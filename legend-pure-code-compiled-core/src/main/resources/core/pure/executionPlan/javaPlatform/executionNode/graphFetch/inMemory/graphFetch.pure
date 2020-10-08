@@ -1,0 +1,611 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::alloy::runtime::java::*;
+import meta::pure::router::extension::*;
+import meta::alloy::runtime::java::naming::*;
+import meta::alloy::runtime::java::platform::*;
+import meta::pure::runtime::*;
+import meta::alloy::runtime::java::graphFetch::xml::*;
+import meta::alloy::runtime::java::graphFetch::flatData::*;
+import meta::alloy::runtime::java::graphFetch::json::*;
+import meta::alloy::runtime::java::graphFetch::stream::*;
+import meta::alloy::runtime::java::typeInfo::*;
+import meta::flatData::mapping::*;
+import meta::flatData::metamodel::*;
+import meta::flatData::runtime::*;
+import meta::flatData::transfer::*;
+import meta::java::codeGeneration::code::*;
+import meta::java::codeGeneration::convention::*;
+import meta::java::codeGeneration::convention::jackson::*;
+import meta::java::codeGeneration::lib::pure::*;
+import meta::java::codeGeneration::utils::*;
+import meta::java::metamodel::factory::*;
+import meta::java::metamodel::project::*;
+import meta::java::tostring::*;
+import meta::pure::dataQuality::*;
+import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::engine::*;
+import meta::pure::graphFetch::*;
+import meta::pure::graphFetch::routing::*;
+import meta::pure::mapping::modelToModel::*;
+
+Class meta::alloy::runtime::java::GraphFetchModelToModelData
+{
+   sourceTree        : RootGraphFetchTree<Any>[1];
+   targetTree        : RoutedRootGraphFetchTree<Any>[1];
+   sourceClass       : meta::java::metamodel::Class[1];
+   targetClass       : meta::java::metamodel::Class[1];
+   enableConstraints : Boolean[1];
+}
+
+function <<access.private>> meta::alloy::runtime::java::extractTreesFromRootLevelOperations(trees: RoutedRootGraphFetchTree<Any>[*], m:meta::pure::mapping::Mapping[1]):RoutedGraphFetchTree[*]
+{
+   $trees->map(tree| $tree.sets->match([o : meta::pure::mapping::OperationSetImplementation[1] | $o->meta::pure::router::routing::resolveOperation($m)->map(s|$tree->extractTreesFromRootLevelOperation($s)),
+                                        s : meta::pure::mapping::SetImplementation[*]          | $tree ]))->cast(@RoutedGraphFetchTree)
+}
+
+function <<access.private>> meta::alloy::runtime::java::extractTreesFromRootLevelOperation(tree: GraphFetchTree[1], sourceSets : meta::pure::mapping::SetImplementation[*]):GraphFetchTree[1]
+{
+   $tree->match([r : RoutedRootGraphFetchTree<Any>[1] | ^$r(sets=$sourceSets, subTrees = $tree.subTrees->map(st|$st->extractTreesFromRootLevelOperation($sourceSets))),
+                 p : RoutedPropertyGraphFetchTree[1]  | if(!$p.isQualifiedProperty && $p.isPrimitive(),| ^$p(sets=$sourceSets)
+                                                                                                      ,| let inScopePropertyMappings = $p.propertyMapping->filter(pm|$sourceSets.id->contains($pm.owner.id->toOne()));
+                                                                                                         let inScopeSets = $p.sets->filter(s|$inScopePropertyMappings.targetSetImplementationId->contains($s.id));
+                                                                                                         ^$p(sets=$inScopeSets, propertyMapping=$inScopePropertyMappings, subTrees=$p.subTrees->map(st|$st->extractTreesFromRootLevelOperation($inScopeSets)));)
+               ]);
+}
+
+function meta::alloy::runtime::java::prepareForGraphFetchModelToModel(node: GraphFetchM2MExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
+{
+   print(if($debug.debug,|$debug.space+'prepareForGraphFetchModelToModel\n', |''));
+
+   let returnsChecked  = !$node.resultType.genericType->isEmpty() && $node.resultType.genericType.rawType == Checked;
+
+   let plusCommons     = $context.conventions->addDataQualitySupport();
+   let newConventions  = $node.connections->fold({c, a| $c->match([json: JsonModelConnection[1] | $a->addJacksonSupport(),
+                                                                   xml : XmlModelConnection[1]  | $a->addJacksonSupport(),
+                                                                   any : Any[1]                 | $a
+                                                                 ])}, $plusCommons);
+
+   let typeInfos = $context.typeInfos->addForClassesWithAllProperties($node.connections->map(c|$c->match([ json: JsonModelConnection[1] | JsonDataRecord,
+                                                                                                            xml: XmlModelConnection[1]  | XmlDataRecord,
+                                                                                                              a: Any[1]                 | JsonDataRecord]))->removeDuplicates());
+   let targetTrees = extractTreesFromRootLevelOperations($node.trees->cast(@RoutedRootGraphFetchTree<Any>), $node.mapping)->cast(@RoutedRootGraphFetchTree<Any>);
+
+   let typeAndNodeInfos =  $targetTrees->fold({targetTree, a| let sourceTree = if($node.connections->size() == 1 && $node.connections->at(0)->instanceOf(FlatDataConnection),
+                                                                                     | #{ParsedFlatData{typeName, values{label, value->subType(@ParsedFlatData) {typeName, values {label, value}}, value}}}#,
+                                                                                     | calculateSourceTree($targetTree, $node.mapping, $extensions)
+                                                                                 );
+      
+                                                              let sourceTreeExtended = if($node.enableConstraints,| $sourceTree->meta::pure::graphFetch::ensureConstraintsRequirements(),|$sourceTree);
+                                                              let connection         = $node.connections->filter(c|$c->match([ json: JsonModelConnection[1] | $json.class == $sourceTree.class,
+                                                                                                                                xml: XmlModelConnection[1] | $xml.class == $sourceTree.class,
+                                                                                                                                  a: Any[1] | true ]))->toOne();
+      
+                                                              let connectionTree = $connection->match([ 
+                                                                 json: FlatDataConnection[1]  | #{RawFlatData {number, lineNumber, record, recordValues {address, rawValue}}}#,
+                                                                 json: JsonModelConnection[1] | #{JsonDataRecord {number, record}}#,
+                                                                 xml : XmlModelConnection[1]  | #{XmlDataRecord {number, record}}#,
+                                                                 a   : Any[1]                 | []
+                                                              ]);
+
+                                                              let newInfo = $typeInfos
+                                                                 ->addForGraphFetchTree($sourceTreeExtended)
+                                                                 ->addForGraphFetchTree($targetTree)
+                                                                 ->map(ti| if($node.enableConstraints, |$ti->addConstraintsForGraphFetchTree($sourceTreeExtended), |$ti))
+                                                                 ->map(ti| if($node.enableConstraints, |$ti->addConstraintsForGraphFetchTree($targetTree), |$ti));
+
+                                                              let data = ^GraphFetchModelToModelData(
+                                                                sourceTree        = $sourceTreeExtended,
+                                                                targetTree        = $targetTree,
+                                                                sourceClass       = $newConventions->className($sourceTreeExtended.class),
+                                                                targetClass       = $newConventions->className($targetTree.class),
+                                                                enableConstraints = $node.enableConstraints
+                                                              );
+
+                                                              print(if($debug.debug,|$debug.space+'targetTree =\n'+$targetTree->treeToString($debug->indent())+'\n', |''));
+                                                              print(if($debug.debug,|$debug.space+'sourceTree =\n'+$sourceTreeExtended->treeToString($debug->indent())+'\n', |''));
+
+                                                              let returnType = if($returnsChecked,
+                                                                                 {| ^CheckedJavaType(
+                                                                                        checkedOf=^SimpleJavaType(pureType=$targetTree.class, javaType=$data.targetClass),
+                                                                                        source=^CheckedJavaType(
+                                                                                           checkedOf=^SimpleJavaType(pureType=$data.sourceTree.class, javaType=$data.sourceClass),
+
+                                                                                           source= $connection->match([
+                                                                                                       flat: FlatDataConnection[1]  | ^SimpleJavaType(pureType=RawFlatData,    javaType=$newConventions->className(RawFlatData)),
+                                                                                                       json: JsonModelConnection[1] | ^SimpleJavaType(pureType=JsonDataRecord, javaType=$newConventions->className(JsonDataRecord)),
+                                                                                                       xml : XmlModelConnection[1]  | ^SimpleJavaType(pureType=XmlDataRecord,  javaType=$newConventions->className(XmlDataRecord)),
+                                                                                                       a   : Any[1]                 | ^SimpleJavaType(pureType=JsonDataRecord, javaType=$newConventions->className(JsonDataRecord))
+                                                                                                   ])
+                                                                                        )
+                                                                                    )
+                                                                                 },
+                                                                                 | ^SimpleJavaType(pureType=$data.targetTree.class, javaType=$data.targetClass)
+                                                                               );
+                                                             let nodeInfo = ^NodeInfo(path=$path, returnType=$returnType, data=$data, graphFetchTrees=[$targetTree, $sourceTreeExtended]->concatenate($connectionTree));
+                                                             pair(list($a.first.values->concatenate($newInfo.typeInfos)), list($a.second.values->concatenate($nodeInfo)));
+                                             }, pair(list([]),list([])))->cast(@Pair<List<TypeInfo>,List<NodeInfo>>);
+
+      ^$context(typeInfos=^TypeInfoSet(typeInfos=$typeAndNodeInfos.first.values->removeDuplicatesBy(ti|$ti.type)), conventions=$newConventions, nodeInfos=$context.nodeInfos->concatenate($typeAndNodeInfos.second.values));
+}
+
+function meta::alloy::runtime::java::generateGraphFetchModelToModel(node: GraphFetchM2MExecutionNode[1], path:String[1], ctx:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
+{
+   print(if($debug.debug,|$debug.space+'generateGraphFetchModelToModel\n', |''));
+   
+   let datas        = $ctx->nodeInfosForPath($path).data->cast(@GraphFetchModelToModelData);
+   let returnsChecked  = !$node.resultType.genericType->isEmpty() && $node.resultType.genericType.rawType == Checked;
+   let createConstraintChecking = $node.enableConstraints || $returnsChecked;
+   
+   let baseProject = mergeProjects
+   ([
+      generateInterfacesAndEnums($ctx, $debug->indent()),
+      createUnitClasses($ctx, $debug)
+   ]->concatenate($datas->map(data|generateMappingApplication($data.targetTree->at(0), $ctx, $createConstraintChecking, $extensions, $debug->indent())))->concatenate($ctx.baseProject)->toOneMany());
+   let context = ^$ctx(baseProject=$baseProject);
+
+   let mapping = $node.mapping;
+
+   let project = createFetchClasses($path, $node, $baseProject, $context, $createConstraintChecking, $extensions, $debug);
+   
+   let checked         = $project->resolve($context.conventions->className(Checked));
+   let targetClass     = $datas->at(0).targetClass;
+   let checkedTarget   = javaParameterizedType($checked, $targetClass);
+   
+   let readsStreamResult  = $node.connections->exists(c|$c->instanceOf(ModelConnection) && $c->cast(@ModelConnection).instances->values()->isNotEmpty());
+   let streamOutType     = javaStream(if($returnsChecked, | $checkedTarget , | $targetClass));
+   let execNodeContext   = graphFetchM2MContextParam($ctx.conventions);
+
+   let fetchStmts = $datas->map(data| $context.conventions->fetchClass($path, $data.sourceTree.class)->j_new([$execNodeContext])->j_invoke('fetchTarget', [], javaStream($data.sourceClass)));
+   let body = if($datas->size() > 1,
+                 | javaStream()->j_invoke(if($returnsChecked, | $checkedTarget , | $targetClass), 'concat', $fetchStmts, $streamOutType)->j_return();,
+                 | $fetchStmts->toOne()->j_return()
+              );
+   let execClass = $body->buildExecuteClass($execNodeContext, $path, $context.conventions);
+
+   generatedCode($project->addClass($execClass), $execClass);
+}
+
+function <<access.private>> meta::alloy::runtime::java::createFetchClasses(path:String[1], node:GraphFetchM2MExecutionNode[1], baseProject:Project[1], context:GenerationContext[1], createConstraintChecking:Boolean[1], extensions:RouterExtension[*], debug:DebugContext[1]): Project[1]
+{
+   let datas           = $context->nodeInfosForPath($path).data->cast(@GraphFetchModelToModelData);
+
+   let allFetchAndReadableProjects = $datas->map(data|
+
+   let conventions     = $context.conventions;
+   let mapperClass     = $conventions->mapperClassName($data.targetTree.sets->toOne(), $extensions);
+   let connection      = $node.connections->map(c|$c->match([ json: JsonModelConnection[1] | if($json.class==$data.sourceTree.class,|$json,|[]),
+                                                               xml: XmlModelConnection[1] | if($xml.class==$data.sourceTree.class,|$xml,|[]),
+                                                                 c: Connection[1]          | $c]))->toOne();
+
+   let url             = $connection->match([
+                             json: JsonModelConnection[1] | $json.url,
+                             xml : XmlModelConnection[1]  | $xml.url,
+                             flat: FlatDataConnection[1]  | $flat.url,
+                             any: Any[1]  | ''
+                          ]);
+   let readableClasses = if($connection->instanceOf(FlatDataConnection),
+                            | [],
+                            | $data.sourceTree.class->concatenate($context.typeInfos->classDependenciesViaPropertiesWithsubTypes($data.sourceTree.class))
+                         );
+   let readableEnums   = if($connection->instanceOf(FlatDataConnection),
+                            | [],
+                            | $context.typeInfos->enumDependenciesViaProperties($data.sourceTree.class)
+                         );
+   let rootTypeInfo    = $context.typeInfos->forClass($data.sourceTree.class);
+   let dataClasses     = if($connection->instanceOf(FlatDataConnection),
+                            | newProject(),
+                            | $readableClasses->map(c| $c->createDataClass($path, $context, $createConstraintChecking, $debug))->toOneMany()->mergeProjects()
+                         );
+
+   let returnsChecked  = !$node.resultType.genericType->isEmpty() && $node.resultType.genericType.rawType == Checked;
+   let checked         = $baseProject->resolve($conventions->className(Checked));
+   let checkedTarget   = javaParameterizedType($checked, $data.targetClass);
+   let checkedSource   = javaParameterizedType($checked, $data.sourceClass);
+   let defect          = $conventions->defectClass();
+   let defectList      = javaList($defect);
+
+   let constrained       = $conventions->className(DataQualityConstrainedInterface);
+   let constrainedTarget = javaParameterizedType($constrained, $conventions->className($data.targetTree.class));
+   let constrainedSource = javaParameterizedType($constrained, $conventions->className($data.sourceTree.class));
+
+   let withDataClasses = mergeProjects([$baseProject, $dataClasses]);
+
+   let fetchClass = $conventions->fetchClass($path, $data.sourceTree.class)
+      ->implements(javaIterator(if($returnsChecked, |$checkedSource, |$data.sourceClass)))
+      ->implements(javaClass('java.io.Closeable'))
+      ->usingKnownPackages($conventions->knownPackages())
+      ->imports($conventions->constrainedImports())
+      ->imports($conventions->standardImports())
+      ->imports($conventions->defectClass())
+      ->imports(javaPackage('java.util.function'))
+      ->imports(javaPackage('java.io'))
+      ->imports(javaPackage('java.net'))
+      ->imports($readableClasses->map(c| $conventions->className($c)))
+      ->imports($readableEnums->map(c| $conventions->className($c)))
+      ->imports($data.targetClass)
+      ->imports($mapperClass)
+      ->imports($constrained)
+      ->imports(if($returnsChecked, |$checked, |[]))
+      ->imports($context->unitImplementationClasses());
+
+
+   let classConventions = $conventions->forClass($fetchClass);
+
+   let hasExplodeProperty = $node.mapping.classMappings()->filter(x | $x->instanceOf(meta::pure::mapping::InstanceSetImplementation))->cast(@meta::pure::mapping::InstanceSetImplementation)->filter(si|$si->containsExplodeProperty())->size() > 0;
+
+   let sourceAndTargetStreams = if($hasExplodeProperty,
+                                   |generateExplodeSourceAndTargetStreams($returnsChecked, $checkedTarget, $checkedSource, $classConventions, $defectList, $data, $mapperClass, $constrainedTarget),
+                                   {|
+                                      let jThis             = j_this($fetchClass);
+                                      let sourceStream      = if($returnsChecked, |javaStream($checkedSource), | javaStream($data.sourceClass));
+                                      let sourceSpliterator = javaSpliterators()->j_invoke('spliteratorUnknownSize', [$jThis, javaSpliterator()->j_field('ORDERED', javaInt())], javaSpliterator($data.sourceClass));
+                                      let fetchSource       = javaMethod(['private'], $sourceStream, 'fetchSource', [],
+                                                                 j_return(javaStreamSupport()->j_invoke('stream', [$sourceSpliterator, j_false()], $sourceStream))->codesToString($fetchClass)
+                                                              );
+                                      if($returnsChecked,
+                                         {|
+                                            let src     = j_parameter(javaParam($checkedSource, 'src'));
+                                            let defects = j_variable($defectList, 'defects');
+                                            let mapped  = j_variable($data.targetClass, 'mapped');
+                                            let noInput = $conventions->className(DataQualityBasicDefectClass)->j_invoke('newNoInputDefect', j_string($data.targetTree.class->elementToPath()), $defect);
+                                            
+                                            [
+                                               javaMethod(['public'], javaStream($checkedTarget), 'fetchTarget', [],
+                                                  j_return($jThis->j_invoke('fetchSource', [], $sourceStream)->js_map($jThis->j_methodReference('mapCheckedSourceToTarget', javaFunctionType($checkedSource, $checkedTarget))))->codesToString($fetchClass)
+                                               ),
+                                               javaMethod(['public'], $checkedTarget, 'mapCheckedSourceToTarget', $src,
+                                                  j_if($src->j_invoke($classConventions->getterName('value'), [], $checkedSource)->j_eq(j_null()),
+                                                     [
+                                                        $defects->j_declare(javaCollections()->j_invoke('singletonList', $noInput, $defectList)),
+                                                        j_return($conventions->dynamicChecked($defects, $src, j_null($data.targetClass)))
+                                                     ],
+                                                     [
+                                                        $mapped->j_declare($mapperClass->j_invoke('mapOne', $src->j_invoke($classConventions->getterName('value'), [], $data.sourceClass), $data.targetClass)),
+                                                        j_return(j_conditional($mapped->j_eq(j_null()), j_null(), $mapped->j_cast($constrainedTarget)->j_invoke('toChecked', [$src, j_boolean($data.enableConstraints)], $checkedTarget)))
+                                                     ]
+                                                  )->codesToString($fetchClass)
+                                               ),
+                                               $fetchSource
+                                            ];
+                                         },
+                                         | [
+                                              javaMethod(['public'], javaStream($data.targetClass), 'fetchTarget', [],
+                                                 {|
+                                                    let mapOverSource =  j_this($fetchClass)->j_invoke('fetchSource', [], javaStream($data.sourceClass))
+                                                                                            ->js_map($mapperClass->j_methodReference('mapOne', javaFunctionType($data.sourceClass, $data.targetClass)));
+                                                    if($data.enableConstraints,
+                                                       {|
+                                                          let x = j_parameter($data.targetClass, 'x');
+                                                          $mapOverSource->js_map(j_lambda($x, $x->j_cast($constrainedTarget)->j_invoke('withConstraintsApplied', [], $data.targetClass)));
+                                                       },
+                                                       | $mapOverSource
+                                                    );
+                                                 }->eval()->j_return()->codesToString($fetchClass)
+                                              ),
+                                              $fetchSource
+                                           ]
+                                      );
+                                   }
+                                );
+
+   let fetchClassWithCommonMethods = $fetchClass
+      ->addField(javaField(['private', 'final'], $conventions->className(StoreStreamReader), 'reader'))
+      ->addField(javaField(['private', 'final'], javaQueue($checkedSource), 'queue', javaLinkedList($checkedSource)->j_new([])->codeToString($fetchClass)))
+      ->addMethods($sourceAndTargetStreams)
+      ->addHasNext($checkedSource)
+      ->addNext($returnsChecked, $data, $checkedSource, $withDataClasses, $conventions)
+      ->addCloseMethod();
+
+   let fetchProject = $connection->match([
+      {json: JsonModelConnection[1] |
+         let jsonReaderProject = $data->createJsonReading($path, $readableClasses, $readableEnums, ^$context(conventions=$classConventions), $debug);
+         let classes = $fetchClassWithCommonMethods->addConstructorForUrlReading($url, $conventions->jsonReaderClass($path, $data.sourceTree.class), $classConventions);
+         mergeProjects([newProject()->addClasses($classes), $jsonReaderProject]);
+      },
+      {xml: XmlModelConnection[1] |
+         let jsonReaderProject = $data->createXmlReading($path, $readableClasses, $readableEnums, ^$context(conventions=$classConventions), $debug);
+         let classes = $fetchClassWithCommonMethods->addConstructorForUrlReading($url, $conventions->xmlReaderClass($path, $data.sourceTree.class), $classConventions);
+         mergeProjects([newProject()->addClasses($classes), $jsonReaderProject]);
+      },
+      {from: ModelConnection[1] |
+         let streamReaderProject = $data->createStreamReading($path, $context, $debug);
+         let varName = $node.connections->at(0)->cast(@ModelConnection).instances->values()->at(0)->get(0)->cast(@RoutedVariablePlaceHolder).name;
+         let classes = $fetchClassWithCommonMethods->addConstructorForStreamReading($data.sourceClass, $varName, $conventions->streamReaderClass($path), $classConventions);
+
+         mergeProjects([newProject()->addClasses($classes), $streamReaderProject]);
+      },
+      {flat: FlatDataConnection[1] |
+         let classes = $fetchClassWithCommonMethods->addConstructorForUrlReadingViaNode($url, $classConventions);
+         newProject()->addClasses($classes);
+      }
+   ]);
+
+    pair(^List<Project>(values=$fetchProject), ^List<Project>(values=$withDataClasses));
+   );
+
+   mergeProjects(
+      $allFetchAndReadableProjects.first.values
+         ->concatenate($allFetchAndReadableProjects.second.values)
+         ->toOneMany()
+   );
+}
+
+function <<access.private>> meta::alloy::runtime::java::addConstructorForUrlReading(class:meta::java::metamodel::Class[1], url:String[1], readerClass:meta::java::metamodel::Class[1], conventions: Conventions[1]): meta::java::metamodel::Class[1]
+{
+   let jThis  = j_this($class);
+   let reader = $jThis->j_field('reader');
+   let in     = j_variable(javaClass('java.io.InputStream'),'in');
+   let ioEx   = j_parameter(javaIOException(), 'e');
+   let context = graphFetchM2MContextParam($conventions);
+   // DataProtocolHandler in Legend uses Java's URLDecoder which converts + to space. Here we explicityly encode + values as space
+   let newUrl = $url->replace('+', '%2B'); 
+
+   $class->addConstructor(javaConstructor('public', $context,
+            [
+               $in->j_declare(javaURL()->j_new(j_string($newUrl))->j_invoke('openStream', [])),
+               $reader->j_assign($readerClass->j_new($in)),
+               $reader->j_invoke('initReading', [], javaVoid())
+      ]->j_ioExTryCatch()->codesToString($class)
+   ));
+}
+
+function <<access.private>> meta::alloy::runtime::java::addConstructorForUrlReadingViaNode(class:meta::java::metamodel::Class[1], url:String[1], conventions: Conventions[1]): meta::java::metamodel::Class[1]
+{
+   let jThis   = j_this($class);
+   let reader  = $jThis->j_field('reader');
+   let ioEx    = j_parameter(javaIOException(), 'e');
+   let context = graphFetchM2MContextParam($conventions);
+
+   $class->addConstructor(javaConstructor('public', $context,
+      [
+         $reader->j_assign($context->j_invoke('createReader', j_string($url), $conventions->className(StoreStreamReader))),
+         $reader->j_invoke('initReading', [], javaVoid())
+      ]->j_ioExTryCatch()->codesToString($class)
+   ));
+}
+
+function <<access.private>> meta::alloy::runtime::java::addConstructorForStreamReading(class: meta::java::metamodel::Class[1], streamOfClass: meta::java::metamodel::Class[1], varName:String[1], readerClass:meta::java::metamodel::Class[1],  conventions: Conventions[1]): meta::java::metamodel::Class[1]
+{
+   let reader  = j_this($class)->j_field('reader');
+   let context = graphFetchM2MContextParam($conventions);   
+   let typeArg = $context->j_invoke('streamType', $streamOfClass->j_field('class', javaClassType()), javaReflectType());
+
+   $class->addConstructor(javaConstructor('public', $context,
+      [
+         $reader->j_assign($readerClass->j_new($context->j_invoke('getResult', [j_string($varName), $typeArg], javaStream($streamOfClass)))),
+         $reader->j_invoke('initReading', [], javaVoid())
+      ]->codesToString($class)
+   ));
+}
+
+function <<access.private>> meta::alloy::runtime::java::addHasNext(class: meta::java::metamodel::Class[1], checkedSource: meta::java::metamodel::Type[1]): meta::java::metamodel::Class[1]
+{
+   let jThis  = j_this($class);
+   let reader = $jThis->j_field('reader');
+   let queue  = $jThis->j_field('queue');
+   
+   $class->addMethod(
+      javaMethod(['public'], javaBoolean(), 'hasNext', [],
+         [
+            j_if(
+               j_and(
+                  $queue->j_invoke('peek', [], $queue.type->elementType())->j_eq(j_null()), 
+                  j_not($reader->j_invoke('isFinished', [], javaBoolean()))
+               ),
+               $queue->j_invoke('addAll', $reader->j_invoke('readCheckedObjects', [], javaCollection($checkedSource)))
+            ),        
+            j_if(
+               $queue->j_invoke('peek', [])->j_eq(j_null()),
+               $jThis->j_invoke('close', [], javaVoid())
+            ),   
+            $queue->j_invoke('peek', [])->j_ne(j_null())->j_return()             
+         ]->codesToString($class)
+      )
+   );
+}
+
+function <<access.private>> meta::alloy::runtime::java::addNext(class: meta::java::metamodel::Class[1], returnsChecked:Boolean[1], data:GraphFetchModelToModelData[1], checkedSource: meta::java::metamodel::Type[1], baseProject:Project[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+{
+   let jThis              = j_this($class);
+   let element            = $checkedSource->cast(@meta::java::metamodel::ParameterizedType).typeArguments->at(0);
+   let returns            = if($returnsChecked, |$checkedSource, |$element);
+   let nextValue          = j_variable($checkedSource, 'nextValue');
+   let nextValueDefects   = $conventions->checkedGetDefects($nextValue);
+   let nextValueSource    = $conventions->checkedGetSource($nextValue);
+   let nextValueValue     = $conventions->checkedGetValue($nextValue);
+   let defectClass        = $baseProject->resolve($conventions->defectClass());
+   let defects            = j_variable(javaList($defectClass), 'defects');
+   let constrained        = $conventions->className(DataQualityConstrainedInterface);
+   let constrainedElement = javaParameterizedType($constrained, $element);
+   
+   $class->addMethod(
+      javaMethod(['public'], $returns, 'next', [],
+         [
+            j_if(
+               j_not($jThis->j_invoke('hasNext', [])),
+               javaNoSuchElementException()->j_new(j_string('End of stream has passed'))->j_throw()
+            ),
+            $nextValue->j_declare($jThis->j_field('queue')->j_invoke('remove', []))
+         ]->concatenate(
+            if($returnsChecked,
+               {|
+                  $defects->j_declare(javaArrayList($defectClass)->j_new($nextValueDefects))
+                     ->concatenate(
+                        if($data.enableConstraints,
+                           | j_if(
+                                j_and($nextValueValue->j_ne(j_null()), $nextValueValue->j_instanceof($constrained)),
+                                $defects->j_invoke('addAll', $nextValueValue->j_cast($constrainedElement)->j_invoke('allConstraints', []))
+                             ),
+                           | []
+                        )
+                     )
+                     ->concatenate($conventions->dynamicChecked($defects, $nextValueSource, $nextValueValue)->j_return())
+               },
+               {|
+                  [
+                     j_if(
+                        j_not($nextValueDefects->j_invoke('isEmpty', [])),
+                        {|
+                           let d = j_parameter($defectClass, 'd');
+                           javaIllegalStateException()->j_new($nextValueDefects->j_streamOf()->js_map(j_lambda($d, $conventions->defectGetMessage($d)))->js_joining(j_string('\n')))->j_throw();
+                        }->eval(),
+                        j_if(
+                           $nextValueValue->j_eq(j_null()),
+                           javaIllegalStateException()->j_new(j_string('Unexpected error: no object and no defects'))->j_throw()
+                        )
+                     )
+                  ]
+                  ->concatenate(
+                     {|
+                        if($data.enableConstraints,
+                           | j_if(
+                                $nextValueValue->j_instanceof($constrained),
+                                $nextValueValue->j_cast($constrainedElement)->j_invoke('withConstraintsApplied', [], $element)->j_return(),
+                                $nextValueValue->j_return()
+                             ),
+                           | $nextValueValue->j_return()
+                        )
+                     }->eval()
+                  )
+               }
+            )
+         )->codesToString($class)
+      )
+   );
+}
+
+function <<access.private>> meta::alloy::runtime::java::addCloseMethod(class: meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+{
+   let reader = j_this($class)->j_field('reader');
+   let ioEx   = j_parameter(javaIOException(), 'e');
+   
+   $class->addMethod(
+      javaMethod(['public'], javaVoid(), 'close', [],
+         [   
+            $reader->j_invoke('destroyReading', [], javaVoid())
+         ]->codesToString($class)
+      )
+   );
+}
+
+function meta::alloy::runtime::java::readMethodName(type:Type[1], conventions:Conventions[1]): String[1]
+{
+   let javaClass  = $conventions->className($type);
+   'read_'+ $conventions->identifier($type->elementToPath('_'));
+}
+
+function <<access.private>> meta::alloy::runtime::java::createDataClass(class:Class<Any>[1], path:String[1], context:GenerationContext[1], createConstraintChecking:Boolean[1], debug:DebugContext[1]): Project[1]
+{
+   print(if($debug.debug,|$debug.space+'createDataClass for '+$class->elementToPath()+'\n', |''));
+
+   let conventions = $context.conventions;
+   let properties  = $context.typeInfos->allProperties($class);
+   let iface       = $conventions->className($class);
+   let proto       = $class->dataClass($path, $conventions)
+      ->implements($iface)
+      ->usingKnownPackages($conventions->knownPackages())
+      ->imports($conventions->standardImports())
+      ->imports(if($createConstraintChecking,|$conventions->constrainedImports(),|[]))
+      ->imports(javaPackage('java.util'))
+      ->imports($iface)
+      ->imports($properties->map(p| $conventions->pureTypeToJavaType($p.genericType.rawType->toOne(), PureOne))->filter(j| $j->instanceOf(meta::java::metamodel::Class))->cast(@meta::java::metamodel::Importable))
+      ->addConstructor(javaConstructor([], [], ''));
+
+   let withFields = $context.typeInfos->allProperties($class)->fold(
+      {p, c|
+         let variable = $conventions->fieldName($p);
+         let javaType = $conventions->pureTypeToJavaType($p);
+
+         let withField = $c->addField(javaField([], $javaType, $variable));
+         let field     = j_this($withField)->j_field($variable);
+         $withField->addMethod(javaMethod('public', $javaType, $conventions->getterName($p), [],
+                                  if($javaType->isJavaList(),
+                                     | j_conditional($field->j_eq(j_null()), javaCollections()->j_invoke('emptyList', [], $javaType), $field),
+                                     | $field
+                                  )->j_return()->codeToString($withField)
+                               )
+         );
+      },
+      $proto
+   );
+
+   mergeProjects([
+      newProject()->addClass($withFields),
+      $withFields->createQualifiedPropertiesForClass($context.typeInfos->allQualifiedProperties($class), $context, $debug->indent()),
+      $withFields->createAlloyStoreObjectReferenceMethodsForClass($context, $debug->indent())
+   ]->concatenate(if($createConstraintChecking,|$withFields->createConstraintCheckingForClass($class, $context, $debug->indent()),|[]))->toOneMany());
+}
+
+function <<access.private>> meta::alloy::runtime::java::generateExplodeSourceAndTargetStreams(returnsChecked:Boolean[1],
+                                                                                              checkedTarget:meta::java::metamodel::ParameterizedType[1],
+                                                                                              checkedSource:meta::java::metamodel::ParameterizedType[1],
+                                                                                              classConventions:Conventions[1],
+                                                                                              defectList:meta::java::metamodel::Type[1],
+                                                                                              data:GraphFetchModelToModelData[1],
+                                                                                              mapperClass:meta::java::metamodel::Class[1],
+                                                                                              constrainedTarget:meta::java::metamodel::ParameterizedType[1]): meta::java::metamodel::Method[*]
+{
+   if($returnsChecked,
+      {|
+         [
+            javaMethod(['public'], javaStream($checkedTarget), 'fetchTarget', [],
+            'return fetchSource().map(this::mapCheckedSourceToTarget).flatMap(Collection::stream);'
+         ),
+            javaMethod(['public'], javaList($checkedTarget), 'mapCheckedSourceToTarget', [javaParam($checkedSource,'src')],
+                    'if (src.' + $classConventions->getterName('value') + '() == null)\n' +
+                    '{\n' +
+                    '    '+$classConventions->codeType($defectList)->codeToString($classConventions)+' defects = '+$classConventions->codeType(javaType('java.util.Collections'))->codeToString($classConventions)+'.singletonList('+$classConventions->newNoInputDefect(escapedString($data.targetTree.class->elementToPath()))+');\n'+
+                    '    return Collections.singletonList('+$classConventions->dynamicChecked($data.targetClass, 'defects', 'src', 'null', '    ')+');\n'+
+                    '}\n' +
+                    'else\n' +
+                    '{\n' +
+                    '    List<'+$classConventions->codeType($data.targetClass)->codeToString($classConventions)+'> mapped = '+$classConventions->codeType($mapperClass)->codeToString($classConventions)+'.mapOne(src.' + $classConventions->getterName('value') + '());\n' +
+                    '    return mapped.stream().map(current -> ((' + $classConventions->codeType($constrainedTarget)->codeToString($classConventions) + ') current).toChecked(src, '+$data.enableConstraints->toString()+')).collect(Collectors.toList());\n' +
+                    '}\n'
+            ),
+            javaMethod(['private'], javaStream($checkedSource), 'fetchSource', [],
+            'return StreamSupport.stream(Spliterators.spliteratorUnknownSize(this, Spliterator.ORDERED), false);'
+            )
+         ];
+      },
+      {|
+         [
+            javaMethod(['public'], javaStream($data.targetClass), 'fetchTarget', [],
+            'return fetchSource()\n' +
+            '    .map('+$classConventions->codeType($mapperClass)->codeToString($classConventions)+'::mapOne).flatMap(Collection::stream)\n' +
+            if($data.enableConstraints,
+               | '\n    .map(x -> (('+$classConventions->codeType($constrainedTarget)->codeToString($classConventions)+') x).withConstraintsApplied())',
+               | ''
+            )+';'
+            ),
+            javaMethod(['private'], javaStream($data.sourceClass), 'fetchSource', [],
+            'return StreamSupport.stream(Spliterators.spliteratorUnknownSize(this, Spliterator.ORDERED), false);'
+            )
+         ];
+      }
+   );
+}
+
+function <<access.private>> meta::alloy::runtime::java::fetchClass(conventions:Conventions[1], path:String[1], srcTreeClass:Class<Any>[1]): meta::java::metamodel::Class[1]
+{   
+   $conventions->planNodeClass('public', $path, 'Fetch_' + $conventions->identifier($srcTreeClass->elementToPath('_')));
+}
+
+function meta::alloy::runtime::java::dataClass(class:Class<Any>[1], path:String[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+{
+ $conventions->planNodeClass([], $path, $conventions->identifier($class->elementToPath('_')) + '_Impl');
+}
+

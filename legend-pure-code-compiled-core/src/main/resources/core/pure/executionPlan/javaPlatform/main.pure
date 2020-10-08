@@ -1,0 +1,285 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::alloy::runtime::java::*;
+import meta::alloy::runtime::java::graphFetch::common::*;
+import meta::pure::mapping::modelToModel::*;
+import meta::pure::graphFetch::executionPlan::*;
+import meta::java::codeGeneration::utils::*;
+import meta::java::tostring::*;
+import meta::pure::mapping::*;
+import meta::pure::executionPlan::*;
+import meta::pure::metamodel::constraint::*;
+import meta::pure::graphFetch::*;
+import meta::java::metamodel::project::*;
+import meta::java::codeGeneration::convention::*;
+import meta::alloy::runtime::java::typeInfo::*;
+
+Profile meta::alloy::runtime::java::roadmap::feature
+{
+   stereotypes: [ M2MBasics, DataQuality, Enums, Filter, Project, Advanced, FlatData, XML, Runtime ];
+}
+
+Class meta::alloy::runtime::java::GenerationContext
+{
+   typeInfos                 : TypeInfoSet[1];
+   conventions               : Conventions[1];
+   nodeInfos                 : NodeInfo[*];
+   baseProject               : Project[0..1];
+   graphFetchWithCachingFlow : Boolean[0..1];
+}
+
+Class meta::alloy::runtime::java::NodeInfo
+{
+   path            : String[1];
+   returnType      : JavaType[1];
+   data            : Any[0..1];
+   graphFetchTrees : RootGraphFetchTree<Any>[*];
+}
+
+Class meta::alloy::runtime::java::JavaType
+{
+}
+
+Class meta::alloy::runtime::java::SimpleJavaType extends JavaType
+{
+   pureType   : Type[1];
+   javaType   : meta::java::metamodel::Type[1];
+}
+
+Class meta::alloy::runtime::java::CheckedJavaType extends JavaType
+{
+   checkedOf  : SimpleJavaType[1];
+   source     : JavaType[1];
+}
+
+
+Class <<typemodifiers.abstract>> meta::alloy::runtime::java::typeInfo::TypeInfoSet
+{
+   typeInfos: TypeInfo[*];
+}
+
+Class <<typemodifiers.abstract>> meta::alloy::runtime::java::typeInfo::TypeInfo
+{
+   type: Type[1];
+}
+
+Class meta::alloy::runtime::java::typeInfo::EnumerationTypeInfo extends TypeInfo
+{
+   enumeration() { $this.type->cast(@Enumeration<Any>) }: Enumeration<Any>[1];
+}
+
+Class <<typemodifiers.abstract>> meta::alloy::runtime::java::typeInfo::ConstraintInfo
+{
+   constraint:Constraint[1];
+}
+
+Class meta::alloy::runtime::java::typeInfo::SupportedConstraintInfo extends ConstraintInfo
+{
+}
+
+Class meta::alloy::runtime::java::typeInfo::AlwaysDefectConstraintInfo extends ConstraintInfo
+{
+   defectMessage: String[1];
+}
+
+Class meta::alloy::runtime::java::typeInfo::ClassTypeInfo extends TypeInfo
+{
+   properties          : Property<Nil,Any|*>[*];
+   supertypes          : Class<Any>[*];
+   qualifiedProperties : QualifiedProperty<Any>[*];
+   constraints         : ConstraintInfo[*];
+   
+   class() { $this.type->cast(@Class<Any>) }: Class<Any>[1];
+}
+
+Class meta::alloy::runtime::java::typeInfo::UnitTypeInfo extends TypeInfo
+{
+   measure: Measure[1];
+   conversionFunction: FunctionDefinition<Any>[1];
+
+   unit() { $this.type->cast(@Unit) }: Unit[1];
+}
+
+Class meta::alloy::runtime::java::GeneratedCode
+{
+   project: Project[0..1];
+   implementation: JavaPlatformImplementation[0..1];
+}
+
+Class meta::alloy::runtime::java::GeneratedNode
+{
+   project: Project[0..1];
+   node: ExecutionNode[1];
+}
+
+
+
+// ----------------------------------------------------------------------------------------------------------
+// --- Plan generation
+// ----------------------------------------------------------------------------------------------------------
+
+function meta::alloy::runtime::java::generatePlatformCode(e:ExecutionPlan[1], config:PlatformCodeGenerationConfig[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):ExecutionPlan[1]
+{
+   let conventions     = alloyConventions($extensions);
+   let pathAdjusted    = if($config.planId->isEmpty(), 
+                            |$conventions, 
+                            |$conventions->setBasePackageName($conventions.basePackageName+'.'+$conventions->identifier('plan_'+$config.planId->toOne()))
+                         );
+   let initialContext  = ^GenerationContext(typeInfos=newTypeInfoSet(), conventions=$pathAdjusted, graphFetchWithCachingFlow=$config.graphFetchWithCachingFlow);
+   let preparedContext = $e.rootExecutionNode->prepare('root', $initialContext, $extensions, $debug)->meta::alloy::runtime::java::fillNewFunctionProhibitedList();
+   
+   // TODO Move Interface/Enum/Unit generation to here
+   let context = ^$preparedContext(baseProject=$preparedContext.conventions->fundamentals($debug));
+   
+   let generated     = $e.rootExecutionNode->generatePlatformCode('root', $e.mapping, $context, $extensions, $debug);
+   
+   ^$e
+   (
+      rootExecutionNode = $generated.node,
+      globalImplementationSupport = if($generated.project->isEmpty() || $generated.project->toOne()->allClasses()->isEmpty(),
+                                       | [],
+                                       | $generated.project->toOne()->projectToImplementation()
+                                    )
+   );
+}
+
+function meta::alloy::runtime::java::projectToImplementation(project:Project[1]):JavaPlatformImplementation[1]
+{                                                     
+   ^JavaPlatformImplementation
+    (
+       classes = $project->allClasses()->map({cl |
+          ^meta::pure::executionPlan::JavaClass
+           (
+             package = $cl.package->packageToString(),
+             name    = $cl.simpleName,
+             source  = $cl->meta::java::tostring::classToString()
+          )
+       })
+    );
+}
+
+
+function meta::alloy::runtime::java::prepare(node:ExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
+{    
+   let contextFromChildren = $node.executionNodes->prepareChildNodes(1, $path, $context, $extensions, $debug);
+   
+   let contextFromOtherNodes = $node->match($extensions.plan_javaRuntime_main_prepare1->map(x|$x->eval($path, $contextFromChildren, $extensions, $debug))->concatenate([
+      f:FreeMarkerConditionalExecutionNode[1] |
+         let contextFromTrueBlock = $f.trueBlock->prepare($path+'.trueBlock', $contextFromChildren, $extensions, $debug);
+         if($f.falseBlock->isEmpty(), |$contextFromTrueBlock, |$f.falseBlock->toOne()->prepare($path+'.falseBlock', $contextFromTrueBlock, $extensions, $debug));,
+      g:GraphFetchExecutionNode[1] | 
+         let contextFromRoot = $g.rootExecutionNode->prepare($path+'.graphRoot', $contextFromChildren, $extensions, $debug);
+         $g.globalGraphFetchExecutionNode->prepare($path+'.globalGraph', $contextFromRoot, $extensions, $debug);,
+      g:GlobalGraphFetchExecutionNode[1] | 
+         let contextFromGlobalChildren = $g.children->size()->range()->fold({x, ctx | $g.children->at($x)->prepare($path+'.globalChild' + $x->toString(), $ctx, $extensions, $debug)}, $contextFromChildren);
+         $g.localGraphFetchExecutionNode->prepare($path+'.localGraph', $contextFromGlobalChildren, $extensions, $debug);,
+      e:ExecutionNode[1] | $contextFromChildren
+   ])->toOneMany());
+
+   $node->match($extensions.plan_javaRuntime_main_prepare2->map(x|$x->eval($path, $contextFromOtherNodes, $extensions, $debug))->concatenate([
+      g:GraphFetchM2MExecutionNode[1]                | $g->prepareForGraphFetchModelToModel($path, $contextFromOtherNodes, $extensions, $debug),
+      g:GraphFetchExecutionNode[1]                   | $g->prepareForGraphQuery($path, $contextFromOtherNodes, $debug),
+      p:PureExpressionPlatformExecutionNode[1]       | $p->prepareForPlatformNode($path, $contextFromOtherNodes, $extensions, $debug),      
+      e:ExecutionNode[1]                             |  $contextFromOtherNodes
+   ])->toOneMany());
+}
+
+function <<access.private>> meta::alloy::runtime::java::fillNewFunctionProhibitedList(context:GenerationContext[1]):GenerationContext[1]
+{
+   let cls = $context.typeInfos.typeInfos->filter(t|$t->instanceOf(ClassTypeInfo))->cast(@ClassTypeInfo)->map(c|$c.class());
+   let oldConventions = $context.conventions; 
+  
+   ^$context(conventions = ^$oldConventions(newFunctionProhibitedList = $cls));
+}
+
+function <<access.private>> meta::alloy::runtime::java::prepareChildNodes(nodes:ExecutionNode[*], childNo:Integer[1], parentPath:String[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
+{
+   $nodes->head()->match([
+      {n0:ExecutionNode[0] |
+         $context
+      },
+      {n:ExecutionNode[1] |
+         let newContext = $n->prepare($parentPath+'.n'+$childNo->toString(), $context, $extensions, $debug);
+         $nodes->tail()->prepareChildNodes($childNo+1, $parentPath, $newContext, $extensions, $debug);
+      }
+   ]);
+}
+
+function meta::alloy::runtime::java::generatePlatformCode(node:ExecutionNode[1], path:String[1], mapping:Mapping[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedNode[1]
+{
+   let generated = $node->match($extensions.plan_javaRuntime_main_generatePlatformCode1->map(e|$e->eval($path, $context, $extensions, $debug))->concatenate([
+      g:GraphFetchM2MExecutionNode[1]                | $g->generateGraphFetchModelToModel($path, $context, $extensions, $debug),
+      l:LocalGraphFetchExecutionNode[1]              | $l->generateCodeForLocalGraphFetchNode($path, $context, $extensions, $debug),
+      p:PureExpressionPlatformExecutionNode[1]       | $p->generateImplementionForPlatformNode($path, $context, $extensions, $debug),
+      e:ExecutionNode[1]                             | ^GeneratedCode()
+   ])->toOneMany());
+
+   let children    = $node.executionNodes->generateChildNodes(1, $path, $mapping, $context, $extensions, $debug);
+
+   let allProjects = $generated.project->concatenate($children.project)->concatenate($context.baseProject);
+   let fullProject = $allProjects->mergeProjectsNullable();
+
+   let newNode = ^$node(executionNodes=$children.node, implementation=$generated.implementation);
+
+   $newNode->match($extensions.plan_javaRuntime_main_generatePlatformCode2->map(e|$e->eval($path, $mapping, $context, $extensions, $fullProject, $debug))->concatenate([
+      g:GraphFetchExecutionNode[1] |
+         let transformedRoot = $g.rootExecutionNode->generatePlatformCode($path+'.graphRoot', $mapping, $context, $extensions, $debug);
+         let transformedGlobal = $g.globalGraphFetchExecutionNode->generatePlatformCode($path+'.globalGraph', $mapping, $context, $extensions, $debug);
+         let transformedGlobalNode = $transformedGlobal.node->cast(@GlobalGraphFetchExecutionNode);
+         ^GeneratedNode(node=^$g(rootExecutionNode = $transformedRoot.node, globalGraphFetchExecutionNode = $transformedGlobalNode), project = mergeProjectsNullable($fullProject->concatenate($transformedRoot.project)->concatenate($transformedGlobal.project)));,
+      g:GlobalGraphFetchExecutionNode[1] |
+         let transformedChildren = $g.children->size()->range()->map(x | $g.children->at($x)->generatePlatformCode($path+'.globalChild' + $x->toString(), $mapping, $context, $extensions, $debug));
+         let transformedLocal = $g.localGraphFetchExecutionNode->generatePlatformCode($path+'.localGraph', $mapping, $context, $extensions, $debug);
+         let transformedLocalNode = $transformedLocal.node->cast(@LocalGraphFetchExecutionNode);
+         ^GeneratedNode(node=^$g(children = $transformedChildren.node->cast(@GlobalGraphFetchExecutionNode), localGraphFetchExecutionNode = $transformedLocalNode), project = mergeProjectsNullable($fullProject->concatenate($transformedChildren.project)->concatenate($transformedLocal.project)));,
+      f:FreeMarkerConditionalExecutionNode[1] |
+         let transformedTrueBlock = $f.trueBlock->generatePlatformCode($path+'.trueBlock', $mapping, $context, $extensions, $debug);
+         let transformedFalseBlock = if($f.falseBlock->isEmpty(), |[], |$f.falseBlock->toOne()->generatePlatformCode($path+'.falseBlock', $mapping, $context, $extensions, $debug));
+         ^GeneratedNode(node=^$f(trueBlock = $transformedTrueBlock.node, falseBlock = $transformedFalseBlock.node), project = mergeProjectsNullable($fullProject->concatenate($transformedTrueBlock.project)->concatenate($transformedFalseBlock.project)));,
+      e:ExecutionNode[1] | ^GeneratedNode(node=$newNode, project=$fullProject)
+   ])->toOneMany());
+}
+
+function <<access.private>> meta::alloy::runtime::java::generateChildNodes(nodes:ExecutionNode[*], childNo:Integer[1], parentPath:String[1], mapping:Mapping[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedNode[*]
+{
+   $nodes->head()->match([
+      n0:ExecutionNode[0] | [],
+      n :ExecutionNode[1] | $n->generatePlatformCode($parentPath+'.n'+$childNo->toString(), $mapping, $context, $extensions, $debug)->concatenate($nodes->tail()->generateChildNodes($childNo+1, $parentPath, $mapping, $context, $extensions, $debug))
+   ]);
+}
+
+function meta::alloy::runtime::java::generatedCode(project:Project[1], entryPoint:meta::java::metamodel::Class[1]):GeneratedCode[1]
+{
+   assert($project->containsClass($entryPoint), 'Entry point class is missing');
+   ^GeneratedCode(
+      project        = $project,
+      implementation = ^JavaPlatformImplementation
+                       (
+                          executionClassFullName = $entryPoint->typePathToString(true),
+                          executionMethodName    = $entryPoint.methods->filter(m |$m->isStatic())->first().name
+                       )
+   );
+}
+
+
+function meta::alloy::runtime::java::nodeInfosForPath(context:GenerationContext[1], path:String[1]): NodeInfo[*]
+{
+   $context.nodeInfos->filter(ni| $ni.path == $path);
+}
+
+function meta::alloy::runtime::java::childNodeInfosForPath(context:GenerationContext[1], path:String[1]): NodeInfo[*]
+{
+   $context.nodeInfos->filter(ni| $ni.path->contains('.') && $ni.path->substring(0, $ni.path->lastIndexOf('.')) == $path);
+}

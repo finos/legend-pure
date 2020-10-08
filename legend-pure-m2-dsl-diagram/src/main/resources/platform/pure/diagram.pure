@@ -1,0 +1,150 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::profiles::*;
+import meta::pure::diagram::*;
+
+Class meta::pure::diagram::DiagramNode
+{
+    <<equality.Key>> id: String[1];
+}
+
+Class meta::pure::diagram::Visibility
+{
+   visibleStereotype: Boolean[1];
+}
+
+Class meta::pure::diagram::AttributeVisibility extends Visibility
+{
+   visibleTypes: Boolean[1];
+}
+
+Class meta::pure::diagram::TypeVisibility extends Visibility
+{
+   visibleAttributeCompartment: Boolean[1];
+}
+
+Class meta::pure::diagram::AssociationVisibility extends Visibility
+{
+   visibleName : Boolean[1];
+}
+
+Class meta::pure::diagram::Rendering
+{
+   //todo: This is in the format #FFCCBB, remodel
+   color : String[1];
+   lineWidth : Float[1];
+}
+
+Class meta::pure::diagram::Point
+{
+   <<equality.Key>> x : Float[1];
+   <<equality.Key>> y : Float[1];
+}
+
+Enum meta::pure::diagram::LineStyle
+{
+   SIMPLE,
+   RIGHT_ANGLE
+}
+
+//todo: do we want this empty class at all?
+Class meta::pure::diagram::Geometry
+{
+}
+
+Class meta::pure::diagram::RectangleGeometry extends Geometry
+{
+   width : Float[1];
+   height : Float[1];
+}
+
+Class meta::pure::diagram::LineGeometry extends Geometry
+{
+   style : LineStyle[1];
+   points : Point[*];
+}
+
+Class meta::pure::diagram::AbstractPathView extends DiagramNode
+{
+   geometry : LineGeometry[1];
+   rendering : Rendering[1];
+   source : TypeView[1];
+   target : TypeView[1];
+   label : String[1];
+}
+
+Class meta::pure::diagram::PropertyView extends AbstractPathView
+{
+    property : AbstractProperty<Any>[1];
+    visibility : AssociationVisibility[1];
+    view : AssociationPropertyView[1];
+}
+
+Class meta::pure::diagram::AssociationPropertyView
+{
+   propertyLocation : Point[1];
+   multiplicityLocation : Point[1];
+}
+
+Class meta::pure::diagram::AssociationView extends AbstractPathView
+{
+   association : Association[1];
+   visibility : AssociationVisibility[1];
+   sourcePropertyView : AssociationPropertyView[1];
+   targetPropertyView : AssociationPropertyView[1];
+}
+
+Class meta::pure::diagram::GeneralizationView extends AbstractPathView
+{
+}
+
+Class meta::pure::diagram::TypeView extends DiagramNode
+{
+   type : Type[1];
+   typeVisibility : TypeVisibility[1];
+   attributeVisibility : AttributeVisibility[1];
+   rendering : Rendering[1];
+   position : Point[1];
+   rectangleGeometry : RectangleGeometry[1];
+}
+
+Class meta::pure::diagram::Diagram extends PackageableElement
+{
+   rectangleGeometry : RectangleGeometry[1];
+}
+
+Association meta::pure::diagram::DiagramTypeViews
+{
+   diagram   : Diagram[1];
+   typeViews : TypeView[*];
+}
+
+Association meta::pure::diagram::DiagramAssociationViews
+{
+   diagram          : Diagram[1];
+   associationViews : AssociationView[*];
+}
+
+Association meta::pure::diagram::DiagramPropertyViews
+{
+   diagram       : Diagram[1];
+   propertyViews : PropertyView[*];
+}
+
+Association meta::pure::diagram::DiagramGeneralizationViews
+{
+   diagram             : Diagram[1];
+   generalizationViews : GeneralizationView[*];
+}

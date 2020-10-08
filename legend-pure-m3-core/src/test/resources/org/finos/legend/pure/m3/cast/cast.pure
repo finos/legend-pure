@@ -1,0 +1,74 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+Class S
+{
+}
+
+Class X extends S
+{
+   nameX:String[*];
+}
+
+Class Y extends S
+{
+   nameY:String[*];
+}
+
+function castToString(str:Any[*]):String[*]
+{
+   $str->cast(@String);
+}
+
+function castToNumber(source:Any[*]):Number[*]
+{
+   $source->cast(@Number);
+}
+
+function castToY(super:S[*]):Y[*]
+{
+   $super->cast(@Y);
+}
+
+function castToListY(list:List<X>[*]):List<Y>[*]
+{
+   $list->cast(@List<Y>);
+}
+
+function nonConcreteCastToString(str:Any[*]):String[*]
+{
+   $str->castWithNonConcreteGenericType(@String);
+}
+
+function nonConcreteCastToNumber(source:Any[*]):Number[*]
+{
+   $source->castWithNonConcreteGenericType(@Number);
+}
+
+function nonConcreteCastToY(super:S[*]):Y[*]
+{
+   $super->castWithNonConcreteGenericType(@Y);
+}
+
+function castWithNonConcreteGenericType<T>(source:Any[*], object:T[1]):T[*]
+{
+   if($source->size() == 1,
+      |$source->toOne()->cast($object),
+      |$source->cast($object));
+}
+
+function testCastWithListY(list:List<Y>[*]):Any[*]
+{
+   'ok';
+}

@@ -1,0 +1,69 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package org.finos.legend.pure.m3.tools.forkjoin;
+
+import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.block.procedure.Procedure;
+import org.eclipse.collections.api.list.ListIterable;
+
+import java.util.concurrent.ForkJoinPool;
+
+public class ForkJoinTools
+{
+    private ForkJoinTools()
+    {
+        // Utility class
+    }
+
+    public static <T> void forEach(ForkJoinPool forkJoinPool, ListIterable<T> list, Procedure<? super T> procedure, int start, int end, int threshold)
+    {
+        forkJoinPool.invoke(RecursiveProcedure.newRecursiveProcedure(list, procedure, start, end, threshold));
+    }
+
+    public static <T> void forEach(ForkJoinPool forkJoinPool, ListIterable<T> list, Procedure<? super T> procedure, int threshold)
+    {
+        forkJoinPool.invoke(RecursiveProcedure.newRecursiveProcedure(list, procedure, threshold));
+    }
+
+    public static <T> void forEach(ForkJoinPool forkJoinPool, T[] array, Procedure<? super T> procedure, int start, int end, int threshold)
+    {
+        forkJoinPool.invoke(RecursiveProcedure.newRecursiveProcedure(array, procedure, start, end, threshold));
+    }
+
+    public static <T> void forEach(ForkJoinPool forkJoinPool, T[] list, Procedure<? super T> procedure, int threshold)
+    {
+        forkJoinPool.invoke(RecursiveProcedure.newRecursiveProcedure(list, procedure, threshold));
+    }
+
+    public static <T, V> ListIterable<V> collect(ForkJoinPool forkJoinPool, ListIterable<T> list, Function<? super T, ? extends V> function, int start, int end, int threshold)
+    {
+        return forkJoinPool.invoke(RecursiveFunction.newRecursiveFunction(list, function, start, end, threshold));
+    }
+
+    public static <T, V> ListIterable<V> collect(ForkJoinPool forkJoinPool, ListIterable<T> list, Function<? super T, ? extends V> function, int threshold)
+    {
+        return forkJoinPool.invoke(RecursiveFunction.newRecursiveFunction(list, function, threshold));
+    }
+
+    public static <T, V> ListIterable<V> collect(ForkJoinPool forkJoinPool, T[] array, Function<? super T, ? extends V> function, int start, int end, int threshold)
+    {
+        return forkJoinPool.invoke(RecursiveFunction.newRecursiveFunction(array, function, start, end, threshold));
+    }
+
+    public static <T, V> ListIterable<V> collect(ForkJoinPool forkJoinPool, T[] array, Function<? super T, ? extends V> function, int threshold)
+    {
+        return forkJoinPool.invoke(RecursiveFunction.newRecursiveFunction(array, function, threshold));
+    }
+}

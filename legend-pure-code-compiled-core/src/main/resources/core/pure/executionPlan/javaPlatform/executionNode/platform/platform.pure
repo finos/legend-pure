@@ -1,0 +1,116 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::alloy::runtime::java::*;
+import meta::alloy::runtime::java::naming::*;
+import meta::alloy::runtime::java::platform::*;
+import meta::alloy::runtime::java::serialize::*;
+import meta::alloy::runtime::java::typeInfo::*;
+import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::engine::*;
+import meta::pure::graphFetch::execution::*;
+import meta::java::metamodel::factory::*;
+import meta::java::codeGeneration::code::*;
+import meta::java::codeGeneration::convention::*;
+import meta::java::codeGeneration::expression::*;
+import meta::java::metamodel::project::*;
+import meta::java::tostring::*;
+
+function <<access.private>> meta::alloy::runtime::java::prepareForPlatformNode(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
+{   
+   if($p.expression->cast(@FunctionExpression)->isSerialize($extensions),
+      | prepareForSerialize($p, $path, $context, $debug),
+      | $context
+    );
+}
+
+function <<access.private>> meta::alloy::runtime::java::generateImplementionForPlatformNode(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
+{   
+   if($p.expression->cast(@FunctionExpression).func == now__DateTime_1_,
+      | generateImplementionForNow($context.conventions),
+      |
+   if($p.expression->cast(@FunctionExpression)->isSerialize($extensions),
+      | generateImplementionForSerialize($p, $path, $context, $debug),
+      |
+   if($p.expression->cast(@FunctionExpression)->isExtractPkValuesFromRelationalObjectReferences(),
+      | generateImplementationForExtractPkValuesFromRelationalObjectReferences($p, $path, $context, $debug),
+      | generateImplementionForExpression($p, $path, $context, $debug))
+   ));
+}
+
+function <<access.private>> meta::alloy::runtime::java::isExtractPkValuesFromRelationalObjectReferences(fe:FunctionExpression[1]):Boolean[1]
+{
+   //TOFIX: use packages instead of STRINGS
+   $fe.func.name == 'extractPkValuesFromRelationalObjectReferences_String_MANY__String_MANY__String_MANY_';
+}
+
+function <<access.private>> meta::alloy::runtime::java::generateImplementionForNow(conventions:Conventions[1]):GeneratedCode[1]
+{   
+   ^GeneratedCode(
+      implementation = ^JavaPlatformImplementation
+                       (
+                          executionClassFullName = $conventions->className(PredefinedExpressions)->typePathToString(true),
+                          executionMethodName    = 'now'
+                       )
+   );   
+}
+
+function <<access.private>> meta::alloy::runtime::java::generateImplementionForExpression(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):GeneratedCode[1]
+{  
+   let body            = $p.expression->generateJava($context.conventions, $debug)->j_return();
+   let execClass       = $body->buildExecuteClass(iExecutionNodeContextParam($context.conventions), $path, $context.conventions);
+   generatedCode(newProject()->addClass($execClass), $execClass);
+}
+
+function meta::alloy::runtime::java::generateImplementationForExtractPkValuesFromRelationalObjectReferences(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):GeneratedCode[1]
+{
+   let conventions    	     = $context.conventions;
+
+   let inputExpression       = $p.expression->cast(@FunctionExpression);
+   let inputVarName          = $conventions->identifier($inputExpression.parametersValues->at(0)->cast(@VariableExpression).name);
+   let pkOrder               = $inputExpression.parametersValues->at(1)->cast(@InstanceValue).values;
+
+   let executionContextVar   = iExecutionNodeContextParam($context.conventions);
+   let objectMapperClass     = javaClass('com.fasterxml.jackson.databind.ObjectMapper');
+
+   let objectRefs            = j_variable(javaList(javaString()), 'objectReferences');
+   let pkOrderVar            = j_variable(javaList(javaString()), 'pkOrder');
+   let lambdaParam           = j_parameter(javaString(), 'objRef');
+   let objectMapperVar       = j_variable($objectMapperClass, 'objectMapper');
+   let pkMapVar              = j_variable(javaMap(javaString(), javaObject()), 'pkMap');
+   
+   let listOfStringsType     = $executionContextVar->j_invoke('listType', javaString()->j_field('class', javaClassType()));
+
+   let lambda                = j_lambda($lambdaParam, [
+                                  j_declare($pkMapVar, $objectMapperVar->j_invoke('readValue',
+                                                                                  [
+                                                                                     $lambdaParam,
+                                                                                     j_field(javaMap(javaString(), javaObject())->cast(@meta::java::metamodel::ParameterizedType).rawType, 'class', javaObject())
+                                                                                  ],
+                                                                                  javaMap(javaString(), javaObject())
+                                                                                 )->j_invoke('get', j_string('pkMap'), javaObject())->j_cast(javaMap(javaString(), javaObject()))),
+                                  $pkOrderVar->j_streamOf()->js_map(j_methodReference($pkMapVar, 'get', javaFunctionType(javaString(), javaObject())))->js_map(j_methodReference(javaObject(), 'toString'))->js_joining(j_string(','))->j_return()
+                               ]->j_exTryCatch())->nonNull();
+
+   let executeBody           = j_block([
+                                  $objectRefs->j_declare($executionContextVar->j_invoke('getResult', [j_string($inputVarName), $listOfStringsType], javaList(javaString()))),  
+                                  $pkOrderVar->j_declare(javaArrayList(javaString())->j_new(javaArrays()->j_invoke('asList', $pkOrder->cast(@String)->map(pk| j_string($pk)), javaList(javaString())))),
+                                  $objectMapperVar->j_declare($objectMapperClass->j_new([])),
+                                  $objectRefs->j_streamOf()->js_map($lambda)->j_return()
+                               ]);
+
+   let executeClass          = buildExecuteClass($executeBody, $executionContextVar, $path, $conventions);
+
+   generatedCode(newProject()->addClasses($executeClass), $executeClass);
+}

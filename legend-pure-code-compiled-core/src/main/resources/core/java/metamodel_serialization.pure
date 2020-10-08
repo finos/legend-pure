@@ -1,0 +1,623 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::java::annotations::json::*;
+import meta::java::metamodel::project::*;
+import meta::java::codeGeneration::utils::*;
+import meta::java::metamodel::factory::*;
+import meta::java::codeGeneration::convention::*;
+import meta::java::codeGeneration::code::*;
+import meta::java::tostring::*;
+import meta::java::tostring::*;
+import meta::java::metamodel::*;
+
+function meta::java::tostring::typeVarsToString(ts:meta::java::metamodel::TypeVariable[*], canonicalNames:Boolean[1]):String[1]
+{
+   if($ts->isEmpty(),
+      |'',
+      |$ts->map(t|$t.name+if($t.bounds->isEmpty(),|'',|' extends ')+$t.bounds->map(b|$b->typePathToString($canonicalNames))->joinStrings(' & '))->joinStrings('<',', ','>')+' '
+   )
+}
+
+function meta::java::tostring::annotationToString(j:meta::java::metamodel::AnnotatedElement[1], tab:String[1], shouldReturn:Boolean[1]):String[1]
+{
+
+   if($j.annotations->isEmpty(),
+      |'',
+      |$j.annotations->map(a|let type = $a->genericType().rawType->cast(@meta::pure::metamodel::type::Class<Any>);
+                             let properties = $type.properties;
+                             let str = if($shouldReturn, |$tab,|'');
+                             if($type == JsonSubTypes,
+                                | $str+ meta::java::tostring::annotationJsonSubTypesToString($a->cast(@JsonSubTypes)),
+                                |$str      +'@'+$type.name->toOne()+if($properties->isEmpty(),
+                                                             |'',
+                                                             |'('+$properties->map(p| let value = $p->eval($a);
+                                                                                      if($value->isEmpty(),
+                                                                                         | [],
+                                                                                         | $p.name->toOne()+'='+if($type == meta::java::annotations::json::JsonIgnoreProperties && ($value->size() > 1) && $p.name->equal('value'), 
+                                                                                                                   |$value->map(er|$er->dataTypeToString())->joinStrings('{', ',', '}'), 
+                                                                                                                   |$value->map(er|$er->dataTypeToString())->joinStrings(',')));
+                                                                                  )->joinStrings(', ')+')'
+                                                         ));
+                          )->joinStrings(if($shouldReturn,|'\n',|' '))+if($shouldReturn,|'\n',|' ')
+   );
+}
+
+function meta::java::tostring::annotationJsonSubTypesToString(type:meta::java::annotations::json::JsonSubTypes[1]):String[1]{
+
+   $type.subTypes->map(p |  ('@JsonSubTypes.Type(value = ' + $p.value->toOne() + '.class' + if($p.name->isEmpty(), |')', |', name = "' + $p.name->toOne() + '")')))->joinStrings('@JsonSubTypes({', ',', '})');
+
+}
+
+function meta::java::tostring::javaDocToString(j:meta::java::metamodel::AnnotatedElement[1], tab:String[1]):String[1]
+{
+   if($j.javaDoc->isEmpty() || $j.javaDoc == '',
+      |'',
+      |$tab+'/**\n'+$tab+'* '+$j.javaDoc->toOne()->splitStringOnSpaces(60)->joinStrings('\n'+$tab+'* ')+'\n'+$tab+'*/\n\n';
+     )
+}
+
+function <<access.private>> {doc.doc = 'Split a String (for JavaDoc) on spaces only, with a target minimum line length'}
+meta::java::tostring::splitStringOnSpaces(s:String[1], targetLineLength:Integer[1]):String[*]
+{
+   $s->chunk($targetLineLength)->fold({s1:String[1], s2:String[*] |
+            let initial = $s2->init();
+            let last = $s2->last()->toOne();
+            if($s1->contains(' ') && ($last->length() > $targetLineLength),
+               | $initial->concatenate([($last + $s1->substring(0, $s1->indexOf(' '))),
+                                         $s1->substring($s1->indexOf(' ') + 1)]),
+               | $initial->concatenate($last + $s1));}, ['']->take(1)); // hack to work around a bug in compiled mode
+}
+function meta::java::tostring::dataTypeToString(j:Any[1]):String[1]
+{
+   $j->match([
+               b:Boolean[1]|$b->toString(),
+               s:String[1]|'"'+$s+'"',
+               i:Integer[1]|$i->toString(),
+               r: meta::java::annotations::json::EnumValue[1]|$r.value
+             ]);
+}
+
+function meta::java::tostring::modifiersToString(element:Any[1]):String[1]
+{
+   let ms = $element->match([c:meta::java::metamodel::Class[1]|$c.modifiers, m:meta::java::metamodel::Member[1]|$m.modifiers]);
+   if($ms->isEmpty(),|'',|$ms->map(m|$m->modifierToString())->joinStrings(' ')+' ');
+}
+
+function meta::java::tostring::modifierToString(modifier:meta::java::metamodel::Modifier[1]):String[1]
+{
+   $modifier->id()->toLower();
+}
+
+function meta::java::tostring::typePathToString(j:meta::java::metamodel::Type[1], canonicalNames:Boolean[1]):String[1]
+{
+   $j->match([c:meta::java::metamodel::Class[1]         |let res = if($canonicalNames, | $c.package->packageToString()+'.', | '')+$c.simpleName;if($res=='java.lang.Void' || $res=='Void',|'void',|$res);,
+              q:meta::java::metamodel::PrimitiveType[1] |$q.simpleName,
+              a:meta::java::metamodel::Array[1]         |$a.rawType->meta::java::tostring::typePathToString($canonicalNames) + '[]',
+              p:ParameterizedType[1]                    |$p.rawType->typePathToString($canonicalNames)+'<'+$p.typeArguments->map(t|$t->typePathToString($canonicalNames))->makeString(', ')+'>',
+              t:TypeVariable[1]                         |$t.name,
+              f:meta::java::metamodel::FunctionType[1]  |'{'+$f.parameterTypes->map(pt|$pt->typePathToString(false))->joinStrings(',')+'->'+$f.returnType->typePathToString(false)+'}',
+              w:meta::java::metamodel::WildcardType[1]  |'?'+if($w.upperBounds->isEmpty(), |'', |' extends '+$w.upperBounds->map(t|$t->typePathToString($canonicalNames))->joinStrings(' & '))+if($w.lowerBounds->isEmpty(), |'', |' super '+$w.lowerBounds->map(t|$t->typePathToString($canonicalNames))->joinStrings(' & '))
+             ]);
+}
+
+function meta::java::tostring::packageToString(j:meta::java::metamodel::Package[1]):String[1]
+{
+   if($j.parent->isEmpty(),|[],|$j.parent->toOne()->packageToString())->concatenate($j.name)->joinStrings('.');
+}
+
+function meta::java::tostring::enumEntryToString(j:meta::java::metamodel::EnumerationEntry[1]):String[1]
+{
+   $j.name + if($j.value->isEmpty(), |'', | '("' + $j.value->toOne() + '")')
+}
+
+function meta::java::tostring::classToString(j:meta::java::metamodel::Class[1], canonicalNames:Boolean[1]):String[1]
+{
+   $j->match([
+      e: meta::java::metamodel::Enumeration[1] | $e->enumToString($canonicalNames),
+      c: meta::java::metamodel::Class[1]       | $c->internalClassToString($canonicalNames)
+   ])
+}
+
+function <<access.private>> meta::java::tostring::internalClassToString(j:meta::java::metamodel::Class[1], canonicalNames:Boolean[1]):String[1]
+{
+   let tab = '    ';
+   'package ' + $j.package->packageToString() + ';\n\n' +
+   $j.additionalImports->filter(i | $i != '')->map(i|'import '+$i+';')->joinStrings('\n')+(if($j.additionalImports->isEmpty(),|'',|'\n\n')) +
+   $j->javaDocToString('') +
+   $j->annotationToString('', true) +
+   $j->modifiersToString() + if($j.modifiers ->contains(meta::java::metamodel::Modifier.Interface),
+                                | $j.simpleName + $j.typeParameters->typeVarsToString($canonicalNames) +
+                                  if($j.interfaces ->isEmpty(), |'', |' extends '    + $j.interfaces->map(i|$i->typePathToString(shouldUseCanonicalName($j, true)))->joinStrings(', ');) + ' {\n\n',
+                                | 'class ' + $j.simpleName + $j.typeParameters->typeVarsToString($canonicalNames) +
+                                  if($j.superType ->isEmpty(), |'', |' extends '    + $j.superType->toOne()->typePathToString(shouldUseCanonicalName($j, false));) +
+                                  if($j.interfaces->isEmpty(), |'', |' implements ' + $j.interfaces->map(i|$i->typePathToString(shouldUseCanonicalName($j, true)))->joinStrings(', ')) + ' {\n\n') +
+   $j->bodyToString($tab, $canonicalNames) +
+   '\n}\n';
+}
+
+function  <<access.private>> {doc.doc = 'checks if a subclass is the same name as the superclass hence should use the fully qualified path'}
+meta::java::tostring::shouldUseCanonicalName(j:meta::java::metamodel::Class[1], isInterface: Boolean[1]):Boolean[1] 
+{   
+   if ($isInterface, 
+       | let sameName = $j.interfaces->filter(i | $i->instanceOf(ParameterizedType) || $i->instanceOf(meta::java::metamodel::Class))
+                      ->map(i | $i->match([ c:meta::java::metamodel::Class[1]| $c.simpleName == $j.simpleName, 
+                                            p:ParameterizedType[1] | true ]));
+         $sameName->contains(true);,
+       | if($j.superType->toOne()->instanceOf(ParameterizedType), | true, | $j.simpleName == ($j.superType->toOne()->cast(@meta::java::metamodel::Class).simpleName))
+   );       
+}
+
+function meta::java::tostring::enumToString(j:meta::java::metamodel::Enumeration[1], canonicalNames:Boolean[1]):String[1]
+{
+   let tab = '    ';
+   'package ' + $j.package->packageToString() + ';\n\n' +
+   $j.additionalImports->filter(i | $i != '')->map(i|'import '+$i+';')->joinStrings('\n')+(if($j.additionalImports->isEmpty(),|'',|'\n\n'))+
+   $j->annotationToString('', true)+
+   $j->modifiersToString()+'enum '+$j.simpleName + ' {\n'+$tab+
+      $j.enumeration->map(e|$e->enumEntryToString())->joinStrings(',\n' + $tab) + ';' + '\n\n' + $j->bodyToString($tab, $canonicalNames) +
+   '\n}\n';
+}
+
+function meta::java::tostring::bodyToString(j:meta::java::metamodel::Class[1], tab:String[1], canonicalNames:Boolean[1]):String[1]
+{
+   $j.fields->map(f|$f->javaDocToString($tab)+$f->annotationToString($tab, true)+
+                       $tab+
+                       $f->modifiersToString()+
+                       $f.type->typePathToString($canonicalNames)+
+                       ' '+
+                       $f.name+
+                       if(!$f.value->isEmpty(), | ' = ' + $f.value->toOne(), | '')+
+                       ';'
+                    )->joinStrings('\n\n')+if($j.fields->isEmpty(),|'',|'\n\n')+
+   $j.constructors->map(c|$tab+$c->modifiersToString()+
+                             $j.simpleName+
+                             '('+
+                             $c.parameters->map(p|$p->annotationToString('', false)+$p.type->typePathToString($canonicalNames)+' '+$p.name)->joinStrings(',')+
+                             ') {\n'+if($c.body->isEmpty(),|'',|$tab+$tab+$c.body->toOne()->replace('\n','\n'+$tab+$tab)+'\n')+$tab+'}'
+
+                          )->joinStrings('\n\n')+if($j.constructors->isEmpty(),|'',|'\n\n')+
+   $j.methods->map(m|$m->javaDocToString($tab)+$m->annotationToString($tab, true)+$tab+
+                        $m->modifiersToString()+
+                        $m.typeParameters->typeVarsToString($canonicalNames)+
+                        $m.returnType->typePathToString($canonicalNames)+
+                        ' '+
+                        $m.name+
+                        '('+
+                        $m.parameters->map(p|$p->annotationToString($tab, false)+$p.type->typePathToString($canonicalNames)+' '+$p.name)->joinStrings(', ')+
+                        ')'+
+                        if($m.body->isEmpty(),
+                              |';',
+                              |' {\n'+$tab+$tab+$m.body->toOne()->replace('\n','\n'+$tab+$tab)+'\n'+$tab+'}'
+                        )
+                      )->joinStrings('\n\n')
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+// Smarter toStrings that use the class imports to determine the canonical naming
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+function meta::java::tostring::typePathToString(j:meta::java::metamodel::Type[1], forClass:meta::java::metamodel::Class[1]):String[1]
+{
+   $j->match([
+      {c:meta::java::metamodel::Class[1] |
+         let pkgName  = $c.package->packageToString();         
+         let imported = $pkgName == 'java.lang' 
+                        || ($pkgName == $forClass.package->packageToString() && !$forClass.additionalImports->exists(i|$i->split('.')->last() == $c.simpleName))
+                        || $forClass.additionalImports->exists(i|$i == $pkgName+'.*' || $i == $pkgName+'.'+$c.simpleName);
+         $c->typePathToString(!$imported);
+      },
+      {q:meta::java::metamodel::PrimitiveType[1] |
+         $q.simpleName;
+      },
+      {a:meta::java::metamodel::Array[1] |
+         $a.rawType->meta::java::tostring::typePathToString($forClass) + '[]'
+      },
+      {p:ParameterizedType[1] |
+         $p.rawType->typePathToString($forClass)+'<'+$p.typeArguments->map(t|$t->typePathToString($forClass))->makeString(', ')+'>'
+      },
+      {t:TypeVariable[1] |
+         $t.name;
+      },
+      {w:WildcardType[1] |
+         '?'+if($w.upperBounds->isEmpty(), |'', |' extends '+$w.upperBounds->map(t|$t->typePathToString($forClass))->joinStrings(' & '))+if($w.lowerBounds->isEmpty(), |'', |' super '+$w.lowerBounds->map(t|$t->typePathToString($forClass))->joinStrings(' & '));
+      }
+   ]);
+}
+
+function meta::java::tostring::importableToString(j:meta::java::metamodel::Importable[1]):String[1]
+{
+   $j->match([
+      p:meta::java::metamodel::Package[1] | $p->packageToString() + '.*',
+      t:meta::java::metamodel::Type[1]    | $t->typePathToString(true)
+   ]);
+}
+
+function meta::java::tostring::typeVarsToString(ts:meta::java::metamodel::TypeVariable[*], forClass:meta::java::metamodel::Class[1]):String[1]
+{
+   if($ts->isEmpty(),
+      |'',
+      |$ts->map(t|$t.name+if($t.bounds->isEmpty(),|'',|' extends ')+$t.bounds->map(b|$b->typePathToString($forClass))->joinStrings(' & '))->joinStrings('<',', ','>')+' '
+   )
+}
+
+function meta::java::tostring::classToString(j:meta::java::metamodel::Class[1]):String[1]
+{
+   $j->match([
+      e: meta::java::metamodel::Enumeration[1] | $e->enumToString(),
+      c: meta::java::metamodel::Class[1]       | $c->internalClassToString()
+   ])
+}
+
+function meta::java::tostring::enumToString(j:meta::java::metamodel::Enumeration[1]):String[1]
+{
+   let tab = '    ';
+   'package ' + $j.package->packageToString() + ';\n\n' +
+   $j.additionalImports->filter(i | $i != '')->map(i|'import '+$i+';')->joinStrings('\n')+(if($j.additionalImports->isEmpty(),|'',|'\n\n'))+
+   $j->annotationToString('', true)+
+   $j->modifiersToString()+'enum '+$j.simpleName + ' {\n'+$tab+
+      $j.enumeration->map(e|$e->enumEntryToString())->joinStrings(',\n' + $tab) + ';' + '\n\n' + $j->bodyToString($tab) +
+   '\n}\n';
+}
+
+function <<access.private>> meta::java::tostring::internalClassToString(j:meta::java::metamodel::Class[1]):String[1]
+{
+   let tab = '    ';
+   'package ' + $j.package->packageToString() + ';\n\n' +
+   $j.additionalImports->filter(i | $i != '')->map(i|'import '+$i+';')->joinStrings('\n')+(if($j.additionalImports->isEmpty(),|'',|'\n\n')) +
+   $j->javaDocToString('') +
+   $j->annotationToString('', true) +
+   $j->modifiersToString() + if($j.modifiers ->contains(meta::java::metamodel::Modifier.Interface),
+                                | $j.simpleName + $j.typeParameters->typeVarsToString($j) +
+                                  if($j.interfaces ->isEmpty(), |'', |' extends '    + $j.interfaces->map(i|$i->typePathToString($j))->joinStrings(', ');) + ' {\n\n',
+                                | 'class ' + $j.simpleName + $j.typeParameters->typeVarsToString($j) +
+                                  if($j.superType ->isEmpty(), |'', |' extends '    + $j.superType->toOne()->typePathToString($j);) +
+                                  if($j.interfaces->isEmpty(), |'', |' implements ' + $j.interfaces->map(i|$i->typePathToString($j))->joinStrings(', ')) + ' {\n\n') +
+   $j->bodyToString($tab) +
+   '\n}\n';
+}
+
+function meta::java::tostring::bodyToString(j:meta::java::metamodel::Class[1], tab:String[1]):String[1]
+{
+   $j.fields->map(f|$f->javaDocToString($tab)+$f->annotationToString($tab, true)+
+                       $tab+
+                       $f->modifiersToString()+
+                       $f.type->typePathToString($j)+
+                       ' '+
+                       $f.name+
+                       if(!$f.value->isEmpty(), | ' = ' + $f.value->toOne(), | '')+
+                       ';'
+                    )->joinStrings('\n\n')+if($j.fields->isEmpty(),|'',|'\n\n')+
+   $j.constructors->map(c|$tab+$c->modifiersToString()+
+                             $j.simpleName+
+                             '('+
+                             $c.parameters->map(p|$p->annotationToString('', false)+$p.type->typePathToString($j)+' '+$p.name)->joinStrings(',')+
+                             ') {\n'+if($c.body->isEmpty(),|'',|$tab+$tab+$c.body->toOne()->replace('\n','\n'+$tab+$tab)+'\n')+$tab+'}'
+
+                          )->joinStrings('\n\n')+if($j.constructors->isEmpty(),|'',|'\n\n')+
+   $j.methods->map(m|$m->javaDocToString($tab)+$m->annotationToString($tab, true)+$tab+
+                        $m->modifiersToString()+
+                        $m.typeParameters->typeVarsToString($j)+
+                        $m.returnType->typePathToString($j)+
+                        ' '+
+                        $m.name+
+                        '('+
+                        $m.parameters->map(p|$p->annotationToString($tab, false)+$p.type->typePathToString($j)+' '+$p.name)->joinStrings(', ')+
+                        ')'+
+                        if($m.body->isEmpty(),
+                              |';',
+                              |' {\n'+$tab+$tab+$m.body->toOne()->replace('\n','\n'+$tab+$tab)+'\n'+$tab+'}'
+                        )
+                      )->joinStrings('\n\n')
+}
+
+// --- To strings
+
+function meta::java::codeGeneration::code::codesToString(codes: Code[*]):String[1]
+{
+   $codes->codesToString(^ToStringContext(inParameters=false, inForHead=false));
+}
+
+function meta::java::codeGeneration::code::codesToString(codes: Code[*], conventions:Conventions[1]):String[1]
+{
+   $codes->codesToString(^ToStringContext(inParameters=false, inForHead=false, imports=$conventions.imports));
+}
+
+function meta::java::codeGeneration::code::codesToString(codes: Code[*], class:meta::java::metamodel::Class[1]):String[1]
+{
+   let imports = $class.additionalImports->map(
+      {imp|
+         if($imp->endsWith('.*'),
+            | javaPackage($imp->substring(0, $imp->length()-2)),
+            | javaClass($imp)
+         )
+      }
+   )->concatenate($class.package);
+
+   $codes->codesToString(^ToStringContext(stack=$class, inParameters=false, inForHead=false, imports=$imports->cast(@meta::java::metamodel::Importable)));
+}
+
+function <<access.private>> meta::java::codeGeneration::code::codesToString(codes: Code[*], ctx:ToStringContext[1]):String[1]
+{
+   $codes->toStatements()->map(c|$c->codeToString($ctx))->joinStrings('\n');
+}
+
+function meta::java::codeGeneration::code::codeToString(code: Code[1]):String[1]
+{
+   $code->codeToString(^ToStringContext(inParameters=false, inForHead=false));
+}
+
+function meta::java::codeGeneration::code::codeToString(code: Code[1], conventions:Conventions[1]):String[1]
+{
+   $code->codeToString(^ToStringContext(inParameters=false, inForHead=false, imports=$conventions.imports));
+}
+
+function meta::java::codeGeneration::code::codeToString(code: Code[1], class:meta::java::metamodel::Class[1]):String[1]
+{
+   let imports = $class.additionalImports->map(imp| if($imp->endsWith('.*'),
+                                                       | javaPackage($imp->substring(0, $imp->length()-2)),
+                                                       | javaClass($imp)
+                                                    ));
+
+   $code->codeToString(^ToStringContext(stack=$class, inParameters=false, inForHead=false, imports=$imports->cast(@meta::java::metamodel::Importable)));
+}
+
+
+function meta::java::codeGeneration::code::codeToStringAsMethodBody(code: Code[1], class:meta::java::metamodel::Class[1]):String[1]
+{
+   $code->match([
+      b:Block[1] | $b.statements->codesToString($class),
+      c:Code[1]  | $c->codesToString($class)
+   ]);
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::ToStringContext
+{
+   stack        : meta::java::metamodel::Class[*];
+   inParameters : Boolean[1];
+   inForHead    : Boolean[1];
+   imports      : meta::java::metamodel::Importable[*];
+}
+
+function <<access.private>> meta::java::codeGeneration::code::codeToString(code: Code[0..1], ctx:ToStringContext[1]):String[1]
+{
+   $code->map(c| $c->resolveDeferred())->match([
+      c:Code[0]                     | '',
+      c:SimpleCode[1]               | $c.code,
+      c:Null[1]                     | 'null',
+      c:This[1]                     | if($ctx.stack->isEmpty() || $ctx.stack->last() == $c.type, |'', |$c.type->typeToString($ctx)+'.')+'this',
+      c:Variable[1]                 | if($ctx.inParameters, |$c.type->typeToString($ctx)+' '+$c.name, |$c.name),
+      c:ArrayAccess[1]              | $c.array->codeToString($ctx)+'['+$c.index->codeToString($ctx)+']',
+      c:Literal[1]                  | $c.literal,
+      c:InfixExpression[1]          | $c.left->maybeParentheses($c, $ctx)+' '+$c.op+' '+$c.right->maybeParentheses($c, $ctx),
+      c:PrefixExpression[1]         | $c.op+$c.expression->maybeParentheses($c, $ctx),
+      c:PostfixExpression[1]        | $c.expression->maybeParentheses($c, $ctx)+$c.op,
+      c:Conditional[1]              | $c.test->maybeParentheses($c, $ctx)+' ? '+$c.then->maybeParentheses($c, $ctx)+' : '+$c.else->maybeParentheses($c, $ctx),
+      c:InstanceOf[1]               | $c.expression->maybeParentheses($c, $ctx)+' instanceof '+$c.class->typeToString($ctx),
+      c:Block[1]                    | '{'+$c.statements->map(s| $s->codeToString($ctx))->joinStrings('\n')->split('\n')->map(l|'    '+$l)->joinStrings('\n', '\n', '\n')+'}',
+      c:ExpressionStatement[1]      | $c.expression->codeToString($ctx)+';',
+      c:LocalVariableDeclaration[1] | $c.modifiers->modifiersToString()+$c.type->typeToString($ctx)+' '+$c.variableName+if($c.initializer->isEmpty(), |'', |' = '+$c.initializer->toOne()->codeToString($ctx))+if($ctx.inForHead, |'', |';'),
+      c:If[1]                       | 'if ('+$c.test->codeToString($ctx)+')\n'+$c.then->codeToString($ctx)+if($c.else->isEmpty(), |'', |'\nelse'+if($c.else->toOne()->instanceOf(If), |' ', |'\n')+$c.else->toOne()->codeToString($ctx)),
+      c:For[1]                      | 'for ('+$c.init->codeToString(^$ctx(inForHead=true))+'; '+$c.test->codeToString(^$ctx(inForHead=true))+'; '+$c.update->codeToString(^$ctx(inForHead=true))+')\n'+$c.body->codeToString($ctx),
+      c:ForEach[1]                  | 'for ('+$c.parameter->asParameter($ctx)+': '+$c.collection->codeToString($ctx)+')\n'+$c.body->codeToString($ctx),
+      c:While[1]                    | 'while ('+$c.test->codeToString($ctx)+')\n'+$c.then->codeToString($ctx),
+      c:DoWhile[1]                  | 'do\n'+$c.do->codeToString($ctx)+'\nwhile ('+$c.while->codeToString($ctx)+');',
+      c:Try[1]                      | 'try\n'+$c.try->codeToString($ctx)+$c.catches->map(ctch|$ctch->codeToString($ctx))->joinStrings('\n', '\n', '')+$c.finally->map(fin|$fin->codeToString($ctx))->joinStrings(''),
+      c:Catch[1]                    | 'catch '+$c.parameter->asParameters($ctx)+'\n'+$c.clause->codeToString($ctx),
+      c:Finally[1]                  | '\nfinally\n'+$c.clause->codeToString($ctx),
+      c:Return[1]                   | 'return' + $c.expression->map(e| ' '+$e->codeToString($ctx))->joinStrings('')+';',
+      c:Throw[1]                    | 'throw ' + $c.expression->codeToString($ctx)+';',
+      c:New[1]                      | $c->newToString($ctx),
+      c:meta::java::codeGeneration::code::Method[1]                   | $c.modifiers->modifiersToString()+$c.type->typeToString($ctx)+' '+$c.name+$c.parameters->asParameters($ctx)+'\n'+$c.body->codeToString($ctx),
+      c:CastProxy[1]                | $c.proxy->codeToString($ctx),
+      c:Cast[1]                     | '('+$c.type->typeToString($ctx)+') '+$c.expression->maybeParentheses($c, $ctx),
+      c:MethodCall[1]               | $c.instance->maybeInstanceParentheses($ctx)+'.'+$c.typeArguments->typeArgumentsToString($ctx)+$c.methodName+'('+$c.arguments->map(a| $a->codeToString($ctx))->joinStrings(', ')+')',
+      c:FieldAccess[1]              | $c.instance->maybeInstanceParentheses($ctx)+'.'+$c.fieldName,
+      c:MethodReference[1]          | $c.instance->maybeInstanceParentheses($ctx)+'::'+$c.methodName,
+      c:StaticMethodCall[1]         | $c.class->typeToString($ctx)+'.'+$c.typeArguments->typeArgumentsToString($ctx)+$c.methodName+'('+$c.arguments->map(a| $a->codeToString($ctx))->joinStrings(', ')+')',
+      c:StaticFieldAccess[1]        | $c.class->typeToString($ctx)+'.'+$c.fieldName,
+      c:StaticMethodReference[1]    | $c.class->typeToString($ctx)+'::'+$c.methodName,
+      c:Lambda[1]                   | $c.parameters->asParameters($ctx)+' -> '+$c.expression->lambdaExpressionToString($ctx)
+   ]);
+}
+
+
+function <<access.private>> meta::java::codeGeneration::code::modifiersToString(modifiers:meta::java::metamodel::Modifier[*]):String[1]
+{
+   if($modifiers->isEmpty(),|'',|$modifiers->map(m|$m->id()->toLower())->joinStrings('', ' ', ' '));
+}
+
+function <<access.private>> meta::java::codeGeneration::code::asParameter(code:Code[1], ctx:ToStringContext[1]):String[1]
+{
+   $code->codeToString(^$ctx(inParameters=true));
+}
+
+function <<access.private>> meta::java::codeGeneration::code::asParameters(codes:Code[*], ctx:ToStringContext[1]):String[1]
+{
+   let newCtx = ^$ctx(inParameters=true);
+   '('+$codes->map(c| $c->codeToString($newCtx))->joinStrings(', ')+')';
+}
+
+function <<access.private>> meta::java::codeGeneration::code::newToString(new: New[1], ctx:ToStringContext[1]):String[1]
+{
+   let level  = if($ctx.stack->isEmpty(),
+                   | 1,
+                   |
+                if($ctx.stack->at(0).package == anonymousPackage(),
+                   | $ctx.stack->size()+1,
+                   | $ctx.stack->size()
+                ));
+   let newCtx = ^$ctx(stack=$ctx.stack->concatenate(anonymousNestedClass($level)));
+
+   'new '+$new.type->typeToString($ctx)+$new.typeArguments->typeArgumentsToString($ctx)+'('+$new.arguments->map(a| $a->codeToString($ctx))->joinStrings(', ')+')'+
+   $new->match([
+      a: NewAnonymous[1] | '\n'+$a.methods->j_block()->codeToString($newCtx),
+      n: New[1] | ''
+   ]);
+}
+
+function <<access.private>> meta::java::codeGeneration::code::lambdaExpressionToString(code: Code[1], ctx:ToStringContext[1]):String[1]
+{
+   $code->match([
+      c:Block[1]  | if($c.statements->size() == 1 && ($c.statements->at(0)->instanceOf(Return) || !$c.statements->at(0)->isStatement()), |$c.statements->at(0)->lambdaExpressionToString($ctx), |$c->codeToString($ctx)),
+      c:Return[1] | $c.expression->toOne()->codeToString($ctx),
+      c:Code[1]   | if($c->isStatement(), |$c->j_block(), |$c)->codeToString($ctx)
+   ]);
+}
+
+function <<access.private>> meta::java::codeGeneration::code::typeArgumentsToString(arguments:meta::java::metamodel::Type[*], ctx:ToStringContext[1]):String[1]
+{
+   if($arguments->isEmpty(),
+      | '',
+      | '<' + $arguments->map(a| $a->typeToString($ctx))->joinStrings(', ') + '>'
+   );
+}
+
+function <<access.private>> meta::java::codeGeneration::code::typeToString(javaType:meta::java::metamodel::Type[1], ctx:ToStringContext[1]):String[1]
+{
+   let code = $javaType->match([
+      {p:meta::java::metamodel::PrimitiveType[1]     | $p.simpleName},
+      {a:meta::java::metamodel::Array[1]             | $a.rawType->typeToString($ctx) + '[]'},
+      {p:meta::java::metamodel::ParameterizedType[1] | $p.rawType->typeToString($ctx)+'<'+$p.typeArguments->map(t|$t->typeToString($ctx))->joinStrings(', ')+'>'},
+      {t:meta::java::metamodel::TypeVariable[1]      | $t.name},
+      {w:meta::java::metamodel::WildcardType[1] | 
+         '?'+if($w.upperBounds->isEmpty(), |'', |' extends '+$w.upperBounds->map(t|$t->typeToString($ctx))->joinStrings(' & '))
+            +if($w.lowerBounds->isEmpty(), |'', |' super '  +$w.lowerBounds->map(t|$t->typeToString($ctx))->joinStrings(' & '))
+      },
+      {c:meta::java::metamodel::Class[1] |
+         let prefix   = if($c->isImported($ctx), |'', |$c.package->packageToString()+'.');
+         let res      = $prefix+$c.simpleName;
+         if($res=='java.lang.Void' || $res=='Void',|'void',|$res);
+      }
+   ]);
+}
+
+function <<access.private>> meta::java::codeGeneration::code::precedence(code: Code[1]):Integer[1]
+{
+   $code->resolveDeferred()->match([
+      post:PostfixExpression[1]                                 | 14,     // 14 postfix                expr++ expr--
+      pre :PrefixExpression[1]                                  | 13,     // 13 unary                  ++expr --expr +expr -expr ~ !
+      pre :Cast[1]                                              | 13,     // 13 unary                  (type)
+      {in:InfixExpression[1]|
+         if($in.op->in(['*', '/', '%']),                        | 12, |   // 12 multiplicative         * / %
+         if($in.op->in(['+', '-']),                             | 11, |   // 11 additive               + -
+         if($in.op->in(['<<', '>>', '>>>']),                    | 10, |   // 10 shift                  << >> >>>
+         if($in.op->in(['<', '>', '<=', '>=']),                 |  9, |   //  9 relational             < > <= >= instanceof (see below)
+         if($in.op->in(['==', '!=']),                           |  8, |   //  8 equality               == !=
+         if($in.op->in(['&']),                                  |  7, |   //  7 bitwise AND            &
+         if($in.op->in(['^']),                                  |  6, |   //  6 bitwise exclusive OR   ^
+         if($in.op->in(['|']),                                  |  5, |   //  5 bitwise inclusive OR   |
+         if($in.op->in(['&&']),                                 |  4, |   //  4 logical AND            &&
+         if($in.op->in(['||']),                                 |  3, |   //  3 logical OR             ||
+                                                                          //  2 ternary (SEE BELOW)
+         if($in.op->in(assignmentOperators()),                  |  1, |   //  1 assignment             = += -= *= /= %= &= ^= |= <<= >>= >>>=
+            fail('Unknown operator: '+$in.op);-1;
+         )))))))))))
+      },
+      i:InstanceOf[1]                                           |  9,     //  9 relational             instanceof (see above)
+      c:Conditional[1]                                          |  2,     //  2 ternary                ? :
+      c:SimpleCode[1]                                           |  0,     //  unknown so no precedence
+      c:Code[1]                                                 | 99      //  anything else considered atomic
+   ])
+}
+
+
+function <<access.private>> meta::java::codeGeneration::code::isImported(class:meta::java::metamodel::Class[1], ctx:ToStringContext[1]):Boolean[1]
+{
+   // Uses tolerant equality to allow say Enum == Class as representations of same type
+   $class.package == javaPackage('java.lang')
+      || $ctx.stack->exists(c| $class.simpleName==$c.simpleName && $class.package==$c.package)
+      || $ctx.imports->exists({i| 
+            $i->match([
+               c:meta::java::metamodel::Class[1]  | $class.simpleName==$c.simpleName && $class.package==$c.package, 
+               p:meta::java::metamodel::Package[1]| $p==$class.package
+            ])
+         });
+}
+
+function <<access.private>> meta::java::codeGeneration::code::resolveDeferred(code: Code[1]):Code[1]
+{
+   $code->match([
+      {dsr:DeferredStreamResolve[1]|
+         if(isJavaList($dsr.type),
+            | $dsr.stream->j_invoke('collect', j_invoke(javaClass('java.util.stream.Collectors'), 'toList', [], $dsr.type), $dsr.type),
+            | $dsr.stream->j_invoke('findFirst', [], javaOptional($dsr.type))->jo_orElseNull()
+         );
+      },
+      {c:Code[1] | $c }
+   ])
+}
+
+function <<access.private>> meta::java::codeGeneration::code::assignmentOperators():String[*]
+{
+   ['=','+=','-=','*=','/=','%=','&=','^=','|=','<<=','>>=','>>>='];
+}
+
+function <<access.private>> meta::java::codeGeneration::code::maybeParentheses(code:Code[1], wrt:Code[1], ctx:ToStringContext[1]):String[1]
+{
+   if($code->precedence() < $wrt->precedence(),
+      | '('+$code->codeToString($ctx)+')',
+      | $code->codeToString($ctx)
+   );
+}
+
+function <<access.private>> meta::java::codeGeneration::code::maybeInstanceParentheses(code:Code[1], ctx:ToStringContext[1]):String[1]
+{
+   let required = $code->resolveDeferred()->match([
+      c:SimpleCode[1]               | false,  // We don't know but safe at present and deprecated.  Any issues should be moved to new style
+      c:This[1]                     | false,
+      c:Variable[1]                 | false,
+      c:ArrayAccess[1]              | false,
+      c:Literal[1]                  | false,
+      c:New[1]                      | false,
+      c:MethodCall[1]               | false,
+      c:FieldAccess[1]              | false,
+      c:StaticMethodCall[1]         | false,
+      c:StaticFieldAccess[1]        | false,
+      c:Code[1]                     | true
+   ]);
+
+   if($required,
+      | '('+$code->codeToString($ctx)+')',
+      | $code->codeToString($ctx)
+   );
+}
+
+function <<access.private>> meta::java::metamodel::project::printDirectory(dir: ProjectDirectory[1]): Any[*]
+{
+   println('==== ' + $dir.fullPath());
+   $dir.classes->map(c|$c->printClass($dir.fullPath()));
+   $dir.files->map(c|$c->printFile($dir.fullPath()));
+}
+
+function <<access.private>> meta::java::metamodel::project::printClass(class: meta::java::metamodel::Class[1], pathTo: String[1]): Any[*]
+{
+   println('---- ' + $pathTo + '/' + $class.simpleName + '.java');
+   $class->meta::java::tostring::classToString(true)->printLines();
+}
+
+function <<access.private>> meta::java::metamodel::project::printFile(file: meta::java::metamodel::project::File[1], pathTo: String[1]): Any[*]
+{
+   println('---- ' + $pathTo + '/' + $file.name);
+   $file->match([
+      tf:TextFile[1] | $tf.content->printLines();
+   ]);
+}
+
+function <<access.private>> meta::java::metamodel::project::printLines(text: String[1]): Any[*]
+{
+   $text->replace('\n\n', '\n<<EMPTY>>\n')->split('\n')->fold({l,n|format('%04d %s', [$n, if($l == '<<EMPTY>>', |'', |$l)])->println(); $n+1;}, 1);
+}
+
+

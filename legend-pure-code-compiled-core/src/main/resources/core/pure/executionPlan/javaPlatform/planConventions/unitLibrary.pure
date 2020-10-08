@@ -1,0 +1,70 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::alloy::runtime::java::naming::*;
+import meta::java::codeGeneration::code::*;
+import meta::java::codeGeneration::convention::*;
+import meta::java::codeGeneration::convention::jackson::*;
+import meta::java::codeGeneration::expression::*;
+import meta::java::codeGeneration::functions::unit::*;
+import meta::java::metamodel::factory::*;
+
+function meta::java::codeGeneration::functions::unit::register(conventions: Conventions[1]): Conventions[1]
+{
+   let lib = newConventionsLibrary()
+      ->usesJavaPackage('java.util')
+      ->usesJavaPackage('java.util.stream')
+      ->addFunctionCoders([
+         fc1(unitType_Any_1__String_1_,          {ctx,unitValue     | $unitValue->j_cast($ctx.conventions->unitInterface())->j_invoke('getUnitType', [], javaString());}),
+         fc1(unitValue_Any_1__Number_1_,         {ctx,unitValue     | $unitValue->j_cast($ctx.conventions->unitInterface())->j_invoke('getUnitValue', [], javaNumber());}),
+         fc2(newUnit_Unit_1__Number_1__Any_1_,   {ctx,unit,value    | $ctx->unitImpl(0)->j_new($value);}),
+         fc2(convert_Any_1__Unit_1__Any_1_,      {ctx,from,unit     | $ctx->unitImpl(1)->j_new($ctx->unitImpl(1)->j_invoke('inverse', $from->j_cast($ctx.conventions->unitInterface())->j_invoke('convertToCanonical', [], javaNumber()), javaNumber()));})
+      ]);
+
+   $conventions->registerLibrary($lib);
+}
+
+function meta::java::codeGeneration::functions::unit::unitType(unit:Any[1]):String[1]
+{
+   fail('Not implemented yet');
+   '';
+}
+
+function meta::java::codeGeneration::functions::unit::unitValue(unit:Any[1]):Number[1]
+{
+   fail('Not implemented yet');
+   0;
+}
+
+function meta::java::codeGeneration::functions::unit::convert(unit:Any[1], targetUnit:Unit[1]):Any[1]
+{
+   fail('Not implemented yet');
+   '';
+}
+
+function <<access.private>> meta::java::codeGeneration::functions::unit::unitImpl(ctx:FuncCoderContext[1], index:Integer[1]): meta::java::metamodel::Class[1]
+{
+   let unit = $ctx.params->at($index)->cast(@InstanceValue).values->toOne()->cast(@Unit);
+   $ctx.conventions->implClassName($unit);
+}
+
+function meta::java::codeGeneration::functions::unit::unitInterface(conventions: Conventions[1]): meta::java::metamodel::Class[1]
+{
+   $conventions->className(Unit)
+      ->addModifiers(['public', 'interface'])
+      ->addMethod(javaMethod('public', jsonNode(),   'createJsonObject',   []))
+      ->addMethod(javaMethod('public', javaString(), 'getUnitType',        []))
+      ->addMethod(javaMethod('public', javaNumber(), 'getUnitValue',       []))
+      ->addMethod(javaMethod('public', javaNumber(), 'convertToCanonical', []));
+}

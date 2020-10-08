@@ -1,0 +1,628 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::java::codeGeneration::code::*;
+import meta::java::codeGeneration::convention::*;
+import meta::java::codeGeneration::expression::*;
+import meta::java::codeGeneration::functions::string::*;
+import meta::java::codeGeneration::utils::*;
+import meta::java::metamodel::factory::*;
+import meta::java::metamodel::project::*;
+import meta::java::tostring::*;
+import meta::pure::executionPlan::engine::*;
+
+function meta::java::codeGeneration::functions::string::register(conventions: Conventions[1]): Conventions[1]
+{   
+   let library  = $conventions->className(Library);
+   
+   let lib = newConventionsLibrary()
+      ->usesString(javaString(), javaString(), {s:String[1] | j_string($s)})
+      ->addFunctionCoders([
+         fc2(contains_String_1__String_1__Boolean_1_,                            {ctx,s,toFind                | $s->j_invoke('contains', [$toFind])}),
+         fc2(endsWith_String_1__String_1__Boolean_1_,                            {ctx,s,toFind                | $s->j_invoke('endsWith', [$toFind])}),
+         fc2(startsWith_String_1__String_1__Boolean_1_,                          {ctx,s,toFind                | $s->j_invoke('startsWith', [$toFind])}),
+
+         fc2(greaterThan_String_1__String_1__Boolean_1_,                         {ctx,s,other                 | $s->j_invoke('compareTo', [$other])->j_gt(j_int(0))}),
+         fc2(greaterThan_String_$0_1$__String_$0_1$__Boolean_1_,                 {ctx,s,other                 | $library->j_invoke('safeCompare', [$s, $other], javaInt())->j_gt(j_int(0))}),
+         fc (greaterThan_String_$0_1$__String_1__Boolean_1_,                     fcAlias(                       greaterThan_String_$0_1$__String_$0_1$__Boolean_1_)),
+         fc (greaterThan_String_1__String_$0_1$__Boolean_1_,                     fcAlias(                       greaterThan_String_$0_1$__String_$0_1$__Boolean_1_)),
+         fc2(greaterThanEqual_String_1__String_1__Boolean_1_,                    {ctx,s,other                 | $s->j_invoke('compareTo', [$other])->j_ge(j_int(0))}),
+         fc2(greaterThanEqual_String_$0_1$__String_$0_1$__Boolean_1_,            {ctx,s,other                 | $library->j_invoke('safeCompare', [$s, $other], javaInt())->j_ge(j_int(0))}),
+         fc (greaterThanEqual_String_$0_1$__String_1__Boolean_1_,                fcAlias(                       greaterThanEqual_String_$0_1$__String_$0_1$__Boolean_1_)),
+         fc (greaterThanEqual_String_1__String_$0_1$__Boolean_1_,                fcAlias(                       greaterThanEqual_String_$0_1$__String_$0_1$__Boolean_1_)),
+         fc2(lessThan_String_1__String_1__Boolean_1_,                            {ctx,s,other                 | $s->j_invoke('compareTo', [$other])->j_lt(j_int(0))}),
+         fc2(lessThan_String_$0_1$__String_$0_1$__Boolean_1_,                    {ctx,s,other                 | $library->j_invoke('safeCompare', [$s, $other], javaInt())->j_lt(j_int(0))}),
+         fc (lessThan_String_$0_1$__String_1__Boolean_1_,                        fcAlias(                       lessThan_String_$0_1$__String_$0_1$__Boolean_1_)),
+         fc (lessThan_String_1__String_$0_1$__Boolean_1_,                        fcAlias(                       lessThan_String_$0_1$__String_$0_1$__Boolean_1_)),
+         fc2(lessThanEqual_String_1__String_1__Boolean_1_,                       {ctx,s,other                 | $s->j_invoke('compareTo', [$other])->j_le(j_int(0))}),
+         fc2(lessThanEqual_String_$0_1$__String_$0_1$__Boolean_1_,               {ctx,s,other                 | $library->j_invoke('safeCompare', [$s, $other], javaInt())->j_le(j_int(0))}),
+         fc (lessThanEqual_String_$0_1$__String_1__Boolean_1_,                   fcAlias(                       lessThanEqual_String_$0_1$__String_$0_1$__Boolean_1_)),
+         fc (lessThanEqual_String_1__String_$0_1$__Boolean_1_,                   fcAlias(                       lessThanEqual_String_$0_1$__String_$0_1$__Boolean_1_)),
+
+         fc2(indexOf_String_1__String_1__Integer_1_,                             {ctx,s,toFind                | $s->j_invoke('indexOf', [$toFind])}),
+         fc1(length_String_1__Integer_1_,                                        {ctx,s                       | $s->j_invoke('length', [])}),
+
+         fc1(joinStrings_String_MANY__String_1_,                                 {ctx,strs                    | $strs->j_streamOf()->js_joining()}),
+         fc2(joinStrings_String_MANY__String_1__String_1_,                       {ctx,strs,sep                | $strs->j_streamOf()->js_joining($sep)}),
+         fc4(joinStrings_String_MANY__String_1__String_1__String_1__String_1_,   {ctx,strs,pre,sep,post       | $pre->j_plus($strs->j_streamOf()->js_joining($sep))->j_plus($post)}),
+         fc (plus_String_MANY__String_1_,                                        fcAlias(                       joinStrings_String_MANY__String_1_)),
+
+         fc1(parseBoolean_String_1__Boolean_1_,                                  {ctx,s                       | $ctx.conventions->codeParseBoolean($s)}),
+         fc1(parseFloat_String_1__Float_1_,                                      {ctx,s                       | $ctx.conventions->codeParseFloat($s)}),
+         fc1(parseInteger_String_1__Integer_1_,                                  {ctx,s                       | $ctx.conventions->codeParseInteger($s)}),
+         fc1(parseDecimal_String_1__Decimal_1_,                                  {ctx,s                       | $ctx.conventions->codeParseDecimal($s)}),
+
+         fc2(chunk_String_1__Integer_1__String_MANY_,                            {ctx,s,val                   | $library->j_invoke('chunk', [$s, $val->j_cast(javaInt())], javaList(javaString()))}),
+         fc3(replace_String_1__String_1__String_1__String_1_,                    {ctx,s,toReplace,replacement | $s->j_invoke('replace', [$toReplace, $replacement])}),
+         fc2(split_String_1__String_1__String_MANY_,                             {ctx,s,token                 | $library->j_invoke('split', [$s, $token], javaList(javaString()))}),
+         fc2(substring_String_1__Integer_1__String_1_,                           {ctx,s,from                  | $s->j_invoke('substring', [$from->j_cast(javaInt())])}),
+         fc3(substring_String_1__Integer_1__Integer_1__String_1_,                {ctx,s,from,to               | $s->j_invoke('substring', [$from->j_cast(javaInt()), $to->j_cast(javaInt())])}),
+                          
+         fc1(toLower_String_1__String_1_,                                        {ctx,s                       | $s->j_invoke('toLowerCase', [])}),
+         fc1(toUpper_String_1__String_1_,                                        {ctx,s                       | $s->j_invoke('toUpperCase', [])}),
+         fc1(toUpperFirstCharacter_String_MANY__String_MANY_,                    {ctx,strs                    | $strs->j_streamOf()->js_map($library->j_methodReference('toUpperFirstCharacter', javaFunctionType(javaString(), javaString())->nonNull()))}),
+         fc1(trim_String_1__String_1_,                                           {ctx,s                       | $s->j_invoke('trim', [])}),
+   
+         fc1(toString_Any_1__String_1_,                                          {ctx,a                       | $library->j_invoke('pureToString', [$a], javaString())}),
+         fc1(toRepresentation_Any_1__String_1_,                                  {ctx,a                       | $library->j_invoke('toRepresentation', [$a], javaString())}),
+         fc2(format_String_1__Any_MANY__String_1_,                               {ctx,format,args             | $library->j_invoke('format', [$format, $args->j_listOf(javaList(javaObject()))], javaString())}),
+         fc2(matches_String_1__String_1__Boolean_1_,                             {ctx,s,regex                 | $s->j_invoke('matches', [$regex])})
+
+      ]);
+
+   $conventions->registerLibrary($lib);
+}
+
+
+function <<access.private>> meta::java::codeGeneration::functions::string::addPureToStringMethod(class:meta::java::metamodel::Class[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+{
+   let any           = j_parameter(javaObject(), 'any');
+   let dateClasses = [Date, StrictDate, DateTime]->map(t| $conventions->pureTypeToJavaType($t, PureOne))->cast(@meta::java::metamodel::Class)->removeDuplicates();
+   let isDateClass = $dateClasses->tail()->fold({cl, test| j_or($test, $any->j_instanceof($cl))}, $any->j_instanceof($dateClasses->at(0)));
+   
+   $class->addMethod(javaMethod(['public', 'static'], javaString(), 'pureToString', $any->cast(@meta::java::metamodel::Parameter),
+      [
+         j_if($isDateClass,
+            $conventions->codeDateToString($any)->j_return(),
+         j_if(j_or($any->j_instanceof(javaDoubleBoxed()), $any->j_instanceof(javaFloatBoxed())),
+            {|
+               let format = j_variable(javaDecimalFormat(), 'format');
+               
+               j_if($any->j_cast(javaDouble())->j_eq(j_double(0.0)),
+                    j_string('0.0')->j_return(),
+                    [
+                       $format->j_declare(javaDecimalFormat()->j_new([j_string('0.0'), javaDecimalFormatSymbols()->j_invoke('getInstance', javaLocale()->j_field('ENGLISH', javaLocale()), javaDecimalFormatSymbols())])),
+                       $format->j_invoke('setMaximumFractionDigits', j_int(340), javaVoid()), 
+                       $format->j_invoke('format', $any->j_cast(javaDouble()), javaString())->j_return()                       
+                    ]
+               );               
+            }->eval(),
+            $any->j_toString()->j_return()
+         ))
+      ]->codesToString($class)
+   )->nonNull());
+}
+
+function <<access.private>> meta::java::codeGeneration::functions::string::addToRepresentationMethod(class:meta::java::metamodel::Class[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+{
+   let any         = j_parameter(javaObject(), 'any');
+   let dateClasses = [Date, StrictDate, DateTime]->map(t| $conventions->pureTypeToJavaType($t, PureOne))->cast(@meta::java::metamodel::Class)->removeDuplicates();
+   let isDateClass = $dateClasses->tail()->fold({cl, test| j_or($test, $any->j_instanceof($cl))}, $any->j_instanceof($dateClasses->at(0)));
+   
+   $class->addMethod(javaMethod(['public', 'static'], javaString(), 'toRepresentation', $any->cast(@meta::java::metamodel::Parameter),
+      [
+         j_if(
+            $any->j_instanceof(javaString()),
+            j_string('\'')->j_plus($any->j_toString()->j_invoke('replace', [j_string('\''), j_string('\\\'')]))->j_plus(j_string('\''))->j_return(),
+         j_if(
+            $isDateClass,
+            j_string('%')->j_plus($class->j_invoke('pureToString', $any, javaString()))->j_return(),
+         j_if(
+            $any->j_instanceof(javaBigDecimal()),
+            $any->j_toString()->j_plus(j_string('D'))->j_return(),
+            $class->j_invoke('pureToString', $any, javaString())->j_return()
+         )))
+      ]->codesToString($class)
+   ));   
+}
+
+function <<access.private>> meta::java::codeGeneration::functions::string::addFormatToolMethods(class:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+{
+   let builder      = j_parameter(javaStringBuilder(), 'builder');
+   let character    = j_parameter(javaChar(),          'character');
+   let zeros        = j_parameter(javaInt(),           'zeros');
+   let s            = j_parameter(javaString(),        's');
+   let index        = j_parameter(javaInt(),           'index');
+   let formatString = j_parameter(javaString(),        'formatString');
+   let start        = j_parameter(javaInt(),           'start');
+   let precision    = j_parameter(javaInt(),           'precision');
+
+   $class
+      ->addMethod(
+         javaMethod(['private', 'static'], javaInt(), 'findEndOfDateFormatString', [$formatString, $start]->cast(@meta::java::metamodel::Parameter),
+            {|       
+               let length   = j_variable(javaInt(),     'length');
+               let inQuotes = j_variable(javaBoolean(), 'inQuotes');
+               let escaped  = j_variable(javaBoolean(), 'escaped');
+               let i        = j_variable(javaInt(),     'i');
+               let next     = j_variable(javaChar(),    'next');
+               
+               [
+                  $length->j_declare($formatString->j_invoke('length', [])),
+                  j_if(
+                     j_or($start->j_ge($length), $formatString->j_invoke('charAt', $start)->j_ne(j_char('{'))),
+                     j_int(-1)->j_return()
+                  ),
+                  $inQuotes->j_declare(j_false()),
+                  $escaped->j_declare(j_false()),
+                  j_for($i->j_declare($start->j_plus(j_int(1))),   $i->j_lt($length),   $i->j_inc(),
+                     [
+                        $next->j_declare($formatString->j_invoke('charAt', $i)),
+                        j_if(
+                           $inQuotes,
+                           j_if(
+                              $next->j_eq(j_char('"')),
+                              j_if(j_not($escaped), $inQuotes->j_assign(j_false())),
+                           j_if(
+                              $next->j_eq(j_char('\\')),
+                              $escaped->j_assign(j_not($escaped))
+                           )),
+                        j_if(
+                           $next->j_eq(j_char('"')),
+                           $inQuotes->j_assign(j_true()),
+                        j_if(
+                           $next->j_eq(j_char('}')),
+                           $i->j_return()
+                        )))
+                     ]
+                  ),
+                  javaIllegalArgumentException()->j_new(j_string('Could not find end of date format starting at index ')->j_plus($start)->j_plus(j_string(' of: '))->j_plus($formatString))->j_throw()
+               ];
+            }->eval()->codesToString($class)
+         )
+      )
+      ->addMethod(
+         javaMethod(['private', 'static'], javaVoid(), 'appendZeros', [$builder, $zeros]->cast(@meta::java::metamodel::Parameter),
+            [
+               j_for([],   $zeros->j_gt(j_int(0)),   $zeros->j_dec(),
+                  [
+                     $builder->j_invoke('append', j_char('0'))
+                  ]
+               )
+            ]->codesToString($class)
+         )
+      )
+      ->addMethod(
+         javaMethod(['private', 'static'], javaBoolean(), 'isSign', [$character]->cast(@meta::java::metamodel::Parameter),
+            [
+               j_or($character->j_eq(j_char('-')), $character->j_eq(j_char('+')))->j_return()
+            ]->codesToString($class)
+         )
+      )
+      ->addMethod(
+         javaMethod(['private', 'static'], javaBoolean(), 'isSigned', [$s]->cast(@meta::java::metamodel::Parameter),
+            [
+               $class->j_invoke('isSign', $s->j_invoke('charAt', j_int(0)), javaBoolean())->j_return()
+            ]->codesToString($class)
+         )
+      )
+      ->addMethod(
+         javaMethod(['private', 'static'], javaInt(), 'getSignCount', [$s]->cast(@meta::java::metamodel::Parameter),
+            {|
+               let i = j_variable(javaInt(), 'i');
+
+               [
+                  $i->j_declare(j_int(0)),
+                  j_while($class->j_invoke('isSign', $s->j_invoke('charAt', $i), javaBoolean()),
+                     [
+                        $i->j_inc()
+                     ]
+                  ),
+                  $i->j_return()
+               ];
+            }->eval()->codesToString($class)
+         )
+      )
+      ->addMethod(
+         javaMethod(['private', 'static'], javaInt(), 'getZeroCountFrom', [$s, $index]->cast(@meta::java::metamodel::Parameter),
+            {|
+               let i = j_variable(javaInt(), 'i');
+
+               [
+                  $i->j_declare($index),
+                  j_while($s->j_invoke('charAt', $i)->j_eq(j_char('0')),
+                     [
+                        $i->j_inc()
+                     ]
+                  ),
+                  $i->j_minus($index)->j_return()
+               ];
+            }->eval()->codesToString($class)
+         )
+      )
+      ->addMethod(
+         javaMethod(['private', 'static'], javaVoid(), 'appendIntegerString', [$builder, $s, $zeros]->cast(@meta::java::metamodel::Parameter),
+            {|
+               let signCount  = j_variable(javaInt(), 'signCount');
+               let length     = j_variable(javaInt(), 'length');
+               let digitCount = j_variable(javaInt(), 'digitCount');
+               
+               j_if(
+                  $zeros->j_lt(j_int(0)),
+                  $builder->j_invoke('append', $s),
+               j_if(
+                  $class->j_invoke('isSigned', $s, javaBoolean()),
+                  [
+                     $signCount->j_declare($class->j_invoke('getSignCount', $s, javaInt())),
+                     $length->j_declare($s->j_invoke('length', [])),
+                     $digitCount->j_declare($length->j_minus($signCount)),
+                     $builder->j_invoke('append', [$s, j_int(0), $signCount]),
+                     $class->j_invoke('appendZeros', [$builder, $zeros->j_minus($digitCount)], javaVoid()),
+                     $builder->j_invoke('append', [$s, $signCount, $length])
+                  ],
+                  [
+                     $class->j_invoke('appendZeros', [$builder, $zeros->j_minus($s->j_invoke('length', []))], javaVoid()),
+                     $builder->j_invoke('append', $s)
+                  ]
+               ));
+            }->eval()->codesToString($class)
+         )
+      )
+      ->addMethod(
+         javaMethod(['private', 'static'], javaVoid(), 'appendFloatString', [$builder, $s]->cast(@meta::java::metamodel::Parameter),
+            {|
+               $class->j_invoke('appendFloatString', [$builder, $s, j_int(-1)], javaVoid())
+            }->eval()->codesToString($class)
+         )
+      )
+      ->addMethod(
+         javaMethod(['private', 'static'], javaVoid(), 'appendFloatString', [$builder, $s, $precision]->cast(@meta::java::metamodel::Parameter),
+            {|
+               let decimalIndex                         = j_variable(javaInt(),     'decimalIndex');
+               let decimalCount                         = j_variable(javaInt(),     'decimalCount');
+               let charAfterDecimal                     = j_variable(javaChar(),    'charAfterDecimal');
+               let roundingPrecision                    = j_variable(javaInt(),     'roundingPrecision');
+               let roundedFloatString                   = j_variable(javaString(),  'roundedFloatString');
+               let roundedDecimalIndex                  = j_variable(javaInt(),     'roundedDecimalIndex');
+               let signCount                            = j_variable(javaInt(),     'signCount');
+               let leadingZeroesBeforeDecimal           = j_variable(javaInt(),     'leadingZeroesBeforeDecimal');
+               let insignificantCharactersBeforeDecimal = j_variable(javaInt(),     'insignificantCharactersBeforeDecimal');
+               let significantDigitsBeforeDecimal       = j_variable(javaInt(),     'significantDigitsBeforeDecimal');
+               let endIndex                             = j_variable(javaInt(),     'endIndex');
+               let endChar                              = j_variable(javaChar(),    'endChar');
+               let roundUp                              = j_variable(javaBoolean(), 'roundUp');
+
+               let up       = javaRoundingMode()->j_field('UP', javaInt());
+               let halfUp   = javaRoundingMode()->j_field('HALF_UP', javaInt());
+               let halfEven = javaRoundingMode()->j_field('HALF_EVEN', javaInt());
+               
+               j_if($precision->j_eq(j_int(-1)),                                                                       // if (decimalPrecision == -1)
+                  [
+                     $builder->j_invoke('append', $s)
+                  ],
+               j_if($precision->j_eq(j_int(0)),                                                                        // else if (decimalPrecision == 0)
+                  [
+                     $decimalIndex->j_declare($s->j_invoke('indexOf', j_char('.'))),
+                     j_if($decimalIndex->j_eq(j_int(-1)),                                                            //     if (decimalIndex == -1)
+                        [
+                           $builder->j_invoke('append', $s)
+                        ],
+                     j_if($decimalIndex->j_eq($s->j_invoke('length', [])->j_minus(j_int(1))),                        //     else if (decimalIndex == (floatString.length() - 1))
+                        [
+                           $builder->j_invoke('append', [$s, j_int(0), $decimalIndex])
+                        ],
+                        [                                                                                            //     else
+                           $charAfterDecimal->j_declare($s->j_invoke('charAt', $decimalIndex->j_plus(j_int(1)))),
+                           j_if($charAfterDecimal->j_lt(j_char('5')),
+                              [
+                                 $builder->j_invoke('append', [$s, j_int(0), $decimalIndex])
+                              ],
+                              [
+                                 $roundingPrecision->j_declare($decimalIndex->j_minus($class->j_invoke('getSignCount', $s, javaInt()))),
+                                 $roundedFloatString->j_declare(javaBigDecimal()->j_new($s)->j_invoke('round', [javaMathContext()->j_new([$roundingPrecision, $halfEven])])->j_toString()),
+                                 $roundedDecimalIndex->j_declare($roundedFloatString->j_invoke('indexOf', j_char('.'))),
+                                 j_if($roundedDecimalIndex->j_eq(j_int(-1)),                                                              
+                                    [
+                                       $builder->j_invoke('append', $roundedFloatString)
+                                    ],
+                                    [
+                                       $builder->j_invoke('append', [$roundedFloatString, j_int(0), $roundedDecimalIndex])
+                                    ]
+                                 )
+                              ]
+                           )
+                        ]
+                     ))
+                  ],
+                  [                                                                                                  // else
+                     $decimalIndex->j_declare($s->j_invoke('indexOf', j_char('.'))),
+                     j_if($decimalIndex->j_eq(j_int(-1)),                                                            //     if (decimalIndex == -1)
+                        [
+                           $builder->j_invoke('append', $s),
+                           $builder->j_invoke('append', j_char('.')),
+                           $class->j_invoke('appendZeros', [$builder, $precision], javaVoid())
+                        ],
+                        [                                                                                            //     else
+                           $decimalCount->j_declare($s->j_invoke('length', [])->j_minus($decimalIndex)->j_minus(j_int(1))),
+                           j_if($decimalCount->j_le($precision),
+                              [
+                                 $builder->j_invoke('append', $s),
+                                 $class->j_invoke('appendZeros', [$builder, $precision->j_minus($decimalCount)], javaVoid())
+                              ],
+                              [
+                                 $signCount->j_declare($class->j_invoke('getSignCount', $s, javaInt())),
+                                 $leadingZeroesBeforeDecimal->j_declare($class->j_invoke('getZeroCountFrom', [$s, $signCount], javaInt())),
+                                 $insignificantCharactersBeforeDecimal->j_declare($signCount->j_plus($leadingZeroesBeforeDecimal)),
+                                 $significantDigitsBeforeDecimal->j_declare($decimalIndex->j_minus($insignificantCharactersBeforeDecimal)),
+                                 $roundingPrecision->j_declare($precision),
+                                 
+                                 j_if($significantDigitsBeforeDecimal->j_gt(j_int(0)),
+                                    [
+                                       $roundingPrecision->j_assign($roundingPrecision->j_plus($significantDigitsBeforeDecimal))
+                                    ],
+                                    [
+                                       $roundingPrecision->j_assign($roundingPrecision->j_minus($class->j_invoke('getZeroCountFrom', [$s, $decimalIndex->j_plus(j_int(1))], javaInt())))
+                                    ]
+                                 ),
+                                 
+                                 j_if($roundingPrecision->j_gt(j_int(0)),
+                                    [
+                                       $roundedFloatString->j_declare(javaBigDecimal()->j_new($s)->j_invoke('round', [javaMathContext()->j_new([$roundingPrecision, $halfEven])])->j_toString()),
+                                       j_if(
+                                          $roundedFloatString->j_invoke('equals', $s),
+                                          javaRuntimeException()->j_new(j_string('Error appending float string \'')->j_plus($s)->j_plus(j_string('\' at precision '))->j_plus($precision)->j_plus(j_string(': rounding to precision '))->j_plus($roundingPrecision)->j_plus(j_string(' failed')))->j_throw()
+                                       ),
+                                       $class->j_invoke('appendFloatString', [$builder, $roundedFloatString, $precision], javaVoid())
+                                    ],
+                                 j_if($roundingPrecision->j_lt(j_int(0)),
+                                    [
+                                       $builder->j_invoke('append', [$s, j_int(0), $decimalIndex->j_plus($precision)->j_plus(j_int(1))])
+                                    ],
+                                    [
+                                       $endIndex->j_declare($decimalIndex->j_plus($precision)->j_plus(j_int(1))),
+                                       $endChar->j_declare($s->j_invoke('charAt', $endIndex)),
+                                       $roundUp->j_declare(),
+                                       j_if($endChar->j_lt(j_char('5')),
+                                          [
+                                             $roundUp->j_assign(j_false())
+                                          ],
+                                       j_if($endChar->j_gt(j_char('5')),
+                                          [
+                                             $roundUp->j_assign(j_true())
+                                          ],
+                                          [
+                                             $roundedFloatString->j_declare(javaBigDecimal()->j_new($s)->j_invoke('round', [javaMathContext()->j_new([j_int(1), $up])])->j_toString()),
+                                             $roundUp->j_assign($roundedFloatString->j_invoke('charAt', $endIndex)->j_ge(j_char('6')))
+                                          ]
+                                       )),
+                                       
+                                       j_if($roundUp,
+                                          [
+                                             $builder->j_invoke('append', [$s, j_int(0), $endIndex->j_minus(j_int(1))]),
+                                             $builder->j_invoke('append', j_char('1'))
+                                          ],
+                                          [
+                                             $builder->j_invoke('append', [$s, j_int(0), $endIndex])
+                                          ]                                           
+                                       )
+                                    ]
+                                 ))
+                              ]
+                           )
+                        ]
+                     )
+                  ]
+               ));
+            }->eval()->codesToString($class)
+         )
+      );
+}
+
+function <<access.private>> meta::java::codeGeneration::functions::string::addFormatMethod(class:meta::java::metamodel::Class[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+{
+   let formatString  = j_parameter(javaString(),           'formatString');
+   let formatArgs    = j_parameter(javaList(javaObject()), 'formatArgs');
+
+   let argIterator = j_variable(javaIterator(javaObject()),    'argIterator');
+   let arg         = j_variable(javaObject(),                  'arg');
+   let index       = j_variable(javaInt(),                     'index');
+   let length      = j_variable(javaInt(),                     'length');
+   let builder     = j_variable(javaStringBuilder(),           'builder');
+   let character   = j_variable(javaChar(),                    'character');
+   let formatCh    = j_variable(javaChar(),                    'formatCh');
+   let ex          = j_parameter(javaNoSuchElementException(), 'e');
+
+   let dateClasses = [Date, StrictDate, DateTime]->map(t| $conventions->pureTypeToJavaType($t, PureOne))->cast(@meta::java::metamodel::Class)->removeDuplicates();
+   let isDateClass = $dateClasses->tail()->fold({cl, test| j_or($test, $arg->j_instanceof($cl))}, $arg->j_instanceof($dateClasses->at(0)));
+
+   $class->addMethod(javaMethod(['public', 'static'], javaString(), 'format', [$formatString, $formatArgs]->cast(@meta::java::metamodel::Parameter),
+      [
+         $index->j_declare(j_int(0)),
+         $length->j_declare($formatString->j_invoke('length', [])),
+         $argIterator->j_declare($formatArgs->j_invoke('iterator', [])),
+         $builder->j_declare(javaStringBuilder()->j_new($length->j_multiply(j_int(2)))),
+                     
+         j_try(
+            [
+               j_while($index->j_lt($length),
+                  [
+                     $character->j_declare($formatString->j_invoke('charAt', $index->j_inc())),
+                     j_if($character->j_eq(j_char('%')),
+                        [
+                           $formatCh->j_declare($formatString->j_invoke('charAt', $index->j_inc())),
+                           j_if($formatCh->j_eq(j_char('%')),
+                              [
+                                 $builder->j_invoke('append', j_char('%'))
+                              ],
+                           j_if($formatCh->j_eq(j_char('s')),
+                              [
+                                 $builder->j_invoke('append', $class->j_invoke('pureToString', $argIterator->j_invoke('next', [])))
+                              ],
+                           j_if($formatCh->j_eq(j_char('r')),
+                              [
+                                 $builder->j_invoke('append', $class->j_invoke('toRepresentation', $argIterator->j_invoke('next', [])))
+                              ],
+                           j_if($formatCh->j_eq(j_char('t')),
+                              {|
+                                 let dateFormatEnd = j_variable(javaInt(), 'dateFormatEnd');
+                               
+                                 [
+                                    $arg->j_declare($argIterator->j_invoke('next', [])),
+                                    j_if($arg->j_instanceof(javaLongBoxed()),
+                                       [
+                                          javaIllegalArgumentException()->j_new(j_string('Expected Date, got: ')->j_plus($arg))->j_throw()
+                                       ]
+                                    ),
+                                    $dateFormatEnd->j_declare($class->j_invoke('findEndOfDateFormatString', [$formatString, $index])),
+                                    j_if($dateFormatEnd->j_eq(j_int(-1)),
+                                       [
+                                          $builder->j_invoke('append', $class->j_invoke('pureToString', $arg))
+                                       ],
+                                       [
+                                          $builder->j_invoke('append', $conventions->codeDateFormat($arg, $formatString->j_invoke('substring', [$index->j_plus(j_int(1)), $dateFormatEnd]))),
+                                          $index->j_assign($dateFormatEnd->j_plus(j_int(1)))
+                                       ]
+                                    )
+                                 ];
+                              }->eval(),
+                           j_if($formatCh->j_eq(j_char('d')),
+                              [
+                                 $arg->j_declare($argIterator->j_invoke('next', [])),
+                                 j_if($arg->j_instanceof(javaLongBoxed()),
+                                    [
+                                       $builder->j_invoke('append', $arg->j_cast(javaLongBoxed())->j_invoke('longValue', []))
+                                    ],
+                                 j_if($arg->j_instanceof(javaIntBoxed()),
+                                    [
+                                       $builder->j_invoke('append', $arg->j_cast(javaIntBoxed())->j_invoke('intValue', []))
+                                    ],
+                                 j_if($arg->j_instanceof(javaBigInteger()),
+                                    [
+                                       $builder->j_invoke('append', $arg->j_toString())
+                                    ],
+                                    [
+                                       javaIllegalArgumentException()->j_new(j_string('Expected Integer, got: ')->j_plus($arg))->j_throw()
+                                    ]
+                                 )))
+                              ],
+                           j_if($formatCh->j_eq(j_char('0')),
+                              {|
+                                 let j       = j_variable(javaInt(), 'j');
+                                 let zeroPad = j_variable(javaInt(), 'zeroPad');
+                                 
+                                 [
+                                    $j->j_declare($index),
+                                    j_while(javaCharBoxed()->j_invoke('isDigit', $formatString->j_invoke('charAt', $j), javaBoolean()),
+                                       [
+                                          $j->j_inc()
+                                       ]
+                                    ),
+                                    j_if($formatString->j_invoke('charAt', $j)->j_ne(j_char('d')),
+                                       [
+                                          javaIllegalArgumentException()->j_new(j_string('Invalid format specifier: %')->j_plus($formatString->j_invoke('substring', [$index, $j->j_plus(j_int(1))]))->j_plus(j_string('\n'))->j_plus($formatString)->j_plus(j_string('\n'))->j_plus($index)->j_plus(j_string('\n'))->j_plus($j))->j_throw()
+                                       ]
+                                    ),
+                                    $zeroPad->j_declare(javaIntBoxed()->j_invoke('valueOf', $formatString->j_invoke('substring', [$index, $j]))),
+                                    $arg->j_declare($argIterator->j_invoke('next', [])),
+                                    j_if(j_not($arg->j_instanceof(javaLongBoxed())->j_or($arg->j_instanceof(javaIntBoxed()))->j_or($arg->j_instanceof(javaBigInteger()))),
+                                       [
+                                          javaIllegalArgumentException()->j_new(j_string('Expected Integer, got: ')->j_plus($arg))->j_throw()
+                                       ]
+                                    ),
+                                    $class->j_invoke('appendIntegerString', [$builder, $arg->j_toString(), $zeroPad]),
+                                    $index->j_assign($j->j_plus(j_int(1)))
+                                 ];
+                              }->eval(),
+                           j_if($formatCh->j_eq(j_char('f')),
+                              [
+                                 $arg->j_declare($argIterator->j_invoke('next', [])),
+                                 j_if(j_not($arg->j_instanceof(javaDoubleBoxed())->j_or($arg->j_instanceof(javaFloatBoxed()))->j_or($arg->j_instanceof(javaBigDecimal()))),
+                                    [
+                                       javaIllegalArgumentException()->j_new(j_string('Expected Float, got: ')->j_plus($arg))->j_throw()
+                                    ]
+                                 ),
+                                 $class->j_invoke('appendFloatString', [$builder, $class->j_invoke('pureToString', $arg)])
+                              ],
+                           j_if($formatCh->j_eq(j_char('.')),
+                              {|
+                                 let j         = j_variable(javaInt(), 'j');
+                                 let precision = j_variable(javaInt(), 'precision');
+                                 
+                                 [
+                                    $j->j_declare($index),
+                                    j_while(javaCharBoxed()->j_invoke('isDigit', $formatString->j_invoke('charAt', $j), javaBoolean()),
+                                       [
+                                          $j->j_inc()
+                                       ]
+                                    ),
+                                    j_if($formatString->j_invoke('charAt', $j)->j_ne(j_char('f')),
+                                       [
+                                          javaIllegalArgumentException()->j_new(j_string('Invalid format specifier: %')->j_plus($formatString->j_invoke('substring', [$index, $j->j_plus(j_int(1))])))->j_throw()
+                                       ]
+                                    ),
+                                    $precision->j_declare(javaIntBoxed()->j_invoke('valueOf', $formatString->j_invoke('substring', [$index, $j]))),
+
+                                    $arg->j_declare($argIterator->j_invoke('next', [])),
+                                    j_if(j_not($arg->j_instanceof(javaDoubleBoxed())->j_or($arg->j_instanceof(javaFloatBoxed()))->j_or($arg->j_instanceof(javaBigDecimal()))),
+                                       [
+                                          javaIllegalArgumentException()->j_new(j_string('Expected Float, got: ')->j_plus($arg))->j_throw()
+                                       ]
+                                    ),
+
+                                    $class->j_invoke('appendFloatString', [$builder, $class->j_invoke('pureToString', $arg), $precision]),
+                                    $index->j_assign($j->j_plus(j_int(1)))
+                                 ];
+                              }->eval(),
+                              [
+                                 javaIllegalArgumentException()->j_new(j_string('Invalid format specifier: %')->j_plus($formatCh))->j_throw()
+                              ]
+                           ))))))))
+                        ],
+                        $builder->j_invoke('append', $character)
+                     )
+                  ]
+               )
+            ],
+            j_catch(
+               $ex,
+               javaIllegalStateException()->j_new(j_string('Too few arguments passed to format function. Format expression "')->j_plus($formatString)->j_plus(j_string('", number of arguments ['))->j_plus($formatArgs->j_invoke('size', []))->j_plus(j_string(']')))->j_throw()
+            )
+         ),
+                                
+         j_if(
+            $argIterator->j_invoke('hasNext', []),
+            javaIllegalStateException()->j_new(j_string('Unused format args. [')->j_plus($formatArgs->j_invoke('size', []))->j_plus(j_string('] arguments provided to expression "'))->j_plus($formatString)->j_plus(j_string('"')))->j_throw()
+         ),
+         $builder->j_toString()->j_return()
+      ]->codesToString($class)
+   ));
+}
+
+function <<access.private>> meta::java::codeGeneration::functions::string::codeDateToString(conventions: Conventions[1], date:Code[1]): Code[1]
+{
+   let pureDate = $conventions->className(PureDate);
+   if($conventions->dateType() == $pureDate,
+      |$date->j_toString()->j_plus(j_conditional($date->j_cast($pureDate)->j_invoke('hasMinute', [], javaBoolean()), j_string('+0000'), j_string(''))),
+      |$date->j_toString()
+   );
+}
+
+function <<access.private>> meta::java::codeGeneration::functions::string::codeDateFormat(conventions: Conventions[1], date:Code[1], formatString:Code[1]): Code[1]
+{
+   let pureDate = $conventions->className(PureDate);
+   if($conventions->dateType() == $pureDate,
+      |$date->j_cast($pureDate)->j_invoke('format', $formatString, javaString()),
+      |fail('TODO'); $date;
+   );
+}

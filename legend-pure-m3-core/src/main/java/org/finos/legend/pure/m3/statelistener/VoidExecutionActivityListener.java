@@ -1,0 +1,34 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package org.finos.legend.pure.m3.statelistener;
+
+public final class VoidExecutionActivityListener implements ExecutionActivityListener
+{
+    public static final VoidExecutionActivityListener VOID_EXECUTION_ACTIVITY_LISTENER = new VoidExecutionActivityListener();
+
+    private VoidExecutionActivityListener()
+    {
+    }
+
+    @Override
+    public void relationalActivityCompleted(String dbHost, Integer dbPort, String dbName, String dbType, String sql, String planInfo, Long executionTime, Long sqlGenerationTime, Long connectionAcquisitionTime)
+    {
+    }
+
+    @Override
+    public void routingActivityCompleted(Long routingTimeInNanoSeconds)
+    {
+    }
+}
