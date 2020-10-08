@@ -58,7 +58,7 @@ jobs:
     - name: Build + Test
       if: github.ref != 'refs/heads/master'
       # TODO - remove skipTests and add javadoc:javadoc goal
-      run: mvn install -DskipTests
+      run: mvn install
     - name: Build + Test + Sonar + Maven Deploy
       if: github.ref == 'refs/heads/master'
       # TODO - remove skipTests, add javadoc:javadoc goal and -Psonar profile
