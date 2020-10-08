@@ -53,7 +53,12 @@
 
     <properties>
         <pure.version>${project.version}</pure.version>
+
+        <!-- Overridden by sub-modules without Java code -->
         <javadoc.skip>false</javadoc.skip>
+
+        <sonar.projectKey>legend-pure</sonar.projectKey>
+        <sonar.moduleKey>${project.groupId}:${project.artifactId}</sonar.moduleKey>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
