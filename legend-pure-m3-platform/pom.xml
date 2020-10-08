@@ -23,14 +23,18 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>trunk-SNAPSHOT</version>
+        <version>0.0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <name>Legend Pure - Base - M3 Platform</name>
     <artifactId>legend-pure-m3-platform</artifactId>
     <packaging>jar</packaging>
-    <version>trunk-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <properties>
+        <javadoc.skip>true</javadoc.skip>
+    </properties>
 
     <build>
         <plugins>

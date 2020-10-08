@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>trunk-SNAPSHOT</version>
+        <version>0.0.1-SNAPSHOT</version>
     </parent>
 
     <name>Legend Pure - Base - M3 Core</name>

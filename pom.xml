@@ -10,7 +10,7 @@
     </parent>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>trunk-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
 
     <packaging>pom</packaging>
     <name>Legend Pure</name>
@@ -53,6 +53,7 @@
 
     <properties>
         <pure.version>${project.version}</pure.version>
+        <javadoc.skip>false</javadoc.skip>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -99,7 +100,9 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${maven.javadoc.plugin.version}</version>
                     <configuration>
+                        <skip>${javadoc.skip}</skip>
                         <source>8</source>
+                        <doclint>none</doclint>
                     </configuration>
                 </plugin>
                 <plugin>

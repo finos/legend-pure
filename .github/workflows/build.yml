@@ -57,7 +57,9 @@ jobs:
       run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
     - name: Build + Test
       if: github.ref != 'refs/heads/master'
-      run: mvn install javadoc:javadoc
+      # TODO - remove skipTests and add javadoc:javadoc goal
+      run: mvn install -DskipTests
     - name: Build + Test + Sonar + Maven Deploy
       if: github.ref == 'refs/heads/master'
-      run: mvn javadoc:javadoc deploy -Psonar
+      # TODO - remove skipTests, add javadoc:javadoc goal and -Psonar profile
+      run: mvn deploy -DskipTests
