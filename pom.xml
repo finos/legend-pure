@@ -75,7 +75,7 @@
         <jersey.version>2.25</jersey.version>
         <jackson.version>2.8.4</jackson.version>
         <jetty.version>9.3.0.M0</jetty.version>
-        <bouncycastle.version>1.60</bouncycastle.version>
+        <bouncycastle.version>1.64</bouncycastle.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
         <json-simple.version>1.1.1</json-simple.version>
         <apache-httpcomponents.version>4.5.5</apache-httpcomponents.version>
