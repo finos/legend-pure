@@ -1,0 +1,680 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::java::metamodel::*;
+import meta::java::metamodel::project::*;
+import meta::java::codeGeneration::code::*;
+
+/*
+   The modeling strategy is to follow Java reflection
+   Except for types (introduced PrimitiveType and FunctionType)
+   That's why primitive and interface are flags on Class
+*/
+
+Class meta::java::metamodel::Importable
+{
+}
+
+Class meta::java::metamodel::Package extends meta::java::metamodel::AnnotatedElement, meta::java::metamodel::Importable
+{
+   <<equality.Key>> name : String[1];
+}
+
+Association meta::java::metamodel::PackageChildren
+{
+   <<equality.Key>> parent : meta::java::metamodel::Package[0..1];
+   children : meta::java::metamodel::Package[*];
+}
+
+Enum meta::java::metamodel::Modifier
+{
+   Abstract,
+   Final,
+   Interface,
+   Native,
+   Private,
+   Protected,
+   Public,
+   Static,
+   Strict,
+   Synchronized,
+   Transient,
+   Volatile,
+   Default
+}
+
+Class meta::java::metamodel::Type
+{
+}
+
+Class meta::java::metamodel::ParameterizedType extends meta::java::metamodel::Type
+{
+   <<equality.Key>> rawType : meta::java::metamodel::Type[1];
+   <<equality.Key>> typeArguments : meta::java::metamodel::Type[*];
+}
+
+Class meta::java::metamodel::WildcardType extends meta::java::metamodel::Type
+{
+   <<equality.Key>> lowerBounds : meta::java::metamodel::Type[*];
+   <<equality.Key>> upperBounds : meta::java::metamodel::Type[*];
+}
+
+Class meta::java::metamodel::Member
+{
+   modifiers : Modifier[*];
+}
+
+Class meta::java::metamodel::Field extends meta::java::metamodel::AnnotatedElement, Member
+{
+   name : String[1];
+   type : meta::java::metamodel::Type[1];
+   value: String[0..1];
+}
+
+Class meta::java::metamodel::Method extends meta::java::metamodel::AnnotatedElement, Member, GenericDeclaration
+{
+   name : String[1];
+   parameters : meta::java::metamodel::Parameter[*];
+   returnType : meta::java::metamodel::Type[1];
+   body : String[0..1]; // String for now ... will model expressions later
+   
+   nullResultPossible : Boolean[0..1];
+   functionType : meta::java::metamodel::FunctionType[0..1];
+}
+
+Class meta::java::metamodel::Parameter extends meta::java::metamodel::AnnotatedElement
+{
+   name : String[1];
+   type : meta::java::metamodel::Type[1];
+}
+
+Class meta::java::metamodel::Constructor extends meta::java::metamodel::AnnotatedElement, Member, GenericDeclaration
+{
+   parameters : meta::java::metamodel::Parameter[*];
+   body : String[0..1]; // String for now ... will model expressions later
+}
+
+Class meta::java::metamodel::TypeVariable extends meta::java::metamodel::Type
+{
+   <<equality.Key>> bounds : meta::java::metamodel::Type[*];
+   <<equality.Key>> name : String[1];
+}
+
+Class meta::java::metamodel::GenericDeclaration
+{
+   typeParameters : TypeVariable[*];
+}
+
+Class meta::java::metamodel::AnnotatedElement
+{
+   annotations : meta::java::metamodel::Annotation[*];
+   javaDoc: String[0..1];
+}
+
+Class meta::java::metamodel::Annotation
+{
+
+}
+
+Class meta::java::metamodel::Array extends meta::java::metamodel::Type, meta::java::metamodel::AnnotatedElement
+{
+   <<equality.Key>> rawType : meta::java::metamodel::Type[1];
+}
+
+Class meta::java::metamodel::Class extends meta::java::metamodel::Type, meta::java::metamodel::GenericDeclaration, meta::java::metamodel::AnnotatedElement, meta::java::metamodel::Importable
+{
+   <<equality.Key>> simpleName : String[1];
+   <<equality.Key>> package : meta::java::metamodel::Package[1];
+
+   modifiers : Modifier[*];
+
+   interfaces : meta::java::metamodel::Type[*];
+   superType : meta::java::metamodel::Type[0..1];
+
+   constructors : Constructor[*];
+   fields : Field[*];
+   methods : meta::java::metamodel::Method[*];
+
+   additionalImports : String[*];
+
+   projectionParentName : String[0..1]; // Java doesn't really have an equivalent AFAIK but we need this
+}
+
+Class meta::java::metamodel::PrimitiveType extends meta::java::metamodel::Type
+{
+   <<equality.Key>> simpleName : String[1];
+}
+
+// Not really a type in Java but used to carry type information for lambdas during code generation
+Class meta::java::metamodel::FunctionType extends meta::java::metamodel::Type
+{
+   <<equality.Key>> parameterTypes : meta::java::metamodel::Type[*];
+   <<equality.Key>> returnType     : meta::java::metamodel::Type[1];
+   nullResultPossible : Boolean[0..1];
+}
+
+Class meta::java::metamodel::Enumeration extends meta::java::metamodel::Class
+{
+   enumeration : EnumerationEntry[*];
+}
+
+Class meta::java::metamodel::EnumerationEntry extends meta::java::metamodel::AnnotatedElement
+{
+   name: String[1];
+   value: String[0..1];
+}
+
+Class meta::java::annotations::json::JsonIgnoreProperties extends meta::java::metamodel::Annotation
+{
+   ignoreUnknown : Boolean[1];
+   value: String[*];
+}
+
+Class meta::java::annotations::json::JsonIgnore extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::json::JsonAnyGetter extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::json::JsonAnySetter extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::json::JsonValue extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::json::JsonCreator extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::json::JsonProperty extends meta::java::metamodel::Annotation
+{
+   value : String[0..1];
+   required : Boolean[0..1];
+}
+
+Class meta::java::annotations::json::JsonSerialize extends meta::java::metamodel::Annotation
+{
+   as : meta::java::annotations::json::EnumValue[0..1];
+   using : meta::java::annotations::json::EnumValue[0..1];
+}
+
+Class meta::java::annotations::json::JsonDeserialize extends meta::java::metamodel::Annotation
+{
+   as : meta::java::annotations::json::EnumValue[0..1];
+   using : meta::java::annotations::json::EnumValue[0..1];
+}
+
+Class meta::java::annotations::json::EnumValue
+{
+   value: String[1];
+}
+
+Class meta::java::annotations::json::JsonSubTypes extends meta::java::metamodel::Annotation
+{
+   subTypes : meta::java::annotations::json::JsonSubType[*];
+}
+
+Class meta::java::annotations::json::JsonSubType
+{
+   name  : String[0..1];
+   value : String[1];
+}
+
+
+Class meta::java::annotations::json::JsonTypeInfo extends meta::java::metamodel::Annotation
+{
+    use        : meta::java::annotations::json::EnumValue[1];
+    include    : meta::java::annotations::json::EnumValue[0..1];
+    id         : meta::java::annotations::json::EnumValue[0..1];
+    property   : String[0..1];
+    visible    : Boolean[0..1];
+    defaultImpl: meta::java::annotations::json::EnumValue[0..1];
+}
+
+Class meta::java::annotations::json::JsonAutoDetect extends meta::java::metamodel::Annotation
+{
+   fieldVisibility: meta::java::annotations::json::EnumValue[1];
+   getterVisibility: meta::java::annotations::json::EnumValue[1];
+   setterVisibility: meta::java::annotations::json::EnumValue[1];
+}
+
+Class meta::java::annotations::json::JsonInclude extends meta::java::metamodel::Annotation
+{
+   value : meta::java::annotations::json::EnumValue[1];
+}
+
+
+Class meta::java::annotations::generated::Generated extends meta::java::metamodel::Annotation
+{
+   value : String[1];
+   comments: String[0..1];
+}
+
+Class meta::java::annotations::override::Override extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::jsi::ExposeToSlang extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::jsi::TypedStructure extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::jsi::ExposeInSlangScope extends meta::java::metamodel::Annotation
+{
+   value : String[1];
+}
+
+Class meta::java::annotations::java::validation::constraints::NotNull extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::java::validation::constraints::Valid extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::java::validation::constraints::Size extends meta::java::metamodel::Annotation
+{
+   min      :Integer[0..1];
+   max      :Integer[0..1];
+   message  :String[0..1];
+}
+
+Class meta::java::annotations::java::validation::constraints::Min extends meta::java::metamodel::Annotation
+{
+   value    :Integer[1];
+   message  :String[0..1];
+}
+
+Class meta::java::annotations::java::validation::constraints::Max extends meta::java::metamodel::Annotation
+{
+   value    :Integer[1];
+   message  :String[0..1];
+}
+
+
+Class meta::java::annotations::immutables::value::Immutable extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::immutables::value::Auxiliary extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::immutables::value::Style extends meta::java::metamodel::Annotation
+{
+   init: String[0..1];
+   get: String[0..1];
+   set: String[0..1];
+   typeAbstract: String[0..1];
+   typeImmutable: String[0..1];
+   builder: String[0..1];
+   build: String[0..1];
+   strictBuilder: Boolean[0..1];
+   optionalAcceptNullable: Boolean[0..1];
+   jdkOnly: Boolean[0..1];
+}
+
+Class meta::java::annotations::immutables::value::Default extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::immutables::value::Check extends meta::java::metamodel::Annotation
+{
+}
+
+Class meta::java::annotations::SuppressWarnings extends meta::java::metamodel::Annotation
+{
+   value: String[1];
+}
+
+Profile meta::java::generation {
+   stereotypes: [opaque, container, reference];
+}
+
+Profile meta::java::temporalType {
+   stereotypes: [Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, OffsetTime, ZonedDateTime];
+}
+
+Profile meta::java::collectionType {
+   stereotypes: [List, Set, Map];
+}
+
+Profile meta::java::integerType {
+   stereotypes: [Integer, Long];
+}
+
+Profile meta::java::floatType {
+   stereotypes: [Float, BigDecimal, Double];
+}
+
+Profile meta::java::stringType {
+   stereotypes: [byteArray];
+}
+
+Profile meta::java::enumValue {
+   stereotypes: [Default];
+   tags:[name];
+}
+
+Profile meta::java::jsonProperty {
+   stereotypes: [customName, ignoreProperties, ignoreProperty];
+   tags: [value];
+}
+
+Profile meta::java::immutables {
+   stereotypes: [Auxiliary];
+}
+
+
+Class meta::java::codeGeneration::code::Code
+{
+   type     : meta::java::metamodel::Type[1];
+   requires : CodeDependency[*];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::SimpleCode extends Code
+{
+   code : String[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Statement extends Code
+{
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Null extends Code
+{
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::This extends Code
+{
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Literal extends Code
+{
+   literal : String[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Block extends Statement
+{
+   statements : Code[*];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::ExpressionStatement extends Statement
+{
+   expression : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Variable extends Code
+{
+   name : String[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Parameter extends Variable, meta::java::metamodel::Parameter
+{
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::InfixExpression extends Code
+{
+   left  : Code[1];
+   op    : String[1];
+   right : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::PrefixExpression extends Code
+{
+   op         : String[1];
+   expression : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::PostfixExpression extends Code
+{
+   expression : Code[1];
+   op         : String[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Conditional extends Code
+{
+   test : Code[1];
+   then : Code[1];
+   else : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::InstanceOf extends Code
+{
+   expression : Code[1];
+   class      : meta::java::metamodel::Class[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::LocalVariableDeclaration extends Statement
+{
+   modifiers    : meta::java::metamodel::Modifier[*];
+   variableName : String[1];
+   initializer  : Code[0..1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::If extends Statement
+{
+   test : Code[1];
+   then : Code[1];
+   else : Code[0..1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::For extends Statement
+{
+   init   : Code[0..1];
+   test   : Code[0..1];
+   update : Code[0..1];
+   body   : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::ForEach extends Statement
+{
+   parameter  : Code[1];
+   collection : Code[1];
+   body       : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::While extends Statement
+{
+   test : Code[1];
+   then : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::DoWhile extends Statement
+{
+   do    : Code[1];
+   while : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Try extends Statement
+{
+   try     : Code[1];
+   catches : Catch[*];
+   finally : Finally[0..1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Catch extends Code
+{
+   parameter : meta::java::codeGeneration::code::Parameter[1];
+   clause    : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Finally extends Code
+{
+   clause    : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Return extends Statement
+{
+   expression : Code[0..1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Throw extends Statement
+{
+   expression : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::New extends Code
+{
+   typeArguments  : meta::java::metamodel::Type[*];
+   arguments      : Code[*];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::NewAnonymous extends New
+{
+   methods  : meta::java::codeGeneration::code::Method[*];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Method extends Code
+{
+   modifiers  : meta::java::metamodel::Modifier[*];
+   name       : String[1];
+   parameters : meta::java::codeGeneration::code::Parameter[*];
+   body       : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::ArrayAccess extends Code
+{
+   array : Code[1];
+   index : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Cast extends Code
+{
+   expression : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::CastProxy extends Cast
+{
+   proxy : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::MethodCall extends Code
+{
+   instance       : Code[1];
+   typeArguments  : meta::java::metamodel::Type[*];
+   methodName     : String[1];
+   arguments      : Code[*];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::FieldAccess extends Code
+{
+   instance  : Code[1];
+   fieldName : String[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::MethodReference extends Code
+{
+   instance   : Code[1];
+   methodName : String[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::StaticMethodCall extends Code
+{
+   class          : meta::java::metamodel::Type[1];
+   typeArguments  : meta::java::metamodel::Type[*];
+   methodName     : String[1];
+   arguments      : Code[*];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::StaticFieldAccess extends Code
+{
+   class     : meta::java::metamodel::Type[1];
+   fieldName : String[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::StaticMethodReference extends Code
+{
+   class      : meta::java::metamodel::Type[1];
+   methodName : String[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::Lambda extends Code
+{
+   parameters : meta::java::codeGeneration::code::Parameter[*];
+   expression : Code[1];
+}
+
+Class <<access.private>> meta::java::codeGeneration::code::DeferredStreamResolve extends Code
+{
+   stream : Code[1];
+}
+
+Class meta::java::codeGeneration::code::CodeDependency
+{
+   <<equality.Key>> name : String[1];
+   stateUpdater          : Function<{CodeDependencyResolutionState[1]->CodeDependencyResolutionState[1]}>[1];
+}
+
+Class meta::java::codeGeneration::code::CodeDependencyResolutionState
+{
+   projectsByDependency : Map<String, Project>[1];
+}
+
+Class meta::java::metamodel::project::Project
+{
+   root             : ProjectDirectory[1];
+   id               : MavenReference[1];
+   mainDependencies : Dependency[*];
+}
+
+Class meta::java::metamodel::project::ProjectDirectory
+{
+   name           : String[1];
+   classes        : meta::java::metamodel::Class[*];
+   files          : File[*];
+
+   // Deliberately not using association
+   parent         : ProjectDirectory[0..1];
+   subdirectories : ProjectDirectory[*];
+
+   fullPath()
+   {
+      if($this.parent->isEmpty(),
+         | fail('Should not reach root'); '';,
+         |
+      if($this.parent.parent->isEmpty(),
+         | $this.name,
+         | $this.parent->toOne().fullPath() + '/' + $this.name
+      ));
+   }: String[1];
+}
+
+Class meta::java::metamodel::project::File
+{
+   name: String[1];
+}
+
+Class meta::java::metamodel::project::TextFile extends File
+{
+   content: String[1];
+}
+
+Class meta::java::metamodel::project::Dependency
+{
+}
+
+Class meta::java::metamodel::project::MavenReference extends meta::java::metamodel::project::Dependency
+{
+   <<equality.Key>> group    : String[1];
+   <<equality.Key>> artifact : String[1];
+   <<equality.Key>> version  : String[1];
+}

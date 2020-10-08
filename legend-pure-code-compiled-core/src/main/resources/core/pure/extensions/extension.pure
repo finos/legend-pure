@@ -1,0 +1,126 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::mapping::*;
+import meta::pure::graphFetch::routing::*;
+import meta::pure::graphFetch::*;
+import meta::java::codeGeneration::convention::*;
+import meta::pure::tds::schema::*;
+import meta::java::codeGeneration::code::*;
+import meta::java::metamodel::project::*;
+import meta::alloy::runtime::java::*;
+import meta::pure::executionPlan::*;
+import meta::pure::router::routing::*;
+import meta::pure::router::systemMapping::*;
+import meta::pure::runtime::*;
+import meta::pure::router::extension::*;
+import meta::pure::router::clustering::*;
+import meta::pure::store::*;
+import meta::pure::graphFetch::executionPlan::*;
+
+Class meta::pure::router::extension::RouterExtension
+{
+   type : String[1];
+   serializerExtension : Function<{String[1]->String[1]}>[1];
+   
+   analytics_getStoreFromSetImpl : Function<{Mapping[1] -> Function<{Nil[1]->Store[1]}>[1]}>[0..1];
+   analytics_getStoreFromSetImpl_Operation : Function<{Mapping[1] -> Function<{Nil[1]->Store[1]}>[1]}>[0..1];
+   
+   cluster_cluster_ExtendedRoutedValueSpecification : Function<{ExtendedRoutedValueSpecification[1], Map<String, List<Any>>[1], Mapping[1] -> Function<{Nil[1]->ClusteredValueSpecification[1]}>[*]}>[0..1];
+   cluster_cluster_ExtendedRoutedValueSpecification_Operation : Function<{ExtendedRoutedValueSpecification[1], Map<String, List<Any>>[1], Mapping[1] -> Function<{Nil[1]->ClusteredValueSpecification[1]}>[*]}>[0..1];
+   cluster_cluster : Function<{Map<String, List<Any>>[1] -> Function<{Nil[1]->ClusterResponse[1]}>[1]}>[0..1];
+   cluster_resolveInstanceSetImplementations : Function<{RouterExtension[*] -> Function<{Nil[1]->InstanceSetImplementation[*]}>[1]}>[0..1];
+   cluster_resolveRootFromEmbedded : Function<{Nil[1]->InstanceSetImplementation[*]}>[0..1];
+   cluster_executionContextEquality : Function<{ExecutionContext[1] -> Function<{Nil[1]->Boolean[1]}>[*]}>[0..1];
+
+   routing_routeFunctionExpressionFunctionDefinition : Pair<Function<{FunctionExpression[1]->Boolean[1]}>, Function<{FunctionExpression[1], RoutingState[1], Runtime[1], Mapping[1], ExecutionContext[1]->RoutingState[1]}>>[0..1];
+   routing_extraShouldStop : Function<Any>[*];
+
+   main_storeEquals : Function<{Any[1], Any[1]-> Function<{Nil[1]->Boolean[1]}>[1]}>[0..1];
+   
+   entry_execute : Function<{FunctionDefinition<Any>[1], Mapping[1], meta::pure::runtime::Runtime[1] -> String[1]}>[0..1];
+
+   systemMapping_systemForSetImplementation : Function<{Nil[1] -> SystemMapping[1]}>[0..1];
+   
+   unsupportedConnection : Function<{Connection[1]->Boolean[1]}>[0..1];
+   
+   runtime_connectionEquality : Function<{Connection[1] -> Function<{Nil[1]->Boolean[1]}>[*]}>[0..1];
+   
+   graphFetch_getStoreFromSet : Function<{Mapping[1] -> Function<{Nil[1]->Store[1]}>[*]}>[0..1];
+   graphFetch_getStoreFromSet_Operation : Function<{Mapping[1] -> Function<{Nil[1]->Store[1]}>[*]}>[0..1];
+   graphFetch_getSystemMappingFromStore : Function<{Nil[1]->SystemMapping[1]}>[0..1];
+   
+   graphExtension_calculateSourceTree : Function<{Nil[1]->RootGraphFetchTree<Any>[1]}>[0..1];
+   
+   graphFetch_recursivelyBuildGlobalNodeStructure : Function<{ClusteredGraphFetchTree[1], String[*], String[1], Map<String, List<Any>>[1], Mapping[1], Runtime[1], ExecutionContext[1], DebugContext[1] -> Function<{Nil[1]->GlobalGraphFetchExecutionNode[1]}>[*]}>[0..1];
+   graphFetch_executionPlan_1 : Function<{StoreQuery[1], RoutedValueSpecification[0..1], ClusteredGraphFetchTree[1], String[*], Mapping[1], Runtime[1], ExecutionContext[1], DebugContext[1]->Function<{Nil[1]->Pair<ExecutionNode, GlobalGraphFetchExecutionNode>[1]}>[*]}>[0..1];
+   graphFetch_executionPlan_2 : Function<{Nil[1]->Function<{StoreQuery[1]->Integer[0..1]}>[1]}>[0..1];
+   graphFetch_localGraphFetchExecutionNodeToString : Function<{String[1], meta::pure::router::extension::RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];
+      
+   executionPlan_print_planNodeToString : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];
+   executionPlan_print_connectionToString: Function<{RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];
+   executionPlan_print_typeToString : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];
+
+   executionPlan_execution_processNode : Function<{Mapping[1], Runtime[1], Pair<VariableExpression, Any>[*], meta::pure::router::extension::RouterExtension[*] -> Function<{Nil[1] -> Result<Any|*>[1]}>[*]}>[0..1];
+   executionPlan_execution_allNodes : Function<{meta::pure::router::extension::RouterExtension[*] -> Function<{Nil[1] ->  ExecutionNode[*]}>[*]}>[0..1];
+   executionPlan_execution_buildVariableTemplateString : Function<{String[1], Any[1], Type[1] -> Function<{Nil[1] ->  String[1]}>[*]}>[0..1];
+   
+   executionPlan_generation_executionPlan : Function<{ExecutionNode[1],meta::pure::router::extension::RouterExtension[*]->String[*]}>[0..1];
+   executionPlan_generation_updateConnection : Function<{Nil[1] -> Connection[1]}>[*];
+   
+   java_conventions_defaultProhibitedFunctions : Function<Any>[*];
+   java_mappingAdaptor : Function<{Nil[1]->String[1]}>[*];
+   java_graphFetch_generateCodeForLocalGraphFetchNode : Function<{String[1], GenerationContext[1], DebugContext[1] -> Function<{Nil[1]->Project[1]}>[*]}>[0..1];
+   java_graphFetch_generateGraphNodeImplementation : Function<{meta::java::metamodel::Class[1], GenerationContext[1] -> Function<{Nil[1]->meta::java::metamodel::Class[1]}>[*]}>[0..1];
+   
+   plan_javaRuntime_main_prepare1 : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GenerationContext[1]}>[*]}>[0..1];
+   plan_javaRuntime_main_prepare2 : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GenerationContext[1]}>[*]}>[0..1];
+   plan_javaRuntime_main_generatePlatformCode1 : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GeneratedCode[1]}>[*]}>[0..1];
+   plan_javaRuntime_main_generatePlatformCode2 : Function<{String[1], Mapping[1], GenerationContext[1], RouterExtension[*], Project[0..1], DebugContext[1] -> Function<{Nil[1]->GeneratedNode[1]}>[*]}>[0..1];
+
+   plan_javaRuntime_mappingAdaptor_addMapOneMethod : Function<{Code[1], Code[1], meta::java::codeGeneration::convention::Conventions[1], DebugContext[1] -> Function<{Nil[1]->Code[1]}>[*]}>[0..1];
+   
+   plan_javaRuntime_common_generateInterfaceForClass : Class<Any>[*];
+   
+   plan_javaRuntime_mappingAdaptor_generatePropertyMapping1 : Function<{Conventions[1], DebugContext[1] -> Function<{Nil[1]->Code[1]}>[*]}>[0..1];
+   plan_javaRuntime_mappingAdaptor_generatePropertyMapping2 : Function<{Nil[1]->ValueTransformer<Any>[1]}>[*];
+   
+   plan_javaRuntime_enginePlatformDependencies_conventions : Function<{Conventions[1]->Conventions[1]}>[0..1];
+
+   mapping_sourceClass : Function<{Nil[1] -> Class<Any>[1]}>[*];
+   mapping_extractRelationalPropertyMappingFromEmbedded : Function<{AbstractProperty<Any>[1], SetImplementation[*], Mapping[1] -> String[*]}>[0..1];
+   
+   tdsSchema_resolveSchemaImpl : Function<{FunctionExpression[1], Map<String, List<Any>>[1], RouterExtension[*] -> Pair<Function<Any>, Function<{->SchemaState[1]}>>[*]}>[0..1];
+   
+   testExtension_testedBy : Function<{ReferenceUsage[1], RouterExtension[*] -> Function<{TestedByResult[1]->TestedByResult[1]}>[*]}>[0..1];
+   
+   logActivities : Function<{meta::pure::mapping::Activity[*] -> Nil[0]}>[0..1];
+   
+   serializerExtension(version : String[1])
+   {
+      let func = $this.serializerExtension->eval($version);
+      $func->pathToElement()->cast(@Function<{String[1]->SerializerExtension[1]}>)->eval($this.type);
+   } : SerializerExtension[1];
+}
+
+Class meta::pure::router::extension::SerializerExtension
+{
+}
+
+
+
+function meta::pure::router::extension::defaultExtensions():RouterExtension[*]
+{
+   [];
+}

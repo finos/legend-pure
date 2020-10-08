@@ -1,0 +1,188 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::java::metamodel::*;
+import meta::java::tostring::test::*;
+import meta::java::metamodel::factory::*;
+import meta::java::annotations::java::validation::constraints::*;
+import meta::java::annotations::json::*;
+
+function <<test.Test>> meta::java::tostring::test::classToString():Boolean[1]
+{
+   let finosPackage = ^meta::java::metamodel::Package(name = 'finos', parent = ^meta::java::metamodel::Package(name = 'org'));
+   let c = ^meta::java::metamodel::Class(simpleName = 'MyClass',
+                                         modifiers = [Modifier.Protected, Modifier.Abstract],
+                                         annotations = [^meta::java::annotations::json::JsonIgnoreProperties(ignoreUnknown=true)],
+                                         typeParameters = ^TypeVariable(name = 'T', bounds = [javaObject(),javaString()]),
+                                         superType = ^ParameterizedType(rawType=^meta::java::metamodel::Class(simpleName='OtherType', package=$finosPackage),
+                                                                        typeArguments = javaString()),
+                                         interfaces = [
+                                                        ^meta::java::metamodel::Class(simpleName = 'SomethingElse', package=$finosPackage),
+                                                        ^meta::java::metamodel::Class(simpleName = 'AndMore', package=$finosPackage)
+                                                      ],
+                                         constructors = [
+                                                           ^Constructor(),
+                                                           ^Constructor(
+                                                              parameters=^Parameter(name='value', type=javaString(), annotations=^NotNull()),
+                                                              body = 'this.myField = value;'      
+                                                           )
+                                                        ],
+                                         package = $finosPackage,
+                                         fields = [
+                                                   ^Field(name = 'myField',
+                                                          type = javaString(),
+                                                          annotations=[^NotNull()],
+                                                          modifiers=[Modifier.Private, Modifier.Static]
+                                                          ),
+                                                   ^Field(name = 'other',
+                                                          type = javaList(javaString()),
+                                                          annotations=[^JsonProperty(value='other', required=false)],
+                                                          modifiers=[Modifier.Public]
+                                                          ),
+                                                   ^Field(name = 'myMap',
+                                                          type = javaMap(javaString(),javaObject()),
+                                                          modifiers=[Modifier.Public]
+                                                          ),
+                                                   ^Field(name = 'myPrimitive',
+                                                          type = javaInt(),
+                                                          modifiers=[Modifier.Protected]
+                                                          )
+                                                  ],
+                                         methods = [
+                                                    ^Method(name='doSomething',
+                                                            parameters=[^Parameter(name='p', type=javaString(), annotations=^NotNull())],
+                                                            returnType = javaVoid(),
+                                                            modifiers=Modifier.Protected,
+                                                            typeParameters = [^TypeVariable(name = 'T', bounds = [javaString()])],
+                                                            body='myCode();'),
+                                                    ^Method(name='doSomethingElse',
+                                                            returnType = javaString(),
+                                                            modifiers=Modifier.Abstract
+                                                            ),
+                                                    ^Method(name='doWildCardThing', 
+                                                            parameters=[^Parameter(name='p', type=javaList(javaWildcardExtends(javaObject())))],
+                                                            returnType = javaVoid(),
+                                                            modifiers=Modifier.Protected,
+                                                            body='myCode();'
+                                                           )
+                                                   ],
+                                         additionalImports = ['org.finos.legend.otherapi.*', 'org.eclipse.collections.*']
+                                   );
+   assertEquals('package org.finos;\n'+
+                '\n'+
+                'import org.finos.legend.otherapi.*;\n'+
+                'import org.eclipse.collections.*;\n'+
+                '\n'+
+                '@JsonIgnoreProperties(ignoreUnknown=true)\n'+
+                'protected abstract class MyClass<T extends java.lang.Object & java.lang.String>  extends org.finos.OtherType<java.lang.String> implements SomethingElse, AndMore '+
+                '{\n\n'+
+                '    @NotNull\n'+
+                '    private static java.lang.String myField;\n'+
+                '\n'+
+                '    @JsonProperty(value="other", required=false)\n'+
+                '    public java.util.List<java.lang.String> other;\n'+
+                '\n'+
+                '    public java.util.Map<java.lang.String, java.lang.Object> myMap;\n'+
+                '\n'+
+                '    protected int myPrimitive;\n'+
+                '\n'+
+                '    MyClass() {\n'+
+                '    }\n'+
+                '\n'+
+                '    MyClass(@NotNull java.lang.String value) {\n'+
+                '        this.myField = value;\n'+
+                '    }\n'+
+                '\n'+
+                '    protected <T extends java.lang.String> void doSomething(@NotNull java.lang.String p) {\n'+
+                '        myCode();\n'+
+                '    }\n'+
+                '\n'+
+                '    abstract java.lang.String doSomethingElse();\n'+
+                '\n'+
+                '    protected void doWildCardThing(java.util.List<? extends java.lang.Object> p) {\n'+
+                '        myCode();\n'+
+                '    }\n'+
+                '}\n', $c->meta::java::tostring::classToString(true));
+}
+
+
+function <<test.Test>> meta::java::tostring::test::smartClassToString():Boolean[1]
+{
+   // Class in same package is considered imported
+   test('package org.finos.test;\n' +
+        '\n'+
+        'class Test {\n'+
+        '\n'+
+        '    public A a;\n' +
+        '\n'+
+        '\n'+
+        '}\n',
+        javaClass('org.finos.test.Test')
+           ->addField(javaField('public', javaClass('org.finos.test.A'), 'a'))
+   );
+
+   // Class in imported package is considered imported
+   test('package org.finos.test;\n' +
+        '\n'+
+        'import java.util.*;\n'+
+        '\n'+
+        'class Test {\n'+
+        '\n'+
+        '    public List<String> a;\n' +
+        '\n'+
+        '\n'+
+        '}\n',
+        javaClass('org.finos.test.Test')
+           ->imports(javaPackage('java.util'))
+           ->addField(javaField('public', javaList(javaString()), 'a'))
+   );
+
+   // Explicitly imported class is imported
+   test('package org.finos.test;\n' +
+        '\n'+
+        'import org.finos.testx.A;\n'+
+        '\n'+
+        'class Test {\n'+
+        '\n'+
+        '    public A a;\n' +
+        '\n'+
+        '\n'+
+        '}\n',
+        javaClass('org.finos.test.Test')
+           ->imports(javaClass('org.finos.testx.A'))
+           ->addField(javaField('public', javaClass('org.finos.testx.A'), 'a'))
+   );
+
+   // Class in same package is not considered imported if masked by another import
+   test('package org.finos.test;\n' +
+        '\n'+
+        'import org.finos.testx.A;\n'+
+        '\n'+
+        'class Test {\n'+
+        '\n'+
+        '    public org.finos.test.A a;\n' +
+        '\n'+
+        '\n'+
+        '}\n',
+        javaClass('org.finos.test.Test')
+           ->imports(javaClass('org.finos.testx.A'))
+           ->addField(javaField('public', javaClass('org.finos.test.A'), 'a'))
+   );
+
+}
+
+function meta::java::tostring::test::test(expected:String[1], class:meta::java::metamodel::Class[1]):Boolean[1]
+{
+   assertEquals($expected, $class->meta::java::tostring::classToString());
+}

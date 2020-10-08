@@ -1,0 +1,182 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::graphFetch::*;
+import meta::pure::store::*;
+import meta::pure::router::extension::*;
+import meta::pure::graphFetch::routing::*;
+import meta::pure::graphFetch::execution::*;
+import meta::pure::graphFetch::executionPlan::*;
+import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::toString::*;
+import meta::pure::mapping::*;
+import meta::pure::runtime::*;
+
+Class meta::pure::graphFetch::executionPlan::GraphFetchExecutionNode extends ExecutionNode
+{
+   graphFetchTree : ClusteredGraphFetchTree[1];
+   rootExecutionNode : ExecutionNode[1];
+   batchSize : Integer[0..1];
+   globalGraphFetchExecutionNode : GlobalGraphFetchExecutionNode[1];
+}
+
+Class meta::pure::graphFetch::executionPlan::GlobalGraphFetchExecutionNode extends ExecutionNode
+{
+   graphFetchTree : ClusteredGraphFetchTree[1];
+   store    : meta::pure::store::Store[1];
+   children : GlobalGraphFetchExecutionNode[*];
+   localGraphFetchExecutionNode    : LocalGraphFetchExecutionNode[1];
+   parentIndex : Integer[0..1];
+   xStorePropertyMapping : meta::pure::mapping::xStore::XStorePropertyMapping[0..1];
+}
+
+Class meta::pure::graphFetch::executionPlan::LocalGraphFetchExecutionNode extends ExecutionNode
+{
+   nodeIndex : Integer[1];
+   graphFetchTree : RoutedGraphFetchTree[1];
+
+//    localChildNodes() {
+//       $this->match([
+//          r: meta::relational::graphFetch::executionPlan::RelationalGraphFetchExecutionNode[1] | $r.children
+//       ])
+//    }: LocalGraphFetchExecutionNode[*];
+}
+function meta::pure::graphFetch::executionPlan::planGraphFetchExecution(sq: StoreQuery[1], ext : RoutedValueSpecification[0..1], m : Mapping[1], runtime : Runtime[1], exeCtx : ExecutionContext[1], extensions:RouterExtension[*], debug : DebugContext[1]): ExecutionNode[1]
+{
+   let fe = $sq.fe->evaluateAndDeactivate();
+   assert($fe.func->in([meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__T_MANY_, meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__Integer_1__T_MANY_]));
+   
+   let clusteredTree = $fe.parametersValues->evaluateAndDeactivate()->at(1)->cast(@InstanceValue).values->at(0)->cast(@ClusteredGraphFetchTree);
+   
+   let orderedPaths = $clusteredTree->getPathsOrdered();
+   let allClusterTreesWithParents = $clusteredTree->findAllClusterTreesWithParents([]);
+   
+   let rootTree = $allClusterTreesWithParents->filter(x | $x.second.values->isEmpty()).first->toOne();
+   let rootTreeWithRemovedClusters = $rootTree->recursivelyRemoveClusterTrees();
+
+   let rootAndGlobalNode = $rootTree.store->match($extensions.graphFetch_executionPlan_1->map(f|$f->evaluate([list($sq), list($ext), list($rootTreeWithRemovedClusters), list($orderedPaths), list($m), list($runtime), list($exeCtx), list($debug)])->cast(@Function<{Nil[1]->Pair<ExecutionNode, GlobalGraphFetchExecutionNode>[1]}>))->toOneMany());
+
+   let batchSizeFunc = $rootTree.store->match($extensions.graphFetch_executionPlan_2->toOneMany());
+
+   let rootNode = $rootAndGlobalNode.first;
+   let globalNode = $rootAndGlobalNode.second;
+
+   let globalNodeWithSubNodes = $globalNode->recursivelyBuildGlobalNodeStructure([], $rootTree, $orderedPaths, $allClusterTreesWithParents, $sq.inScopeVars, $m, $runtime, $exeCtx, $extensions, $debug);
+
+   ^GraphFetchExecutionNode
+    (
+       resultType = $clusteredTree->resultTypeFromGraphFetchTree(),
+       graphFetchTree = $clusteredTree,
+       rootExecutionNode = $rootNode,
+       batchSize = $batchSizeFunc->eval($sq),
+       globalGraphFetchExecutionNode = $globalNodeWithSubNodes
+    );
+}
+
+   //ClusteredGraphFetchTree[1], String[*], String[1], Map<String, List<Any>>[1], Mapping[1], Runtime[1], ExecutionContext[1], RouterExtension[*], DebugContext[1]
+
+function <<access.private>> meta::pure::graphFetch::executionPlan::recursivelyBuildGlobalNodeStructure(currentNode : GlobalGraphFetchExecutionNode[1], parentPath: String[0..1],  currentTree: ClusteredGraphFetchTree[1], orderedPaths: String[*], clusterNodesWithParents: Pair<ClusteredGraphFetchTree, List<RoutedGraphFetchTree>>[*], inScopeVars: Map<String, List<Any>>[1], m: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions:RouterExtension[*], debug: DebugContext[1]):GlobalGraphFetchExecutionNode[1]
+{
+   let currentNonClusterTrees = $currentTree->recursivelyFindNonClusterTrees();
+   let childrenClusterNodes = $clusterNodesWithParents->filter(x | $x.second.values->isNotEmpty() && $x.second.values->toOne()->in($currentNonClusterTrees));
+   if($childrenClusterNodes->isEmpty(),
+      | $currentNode,
+      | let children = $childrenClusterNodes->map({ch |
+           let childTreeWithRemovedClusters = $ch.first->recursivelyRemoveClusterTrees();
+           let pathTo = $ch.second.values->toOne()->getPathTo($ch.first)->toOne();
+           let newParentPath = if($parentPath->isEmpty(), |$pathTo, |$parentPath->toOne()+'.'+$ch.second.values->toOne()->getPathTo($ch.first)->toOne());
+           let newCrossNode = $ch.first.store->match($extensions.graphFetch_recursivelyBuildGlobalNodeStructure->map(f|$f->evaluate([list($childTreeWithRemovedClusters), list($orderedPaths), list($newParentPath), list($inScopeVars), list($m), list($runtime), list($exeCtx), list($debug)])->cast(@Function<{Store[1]->GlobalGraphFetchExecutionNode[1]}>))->toOneMany());
+           $newCrossNode->recursivelyBuildGlobalNodeStructure($newParentPath, $ch.first, $orderedPaths, $clusterNodesWithParents, $inScopeVars, $m, $runtime, $exeCtx, $extensions, $debug);
+        });
+        ^$currentNode(children = $children);
+   );
+}
+
+function <<access.private>> meta::pure::graphFetch::executionPlan::findAllClusterTreesWithParents(g : GraphFetchTree[1], parent : RoutedGraphFetchTree[0..1]):Pair<ClusteredGraphFetchTree, List<RoutedGraphFetchTree>>[*]
+{
+   let thisLevel = $g->match([
+      c : ClusteredGraphFetchTree[1] | pair($c, list($parent)),
+      r : RoutedGraphFetchTree[1] | []
+   ]);
+   
+   let subClusterTrees = $g->byPassClusteringInfo().subTrees->map(k | $k->findAllClusterTreesWithParents($g->byPassClusteringInfo()->cast(@RoutedGraphFetchTree)));
+   
+   $thisLevel->concatenate($subClusterTrees);
+}
+
+function <<access.private>> meta::pure::graphFetch::executionPlan::recursivelyFindNonClusterTrees(cls : ClusteredGraphFetchTree[1]):RoutedGraphFetchTree[*]
+{
+   $cls.tree->cast(@RoutedGraphFetchTree)->recursivelyFindNonClusterTrees()
+}
+
+function <<access.private>> meta::pure::graphFetch::executionPlan::recursivelyFindNonClusterTrees(routed : RoutedGraphFetchTree[1]):RoutedGraphFetchTree[*]
+{
+   $routed->concatenate($routed.subTrees->filter(x | !$x->instanceOf(ClusteredGraphFetchTree))->cast(@RoutedGraphFetchTree)->map(x | $x->recursivelyFindNonClusterTrees()))
+}
+
+function <<access.private>> meta::pure::graphFetch::executionPlan::recursivelyRemoveClusterTrees(cls : ClusteredGraphFetchTree[1]):ClusteredGraphFetchTree[1]
+{
+   ^$cls
+   (
+      tree  = $cls.tree->cast(@RoutedGraphFetchTree)->recursivelyRemoveClusterTrees()
+   );
+}
+
+function <<access.private>> meta::pure::graphFetch::executionPlan::recursivelyRemoveClusterTrees(routed : RoutedGraphFetchTree[1]):RoutedGraphFetchTree[1]
+{
+   ^$routed
+   (
+      subTrees = $routed.subTrees->filter(x | !$x->instanceOf(ClusteredGraphFetchTree))->cast(@RoutedGraphFetchTree)->map(x | $x->recursivelyRemoveClusterTrees())
+   );
+}
+
+function meta::pure::graphFetch::executionPlan::graphExecutionNodeToString(g: GraphFetchExecutionNode[1], space: String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
+{
+   'GraphFetch\n' + 
+      $space + '(' + header($g, $space, $extensions) + '\n'+
+      $space + '  graphFetchTree = ' + $g.graphFetchTree->asString(true)->replace('\n', '\n         '+$space) + '\n'+
+      $space + '  rootExecutionNode = \n' + planNodeToString($g.rootExecutionNode, $space + '     ', $extensions) + 
+      if($g.batchSize->isEmpty(), | '', | $space + '  batchSize = ' + $g.batchSize->toOne()->toString() + '\n') +
+      $space + '  globalGraphFetchExecutionNode = \n' + $space + '     ' + $g.globalGraphFetchExecutionNode->globalGraphFetchExecutionNodeToString($space + '     ', $extensions) +
+      $g.implementation->printImplementation('implementation', $space+'  ', $extensions)+
+      $space + ')\n';
+}
+
+function meta::pure::graphFetch::executionPlan::globalGraphFetchExecutionNodeToString(g: GlobalGraphFetchExecutionNode[1], space: String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
+{
+   'GlobalGraphFetch\n' + 
+      $space + '(' + header($g, $space, $extensions) + '\n'+
+      $space + '  store = ' + $g.store->elementToPath() + '\n'+
+      $space + '  localGraphFetchExecutionNode = \n' + $space + '     ' + $g.localGraphFetchExecutionNode->localGraphFetchExecutionNodeToString($space + '     ', $extensions) +
+      $space + '  children = ' + $g.children->map(x | globalGraphFetchExecutionNodeToString($x, $space + '     ', $extensions))->joinStrings('[\n'+ $space + '     ', '\n' + $space + '     ', '\n' + $space + '  ]\n') + 
+      if($g.parentIndex->isEmpty(), | '', | $space + '  parentIndex = ' + $g.parentIndex->toOne()->toString() + '\n') +
+      if($g.xStorePropertyMapping->isEmpty(), | '', | $space + '  xStorePropertyMapping = ' + $g.xStorePropertyMapping.property.name->toOne() + '[' + $g.xStorePropertyMapping.sourceSetImplementationId->toOne() + ' -> ' + $g.xStorePropertyMapping.targetSetImplementationId->toOne() + ']' + '\n') +
+      $g.implementation->printImplementation('implementation', $space+'  ', $extensions)+
+      $space + ')\n';
+}
+
+function meta::pure::graphFetch::executionPlan::localGraphFetchExecutionNodeToString(g: LocalGraphFetchExecutionNode[1], space: String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
+{
+   $g->match($extensions.graphFetch_localGraphFetchExecutionNodeToString->map(s|$s->eval($space, $extensions))->toOneMany());
+}
+
+function meta::pure::graphFetch::executionPlan::resultTypeFromGraphFetchTree(g: GraphFetchTree[1]):PartialClassResultType[1]
+{
+   ^PartialClassResultType
+    (
+       type = $g->byPassClusteringInfo()->typeFromGraphFetchTree(),
+       setImplementations = $g->byPassClusteringInfo()->cast(@RoutedGraphFetchTree).sets,
+       propertiesWithParameters = $g->byPassClusteringInfo().subTrees->map(x | $x->byPassClusteringInfo()->cast(@PropertyGraphFetchTree)->map(x | ^PropertyWithParameters(property = $x.property, parameters = $x.parameters)))
+    )
+}

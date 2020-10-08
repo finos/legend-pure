@@ -1,0 +1,83 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::java::codeGeneration::expression::*;
+import meta::java::codeGeneration::utils::*;
+import meta::alloy::runtime::java::platform::*;
+import meta::java::codeGeneration::code::*;
+import meta::java::codeGeneration::convention::*;
+import meta::java::codeGeneration::functions::meta::*;
+import meta::java::metamodel::factory::*;
+import meta::java::tostring::*;
+
+function meta::java::codeGeneration::functions::meta::register(conventions: Conventions[1]): Conventions[1]
+{
+    let lib = newConventionsLibrary()
+      ->addFunctionCoders([
+         fc1(id_Any_1__String_1_,                                      {ctx,obj                  | if($ctx.params->at(0).genericType.rawType->toOne()->instanceOf(PrimitiveType) || $ctx.params->at(0).genericType.rawType->toOne()->instanceOf(Enumeration),| javaString()->j_invoke('valueOf', $obj, javaString()),
+                                                                                                      | j_string('@')->j_plus(javaInt()->toBoxed()->j_invoke('toHexString', javaSystem()->j_invoke('identityHashCode', $obj, javaInt()), javaString())))}),
+         fc2(instanceOf_Any_1__Type_1__Boolean_1_,                     {ctx,candidate,type       | $candidate->j_cast(javaObject())->j_instanceof($type->cast(@Cast).expression.type->toBoxed());}),
+         fc(extractEnumValue_Enumeration_1__String_1__T_1_,            extractEnumValue_FunctionExpression_1__Conventions_1__DebugContext_1__Code_1_),
+         fc(enumValues_Enumeration_1__T_MANY_,                         enumValues_FunctionExpression_1__Conventions_1__DebugContext_1__Code_1_)         
+      ]);
+   
+    $conventions->registerClassCoder(
+         ClassPurpose.ENUMERATION,
+         meta::java::codeGeneration::functions::meta::generateEnumeration_Type_1__Conventions_1__DebugContext_1__Class_1_
+      )->registerLibrary($lib);
+}
+
+function meta::java::codeGeneration::functions::meta::extractEnumValue(fe:FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1]): Code[1]
+{
+   let params    = $fe.parametersValues->evaluateAndDeactivate();
+   let type      = $params->at(0).genericType.typeArguments->at(0).rawType->toOne();
+   let enumType  = $conventions->className($type);
+   let enumValue = $conventions->identifier($params->at(1)->cast(@InstanceValue).values->cast(@String)->toOne());
+                 
+   $enumType->j_field($enumValue, $enumType)->dependsOn(enumTypeDependency($type, $conventions, $debug));
+}
+
+function meta::java::codeGeneration::functions::meta::enumValues(fe:FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1]): Code[1]
+{
+   let params    = $fe.parametersValues->evaluateAndDeactivate();
+   let type      = $params->at(0).genericType.typeArguments->at(0).rawType->toOne();
+   let enumType  = $conventions->className($type);
+   
+   javaArrays()->j_invoke('asList', $enumType->j_invoke('values', [], javaArray($enumType)), javaList($enumType))->dependsOn(enumTypeDependency($type, $conventions, $debug));
+}
+
+function <<access.private>> meta::java::codeGeneration::functions::meta::enumTypeDependency(type:Type[1], conventions:Conventions[1], debug:DebugContext[1]) : CodeDependency[1] 
+{
+   let name = $type->elementToPath();
+   let dep = newDependency(
+      $name,
+        {state |    let typeInfo = meta::alloy::runtime::java::typeInfo::newTypeInfoSet()->meta::alloy::runtime::java::typeInfo::addForType($type); 
+                    let project = meta::alloy::runtime::java::generateInterfacesAndEnums($conventions, $typeInfo, $debug);
+                    $state->addDependencyProject($name, $project);
+        });  
+}
+
+function meta::java::codeGeneration::functions::meta::generateEnumeration(type:Type[1], conventions: Conventions[1], debug: DebugContext[1]): meta::java::metamodel::Class[1]
+{
+   print(if($debug.debug,|$debug.space+'generateEnumeration: \''+$type.name->toOne()+'\'\n', |''));
+   let pkgAndName=$conventions->className($type);
+   
+   ^meta::java::metamodel::Enumeration(
+      simpleName  = $pkgAndName.simpleName,
+      package     = $pkgAndName.package,
+      modifiers   = meta::java::metamodel::Modifier.Public,
+      enumeration = $type->cast(@Enumeration<Any>)->enumValues()->map(e| ^meta::java::metamodel::EnumerationEntry(name=$conventions->identifier($e->cast(@Enum).name))),
+      methods     = javaMethod('public', meta::java::metamodel::factory::javaString(), 'getName', [], 'return this.toString();')
+   );
+}

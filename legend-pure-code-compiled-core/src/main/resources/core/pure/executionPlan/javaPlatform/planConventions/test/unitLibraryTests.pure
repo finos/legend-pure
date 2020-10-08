@@ -1,0 +1,65 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::java::codeGeneration::convention::*;
+import meta::java::codeGeneration::tests::functions::unit::*;
+import meta::java::codeGeneration::code::*;
+import meta::java::codeGeneration::functions::unit::*;
+import meta::java::codeGeneration::expression::*;
+import meta::java::codeGeneration::tests::*;
+import meta::java::codeGeneration::utils::*;
+import meta::java::metamodel::factory::*;
+import meta::java::tostring::*;
+import meta::pure::functions::asserts::*;
+import meta::pure::unit::*;
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
+{  meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X' }
+meta::java::codeGeneration::tests::functions::unit::unitPureTests() : Boolean[1]
+{
+   javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
+      meta::java::codeGeneration::tests::functions::unit::testNewUnit__Boolean_1_,
+      meta::java::codeGeneration::tests::functions::unit::testUnitType__Boolean_1_,
+      meta::java::codeGeneration::tests::functions::unit::testUnitValue__Boolean_1_,
+      meta::java::codeGeneration::tests::functions::unit::testConvert__Boolean_1_
+   ])
+      ->generate(Mass~Kilogram)
+      ->generate(Mass~Pound)
+      ->runTests();
+}
+
+// TODO Does not work for literal units is used here
+
+
+function meta::java::codeGeneration::tests::functions::unit::testUnitType():Boolean[1]
+{
+   assertEquals('meta::pure::unit::Mass~Kilogram', newUnit(Mass~Kilogram, 5.5)->unitType());
+}
+
+function meta::java::codeGeneration::tests::functions::unit::testUnitValue():Boolean[1]
+{
+   assertEquals(5.5, newUnit(Mass~Kilogram, 5.5)->unitValue());
+}
+
+function meta::java::codeGeneration::tests::functions::unit::testNewUnit():Boolean[1]
+{
+   assert(newUnit(Mass~Kilogram, 5.5)->instanceOf(Mass~Kilogram));
+}
+
+function meta::java::codeGeneration::tests::functions::unit::testConvert():Boolean[1]
+{
+   let pounds = newUnit(Mass~Kilogram, 5.5)->convert(Mass~Pound);
+   assert($pounds->instanceOf(Mass~Pound));
+   assertEquals(12.12548777530369, $pounds->unitValue());
+}

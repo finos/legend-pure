@@ -1,0 +1,641 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::alloy::runtime::java::roadmap::*;
+import meta::json::*;
+import meta::pure::dataQuality::*;
+import meta::pure::executionPlan::profiles::*;
+import meta::pure::graphFetch::execution::*;
+import meta::pure::mapping::modelToModel::*;
+import meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::*;
+import meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::*;
+import meta::pure::mapping::modelToModel::test::alloy::simple::*;
+import meta::pure::mapping::modelToModel::test::alloy::utils::*;
+import meta::pure::mapping::modelToModel::test::shared::src::*;
+import meta::pure::mapping::modelToModel::test::shared::dest::*;
+import meta::pure::mapping::modelToModel::test::simple::*;
+import meta::pure::runtime::*;
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='V1_7_0',
+   doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObject() : Boolean[1]
+{
+   let tree = #{Person {firstName,lastName} }#;
+
+   let result = execute(
+      |Person.all()->graphFetch($tree)->serialize($tree),
+      simpleModelMapping,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=_S_Person, 
+                                url='data:application/json,{"fullName":"Pierre Doe"}'
+                             )
+      ),
+      []
+   );
+
+   assert(jsonEquivalent('{"firstName":"Pierre","lastName":"Doe"}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='VX_X_X',
+   doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch with subType and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObjectWithSubType() : Boolean[1]
+{
+   let tree = #{Firm {legalName, employees{firstName}} }#;
+
+   let result = execute(
+      |Firm.all()->graphFetch($tree)->serialize($tree),
+      simpleModelMappingWithSubType,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=_S_Firm, 
+                                url='data:application/json,[{"name":"GS","employees": [{"fullName" : "Robert T", "aName" : "A", "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA"}, {"fullName" : "John T", "aName" : "A", "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA"}, {"fullName" : "Den T", "aName" : "B", "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonB"}, {"fullName" : "Den T", "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_Person"}]}]'
+                             )
+      ),
+      []
+   );      
+   
+   assert(jsonEquivalent('{"legalName":"GS","employees":[{"firstName":"RobertA"},{"firstName":"JohnA"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='VX_X_X',
+   doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch with Subtype and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObjectWithSubTypeChecked() : Boolean[1]
+{
+   let tree = #{Firm {legalName, employees{firstName}} }#;
+
+   let result = execute(
+      |Firm.all()->graphFetchChecked($tree)->serialize($tree),
+      simpleModelMappingWithSubType,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=_S_Firm, 
+                                url='data:application/json,[{"name":"GS","employees": [{"fullName" : "Robert T", "aName" : "A", "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA"}, {"fullName" : "John T", "aName" : "A", "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA"}, {"fullName" : "Den T", "aName" : "B", "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonB"}, {"fullName" : "Den T", "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_Person"}]}]'
+                             )
+      ),
+      []
+   );      
+   
+   assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"name\\":\\"GS\\",\\"employees\\":[{\\"fullName\\":\\"Robert T\\",\\"aName\\":\\"A\\",\\"@type\\":\\"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA\\"},{\\"fullName\\":\\"John T\\",\\"aName\\":\\"A\\",\\"@type\\":\\"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA\\"},{\\"fullName\\":\\"Den T\\",\\"aName\\":\\"B\\",\\"@type\\":\\"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonB\\"},{\\"fullName\\":\\"Den T\\",\\"@type\\":\\"meta::pure::mapping::modelToModel::test::shared::src::_S_Person\\"}]}"},"value":{"name":"GS","employees":[{"aName":"A","fullName":"Robert T"},{"aName":"A","fullName":"John T"},{"fullName":"Den T"},{"fullName":"Den T"}]}},"value":{"legalName":"GS","employees":[{"firstName":"RobertA"},{"firstName":"JohnA"}]}}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='VX_X_X',
+   doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch with Subtype and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObjectWithSubTypeWithNestedAssosiationChecked() : Boolean[1]
+{
+   let tree = #{Firm {legalName, employees{firstName, lastName, description}} }#;
+
+   let result = execute(
+      |Firm.all()->graphFetchChecked($tree)->serialize($tree),
+      simpleModelMappingWithSubTypeWithNestedAssosiation,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=_S_Firm, 
+                                url='data:application/json,[{"name":"GS","employees": [{"fullName" : "Robert T", "address":  {"name" : "n", "street" : "Digby"}, "aName" : "A", "vehicle": {"wheelCount" : 5}, "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA"}, {"fullName" : "John T", "address":  {"name" : "n", "street" : "HighBury"}, "aName" : "A", "vehicle": {"wheelCount" : 7}, "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA"}, {"fullName" : "Den T", "address":  {"name" : "n", "street" : "Cresent"}, "aName" : "B", "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonB"}, {"fullName" : "Den T", "address":  {"name" : "n", "street" : "Test"}, "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_Person"}]}]'
+                             )
+      ),
+      []
+   );      
+   
+   assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"name\\":\\"GS\\",\\"employees\\":[{\\"fullName\\":\\"Robert T\\",\\"address\\":{\\"name\\":\\"n\\",\\"street\\":\\"Digby\\"},\\"aName\\":\\"A\\",\\"vehicle\\":{\\"wheelCount\\":5},\\"@type\\":\\"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA\\"},{\\"fullName\\":\\"John T\\",\\"address\\":{\\"name\\":\\"n\\",\\"street\\":\\"HighBury\\"},\\"aName\\":\\"A\\",\\"vehicle\\":{\\"wheelCount\\":7},\\"@type\\":\\"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA\\"},{\\"fullName\\":\\"Den T\\",\\"address\\":{\\"name\\":\\"n\\",\\"street\\":\\"Cresent\\"},\\"aName\\":\\"B\\",\\"@type\\":\\"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonB\\"},{\\"fullName\\":\\"Den T\\",\\"address\\":{\\"name\\":\\"n\\",\\"street\\":\\"Test\\"},\\"@type\\":\\"meta::pure::mapping::modelToModel::test::shared::src::_S_Person\\"}]}"},"value":{"name":"GS","employees":[{"address":{"street":"Digby"},"aName":"A","fullName":"Robert T","vehicle":{"wheelCount":5}},{"address":{"street":"HighBury"},"aName":"A","fullName":"John T","vehicle":{"wheelCount":7}},{"address":{"street":"Cresent"},"fullName":"Den T"},{"address":{"street":"Test"},"fullName":"Den T"}]}},"value":{"legalName":"GS","employees":[{"firstName":"Robert","lastName":"T","description":"aName:A lives at Digby and has road vehicle with wheel count:5"},{"firstName":"John","lastName":"T","description":"aName:A lives at HighBury and has road vehicle with wheel count:7"}]}}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='V1_7_0',
+   doc.doc='Given: multiple JSON objects in an array that matches a source defintion, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized as a JSON array.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfMultipleObjects() : Boolean[1]
+{
+   let tree = #{Person {firstName,lastName} }#;
+
+   let result = execute(
+      |Person.all()->graphFetch($tree)->serialize($tree),
+      simpleModelMapping,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=_S_Person, 
+                                url='data:application/json,[{"fullName":"Pierre Doe"},{"fullName":"Dave Miles"}]'
+                             )
+      ),
+      []
+   );
+
+   assert(jsonEquivalent('[{"firstName":"Pierre","lastName":"Doe"},{"firstName":"Dave","lastName":"Miles"}]'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='V1_7_0',
+   doc.doc='Parse a simple JSON object, process it through an M2M mapping and serialize the result as JSON.',
+   doc.todo='This does not test any more of the basic functionality but is a proxy until independent tests of the expression functions provide coverage at which point this can be removed.' 
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOneObjectReverse() : Boolean[1]
+{
+   let tree = #{_S_Person {fullName} }#;
+
+   let result = execute(
+      |_S_Person.all()->graphFetch($tree)->serialize($tree),
+      simpleModelMappingReverse,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=Person, 
+                                url='data:application/json,{"firstName":"Pierre","lastName":"Doe"}'
+                             )
+      ),
+      []
+   );
+
+   assert(jsonEquivalent('{"fullName":"Pierre Doe"}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_9_0',
+   doc.doc='Given: a JSON object (matching a source class) that contains data for all primitive data types and an enumeration, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized handling all datatypes appropriately.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::supportForPrimitivesAndEnumerations() : Boolean[1]
+{
+   let tree = #{SomeData {i, f, d, sd, dt, b, c, c2, c3} }#;
+
+   let result = execute(
+      |SomeData.all()->graphFetch($tree)->serialize($tree),
+      simpleDataMapping,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=_SomeData,
+                                url='data:application/json,{"i":2, "f": 2.5, "d": [0.1, 0.2], "sd": ["2018-03-12", "2019-05-30"], "dt": ["2018-03-12T13:20:21.000", "2019-05-30T04:29:01.234"], "b": [true, false, true], "c":"ROUGE", "s":["BLEU", "VERT"]}'
+                             )
+      ),
+      []
+   );
+
+   let expected = '{"i":4, "f": 0.4, "d": [0.2, 0.4],"sd": ["2018-03-13", "2019-05-31"], "dt": ["2018-03-12T15:20:21.000", "2019-05-30T06:29:01.234"], "b": [false, true, false], "c":"RED", "c2":"BLUE", "c3":["BLUE", "GREEN"]}';
+
+   assert(jsonEquivalent($expected->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_9_0',
+   doc.doc='Given: a JSON object (matching a source class) that contains data for all primitive data types and an enumeration, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized handling all datatypes appropriately checked.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::supportForPrimitivesAndEnumerationsChecked() : Boolean[1]
+{
+   let tree = #{SomeData {i, f, d, sd, dt, b, c, c2, c3} }#;
+
+   let result = execute(
+      |SomeData.all()->graphFetch($tree)->serialize($tree),
+      simpleDataMapping,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=_SomeData,
+                                url='data:application/json,{"i":2, "f": 2.5, "d": [0.1, 0.2], "sd": ["2018-03-12", "2019-05-30"], "dt": ["2018-03-12T13:20:21.000", "2019-05-30T04:29:01.234"], "b": [true, false, true], "c":"ROUGE", "s":["BLEU", "VERT"]}'
+                             )
+      ),
+      []
+   );
+
+   let expected = '{"i":4, "f": 0.4, "d": [0.2, 0.4],"sd": ["2018-03-13", "2019-05-31"], "dt": ["2018-03-12T15:20:21.000", "2019-05-30T06:29:01.234"], "b": [false, true, false], "c":"RED", "c2":"BLUE", "c3":["BLUE", "GREEN"]}';
+
+   assert(jsonEquivalent($expected->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_9_0',
+   doc.doc='Given: a JSON object (matching a source class) that contains an empty property signaled by an empty array, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized demonstrating support for empty properties.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::supportForEmptyValues() : Boolean[1]
+{
+   let tree = #{SomeData {i, f, d} }#;
+
+   let result = execute(
+      |SomeData.all()->graphFetch($tree)->serialize($tree),
+      simpleDataMapping,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=_SomeData,
+                                url='data:application/json,{"i":null, "f": 2.5, "d": [], "b": [false, true], "c":"ROUGE"}'
+                             )
+      ),
+      []
+   );
+
+   assert(jsonEquivalent('{"i":null, "f": 0.4, "d": []}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_11_0',
+   doc.doc='Given: a source class',
+   doc.doc='Given: data with unused fields',
+   doc.doc='When:  a mapping is executed.',
+   doc.doc='Then:  the additional fields should be ignored.',
+   doc.todo='Make this behaviour configurable and have it distinguish modelled/unmodelled unused data.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::ignoresUnwantedValues() : Boolean[1]
+{
+   let tree = #{Person {firstName,lastName} }#;
+
+   let result = execute(
+      |Person.all()->graphFetch($tree)->serialize($tree),
+      simpleModelMapping,
+      testJsonRuntime(_S_Person, '{"fullName":"Dave Miles", "likes": ["skiing", "books"], "height": 180, "address": {"line1": "1 The Street", "line2": "Sometown"}}'),
+      []
+   );
+
+   let json = $result.values->toOne();
+   let expected= '{"firstName":"Dave", "lastName":"Miles"}';
+   assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_9_0',
+   doc.doc='Given: a source object containing an enumeration',
+   doc.doc='Given: a mapping that maps a String to the name of the enumeration',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the result is the name of the enumeration value.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::canMapToAnEnumerationName() : Boolean[1]
+{
+   let tree = #{Name {name} }#;
+
+   let result = execute(
+      |Name.all()->graphFetch($tree)->serialize($tree),
+      enumNameMapping,
+      testJsonRuntime(_SomeData, '{"f": 2.5, "b": [true, false, true], "c":"ROUGE"}'),
+      []
+   );
+
+   let json = $result.values->toOne();
+   let expected= '{"name":"ROUGE"}';
+   assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_15_0',
+   doc.doc='Given: a source object containing an enumeration',
+   doc.doc='Given: a mapping that maps a String to the name of the enumeration and use',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the result is the name mapped based on external enum.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::canUseExternalEnumInMapping() : Boolean[1]
+{
+   let tree = #{Name {name} }#;
+
+   let result = execute(
+      |Name.all()->graphFetch($tree)->serialize($tree),
+      externalEnumMapping,
+      testJsonRuntime(_SomeData, '{"f": 2.5, "b": [true, false, true], "c":"ROUGE"}'),
+      []
+   );
+
+   let json = $result.values->toOne();
+   
+   let expected= '{"name":"ROUGE on FRIDAY"}';
+   assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_15_0',
+   doc.doc='Given: a source object containing an enumeration',
+   doc.doc='Given: a mapping that maps a String to the name of the enumeration and use',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the result is the name mapped based on external enum values.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::canUseExternalEnumValuesInMapping() : Boolean[1]
+{
+   let tree = #{Name {name} }#;
+
+   let result = execute(
+      |Name.all()->graphFetch($tree)->serialize($tree),
+      externalEnumValuesMapping,
+      testJsonRuntime(_SomeData, '{"f": 2.5, "b": [true, false, true], "c":"VERT"}'),
+      []
+   );
+
+   let json = $result.values->toOne();
+   
+   let expected= '{"name":"VERT on MONDAY-TUESDAY-FRIDAY"}';
+   assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
+{  serverVersion.start='vX_X_X',
+   doc.doc='Given: a mapping that does not map optional properties',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the result has empty values for the unmapped properties.'
+}
+meta::pure::mapping::modelToModel::test::alloy::simple::unmappedOptionalPropertiesAreEmpty() : Boolean[1]
+{
+   let tree = #{SomeOptionalData {s1, s2, i, f, d, sd, dt, b, c} }#;
+
+   let result = execute(
+      |SomeOptionalData.all()->graphFetch($tree)->serialize($tree),
+      sparseDataMapping,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(),
+                                class=_AString,
+                                url='data:application/json,{"s":"Hello"}'
+                             )
+      ),
+      []
+   );
+
+   let expected = '{"s1":"Hello", "s2":[], "i":null, "f":null, "d":[], "sd":[], "dt":[], "b":null, "c":null}';
+
+   assert(jsonEquivalent($expected->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
+{  serverVersion.start='vX_X_X',
+   doc.doc='Given: a mapping that does not map optional properties',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the result has empty values for the unmapped properties.'
+}
+meta::pure::mapping::modelToModel::test::alloy::simple::testPlusInUrl() : Boolean[1]
+{
+   let tree = #{SomeOptionalData {s1} }#;
+
+   let result = execute(
+      |SomeOptionalData.all()->graphFetch($tree)->serialize($tree),
+      sparseDataMapping2,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(),
+                                class=_AString,
+                                url='data:application/json,{"s":"Hello+World"}'
+                             )
+      ),
+      []
+   );
+
+   let expected = '{"s1":"Hello+World"}';
+   println($result.values->toOne()->println());
+   assert(jsonEquivalent($expected->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
+{  serverVersion.start='v1_15_0',
+   doc.doc='Given: a source object containing an enumeration',
+   doc.doc='Given: a mapping that maps a String to the name of the enumeration and use',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the result is the name mapped based on external enum values.'
+}
+meta::pure::mapping::modelToModel::test::alloy::simple::canUseExternalEnumValuesInMappingFilter() : Boolean[1]
+{
+   let tree = #{Name {name} }#;
+
+   let result = execute(
+      |Name.all()->graphFetch($tree)->serialize($tree),
+      externalEnumValuesMappingFilter,
+      testJsonRuntime(_SomeData, '{"f": 2.5, "b": [true, false, true], "c":"VERT", "cs":"RED"}'),
+      []
+   );
+
+   let json = $result.values->toOne();
+
+   let expected= '{"name":"VERT on MONDAY-TUESDAY-FRIDAY"}';
+   assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
+}
+
+###Pure
+import meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::*;
+import meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::*;
+
+
+Enum meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::ExternalEnum
+{
+   MONDAY, TUESDAY, FRIDAY
+}
+
+Enum meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_Colour
+{
+   ROUGE, VERT, BLEU
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_SomeData
+{
+   i  : Integer[0..1];
+   f  : Float[1];
+   d  : Decimal[*];
+   sd : StrictDate[*];
+   dt : DateTime[*];
+   b  : Boolean[2..4];
+   c  : _Colour[1];
+   s  : String[*]; 
+   cs : String[0..1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_AString
+{
+   s  : String[1];
+}
+
+Enum meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::Colour
+{
+   RED, GREEN, BLUE
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::SomeData
+{
+   i  : Integer[0..1];
+   f  : Float[1];
+   d  : Decimal[*];
+   sd : StrictDate[*];
+   dt : DateTime[*];
+   b  : Boolean[2..4];
+   c  : Colour[1];
+   c2 : Colour[0..1];
+   c3 : Colour[*];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::SomeOptionalData
+{
+   s1 : String[1];
+   s2 : String[*];
+   i  : Integer[0..1];
+   f  : Float[0..1];
+   d  : Decimal[*];
+   sd : StrictDate[*];
+   dt : DateTime[*];
+   b  : Boolean[0..1];
+   c  : Colour[0..1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::Name
+{
+   name  : String[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_X
+[
+   TestConstraint(
+      ~function:(1 < $this.i)
+   )
+]
+{
+   i:Integer[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_Y extends _X
+[
+   TestConstraintChild(
+      ~function:(2 < $this.i && $this.b)
+   )
+]
+{
+   b: Boolean[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::Z
+{
+   i:Integer[1];
+   b:Boolean[1];
+}
+
+
+###Mapping
+import meta::pure::mapping::modelToModel::test::shared::src::*;
+import meta::pure::mapping::modelToModel::test::shared::dest::*;
+
+Mapping meta::pure::mapping::modelToModel::test::alloy::simple::simpleModelMappingReverse
+(
+   _S_Person : Pure
+            {
+               ~src Person
+               fullName : $src.firstName + ' ' + $src.lastName
+            }
+)
+
+###Mapping
+import meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::*;
+import meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::*;
+
+Mapping meta::pure::mapping::modelToModel::test::simple::simpleDataMapping
+(
+   SomeData : Pure
+            {
+               ~src _SomeData
+               i  : $src.i->map(n| $n * $n),
+               f  : 1.0 / $src.f,
+               d  : $src.d->map(n| $n + $n),
+               sd : $src.sd->map(d| $d->adjust(1, DurationUnit.DAYS))->cast(@StrictDate),
+               dt : $src.dt->map(t| $t->adjust(2, DurationUnit.HOURS))->cast(@DateTime),
+               b  : $src.b->map(b| !$b),
+               c  : EnumerationMapping ColourMapping: $src.c,
+               c2 : EnumerationMapping ColourMappingInt: $src.i,
+               c3 : EnumerationMapping ColourMappingString: $src.s
+            }
+   
+   Colour : EnumerationMapping ColourMapping
+          {
+             RED   : _Colour.ROUGE,
+             BLUE  : _Colour.BLEU,
+             GREEN : _Colour.VERT
+          }
+   
+   Colour : EnumerationMapping ColourMappingInt
+          {
+             RED   : 1,
+             BLUE  : 2,
+             GREEN : 3
+          }
+   
+   Colour : EnumerationMapping ColourMappingString
+          {
+             RED   : 'ROUGE',
+             BLUE  : 'BLEU',
+             GREEN : 'VERT'
+          }
+)
+
+Mapping meta::pure::mapping::modelToModel::test::simple::sparseDataMapping
+(
+   SomeOptionalData : Pure
+            {
+               ~src _AString
+               s1 : $src.s
+            }
+)
+
+Mapping meta::pure::mapping::modelToModel::test::simple::sparseDataMapping2
+(
+   SomeOptionalData : Pure
+            {
+               ~src _AString
+               s1 : $src.s
+            }
+)
+
+Mapping meta::pure::mapping::modelToModel::test::simple::enumNameMapping
+(
+   Name : Pure
+      {
+         ~src _SomeData
+         name : $src.c.name
+      }
+)
+
+Mapping meta::pure::mapping::modelToModel::test::simple::externalEnumMapping
+(
+   Name : Pure
+      {
+         ~src _SomeData
+         name : $src.c.name +' on '+ ExternalEnum.FRIDAY.name
+      }
+)
+
+Mapping meta::pure::mapping::modelToModel::test::simple::externalEnumValuesMapping
+(
+   Name : Pure
+      {
+         ~src _SomeData
+         name : $src.c.name + ' on ' + ExternalEnum->enumValues().name->joinStrings('-')
+      }
+)
+
+Mapping meta::pure::mapping::modelToModel::test::simple::externalEnumValuesMappingFilter
+(
+   Name : Pure
+      {
+         ~src _SomeData
+         ~filter $src.cs->in(Colour->enumValues().name)
+         name : $src.c.name + ' on ' + ExternalEnum->enumValues().name->joinStrings('-')
+      }
+)
+
+
+
+

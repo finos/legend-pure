@@ -1,0 +1,253 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::alloy::runtime::java::*;
+import meta::alloy::runtime::java::graphFetch::common::*;
+import meta::alloy::runtime::java::naming::*;
+import meta::alloy::runtime::java::typeInfo::*;
+import meta::pure::metamodel::constraint::*;
+import meta::pure::graphFetch::routing::*;
+import meta::pure::dataQuality::*;
+import meta::pure::graphFetch::*;
+import meta::pure::mapping::*;
+import meta::pure::milestoning::*;
+import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::engine::*;
+import meta::pure::graphFetch::execution::*;
+import meta::pure::mapping::modelToModel::*;
+import meta::pure::mapping::modelToModel::inMemory::*;
+import meta::pure::graphFetch::executionPlan::*;
+import meta::java::metamodel::project::*;
+import meta::java::metamodel::factory::*;
+import meta::java::tostring::*;
+import meta::java::codeGeneration::code::*;
+import meta::java::codeGeneration::convention::*;
+import meta::java::codeGeneration::convention::jackson::*;
+import meta::java::codeGeneration::expression::*;
+import meta::java::codeGeneration::utils::*;
+
+
+// ----------------------------------------------------------------------------------------------------------
+// --- Alloy platform dependencies (non-generated)
+// ----------------------------------------------------------------------------------------------------------
+
+function meta::alloy::runtime::java::platform::iExecutionNodeContextParam(conventions: Conventions[1]):Code[1]
+{
+   j_parameter($conventions->className(IExecutionNodeContext), 'context');
+}
+
+function meta::alloy::runtime::java::platform::graphFetchM2MContextParam(conventions: Conventions[1]): Code[1]
+{
+   j_parameter($conventions->className(IGraphFetchM2MExecutionNodeContext), 'context');
+}
+
+function meta::alloy::runtime::java::platform::buildExecuteClass(body:Code[1], param:Code[1], path:String[1], conventions:Conventions[1]):meta::java::metamodel::Class[1]
+{
+   // TODO Temporarily relaxed
+   //assert($param->instanceOf(meta::java::metamodel::Parameter) && $param.type->cast(@meta::java::metamodel::Class).simpleName->endsWith('ExecutionNodeContext'));
+   //assert($param->parameterName() == 'context');
+
+   let ex       = j_parameter(javaException(), 'e');   
+   let fullBody = j_try(
+                     $body,
+                     j_catch($ex,
+                        javaRuntimeException()->j_new([j_string('Failed in node: '+$path), $ex])->j_throw()
+                     )
+                  );
+   
+   let classesUsed = $param.type->cast(@meta::java::metamodel::Class)->concatenate($fullBody->classesUsed())->removeDuplicates();
+   let withImports = $conventions->planNodeClass('public', $path, 'Execute')->imports($classesUsed);
+   
+   $withImports->addMethod(javaMethod(['public', 'static'], javaObject(), 'execute', $param->cast(@meta::java::metamodel::Parameter), $fullBody->codeToString($withImports)));
+}
+
+function meta::alloy::runtime::java::platform::graphInstanceOf(elementType:meta::java::metamodel::Type[1], conventions:Conventions[1]):meta::java::metamodel::ParameterizedType[1]
+{ 
+   javaParameterizedType($conventions->className(GraphInstance), $elementType);
+}
+
+// ----------------------------------------------------------------------------------------------------------
+// --- Implementation
+// ----------------------------------------------------------------------------------------------------------
+    
+function meta::alloy::runtime::java::generateTypes(context:GenerationContext[1], debug:DebugContext[1]) : Project[1]
+{
+   print(if($debug.debug,|$debug.space+'generateTypes\n', |''));
+
+   mergeProjects
+   ([
+      generateInterfacesAndEnums($context, $debug->indent()),
+      createUnitClasses($context, $debug->indent())
+   ]);
+}
+   
+function meta::alloy::runtime::java::generateInterfacesAndEnums(context:GenerationContext[1], debug:DebugContext[1]) : Project[1]
+{
+    generateInterfacesAndEnums($context.conventions, $context.typeInfos, $debug);  
+}
+
+function meta::alloy::runtime::java::generateInterfacesAndEnums(conventions:Conventions[1], typeInfos:TypeInfoSet[1], debug:DebugContext[1]) : Project[1]
+{
+   print(if($debug.debug,|$debug.space+'generateInterfacesAndEnums\n', |''));
+
+   let classes     = $typeInfos->allClassInfos()      ->filter(ti| !$conventions->isProvidedType($ti.type))->map(cti | $cti->generateInterfaceForClass($conventions, $debug->indent()));
+   let enums       = $typeInfos->allEnumerationInfos()->filter(ti| !$conventions->isProvidedType($ti.type))->map(eti | $conventions->codeClass($eti.type, ClassPurpose.ENUMERATION, $debug->indent()));
+
+   let unitInfos = $typeInfos->allUnitInfos();
+   assert($unitInfos->forAll(ti| !$conventions->isProvidedType($ti.type)), 'Units cannot be provided until the Unit interface is a provded type');
+   
+   let units = if($unitInfos->isEmpty(),
+                  | [],
+                  {|
+                     let iface = $conventions->meta::java::codeGeneration::functions::unit::unitInterface();
+                     $unitInfos->map(uti | $uti->generateInterfaceForUnit($iface, $conventions, $debug->indent()))->concatenate($iface);
+                  }
+               );
+
+   $classes->concatenate($enums)->concatenate($units->removeDuplicates())->fold({class,project| $project->addClass($class)}, newProject());
+
+}
+
+//TODO: remove and refactor to use the one using conventions directly below
+function meta::alloy::runtime::java::createQualifiedPropertiesForClass(class: meta::java::metamodel::Class[1], qualifiedProperties:QualifiedProperty<Any>[*], context:GenerationContext[1], debug:DebugContext[1]) : Project[1]
+{
+   createQualifiedPropertiesForClass($class, $qualifiedProperties, $context.conventions, $debug);
+}
+
+function meta::alloy::runtime::java::createQualifiedPropertiesForClass(class: meta::java::metamodel::Class[1], qualifiedProperties:QualifiedProperty<Any>[*], conventions:Conventions[1], debug:DebugContext[1]) : Project[1]
+{
+   print(if($debug.debug,|$debug.space+'createQualifiedPropertiesForClass: \''+$class->typePathToString(true)+'\'\n',|''));
+
+   let conventionsForClass    = $conventions->forClass($class);
+
+   let qualifiedClass = $qualifiedProperties->fold(
+      {qp, project|
+         let params     = $qp->functionType().parameters->evaluateAndDeactivate()->tail()->map(p | javaParam($conventionsForClass->pureTypeToJavaType($p.genericType.rawType->toOne(), $p.multiplicity), $p.name));
+         let body       = $qp.expressionSequence->evaluateAndDeactivate()->generateJavaMethodBody($conventionsForClass, $debug);
+         let newProject = newProject()->addClass($class->addMethod(
+            javaMethod('public', $conventionsForClass->pureTypeToJavaType($qp), $conventionsForClass->getterName($qp), $params, $body->codeToStringAsMethodBody($class))
+         ));
+
+         mergeProjects($project->concatenate($newProject)->concatenate($body->dependencies()->resolveAndGetProjects())->toOneMany());
+      },
+      newProject()
+   );
+}
+
+function meta::alloy::runtime::java::createGeneratedMilestonedPropertiesForClass(class: meta::java::metamodel::Class[1], milestonedProperties:QualifiedProperty<Any>[*], varName: String[1], set: PureInstanceSetImplementation[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]) : Project[1]
+{
+   print(if($debug.debug,|$debug.space+'createGeneratedMilestonedPropertiesForClass: \''+$class->typePathToString(true)+'\'\n',|''));
+
+   let conventions    = $context.conventions->forClass($class);
+
+   let milestonedClass = $milestonedProperties->fold(
+      {mp, project|
+         let srcMp          = $mp->meta::pure::milestoning::getSourceMilestonedProperty($set);
+         let childSetImpl   = $set.parent.rootClassMappingByClass($mp->functionReturnType().rawType->cast(@Class<Any>)->toOne());
+         let mapperClass    = $conventions->mapperClassName($childSetImpl->toOne(), $extensions);
+
+         let params         = $mp->functionType().parameters->evaluateAndDeactivate()->tail()->map(p | j_parameter($conventions->pureTypeToJavaType($p.genericType.rawType->toOne(), $p.multiplicity), $p.name));
+         let body           = j_invoke($mapperClass,
+                                       if($srcMp.multiplicity == PureOne, | 'mapOne', | 'mapMany'),
+                                       j_variable($class, $varName->toOne())->j_invoke($conventions->getterName($srcMp),
+                                                                                       $params,
+                                                                                       $conventions->pureTypeToJavaType($srcMp)
+                                                                                      ),
+                                       $conventions->pureTypeToJavaType($mp)
+                                      )->j_return();
+
+         let newProject = newProject()->addClass($class->addMethod(
+            javaMethod('public', $conventions->pureTypeToJavaType($mp), $conventions->getterName($mp), $params->cast(@meta::java::metamodel::Parameter), $body->codeToString($conventions))
+         ));
+
+         mergeProjects($project->concatenate($newProject)->concatenate($body->dependencies()->resolveAndGetProjects())->toOneMany());
+      },
+      newProject()
+   );
+}
+
+function meta::alloy::runtime::java::createAlloyStoreObjectReferenceMethodsForClass(class: meta::java::metamodel::Class[1], context:GenerationContext[1], debug:DebugContext[1]) : Project[1]
+{
+   print(if($debug.debug,|$debug.space+'createAlloyStoreObjectReferenceMethodsForClass: \''+$class->typePathToString(true)+'\'\n',|''));
+
+   let iface      = $context.conventions->className(IReferencedObject);
+   let methodName = $iface.methods->toOne().name;
+   let body       = j_null()->j_return();
+
+   let newProject = newProject()->addClass($class->implements($iface)->addMethod(
+      javaMethod('public', javaString(), $methodName, [], $body->codeToString($class))
+   ));
+}
+
+function meta::alloy::runtime::java::generateInterfaceForClass(typeInfo: ClassTypeInfo[1], conventions: Conventions[1], debug: DebugContext[1]): meta::java::metamodel::Class[1]
+{
+   print(if($debug.debug,|$debug.space+'generateInterfaceForClass: \''+$typeInfo.type.name->toOne()+'\'\n', |''));
+   let pkg   = $conventions->className($typeInfo.type).package;
+   let proto = $conventions->className($typeInfo.type)
+      ->addModifiers(['public', 'interface'])
+      ->implements($typeInfo.supertypes->map(c|$conventions->className($c)))
+      ->imports($conventions->standardDataTypeImports())
+      ->imports($typeInfo.supertypes->map(st|$conventions->className($st))->filter(c| $c.package != $pkg));
+
+   let withPropertyGetters = $typeInfo.properties->fold(
+      {p, c|
+         $c->addMethod($p->generateInterfacePropertyGetter($conventions))
+      },
+      $proto
+   );
+
+   let withQualifiedPropertyGetters = $typeInfo.qualifiedProperties->fold(
+      {q, c|
+         $c->addMethod($q->generateInterfaceQualifiedPropertyGetter($conventions))
+      },
+      $withPropertyGetters
+   );
+   
+   let dataRecordClass   = JsonDataRecord->concatenate($conventions.extensions.plan_javaRuntime_common_generateInterfaceForClass);
+   let iReferencedObject = $conventions->className(IReferencedObject);
+   if($typeInfo.class->in($dataRecordClass),
+      |$withQualifiedPropertyGetters,
+      |$withQualifiedPropertyGetters->implements($iReferencedObject)->addMethod(javaMethod(javaString(), $iReferencedObject.methods->toOne().name, [])));
+}
+
+// function meta::alloy::runtime::java::generateStoreReferenceObjectIndentifierMethod(conventions:Conventions[1]) : meta::java::metamodel::Method[1]
+// {
+//    javaMethod(['public'], javaString(), $conventions->getterName(storeObjectReferenceIdentifier()),[], [j_null()->j_return()->codeToString($conventions)])
+// }
+
+function <<access.private>> meta::alloy::runtime::java::generateInterfacePropertyGetter(p: AbstractProperty<Any>[1], conventions: Conventions[1]): meta::java::metamodel::Method[1]
+{
+   javaMethod($conventions->pureTypeToJavaType($p), $conventions->getterName($p), []);
+}
+
+function <<access.private>> meta::alloy::runtime::java::generateInterfaceQualifiedPropertyGetter(q: QualifiedProperty<Any>[1], conventions: Conventions[1]): meta::java::metamodel::Method[1]
+{
+   javaMethod(
+      $conventions->pureTypeToJavaType($q),
+      $conventions->getterName($q),
+      $q->functionType().parameters->evaluateAndDeactivate()->tail()->map(p | javaParam($conventions->pureTypeToJavaType($p.genericType.rawType->toOne(), $p.multiplicity), $p.name))
+   );
+}
+
+function meta::alloy::runtime::java::generateAndAddGetterMethods(class:meta::java::metamodel::Class[1], typeInfo:ClassTypeInfo[1], context:GenerationContext[1],  varName:String[1]):meta::java::metamodel::Class[1]
+{
+   let class1 = $typeInfo.properties->fold(
+      {p,c|
+         $c->addMethod(javaMethod('public', $context.conventions->pureTypeToJavaType($p), $context.conventions->getterName($p), [], 'return '+$varName+'.'+$context.conventions->getterName($p)+'();'));
+      },
+      $class
+   );
+
+   $typeInfo.supertypes->fold({p,c | generateAndAddGetterMethods($c,$context.typeInfos->forClass($p), $context, $varName) }, $class1);
+}

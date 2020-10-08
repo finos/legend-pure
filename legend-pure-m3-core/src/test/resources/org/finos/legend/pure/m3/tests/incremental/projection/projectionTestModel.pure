@@ -1,0 +1,249 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::tests::model::simple::*;
+import meta::pure::tests::model::simple::projection::*;
+
+native function average(s:Number[*]):Float[1];
+native function sum(s:Integer[*]):Integer[1];
+native function max(s:Integer[*]):Integer[1];
+
+Class meta::pure::tests::model::simple::projection::EntityWithAddressProjection projects
+EntityWithAddress
+{
+    > address [$this.address.name]
+}
+
+Class meta::pure::tests::model::simple::projection::FirmProjection projects
+meta::pure::tests::model::simple::Firm
+{
+   +[legalName]
+}
+
+Class meta::pure::tests::model::simple::projection::PersonProjection projects
+meta::pure::tests::model::simple::Person
+{
+   +[firstName, lastName, age]
+}
+
+Class meta::pure::tests::model::simple::projection::AddressProjection projects
+Address
+{
+   *
+}
+
+Association meta::pure::tests::model::simple::projection::EmploymentProjection projects Employment<FirmProjection, PersonProjection>
+
+Class meta::pure::tests::model::simple::EntityWithAddress
+{
+    address : Address[0..1];
+}
+
+Class meta::pure::tests::model::simple::EntityWithLocations
+{
+    locations : Location[*];
+    locationsByType(types:GeographicEntityType[*])
+    {
+        $this.locations->filter(l | $types->exists(type | is($l.type, $type)))
+    }:Location[*];
+}
+
+Class meta::pure::tests::model::simple::Firm extends EntityWithAddress
+{
+    <<equality.Key>> legalName : String[1];
+    averageEmployeesAge(){$this.employees.age->average()*2.0}:Float[1];
+    sumEmployeesAge(){$this.employees.age->sum()}:Integer[1];
+    maxEmployeesAge(){$this.employees.age->max()}:Integer[0..1];
+
+    nameAndAddress(){
+       $this.legalName + ',' + $this.address.name->toOne();
+    }:String[1];
+
+    isFirmX(){
+       if ($this.legalName->toOne() == 'FirmX', | 'Yes', | 'No')
+    }:String[1];
+
+    nameAndMaskedAddress(){
+       if ($this.legalName == 'FirmX', | $this.legalName + ' , LegalFirm', |  $this.legalName + ',' + $this.address.name->toOne())
+    }:String[1];
+
+    employeeByLastName(lastName:String[1]){$this.employees->filter(e|$e.lastName == $lastName)->toOne()}:Person[0..1];
+
+    employeeByLastNameWhereVarIsFirstEqualArg(lastName:String[1]){$this.employees->filter(e|$lastName == $e.lastName)->toOne()}:Person[0..1];
+
+    employeesByAge(age:Integer[1]){$this.employees->filter(e|$e.age->toOne() < $age)}:Person[*];
+
+    employeesByCityOrManager(city:String[1], managerName:String[1]){$this.employees->filter(e|$e.address.name == $city || $e.manager.name == $managerName)}:Person[*];
+
+    employeesByCityOrManagerAndLastName(name:String[1], city:String[1], managerName:String[1]){$this.employees->filter(e|$e.lastName == $name && ($e.address.name == $city || $e.manager.name == $managerName))->toOne()}:Person[1];
+
+    hasEmployeeBelowAge(age:Integer[1]){$this.employees->exists(e|$e.age->toOne() < $age)}:Boolean[1];
+}
+
+
+Class meta::pure::tests::model::simple::Person extends EntityWithAddress, EntityWithLocations
+{
+    firstName : String[1];
+    lastName : String[1];
+    otherNames : String[*];
+    name(){$this.firstName+' '+$this.lastName}:String[1];
+    nameWithTitle(title:String[1]){$title+' '+$this.firstName+' '+$this.lastName}:String[1];
+    nameWithPrefixAndSuffix(prefix:String[0..1], suffixes:String[*])
+    {
+        if($prefix->isEmpty(),
+           | if($suffixes->isEmpty(),
+                | $this.firstName + ' ' + $this.lastName,
+                | $this.firstName + ' ' + $this.lastName + ', ' + $suffixes->joinStrings(', ')),
+           | if($suffixes->isEmpty(),
+                | $prefix->toOne() + ' ' + $this.firstName + ' ' + $this.lastName,
+                | $prefix->toOne() + ' ' + $this.firstName + ' ' + $this.lastName + ', ' + $suffixes->joinStrings(', ')))
+    }:String[1];
+
+    fullName(lastNameFirst:Boolean[1])
+    {
+        if($lastNameFirst, | $this.lastName + ', ' + $this.firstName, | $this.firstName + ' ' + $this.lastName)
+    }:String[1];
+
+    parameterizedName(personNameParameter:PersonNameParameter[1])
+    {
+        if($personNameParameter.lastNameFirst, | $personNameParameter.nested.prefix+' '+$this.lastName + ', ' + $this.firstName, | $this.firstName + ' ' + $this.lastName)
+    }:String[1];
+
+    allOrganizations()
+    {
+        concatenate($this.organizations, $this.organizations->map(o | $o.superOrganizations()))->removeDuplicates()
+    }:Organization[*];
+    extraInformation : String[0..1];
+    manager : Person[0..1];
+    age : Integer[0..1];
+    constant() { 'constant' } : String[1];
+
+    addresses(){
+       $this.address->concatenate($this.firm.address)
+    }:Address[*];
+
+
+}
+
+Class meta::pure::tests::model::simple::Interaction
+{
+   id : String[1];
+   source : Person[0..1];
+   target : Person[0..1];
+   active : Boolean[1];
+   time : Integer[1];
+   longestInteractionBetweenSourceAndTarget : Integer[1];
+}
+
+Class meta::pure::tests::model::simple::GeographicEntity
+{
+    type : GeographicEntityType[1];
+}
+
+Class meta::pure::tests::model::simple::Location extends GeographicEntity
+{
+    place : String[1];
+}
+
+Class meta::pure::tests::model::simple::Address extends GeographicEntity
+{
+    name : String[1];
+    street : String[0..1];
+}
+
+Enum meta::pure::tests::model::simple::GeographicEntityType
+{
+    {doc.doc = 'A city, town, village, or other urban area.'} CITY,
+    <<doc.deprecated>> COUNTRY,
+    {doc.doc = 'Any geographic entity other than a city or country.'} REGION
+}
+
+Class meta::pure::tests::model::simple::PlaceOfInterest
+{
+    name : String[1];
+}
+Class meta::pure::tests::model::simple::PersonNameParameter
+{
+   lastNameFirst:Boolean[1];
+   nested:PersonNameParameterNested[1];
+}
+
+Class meta::pure::tests::model::simple::PersonNameParameterNested
+{
+   prefix:String[1];
+}
+
+Class meta::pure::tests::model::simple::Organization
+{
+    name : String[1];
+    superOrganizations()
+    {
+        let parent = $this.parent;
+        if($parent->isEmpty(), |[], |concatenate($parent, $parent->toOne().superOrganizations()));
+    }:Organization[*];
+    subOrganizations()
+    {
+        concatenate($this.children, $this.children->map(c | $c.subOrganizations()))->removeDuplicates()
+    }:Organization[*];
+    child(name:String[1])
+    {
+        $this.children->filter(c | $c.name == $name)->toOne()
+    }:Organization[1];
+    allMembers()
+    {
+        concatenate($this.members, $this.subOrganizations()->map(o | $o.members))->removeDuplicates()
+    }:Person[*];
+}
+
+Class meta::pure::tests::model::simple::Division extends Organization
+{
+}
+
+Class meta::pure::tests::model::simple::Department extends Organization
+{
+}
+
+Class meta::pure::tests::model::simple::Team extends Organization
+{
+}
+
+Association meta::pure::tests::model::simple::Employment
+{
+    firm : Firm[0..1];
+    employees : Person[*];
+}
+
+Association meta::pure::tests::model::simple::FirmOrganizations
+{
+    firm : Firm[1];
+    organizations : Organization[*];
+}
+
+Association meta::pure::tests::model::simple::SubOrganization
+{
+    parent : Organization[0..1];
+    children : Organization[*];
+}
+
+Association meta::pure::tests::model::simple::Membership
+{
+    organizations : Organization[*];
+    members : Person[*];
+}
+
+Association meta::pure::tests::model::simple::PlacesOfInterest
+{
+    location : Location[1];
+    placeOfInterest : PlaceOfInterest[*];
+}
