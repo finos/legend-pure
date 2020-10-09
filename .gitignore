@@ -4,3 +4,11 @@
 **/lib
 **/surefire-reports-aggregate
 **/dependency-reduced-pom.xml
+
+.factorypath
+
+# VS Code ignores
+.vscode
+.settings
+.classpath
+.project

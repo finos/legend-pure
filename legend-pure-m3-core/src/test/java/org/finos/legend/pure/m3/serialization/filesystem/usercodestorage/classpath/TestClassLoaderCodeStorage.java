@@ -123,10 +123,9 @@ public class TestClassLoaderCodeStorage
                 "    'ok' + 'z'\n" +
                 "}";
 
-        Assert.assertEquals(Arrays.toString(code.getBytes()), Arrays.toString(this.testCodeStorage.getContentAsText("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure").getBytes()));
-        Assert.assertEquals(code, this.testCodeStorage.getContentAsText("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure"));
+        Assert.assertEquals(code.replaceAll("\\r",""), this.testCodeStorage.getContentAsText("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure").replaceAll("\\r",""));
         Assert.assertNotNull("Unable to load content for file on classpath", this.platformCodeStorage.getContentAsText("/platform/pure/m3.pure"));
-        Assert.assertEquals(code, this.combinedCodeStorage.getContentAsText("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure"));
+        Assert.assertEquals(code.replaceAll("\\r",""), this.combinedCodeStorage.getContentAsText("/test/org/finos/legend/pure/m3/serialization/filesystem/test/level1/level1.pure").replaceAll("\\r",""));
     }
 
     @Test
