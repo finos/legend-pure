@@ -63,5 +63,5 @@ jobs:
         run: mvn install
       - name: Build + Test + Sonar + Maven Deploy
         if: github.ref == 'refs/heads/master'
-        # TODO - add javadoc:javadoc goal and -Psonar profile
-        run: mvn deploy
+        # TODO - add javadoc:javadoc goal
+        run: mvn deploy -Psonar
