@@ -33,5 +33,5 @@ STRING:   String;
 
 mode ISLAND_BLOCK;
 INNER_CURLY_BRACKET_OPEN : '{' -> pushMode (ISLAND_BLOCK);
-CONTENT: (~[{}])*;
+CONTENT: (~[{}])+;
 INNER_CURLY_BRACKET_CLOSE: '}' -> popMode;

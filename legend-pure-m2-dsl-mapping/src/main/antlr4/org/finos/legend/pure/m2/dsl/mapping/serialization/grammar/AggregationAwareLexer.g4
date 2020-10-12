@@ -21,7 +21,7 @@ COMMENT:      Comment -> skip  ;
 LINE_COMMENT: LineComment -> skip  ;
 
 mode ISLAND_BLOCK;
-CONTENT: ~('}')*;
+CONTENT: ~('}')+;
 CURLY_BRACKET_CLOSE: '}' -> popMode;
 
 

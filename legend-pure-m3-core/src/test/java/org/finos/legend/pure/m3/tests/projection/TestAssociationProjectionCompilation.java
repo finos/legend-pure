@@ -15,10 +15,11 @@
 package org.finos.legend.pure.m3.tests.projection;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Assert;
 import org.junit.Test;
@@ -229,11 +230,11 @@ public class TestAssociationProjectionCompilation extends AbstractPureTestWithCo
         assertPropertiesFromAssociationProjection(addressProjection, "person");
     }
 
-    public void assertPropertiesFromAssociationProjection(CoreInstance projection, String... properties)
+    public void assertPropertiesFromAssociationProjection(CoreInstance projection, String properties)
     {
         Assert.assertNotNull(projection);
         RichIterable<? extends CoreInstance> propertiesFromAssociation = Instance.getValueForMetaPropertyToManyResolved(projection, M3Properties.propertiesFromAssociations, this.processorSupport);
-        Assert.assertEquals("Missing properties", properties.length, propertiesFromAssociation.size());
+        Assert.assertEquals("Missing properties", 1, propertiesFromAssociation.size());
 
         RichIterable<String> names = propertiesFromAssociation.collect(CoreInstance.GET_NAME);
         Verify.assertContainsAll(names.toList(), properties);
