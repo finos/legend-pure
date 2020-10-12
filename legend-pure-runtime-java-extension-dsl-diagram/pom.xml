@@ -49,10 +49,19 @@
                     <mainClass>org.finos.legend.pure.runtime.java.compiled.generation.JavaClassLoaderSourceCodeGenerator</mainClass>
                     <arguments>
                         <argument>${project.build.directory}/generated-sources/</argument>
-                        <argyment></argyment>
+                        <argument></argument>
                         <argument>Diagram</argument>
                     </arguments>
+                    <includeProjectDependencies>true</includeProjectDependencies>
+                    <includePluginDependencies>true</includePluginDependencies>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-code-compiled-platform</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -80,18 +89,7 @@
                     <workingDirectory>${project.parent.basedir}</workingDirectory>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
+         </plugins>
     </build>
 
     <dependencies>
@@ -121,12 +119,17 @@
 
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
+            <artifactId>legend-pure-m2-dsl-diagram</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m2-dsl-diagram</artifactId>
+            <artifactId>legend-pure-m2-dsl-mapping</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
         </dependency>
 
         <dependency>

@@ -50,7 +50,6 @@ public class ParserService
             }
             catch (Throwable e)
             {
-                e.printStackTrace();
                 // Needs to be silent ... during the build process
             }
         }
@@ -70,7 +69,6 @@ public class ParserService
             }
             catch (Throwable e)
             {
-                e.printStackTrace();
                 // Needs to be silent ... during the build process
             }
         }
