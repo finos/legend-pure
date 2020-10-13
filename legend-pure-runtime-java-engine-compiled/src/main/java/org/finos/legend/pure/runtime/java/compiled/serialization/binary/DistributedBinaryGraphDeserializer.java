@@ -210,7 +210,7 @@ public class DistributedBinaryGraphDeserializer
     private class ClassifierIndex
     {
         private final String classifierId;
-        private MapIterable<String, SourceCoordinates> index;
+        private volatile MapIterable<String, SourceCoordinates> index;
 
         private ClassifierIndex(String classifierId)
         {

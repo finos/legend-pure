@@ -20,6 +20,7 @@ import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 public abstract class AbstractCacheNextReadOnceForwardOnly
 {
@@ -83,6 +84,10 @@ public abstract class AbstractCacheNextReadOnceForwardOnly
         @Override
         public CoreInstance next()
         {
+            if (!hasNext())
+            {
+                throw new NoSuchElementException();
+            }
             CoreInstance result = AbstractCacheNextReadOnceForwardOnly.this.next(this.index);
             this.index++;
             return result;
