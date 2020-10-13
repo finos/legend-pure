@@ -279,7 +279,7 @@ public class ReferenceUsage
 
         String propertyName1 = PrimitiveUtilities.getStringValue(referenceUsage1.getValueForMetaPropertyToOne(M3Properties.propertyName));
         String propertyName2 = PrimitiveUtilities.getStringValue(referenceUsage2.getValueForMetaPropertyToOne(M3Properties.propertyName));
-        if (propertyName1 != propertyName2) // pointer equality check for possible fast success before doing a more expensive String comparison
+        if (propertyName1 != propertyName2) //NOSONAR pointer equality check for possible fast success before doing a more expensive String comparison
         {
             int propertyNameCmp = Comparators.nullSafeCompare(propertyName1, propertyName2);
             if (propertyNameCmp != 0)

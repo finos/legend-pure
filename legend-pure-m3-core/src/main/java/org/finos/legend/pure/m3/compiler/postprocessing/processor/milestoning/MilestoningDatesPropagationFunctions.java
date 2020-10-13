@@ -47,6 +47,8 @@ import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
 
+import java.util.Objects;
+
 public class MilestoningDatesPropagationFunctions
 {
     public static final String PATH_MILESTONING_DATES_VARIABLE_NAME = "p_milestoning_dates";
@@ -245,7 +247,7 @@ public class MilestoningDatesPropagationFunctions
             }
             else if (isSingleDateTemporal(sourceTypeMilestoningEnum) && oneDateParamSupplied(parametersValues))
             {
-                int propagatedDateIndex = sourceTypeMilestoningEnum.positionInTemporalParameterValues();
+                int propagatedDateIndex = Objects.requireNonNull(sourceTypeMilestoningEnum).positionInTemporalParameterValues();
                 CoreInstance propagatedDate = milestoningDates.getMilestoningDate(sourceTypeMilestoningEnum);
                 int otherPropagatedDateIndex = (sourceTypeMilestoningEnum == MilestoningStereotypeEnum.processingtemporal ? MilestoningStereotypeEnum.businesstemporal : MilestoningStereotypeEnum.processingtemporal).positionInTemporalParameterValues();
                 setMilestoningDateParameters(milestoningDateParameters, propagatedDateIndex, propagatedDate);

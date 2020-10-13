@@ -17,6 +17,8 @@ package org.finos.legend.pure.m3.tools.tree;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.list.mutable.FastList;
 
+import java.util.Objects;
+
 public class CutPathAndEncapsulatedObject<T>
 {
     private final MutableList<T> encapsulatedObjects = FastList.newList();
@@ -69,6 +71,7 @@ public class CutPathAndEncapsulatedObject<T>
         // Do we have more text to add?
         else if (commonString.length() < givenPath.length())
         {
+            Objects.requireNonNull(mostCommonNode);
             String mostCommonNodeText = ((CutPathAndEncapsulatedObject) mostCommonNode.getObject()).getCutPath();
             // Is the common text exactly the node
             if (commonString.length() == mostCommonNodeText.length())
@@ -95,7 +98,7 @@ public class CutPathAndEncapsulatedObject<T>
         }
         else
         {
-            ((CutPathAndEncapsulatedObject) mostCommonNode.getObject()).encapsulatedObjects.add(0, encapsulatedObject);
+            ((CutPathAndEncapsulatedObject) Objects.requireNonNull(mostCommonNode).getObject()).encapsulatedObjects.add(0, encapsulatedObject);
         }
     }
 

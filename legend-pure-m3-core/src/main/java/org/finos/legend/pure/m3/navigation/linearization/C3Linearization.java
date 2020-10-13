@@ -137,7 +137,7 @@ public class C3Linearization implements Function<CoreInstance, ImmutableList<Cor
             while (iterator.hasNext())
             {
                 TypeQueue linearization = iterator.next();
-                if (this.typeSupport.equal(candidate, linearization.peek(), processorSupport))
+                if (this.typeSupport.check_typeEquality(candidate, linearization.peek(), processorSupport))
                 {
                     linearization.pop();
                 }
@@ -240,7 +240,7 @@ public class C3Linearization implements Function<CoreInstance, ImmutableList<Cor
             TypeSupport typeSupport = C3Linearization.this.typeSupport;
             for (int i = this.start + 1, size = this.list.size(); i < size; i++)
             {
-                if (typeSupport.equal(type, this.list.get(i), C3Linearization.this.processorSupport))
+                if (typeSupport.check_typeEquality(type, this.list.get(i), C3Linearization.this.processorSupport))
                 {
                     return true;
                 }

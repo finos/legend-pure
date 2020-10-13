@@ -54,5 +54,5 @@ interface TypeSupport
      * @param processorSupport
      * @return whether type1 and type2 are equal
      */
-    boolean equal(CoreInstance type1, CoreInstance type2, ProcessorSupport processorSupport);
+    boolean check_typeEquality(CoreInstance type1, CoreInstance type2, ProcessorSupport processorSupport);
 }

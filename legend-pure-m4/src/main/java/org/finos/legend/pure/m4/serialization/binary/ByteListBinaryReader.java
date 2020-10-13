@@ -48,7 +48,7 @@ class ByteListBinaryReader extends AbstractSimpleBinaryReader
         long newPosition = this.current + n;
         if (newPosition >= this.bytes.size())
         {
-            throw new UnexpectedEndException(n, this.bytes.size() - this.current);
+            throw new UnexpectedEndException(n, (long)this.bytes.size() - this.current);
         }
         this.current = (int)newPosition;
     }

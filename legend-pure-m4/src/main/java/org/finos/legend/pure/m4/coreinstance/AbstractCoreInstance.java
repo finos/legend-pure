@@ -124,6 +124,14 @@ public abstract class AbstractCoreInstance implements CoreInstance
     }
 
     @Override
+    public int hashCode()
+    {
+        return super.hashCode();
+    }
+
+
+
+    @Override
     public void removeProperty(CoreInstance propertyNameKey)
     {
         this.removeProperty(propertyNameKey.getName());

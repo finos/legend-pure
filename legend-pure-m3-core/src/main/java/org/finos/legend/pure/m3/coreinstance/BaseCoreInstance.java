@@ -550,7 +550,7 @@ public abstract class BaseCoreInstance extends AbstractCoreInstance
             return this.values.size();
         }
 
-        public ListIterable<V> getValues()
+        public ListIterable<V> getValues() //NOSONAR
         {
             ListIterable<V> localValues = this.values;
             if (localValues instanceof MutableList<?>)

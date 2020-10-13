@@ -170,42 +170,44 @@ public class BinaryRepositorySerializer
     private static void serializeNode(MutableIntObjectMap<byte[]> nodeSerializations, MutableIntObjectMap<ListIterable<String>> keys, MutableObjectIntMap<String> idsByFile, MutableStack<CoreInstance> stack, MutableSet<CoreInstance> doneSet)
     {
         ByteArrayOutputStream nodeBytes = new ByteArrayOutputStream();
-        Writer writer = BinaryWriters.newBinaryWriter(nodeBytes);
-        while (stack.notEmpty())
+        try (Writer writer = BinaryWriters.newBinaryWriter(nodeBytes))
         {
-            CoreInstance node = stack.pop();
-            if (doneSet.add(node))
+            while (stack.notEmpty())
             {
-                nodeBytes.reset();
-                push(node.getClassifier(), stack, doneSet);
-
-                int id = node.getSyntheticId();
-                writer.writeInt(id);
-                writer.writeInt(node.getClassifier().getSyntheticId());
-                writer.writeString(node.getName());
-                writer.writeInt(node.getCompileStates().toBitSet());
-                serializeSourceInformation(writer, node.getSourceInformation(), idsByFile);
-
-                writer.writeInt(node.getKeys().size());
-                for (String key : node.getKeys())
+                CoreInstance node = stack.pop();
+                if (doneSet.add(node))
                 {
-                    CoreInstance keyCoreInstance = node.getKeyByName(key);
-                    keys.put(keyCoreInstance.getSyntheticId(), node.getRealKeyByName(key));
-                    push(keyCoreInstance, stack, doneSet);
-                    writer.writeInt(keyCoreInstance.getSyntheticId());
-                    ListIterable<? extends CoreInstance> values = node.getValueForMetaPropertyToMany(key);
-                    writer.writeInt(values.size());
-                    for (CoreInstance value : values)
+                    nodeBytes.reset();
+                    push(node.getClassifier(), stack, doneSet);
+
+                    int id = node.getSyntheticId();
+                    writer.writeInt(id);
+                    writer.writeInt(node.getClassifier().getSyntheticId());
+                    writer.writeString(node.getName());
+                    writer.writeInt(node.getCompileStates().toBitSet());
+                    serializeSourceInformation(writer, node.getSourceInformation(), idsByFile);
+
+                    writer.writeInt(node.getKeys().size());
+                    for (String key : node.getKeys())
                     {
-                        push(value, stack, doneSet);
-                        writer.writeInt(value.getSyntheticId());
+                        CoreInstance keyCoreInstance = node.getKeyByName(key);
+                        keys.put(keyCoreInstance.getSyntheticId(), node.getRealKeyByName(key));
+                        push(keyCoreInstance, stack, doneSet);
+                        writer.writeInt(keyCoreInstance.getSyntheticId());
+                        ListIterable<? extends CoreInstance> values = node.getValueForMetaPropertyToMany(key);
+                        writer.writeInt(values.size());
+                        for (CoreInstance value : values)
+                        {
+                            push(value, stack, doneSet);
+                            writer.writeInt(value.getSyntheticId());
+                        }
                     }
+                    if (nodeSerializations.containsKey(id))
+                    {
+                        throw new RuntimeException("ERROR");
+                    }
+                    nodeSerializations.put(id, nodeBytes.toByteArray());
                 }
-                if (nodeSerializations.containsKey(id))
-                {
-                    throw new RuntimeException("ERROR");
-                }
-                nodeSerializations.put(id, nodeBytes.toByteArray());
             }
         }
     }

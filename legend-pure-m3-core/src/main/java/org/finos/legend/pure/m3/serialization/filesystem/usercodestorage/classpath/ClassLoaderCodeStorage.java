@@ -97,7 +97,7 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
     };
 
     private final ClassLoader classLoader;
-    private ImmutableMap<String, ImmutableMap<String, ClassLoaderCodeStorageNode>> nodesByPathByRepo;
+    private volatile ImmutableMap<String, ImmutableMap<String, ClassLoaderCodeStorageNode>> nodesByPathByRepo;
 
     public ClassLoaderCodeStorage(ClassLoader classLoader, Iterable<? extends CodeRepository> repositories)
     {

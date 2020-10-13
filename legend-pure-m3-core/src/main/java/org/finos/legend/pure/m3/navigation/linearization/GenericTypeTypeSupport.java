@@ -125,7 +125,7 @@ class GenericTypeTypeSupport implements TypeSupport
     }
 
     @Override
-    public boolean equal(CoreInstance type1, CoreInstance type2, ProcessorSupport processorSupport)
+    public boolean check_typeEquality(CoreInstance type1, CoreInstance type2, ProcessorSupport processorSupport)
     {
         return GenericType.genericTypesEqual(type1, type2, processorSupport);
     }

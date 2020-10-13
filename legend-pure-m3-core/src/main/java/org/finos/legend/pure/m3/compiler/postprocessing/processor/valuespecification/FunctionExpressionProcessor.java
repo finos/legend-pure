@@ -84,6 +84,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
+import java.util.Objects;
+
 public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 {
     private static final org.eclipse.collections.api.block.function.Function<Import, String> IMPORT_PACKAGE = new org.eclipse.collections.api.block.function.Function<Import, String>()
@@ -292,7 +294,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     if (isLambdaWithEmptyParamType(instance, processorSupport))
                     {
                         observer.shiftTab();
-                        final VariableExpression templateToMatchLambdaTo = getRawTypeFromGenericType(foundFunction, processorSupport)._parameters().toList().get(z);
+                        final VariableExpression templateToMatchLambdaTo = Objects.requireNonNull(getRawTypeFromGenericType(foundFunction, processorSupport))._parameters().toList().get(z);
 
                         observer.register(templateToMatchLambdaTo, templateToMatchLambdaTo, state.getTypeInferenceContext(), state.getTypeInferenceContext());
 
@@ -326,7 +328,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
                                         if (null != templateReturnType)
                                         {
-                                            FunctionType lambdaFunctionType = getRawTypeFromGenericType((LambdaFunction)val, processorSupport);
+                                            FunctionType lambdaFunctionType = Objects.requireNonNull(getRawTypeFromGenericType((LambdaFunction)val, processorSupport));
                                             GenericType concreteGenericType = (GenericType)org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(lambdaFunctionType._returnType(), lambdaInferenceContext.getTypeParameterToGenericType(), lambdaInferenceContext.getMultiplicityParameterToMultiplicity(), processorSupport);
                                             lambdaFunctionType._returnTypeRemove();
                                             lambdaFunctionType._returnType(concreteGenericType);
@@ -341,7 +343,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                                                 ((FunctionType)ImportStub.withImportStubByPass(templateGenFunctionType._rawTypeCoreInstance(), processorSupport))._returnMultiplicity() : null;
                                         if (null != templateReturnMultiplicity)
                                         {
-                                            FunctionType lambdaFunctionType = getRawTypeFromGenericType((LambdaFunction)val, processorSupport);
+                                            FunctionType lambdaFunctionType = Objects.requireNonNull(getRawTypeFromGenericType((LambdaFunction)val, processorSupport));
                                             Multiplicity concreteMultiplicity = (Multiplicity)org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(Instance.getValueForMetaPropertyToOneResolved(lambdaFunctionType, M3Properties.returnMultiplicity, processorSupport), lambdaInferenceContext.getMultiplicityParameterToMultiplicity());
 
                                             lambdaFunctionType._returnMultiplicityRemove();

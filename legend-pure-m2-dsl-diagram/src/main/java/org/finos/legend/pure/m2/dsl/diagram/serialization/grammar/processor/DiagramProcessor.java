@@ -159,8 +159,11 @@ public class DiagramProcessor extends Processor<Diagram>
         {
             throw new PureCompilationException(view.getSourceInformation(), "Object with id '" + sourceViewId + "' is not a TypeView");
         }
-        sourceViewStub._original(view._sourceCoreInstance());
-        sourceViewStub._value(sourceView);
+        if (sourceViewStub != null)
+        {
+            sourceViewStub._original(view._sourceCoreInstance());
+            sourceViewStub._value(sourceView);
+        }
         view._sourceCoreInstance(sourceViewStub);
 
         // target view
@@ -173,8 +176,11 @@ public class DiagramProcessor extends Processor<Diagram>
         {
             throw new PureCompilationException(view.getSourceInformation(), "Object with id '" + targetViewId + "' is not a TypeView");
         }
-        targetViewStub._original(view._targetCoreInstance());
-        targetViewStub._value(targetView);
+        if (targetViewStub != null)
+        {
+            targetViewStub._original(view._targetCoreInstance());
+            targetViewStub._value(targetView);
+        }
         view._targetCoreInstance(targetViewStub);
     }
 

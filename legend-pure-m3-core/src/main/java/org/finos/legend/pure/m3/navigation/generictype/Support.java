@@ -481,6 +481,10 @@ class Support
      */
     private static class AlmostGenericTypeMutableSet extends UnifiedSetWithHashingStrategy<CoreInstance>
     {
+        private AlmostGenericTypeMutableSet()
+        {
+        }
+
         private AlmostGenericTypeMutableSet(ProcessorSupport processorSupport, int size)
         {
             super(new AlmostGenericTypeHashingStrategy(processorSupport), size);
