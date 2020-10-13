@@ -16,14 +16,15 @@ package org.finos.legend.pure.m2.ds.mapping.test;
 
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.ImmutableList;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EnumValueMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EnumerationMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -390,7 +391,7 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
         ImmutableList<CoreInstance> sourceValuesCoreInstances4 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValuesCoreInstance();
         Assert.assertEquals(3, sourceValuesCoreInstances4.size());
         Assert.assertTrue(sourceValuesCoreInstances4.get(0) instanceof IntegerCoreInstance);
-        ImmutableList<CoreInstance> sourceValues4 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValues();
+        MutableList<? extends Object> sourceValues4 = enumValueMapping1._sourceValues().toList();
         Assert.assertEquals(3, sourceValues4.size());
         Assert.assertEquals(4L, sourceValues4.get(0));
         Assert.assertEquals(5L, sourceValues4.get(1));
@@ -400,7 +401,7 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
         ImmutableList<CoreInstance> sourceValuesCoreInstances5 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValuesCoreInstance();
         Assert.assertEquals(1, sourceValuesCoreInstances5.size());
         Assert.assertTrue(sourceValuesCoreInstances4.get(0) instanceof IntegerCoreInstance);
-        ImmutableList<CoreInstance> sourceValues5 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValues();
+        MutableList<? extends Object> sourceValues5 = enumValueMapping2._sourceValues().toList();
         Assert.assertEquals(1, sourceValues5.size());
         Assert.assertEquals(3L, sourceValues5.get(0));
 
@@ -410,7 +411,7 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
         ImmutableList<CoreInstance> sourceValuesCoreInstances6 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValuesCoreInstance();
         Assert.assertEquals(3, sourceValuesCoreInstances6.size());
         Assert.assertTrue(sourceValuesCoreInstances4.get(0) instanceof IntegerCoreInstance);
-        ImmutableList<CoreInstance> sourceValues6 = (ImmutableList<CoreInstance>)enumValueMapping1._sourceValues();
+        MutableList<? extends Object> sourceValues6 = enumValueMapping1._sourceValues().toList();
         Assert.assertEquals(3, sourceValues6.size());
         Assert.assertEquals("One", sourceValues6.get(0));
         Assert.assertEquals("Two", sourceValues6.get(1));
@@ -420,7 +421,7 @@ public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompi
         ImmutableList<CoreInstance> sourceValuesCoreInstances7 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValuesCoreInstance();
         Assert.assertEquals(1, sourceValuesCoreInstances7.size());
         Assert.assertTrue(sourceValuesCoreInstances4.get(0) instanceof IntegerCoreInstance);
-        ImmutableList<CoreInstance> sourceValues7 = (ImmutableList<CoreInstance>)enumValueMapping2._sourceValues();
+        MutableList<? extends Object> sourceValues7 = enumValueMapping2._sourceValues().toList();
         Assert.assertEquals(1, sourceValues7.size());
         Assert.assertEquals("A", sourceValues7.get(0));
     }

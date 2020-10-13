@@ -53,6 +53,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
+import java.util.Objects;
+
 public class AssociationProcessor extends Processor<Association>
 {
     @Override
@@ -380,7 +382,7 @@ public class AssociationProcessor extends Processor<Association>
             {
                 throw new PureCompilationException(instance.getSourceInformation(), validQualifiedPropertyInAssociationMsg() + qualifiedPropertyCompileErrorMsgPrefix(association, qualifiedProperty) + " left side of filter should refer to '$this' not '" + variableExpressionName + "'");
             }
-            propertyNameForLeftSideOfQualifiedPropertyFilter = propertyName.getName();
+            propertyNameForLeftSideOfQualifiedPropertyFilter = Objects.requireNonNull(propertyName).getName();
         }
         else
         {

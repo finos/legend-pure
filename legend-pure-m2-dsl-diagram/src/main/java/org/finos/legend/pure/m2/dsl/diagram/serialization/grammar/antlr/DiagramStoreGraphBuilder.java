@@ -935,7 +935,7 @@ public class DiagramStoreGraphBuilder extends DiagramAntlrParserBaseVisitor
         }
         else if (contexts.size() == 1)
         {
-            return contexts.isEmpty() ? null : contexts.get(0);
+            return contexts.get(0);
         }
         else
         {

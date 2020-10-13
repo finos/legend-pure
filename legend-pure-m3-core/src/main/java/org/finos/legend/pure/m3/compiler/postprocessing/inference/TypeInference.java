@@ -52,6 +52,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
+import java.util.Objects;
 import java.util.Stack;
 
 public class TypeInference
@@ -123,7 +124,7 @@ public class TypeInference
                     {
                         throw new PureCompilationException(lambdaFunction.getSourceInformation(), "Can't infer the parameters' types for the lambda. Please specify it in the signature.");
                     }
-                    VariableExpression templateParam = ((FunctionType)templateFunctionType)._parameters().toList().get(j);
+                    VariableExpression templateParam = ((FunctionType) Objects.requireNonNull(templateFunctionType))._parameters().toList().get(j);
                     CoreInstance genericType = org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(templateParam._genericType(), state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
                     if (state.getTypeInferenceContext().isTypeParameterResolved(genericType))
                     {

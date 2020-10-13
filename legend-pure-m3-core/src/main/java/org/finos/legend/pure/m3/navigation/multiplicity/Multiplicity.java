@@ -27,6 +27,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Objects;
 
 public class Multiplicity
 {
@@ -50,7 +51,7 @@ public class Multiplicity
      */
     public static String getMultiplicityParameter(CoreInstance multiplicity)
     {
-        CoreInstance parameter = multiplicity.getValueForMetaPropertyToOne(M3Properties.multiplicityParameter);
+        CoreInstance parameter = Objects.requireNonNull(multiplicity).getValueForMetaPropertyToOne(M3Properties.multiplicityParameter);
         return (parameter == null) ? null : PrimitiveUtilities.getStringValue(parameter);
     }
 

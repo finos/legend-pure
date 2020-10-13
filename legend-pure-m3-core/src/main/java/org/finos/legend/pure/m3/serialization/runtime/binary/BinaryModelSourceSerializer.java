@@ -299,33 +299,35 @@ public class BinaryModelSourceSerializer
     private void serializeInstances()
     {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Writer writer = BinaryWriters.newBinaryWriter(stream);
-        initializeSerializationQueue();
-        while (!this.serializationQueue.isEmpty())
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream))
         {
-            CoreInstance instance = this.serializationQueue.remove();
-            if (shouldSerialize(instance) && this.serialized.add(instance))
+            initializeSerializationQueue();
+            while (!this.serializationQueue.isEmpty())
             {
-                possiblyRegisterInternalInstance(instance);
-                try
+                CoreInstance instance = this.serializationQueue.remove();
+                if (shouldSerialize(instance) && this.serialized.add(instance))
                 {
-                    serializeInstance(instance, writer);
-                }
-                catch (RuntimeException e)
-                {
-                    StringBuilder message = new StringBuilder("Error serializing ");
-                    message.append(instance);
-                    SourceInformation sourceInformation = instance.getSourceInformation();
-                    if (sourceInformation != null)
+                    possiblyRegisterInternalInstance(instance);
+                    try
                     {
-                        message.append(" (source information: ");
-                        sourceInformation.writeMessage(message);
-                        message.append(')');
+                        serializeInstance(instance, writer);
                     }
-                    throw new RuntimeException(message.toString(), e);
+                    catch (RuntimeException e)
+                    {
+                        StringBuilder message = new StringBuilder("Error serializing ");
+                        message.append(instance);
+                        SourceInformation sourceInformation = instance.getSourceInformation();
+                        if (sourceInformation != null)
+                        {
+                            message.append(" (source information: ");
+                            sourceInformation.writeMessage(message);
+                            message.append(')');
+                        }
+                        throw new RuntimeException(message.toString(), e);
+                    }
+                    this.internalInstanceSerializations.put(instance, stream.toByteArray());
+                    stream.reset();
                 }
-                this.internalInstanceSerializations.put(instance, stream.toByteArray());
-                stream.reset();
             }
         }
     }

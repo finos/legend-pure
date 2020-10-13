@@ -33,8 +33,8 @@ import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.tools.JavaTools;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -46,6 +46,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class M3ToJavaGenerator
 {
@@ -1099,7 +1100,7 @@ public class M3ToJavaGenerator
                                 String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
                                 if (isPrimitiveTypeProperty(propertyReturnGenericType))
                                 {
-                                    String type = getTypeFromGenericType(propertyReturnGenericType).getName();
+                                    String type = Objects.requireNonNull(getTypeFromGenericType(propertyReturnGenericType)).getName();
                                     return "        state." + propertyName + " = " + propertyName + " == null ? null : repository.new" + type + "CoreInstance" + (ModelRepository.STRING_TYPE_NAME.equals(type) ? "_cached(" : "(") + propertyName + ");\n";
                                 }
                                 else
@@ -1432,7 +1433,7 @@ public class M3ToJavaGenerator
         if (isPrimitiveTypeProperty(propertyReturnGenericType))
         {
             newExpression = applyFunctionWithCardinality(property, primitiveFromCoreInstanceFn(propertyReturnGenericType), newExpression, isToOne);
-            String type = getTypeFromGenericType(propertyReturnGenericType).getName();
+            String type = Objects.requireNonNull(getTypeFromGenericType(propertyReturnGenericType)).getName();
             if ("Integer".equals(type))
             {
                 newExpression = nullSafe(newExpression, newExpression + ".longValue()");
@@ -1585,15 +1586,15 @@ public class M3ToJavaGenerator
         }
         else if (isToOne)
         {
-            if (isMandatoryProperty(property) && isPrimitiveTypeProperty(propertyReturnGenericType) && ("Integer".equals(getTypeFromGenericType(propertyReturnGenericType).getName())
-                    || "Float".equals(getTypeFromGenericType(propertyReturnGenericType).getName())))
+            if (isMandatoryProperty(property) && isPrimitiveTypeProperty(propertyReturnGenericType) && ("Integer".equals(Objects.requireNonNull(getTypeFromGenericType(propertyReturnGenericType)).getName())
+                    || "Float".equals(Objects.requireNonNull(getTypeFromGenericType(propertyReturnGenericType)).getName())))
             {
                 expression = propertyTypeInternal + " value = this.getState()." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + ";\n" +
                         "        if (value == null)\n" +
                         "        {\n" +
                         "            throw new PureCompilationException(this.getSourceInformation(), \"'" + property.getName() + "' is a mandatory property\");\n" +
                         "        }\n" +
-                        "        return value.getValue()." + PRIMITIVES_EXTERNAL.get(getTypeFromGenericType(propertyReturnGenericType).getName()) + "Value()";
+                        "        return value.getValue()." + PRIMITIVES_EXTERNAL.get(Objects.requireNonNull(getTypeFromGenericType(propertyReturnGenericType)).getName()) + "Value()";
             }
             else
             {
@@ -2070,7 +2071,7 @@ public class M3ToJavaGenerator
                 {
                     CoreInstance generalGenericType = generalization.getValueForMetaPropertyToOne("general");
                     CoreInstance type = getTypeFromGenericType(generalGenericType);
-                    return getInterfaceName(type) + getTypeArgs(type, generalGenericType, false, true);
+                    return getInterfaceName(Objects.requireNonNull(type)) + getTypeArgs(type, generalGenericType, false, true);
                 }
             }).distinct().makeString(", ");
         }
@@ -2513,7 +2514,7 @@ public class M3ToJavaGenerator
                             @Override
                             public String valueOf(CoreInstance object)
                             {
-                                String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : object.getName();
+                                String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
                                 return "        interfaceByPath.put(\"" + getUserObjectPathForPackageableElement(object, false).makeString("::") + "\", " + classString + ".class);";
                             }
                         }).makeString("\n") + "\n";
@@ -2526,7 +2527,7 @@ public class M3ToJavaGenerator
                         @Override
                         public String valueOf(CoreInstance object)
                         {
-                            String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : object.getName();
+                            String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
                             return "        typeFactoriesById.put(" + object.getSyntheticId() + ", " + classString + "Instance.FACTORY);";
                         }
                     }).makeString("", "\n", "\n");
@@ -2538,7 +2539,7 @@ public class M3ToJavaGenerator
                     @Override
                     public String valueOf(CoreInstance object)
                     {
-                        String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : object.getName();
+                        String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
                         return "        typeFactoriesByPath.put(" + getUserObjectPathForPackageableElement(object, false).makeString("\"", "::", "\"") + ", " + classString + "Instance.FACTORY);";
                     }
                 }).makeString("", "\n", "\n") +
@@ -2569,7 +2570,7 @@ public class M3ToJavaGenerator
         {
             CoreInstance general = getTypeFromGenericType(generalization.getValueForMetaPropertyToOne("general"));
 
-            ListIterable<? extends CoreInstance> ps = general.getValueForMetaPropertyToMany("properties");
+            ListIterable<? extends CoreInstance> ps = general == null ? Lists.mutable.empty() : general.getValueForMetaPropertyToMany("properties");
 
             // TODO: Respect property resolution order
             for (CoreInstance prop : ps)
@@ -2585,7 +2586,7 @@ public class M3ToJavaGenerator
                 }
             }
 
-            collectGeneralizationProperties(general.getValueForMetaPropertyToMany("generalizations"), properties, propertyOwners);
+            collectGeneralizationProperties(general == null ? Lists.mutable.empty() : general.getValueForMetaPropertyToMany("generalizations"), properties, propertyOwners);
 
         }
 
@@ -2597,7 +2598,7 @@ public class M3ToJavaGenerator
         {
             CoreInstance general = getTypeFromGenericType(generalization.getValueForMetaPropertyToOne("general"));
 
-            ListIterable<? extends CoreInstance> ps = general.getValueForMetaPropertyToMany("qualifiedProperties");
+            ListIterable<? extends CoreInstance> ps = general == null ? Lists.mutable.empty() : general.getValueForMetaPropertyToMany("qualifiedProperties");
 
             // TODO: Respect property resolution order
             for (CoreInstance prop : ps)
@@ -2607,7 +2608,7 @@ public class M3ToJavaGenerator
                     qualifiedProperties.add(prop);
                 }
             }
-            collectGeneralizationQualifiedProperties(general.getValueForMetaPropertyToMany("generalizations"), qualifiedProperties);
+            collectGeneralizationQualifiedProperties(general == null ? Lists.mutable.empty() : general.getValueForMetaPropertyToMany("generalizations"), qualifiedProperties);
         }
 
     }
@@ -2965,7 +2966,7 @@ public class M3ToJavaGenerator
         }
         else
         {
-            return "CoreInstance".equals(type) ? expression : coreInstanceToTypeFn(propertyReturnGenericType, type) + ".valueOf(" + expression + ")" + (type.equals("double") ? ".doubleValue()" : "");
+            return "CoreInstance".equals(type) ? expression : coreInstanceToTypeFn(propertyReturnGenericType, type) + ".valueOf(" + expression + ")" + ("double".equals(type) ? ".doubleValue()" : "");
         }
     }
 
@@ -2979,7 +2980,12 @@ public class M3ToJavaGenerator
         String conversionClass;
         if (isPrimitiveTypeProperty(propertyReturnGenericType))
         {
-            conversionClass = getTypeFromGenericType(propertyReturnGenericType).getName() + "CoreInstance";
+            CoreInstance typeO = getTypeFromGenericType(propertyReturnGenericType);
+            if (typeO == null)
+            {
+                throw new RuntimeException("Type should not be null!");
+            }
+            conversionClass = typeO.getName() + "CoreInstance";
         }
         else
         {
@@ -3012,14 +3018,24 @@ public class M3ToJavaGenerator
 
     private static String getPrimitiveClass(CoreInstance propertyGenericType)
     {
-        return getTypeFromGenericType(propertyGenericType).getName() + "CoreInstance";
+        CoreInstance type = getTypeFromGenericType(propertyGenericType);
+        if (type == null)
+        {
+            throw new RuntimeException("Type should not be null!");
+        }
+        return type.getName() + "CoreInstance";
     }
 
     private String primitiveCoreInstanceFromPrimitive(CoreInstance property, CoreInstance propertyReturnGenericType, String expression, boolean isWrapper, boolean isToOne)
     {
-        String type = getTypeFromGenericType(propertyReturnGenericType).getName();
-        String toPrimitiveFn = "PrimitiveHelper." + type.toUpperCase() + "_TO_COREINSTANCE_FN";
-        if ("Float".equals(type))
+        CoreInstance type = getTypeFromGenericType(propertyReturnGenericType);
+        if (type == null)
+        {
+            throw new RuntimeException("Type should not be null!");
+        }
+        String typeName = type.getName();
+        String toPrimitiveFn = "PrimitiveHelper." + typeName.toUpperCase() + "_TO_COREINSTANCE_FN";
+        if ("Float".equals(typeName))
         {
             expression = "new java.math.BigDecimal(" + expression + ")";
         }

@@ -199,6 +199,10 @@ public class GenericTypeMatch implements Comparable<GenericTypeMatch>
                 {
                     throw new RuntimeException("Target generic type must be concrete, got: " + GenericType.print(targetGenericType, processorSupport));
                 }
+                default:
+                {
+                    throw new RuntimeException("Should not be possible");
+                }
             }
         }
 

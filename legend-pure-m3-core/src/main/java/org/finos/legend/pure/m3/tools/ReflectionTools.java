@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.tools;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Objects;
 
 public class ReflectionTools
 {
@@ -60,6 +61,11 @@ public class ReflectionTools
                 }
             }
 
+            if (f == null)
+            {
+                throw new RuntimeException("Property '"+prop+"' not found in class "+cl.getName());
+            }
+
             f.setAccessible(true);
 
             Field modifiers = Field.class.getDeclaredField("modifiers");
@@ -80,8 +86,7 @@ public class ReflectionTools
         try
         {
             Class<?> x = load(str);
-            Field f = field(x, prop);
-            f.set(null, null);
+            Objects.requireNonNull(field(x, prop)).set(null, null);
         }
         catch(Exception e)
         {

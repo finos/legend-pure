@@ -86,13 +86,15 @@ public class BinaryModelRepositorySerializer
     private void serializeSources()
     {
         ByteArrayOutputStream stream = new ByteArrayOutputStream(1024);
-        Writer writer = BinaryWriters.newBinaryWriter(stream);
-        for (Source source : this.runtime.getSourceRegistry().getSources().selectWith(IS_SOURCE_IN_REPO, this.repositoryName))
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream))
         {
-            stream.reset();
-            SourceSerializationResult result = BinaryModelSourceSerializer.serialize(writer, source, this.runtime);
-            this.serializationResults.add(result);
-            this.sourceSerializations.put(source.getId(), stream.toByteArray());
+            for (Source source : this.runtime.getSourceRegistry().getSources().selectWith(IS_SOURCE_IN_REPO, this.repositoryName))
+            {
+                stream.reset();
+                SourceSerializationResult result = BinaryModelSourceSerializer.serialize(writer, source, this.runtime);
+                this.serializationResults.add(result);
+                this.sourceSerializations.put(source.getId(), stream.toByteArray());
+            }
         }
     }
 

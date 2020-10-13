@@ -76,7 +76,7 @@ class DateDiff
         }
         else
         {
-            result = earlierLaterPair.getTwo().getOne().get(Calendar.DAY_OF_YEAR) - earlierLaterPair.getOne().getOne().get(Calendar.DAY_OF_YEAR);
+            result = (long)earlierLaterPair.getTwo().getOne().get(Calendar.DAY_OF_YEAR) - earlierLaterPair.getOne().getOne().get(Calendar.DAY_OF_YEAR);
         }
         return result;
     }

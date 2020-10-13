@@ -151,16 +151,14 @@ public class CompiledSupport
 
     private static final String TEMP_TYPE_NAME = "tempTypeName";
 
-    private static final ThreadLocal<DecimalFormat> DECIMAL_FORMAT = new ThreadLocal<DecimalFormat>()
+    private static final DecimalFormat DECIMAL_FORMAT;
+    static
     {
-        @Override
-        protected DecimalFormat initialValue()
-        {
-            DecimalFormat format = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
-            format.setMaximumFractionDigits(340); // 340 = DecimalFormat.DOUBLE_FRACTION_DIGITS
-            return format;
-        }
-    };
+        DecimalFormat format = new DecimalFormat("0.0", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+        format.setMaximumFractionDigits(340); // 340 = DecimalFormat.DOUBLE_FRACTION_DIGITS
+        DECIMAL_FORMAT =  format;
+    }
+
 
     private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
     private static final ImmutableList<Class<?>> PRIMITIVE_CLASS_COMPARISON_ORDER = Lists.immutable.<Class<?>>with(Long.class, Double.class, PureDate.class, Boolean.class, String.class);
@@ -1348,7 +1346,7 @@ public class CompiledSupport
 
     public static String primitiveToString(double value)
     {
-        return (value == 0.0d) ? "0.0" : DECIMAL_FORMAT.get().format(value);
+        return (value == 0.0d) ? "0.0" : DECIMAL_FORMAT.format(value);
     }
 
     public static String primitiveToString(BigDecimal value)

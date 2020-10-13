@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m3.execution;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
@@ -192,6 +193,10 @@ public class ExecutionPlatformRegistry
         @Override
         public Class<?> next()
         {
+            if (!hasNext())
+            {
+                throw new NoSuchElementException();
+            }
             Class<?> result = this.nextExecutionPlatform;
             findNextExecutionPlatform();
             return result;

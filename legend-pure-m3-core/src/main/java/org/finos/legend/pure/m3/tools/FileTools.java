@@ -98,9 +98,15 @@ public class FileTools
                 // If the file is not writable, try to make it writable; then retry the delete.
                 if (!Files.isWritable(path))
                 {
-                    path.toFile().setWritable(true);
+                    if(path.toFile().setWritable(true))
+                    {
+                        Files.delete(path);
+                    }
                 }
-                Files.delete(path);
+                else
+                {
+                    Files.delete(path);
+                }
             }
         }
     }

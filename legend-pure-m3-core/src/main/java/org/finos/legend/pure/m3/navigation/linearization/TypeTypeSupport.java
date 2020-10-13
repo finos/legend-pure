@@ -42,7 +42,7 @@ class TypeTypeSupport implements TypeSupport
     }
 
     @Override
-    public boolean equal(CoreInstance type1, CoreInstance type2, ProcessorSupport processorSupport)
+    public boolean check_typeEquality(CoreInstance type1, CoreInstance type2, ProcessorSupport processorSupport)
     {
         return type1 == type2;
     }

@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Properties;
 
@@ -28,9 +29,12 @@ public class PureModelVersion
         {
             Properties properties = new Properties();
             URL url = PureModelVersion.class.getResource("/" + name);
-            properties.load(url.openStream());
-            String versionAsString = properties.getProperty("version");
-            return (versionAsString == null) ? 0L : Long.parseLong(versionAsString);
+            try(InputStream stream = url.openStream())
+            {
+                properties.load(stream);
+                String versionAsString = properties.getProperty("version");
+                return (versionAsString == null) ? 0L : Long.parseLong(versionAsString);
+            }
         }
         catch (Exception e)
         {

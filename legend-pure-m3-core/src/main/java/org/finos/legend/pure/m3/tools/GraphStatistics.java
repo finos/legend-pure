@@ -167,14 +167,16 @@ public class GraphStatistics
 
     private static void writeInstanceCountsByClassifierPathDeltas(Appendable appendable, String formatString, SetIterable<String> classifierPaths, IntFunction<String> countFn1, IntFunction<String> countFn2)
     {
-        Formatter formatter = new Formatter(appendable);
-        for (String classifier : classifierPaths.toSortedList())
+        try (Formatter formatter = new Formatter(appendable))
         {
-            int count1 = countFn1.intValueOf(classifier);
-            int count2 = countFn2.intValueOf(classifier);
-            if (count1 != count2)
+            for (String classifier : classifierPaths.toSortedList())
             {
-                formatter.format(formatString, classifier, count1, count2, (count2 - count1));
+                int count1 = countFn1.intValueOf(classifier);
+                int count2 = countFn2.intValueOf(classifier);
+                if (count1 != count2)
+                {
+                    formatter.format(formatString, classifier, count1, count2, (count2 - count1));
+                }
             }
         }
     }

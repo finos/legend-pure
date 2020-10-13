@@ -50,26 +50,28 @@ public class BinarySourceSerializer
 
     public static void serialize(OutputStream stream, SourceRegistry sourceRegistry)
     {
-        Writer writer = BinaryWriters.newBinaryWriter(stream);
-        MutableObjectIntMap<String> parserIds = ObjectIntMaps.mutable.empty();
-        ListIterable<String> parserNames = getParserNames(sourceRegistry).toSortedList();
-        writer.writeInt(parserNames.size());
-        for (String parserName : parserNames)
+        try (Writer writer = BinaryWriters.newBinaryWriter(stream))
         {
-            writer.writeString(parserName);
-            parserIds.put(parserName, parserIds.size());
-        }
-        MutableList<Source> sortedSources = sourceRegistry.getSources().toSortedListBy(Source.SOURCE_ID);
-        writer.writeInt(sortedSources.size());
-        for (Source source : sortedSources)
-        {
-            try
+            MutableObjectIntMap<String> parserIds = ObjectIntMaps.mutable.empty();
+            ListIterable<String> parserNames = getParserNames(sourceRegistry).toSortedList();
+            writer.writeInt(parserNames.size());
+            for (String parserName : parserNames)
             {
-                serializeSource(writer, source, parserIds);
+                writer.writeString(parserName);
+                parserIds.put(parserName, parserIds.size());
             }
-            catch (Exception e)
+            MutableList<Source> sortedSources = sourceRegistry.getSources().toSortedListBy(Source.SOURCE_ID);
+            writer.writeInt(sortedSources.size());
+            for (Source source : sortedSources)
             {
-                throw new RuntimeException("Error serializing source: " + source.getId(), e);
+                try
+                {
+                    serializeSource(writer, source, parserIds);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException("Error serializing source: " + source.getId(), e);
+                }
             }
         }
     }
@@ -125,21 +127,23 @@ public class BinarySourceSerializer
 
     public static void build(InputStream stream, SourceRegistry registry, IntObjectMap<CoreInstance> instances, ParserLibrary library, Context context)
     {
-        Reader reader = BinaryReaders.newBinaryReader(stream);
-        String[] parserNames = reader.readStringArray();
-        int sourceCount = reader.readInt();
-        for (int i = 0; i < sourceCount; i++)
+        try (Reader reader = BinaryReaders.newBinaryReader(stream))
         {
-            Source source;
-            try
+            String[] parserNames = reader.readStringArray();
+            int sourceCount = reader.readInt();
+            for (int i = 0; i < sourceCount; i++)
             {
-                source = buildSource(reader, instances, parserNames, library, context);
+                Source source;
+                try
+                {
+                    source = buildSource(reader, instances, parserNames, library, context);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException("Error building source " + (i + 1) + " of " + sourceCount, e);
+                }
+                registry.registerSource(source);
             }
-            catch (Exception e)
-            {
-                throw new RuntimeException("Error building source " + (i + 1) + " of " + sourceCount, e);
-            }
-            registry.registerSource(source);
         }
     }
 

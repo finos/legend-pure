@@ -38,7 +38,7 @@ class PropertyValueIndexSpec extends IndexSpecification<CoreInstance>
     @Override
     public boolean equals(Object other)
     {
-        return (this == other) || ((this.getClass() == other.getClass()) && this.propertyName.equals(((PropertyValueIndexSpec)other).propertyName));
+        return (this == other) || (other != null && (this.getClass() == other.getClass()) && this.propertyName.equals(((PropertyValueIndexSpec)other).propertyName));
     }
 
     @Override

@@ -359,6 +359,10 @@ abstract class TypeMatch implements Comparable<TypeMatch>
                 {
                     throw new RuntimeException("Value type may not be null");
                 }
+                default:
+                {
+                    throw new RuntimeException("Should not be possible!");
+                }
             }
         }
 

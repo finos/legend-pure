@@ -2259,8 +2259,8 @@ public class AntlrContextToM3CoreInstance
         MutableList<String> typeParameterNames = FastList.newList();
         MutableList<Boolean> contravariants = FastList.newList();
         MutableList<String> multiplicityParameterNames = FastList.newList();
-        ListIterable<CoreInstance> stereotypes = null;
-        ListIterable<TaggedValue> tags = null;
+        ListIterable<CoreInstance> stereotypes = FastList.newList();
+        ListIterable<TaggedValue> tags = FastList.newList();
         MeasureInstance measureInstance;
 
         String measureName = ctx.qualifiedName().identifier().getText();
@@ -2324,11 +2324,11 @@ public class AntlrContextToM3CoreInstance
         }
 
         measureInstance._name(ctx.qualifiedName().identifier().getText());
-        if (stereotypes != null)
+        if (!stereotypes.isEmpty())
         {
             measureInstance._stereotypesCoreInstance(stereotypes);
         }
-        if (tags != null)
+        if (!tags.isEmpty())
         {
             measureInstance._taggedValues(tags);
         }
