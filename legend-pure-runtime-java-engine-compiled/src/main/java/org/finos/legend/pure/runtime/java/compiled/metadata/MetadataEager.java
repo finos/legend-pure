@@ -32,6 +32,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
 
 import java.util.Map;
+import java.util.Objects;
 
 public final class MetadataEager implements Metadata
 {
@@ -74,8 +75,8 @@ public final class MetadataEager implements Metadata
         {
             if (this.added.get().getMetadata(packageClassifier, packageId) == null)
             {
-                CoreInstance packageInstance = this.metamodelByClassifier.getMetadata(packageClassifier, packageId);
-                CoreInstance copy = (CoreInstance)((ReflectiveCoreInstance)packageInstance).copy();
+                CoreInstance packageInstance = Objects.requireNonNull(this.metamodelByClassifier.getMetadata(packageClassifier, packageId));
+                CoreInstance copy = ((ReflectiveCoreInstance)packageInstance).copy();
 
                 this.added.get().add(packageClassifier, packageId, copy);
             }
@@ -87,12 +88,7 @@ public final class MetadataEager implements Metadata
     @Override
     public CoreInstance getEnum(String enumerationName, String enumName)
     {
-        CoreInstance instance =  this.getMetadata(enumerationName, enumName);
-        if (instance == null)
-        {
-            throw new PureExecutionException("Enum " + enumerationName + "." + enumName + " does not exist");
-        }
-        return instance;
+        return this.getMetadata(enumerationName, enumName);
     }
 
 
@@ -220,7 +216,7 @@ public final class MetadataEager implements Metadata
         {
             try
             {
-                Package _package = (Package)this.getMetadata(packageClassifier, packageId);
+                Package _package = (Package)Objects.requireNonNull(this.getMetadata(packageClassifier, packageId));
                 _package._childrenAdd((PackageableElement)this.getMetadata(objectClassifier, instanceId));
             }
             catch (Exception ex)
@@ -237,7 +233,7 @@ public final class MetadataEager implements Metadata
                 CoreInstance o = classifierMetaData.remove(identifier);
                 if (o != null && o instanceof PackageableElement)
                 {
-                    Package _package = (Package)this.getMetadata(packClassifier, packIdentifier);
+                    Package _package = (Package)Objects.requireNonNull(this.getMetadata(packClassifier, packIdentifier));
                     _package._childrenRemove((PackageableElement)o);
                 }
             }

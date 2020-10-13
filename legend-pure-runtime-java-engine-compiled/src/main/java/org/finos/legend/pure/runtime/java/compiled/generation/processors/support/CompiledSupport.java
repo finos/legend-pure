@@ -130,20 +130,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.util.*;
 
 public class CompiledSupport
 {
@@ -695,7 +682,7 @@ public class CompiledSupport
         }
         if (number instanceof Float || number instanceof Double)
         {
-            return new BigDecimal(number.doubleValue());
+            return BigDecimal.valueOf(number.doubleValue());
         }
         try
         {
@@ -753,29 +740,16 @@ public class CompiledSupport
 
     public static RichIterable<Long> range(long start, long stop, long step, SourceInformation sourceInformation)
     {
-        if (step > 0)
+        if (step == 0)
         {
-            MutableList<Long> result = FastList.newList((int)Math.max(0, (stop - start) / step));
-            for (; start < stop; start += step)
-            {
-                result.add(start);
-            }
-            return result;
+            throw new PureExecutionException(sourceInformation, "range step must not be 0");
         }
-        else if (step < 0)
+        MutableList<Long> result = FastList.newList((int)Math.max(0, (stop - start) / step));
+        for (; step > 0 ? start < stop : start > stop; start += step)
         {
-            MutableList<Long> result = FastList.newList((int)Math.max(0, (stop - start) / step));
-            for (; start > stop; start += step)
-            {
-                result.add(start);
-            }
-            return result;
+            result.add(start);
         }
-        else
-        {
-            String message = "range step must not be 0";
-            throw new PureExecutionException(sourceInformation, message);
-        }
+        return result;
     }
 
     public static <T> RichIterable<? extends T> removeAllOptimized(RichIterable<? extends T> main, RichIterable<? extends T> other)
@@ -898,7 +872,8 @@ public class CompiledSupport
 
     public static String joinStrings(RichIterable<String> strings, String prefix, String separator, String suffix)
     {
-        int size = strings == null ? 0 : strings.size();
+        strings = strings == null ? Lists.mutable.empty() : strings;
+        int size = strings.size();
 
         switch (size)
         {
@@ -2310,6 +2285,10 @@ public class CompiledSupport
                     @Override
                     public String next()
                     {
+                        if (!hasNext())
+                        {
+                            throw new NoSuchElementException();
+                        }
                         int start = this.current;
                         int end = Math.min(start + size, length);
                         String next = text.substring(start, end);
@@ -2768,7 +2747,7 @@ public class CompiledSupport
         else if ((second instanceof Float) || (second instanceof Double))
         {
             secondInt = second.intValue();
-            String string = new BigDecimal(second.doubleValue()).toPlainString();
+            String string = BigDecimal.valueOf(second.doubleValue()).toPlainString();
             int index = string.indexOf('.');
             subsecond = (index == -1) ? "0" : string.substring(index + 1);
         }
