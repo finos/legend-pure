@@ -52,7 +52,7 @@ public class GraphAntlrParser
         {
             if (fastParser && e instanceof PureParserException && e.getCause() instanceof RecognitionException)
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseDefinition(false, code, importId, fileName, offsetColumn, offsetLine, repository, context);
             }
             else

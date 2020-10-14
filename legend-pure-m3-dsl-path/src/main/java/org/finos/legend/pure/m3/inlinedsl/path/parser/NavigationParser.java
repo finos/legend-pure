@@ -51,7 +51,7 @@ public class NavigationParser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseDefinition(false, code, sourceName, false, offsetLine, offsetColumn, repository, context, importId);
             }
             else

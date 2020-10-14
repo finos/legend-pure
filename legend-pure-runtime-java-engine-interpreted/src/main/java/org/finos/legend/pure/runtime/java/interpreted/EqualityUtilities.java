@@ -84,7 +84,7 @@ public class EqualityUtilities
      * @param processorSupport processor support
      * @return whether left and right are equal in Pure
      */
-    public static boolean equal(CoreInstance left, CoreInstance right, RichIterable<? extends CoreInstance> external, ProcessorSupport processorSupport)
+    public static boolean equal(CoreInstance left, CoreInstance right, RichIterable<? extends CoreInstance> external, ProcessorSupport processorSupport) //NOSONAR signature is clear enough
     {
         if (left == right)
         {
@@ -137,7 +137,7 @@ public class EqualityUtilities
      * @param right   right instances
      * @return whether the lists are equal in Pure
      */
-    public static boolean equal(ListIterable<? extends CoreInstance> left, ListIterable<? extends CoreInstance> right, ProcessorSupport processorSupport)
+    public static boolean equal(ListIterable<? extends CoreInstance> left, ListIterable<? extends CoreInstance> right, ProcessorSupport processorSupport) //NOSONAR signature is clear enough
     {
         int size = left.size();
         if (right.size() != size)
@@ -335,6 +335,10 @@ public class EqualityUtilities
 
     private static class CoreInstanceMutableSet<T extends CoreInstance> extends UnifiedSetWithHashingStrategy<T>
     {
+        public CoreInstanceMutableSet()
+        {
+        }
+
         private CoreInstanceMutableSet(ProcessorSupport processorSupport)
         {
             super(newCoreInstanceHashingStrategy(processorSupport));
@@ -348,6 +352,10 @@ public class EqualityUtilities
 
     private static class CoreInstanceMutableMap<K extends CoreInstance, V> extends UnifiedMapWithHashingStrategy<K, V>
     {
+        public CoreInstanceMutableMap()
+        {
+        }
+
         private CoreInstanceMutableMap(ProcessorSupport processorSupport)
         {
             super(newCoreInstanceHashingStrategy(processorSupport));

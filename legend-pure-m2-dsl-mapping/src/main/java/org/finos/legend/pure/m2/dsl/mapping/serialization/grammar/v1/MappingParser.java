@@ -109,7 +109,7 @@ public class MappingParser implements Parser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseDefinition(false, code, sourceName, addLines, offset, repository, listener, context, count);
             }
             else

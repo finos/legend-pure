@@ -37,7 +37,6 @@ public class E_
         }
         catch (Exception e)
         {
-            System.err.println(e);
             SourceInformation sourceInformation = new SourceInformation(sourceId, line, column, endLine, endColumn);
             throw new PureCompiledExecutionException(sourceInformation, e.getMessage(), e);
         }

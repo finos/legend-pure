@@ -135,7 +135,7 @@ public class MetadataLazy implements Metadata
     private final ConcurrentMutableMap<String, ConcurrentMutableMap<String, CoreInstance>> instanceCache = ConcurrentHashMap.newMap();
     private final ConcurrentMutableMap<String, MapIterable<String, CoreInstance>> enumCache = ConcurrentHashMap.newMap();
 
-    private volatile Constructor<? extends CoreInstance> enumConstructor = null;
+    private volatile Constructor<? extends CoreInstance> enumConstructor = null; //NOSONAR we actually want to protect the pointer
 
     public MetadataLazy(ClassLoader classLoader, DistributedBinaryGraphDeserializer deserializer)
     {

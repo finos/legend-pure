@@ -82,7 +82,7 @@ public class OperationParser implements Parser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseMapping(false, content, id, extendsId, setSourceInfo, root, classPath, classSourceInfo, mappingPath, sourceName, offset, importId, repository, context);
             }
             else

@@ -36,7 +36,7 @@ public class InterpretedExtensionLoader
             }
             catch (Throwable z)
             {
-                z.printStackTrace();
+                //z.printStackTrace();
                 // Needs to be silent ... during the build process
             }
         }

@@ -198,7 +198,7 @@ public class M3AntlrParser implements Parser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 this.parseDefinition(false, code, sourceName, repository, coreInstancesResult, listener, context, count, addLines, oldState);
             }
             else
@@ -226,7 +226,7 @@ public class M3AntlrParser implements Parser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseType(false, code, fileName, offsetLine, offsetColumn, importId, repository, context);
             }
             else
@@ -249,7 +249,7 @@ public class M3AntlrParser implements Parser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseInstance(false, code, fileName, offsetLine, offsetColumn, importId, repository, context);
             }
             else
@@ -277,7 +277,7 @@ public class M3AntlrParser implements Parser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 this.parseProperties(false, code, fileName, properties, qualifiedProperties, typeOwner, importId, addLines, repository, context, startingQualifiedPropertyIndex);
             }
             else
@@ -300,7 +300,7 @@ public class M3AntlrParser implements Parser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseTreePath(false, code, fileName, offsetLine, offsetColumn, importId, repository, context);
             }
             else
@@ -585,11 +585,11 @@ public class M3AntlrParser implements Parser
     {
         AntlrDescriptiveErrorListener pureErrorListener = new AntlrDescriptiveErrorListener(sourceInformation);
 
-        org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Lexer lexer = new M3Lexer(new ANTLRInputStream(code));
+        org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Lexer lexer = new org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Lexer(new ANTLRInputStream(code));
         lexer.removeErrorListeners();
         lexer.addErrorListener(pureErrorListener);
 
-        org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = new M3Parser(new CommonTokenStream(lexer));
+        org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = new org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser(new CommonTokenStream(lexer));
         parser.removeErrorListeners();
         parser.addErrorListener(pureErrorListener);
         parser.setErrorHandler(new PureAntlrErrorStrategy(sourceInformation));

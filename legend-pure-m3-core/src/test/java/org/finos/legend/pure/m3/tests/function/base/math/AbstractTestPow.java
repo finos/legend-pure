@@ -38,6 +38,7 @@ public abstract class AbstractTestPow extends AbstractPureTestWithCoreCompiled
         }
         catch (NumberFormatException e)
         {
+            e.printStackTrace();
             Assert.assertEquals("Infinite or NaN", e.getMessage());
         }
     }
