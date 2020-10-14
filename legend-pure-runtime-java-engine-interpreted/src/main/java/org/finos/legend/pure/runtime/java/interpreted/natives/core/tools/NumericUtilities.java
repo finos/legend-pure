@@ -270,7 +270,7 @@ public class NumericUtilities
             }
             else if ((right instanceof Float) || (right instanceof Double))
             {
-                return new BigDecimal(left.longValue()).compareTo(new BigDecimal(right.doubleValue()));
+                return new BigDecimal(left.longValue()).compareTo(BigDecimal.valueOf(right.doubleValue()));
             }
             else if (right instanceof BigInteger)
             {
@@ -289,7 +289,7 @@ public class NumericUtilities
         {
             if ((right instanceof Integer) || (right instanceof Long))
             {
-                return new BigDecimal(left.doubleValue()).compareTo(new BigDecimal(right.longValue()));
+                return BigDecimal.valueOf(left.doubleValue()).compareTo(BigDecimal.valueOf(right.longValue()));
             }
             else if ((right instanceof Float) || (right instanceof Double))
             {
@@ -297,11 +297,11 @@ public class NumericUtilities
             }
             else if (right instanceof BigInteger)
             {
-                return new BigDecimal(left.doubleValue()).compareTo(new BigDecimal((BigInteger)right));
+                return new BigDecimal(left.doubleValue()).compareTo(new BigDecimal((BigInteger)right)); //NOSONAR
             }
             else if (right instanceof BigDecimal)
             {
-                return new BigDecimal(left.doubleValue()).compareTo((BigDecimal)right);
+                return BigDecimal.valueOf(left.doubleValue()).compareTo((BigDecimal)right);
             }
             else
             {
@@ -316,7 +316,7 @@ public class NumericUtilities
             }
             else if ((right instanceof Float) || (right instanceof Double))
             {
-                return new BigDecimal((BigInteger)left).compareTo(new BigDecimal(right.doubleValue()));
+                return new BigDecimal((BigInteger)left).compareTo(BigDecimal.valueOf(right.doubleValue()));
             }
             else if (right instanceof BigInteger)
             {
@@ -339,7 +339,7 @@ public class NumericUtilities
             }
             else if ((right instanceof Float) || (right instanceof Double))
             {
-                return ((BigDecimal)left).compareTo(new BigDecimal(right.doubleValue()));
+                return ((BigDecimal)left).compareTo(BigDecimal.valueOf(right.doubleValue()));
             }
             else if (right instanceof BigInteger)
             {

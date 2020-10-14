@@ -210,7 +210,7 @@ public class DistributedBinaryGraphDeserializer
     private class ClassifierIndex
     {
         private final String classifierId;
-        private volatile MapIterable<String, SourceCoordinates> index;
+        private volatile MapIterable<String, SourceCoordinates> index; //NOSONAR we actually want to protect the pointer
 
         private ClassifierIndex(String classifierId)
         {

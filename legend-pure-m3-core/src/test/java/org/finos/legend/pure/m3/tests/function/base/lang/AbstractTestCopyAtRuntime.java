@@ -92,7 +92,7 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
             fail("Failed to increment the Integer property on Copy.");
         }
     }

@@ -769,7 +769,7 @@ public class NumericAccumulator
 
         private BigDecimalWrapper(double initialValue)
         {
-            this(new BigDecimal(initialValue));
+            this(BigDecimal.valueOf(initialValue));
         }
 
         private BigDecimalWrapper(BigInteger initialValue)
@@ -805,7 +805,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper add(double number)
         {
-            return add(new BigDecimal(number));
+            return add(BigDecimal.valueOf(number));
         }
 
         @Override
@@ -836,7 +836,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper subtract(double number)
         {
-            return subtract(new BigDecimal(number));
+            return subtract(BigDecimal.valueOf(number));
         }
 
         @Override
@@ -867,7 +867,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper multiply(double number)
         {
-            return multiply(new BigDecimal(number));
+            return multiply(BigDecimal.valueOf(number));
         }
 
         @Override
@@ -906,7 +906,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper divide(double number)
         {
-            return divide(new BigDecimal(number));
+            return divide(BigDecimal.valueOf(number));
         }
 
         @Override
@@ -930,7 +930,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper pow(BigDecimal number)
         {
-            this.value = new BigDecimal(StrictMath.pow(this.value.doubleValue(), number.doubleValue()));
+            this.value = new BigDecimal(StrictMath.pow(this.value.doubleValue(), number.doubleValue())); //NOSONAR Ensure we have a proper error message when double is Infinity or NaN
             return this;
         }
 
@@ -949,7 +949,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper pow(double number)
         {
-            return this.pow(new BigDecimal(number));
+            return this.pow(BigDecimal.valueOf(number));
         }
 
         @Override
@@ -1387,8 +1387,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper pow(int number)
         {
-            this.value.pow(number);
-            return this;
+            return new BigIntegerWrapper(this.value.pow(number));
         }
 
         @Override
@@ -1400,7 +1399,7 @@ public class NumericAccumulator
         @Override
         NumberWrapper pow(double number)
         {
-            return this.pow(new BigDecimal(number));
+            return this.pow(BigDecimal.valueOf(number));
         }
 
         @Override

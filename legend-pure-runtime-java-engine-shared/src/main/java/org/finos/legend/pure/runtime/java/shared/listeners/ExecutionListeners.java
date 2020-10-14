@@ -80,7 +80,7 @@ public class ExecutionListeners
                 catch (Exception ex)
                 {
                     //Ignore, need to make sure we get through all possible listeners
-                    ex.printStackTrace();
+//                    ex.printStackTrace();
                     return new ExecutionEndListenerState(true, ex.getMessage());
                 }
             }

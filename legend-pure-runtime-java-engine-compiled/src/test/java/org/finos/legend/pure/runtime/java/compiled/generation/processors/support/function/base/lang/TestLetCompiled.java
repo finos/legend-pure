@@ -51,7 +51,7 @@ public class TestLetCompiled extends AbstractPureTestWithCoreCompiled
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
             Assert.fail();
         }
     }

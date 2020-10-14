@@ -328,7 +328,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
             this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 5, 4, e);
         }
     }
@@ -414,7 +414,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
             this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 4, 12, e);
         }
     }
@@ -459,7 +459,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
             this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 4, 12, e);
         }
 
@@ -1519,7 +1519,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
             this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[c3] violated in the Class Position", 27, 14, e);
         }
     }

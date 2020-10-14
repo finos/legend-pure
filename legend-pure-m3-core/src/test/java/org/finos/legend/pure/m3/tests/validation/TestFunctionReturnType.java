@@ -223,7 +223,7 @@ public class TestFunctionReturnType extends AbstractPureTestWithCoreCompiledPlat
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
             assertPureException(PureCompilationException.class, "Return type error in function 'funcPairs2'; found: meta::pure::functions::collection::Pair<String, meta::pure::metamodel::function::ConcreteFunctionDefinition<{meta::pure::metamodel::type::Class<meta::pure::metamodel::type::Type>[0..1]->meta::pure::functions::collection::List<meta::pure::metamodel::type::Type>[1]}>>; expected: meta::pure::functions::collection::Pair<String, meta::pure::metamodel::function::Function<{meta::pure::metamodel::type::Class<meta::pure::metamodel::type::Any>[0..1]->meta::pure::functions::collection::List<meta::pure::metamodel::type::Any>[1]}>>", "testSource2.pure", 8, 3, e);
         }
     }

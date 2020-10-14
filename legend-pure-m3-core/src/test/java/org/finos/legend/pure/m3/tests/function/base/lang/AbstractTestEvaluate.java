@@ -120,7 +120,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
         }
         catch (RuntimeException e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
             this.assertExceptionInformation(e, "Error during dynamic function evaluation. The type Wave is not compatible with the type ElementaryParticle", 29, 70, this.checkLineNumbers());
         }
     }

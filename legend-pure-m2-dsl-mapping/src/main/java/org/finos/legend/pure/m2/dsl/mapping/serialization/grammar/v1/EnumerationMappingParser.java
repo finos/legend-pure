@@ -82,7 +82,7 @@ public class EnumerationMappingParser implements Parser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseMapping(false, content, classPath, classSourceInfo, sourceName, offset, importId);
             }
             else

@@ -97,7 +97,7 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
     };
 
     private final ClassLoader classLoader;
-    private volatile ImmutableMap<String, ImmutableMap<String, ClassLoaderCodeStorageNode>> nodesByPathByRepo;
+    private volatile ImmutableMap<String, ImmutableMap<String, ClassLoaderCodeStorageNode>> nodesByPathByRepo; //NOSONAR we actually want to protect the pointer
 
     public ClassLoaderCodeStorage(ClassLoader classLoader, Iterable<? extends CodeRepository> repositories)
     {

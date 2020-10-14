@@ -123,11 +123,6 @@
             <artifactId>eclipse-collections</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-
          <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4</artifactId>
