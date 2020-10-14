@@ -1090,7 +1090,7 @@ public class CompiledSupport
         return Math.log(n.doubleValue());
     }
 
-    public static boolean equal(Object left, Object right)
+    public static boolean equal(Object left, Object right) //NOSONAR Function signature avoids confusion
     {
         if (left == right)
         {
