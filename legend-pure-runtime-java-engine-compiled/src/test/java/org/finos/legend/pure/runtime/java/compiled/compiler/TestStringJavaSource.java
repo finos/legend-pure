@@ -18,6 +18,7 @@ public class TestStringJavaSource
         Assert.assertFalse(StringJavaSource.hasPackageDeclaration("invalid package declaration.line;\n\npublic class MyClass {}\n"));
         Assert.assertFalse(StringJavaSource.hasPackageDeclaration("// package declaration.line;\n\npublic class MyClass {}\n"));
         Assert.assertFalse(StringJavaSource.hasPackageDeclaration("package\fa.b.c.d;\n"));
+        Assert.assertFalse(StringJavaSource.hasPackageDeclaration("packagea.b.c.d;\n"));
         Assert.assertFalse(StringJavaSource.hasPackageDeclaration("\r\n\r\npackage    \r\n       a.b.c.d;\n"));
         Assert.assertFalse(StringJavaSource.hasPackageDeclaration("import a.b.c.d;\nimport e.f.g.h;\n\npublic class MyClass {}\n"));
     }
