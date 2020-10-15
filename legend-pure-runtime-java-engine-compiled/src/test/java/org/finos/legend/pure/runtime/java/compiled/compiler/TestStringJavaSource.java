@@ -26,6 +26,7 @@ public class TestStringJavaSource
         Assert.assertTrue(StringJavaSource.hasPackageDeclaration("\n\n\n\npackage valid.dec.line;\n\npublic class MyClass {}\n"));
         Assert.assertTrue(StringJavaSource.hasPackageDeclaration("// comment line 1\n// comment line 2\npackage e.f.g.h.i.j;\nclass MyClass {}\n"));
         Assert.assertTrue(StringJavaSource.hasPackageDeclaration("\r\n\r\n   \t package    \t\ta.b.c.d \t;\t\t\t\r\n"));
+        Assert.assertTrue(StringJavaSource.hasPackageDeclaration("package    \t\ta.b.c.d \t;more stuff"));
 
         Assert.assertFalse(StringJavaSource.hasPackageDeclaration(""));
         Assert.assertFalse(StringJavaSource.hasPackageDeclaration("not even Java code"));
