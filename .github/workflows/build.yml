@@ -59,9 +59,7 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
       - name: Build + Test
         if: github.ref != 'refs/heads/master'
-        # TODO - add javadoc:javadoc goal
-        run: mvn install
+        run: mvn install javadoc:javadoc
       - name: Build + Test + Sonar + Maven Deploy
         if: github.ref == 'refs/heads/master'
-        # TODO - add javadoc:javadoc goal
-        run: mvn deploy -Psonar
+        run: mvn deploy javadoc:javadoc -Psonar
