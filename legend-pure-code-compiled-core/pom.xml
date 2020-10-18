@@ -39,7 +39,7 @@
                 <artifactId>legend-pure-maven-compilation-par</artifactId>
                 <configuration>
                     <sourceDirectory>${project.build.outputDirectory}</sourceDirectory>
-                    <purePlatformVersion>${pure.version}</purePlatformVersion>
+                    <purePlatformVersion>${project.version}</purePlatformVersion>
                     <repositories>
                         <repository>core</repository>
                     </repositories>
