@@ -38,7 +38,7 @@
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-maven-compilation-par</artifactId>
                 <configuration>
-                    <purePlatformVersion>${pure.version}</purePlatformVersion>
+                    <purePlatformVersion>${project.version}</purePlatformVersion>
                     <repositories>
                         <repository>platform</repository>
                     </repositories>
