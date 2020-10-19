@@ -22,13 +22,13 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>0.0.7</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>legend-pure-code-java-compiled-core</artifactId>
     <packaging>jar</packaging>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.0.7</version>
     <name>Legend Pure - Code - Java Compiled - Core</name>
 
     <build>
@@ -56,12 +56,12 @@
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-platform</artifactId>
-                        <version>0.1.0-SNAPSHOT</version>
+                        <version>0.0.7</version>
                     </dependency>
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-core</artifactId>
-                        <version>0.1.0-SNAPSHOT</version>
+                        <version>0.0.7</version>
                     </dependency>
                 </dependencies>
             </plugin>

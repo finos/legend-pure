@@ -22,13 +22,13 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>0.0.7</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>legend-pure-runtime-java-extension-external-shared</artifactId>
     <packaging>jar</packaging>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.0.7</version>
     <name>Legend Pure - Runtime - Java Extension - External Shared</name>
 
 
