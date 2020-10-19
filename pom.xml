@@ -161,10 +161,6 @@
                     <version>2.6</version>
                 </plugin>
                 <plugin>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>2.2.1</version>
-                </plugin>
-                <plugin>
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>1.8</version>
                 </plugin>
@@ -222,18 +218,6 @@
         </pluginManagement>
 
         <plugins>
-            <plugin>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>

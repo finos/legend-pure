@@ -31,10 +31,6 @@
     <packaging>jar</packaging>
     <version>0.1.0-SNAPSHOT</version>
 
-    <properties>
-        <javadoc.skip>true</javadoc.skip>
-    </properties>
-
     <build>
         <plugins>
             <plugin>
