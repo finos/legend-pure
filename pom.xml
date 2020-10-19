@@ -26,7 +26,7 @@
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>0.0.7</version>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -99,7 +99,7 @@
 
     <scm>
         <developerConnection>scm:git:https://github.com/finos/legend-pure</developerConnection>
-        <tag>legend-pure-0.0.7</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <build>
