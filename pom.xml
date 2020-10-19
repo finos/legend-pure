@@ -91,7 +91,7 @@
         <bouncycastle.version>1.64</bouncycastle.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
         <json-simple.version>1.1.1</json-simple.version>
-        <apache-httpcomponents.version>4.5.5</apache-httpcomponents.version>
+        <apache-httpcomponents.version>4.5.13</apache-httpcomponents.version>
         <junit.version>4.13.1</junit.version>
         <jacoco.maven.plugin.version>0.8.5</jacoco.maven.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
