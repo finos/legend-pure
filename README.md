@@ -13,7 +13,7 @@ This application uses Maven 3.6+ and JDK 11. Simply run `mvn install` to compile
 
 ## Roadmap
 
-Visit [legend.finos.org/docs/roadmap](https://legend.finos.org/docs/roadmap) to know more about the roadmap.
+Visit our [roadmap](https://github.com/finos/legend#roadmap) to know more about the upcoming features.
 
 ## Contributing
 
