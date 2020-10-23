@@ -166,11 +166,12 @@ public class PureSession
             try
             {
                 mainObj = this.saveFiles(request, response);
-                JSONArray array = null != mainObj.get("modifiedFiles") ? (JSONArray) mainObj.get("modifiedFiles") : new JSONArray();
-                mainObj.put("modifiedFiles", array);
                 if (null != mainObj)
                 {
                     //file has been saved
+                    JSONArray array = (null != mainObj.get("modifiedFiles")) ? (JSONArray) mainObj.get("modifiedFiles") : new JSONArray();
+                    mainObj.put("modifiedFiles", array);
+
                     JSONObject extraParams = (JSONObject) mainObj.get("extraParams");
                     extraParams.put("saveOutcome", "saved");
                     func.run(this, extraParams, (JSONArray) mainObj.get("modifiedFiles"), response, outputStream);
