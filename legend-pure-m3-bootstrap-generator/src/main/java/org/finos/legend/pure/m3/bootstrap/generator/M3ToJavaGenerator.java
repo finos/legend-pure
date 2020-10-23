@@ -65,7 +65,7 @@ public class M3ToJavaGenerator
 
     static
     {
-        PRIMITIVES = new HashMap<>();
+        PRIMITIVES = Maps.mutable.empty();
         PRIMITIVES.put("Integer", "Long");
         //PRIMITIVES.put("Float", "java.math.BigDecimal");
         PRIMITIVES.put("Float", "Double");
@@ -77,7 +77,7 @@ public class M3ToJavaGenerator
         PRIMITIVES.put("String", "String");
         PRIMITIVES.put("Number", "Number");
 
-        PRIMITIVES_EXTERNAL = new HashMap<>();
+        PRIMITIVES_EXTERNAL = Maps.mutable.empty();
         PRIMITIVES_EXTERNAL.put("Integer", "long");
         PRIMITIVES_EXTERNAL.put("Float", "double");
         PRIMITIVES_EXTERNAL.put("Boolean", "boolean");
@@ -101,25 +101,7 @@ public class M3ToJavaGenerator
         PRIMITIVES_EXTERNAL_0_1.put("Number", "Number");
     }
 
-    private static final Predicate<CoreInstance> IS_TO_ONE_PREDICATE = new Predicate<CoreInstance>()
-    {
-        @Override
-        public boolean accept(CoreInstance each)
-        {
-            return isToOne(each);
-        }
-    };
-
-    private static final Predicate<CoreInstance> IS_MANDATORY_PREDICATE = new Predicate<CoreInstance>()
-    {
-        @Override
-        public boolean accept(CoreInstance each)
-        {
-            return isMandatoryProperty(each);
-        }
-    };
-
-    private MutableMap<String, StubDef> STUB_DEFS = Lists.immutable.with(
+    private final MutableMap<String, StubDef> stubDefs = Lists.immutable.with(
                     StubDef.build("Class", "ImportStub"),
                     StubDef.build("Stereotype", "ImportStub"),
                     StubDef.build("Tag", "ImportStub"),
@@ -130,7 +112,7 @@ public class M3ToJavaGenerator
                     StubDef.build("ClassProjection", "ImportStub"),
                     StubDef.build("Function", "ImportStub"),
                     StubDef.build("Property", "PropertyStub", Sets.immutable.with("Class", "Association")),
-                    StubDef.build("Enum", "EnumStub", Sets.immutable.<String>with("Enumeration"))
+                    StubDef.build("Enum", "EnumStub", Sets.immutable.with("Enumeration"))
             ).injectInto(Maps.mutable.empty(), (map, stubDef) -> {
                 map.put(stubDef.getClassName(), stubDef);
                 return map;
@@ -139,7 +121,7 @@ public class M3ToJavaGenerator
 
     private StubDef getStubDef(String className)
     {
-        return STUB_DEFS.get(className);
+        return this.stubDefs.get(className);
     }
 
     private String getStubType(String className)
@@ -178,7 +160,7 @@ public class M3ToJavaGenerator
         this.factoryNamePrefix = factoryNamePrefix;
         this.generateTypeFactoriesById = generateTypeFactoriesById;
         this.propertyTypeResolver = propertyTypeResolver;
-        this.STUB_DEFS.putAll(additionalStubs);
+        this.stubDefs.putAll(additionalStubs);
     }
 
     public void generate(ModelRepository repository, ListIterable<String> fileNames)
@@ -229,10 +211,10 @@ public class M3ToJavaGenerator
         CoreInstance classGenericType = getClassGenericType(instance);
 
         MutableSet<CoreInstance> propertiesFromAssociations = Sets.mutable.withAll(instance.getValueForMetaPropertyToMany("propertiesFromAssociations"));
-        MutableSet<CoreInstance> properties = ((MutableSet<CoreInstance>)Sets.mutable.withAll(instance.getValueForMetaPropertyToMany("properties")))
+        MutableSet<CoreInstance> properties = Sets.mutable.<CoreInstance>withAll(instance.getValueForMetaPropertyToMany("properties"))
                 .withAll(propertiesFromAssociations);
 
-        MutableSet<CoreInstance> qualifiedProperties = ((MutableSet<CoreInstance>)Sets.mutable.withAll(instance.getValueForMetaPropertyToMany("qualifiedProperties")))
+        MutableSet<CoreInstance> qualifiedProperties = Sets.mutable.<CoreInstance>withAll(instance.getValueForMetaPropertyToMany("qualifiedProperties"))
                 .withAll(instance.getValueForMetaPropertyToMany("qualifiedPropertiesFromAssociations"));
 
         collectGeneralizationQualifiedProperties(instance.getValueForMetaPropertyToMany("generalizations"), qualifiedProperties);
@@ -305,7 +287,7 @@ public class M3ToJavaGenerator
 
     private static String getJavaPackageString(ListIterable<String> packagePath)
     {
-        return packagePath.isEmpty() ? ROOT_PACKAGE : packagePath.collectWith(JavaTools.MAKE_VALID_JAVA_IDENTIFIER, "_").makeString(ROOT_PACKAGE + ".", ".", "");
+        return packagePath.isEmpty() ? ROOT_PACKAGE : packagePath.collectWith(JavaTools::makeValidJavaIdentifier, "_").makeString(ROOT_PACKAGE + ".", ".", "");
     }
 
 
@@ -327,12 +309,12 @@ public class M3ToJavaGenerator
         String systemPathForPackageableElement = paths.makeString("::");
 
 
-        PartitionIterable<CoreInstance> partition = properties.partition(IS_TO_ONE_PREDICATE);
+        PartitionIterable<CoreInstance> partition = properties.partition(M3ToJavaGenerator::isToOne);
 
         RichIterable<CoreInstance> toOneProperties = partition.getSelected();
         RichIterable<CoreInstance> toManyProperties = partition.getRejected();
 
-        RichIterable<CoreInstance> mandatoryToOneProps = toOneProperties.select(IS_MANDATORY_PREDICATE);
+        RichIterable<CoreInstance> mandatoryToOneProps = toOneProperties.select(M3ToJavaGenerator::isMandatoryProperty);
 
         RichIterable<Pair<String, String>> typesForMandatoryProps = buildMandatoryProperties(classGenericType, mandatoryToOneProps, imports).toSortedSetBy(Functions.<String>firstOfPair());
 
@@ -2161,12 +2143,12 @@ public class M3ToJavaGenerator
 
         imports.setThisClassName(wrapperName);
 
-        PartitionIterable<CoreInstance> partition = properties.partition(IS_TO_ONE_PREDICATE);
+        PartitionIterable<CoreInstance> partition = properties.partition(M3ToJavaGenerator::isToOne);
 
         RichIterable<CoreInstance> toOneProperties = partition.getSelected();
         RichIterable<CoreInstance> toManyProperties = partition.getRejected();
 
-        RichIterable<CoreInstance> mandatoryToOneProps = toOneProperties.select(IS_MANDATORY_PREDICATE);
+        RichIterable<CoreInstance> mandatoryToOneProps = toOneProperties.select(M3ToJavaGenerator::isMandatoryProperty);
 
         RichIterable<Pair<String, String>> typesForMandatoryProps = buildMandatoryProperties(classGenericType, mandatoryToOneProps, imports).toSortedSetBy(Functions.<String>firstOfPair());
 
