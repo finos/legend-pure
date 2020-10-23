@@ -4,6 +4,8 @@
 **/lib
 **/surefire-reports-aggregate
 **/dependency-reduced-pom.xml
+**/node_modules/
+**/package-lock.json
 
 .factorypath
 
