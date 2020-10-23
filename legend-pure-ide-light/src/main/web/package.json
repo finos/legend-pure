@@ -1,5 +1,7 @@
 {
-  "name": "legend-pure-light-ide-web",
+  "name": "legend-pure-ide-light-web",
+  "private": true,
+  "description": "The UI for Pure IDE (Light)",
   "engines": {
     "node": ">=14.3.0"
   },

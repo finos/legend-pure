@@ -15,6 +15,7 @@
 package org.finos.legend.pure.ide.light;
 
 import io.dropwizard.Application;
+import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
@@ -55,6 +56,7 @@ public class PureIDEServer extends Application<ServerConfiguration>
                 return configuration.swagger;
             }
         });
+        bootstrap.addBundle(new AssetsBundle("/ide", "/ide", "index.html", "static"));
     }
 
     @Override
@@ -85,7 +87,6 @@ public class PureIDEServer extends Application<ServerConfiguration>
         environment.jersey().register(new Activities(pureSession));
         environment.jersey().register(new FileManagement(pureSession));
         environment.jersey().register(new LifeCycle(pureSession));
-
 
         enableCors(environment);
     }

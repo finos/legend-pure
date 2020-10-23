@@ -1,5 +1,4 @@
 {
   "contentRoute": "ide",
-  "baseRoute": "ide",
-  "baseUrl": "http://localhost:9010"
+  "baseRoute": "ide"
 }
