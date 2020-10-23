@@ -1,4 +1,4 @@
-function <<meta::pure::profiles::test.Test>> meta::pure::executionPlan::test::testAllNodesForGraphNode() : Boolean[1]
+function <<meta::pure::profiles::test.Test>> meta::pure::executionPlan::tests::testAllNodesForGraphNode() : Boolean[1]
 {
    let sysMapping = ^meta::pure::router::systemMapping::SystemMapping(
       executeFunctionAsString='',
