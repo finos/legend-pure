@@ -27,7 +27,6 @@ import { EditorStoreProvider, useEditorStore } from 'Stores/EditorStore';
 import clsx from 'clsx';
 import Backdrop from '@material-ui/core/Backdrop';
 import { useApplicationStore } from 'Stores/ApplicationStore';
-import { AppHeader } from 'Components/shared/sharable/AppHeader';
 import { StatusBar } from 'Components/editor/StatusBar';
 import { EditPanel } from 'Components/editor/edit-panel/EditPanel';
 import { flowResult } from 'mobx';
@@ -115,40 +114,35 @@ export const EditorInner = observer(() => {
   const editable = editorStore.initState.hasSucceeded;
 
   return (
-    <div className="app__page">
-      <AppHeader />
-      <div className="app__content">
-        <div className="editor">
-          <GlobalHotKeys keyMap={keyMap} handlers={handlers}>
-            <div className="editor__body">
-              <ActivityBar />
-              <Backdrop className="backdrop" open={editorStore.backdrop} />
-              <ReactResizeDetector
-                handleHeight={true}
-                handleWidth={true}
-                onResize={handleResize}
-              >
-                <div className="editor__content-container" ref={editorContainerRef}>
-                  <div className={clsx('editor__content', { 'editor__content--expanded': editorStore.isInExpandedMode })}>
-                    <SplitPane split="vertical" size={editorStore.sideBarSize} onDragFinished={snapSideBar} minSize={0} maxSize={-600}>
-                      <SideBar />
-                      <SplitPane primary="second" split="horizontal" size={editorStore.auxPanelSize} onDragFinished={snapAuxPanel} minSize={0} maxSize={0}>
-                        <>
-                          <EditPanel />
-                        </>
-                        <AuxiliaryPanel />
-                      </SplitPane>
-                    </SplitPane>
-                  </div>
-                </div>
-              </ReactResizeDetector>
+    <div className="editor">
+      <GlobalHotKeys keyMap={keyMap} handlers={handlers}>
+        <div className="editor__body">
+          <ActivityBar />
+          <Backdrop className="backdrop" open={editorStore.backdrop} />
+          <ReactResizeDetector
+            handleHeight={true}
+            handleWidth={true}
+            onResize={handleResize}
+          >
+            <div className="editor__content-container" ref={editorContainerRef}>
+              <div className={clsx('editor__content', { 'editor__content--expanded': editorStore.isInExpandedMode })}>
+                <SplitPane split="vertical" size={editorStore.sideBarSize} onDragFinished={snapSideBar} minSize={0} maxSize={-600}>
+                  <SideBar />
+                  <SplitPane primary="second" split="horizontal" size={editorStore.auxPanelSize} onDragFinished={snapAuxPanel} minSize={0} maxSize={0}>
+                    <>
+                      <EditPanel />
+                    </>
+                    <AuxiliaryPanel />
+                  </SplitPane>
+                </SplitPane>
+              </div>
             </div>
-            <StatusBar actionsDisabled={!editable} />
-            {editable && <FileSearchCommand />}
-            {editable && <TextSearchCommand />}
-          </GlobalHotKeys>
+          </ReactResizeDetector>
         </div>
-      </div>
+        <StatusBar actionsDisabled={!editable} />
+        {editable && <FileSearchCommand />}
+        {editable && <TextSearchCommand />}
+      </GlobalHotKeys>
     </div>
   );
 });

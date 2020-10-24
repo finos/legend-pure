@@ -39,9 +39,6 @@ export const EditPanelSplashScreen: React.FC = () => {
       onResize={handleResize}
     >
       <div className="edit-panel__splash-screen">
-        {/* <div className={clsx('edit-panel__splash-screen__logo', { 'edit-panel__splash-screen__logo--hidden': !showLogo })}>
-          <Logo className="edit-panel__splash-screen__logo__svg" />
-        </div> */}
         <div className={clsx('edit-panel__splash-screen__content', { 'edit-panel__splash-screen__content--hidden': !showCommandList })}>
           <div className="edit-panel__splash-screen__content__item">
             <div className="edit-panel__splash-screen__content__item__label">Execute the &apos;go&apos; function</div>

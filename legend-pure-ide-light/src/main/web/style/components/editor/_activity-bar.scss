@@ -21,8 +21,14 @@
   overflow-x: hidden;
   overflow-y: hidden;
 
+  &__logo {
+    @include flexCenter;
+    height: 6.2rem;
+    border-bottom: 0.1rem solid var(--color-dark-grey-100);
+  }
+
   &__items {
-    height: calc(100% - 5rem);
+    height: calc(100% - 11.2rem);
     overflow-y: auto;
     overflow-x: hidden;
   }
@@ -165,5 +171,14 @@
     &__context-menu__item:not([disabled]):hover {
       background: var(--color-light-blue-450);
     }
+  }
+}
+
+.logo {
+  @include flexCenter;
+
+  svg {
+    color: var(--color-medium-green-100);
+    font-size: 3rem;
   }
 }

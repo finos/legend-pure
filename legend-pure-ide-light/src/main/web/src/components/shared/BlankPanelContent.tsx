@@ -26,9 +26,9 @@ export const BlankPanelContent: React.FC<{
 }> = props => {
   const { children } = props;
   const [contentRef, contentDimensions] = useDimensions();
-  const [showLogo, setShowLogo] = useState(false);
+  const [showContent, setShowContent] = useState(false);
   const handleResize = (width: number, height: number): void => {
-    setShowLogo(width > ((contentDimensions?.width ?? 0) + DEFAULT_CONTENT_PADDING * 2) && height > ((contentDimensions?.height ?? 0) + DEFAULT_CONTENT_PADDING * 2));
+    setShowContent(width > ((contentDimensions?.width ?? 0) + DEFAULT_CONTENT_PADDING * 2) && height > ((contentDimensions?.height ?? 0) + DEFAULT_CONTENT_PADDING * 2));
   };
 
   return (
@@ -41,7 +41,7 @@ export const BlankPanelContent: React.FC<{
       refreshOptions={{ trailing: true }}
     >
       <div className="panel__content__blank">
-        <div ref={contentRef} className={clsx('panel__content__blank__content', { 'panel__content__blank__content--hide': !showLogo })}>{children}</div>
+        <div ref={contentRef} className={clsx('panel__content__blank__content', { 'panel__content__blank__content--hide': !showContent })}>{children}</div>
       </div>
     </ReactResizeDetector>
   );

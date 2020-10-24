@@ -44,6 +44,7 @@ export const FileEditor = observer((props: {
         ...baseTextEditorSettings,
         language: EDITOR_LANGUAGE.PURE,
         theme: EDITOR_THEME.NATIVE,
+        fontSize: 12,
       });
       editor.onDidChangeModelContent(() => {
         const currentVal = editor.getValue();
