@@ -14,25 +14,12 @@
 
 package org.finos.legend.pure.m3.tools;
 
-import org.eclipse.collections.api.block.function.Function2;
-import org.eclipse.collections.api.set.ImmutableSet;
-import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.impl.utility.StringIterate;
 
 import javax.lang.model.SourceVersion;
 
 public class JavaTools
 {
-    public static final ImmutableSet<String> JAVA_KEYWORDS = Sets.immutable.with("abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "false", "final", "finally", "float", "for", "goto", "if", "implements", "import", "instanceof", "int", "interface", "long", "native", "new", "null", "package", "private", "protected", "public", "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "true", "try", "void", "volatile", "while");
-
-    public static final Function2<String, String, String> MAKE_VALID_JAVA_IDENTIFIER = new Function2<String, String, String>()
-    {
-        @Override
-        public String value(String string, String fixChar)
-        {
-            return makeValidJavaIdentifier(string, fixChar);
-        }
-    };
-
     private JavaTools()
     {
         // Utility class
@@ -52,42 +39,51 @@ public class JavaTools
     /**
      * Make string into a valid Java identifier.
      *
-     * @param string  candidate Java identifier
-     * @param fixChar string to use to fix invalid identifiers
+     * @param string candidate Java identifier
+     * @param fix    string to use to fix invalid identifiers
      * @return valid Java identifier
      */
-    public static String makeValidJavaIdentifier(String string, String fixChar)
+    public static String makeValidJavaIdentifier(String string, String fix)
     {
-        if (string == null)
+        if ((string == null) || string.isEmpty())
         {
-            return fixChar;
+            if (!SourceVersion.isIdentifier(fix) || SourceVersion.isKeyword(fix))
+            {
+                throw new IllegalStateException("Cannot replace null or empty string with \"" + fix + "\", as it is not a valid Java identifier");
+            }
+            return fix;
+        }
+
+        if (SourceVersion.isKeyword(string))
+        {
+            if (isValidAtStart(fix))
+            {
+                return fix + string;
+            }
+            if (isValidPart(fix))
+            {
+                return string + fix;
+            }
+            throw new IllegalStateException("\"" + string + "\" is a Java keyword, but fix (\"" + fix + "\") is not a valid Java identifier part");
         }
 
         int length = string.length();
-        if (length == 0)
-        {
-            return fixChar;
-        }
-
-        if (JAVA_KEYWORDS.contains(string))
-        {
-            return fixChar + string;
-        }
-
         StringBuilder builder = null;
         int codePoint = string.codePointAt(0);
         int codePointLen = Character.charCount(codePoint);
         if (!Character.isJavaIdentifierStart(codePoint))
         {
-            builder = new StringBuilder(length + 1);
-            builder.append(fixChar);
+            if (!isValidAtStart(fix))
+            {
+                throw new IllegalStateException("First character of \"" + string + "\" needs to be replaced, but replacement (\"" + fix + "\") is not a valid Java identifier start");
+            }
+            builder = new StringBuilder(length + fix.length()).append(fix);
             if (Character.isJavaIdentifierPart(codePoint))
             {
                 builder.append(string, 0, codePointLen);
             }
         }
-        int index = codePointLen;
-        while (index < length)
+        for (int index = codePointLen; index < length; index += codePointLen)
         {
             codePoint = string.codePointAt(index);
             codePointLen = Character.charCount(codePoint);
@@ -102,14 +98,27 @@ public class JavaTools
             {
                 if (builder == null)
                 {
-                    builder = new StringBuilder(length);
+                    if (!isValidPart(fix))
+                    {
+                        throw new IllegalStateException("Character " + index + " of \"" + string + "\" needs to be replaced, but replacement (\"" + fix + "\") is not a valid Java identifier part");
+                    }
+                    builder = new StringBuilder(length + (fix.length() - 1));
                     builder.append(string, 0, index);
                 }
-                builder.append(fixChar);
+                builder.append(fix);
             }
-            index += codePointLen;
         }
 
         return (builder == null) ? string : builder.toString();
+    }
+
+    private static boolean isValidAtStart(String fix)
+    {
+        return isValidPart(fix) && Character.isJavaIdentifierStart(fix.codePointAt(0));
+    }
+
+    private static boolean isValidPart(String fix)
+    {
+        return (fix != null) && !fix.isEmpty() && StringIterate.allSatisfyCodePoint(fix, Character::isJavaIdentifierPart);
     }
 }
