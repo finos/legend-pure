@@ -52,7 +52,7 @@ jobs:
         with:
           node-version: '14.3.0'
       - name: Check Yarn version
-      - run: yarn -v
+        run: yarn -v
       - name: Configure git
         run: |
           git config --global committer.email "infra@finos.org"
