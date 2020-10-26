@@ -128,6 +128,7 @@ module.exports = (env, arg) => {
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx'],
       alias: {
+        ServerConfig: path.resolve(__dirname, '../resources/ideLightConfig.json'),
         BaseConfig: path.resolve(__dirname, 'ide.config.json'),
         Const: path.resolve(__dirname, 'src/const'),
         Utilities: path.resolve(__dirname, 'src/utils'),

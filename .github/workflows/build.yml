@@ -47,6 +47,12 @@ jobs:
           server-id: ossrh
           server-username: CI_DEPLOY_USERNAME
           server-password: CI_DEPLOY_PASSWORD
+      - name: Set up Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.3.0'
+      - name: Check Yarn version
+        run: yarn -v
       - name: Configure git
         run: |
           git config --global committer.email "infra@finos.org"

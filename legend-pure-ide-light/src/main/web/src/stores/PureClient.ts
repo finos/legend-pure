@@ -15,7 +15,7 @@
  */
 
 import type { NetworkClient } from 'Utilities/NetworkClient';
-import BASE_CONFIG from 'BaseConfig';
+import ServerConfig from 'ServerConfig';
 import type { ConceptActivity, InitializationResult, InitializationActivity } from 'Models/Initialization';
 import type { DirectoryNode } from 'Models/DirectoryTree';
 import type { ConceptNode } from 'Models/ConceptTree';
@@ -27,8 +27,15 @@ import type { Usage, UsageConcept } from 'Models/Usage';
 import type { PlainObject } from 'Utilities/GeneralUtil';
 import type { CommandResult } from 'Models/Command';
 
+// roughly follow Dropwizard connector config
+interface ServerConnectorConfig {
+  type: string;
+  port: number;
+  bindHost?: string;
+}
+
 export class PureClient {
-  readonly baseUrl?: string;
+  readonly baseUrl: string;
   private networkClient: NetworkClient;
   // Pure IDE info
   userId = 'localuser';
@@ -38,7 +45,8 @@ export class PureClient {
 
   constructor(networkClient: NetworkClient) {
     this.networkClient = networkClient;
-    this.baseUrl = BASE_CONFIG.baseUrl;
+    const connector = ServerConfig.server.connector as ServerConnectorConfig;
+    this.baseUrl = `${connector.type}://${connector.bindHost ?? 'localhost'}:${connector.port}`;
   }
 
   initialize = (requestCache: boolean): Promise<PlainObject<InitializationResult>> => this.networkClient.get(`${this.baseUrl}/initialize`, undefined, undefined, {

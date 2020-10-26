@@ -1,5 +1,7 @@
 {
-  "name": "legend-pure-light-ide-web",
+  "name": "legend-pure-ide-light-web",
+  "private": true,
+  "description": "The UI for Pure IDE (Light)",
   "engines": {
     "node": ">=14.3.0"
   },
@@ -8,6 +10,7 @@
     "start": "node ./dev/scripts/start.js",
     "start:advanced": "node ./dev/scripts/start.js --advanced",
     "start:minimal": "webpack serve --mode development --hot",
+    "serve:static": "npx http-server ../../../target/classes/ -p 3000 -a localhost -g --cors -o /ide",
     "lint": "eslint --config ./.eslintrc-advanced.js --rulesdir ./dev/eslint_rules .",
     "lint:fix": "eslint --config ./.eslintrc-advanced.js --rulesdir ./dev/eslint_rules --fix .",
     "update": "yarn upgrade-interactive --latest"
@@ -64,7 +67,7 @@
     "eslint-plugin-react": "7.21.5",
     "eslint-plugin-react-hooks": "4.2.0",
     "fork-ts-checker-webpack-plugin": "5.2.0",
-    "html-webpack-plugin": "5.0.0-alpha.6",
+    "html-webpack-plugin": "5.0.0-alpha.7",
     "mini-css-extract-plugin": "1.1.1",
     "monaco-editor-webpack-plugin": "2.0.0",
     "postcss": "8.1.2",

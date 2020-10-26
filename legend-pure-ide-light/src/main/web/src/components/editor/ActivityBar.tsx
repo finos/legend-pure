@@ -20,6 +20,7 @@ import { FaList, FaRegFile } from 'react-icons/fa';
 import { useEditorStore } from 'Stores/EditorStore';
 import clsx from 'clsx';
 import { ACTIVITY_MODE } from 'Stores/EditorConfig';
+import { Logo } from 'Components/shared/Logo';
 
 interface ActivityDisplay {
   mode: ACTIVITY_MODE;
@@ -46,6 +47,9 @@ export const ActivityBar = observer(() => {
 
   return (
     <div className="activity-bar">
+      <div className="activity-bar__logo">
+        <Logo />
+      </div>
       <div className="activity-bar__items">
         {activities.map(activity =>
           <button
