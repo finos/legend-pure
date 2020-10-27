@@ -33,6 +33,7 @@ import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -53,6 +54,12 @@ public class DistributedBinaryGraphDeserializer
     private final FileReader fileReader;
     private final LazyStringIndex stringIndex;
     private final ImmutableMap<String, ClassifierIndex> classifierIndexes;
+
+    public static void setSourceCoordinateMapProvider(SourceCoordinateMapProvider sourceCoordinateMapProvider) {
+        DistributedBinaryGraphDeserializer.sourceCoordinateMapProvider = sourceCoordinateMapProvider;
+    }
+
+    private static SourceCoordinateMapProvider sourceCoordinateMapProvider = new DefaultSourceCoordinateMapImpl();
 
     private DistributedBinaryGraphDeserializer(FileReader fileReader)
     {
@@ -153,10 +160,10 @@ public class DistributedBinaryGraphDeserializer
         return this.classifierIndexes.get(classifierId);
     }
 
-    private MapIterable<String, SourceCoordinates> readInstanceIndex(Reader reader)
+    private MapIterable<String, SourceCoordinates> readInstanceIndex(Reader reader, String classifier)
     {
         int instanceCount = reader.readInt();
-        MutableMap<String, SourceCoordinates> index = UnifiedMap.newMap(instanceCount);
+        MutableMap<String, SourceCoordinates> index = sourceCoordinateMapProvider.getMap(instanceCount, classifier);
 
         int instancePartition = reader.readInt();
         int offset = reader.readInt();
@@ -247,7 +254,7 @@ public class DistributedBinaryGraphDeserializer
                     {
                         try (Reader reader = DistributedBinaryGraphDeserializer.this.fileReader.getReader(DistributedBinaryGraphSerializer.getMetadataIndexFilePath(this.classifierId)))
                         {
-                            this.index = readInstanceIndex(reader);
+                            this.index = readInstanceIndex(reader, this.classifierId);
                         }
                     }
                 }
@@ -256,7 +263,7 @@ public class DistributedBinaryGraphDeserializer
         }
     }
 
-    private static class SourceCoordinates
+    public static class SourceCoordinates implements Serializable
     {
         private final String identifier;
         private final String filePath;
@@ -437,6 +444,13 @@ public class DistributedBinaryGraphDeserializer
             {
                 throw new RuntimeException("Error accessing file '" + path + "'", e);
             }
+        }
+    }
+
+    private static class DefaultSourceCoordinateMapImpl implements SourceCoordinateMapProvider {
+        @Override
+        public MutableMap<String, SourceCoordinates> getMap(int instanceCount, String classifier) {
+            return UnifiedMap.newMap(instanceCount);
         }
     }
 }
