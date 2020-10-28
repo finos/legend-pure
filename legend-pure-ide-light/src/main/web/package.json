@@ -11,8 +11,8 @@
     "start:advanced": "node ./dev/scripts/start.js --advanced",
     "start:minimal": "webpack serve --mode development --hot",
     "serve:static": "npx http-server ../../../target/classes/ -p 3000 -a localhost -g --cors -o /ide",
-    "lint": "eslint --config ./.eslintrc-advanced.js --rulesdir ./dev/eslint_rules .",
-    "lint:fix": "eslint --config ./.eslintrc-advanced.js --rulesdir ./dev/eslint_rules --fix .",
+    "lint": "eslint --config ./.eslintrc-advanced.js .",
+    "lint:fix": "eslint --config ./.eslintrc-advanced.js --fix .",
     "update": "yarn upgrade-interactive --latest"
   },
   "dependencies": {

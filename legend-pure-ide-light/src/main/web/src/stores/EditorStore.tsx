@@ -29,7 +29,7 @@ import { ActionState } from 'Utilities/ActionState';
 import { FileCoordinate, PureFile, trimPathLeadingSlash } from 'Models/PureFile';
 import { DirectoryTreeState } from 'Stores/DirectoryTreeState';
 import { ConceptTreeState } from 'Stores/ConceptTreeState';
-import type { InitializationActivity } from 'Models/Initialization';
+import type { InitializationActivity, InitializationResult } from 'Models/Initialization';
 import { InitializationFailureWithSourceResult, InitializationFailureResult, deserializeInitializationnResult } from 'Models/Initialization';
 import type { CandidateWithPackageNotImported, ExecutionActivity, ExecutionResult } from 'Models/Execution';
 import { TestExecutionResult, UnmatchedFunctionResult, UnmatchedResult, GetConceptResult, deserializeExecutionResult, ExecutionFailureResult, ExecutionSuccessResult } from 'Models/Execution';
@@ -166,7 +166,7 @@ export class EditorStore {
       const openWelcomeFilePromise = flowResult(this.loadFile('/welcome.pure'));
       const directoryTreeInitPromise = this.directoryTreeState.initialize();
       const conceptTreeInitPromise = this.conceptTreeState.initialize();
-      const result = deserializeInitializationnResult((yield initializationPromise) as Record<PropertyKey, unknown>);
+      const result = deserializeInitializationnResult((yield initializationPromise) as PlainObject<InitializationResult>);
       if (result.text) {
         this.setConsoleText(result.text);
         this.openAuxPanel(AUX_PANEL_MODE.CONSOLE, true);
@@ -207,7 +207,7 @@ export class EditorStore {
   }
 
   async pullInitializationActivity(fn?: (activity: InitializationActivity) => void): Promise<void> {
-    const result = (await this.applicationStore.client.getInitializationActivity()) as InitializationActivity;
+    const result = await this.applicationStore.client.getInitializationActivity() as unknown as InitializationActivity;
     if (result.initializing) {
       return new Promise((resolve, reject) =>
         setTimeout(() => {
@@ -353,7 +353,6 @@ export class EditorStore {
     }
     this.executionState.inProgress();
     try {
-      this.setBlockingAlert({ message: 'Executing...', prompt: 'Please do not refresh the application', showLoading: true });
       const openedFiles = this.openedEditorStates
         .filter((editorState): editorState is FileEditorState => editorState instanceof FileEditorState)
         .map(fileEditorState => ({
@@ -362,11 +361,24 @@ export class EditorStore {
           code: fileEditorState.file.content.replace(/\r\n/g, '\n'),
         }));
       const executionPromise = this.applicationStore.client.execute(openedFiles, url, extraParams);
-      if (checkExecutionStatus) {
-        yield this.pullExecutionStatus();
-      }
-      this.setBlockingAlert({ message: 'Executing...', prompt: 'Please do not refresh the application', showLoading: true });
-      const result = deserializeExecutionResult((yield executionPromise) as Record<PropertyKey, unknown>);
+      // NOTE: when we execute, it could take a while, and by default, we run a status check which potentially
+      // blocks the screen, as such, to be less disruptive to the UX and to avoid creating the illusion of slowness
+      // we will have a wait time, if execution is below this threshold, we will not conduct the check.
+      // The current threshold we choose is 1000ms, i.e. the execution should be sub-second
+      const WAIT_TIME_TO_TRIGGER_STATUS_CHECK = 1000;
+      let executionPromiseFinished = false;
+      let executionPromiseResult: PlainObject<ExecutionResult> | undefined;
+      yield Promise.all([executionPromise.then(value => {
+        executionPromiseFinished = true;
+        executionPromiseResult = value;
+      }), new Promise(resolve => setTimeout(() => {
+        if (!executionPromiseFinished && checkExecutionStatus) {
+          this.setBlockingAlert({ message: 'Executing...', prompt: 'Please do not refresh the application', showLoading: true });
+          resolve(this.pullExecutionStatus());
+        }
+        resolve();
+      }, WAIT_TIME_TO_TRIGGER_STATUS_CHECK, true))]);
+      const result = deserializeExecutionResult(guaranteeNonNullable(executionPromiseResult));
       this.setBlockingAlert(undefined);
       this.setConsoleText(result.text);
       if (result instanceof ExecutionFailureResult) {
@@ -389,6 +401,7 @@ export class EditorStore {
         yield flowResult(manageResult(result));
       }
     } finally {
+      this.setBlockingAlert(undefined);
       this.executionState.initial();
     }
   }
@@ -396,7 +409,7 @@ export class EditorStore {
   // NOTE: currently backend do not suppor this operation, so we temporarily disable it, but
   // in theory, this will pull up a blocking modal to show the execution status to user
   async pullExecutionStatus(): Promise<void> {
-    const result = await this.applicationStore.client.getExecutionActivity() as ExecutionActivity;
+    const result = await this.applicationStore.client.getExecutionActivity() as unknown as ExecutionActivity;
     this.setBlockingAlert({ message: 'Executing...', prompt: result.text ? result.text : 'Please do not refresh the application', showLoading: true });
     if (result.executing) {
       return new Promise((resolve, reject) =>
@@ -411,6 +424,7 @@ export class EditorStore {
         }, 500)
       );
     }
+    this.setBlockingAlert({ message: 'Executing...', prompt: 'Please do not refresh the application', showLoading: true });
     return Promise.resolve();
   }
 
@@ -610,7 +624,7 @@ export class EditorStore {
 
   *command(this: EditorStore, cmd: () => Promise<PlainObject<CommandResult>>): Generator<Promise<unknown>, boolean, unknown> {
     try {
-      const result = deserializeCommandResult((yield cmd()) as Record<PropertyKey, unknown>);
+      const result = deserializeCommandResult((yield cmd()) as PlainObject<CommandResult>);
       if (result instanceof CommandFailureResult) {
         if (result.errorDialog) {
           this.applicationStore.notifyWarning(`Error: ${result.text}`);

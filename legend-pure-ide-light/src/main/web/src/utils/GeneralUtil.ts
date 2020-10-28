@@ -332,4 +332,4 @@ export const downloadFile = (fileName: string, content: string, contentType: Con
 export const getNullableFirstElement = <T>(array: T[]): T | undefined => array.length ? array[0] : undefined;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type PlainObject<T> = unknown;
+export type PlainObject<T> = Record<PropertyKey, unknown>;
