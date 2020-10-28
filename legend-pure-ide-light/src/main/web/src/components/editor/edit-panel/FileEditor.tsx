@@ -44,15 +44,6 @@ export const FileEditor = observer((props: {
         ...baseTextEditorSettings,
         language: EDITOR_LANGUAGE.PURE,
         theme: EDITOR_THEME.NATIVE,
-        // NOTE: These following font options are needed (and CSS font-size option `.monaco-editor * { font-size: 1.2rem }` as well)
-        // in order to make the editor appear properly on multiple platform, the ligatures option is needed for Mac to display properly
-        // otherwise the cursor position relatively to text would be off
-        // Another potential cause for this misaligment is that the fonts are being lazy-loaded and made available after `monaco-editor`
-        // calculated the font-width, for this, we can use `remeasureFonts`, but our case here, `fontLigatures: true` seems
-        // to do the trick
-        // See https://github.com/microsoft/monaco-editor/issues/392
-        fontSize: 12,
-        fontLigatures: true,
       });
       editor.onDidChangeModelContent(() => {
         const currentVal = editor.getValue();
