@@ -1,15 +1,16 @@
+# IDE
+.vscode
+.settings
+.classpath
+.project
 .idea/**
+.factorypath
 **/*.iml
+
+# Build
 **/target
 **/lib
 **/surefire-reports-aggregate
 **/dependency-reduced-pom.xml
 **/node_modules/
-
-.factorypath
-
-# VS Code ignores
-.vscode
-.settings
-.classpath
-.project
+package-lock.json

@@ -235,7 +235,7 @@ export class TestRunnerState {
   }
 
   async pullTestRunnerResult(testResultInfo: TestResultInfo): Promise<void> {
-    const result = deserializeTestRunnerCheckResult(await this.editorStore.applicationStore.client.checkTestRunner(this.testExecutionResult.runnerId) as Record<PropertyKey, undefined>);
+    const result = deserializeTestRunnerCheckResult(await this.editorStore.applicationStore.client.checkTestRunner(this.testExecutionResult.runnerId));
     if (result instanceof TestRunnerCheckResult) {
       await Promise.all(result.tests.map(test => promisify(() => testResultInfo.addResult(test, getFullTestId(test, this.testExecutionResult)))));
       if (!result.finished) {
@@ -247,7 +247,7 @@ export class TestRunnerState {
               this.editorStore.applicationStore.notifyWarning(`Failed to run test${e.message ? `: ${e.message}` : ''}`);
               reject(e);
             }
-            // NOTE: this call might take some time so we need to tune this depending on the performance of the app
+            // NOTE: this call might take a while so we need to tune this depending on the performance of the app
           }, 1000)
         );
       }

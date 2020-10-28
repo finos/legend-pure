@@ -102,7 +102,7 @@ export class ConceptTreeState extends TreeState<ConceptTreeNode, ConceptNode> {
   }
 
   async pullConceptsActivity(): Promise<void> {
-    const result = await this.editorStore.applicationStore.client.getConceptActivity() as ConceptActivity;
+    const result = await this.editorStore.applicationStore.client.getConceptActivity() as unknown as ConceptActivity;
     if (result.text) {
       this.setStatusText(`Preparing - ${result.text}`);
     }
