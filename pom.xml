@@ -89,7 +89,7 @@
         <log4j.version>1.2.17</log4j.version>
         <jersey.version>2.25.1</jersey.version>
         <jackson.version>2.10.3</jackson.version>
-        <jetty.version>9.4.18.v20190429</jetty.version>
+        <jetty.version>9.4.33.v20201020</jetty.version>
         <bouncycastle.version>1.64</bouncycastle.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
         <json-simple.version>1.1.1</json-simple.version>
@@ -97,7 +97,7 @@
         <junit.version>4.13.1</junit.version>
         <jacoco.maven.plugin.version>0.8.5</jacoco.maven.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
-        <dropwizard.version>1.3.24</dropwizard.version>
+        <dropwizard.version>1.3.27</dropwizard.version>
         <dropwizard-swagger.version>1.3.17-1</dropwizard-swagger.version>
         <joda.time.version>2.10.6</joda.time.version>
         <jaxrs.version>2.0.1</jaxrs.version>
@@ -600,18 +600,7 @@
             </dependency>
             <!-- Jackson -->
 
-            <dependency>
-                <groupId>com.googlecode.json-simple</groupId>
-                <artifactId>json-simple</artifactId>
-                <version>${json-simple.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.github.classgraph</groupId>
-                <artifactId>classgraph</artifactId>
-                <version>4.8.25</version>
-            </dependency>
-
+            <!-- To Review -->
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpg-jdk15on</artifactId>
@@ -764,6 +753,22 @@
                 <version>${swagger.annotation.version}</version>
             </dependency>
             <!-- Swagger -->
+
+            <!-- JSON Simple -->
+            <dependency>
+                <groupId>com.googlecode.json-simple</groupId>
+                <artifactId>json-simple</artifactId>
+                <version>${json-simple.version}</version>
+            </dependency>
+            <!-- JSON Simple -->
+
+            <!-- Class graph -->
+            <dependency>
+                <groupId>io.github.classgraph</groupId>
+                <artifactId>classgraph</artifactId>
+                <version>4.8.25</version>
+            </dependency>
+            <!-- Class graph -->
 
             <!-- Test Scope -->
             <dependency>

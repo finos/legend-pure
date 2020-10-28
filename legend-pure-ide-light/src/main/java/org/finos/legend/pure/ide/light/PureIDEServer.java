@@ -63,16 +63,13 @@ public class PureIDEServer extends Application<ServerConfiguration>
     public void run(ServerConfiguration configuration, Environment environment) throws Exception
     {
         environment.jersey().setUrlPattern("/*");
-        environment
-                .jersey()
-                .register(
-                        new SwaggerResource(
-                                "",
-                                configuration.swagger.getSwaggerViewConfiguration(),
-                                configuration.swagger.getSwaggerOAuth2Configuration(),
-                                configuration.swagger.getContextRoot() +
-                                        (configuration.swagger.getContextRoot().endsWith("/") ? "" : "/")
-                                        + "api"));
+        environment.jersey().register(new SwaggerResource(
+            "",
+            configuration.swagger.getSwaggerViewConfiguration(),
+            configuration.swagger.getSwaggerOAuth2Configuration(),
+            configuration.swagger.getContextRoot() +
+                (configuration.swagger.getContextRoot().endsWith("/") ? "" : "/") + "api")
+        );
 
 
         environment.jersey().register(new Concept(pureSession));
