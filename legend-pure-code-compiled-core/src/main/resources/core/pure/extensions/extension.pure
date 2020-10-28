@@ -106,6 +106,8 @@ Class meta::pure::router::extension::RouterExtension
    testExtension_testedBy : Function<{ReferenceUsage[1], RouterExtension[*] -> Function<{TestedByResult[1]->TestedByResult[1]}>[*]}>[0..1];
    
    logActivities : Function<{meta::pure::mapping::Activity[*] -> Nil[0]}>[0..1];
+
+   validTestPackages : String[*];
    
    serializerExtension(version : String[1])
    {
