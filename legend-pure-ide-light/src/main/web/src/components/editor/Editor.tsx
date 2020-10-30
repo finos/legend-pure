@@ -17,12 +17,11 @@
 import React, { useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import ReactResizeDetector from 'react-resize-detector';
-import SplitPane from 'react-split-pane';
 import { AuxiliaryPanel } from './aux-panel/AuxiliaryPanel';
 import { SideBar } from './side-bar/SideBar';
 import { GlobalHotKeys } from 'react-hotkeys';
 import { ActivityBar } from './ActivityBar';
-import { SIDE_BAR_RESIZE_SNAP_THRESHOLD, DEFAULT_SIDE_BAR_SIZE, AUX_PANEL_RESIZE_SNAP_THRESHOLD, HOTKEY, HOTKEY_MAP } from 'Stores/EditorConfig';
+import { SIDE_BAR_RESIZE_SNAP_THRESHOLD, DEFAULT_SIDE_BAR_SIZE, HOTKEY, HOTKEY_MAP, AUX_PANEL_RESIZE_BOTTOM_SNAP_THRESHOLD, AUX_PANEL_RESIZE_TOP_SNAP_THRESHOLD } from 'Stores/EditorConfig';
 import { EditorStoreProvider, useEditorStore } from 'Stores/EditorStore';
 import clsx from 'clsx';
 import Backdrop from '@material-ui/core/Backdrop';
@@ -34,6 +33,8 @@ import { parse } from 'query-string';
 import { FileEditorState } from 'Stores/EditorState';
 import { FileSearchCommand } from 'Components/editor/command-center/FileSearchCommand';
 import { TextSearchCommand } from 'Components/editor/command-center/TextSearchCommand';
+import type { HandlerProps } from 'react-reflex';
+import { ReflexContainer, ReflexElement, ReflexSplitter } from 'react-reflex';
 
 interface EditorQueryParams {
   mode?: string;
@@ -47,26 +48,24 @@ export const EditorInner = observer(() => {
   // Resize
   const editorContainerRef = useRef<HTMLDivElement>(null);
   // These create snapping effect on panel resizing
-  const snapSideBar = (newSize: number | undefined): void => {
-    if (newSize !== undefined) {
-      editorStore.setSideBarSize(newSize < SIDE_BAR_RESIZE_SNAP_THRESHOLD ? (editorStore.sideBarSize > 0 ? 0 : DEFAULT_SIDE_BAR_SIZE) : newSize);
-    }
-  };
   const handleResize = (): void => {
     if (editorContainerRef.current) {
       editorStore.setMaxAuxPanelSize(editorContainerRef.current.offsetHeight);
     }
   };
-  const snapAuxPanel = (newSize: number | undefined): void => {
+  const snapSideBar = (handlerProps: HandlerProps): void => {
+    const newSize = (handlerProps.domElement as HTMLDivElement).offsetWidth;
+    editorStore.setSideBarSize(newSize < SIDE_BAR_RESIZE_SNAP_THRESHOLD ? (editorStore.sideBarSize > 0 ? 0 : DEFAULT_SIDE_BAR_SIZE) : newSize);
+  };
+  const snapAuxPanel = (handlerProps: HandlerProps): void => {
+    const newSize = (handlerProps.domElement as HTMLDivElement).offsetHeight;
     if (editorContainerRef.current) {
-      if (newSize !== undefined) {
-        if (newSize >= editorContainerRef.current.offsetHeight - AUX_PANEL_RESIZE_SNAP_THRESHOLD) {
-          editorStore.setAuxPanelSize(editorContainerRef.current.offsetHeight);
-        } else if (newSize <= AUX_PANEL_RESIZE_SNAP_THRESHOLD) {
-          editorStore.setAuxPanelSize(editorStore.auxPanelSize > 0 ? 0 : AUX_PANEL_RESIZE_SNAP_THRESHOLD);
-        } else {
-          editorStore.setAuxPanelSize(newSize);
-        }
+      if (newSize >= editorContainerRef.current.offsetHeight - AUX_PANEL_RESIZE_TOP_SNAP_THRESHOLD) {
+        editorStore.setAuxPanelSize(editorContainerRef.current.offsetHeight);
+      } else if (newSize <= AUX_PANEL_RESIZE_BOTTOM_SNAP_THRESHOLD) {
+        editorStore.setAuxPanelSize(editorStore.auxPanelSize > 0 ? 0 : AUX_PANEL_RESIZE_BOTTOM_SNAP_THRESHOLD);
+      } else {
+        editorStore.setAuxPanelSize(newSize);
       }
     }
   };
@@ -126,15 +125,23 @@ export const EditorInner = observer(() => {
           >
             <div className="editor__content-container" ref={editorContainerRef}>
               <div className={clsx('editor__content', { 'editor__content--expanded': editorStore.isInExpandedMode })}>
-                <SplitPane split="vertical" size={editorStore.sideBarSize} onDragFinished={snapSideBar} minSize={0} maxSize={-600}>
-                  <SideBar />
-                  <SplitPane primary="second" split="horizontal" size={editorStore.auxPanelSize} onDragFinished={snapAuxPanel} minSize={0} maxSize={0}>
-                    <>
-                      <EditPanel />
-                    </>
-                    <AuxiliaryPanel />
-                  </SplitPane>
-                </SplitPane>
+                <ReflexContainer orientation="vertical">
+                  <ReflexElement size={editorStore.sideBarSize} minSize={0} onStopResize={snapSideBar}>
+                    <SideBar />
+                  </ReflexElement>
+                  <ReflexSplitter />
+                  <ReflexElement minSize={100}>
+                    <ReflexContainer orientation="horizontal">
+                      <ReflexElement minSize={0}>
+                        <EditPanel />
+                      </ReflexElement>
+                      <ReflexSplitter />
+                      <ReflexElement size={editorStore.auxPanelSize} direction={-1} minSize={0} onStopResize={snapAuxPanel}>
+                        <AuxiliaryPanel />
+                      </ReflexElement>
+                    </ReflexContainer>
+                  </ReflexElement>
+                </ReflexContainer>
               </div>
             </div>
           </ReactResizeDetector>

@@ -20,7 +20,6 @@ import { useEditorStore } from 'Stores/EditorStore';
 import { BlankPanelContent } from 'Components/shared/BlankPanelContent';
 import { FaBan, FaCheckCircle, FaChevronDown, FaChevronRight, FaCircleNotch, FaCompress, FaExclamationCircle, FaExpand, FaPlay, FaPlus, FaTimesCircle } from 'react-icons/fa';
 import { PanelLoadingIndicator } from 'Components/shared/PanelLoadingIndicator';
-import SplitPane from 'react-split-pane';
 import type { TestResultInfo, TestRunnerState, TestTreeNode } from 'Stores/TestRunnerState';
 import { getTestTreeNodeStatus, TestResultType, TestSuiteStatus } from 'Stores/TestRunnerState';
 import { LinearProgress } from '@material-ui/core';
@@ -33,6 +32,7 @@ import { UnknownTypeIcon } from 'Components/shared/Icon';
 import { TestFailureResult, TestSuccessResult } from 'Models/Test';
 import { flowResult } from 'mobx';
 import { useApplicationStore } from 'Stores/ApplicationStore';
+import { ReflexContainer, ReflexElement, ReflexSplitter } from 'react-reflex';
 
 const TestTreeNodeContainer = observer((props: TreeNodeContainerProps<TestTreeNode, {
   testRunnerState: TestRunnerState;
@@ -197,72 +197,78 @@ const TestRunnerResultDisplay = observer((props: {
 
   return (
     <div className="test-runner-panel__content">
-      <SplitPane split="vertical" minSize={450} maxSize={-450}>
-        <div className="panel test-runner-panel__explorer">
-          <PanelLoadingIndicator isLoading={testRunnerState.treeBuildingState.isInProgress} />
-          <div className="panel__header">
-            <div className="panel__header__title">
-              <div className="panel__header__title__content test-runner-panel__explorer__report">
-                <div className="test-runner-panel__explorer__report__overview">
-                  <div className="test-runner-panel__explorer__report__overview__stat test-runner-panel__explorer__report__overview__stat--total">{numberOfTests} total</div>
-                  <div className="test-runner-panel__explorer__report__overview__stat test-runner-panel__explorer__report__overview__stat--passed">{testResultInfo?.passed ?? 0} <FaCheckCircle /></div>
-                  <div className="test-runner-panel__explorer__report__overview__stat test-runner-panel__explorer__report__overview__stat--failed">{testResultInfo?.failed ?? 0} <FaExclamationCircle /></div>
-                  <div className="test-runner-panel__explorer__report__overview__stat test-runner-panel__explorer__report__overview__stat--error">{testResultInfo?.error ?? 0} <FaTimesCircle /></div>
+      <ReflexContainer orientation="vertical">
+        <ReflexElement minSize={400}>
+          <div className="panel test-runner-panel__explorer">
+            <PanelLoadingIndicator isLoading={testRunnerState.treeBuildingState.isInProgress} />
+            <div className="panel__header">
+              <div className="panel__header__title">
+                <div className="panel__header__title__content test-runner-panel__explorer__report">
+                  <div className="test-runner-panel__explorer__report__overview">
+                    <div className="test-runner-panel__explorer__report__overview__stat test-runner-panel__explorer__report__overview__stat--total">{numberOfTests} total</div>
+                    <div className="test-runner-panel__explorer__report__overview__stat test-runner-panel__explorer__report__overview__stat--passed">{testResultInfo?.passed ?? 0} <FaCheckCircle /></div>
+                    <div className="test-runner-panel__explorer__report__overview__stat test-runner-panel__explorer__report__overview__stat--failed">{testResultInfo?.failed ?? 0} <FaExclamationCircle /></div>
+                    <div className="test-runner-panel__explorer__report__overview__stat test-runner-panel__explorer__report__overview__stat--error">{testResultInfo?.error ?? 0} <FaTimesCircle /></div>
+                  </div>
+                  {testResultInfo && <div className="test-runner-panel__explorer__report__time">{testResultInfo.time}ms</div>}
                 </div>
-                {testResultInfo && <div className="test-runner-panel__explorer__report__time">{testResultInfo.time}ms</div>}
+              </div>
+              <div className="panel__header__actions">
+                <button
+                  className="panel__header__action"
+                  onClick={expandTree}
+                  title="Expand All"
+                ><FaExpand /></button>
+                <button
+                  className="panel__header__action"
+                  onClick={collapseTree}
+                  title="Collapse All"
+                ><FaCompress /></button>
+                <button
+                  className="panel__header__action"
+                  tabIndex={-1}
+                  disabled={!editorStore.testRunState.isInProgress}
+                  onClick={cancelTestRun}
+                  title="Stop"
+                ><FaBan /></button>
+                <button
+                  className="panel__header__action"
+                  tabIndex={-1}
+                  onClick={runSuite}
+                  disabled={editorStore.testRunState.isInProgress}
+                  title="Run Suite"
+                ><FaPlay /></button>
               </div>
             </div>
-            <div className="panel__header__actions">
-              <button
-                className="panel__header__action"
-                onClick={expandTree}
-                title="Expand All"
-              ><FaExpand /></button>
-              <button
-                className="panel__header__action"
-                onClick={collapseTree}
-                title="Collapse All"
-              ><FaCompress /></button>
-              <button
-                className="panel__header__action"
-                tabIndex={-1}
-                disabled={!editorStore.testRunState.isInProgress}
-                onClick={cancelTestRun}
-                title="Stop"
-              ><FaBan /></button>
-              <button
-                className="panel__header__action"
-                tabIndex={-1}
-                onClick={runSuite}
-                disabled={editorStore.testRunState.isInProgress}
-                title="Run Suite"
-              ><FaPlay /></button>
+            <div className="test-runner-panel__header__status">
+              <LinearProgress
+                className={`test-runner-panel__progress-bar test-runner-panel__progress-bar--${overallResult.toLowerCase()}`}
+                classes={{
+                  bar: `test-runner-panel__progress-bar__bar test-runner-panel__progress-bar__bar--${overallResult.toLowerCase()}`
+                }}
+                variant="determinate"
+                value={runPercentage}
+              />
+            </div>
+            <div className="panel__content">
+              {testRunnerState.treeData && <TestRunnerTree testRunnerState={testRunnerState} />}
             </div>
           </div>
-          <div className="test-runner-panel__header__status">
-            <LinearProgress
-              className={`test-runner-panel__progress-bar test-runner-panel__progress-bar--${overallResult.toLowerCase()}`}
-              classes={{
-                bar: `test-runner-panel__progress-bar__bar test-runner-panel__progress-bar__bar--${overallResult.toLowerCase()}`
-              }}
-              variant="determinate"
-              value={runPercentage}
-            />
-          </div>
-          <div className="panel__content">
-            {testRunnerState.treeData && <TestRunnerTree testRunnerState={testRunnerState} />}
-          </div>
-        </div>
-        {testRunnerState.selectedTestId && !testResultInfo && <div />}
-        {testRunnerState.selectedTestId && testResultInfo && <TestResultViewer testRunnerState={testRunnerState} selectedTestId={testRunnerState.selectedTestId} testResultInfo={testResultInfo} />}
-        {!testRunnerState.selectedTestId &&
-          <div className="panel">
-            <div className="panel__header"></div>
-            <div className="panel__content"><BlankPanelContent>No test selected</BlankPanelContent></div>
-          </div>
-        }
-        <div />
-      </SplitPane>
+        </ReflexElement>
+        <ReflexSplitter />
+        <ReflexElement minSize={400}>
+          {testRunnerState.selectedTestId && !testResultInfo && <div />}
+          {testRunnerState.selectedTestId && testResultInfo && <TestResultViewer testRunnerState={testRunnerState} selectedTestId={testRunnerState.selectedTestId} testResultInfo={testResultInfo} />}
+          {!testRunnerState.selectedTestId &&
+            <div className="panel">
+              <div className="panel__header"></div>
+              <div className="panel__content"><BlankPanelContent>No test selected</BlankPanelContent></div>
+            </div>
+          }
+          <div />
+
+        </ReflexElement>
+      </ReflexContainer>
     </div>
   );
 });
