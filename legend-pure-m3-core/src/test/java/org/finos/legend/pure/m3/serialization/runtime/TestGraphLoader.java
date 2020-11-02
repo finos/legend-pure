@@ -55,28 +55,27 @@ import org.finos.legend.pure.m3.tools.PackageTreeIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPlatform
 {
-    private FunctionExecution functionExecution2;
-    private PureRuntime runtime2;
-    private ModelRepository repository2;
-    private Context context2;
-    private ProcessorSupport processorSupport2;
-    private GraphLoader loader;
+    protected static FunctionExecution functionExecution2;
+    protected static PureRuntime runtime2;
+    protected static ModelRepository repository2;
+    protected static Context context2;
+    protected static ProcessorSupport processorSupport2;
+    protected static GraphLoader loader;
+    protected static MutableList<PureRepositoryJar> jars;
 
-    @Before
-    public void setUp()
+    public static void setUp()
     {
-        MutableList<PureRepositoryJar> jars = Lists.mutable.empty();
+        setUpRuntime(getExtra());
+        jars = Lists.mutable.empty();
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        CodeStorage codeStorage = this.runtime.getCodeStorage();
+        CodeStorage codeStorage = runtime.getCodeStorage();
         RichIterable<String> repoNames = codeStorage.getAllRepoNames();
         if (codeStorage.isFile(PureCodeStorage.WELCOME_FILE_PATH))
         {
@@ -87,7 +86,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
             outStream.reset();
             try
             {
-                BinaryModelRepositorySerializer.serialize(outStream, repoName, this.runtime);
+                BinaryModelRepositorySerializer.serialize(outStream, repoName, runtime);
             }
             catch (IOException e)
             {
@@ -96,19 +95,16 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
             jars.add(PureRepositoryJars.get(outStream));
         }
 
-        this.runtime2 = new PureRuntimeBuilder(this.runtime.getCodeStorage())
+        runtime2 = new PureRuntimeBuilder(runtime.getCodeStorage())
                 .withRuntimeStatus(getPureRuntimeStatus())
                 .build();
-        this.functionExecution2 = this.getFunctionExecution();
-        this.functionExecution2.init(this.runtime2, new Message(""));
-        this.repository2 = this.runtime2.getModelRepository();
-        this.context2 = this.runtime2.getContext();
-        this.processorSupport2 = this.runtime2.getProcessorSupport();
-        IncrementalCompiler compiler = this.runtime2.getIncrementalCompiler();
-        this.loader = buildGraphLoader(this.repository2, this.context2, compiler.getParserLibrary(), compiler.getDslLibrary(), this.runtime2.getSourceRegistry(), this.runtime2.getURLPatternLibrary(), SimplePureRepositoryJarLibrary.newLibrary(jars));
+        functionExecution2 = getFunctionExecution();
+        functionExecution2.init(runtime2, new Message(""));
+        repository2 = runtime2.getModelRepository();
+        context2 = runtime2.getContext();
+        processorSupport2 = runtime2.getProcessorSupport();
     }
-
-    protected abstract GraphLoader buildGraphLoader(ModelRepository repository, Context context, ParserLibrary parserLibrary, InlineDSLLibrary dslLibrary, SourceRegistry sourceRegistry, URLPatternLibrary patternLibrary, PureRepositoryJarLibrary jarLibrary);
+//    protected abstract GraphLoader buildGraphLoader(ModelRepository repository, Context context, ParserLibrary parserLibrary, InlineDSLLibrary dslLibrary, SourceRegistry sourceRegistry, URLPatternLibrary patternLibrary, PureRepositoryJarLibrary jarLibrary);
 
     @Test
     public void testIsKnownRepository()
@@ -196,17 +192,18 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     @Test
     public void testLoadM3()
     {
+        MutableSet<String> alreadyLoaded = this.loader.getLoadedFiles().collect(PureRepositoryJarTools.BINARY_PATH_TO_PURE_PATH, Sets.mutable.<String>empty());
         String m3SourceId = "/platform/pure/m3.pure";
         this.loader.loadFile(m3SourceId);
 
-        Verify.assertSetsEqual(Sets.mutable.with(m3SourceId), this.loader.getLoadedFiles().collect(PureRepositoryJarTools.BINARY_PATH_TO_PURE_PATH, Sets.mutable.<String>empty()));
-        Verify.assertSetsEqual(Sets.mutable.with(m3SourceId), this.runtime2.getSourceRegistry().getSourceIds().toSet());
+        Verify.assertSetsEqual(Sets.mutable.with(m3SourceId).union(alreadyLoaded), this.loader.getLoadedFiles().collect(PureRepositoryJarTools.BINARY_PATH_TO_PURE_PATH, Sets.mutable.<String>empty()));
+        Verify.assertSetsEqual(Sets.mutable.with(m3SourceId).union(alreadyLoaded), this.runtime2.getSourceRegistry().getSourceIds().toSet());
         assertSourcesEqual(m3SourceId);
 
         for (CoreInstance instance : GraphNodeIterable.fromModelRepository(this.repository2))
         {
             SourceInformation sourceInfo = instance.getSourceInformation();
-            if (sourceInfo != null)
+            if (sourceInfo != null && !alreadyLoaded.contains(sourceInfo.getSourceId()))
             {
                 Assert.assertEquals("Wrong source id for " + instance + " (" + sourceInfo + ")", m3SourceId, sourceInfo.getSourceId());
             }

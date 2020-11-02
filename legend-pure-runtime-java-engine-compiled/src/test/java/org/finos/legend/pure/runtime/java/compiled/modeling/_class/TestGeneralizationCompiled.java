@@ -19,17 +19,22 @@ import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.AbstractTestGeneralizationAtRuntime;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 
 public class TestGeneralizationCompiled extends AbstractTestGeneralizationAtRuntime
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getFactoryRegistryOverride());
+    }
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
 
-    @Override
-    protected CoreInstanceFactoryRegistry getFactoryRegistryOverride()
+    protected static CoreInstanceFactoryRegistry getFactoryRegistryOverride()
     {
         return CoreJavaModelFactoryRegistry.REGISTRY;
     }

@@ -21,11 +21,26 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.test.Verify;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestSourceMutation extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("testDiagram.pure");
+        runtime.delete("testModel.pure");
+        runtime.delete("testFile.pure");
+    }
+
     @Test
     public void testTypeViewWithNonExistentType()
     {

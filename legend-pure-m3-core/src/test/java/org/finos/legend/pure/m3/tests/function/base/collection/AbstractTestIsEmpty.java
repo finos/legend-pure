@@ -22,7 +22,7 @@ public abstract class AbstractTestIsEmpty extends PureExpressionTest
     @Test
     public void testBasic()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(false == [1,2,3]->isEmpty(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestIsEmpty extends PureExpressionTest
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(false == isEmpty_Any_MANY__Boolean_1_->eval([1,2,3]), |'');\n" +

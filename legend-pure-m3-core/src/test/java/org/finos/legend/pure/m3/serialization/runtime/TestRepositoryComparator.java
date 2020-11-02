@@ -24,12 +24,17 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepos
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestRepositoryComparator extends AbstractPureTestWithCoreCompiledPlatform
 {
-    @Override
-    protected RichIterable<? extends CodeRepository> getCodeRepositories()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getCodeStorage(), getCodeRepositories(), getExtra());
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         return Lists.immutable.with(
                 SVNCodeRepository.newDatamartCodeRepository("dtm"),
@@ -44,8 +49,7 @@ public class TestRepositoryComparator extends AbstractPureTestWithCoreCompiledPl
         );
     }
 
-    @Override
-    protected MutableCodeStorage getCodeStorage()
+    protected static MutableCodeStorage getCodeStorage()
     {
         return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
     }

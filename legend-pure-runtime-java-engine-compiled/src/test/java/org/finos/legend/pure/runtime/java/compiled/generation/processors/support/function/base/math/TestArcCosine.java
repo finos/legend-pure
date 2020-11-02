@@ -19,17 +19,21 @@ import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.math.AbstractTestArcCosine;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.BeforeClass;
 
 public class TestArcCosine extends AbstractTestArcCosine
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getFactoryRegistryOverride());
+    }
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
 
-    @Override
-    protected CoreInstanceFactoryRegistry getFactoryRegistryOverride()
+    protected static CoreInstanceFactoryRegistry getFactoryRegistryOverride()
     {
         return CoreJavaModelFactoryRegistry.REGISTRY;
     }

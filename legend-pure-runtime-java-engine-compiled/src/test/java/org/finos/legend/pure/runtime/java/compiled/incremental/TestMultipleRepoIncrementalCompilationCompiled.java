@@ -24,12 +24,16 @@ import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerif
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.PrintJavaCompilerEventObserver;
+import org.junit.BeforeClass;
 
 public class TestMultipleRepoIncrementalCompilationCompiled extends TestMultipleRepoIncrementalCompilation
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getCodeRepositories());
+    }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().withJavaCompilerEventObserver(new PrintJavaCompilerEventObserver(System.out)).build();
     }
@@ -40,8 +44,7 @@ public class TestMultipleRepoIncrementalCompilationCompiled extends TestMultiple
         return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
 
-    @Override
-    public Pair<String, String> getExtra()
+    public static Pair<String, String> getExtra()
     {
         return null;
     }

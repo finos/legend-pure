@@ -19,11 +19,26 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("sourceId.pure");
+        runtime.delete("sourceId2.pure");
+        runtime.delete("userId.pure");
+        runtime.delete("other.pure");
+    }
+
     @Test
     public void testPureRuntimeClassAsFunctionExpressionParameter() throws Exception
     {
@@ -153,7 +168,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
     @Test
     public void testPureRuntimeClassProperty_GenericsLambdaModify() throws Exception
     {
-        String source2 = "import meta::relational::tests::mapping::enumeration::model::domain::*;\n" +
+        String sourceId2 = "import meta::relational::tests::mapping::enumeration::model::domain::*;\n" +
                 "function go():Any[*]\n" +
                 "{\n" +
                 "   ProductSynonym.all()->filter([p | $p.value == 'A']);\n" +
@@ -168,7 +183,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                 "\n";
 
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", source)
-                        .compile().createInMemorySource("source2.pure", source2).compile(),
+                        .compile().createInMemorySource("sourceId2.pure", sourceId2).compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("sourceId.pure", "////Comment\n" + source)
                         .compile(),
@@ -179,7 +194,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
     @Test
     public void testPureRuntimeClassProperty_NestedGenericsModify() throws Exception
     {
-        String source2 = "import meta::relational::tests::mapping::enumeration::model::domain::*;\n" +
+        String sourceId2 = "import meta::relational::tests::mapping::enumeration::model::domain::*;\n" +
                 "\n" +
                 "Class meta::pure::functions::collection::AggregateValue<T,V,U>\n" +
                 "{\n" +
@@ -217,7 +232,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                 "\n";
 
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", source)
-                        .compile().createInMemorySource("source2.pure", source2).compile(),
+                        .compile().createInMemorySource("sourceId2.pure", sourceId2).compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("sourceId.pure", "////Comment\n" + source)
                         .compile(),
@@ -228,7 +243,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
     @Test
     public void testPureRuntimeClassProperty_NestedGenericsModifyProject() throws Exception
     {
-        String source2 = "import meta::relational::tests::mapping::enumeration::model::domain::*;\n" +
+        String sourceId2 = "import meta::relational::tests::mapping::enumeration::model::domain::*;\n" +
                 "Class meta::pure::tds::TabularDataSet\n" +
                 "{\n" +
                 "   rows : TDSRow[*];\n" +
@@ -274,7 +289,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
 
 
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", source)
-                        .compile().createInMemorySource("source2.pure", source2).compile(),
+                        .compile().createInMemorySource("sourceId2.pure", sourceId2).compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("sourceId.pure", "////Comment\n" + source)
                         .compile(),

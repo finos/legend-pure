@@ -15,11 +15,25 @@
 package org.finos.legend.pure.m3.inlinedsl.graph;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestGraphDSLCompilation extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("file.pure");
+        runtime.delete("function.pure");
+    }
+
     @Test
     public void testSimple()
     {
@@ -225,16 +239,10 @@ public class TestGraphDSLCompilation extends AbstractPureTestWithCoreCompiled
                         "                | $prefix->toOne() + ' ' + $this.firstName + ' ' + $this.lastName + ', ' + $suffixes->joinStrings(', ')))\n" +
                         "    }:String[1];" +
                         "}\n");
-        this.runtime.createInMemorySource("function.pure",
-                "function test():Any[*]\n" +
-                        "{\n" +
-                        "    print(#{Person{nameWithTitle('1')}}#,2);\n" +
-                        "}\n");
-        this.runtime.compile();
 
         try
         {
-            this.runtime.modify("function.pure",
+            this.runtime.createInMemorySource("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#{Person{nameWithTitle()}}#,2);\n" +
@@ -261,6 +269,13 @@ public class TestGraphDSLCompilation extends AbstractPureTestWithCoreCompiled
         {
             Assert.assertEquals("Compilation error at (resource:function.pure line:3 column:20), \"The system can't find a match for the property / qualified property: nameWithTitle(_:Integer[1])\"", e.getMessage());
         }
+
+        this.runtime.modify("function.pure",
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "    print(#{Person{nameWithTitle('1')}}#,2);\n" +
+                        "}\n");
+        this.runtime.compile();
     }
 
     @Test
@@ -304,13 +319,6 @@ public class TestGraphDSLCompilation extends AbstractPureTestWithCoreCompiled
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#{Person{nameWithPrefixAndSuffix('a', ['a', 'b'])}}#,2);\n" +
-                        "}\n");
-        this.runtime.compile();
-
-        this.runtime.modify("function.pure",
-                "function test():Any[*]\n" +
-                        "{\n" +
-                        "    print(#{Person{nameWithPrefixAndSuffix([], ['a', 'b'])}}#,2);\n" +
                         "}\n");
         this.runtime.compile();
 
@@ -358,6 +366,13 @@ public class TestGraphDSLCompilation extends AbstractPureTestWithCoreCompiled
         {
             Assert.assertEquals("Compilation error at (resource:function.pure line:3 column:20), \"The system can't find a match for the property / qualified property: nameWithPrefixAndSuffix(_:String[1])\"", e.getMessage());
         }
+
+        this.runtime.modify("function.pure",
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "    print(#{Person{nameWithPrefixAndSuffix([], ['a', 'b'])}}#,2);\n" +
+                        "}\n");
+        this.runtime.compile();
     }
 
     @Test
@@ -402,13 +417,6 @@ public class TestGraphDSLCompilation extends AbstractPureTestWithCoreCompiled
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    print(#{Person{nameWithPrefixAndSuffix('a', ['a', 'b'])}}#,2);\n" +
-                        "}\n");
-        this.runtime.compile();
-
-        this.runtime.modify("function.pure",
-                "function test():Any[*]\n" +
-                        "{\n" +
-                        "    print(#{Person{nameWithPrefixAndSuffix([], ['a', 'b'])}}#,2);\n" +
                         "}\n");
         this.runtime.compile();
 
@@ -459,5 +467,13 @@ public class TestGraphDSLCompilation extends AbstractPureTestWithCoreCompiled
         {
             Assert.assertEquals("Compilation error at (resource:function.pure line:4 column:20), \"The system can't find a match for the property / qualified property: nameWithPrefixAndSuffix(_:String[1])\"", e.getMessage());
         }
+
+        this.runtime.modify("function.pure",
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "    print(#{Person{nameWithPrefixAndSuffix([], ['a', 'b'])}}#,2);\n" +
+                        "}\n");
+        this.runtime.compile();
+
     }
 }

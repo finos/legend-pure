@@ -22,7 +22,7 @@ public abstract class AbstractTestParseInteger extends AbstractPureTestWithCoreC
     @Test
     public void testBasicParse()
     {
-            compileTestSource(
+            compileTestSource("fromString.pure",
                     "function test():Boolean[1]\n" +
                             "{\n" +
                             "   assert(1 == '1'->parseInteger(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestParseInteger extends AbstractPureTestWithCoreC
     @Test
     public void testEvalParse()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(1 == parseInteger_String_1__Integer_1_->eval('1'), |'');\n" +

@@ -21,6 +21,9 @@ import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.TrackingTransactionObserver;
 import org.finos.legend.pure.m3.execution.VoidFunctionExecution;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -31,6 +34,22 @@ import java.nio.file.Paths;
 
 public class TestPureRuntimeProjection extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("userId.pure");
+        runtime.delete("sourceId.pure");
+        runtime.delete("projectionId.pure");
+        runtime.delete("projections.pure");
+        runtime.delete("association.pure");
+        runtime.delete("associationProjection.pure");
+        runtime.delete("function.pure");
+    }
+
     @Test
     public void testPureRuntimeProperty()
     {

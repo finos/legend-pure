@@ -17,11 +17,21 @@ package org.finos.legend.pure.runtime.java.interpreted.function.base.math;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.math.AbstractTestPrecedence;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
+import org.junit.BeforeClass;
 
 public class TestInterpretedPrecedence extends AbstractTestPrecedence
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+    }
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

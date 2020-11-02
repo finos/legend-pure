@@ -31,11 +31,25 @@ import org.finos.legend.pure.m3.navigation.Printer;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("file.pure");
+        runtime.delete("projection.pure");
+        runtime.delete("model.pure");
+    }
+
     @Test
     public void testExceptionScenarios() throws Exception
     {
@@ -444,7 +458,7 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testSimpleProjectionWithQualifiedPropertiesIntLiteral() throws Exception
     {
-        this.runtime.createInMemorySource("file1.pure", "Class Person{ name: String[1]; propInt(){1}: Integer[1];}" +
+        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propInt(){1}: Integer[1];}" +
                 "Class PersonProjection projects #Person" +
                 "{\n" +
                 "      +[ name, propInt() ]   \n" +
@@ -460,7 +474,7 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testSimpleProjectionWithQualifiedPropertiesBooleanLiteral() throws Exception
     {
-        this.runtime.createInMemorySource("file1.pure", "Class Person{ name: String[1]; propBool(){true}: Boolean[1];}" +
+        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propBool(){true}: Boolean[1];}" +
                 "Class PersonProjection projects #Person" +
                 "{\n" +
                 "      +[ propBool() ]   \n" +
@@ -476,7 +490,7 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testSimpleProjectionWithQualifiedPropertiesDateLiteral() throws Exception
     {
-        this.runtime.createInMemorySource("file1.pure", "Class Person{ name: String[1]; propDate(){%12-12-12}: Date[1];}" +
+        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propDate(){%12-12-12}: Date[1];}" +
                 "Class PersonProjection projects #Person" +
                 "{\n" +
                 "      +[ propDate() ]   \n" +
@@ -492,7 +506,7 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testSimpleProjectionWithQualifiedPropertiesEnumLiteral() throws Exception
     {
-        this.runtime.createInMemorySource("file1.pure", "Class Person{ name: String[1]; propEnum(){NumNum.Cookie}: NumNum[1];}" +
+        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propEnum(){NumNum.Cookie}: NumNum[1];}" +
                 "Class PersonProjection projects #Person" +
                 "{\n" +
                 "      +[ propEnum() ]   \n" +
@@ -513,7 +527,7 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testSimpleProjectionWithQualifiedPropertiesLiteralArrayAny() throws Exception
     {
-        this.runtime.createInMemorySource("file1.pure", "Class Person{ name: String[1]; propManyAny(){[NumNum.Cookie, 1 , true, %12-12-12, 'pi', 3.14]}: Any[*];}" +
+        this.runtime.createInMemorySource("file.pure", "Class Person{ name: String[1]; propManyAny(){[NumNum.Cookie, 1 , true, %12-12-12, 'pi', 3.14]}: Any[*];}" +
                 "Class PersonProjection projects #Person" +
                 "{\n" +
                 "      +[ propManyAny() ]   \n" +
@@ -657,7 +671,7 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testProjectionWithNonResolvableQualifiedProperties() throws Exception
     {
-        this.runtime.createInMemorySource("file1.pure", "import meta::pure::tests::model::simple::*;\n" +
+        this.runtime.createInMemorySource("file.pure", "import meta::pure::tests::model::simple::*;\n" +
                 "import meta::pure::tests::model::simple::projection::*;\n" +
                 "\n" +
                 "\n" +
@@ -693,7 +707,7 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testPrintFlattenedProperty() throws Exception
     {
-        this.runtime.createInMemorySource("file1.pure", "import meta::pure::tests::model::simple::*;\n" +
+        this.runtime.createInMemorySource("file.pure", "import meta::pure::tests::model::simple::*;\n" +
                 "import meta::pure::tests::model::simple::projection::*;\n" +
                 "\n" +
                 "native function average(s:Number[*]):Float[1];\n" +

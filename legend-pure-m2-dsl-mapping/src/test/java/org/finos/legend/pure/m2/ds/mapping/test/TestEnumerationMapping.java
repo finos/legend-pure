@@ -25,11 +25,25 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestEnumerationMapping extends AbstractPureMappingTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("mapping.pure");
+        runtime.delete("model.pure");
+    }
+
     private static Predicate detectByEnumerationMappingName(final String name)
     {
         return new Predicate<EnumerationMapping>()

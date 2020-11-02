@@ -16,11 +16,25 @@ package org.finos.legend.pure.m3.inlinedsl.path;
 
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("file.pure");
+        runtime.delete("function.pure");
+    }
+
     @Test
     public void testSimple() throws Exception
     {
@@ -157,17 +171,10 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
                         "                | $prefix->toOne() + ' ' + $this.firstName + ' ' + $this.lastName + ', ' + $suffixes->joinStrings(', ')))\n" +
                         "    }:String[1];" +
                         "}\n");
-        this.runtime.createInMemorySource("function.pure",
-                "function test():Any[*]\n" +
-                        "{\n" +
-                        "    print(#/Person/nameWithTitle('1')#,2);\n" +
-                        "}\n");
-        this.runtime.compile();
-
 
         try
         {
-            this.runtime.modify("function.pure",
+            this.runtime.createInMemorySource("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#/Person/nameWithTitle()#,2);\n" +
@@ -196,7 +203,12 @@ public class TestDSLCompilation extends AbstractPureTestWithCoreCompiled
             Assert.assertEquals("Compilation error at (resource:function.pure line:3 column:12), \"Parameter type mismatch for function 'nameWithTitle'. Expected:String, Found:Integer\"", e.getMessage());
         }
 
-
+        this.runtime.modify("function.pure",
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "    print(#/Person/nameWithTitle('1')#,2);\n" +
+                        "}\n");
+        this.runtime.compile();
     }
 
     @Test

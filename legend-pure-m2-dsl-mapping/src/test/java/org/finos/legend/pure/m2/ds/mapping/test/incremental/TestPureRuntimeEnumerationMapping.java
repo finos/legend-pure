@@ -21,7 +21,9 @@ import org.finos.legend.pure.m2.ds.mapping.test.AbstractPureMappingTestWithCoreC
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWithCoreCompiled
@@ -56,6 +58,20 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
                     "    CONTRCAT,\n" + //This is the TYPO
                     "    FULL_TIME\n" +
                     "}");
+
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete(TEST_ENUM_MODEL_SOURCE_ID);
+        runtime.delete(TEST_ENUMERATION_MAPPING_SOURCE_ID);
+        runtime.delete("modelCode.pure");
+        runtime.delete("mappingCode.pure");
+    }
 
     @Test
     public void testPureEnumerationMapping_EnumValueWithTypoShouldNotCompile() throws Exception
@@ -130,7 +146,7 @@ public class TestPureRuntimeEnumerationMapping extends AbstractPureMappingTestWi
     @Test
     public void testDuplicateError() throws Exception
     {
-        this.runtime.createInMemorySource("userId.pure", "Enum OK {e_true,e_false}\n" +
+        this.runtime.createInMemorySource(TEST_ENUMERATION_MAPPING_SOURCE_ID, "Enum OK {e_true,e_false}\n" +
                                                     "###Mapping\n" +
                                                     "Mapping myMap1(\n" +
                                                     "    OK: EnumerationMapping Foo\n" +

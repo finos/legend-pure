@@ -26,7 +26,7 @@ public abstract class AbstractTestFormat extends AbstractPureTestWithCoreCompile
     {
         try
         {
-            compileTestSource(
+           compileTestSource("fromString.pure",
                     "function test():Nil[0]\n" +
                             "{\n" +
                             "   print('Hello %s %s'->format(['Catherine']), 1);\n" +
@@ -45,7 +45,7 @@ public abstract class AbstractTestFormat extends AbstractPureTestWithCoreCompile
     {
         try
         {
-            compileTestSource(
+           compileTestSource("fromString.pure",
                     "function test():Nil[0]\n" +
                             "{\n" +
                             "   print('Hello %s %s'->format(['Catherine', 'Joe', 'Katie']), 1);\n" +

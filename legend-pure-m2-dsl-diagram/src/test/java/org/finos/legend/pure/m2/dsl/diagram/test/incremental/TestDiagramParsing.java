@@ -29,13 +29,27 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.predicate.Predicate;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
 
 public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("testDiagram.pure");
+        runtime.delete("testModel.pure");
+    }
+
     private Parser getRuntimeDiagramParser() throws NoSuchFieldException, IllegalAccessException
     {
         Field field = this.runtime.getSourceRegistry().getClass().getDeclaredField("parserLibrary");

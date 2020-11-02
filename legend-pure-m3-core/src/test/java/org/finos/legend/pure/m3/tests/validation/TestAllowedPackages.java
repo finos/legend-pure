@@ -23,13 +23,26 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepos
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.regex.Pattern;
 
 public class TestAllowedPackages extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getCodeStorage(), getCodeRepositories(), getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("/platform/testSource1.pure");
+        runtime.delete("/platform/testSource2.pure");
+    }
+
     @Test
     public void testNoModelPackageInPlatform()
     {
@@ -96,8 +109,7 @@ public class TestAllowedPackages extends AbstractPureTestWithCoreCompiledPlatfor
         }
     }
 
-    @Override
-    protected MutableCodeStorage getCodeStorage()
+    protected static MutableCodeStorage getCodeStorage()
     {
         return new PureCodeStorage(getCodeStorageRoot(), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository(), new TestCodeRepository("test", Pattern.compile("test(::*)?")), SVNCodeRepository.newModelValidationCodeRepository()));
     }

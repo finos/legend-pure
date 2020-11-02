@@ -17,12 +17,21 @@ package org.finos.legend.pure.runtime.java.interpreted;
 import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestNewInferenceAtRuntime;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestNewInferenceInterpreted extends AbstractTestNewInferenceAtRuntime
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+    }
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }
@@ -30,7 +39,7 @@ public class TestNewInferenceInterpreted extends AbstractTestNewInferenceAtRunti
     @Test
     public void newMapRuntimeResolution() throws Exception
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "Class A{}\n" +
                         "Class B{}" +
                         "function gb<U,K>(set:U[*], f:Function<{U[1]->K[1]}>[1]):Map<K,List<U>>[1]\n" +

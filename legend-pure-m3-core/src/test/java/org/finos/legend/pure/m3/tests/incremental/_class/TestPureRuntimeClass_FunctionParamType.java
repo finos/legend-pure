@@ -24,11 +24,26 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("sourceId.pure");
+        runtime.delete("sourceId2.pure");
+        runtime.delete("userId.pure");
+        runtime.delete("other.pure");
+    }
+
     @Test
     public void testPureRuntimeClassAsFunctionParameterType() throws Exception
     {
@@ -199,11 +214,11 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
     public void testPureRuntimeClassAsQualifiedPropertyParameter() throws Exception
     {
         ImmutableMap<String, String> sources = Maps.immutable.with(
-                "source1.pure", "Class A{name:String[1];}",
-                "source2.pure", "Class B{prop(a:A[1]){$a.name}:String[1];}"
+                "sourceId.pure", "Class A{name:String[1];}",
+                "sourceId2.pure", "Class B{prop(a:A[1]){$a.name}:String[1];}"
         );
-        this.runtime.createInMemorySource("source1.pure", sources.get("source1.pure"));
-        this.runtime.createInMemorySource("source2.pure", sources.get("source2.pure"));
+        this.runtime.createInMemorySource("sourceId.pure", sources.get("sourceId.pure"));
+        this.runtime.createInMemorySource("sourceId2.pure", sources.get("sourceId2.pure"));
         this.runtime.compile();
 
         int size = this.repository.serialize().length;
@@ -214,7 +229,7 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("source1.pure");
+            this.runtime.delete("sourceId.pure");
             try
             {
                 this.runtime.compile();
@@ -222,10 +237,10 @@ public class TestPureRuntimeClass_FunctionParamType extends AbstractPureTestWith
             }
             catch (Exception e)
             {
-                assertPureException(PureCompilationException.class, "A has not been defined!", "source2.pure", e);
+                assertPureException(PureCompilationException.class, "A has not been defined!", "sourceId2.pure", e);
             }
 
-            this.runtime.createInMemorySource("source1.pure", sources.get("source1.pure"));
+            this.runtime.createInMemorySource("sourceId.pure", sources.get("sourceId.pure"));
             this.runtime.compile();
 
             classA = this.processorSupport.package_getByUserPath("A");

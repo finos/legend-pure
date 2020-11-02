@@ -17,11 +17,20 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.io.AbstractTestHttp;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 
+//Remove Ignore when we have an available HTTP server for tests
+@Ignore
 public class TestHttpCompiled extends AbstractTestHttp
 {
-    @Override
-    public FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    public static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

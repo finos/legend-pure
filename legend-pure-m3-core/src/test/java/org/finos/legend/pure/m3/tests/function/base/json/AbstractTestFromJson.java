@@ -79,6 +79,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         {
             String exceptionDetails = "".equals(expectedExceptionSnippet) ? "" : ": \n" + expectedExceptionSnippet;
             this.assertException(e, "Error populating property 'testField' on class 'meta::pure::functions::json::tests::" + testName + "'" + exceptionDetails);
+            runtime.delete(testName + CodeStorage.PURE_FILE_EXTENSION);
         }
     }
 
@@ -98,6 +99,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         this.compileTestSource(testName + CodeStorage.PURE_FILE_EXTENSION, source);
         CoreInstance func = this.runtime.getFunction(testName + "():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        runtime.delete(testName + CodeStorage.PURE_FILE_EXTENSION);
     }
 
     @Test
@@ -335,7 +337,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("Association.pure", associationSource);
+            this.compileTestSource("fromString.pure", associationSource);
             CoreInstance func = this.runtime.getFunction("Association():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -373,7 +375,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("AssociationNestedClasses.pure", associationSource);
+            this.compileTestSource("fromString.pure", associationSource);
             CoreInstance func = this.runtime.getFunction("Association():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -414,7 +416,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("AssociationNestedClasses.pure", associationSource);
+            this.compileTestSource("fromString.pure", associationSource);
             CoreInstance func = this.runtime.getFunction("Association():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -449,7 +451,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         };
         String associationSource = StringUtils.join(rawAssociationSource, "\n") + "\n";
 
-        this.compileTestSource("AssociationNestedClasses.pure", associationSource);
+        this.compileTestSource("fromString.pure", associationSource);
         CoreInstance func = this.runtime.getFunction("mimic():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -478,7 +480,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         };
         String associationSource = StringUtils.join(rawAssociationSource, "\n") + "\n";
 
-        this.compileTestSource("AssociationNestedClasses.pure", associationSource);
+        this.compileTestSource("fromString.pure", associationSource);
         CoreInstance func = this.runtime.getFunction("foo():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -508,7 +510,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         };
         String associationSource = StringUtils.join(rawAssociationSource, "\n") + "\n";
 
-        this.compileTestSource("AssociationSuperClass.pure", associationSource);
+        this.compileTestSource("fromString.pure", associationSource);
         CoreInstance func = this.runtime.getFunction("foo():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -540,7 +542,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("AssociationSuperClass.pure", associationSource);
+            this.compileTestSource("fromString.pure", associationSource);
             CoreInstance func = this.runtime.getFunction("foo():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -569,7 +571,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("InRangeToOneMissing.pure", inRangeToOneSources);
+            this.compileTestSource("fromString.pure", inRangeToOneSources);
             CoreInstance func = this.runtime.getFunction("InRangeToOne():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -604,7 +606,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("missing.pure", source);
+            this.compileTestSource("fromString.pure", source);
             CoreInstance func = this.runtime.getFunction("missing():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -632,7 +634,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("failUnknown.pure", source);
+            this.compileTestSource("fromString.pure", source);
             CoreInstance func = this.runtime.getFunction("failUnknown():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -660,7 +662,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("Association.pure", associationSource);
+            this.compileTestSource("fromString.pure", associationSource);
             CoreInstance func = this.runtime.getFunction("TypeKey():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -690,7 +692,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                     "}"
             };
 
-            this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+            this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
             CoreInstance func = this.runtime.getFunction("go():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -724,7 +726,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                 "}"
         };
 
-        this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+        this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
         CoreInstance func = this.runtime.getFunction("go():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -750,7 +752,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                     "}"
             };
 
-            this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+            this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
             CoreInstance func = this.runtime.getFunction("go():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -781,7 +783,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                     "}"
             };
 
-            this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+            this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
             CoreInstance func = this.runtime.getFunction("go():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -813,7 +815,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                     "}"
             };
 
-            this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+            this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
             CoreInstance func = this.runtime.getFunction("go():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -848,7 +850,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                     "}"
             };
 
-            this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+            this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
             CoreInstance func = this.runtime.getFunction("go():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -886,7 +888,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                 "    '" + json + "' -> fromJson(Foo, ^JSONDeserializationConfig(typeKeyName='@type', failOnUnknownProperties=false));\n" +
                 "}";
 
-        this.compileTestSource("TestSources.pure", StringUtils.join(foo, "\n") + "\n");
+        this.compileTestSource("fromString.pure", StringUtils.join(foo, "\n") + "\n");
         CoreInstance func = this.runtime.getFunction("go():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -908,7 +910,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                 "}"
         }, "\n") + "\n";
 
-        this.compileTestSource("idKeys.pure", idKeysSource);
+        this.compileTestSource("fromString.pure", idKeysSource);
         CoreInstance func = this.runtime.getFunction("foo():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -938,7 +940,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         };
         String associationSource = StringUtils.join(rawAssociationSource, "\n") + "\n";
 
-        this.compileTestSource("idKeysWithAssociation.pure", associationSource);
+        this.compileTestSource("fromString.pure", associationSource);
         CoreInstance func = this.runtime.getFunction("foo():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -966,7 +968,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         };
         String associationSource = StringUtils.join(rawAssociationSource, "\n") + "\n";
 
-        this.compileTestSource("idKeysWithAssociation.pure", associationSource);
+        this.compileTestSource("fromString.pure", associationSource);
         CoreInstance func = this.runtime.getFunction("foo():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -996,7 +998,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         };
         String associationSource = StringUtils.join(rawAssociationSource, "\n") + "\n";
 
-        this.compileTestSource("regularAssociation.pure", associationSource);
+        this.compileTestSource("fromString.pure", associationSource);
         CoreInstance func = this.runtime.getFunction("foo():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -1028,7 +1030,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         };
         String associationSource = StringUtils.join(rawAssociationSource, "\n") + "\n";
 
-        this.compileTestSource("idKeysWithAssociation.pure", associationSource);
+        this.compileTestSource("fromString.pure", associationSource);
         CoreInstance func = this.runtime.getFunction("foo():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -1053,7 +1055,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         };
         String associationSource = StringUtils.join(rawAssociationSource, "\n") + "\n";
 
-        this.compileTestSource("idKeysWithAssociation.pure", associationSource);
+        this.compileTestSource("fromString.pure", associationSource);
         CoreInstance func = this.runtime.getFunction("foo():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -1077,7 +1079,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         };
         String source = StringUtils.join(rawSource, "\n") + "\n";
 
-        this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+        this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
         CoreInstance func = this.runtime.getFunction("go():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -1097,7 +1099,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                     "}"
             };
 
-            this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+            this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
             CoreInstance func = this.runtime.getFunction("go():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -1122,7 +1124,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                 "}"
         };
 
-        this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+        this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
         CoreInstance func = this.runtime.getFunction("go():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -1140,7 +1142,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                 "}"
         };
 
-        this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+        this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
         CoreInstance func = this.runtime.getFunction("go():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -1161,7 +1163,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                 "}"
         };
 
-        this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+        this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
         CoreInstance func = this.runtime.getFunction("go():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
     }
@@ -1181,7 +1183,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                     "}"
             };
 
-            this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+            this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
             CoreInstance func = this.runtime.getFunction("go():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -1207,7 +1209,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                     "}"
             };
 
-            this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+            this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
             CoreInstance func = this.runtime.getFunction("go():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -1235,7 +1237,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                 "}"
         };
 
-        this.compileTestSource("TestSources.pure", StringUtils.join(source, "\n") + "\n");
+        this.compileTestSource("fromString.pure", StringUtils.join(source, "\n") + "\n");
         CoreInstance func = this.runtime.getFunction("go():Any[*]");
         this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -1252,7 +1254,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                         "   Pound: x -> $x*453.59;\n" +
                         "}";
 
-        this.compileTestSource("testFunc.pure",
+        this.compileTestSource("fromString.pure",
                 "import pkg::*;\n" +
                         massDefinition +
                         "Class A\n" +
@@ -1282,7 +1284,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                         "   Pound: x -> $x*453.59;\n" +
                         "}";
 
-        this.compileTestSource("testFunc.pure",
+        this.compileTestSource("fromString.pure",
                 "import pkg::*;\n" +
                         massDefinition +
                         "Class A\n" +
@@ -1312,7 +1314,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                         "   Pound: x -> $x*453.59;\n" +
                         "}";
 
-        this.compileTestSource("testFunc.pure",
+        this.compileTestSource("fromString.pure",
                 "import pkg::*;\n" +
                         massDefinition +
                         "Class A\n" +
@@ -1342,7 +1344,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                         "   Pound: x -> $x*453.59;\n" +
                         "}";
 
-        this.compileTestSource("testFunc.pure",
+        this.compileTestSource("fromString.pure",
                 "import pkg::*;\n" +
                         massDefinition +
                         "Class A\n" +
@@ -1387,7 +1389,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("testFunc.pure", testSourceStr);
+            this.compileTestSource("fromString.pure", testSourceStr);
             CoreInstance func = this.runtime.getFunction("testUnitToJsonWithType():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -1425,7 +1427,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("testFunc.pure", testSourceStr);
+            this.compileTestSource("fromString.pure", testSourceStr);
             CoreInstance func = this.runtime.getFunction("testUnitToJsonWithType():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -1462,7 +1464,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("testFunc.pure", testSourceStr);
+            this.compileTestSource("fromString.pure", testSourceStr);
             CoreInstance func = this.runtime.getFunction("testUnitToJsonWithType():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 
@@ -1499,7 +1501,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
 
         try
         {
-            this.compileTestSource("testFunc.pure", testSourceStr);
+            this.compileTestSource("fromString.pure", testSourceStr);
             CoreInstance func = this.runtime.getFunction("testUnitToJsonWithType():Any[*]");
             this.functionExecution.start(func, FastList.<CoreInstance>newList());
 

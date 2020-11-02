@@ -17,11 +17,18 @@ package org.finos.legend.pure.runtime.java.interpreted.function.base.collection;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestAppendTreeToNode extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
     @Test
     public void testSimple()
     {
@@ -137,8 +144,7 @@ public class TestAppendTreeToNode extends AbstractPureTestWithCoreCompiled
                 "        1 instance String", this.functionExecution.getConsole().getLine(1));
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

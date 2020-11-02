@@ -22,7 +22,7 @@ public abstract class AbstractTestMapCollection extends AbstractPureTestWithCore
     @Test
     public void testGetIfAbsentPutWithKey()
     {
-        this.compileTestSource(
+        compileTestSource("fromString.pure",
                 "function testGetIfAbsentPutWithKey():Any[*]\n" +
                 "{\n" +
                 "   let m = newMap([pair(1,'_1'), pair(2,'_2')]);\n" +
@@ -37,7 +37,7 @@ public abstract class AbstractTestMapCollection extends AbstractPureTestWithCore
     @Test
     public void testGetMapStats()
     {
-        this.compileTestSource(
+        compileTestSource("fromString.pure",
                 "function testGetMapStats():Any[*]\n" +
                         "{\n" +
                         "   let m = newMap([pair(1,'_1'), pair(2,'_2')]);\n" +

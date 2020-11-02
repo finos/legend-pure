@@ -19,13 +19,25 @@ import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestLetCompiled extends AbstractPureTestWithCoreCompiled
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
@@ -35,7 +47,7 @@ public class TestLetCompiled extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function testLetCollectionWithAnyCastIssue():Boolean[1]\n" +
+            compileTestSource("fromString.pure","function testLetCollectionWithAnyCastIssue():Boolean[1]\n" +
                     "{\n" +
                     "    let a = [A, B];\n" +
                     "    if($a->size() == 2, | true, | false);" +
@@ -61,7 +73,7 @@ public class TestLetCompiled extends AbstractPureTestWithCoreCompiled
     {
         String reallyLargeString = getLargeString();
 
-        compileTestSource("function testLargeString():String[1]\n" +
+        compileTestSource("fromString.pure","function testLargeString():String[1]\n" +
                 "{\n" +
                 "    let a = \'" + reallyLargeString + "\';\n" +
                 "    $a;" +
@@ -74,7 +86,7 @@ public class TestLetCompiled extends AbstractPureTestWithCoreCompiled
     {
         String reallyLargeString = getLargeString();
 
-        compileTestSource("function testLargeString():String[1]\n" +
+        compileTestSource("fromString.pure","function testLargeString():String[1]\n" +
                 "{\n" +
                 "    let a = \'" + reallyLargeString + "\' + \'" + reallyLargeString + "\';\n" +
                 "    $a;" +

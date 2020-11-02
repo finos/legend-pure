@@ -21,17 +21,29 @@ import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
 {
-    FunctionExecutionInterpreted functionExecution = new FunctionExecutionInterpreted();
+    static FunctionExecutionInterpreted functionExecution = new FunctionExecutionInterpreted();
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
 
     @Test
     public void testStartWithNotEnoughArguments()
     {
-        compileTestSource("function testFn(s1:String[1], s2:String[1]):String[1] { $s1 + $s2 }");
+        compileTestSource("fromString.pure","function testFn(s1:String[1], s2:String[1]):String[1] { $s1 + $s2 }");
         CoreInstance func = this.runtime.getFunction("testFn(String[1], String[1]):String[1]");
         Assert.assertNotNull(func);
 
@@ -66,7 +78,7 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
     @Test
     public void testStartWithTooManyArguments()
     {
-        compileTestSource("function testFn():String[1] { 'the quick brown fox jumps over the lazy dog' }");
+        compileTestSource("fromString.pure","function testFn():String[1] { 'the quick brown fox jumps over the lazy dog' }");
         CoreInstance func = this.runtime.getFunction("testFn():String[1]");
         Assert.assertNotNull(func);
         try
@@ -88,9 +100,8 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
         }
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
-        return this.functionExecution;
+        return functionExecution;
     }
 }

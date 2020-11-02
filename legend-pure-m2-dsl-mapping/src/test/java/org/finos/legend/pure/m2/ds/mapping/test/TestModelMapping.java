@@ -23,14 +23,23 @@ import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
 {
     GraphWalker graphWalker;
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("mapping.pure");
+        runtime.delete("model.pure");
+        runtime.delete("projection.pure");
+    }
 
     @Before
     public void setUpRelational()

@@ -21,12 +21,24 @@ import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.regex.Pattern;
 
 public class TestSearchTools extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("SourceId.pure");
+    }
+
     @Test
     public void testFindInAllPackages()
     {

@@ -14,15 +14,25 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.tracing;
 
+import io.opentracing.util.GlobalTracer;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.tracing.AbstractTestTraceSpan;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
+import org.junit.BeforeClass;
 
 public class TestInterpretedTraceSpan extends AbstractTestTraceSpan
 {
-
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+        GlobalTracer.registerIfAbsent(tracer);
+    }
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+    }
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

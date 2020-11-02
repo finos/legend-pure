@@ -17,11 +17,21 @@ package org.finos.legend.pure.runtime.java.interpreted.function.base.meta;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestReactivate;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestReactivate extends AbstractTestReactivate
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+    @After
+    public void cleanRuntime() {
+        runtime.delete("testSource.pure");
+    }
     @Test
     public void testVariableScopeFail()
     {
@@ -37,8 +47,7 @@ public class TestReactivate extends AbstractTestReactivate
 
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

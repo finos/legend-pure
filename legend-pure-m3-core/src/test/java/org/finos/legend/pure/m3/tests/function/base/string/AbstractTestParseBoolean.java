@@ -22,7 +22,7 @@ public abstract class AbstractTestParseBoolean extends AbstractPureTestWithCoreC
     @Test
     public void testBasicParse()
     {
-            compileTestSource(
+           compileTestSource("fromString.pure",
                     "function test():Boolean[1]\n" +
                             "{\n" +
                             "   assert(true == 'true'->parseBoolean(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestParseBoolean extends AbstractPureTestWithCoreC
     @Test
     public void testEvalParse()
     {
-        compileTestSource(
+       compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(true == parseBoolean_String_1__Boolean_1_->eval('true'), |'');\n" +

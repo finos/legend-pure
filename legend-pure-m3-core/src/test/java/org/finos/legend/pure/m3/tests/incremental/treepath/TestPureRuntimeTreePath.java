@@ -21,10 +21,27 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.RuntimeVerifier.FunctionExecutionStateVerifier;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeTreePath extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("userId.pure");
+        runtime.delete("sourceId.pure");
+        runtime.delete("funcId.pure");
+        runtime.delete("profile.pure");
+        runtime.delete("treeSourceId.pure");
+        runtime.delete("enumSourceId.pure");
+    }
+
     @Test
     public void testPureRuntimeProperty()
     {

@@ -17,14 +17,27 @@ package org.finos.legend.pure.runtime.java.compiled;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestReflectiveFunctions extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getCodeRepositories());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testFilterSimple()
     {
-        compileTestSource(
+       compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                 "{\n" +
                 "   assert('test' == ['a','b','test']->filter(x|$x == 'test'), |'')\n" +
@@ -35,7 +48,7 @@ public class TestReflectiveFunctions extends AbstractPureTestWithCoreCompiled
     @Test
     public void testFilterReflectiveEval()
     {
-        compileTestSource(
+       compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert('test' == filter_T_MANY__Function_1__T_MANY_->eval(['a','b','test'], x:String[1]|$x == 'test'), |'')\n" +
@@ -46,7 +59,7 @@ public class TestReflectiveFunctions extends AbstractPureTestWithCoreCompiled
     @Test
     public void testFilterReflectiveEvaluate()
     {
-        compileTestSource(
+       compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert('test' == filter_T_MANY__Function_1__T_MANY_->evaluate([list(['a','b','test']), list(x:String[1]|$x == 'test')]), |'')\n" +
@@ -56,8 +69,7 @@ public class TestReflectiveFunctions extends AbstractPureTestWithCoreCompiled
     }
 
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

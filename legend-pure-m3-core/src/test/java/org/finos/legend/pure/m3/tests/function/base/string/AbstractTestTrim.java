@@ -22,7 +22,7 @@ public abstract class AbstractTestTrim extends AbstractPureTestWithCoreCompiled
     @Test
     public void testBasicParse()
     {
-            compileTestSource(
+            compileTestSource("fromString.pure",
                     "function test():Boolean[1]\n" +
                             "{\n" +
                             "   assert('hello' == ' hello '->trim(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestTrim extends AbstractPureTestWithCoreCompiled
     @Test
     public void testEvalParse()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert('hello' == trim_String_1__String_1_->eval(' hello '), |'');\n" +

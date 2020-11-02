@@ -20,17 +20,22 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 public class TestLambda extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setObserver()
-    {
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+
+        //set observer
         System.setProperty("pure.typeinference.test", "true");
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("inferenceTest.pure");
     }
 
     @AfterClass
@@ -128,8 +133,7 @@ public class TestLambda extends AbstractPureTestWithCoreCompiled
         }
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

@@ -19,11 +19,18 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestNamespaces extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
     @Test
     public void testClassNameConflict()
     {
@@ -70,11 +77,11 @@ public class TestNamespaces extends AbstractPureTestWithCoreCompiledPlatform
     public void testAssociationNameConflict()
     {
         compileTestSource("assoc1.pure",
-                "Class test::MyClass {}\n" +
+                "Class test::TestClass {}\n" +
                         "Association test::MyAssociation" +
                         "{\n" +
-                        "  prop1 : test::MyClass[*];\n" +
-                        "  prop2 : test::MyClass[*];\n" +
+                        "  prop1 : test::TestClass[*];\n" +
+                        "  prop2 : test::TestClass[*];\n" +
                         "}");
         CoreInstance myAssoc = this.runtime.getCoreInstance("test::MyAssociation");
         Assert.assertNotNull(myAssoc);
@@ -85,8 +92,8 @@ public class TestNamespaces extends AbstractPureTestWithCoreCompiledPlatform
             compileTestSource("assoc2.pure",
                     "Association test::MyAssociation" +
                             "{\n" +
-                            "  prop1 : test::MyClass[*];\n" +
-                            "  prop2 : test::MyClass[*];\n" +
+                            "  prop1 : test::TestClass[*];\n" +
+                            "  prop2 : test::TestClass[*];\n" +
                             "}");
             Assert.fail("Expected compilation error");
         }

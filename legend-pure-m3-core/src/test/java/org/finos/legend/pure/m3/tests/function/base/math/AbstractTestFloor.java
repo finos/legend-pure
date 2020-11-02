@@ -22,7 +22,7 @@ public abstract class AbstractTestFloor extends AbstractPureTestWithCoreCompiled
     @Test
     public void testBasic()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(1 == 1.9->floor(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestFloor extends AbstractPureTestWithCoreCompiled
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(1 == floor_Number_1__Integer_1_->eval(1.9), |'');\n" +

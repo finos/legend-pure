@@ -17,11 +17,18 @@ package org.finos.legend.pure.runtime.java.interpreted.path;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestDSLExecution extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
     @Test
     public void testSimple() throws Exception
     {
@@ -111,8 +118,7 @@ public class TestDSLExecution extends AbstractPureTestWithCoreCompiled
                 "                        [>2] Anonymous_StripedId instance ReferenceUsage", this.functionExecution.getConsole().getLine(0));
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

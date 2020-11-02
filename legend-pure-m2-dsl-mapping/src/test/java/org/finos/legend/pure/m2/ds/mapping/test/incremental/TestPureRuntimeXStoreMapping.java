@@ -19,6 +19,9 @@ import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m2.ds.mapping.test.AbstractPureMappingTestWithCoreCompiled;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeXStoreMapping extends AbstractPureMappingTestWithCoreCompiled
@@ -131,6 +134,20 @@ public class TestPureRuntimeXStoreMapping extends AbstractPureMappingTestWithCor
                     "   firmId: String[1];" +
                     "   lastName : String[1];" +
                     "}\n";
+
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("source1.pure");
+        runtime.delete("source3.pure");
+        runtime.delete("source4.pure");
+        runtime.delete("source5.pure");
+    }
 
     @Test
     public void testCreateAndDeleteMappingProperties() throws Exception

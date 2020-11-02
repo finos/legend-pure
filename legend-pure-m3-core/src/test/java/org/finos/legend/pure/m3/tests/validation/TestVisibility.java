@@ -18,6 +18,7 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Sets;
+import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
@@ -31,13 +32,40 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.Mutable
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestVisibility extends AbstractPureTestWithCoreCompiledPlatform
+public class TestVisibility extends AbstractPureTestWithCoreCompiled
 {
-    @Override
-    protected RichIterable<? extends CodeRepository> getCodeRepositories()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getCodeStorage(), getCodeRepositories(), null);
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("testFile.pure");
+        runtime.delete("testFile2.pure");
+        runtime.delete("/system/testFile.pure");
+        runtime.delete("/system/testFile2.pure");
+        runtime.delete("/system/testFile3.pure");
+        runtime.delete("/system/testFile4.pure");
+        runtime.delete("/model_legacy/testFile.pure");
+        runtime.delete("/model_legacy/testFile2.pure");
+        runtime.delete("/model_validation/testFile2.pure");
+        runtime.delete("/datamart_datamt/testFile.pure");
+        runtime.delete("/datamart_datamt/testFile2.pure");
+
+        try{
+            runtime.compile();
+        } catch (PureCompilationException e) {
+            setUp();
+        }
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         return Lists.immutable.with(
                 SVNCodeRepository.newDatamartCodeRepository("dtm"),
@@ -52,8 +80,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiledPlatform
                 );
     }
 
-    @Override
-    protected MutableCodeStorage getCodeStorage()
+    protected static MutableCodeStorage getCodeStorage()
     {
         return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
     }
@@ -604,28 +631,28 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiledPlatform
             assertRepoExists("datamart_datamt");
             compileTestSource(
                     "/datamart_datamt/testFile1.pure",
-                    "Class datamarts::datamt::domain::A { name:String[1];}");
-            Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::A"));
+                    "Class datamarts::datamt::domain::Test { name:String[1];}");
+            Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::Test"));
             compileTestSource(
                     "/model_validation/testFile2.pure",
                     "import datamarts::datamt::domain::*;\n" +
-                            "function model::producers::bu::validationFunc():A[1]\n" +
+                            "function model::producers::bu::validationFunc():Test[1]\n" +
                             "{\n" +
-                            "    ^A(name='lala');\n" +
+                            "    ^Test(name='lala');\n" +
                             "}");
-            Assert.assertNotNull(this.runtime.getFunction("model::producers::bu::validationFunc():A[1]"));
+            Assert.assertNotNull(this.runtime.getFunction("model::producers::bu::validationFunc():Test[1]"));
             Assert.fail("Expected compilation error");
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not visible in the file /model_validation/testFile2.pure", "/model_validation/testFile2.pure", 2, 49, 2, 49, 2, 49, e);
+            assertPureException(PureCompilationException.class, "datamarts::datamt::domain::Test is not visible in the file /model_validation/testFile2.pure", "/model_validation/testFile2.pure", 2, 49, 2, 49, 2, 52, e);
         }
     }
 
     @Test
     public void testIsVisibleInPackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("testFile.pure", "import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.private>> pkg1::privateFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +

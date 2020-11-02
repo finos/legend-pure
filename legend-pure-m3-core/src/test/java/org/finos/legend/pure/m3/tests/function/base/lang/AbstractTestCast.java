@@ -35,15 +35,15 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("Class A {prop3:String[1];}\n" +
+            compileTestSource("fromString.pure","Class A {prop3:String[1];}\n" +
                     "Class B extends A {prop2 : String[1];}\n" +
                     "Class C {prop:String[1];}\n" +
                     "\n" +
-                    "function test():Nil[0]\n" +
+                    "function testError():Nil[0]\n" +
                     "{\n" +
                     "   print(^A(prop3='a')->cast(@C).prop,1);\n" +
                     "}\n");
-            this.execute("test():Nil[0]");
+            this.execute("testError():Nil[0]");
             Assert.fail();
         }
         catch (Exception e)
@@ -73,7 +73,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Any[*]\n" +
+            compileTestSource("fromString.pure","function test():Any[*]\n" +
                     "{\n" +
                     "   ^List<X>(values=^X(nameX = 'my name is X'))->castToListY().values.nameY->print(1);\n" +
                     "}");
@@ -104,7 +104,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Number[*]\n" +
+            compileTestSource("fromString.pure","function test():Number[*]\n" +
                     "{\n" +
                     "   [1, 3.0, 'the cat sat on the mat']->cast(@Number)->plus()\n" +
                     "}\n");
@@ -127,7 +127,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Any[*]\n" +
+            compileTestSource("fromString.pure","function test():Any[*]\n" +
                     "{\n" +
                     "   1->castToString()->joinStrings('');\n" +
                     "}");
@@ -150,11 +150,11 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Any[*]\n" +
+            compileTestSource("fromString.pure","function testMany():Any[*]\n" +
                     "{\n" +
                     "   [1, 2.5, 'abc']->castToNumber()->plus();\n" +
                     "}");
-            this.execute("test():Any[*]");
+            this.execute("testMany():Any[*]");
             Assert.fail("Expected cast error");
         }
         catch (Exception e)
@@ -173,7 +173,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Any[*]\n" +
+            compileTestSource("fromString.pure","function test():Any[*]\n" +
                     "{\n" +
                     "   ^X()->castToY().nameY;\n" +
                     "}");
@@ -196,7 +196,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Any[*]\n" +
+            compileTestSource("fromString.pure","function test():Any[*]\n" +
                     "{\n" +
                     "   [^X(), ^Y(), ^S()]->castToY().nameY;\n" +
                     "}");
@@ -219,11 +219,11 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Any[*]\n" +
+            compileTestSource("fromString.pure","function testConcrete():Any[*]\n" +
                     "{\n" +
                     "   1->nonConcreteCastToString()->joinStrings('');\n" +
                     "}");
-            this.execute("test():Any[*]");
+            this.execute("testConcrete():Any[*]");
             Assert.fail("Expected cast error");
         }
         catch (Exception e)
@@ -242,11 +242,11 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Any[*]\n" +
+            compileTestSource("fromString.pure","function testNonConcrete():Any[*]\n" +
                     "{\n" +
                     "   [1, 2.5, 'abc']->nonConcreteCastToNumber()->plus();\n" +
                     "}");
-            this.execute("test():Any[*]");
+            this.execute("testNonConcrete():Any[*]");
             Assert.fail("Expected cast error");
         }
         catch (Exception e)
@@ -265,11 +265,11 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Any[*]\n" +
+            compileTestSource("fromString.pure","function testNonPrimitive():Any[*]\n" +
                     "{\n" +
                     "   ^X()->nonConcreteCastToY().nameY;\n" +
                     "}");
-            this.execute("test():Any[*]");
+            this.execute("testNonPrimitive():Any[*]");
             Assert.fail("Expected cast error");
         }
         catch (Exception e)
@@ -288,7 +288,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Any[*]\n" +
+            compileTestSource("fromString.pure","function test():Any[*]\n" +
                     "{\n" +
                     "   [^X(), ^Y(), ^S()]->nonConcreteCastToY().nameY;\n" +
                     "}");
@@ -311,11 +311,11 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Any[*]\n" +
+            compileTestSource("fromString.pure","function testEnum():Any[*]\n" +
                     "{\n" +
                     "   Month.January -> castToString() -> joinStrings('');\n" +
                     "}");
-            this.execute("test():Any[*]");
+            this.execute("testEnum():Any[*]");
             Assert.fail("Expected cast error");
         }
         catch (Exception e)
@@ -334,7 +334,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Nil[0]\n" +
+            compileTestSource("fromString.pure","function test():Nil[0]\n" +
                     "{\n" +
                     "   'January' -> cast(@Month) -> print(1);\n" +
                     "}");

@@ -20,10 +20,25 @@ import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestQualifiedPropertyInheritance extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("file1.pure");
+        runtime.delete("file2.pure");
+        runtime.delete("file3.pure");
+    }
+
     @Test
     public void testQualifiedPropertyInheritance_OneSource()
     {
@@ -182,8 +197,7 @@ public class TestQualifiedPropertyInheritance extends AbstractPureTestWithCoreCo
                 this.runtime, this.functionExecution, Lists.immutable.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
     }
 
-    @Override
-    public FunctionExecution getFunctionExecution()
+    public static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

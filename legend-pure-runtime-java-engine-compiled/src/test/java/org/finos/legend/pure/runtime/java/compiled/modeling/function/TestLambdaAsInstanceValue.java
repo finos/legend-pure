@@ -21,11 +21,30 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestLambdaAsInstanceValue extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("/test/testSource1.pure");
+        runtime.delete("/test/testSource2.pure");
+//        try {
+//            runtime.compile();
+//        } catch(PureCompilationException e) {
+//            setUp();
+//        }
+    }
+
     @Test
     public void testLambdaWithNoArgsAsInstanceValue()
     {
@@ -88,8 +107,7 @@ public class TestLambdaAsInstanceValue extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals("LAMBDA", PrimitiveUtilities.getStringValue(result.getValueForMetaPropertyToOne(M3Properties.values)));
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

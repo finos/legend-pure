@@ -17,11 +17,24 @@ package org.finos.legend.pure.m3.inlinedsl.path.inference;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestFunctionTypeInferenceInPath extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("id.pure");
+    }
+
     @Test
     public void inferTypeParameterUpAndDownWithNestedFunctionArray() throws Exception
     {

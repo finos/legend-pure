@@ -23,11 +23,17 @@ import org.finos.legend.pure.m3.tests.incremental._class.TestPureRuntimeClass_Fu
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestPureRuntimeClass_FunctionParamTypeCompiled extends TestPureRuntimeClass_FunctionParamType
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getExtra());
+    }
+
     @Ignore
     @Test
     public void testPureRuntimeClassAsQualifiedPropertyParameter() throws Exception
@@ -35,8 +41,7 @@ public class TestPureRuntimeClass_FunctionParamTypeCompiled extends TestPureRunt
         this.testPureRuntimeClassAsQualifiedPropertyParameter();
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
@@ -47,8 +52,7 @@ public class TestPureRuntimeClass_FunctionParamTypeCompiled extends TestPureRunt
         return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
 
-    @Override
-    public Pair<String, String> getExtra()
+    public static Pair<String, String> getExtra()
     {
         return null;
     }

@@ -14,15 +14,22 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.asserts;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestAssertNotEquals extends PureExpressionTest
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), extra);
+    }
 
-    String extra = "function meta::pure::functions::asserts::assertNotEquals(notExpected:Any[*], actual:Any[*]):Boolean[1]\n" +
+    public static Pair<String, String> extra = Tuples.pair("/system/extra.pure","function meta::pure::functions::asserts::assertNotEquals(notExpected:Any[*], actual:Any[*]):Boolean[1]\n" +
             "{\n" +
             "    if(eq($notExpected->size(), 1) && eq($actual->size(), 1),\n" +
             "       | assertNotEquals($notExpected, $actual, '%r should not equal %r', [$notExpected->toOne(), $actual->toOne()]),\n" +
@@ -46,25 +53,24 @@ public class TestAssertNotEquals extends PureExpressionTest
             "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
             "{\n" +
             "    assert($condition, | format($formatString, $formatArgs));\n" +
-            "}";
+            "}");
     ;
 
     @Test
     public void testFailure()
     {
-        assertExpressionRaisesPureException("1 should not equal 1", 3, 9, "assertNotEquals(1, 1)", extra);
+        assertExpressionRaisesPureException("1 should not equal 1", 3, 9, "assertNotEquals(1, 1)");
     }
 
     @Test
     public void testFailureWithCollections()
     {
-        assertExpressionRaisesPureException("[1, 2] should not equal [1, 2]", 3, 9, "assertNotEquals([1, 2], [1, 2])", extra);
+        assertExpressionRaisesPureException("[1, 2] should not equal [1, 2]", 3, 9, "assertNotEquals([1, 2], [1, 2])");
         assertExpressionRaisesPureException("['aaa', 'bb'] should not equal ['aaa', 'bb']", 3, 9, "assertNotEquals(['aaa', 'bb'], ['aaa', 'bb'])");
         assertExpressionRaisesPureException("['aaa', 2] should not equal ['aaa', 2]", 3, 9, "assertNotEquals(['aaa', 2], ['aaa', 2])");
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

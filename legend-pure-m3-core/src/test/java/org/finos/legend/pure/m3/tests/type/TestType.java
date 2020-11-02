@@ -18,15 +18,27 @@ import org.finos.legend.pure.m3.navigation.type.Type;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestType extends AbstractPureTestWithCoreCompiledPlatform {
 
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testGetTopMostNonTopTypeGeneralizationsWithOneOrphanType() {
         String pureSource = "Class A{}";
-        compileTestSource(pureSource);
+        compileTestSource("fromString.pure",pureSource);
         CoreInstance classA = this.runtime.getCoreInstance("A");
         MutableSet<CoreInstance> leafTypes = Type.getTopMostNonTopTypeGeneralizations(classA, this.processorSupport);
         Assert.assertEquals(1, leafTypes.size());
@@ -49,7 +61,7 @@ public class TestType extends AbstractPureTestWithCoreCompiledPlatform {
                 "Class D extends F {}\n" +
                 "Class E extends F {}\n" +
                 "Class F {}";
-        compileTestSource(pureSource);
+        compileTestSource("fromString.pure",pureSource);
         CoreInstance classA = this.runtime.getCoreInstance("A");
         MutableSet<CoreInstance> leafTypes = Type.getTopMostNonTopTypeGeneralizations(classA, this.processorSupport);
         Assert.assertEquals(1, leafTypes.size());
@@ -69,7 +81,7 @@ public class TestType extends AbstractPureTestWithCoreCompiledPlatform {
                 "Class C extends E {}\n" +
                 "Class D {}\n" +
                 "Class E {}";
-        compileTestSource(pureSource);
+        compileTestSource("fromString.pure",pureSource);
         CoreInstance classA = this.runtime.getCoreInstance("A");
         MutableSet<CoreInstance> leafTypes = Type.getTopMostNonTopTypeGeneralizations(classA, this.processorSupport);
         Assert.assertEquals(2, leafTypes.size());

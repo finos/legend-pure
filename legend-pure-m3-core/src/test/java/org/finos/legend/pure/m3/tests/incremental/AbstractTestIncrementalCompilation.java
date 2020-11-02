@@ -31,8 +31,7 @@ import org.junit.Test;
 
 public abstract class AbstractTestIncrementalCompilation extends AbstractPureTestWithCoreCompiled
 {
-    @Override
-    protected RichIterable<? extends CodeRepository> getCodeRepositories()
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         CodeRepository platform = CodeRepository.newPlatformCodeRepository();
         CodeRepository core = new TestCodeRepositoryWithDependencies("core", null, Sets.mutable.with(platform));
@@ -42,8 +41,7 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
         return Lists.immutable.with(platform, system, model, other);
     }
 
-    @Override
-    protected MutableCodeStorage getCodeStorage()
+    protected static MutableCodeStorage getCodeStorage()
     {
         return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
     }
@@ -1442,7 +1440,7 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
     @Test
     public void test24()
     {
-        RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("1.pure", "" +
+        RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("s1.pure", "" +
                         "Class <<temporal.businesstemporal>> A {a: String[1];} \n\n Class <<temporal.businesstemporal>> B {b: String[1];}")
                         .createInMemorySource("3.pure", "" +
                                 "Class <<temporal.businesstemporal>> E {e: String[1];} \n\n Class <<temporal.businesstemporal>> F {f: String[1];}\n\nClass <<temporal.businesstemporal>>G {g: String[1]; gQualified(){$this.g}:String[1];}" +
@@ -1464,13 +1462,13 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
     public void test25()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
-                        .createInMemorySource("1.pure", "Class <<temporal.businesstemporal>> A {a: String[1]; c: C[1];} \n Class B{hubA: A[1];}")
-                        .createInMemorySource("2.pure", "Class C{c: String[1];}")
+                        .createInMemorySource("s1.pure", "Class <<temporal.businesstemporal>> A {a: String[1]; c: C[1];} \n Class B{hubA: A[1];}")
+                        .createInMemorySource("s2.pure", "Class C{c: String[1];}")
                         .compile(),
                 new RuntimeTestScriptBuilder()
-                        .updateSource("2.pure", "Class\n C{c: String[1];}")
+                        .updateSource("s2.pure", "Class\n C{c: String[1];}")
                         .compile()
-                        .updateSource("2.pure", "Class C{c: String[1];}")
+                        .updateSource("s2.pure", "Class C{c: String[1];}")
                         .compile(),
                 this.runtime, this.functionExecution, this.getAdditionalVerifiers());
     }

@@ -27,17 +27,38 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
 {
     // Private function applications and references in the same package
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("/test/testSource.pure");
+        runtime.delete("/test/testSource1.pure");
+        runtime.delete("/test/testSource2.pure");
+        runtime.delete("fromString.pure");
+
+        try {
+            runtime.compile();
+        } catch (PureCompilationException e)
+        {
+            setUp();
+        }
+    }
 
     @Test
     public void testPrivateFunctionApplicationInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.private>> pkg::privateFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -63,7 +84,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testPrivateFunctionIndirectApplicationInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.private>> pkg::privateFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -86,7 +107,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testPrivateFunctionApplicationInCollectInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.private>> pkg::privateFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -109,7 +130,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testPrivateFunctionApplicationInLetInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.private>> pkg::privateFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -133,7 +154,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testPrivateFunctionApplicationInKeyExpressionInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class pkg::MyClass\n" +
                 "{\n" +
@@ -161,7 +182,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testPrivateFunctionReferenceInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.private>> pkg::privateFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -366,7 +387,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionApplicationInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.protected>> pkg::protectedFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -392,7 +413,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionIndirectApplicationInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.protected>> pkg::protectedFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -415,7 +436,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionApplicationInCollectInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.protected>> pkg::protectedFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -438,7 +459,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionApplicationInLetInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.protected>> pkg::protectedFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -462,7 +483,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionApplicationInKeyExpressionInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class pkg::MyClass\n" +
                 "{\n" +
@@ -490,7 +511,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionReferenceInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.protected>> pkg::protectedFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -518,7 +539,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionApplicationInSubPackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.protected>> pkg::protectedFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -544,7 +565,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionIndirectApplicationInSubPackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.protected>> pkg::protectedFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -567,7 +588,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionApplicationInCollectInSubPackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.protected>> pkg::protectedFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -590,7 +611,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionApplicationInLetInSubPackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.protected>> pkg::protectedFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -614,7 +635,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionApplicationInKeyExpressionInSubPackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class pkg::MyClass\n" +
                 "{\n" +
@@ -642,7 +663,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedFunctionReferenceInSubPackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.protected>> pkg::protectedFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -846,7 +867,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testPrivateClassReferenceInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class <<access.private>> pkg::PrivateClass\n" +
                 "{\n" +
@@ -874,7 +895,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testPrivateClassExtensionInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class <<access.private>> pkg::PrivateClass\n" +
                 "{\n" +
@@ -896,7 +917,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testPrivateClassPropertyTypeInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class <<access.private>> pkg::PrivateClass\n" +
                 "{\n" +
@@ -919,7 +940,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testPrivateClassAssociationPropertyTypeInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class <<access.private>> pkg::PrivateClass\n" +
                 "{\n" +
@@ -1054,7 +1075,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedClassReferenceInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class <<access.protected>> pkg::ProtectedClass\n" +
                 "{\n" +
@@ -1082,7 +1103,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedClassExtensionInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class <<access.protected>> pkg::ProtectedClass\n" +
                 "{\n" +
@@ -1104,7 +1125,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedClassPropertyTypeInSamePackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class <<access.protected>> pkg::ProtectedClass\n" +
                 "{\n" +
@@ -1129,7 +1150,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedClassReferenceInSubPackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class <<access.protected>> pkg::ProtectedClass\n" +
                 "{\n" +
@@ -1157,7 +1178,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedClassExtensionInSubPackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class <<access.protected>> pkg::ProtectedClass\n" +
                 "{\n" +
@@ -1179,7 +1200,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testProtectedClassPropertyTypeInSubPackage()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "Class <<access.protected>> pkg::ProtectedClass\n" +
                 "{\n" +
@@ -1616,7 +1637,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testHasExplicitAccessLevel()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.private>> pkg::privateFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -1640,7 +1661,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testGetAccessLevelStereotypes()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.private>> pkg::privateFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +
@@ -1691,7 +1712,7 @@ public class TestAccess extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testGetAccessLevel()
     {
-        compileTestSource("import meta::pure::profiles::*;\n" +
+        compileTestSource("fromString.pure","import meta::pure::profiles::*;\n" +
                 "\n" +
                 "function <<access.private>> pkg::privateFunc(string1:String[1], string2:String[1]):String[1]\n" +
                 "{\n" +

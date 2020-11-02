@@ -18,11 +18,23 @@ import java.util.regex.Pattern;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestGeneralizationLinearization extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testSimpleLoop()
     {
@@ -109,7 +121,7 @@ public class TestGeneralizationLinearization extends AbstractPureTestWithCoreCom
     {
         try
         {
-            compileTestSource(code);
+            compileTestSource("fromString.pure",code);
             Assert.fail("Expected compilation error from:\n" + code);
         }
         catch (RuntimeException e)

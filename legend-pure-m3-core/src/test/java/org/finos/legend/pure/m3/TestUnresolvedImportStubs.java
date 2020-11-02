@@ -23,12 +23,18 @@ import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Collection;
 
 public class TestUnresolvedImportStubs extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
     @Test
     public void testNoUnresolvedImportStubs()
     {

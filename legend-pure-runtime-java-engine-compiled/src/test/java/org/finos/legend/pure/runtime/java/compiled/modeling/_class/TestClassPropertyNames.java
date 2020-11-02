@@ -24,15 +24,28 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestClassPropertyNames extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getFactoryRegistryOverride());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testClassWithJavaKeywordProperty()
     {
-        compileTestSource("Class test::TestClass\n" +
+        compileTestSource("fromString.pure","Class test::TestClass\n" +
                 "{\n" +
                 "  case : String[1];\n" +
                 "}\n" +
@@ -55,7 +68,7 @@ public class TestClassPropertyNames extends AbstractPureTestWithCoreCompiled
     @Test
     public void testClassWithJavaKeywordQualifiedProperty()
     {
-        compileTestSource("Class test::TestClass\n" +
+        compileTestSource("fromString.pure","Class test::TestClass\n" +
                 "{\n" +
                 "  case()\n" +
                 "  {\n" +
@@ -78,14 +91,12 @@ public class TestClassPropertyNames extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(Boolean.TRUE, value);
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
 
-    @Override
-    protected CoreInstanceFactoryRegistry getFactoryRegistryOverride()
+    protected static CoreInstanceFactoryRegistry getFactoryRegistryOverride()
     {
         return CoreJavaModelFactoryRegistry.REGISTRY;
     }

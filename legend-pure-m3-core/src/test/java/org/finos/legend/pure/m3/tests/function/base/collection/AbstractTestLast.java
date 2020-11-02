@@ -22,7 +22,7 @@ public abstract class AbstractTestLast extends PureExpressionTest
     @Test
     public void testBasic()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(3 == [1,2,3]->last(), |'');\n" +
@@ -35,7 +35,7 @@ public abstract class AbstractTestLast extends PureExpressionTest
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(3 == last_T_MANY__T_$0_1$_->eval([1,2,3]), |'');\n" +

@@ -16,11 +16,24 @@ package org.finos.legend.pure.m3.tests.validation;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestCopy extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("testModel.pure");
+        runtime.delete("testFunc.pure");
+    }
+
     @Test
     public void testIncompatiblePrimitiveTypes()
     {

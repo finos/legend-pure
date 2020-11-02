@@ -23,13 +23,24 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 public class TestMilestoningClassProcessor extends AbstractTestMilestoning
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("sourceId.pure");
+        runtime.delete("sourceId2.pure");
+        runtime.delete("domain.pure");
+        runtime.delete("singleInheritance.pure");
+    }
+
     @Rule
     public final ExpectedException expectedEx = ExpectedException.none();
 
@@ -49,7 +60,7 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
     @Test
     public void testImportOfBusinessMilestonedClass() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;" +
                         "Class meta::test::domain::account::Account{\n" +
                         "   orderId : Integer[1];\n" +
@@ -71,7 +82,7 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
     @Test
     public void testGeneratedMilestonedPropertyHasACorrectlyGeneratedImportGroup() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "Class <<temporal.businesstemporal>> meta::test::domain::account::FirmAccount \n" +
                         "{}"
         );
@@ -107,7 +118,7 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
         this.expectedEx.expect(PureCompilationException.class);
         this.expectedEx.expectMessage("Temporal stereotypes must be applied at all levels in a temporal class hierarchy, top most supertype(s): 'Account' has milestoning stereotype: 'businesstemporal'");
 
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import model::domain::subdom1::account::*;" +
                         "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account{} \n" +
                         "Class model::domain::subdom1::account::FirmAccount extends model::domain::subdom1::account::Account{} \n" +

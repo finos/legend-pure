@@ -29,7 +29,7 @@ public abstract class AbstractTestIsOptionSet extends AbstractPureTestWithCoreCo
     @Test
     public void testOptionThatIsSetOn()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "    meta::pure::runtime::isOptionSet('TestSetOn');" +
@@ -41,7 +41,7 @@ public abstract class AbstractTestIsOptionSet extends AbstractPureTestWithCoreCo
     @Test
     public void testOptionThatIsSetOff()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "    meta::pure::runtime::isOptionSet('TestSetOff');" +
@@ -53,7 +53,7 @@ public abstract class AbstractTestIsOptionSet extends AbstractPureTestWithCoreCo
     @Test
     public void testOptionThatIsNotSet()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "    meta::pure::runtime::isOptionSet('TestUnset');" +
@@ -62,7 +62,7 @@ public abstract class AbstractTestIsOptionSet extends AbstractPureTestWithCoreCo
         Assert.assertEquals("false", ValueSpecification.getValue(result, this.processorSupport).getName());
     }
 
-    protected RuntimeOptions getOptions()
+    protected static RuntimeOptions getOptions()
     {
         final Map<String, Boolean> testOptions = new TreeMap<>();
         testOptions.put("TestSetOn", true);

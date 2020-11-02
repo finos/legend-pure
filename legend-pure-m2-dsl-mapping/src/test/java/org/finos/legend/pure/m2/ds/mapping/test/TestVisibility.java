@@ -23,13 +23,27 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
 {
-    @Override
-    protected RichIterable<? extends CodeRepository> getCodeRepositories()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getCodeStorage(), getCodeRepositories(), null);
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("/datamart_datamt/testFile.pure");
+        runtime.delete("/datamart_datamt/testFile2.pure");
+        runtime.delete("/system/testFile.pure");
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         CodeRepository platform = CodeRepository.newPlatformCodeRepository();
         CodeRepository core = new TestCodeRepositoryWithDependencies("core", null, Sets.mutable.with(platform));
@@ -39,8 +53,7 @@ public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
         return Lists.immutable.with(platform, system, model, other);
     }
 
-    @Override
-    protected MutableCodeStorage getCodeStorage()
+    protected static MutableCodeStorage getCodeStorage()
     {
         return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
     }

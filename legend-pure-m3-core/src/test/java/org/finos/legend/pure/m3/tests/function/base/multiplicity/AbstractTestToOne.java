@@ -29,7 +29,7 @@ public abstract class AbstractTestToOne extends PureExpressionTest
     @Test
     public void testBasic()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(1 == [1]->toOne(), |'');\n" +
@@ -40,7 +40,7 @@ public abstract class AbstractTestToOne extends PureExpressionTest
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(1 == toOne_T_MANY__T_1_->eval([1]), |'');\n" +

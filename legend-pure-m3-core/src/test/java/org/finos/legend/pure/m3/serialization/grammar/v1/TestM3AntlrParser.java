@@ -21,13 +21,20 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
 import org.finos.legend.pure.m3.statelistener.StatsStateListener;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
 {
     MutableList<CoreInstance> newInstances = Lists.fixedSize.empty();
     StatsStateListener stateListener = new StatsStateListener();
+
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
 
     @Before
     public void setup()
@@ -188,7 +195,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testClassWithQualifiedProperty()
     {
-        String code = "Class Person\n" +
+        String code = "Class Person2\n" +
                 "      {\n" +
                 "         firstName: String[1];\n" +
                 "         lastName: String[1];\n" +
@@ -202,7 +209,7 @@ public class TestM3AntlrParser extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testFunctionDefinition()
     {
-        String code = "Class Person\n" +
+        String code = "Class Person3\n" +
                 "      {\n" +
                 "         firstName: String[1];\n" +
                 "         lastName: String[1];\n" +
