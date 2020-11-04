@@ -298,3 +298,9 @@ function meta::pure::functions::collection::appendTreeToNode(root:TreeNode[1], p
 {
    $root->meta::pure::functions::collection::replaceTreeNode($position, ^$position(childrenData += $joinTree));
 }
+
+function meta::pure::functions::collection::getAllForEachDate<T>(type:Class<T>[1], dates:Date[*]):T[*]
+{
+    fail('not implemented');
+    [];
+}
