@@ -83,6 +83,30 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testTargetConstraints
    assert(jsonEquivalent('[{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"hasLongName","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint","message":"Constraint :[hasLongName] violated in the Class FirmEmployeeWithConstraint"}],"source":{"defects":[],"source":{"number":1,"record":"{\\"name\\":\\"Dunder Mifflin\\",\\"simpleEmployees\\":[{\\"fullName\\":\\"Jim\\"},{\\"fullName\\":\\"Pam\\"}]}"},"value":{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim"},{"fullName":"Pam"}]}},"value":{"fullName":"Jim","firmName":"Dunder Mifflin"}},{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"hasLongName","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint","message":"Constraint :[hasLongName] violated in the Class FirmEmployeeWithConstraint"}],"source":{"defects":[],"source":{"number":1,"record":"{\\"name\\":\\"Dunder Mifflin\\",\\"simpleEmployees\\":[{\\"fullName\\":\\"Jim\\"},{\\"fullName\\":\\"Pam\\"}]}"},"value":{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim"},{"fullName":"Pam"}]}},"value":{"fullName":"Pam","firmName":"Dunder Mifflin"}}]'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>> 
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0',
+   doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping with sets using and not using explosion mapping',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::explosion::testMappingWithSetsUsingAndNotUsingExplosion(): Boolean[1]
+{
+   let tree = #{Person {firstName,lastName} }#;
+
+   let result = execute(
+      |Person.all()->graphFetch($tree)->serialize($tree),
+      mappingWithSetsUsingAndNotUsingExplosion,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=_S_Person, 
+                                url='data:application/json,{"fullName":"Pierre Doe"}'
+                             )
+      ),
+      []
+   );
+   assert(jsonEquivalent('{"firstName":"Pierre","lastName":"Doe"}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
 Class meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint
 [  hasLongName: $this.fullName->size() > 4 ]
 {
@@ -120,6 +144,24 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::explosion::multipleExplo
 
 Mapping meta::pure::mapping::modelToModel::test::alloy::explosion::explosionWithConstraintMapping
 (
+  FirmEmployeeWithConstraint : Pure
+            {
+               ~src _SimpleFirm
+               firmName : $src.name,
+               fullName* : $src.simpleEmployees.fullName
+            }
+)
+
+Mapping meta::pure::mapping::modelToModel::test::alloy::explosion::mappingWithSetsUsingAndNotUsingExplosion
+(
+  Person : Pure
+            {
+               ~src _S_Person
+               firstName : $src.fullName->substring(0, $src.fullName->indexOf(' ')),
+               lastName  : $src.fullName->substring($src.fullName->indexOf(' ')+1, $src.fullName->length()),
+               type      : $src.type
+            }
+
   FirmEmployeeWithConstraint : Pure
             {
                ~src _SimpleFirm
