@@ -14,15 +14,22 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.asserts;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestAssertEquals extends PureExpressionTest
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), extra);
+    }
 
-    String extra = "function meta::pure::functions::asserts::assertEquals(expected:Any[*], actual:Any[*]):Boolean[1]\n" +
+    public static Pair<String, String> extra = Tuples.pair("/system/extra.pure","function meta::pure::functions::asserts::assertEquals(expected:Any[*], actual:Any[*]):Boolean[1]\n" +
             "{\n" +
             "    if(eq($expected->size(), 1) && eq($actual->size(), 1),\n" +
             "       | assertEquals($expected, $actual, '\\nexpected: %r\\nactual:   %r', [$expected->toOne(), $actual->toOne()]),\n" +
@@ -41,24 +48,23 @@ public class TestAssertEquals extends PureExpressionTest
             "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
             "{\n" +
             "    assert($condition, | format($formatString, $formatArgs));\n" +
-            "}";
+            "}");
 
     @Test
     public void testFailure()
     {
-        assertExpressionRaisesPureException("\nexpected: 1\nactual:   2", 3, 9, "assertEquals(1, 2)", extra);
+        assertExpressionRaisesPureException("\nexpected: 1\nactual:   2", 3, 9, "assertEquals(1, 2)");
     }
 
     @Test
     public void testFailureWithCollections()
     {
-        assertExpressionRaisesPureException("\nexpected: [1, 3, 2]\nactual:   [2, 4, 1, 5]", 3, 9, "assertEquals([1, 3, 2], [2, 4, 1, 5])", extra);
+        assertExpressionRaisesPureException("\nexpected: [1, 3, 2]\nactual:   [2, 4, 1, 5]", 3, 9, "assertEquals([1, 3, 2], [2, 4, 1, 5])");
         assertExpressionRaisesPureException("\nexpected: [1, 2]\nactual:   [2, 1]", 3, 9, "assertEquals([1, 2], [2, 1])");
         assertExpressionRaisesPureException("\nexpected: ['aaa', 2]\nactual:   [2, 'aaa']", 3, 9, "assertEquals(['aaa', 2], [2, 'aaa'])");
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

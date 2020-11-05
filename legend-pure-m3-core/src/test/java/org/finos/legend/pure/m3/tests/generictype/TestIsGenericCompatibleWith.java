@@ -21,7 +21,10 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 // WRITE IN MODELING A TEST WITH AN INSTANCE USING A PROPERTY NOT DEFINED IN THE CLASS
@@ -30,10 +33,25 @@ import org.junit.Test;
 
 public class TestIsGenericCompatibleWith extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("fromString.pure");
+        try{
+            runtime.compile();
+        } catch (PureCompilationException e) {
+            setUp();
+        }
+    }
+
     @Test
     public void testIsGenericCompatibleWith_TypeParamInClass()
     {
-        compileTestSource("Class Employee<T>\n" +
+        compileTestSource("fromString.pure","Class Employee<T>\n" +
                             "{\n" +
                             "   address : T[1];\n" +
                             "}\n" +
@@ -57,7 +75,7 @@ public class TestIsGenericCompatibleWith extends AbstractPureTestWithCoreCompile
     @Test
     public void testIsGenericCompatibleWith_TypeParamInType()
     {
-        compileTestSource("Class Person" +
+        compileTestSource("fromString.pure","Class Person" +
                         "{" +
                         "}" +
                         "Class Employee<Z> extends Person\n" +
@@ -74,7 +92,7 @@ public class TestIsGenericCompatibleWith extends AbstractPureTestWithCoreCompile
                         "{\n" +
                         "}\n" +
                         "" +
-                        "^Employee<Address> i1 (address = ^VacationAddress())\n" +
+                        "^Employee<Address> i3 (address = ^VacationAddress())\n" +
                         "function func(emp:Employee<Address>[1]):HomeAddress[1]\n" +
                         "{\n" +
                         "   ^HomeAddress();\n" +
@@ -102,7 +120,7 @@ public class TestIsGenericCompatibleWith extends AbstractPureTestWithCoreCompile
     @Test
     public void testGenericFunctionTypeCompatibleWithItself()
     {
-        compileTestSource("Class TestClass { fn : Function<{Integer[1]->Function<{Float[1]->Boolean[1]}>[1]}>[1]; }");
+        compileTestSource("fromString.pure","Class TestClass { fn : Function<{Integer[1]->Function<{Float[1]->Boolean[1]}>[1]}>[1]; }");
         CoreInstance prop = this.processorSupport.class_findPropertyUsingGeneralization(this.runtime.getCoreInstance("TestClass"), "fn");
         CoreInstance genericType = Instance.getValueForMetaPropertyToOneResolved(processorSupport.function_getFunctionType(prop), M3Properties.returnType, this.processorSupport);
 
@@ -123,7 +141,7 @@ public class TestIsGenericCompatibleWith extends AbstractPureTestWithCoreCompile
     @Test
     public void testGenericLambdaFunctionTypeCompatibleWithGenericFunctionType()
     {
-        compileTestSource("Class TestClass\n" +
+        compileTestSource("fromString.pure","Class TestClass\n" +
                 "{\n" +
                 "  fn : Function<{Integer[1]->Function<{Float[1]->Boolean[1]}>[1]}>[1];\n" +
                 "  lfn : LambdaFunction<{Integer[1]->LambdaFunction<{Float[1]->Boolean[1]}>[1]}>[1];\n" +

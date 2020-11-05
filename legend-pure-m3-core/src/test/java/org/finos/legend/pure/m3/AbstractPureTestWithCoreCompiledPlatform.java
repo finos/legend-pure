@@ -79,8 +79,7 @@ public class AbstractPureTestWithCoreCompiledPlatform extends AbstractPureTestWi
                     "native function meta::pure::functions::lang::eval<T,U,V,W,X,Y,Z|m,n,p,q,r,s,t>(func:Function<{T[n],U[p],W[q],X[r],Y[s],Z[t]->V[m]}>[1], param1:T[n], param2:U[p], param3:W[q], param4:X[r], param5:Y[s], param6:Z[t]):V[m];\n" +
                     "native function meta::pure::functions::lang::eval<S,T,V,U,W,X,Y,Z|m,n,o,p,q,r,s,t>(func:Function<{S[n],T[o],U[p],W[q],X[r],Y[s],Z[t]->V[m]}>[1], param1:S[n], param2:T[o], param3:U[p], param4:W[q], param5:X[r], param6:Y[s], param7:Z[t]):V[m];");
 
-    @Override
-    public Pair<String, String> getExtra()
+    public static Pair<String, String> getExtra()
     {
         return extra;
     }

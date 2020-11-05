@@ -18,15 +18,28 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestManyPromotion extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testString()
     {
-        compileTestSource("function func():String[*]\n" +
+        compileTestSource("fromString.pure","function func():String[*]\n" +
                           "{\n" +
                           "    'ok';\n" +
                           "}\n" +
@@ -43,7 +56,7 @@ public class TestManyPromotion extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("testFunc.pure",
+            compileTestSource("fromString.pure",
                     "function func():String[1]\n" +
                               "{\n" +
                               "    ['ok','ok2'];\n" +
@@ -55,7 +68,7 @@ public class TestManyPromotion extends AbstractPureTestWithCoreCompiled
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "Return multiplicity error in function 'func'; found: [2]; expected: [1]", "testFunc.pure", 3, 5, e);
+            assertPureException(PureCompilationException.class, "Return multiplicity error in function 'func'; found: [2]; expected: [1]", "fromString.pure", 3, 5, e);
         }
     }
 
@@ -63,7 +76,7 @@ public class TestManyPromotion extends AbstractPureTestWithCoreCompiled
     @Test
     public void testFunctionMatchingMultiplicity()
     {
-        compileTestSource("function func(a:Any[1]):Any[*]\n" +
+        compileTestSource("fromString.pure","function func(a:Any[1]):Any[*]\n" +
                 "{\n" +
                 "    $a;\n" +
                 "}\n" +
@@ -77,8 +90,7 @@ public class TestManyPromotion extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals("1", this.functionExecution.getConsole().getLine(1));
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

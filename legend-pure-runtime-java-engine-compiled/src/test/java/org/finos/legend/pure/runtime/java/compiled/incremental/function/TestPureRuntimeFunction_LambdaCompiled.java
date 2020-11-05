@@ -23,12 +23,16 @@ import org.finos.legend.pure.m3.tests.incremental.function.TestPureRuntimeFuncti
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.BeforeClass;
 
 public class TestPureRuntimeFunction_LambdaCompiled extends TestPureRuntimeFunction_Lambda
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getExtra());
+    }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
@@ -38,8 +42,7 @@ public class TestPureRuntimeFunction_LambdaCompiled extends TestPureRuntimeFunct
     {
         return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
-    @Override
-    public Pair<String, String> getExtra()
+    public static Pair<String, String> getExtra()
     {
         return null;
     }

@@ -17,11 +17,25 @@ package org.finos.legend.pure.m3.inlinedsl.path;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPathParsing extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("testSource.pure");
+        runtime.delete("testSource2.pure");
+    }
+
     @Test
     public void testPathWithNoPath()
     {
@@ -51,7 +65,7 @@ public class TestPathParsing extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("testSource1.pure",
+            compileTestSource("testSource.pure",
                     "import meta::pure::metamodel::path::*;\n" +
                             "Class TestClass\n" +
                             "{\n" +
@@ -66,7 +80,7 @@ public class TestPathParsing extends AbstractPureTestWithCoreCompiled
         }
         catch (RuntimeException e)
         {
-            assertPureException(PureCompilationException.class, "The property 'nonProp' can't be found in the type 'TestClass' (or any supertype).", "testSource1.pure", 9, 17, 9, 23, e);
+            assertPureException(PureCompilationException.class, "The property 'nonProp' can't be found in the type 'TestClass' (or any supertype).", "testSource.pure", 9, 17, 9, 23, e);
         }
 
         try

@@ -16,12 +16,30 @@ package org.finos.legend.pure.runtime.java.extension.external.json.compiled.nati
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.json.AbstractTestToJson;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 
 public class TestToJsonCompiled extends AbstractTestToJson
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+        runtime.delete("/test/testFile.pure");
+        runtime.delete("/org/finos/legend/pure/m3/toJson/toJson.pure");
+        try {
+            runtime.compile();
+        } catch (PureCompilationException e)
+        {
+            setUp();
+        }
+    }
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

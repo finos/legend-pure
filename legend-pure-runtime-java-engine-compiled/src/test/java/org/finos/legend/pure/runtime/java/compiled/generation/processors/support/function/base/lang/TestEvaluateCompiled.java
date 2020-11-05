@@ -18,12 +18,22 @@ import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestEvaluate;
 import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 
 public class TestEvaluateCompiled extends AbstractTestEvaluate
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+    }
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

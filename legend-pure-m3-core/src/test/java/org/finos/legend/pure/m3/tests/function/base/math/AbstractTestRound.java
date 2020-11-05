@@ -22,7 +22,7 @@ public abstract class AbstractTestRound extends AbstractPureTestWithCoreCompiled
     @Test
     public void testBasic()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(2 == 1.9->round(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestRound extends AbstractPureTestWithCoreCompiled
     @Test
     public void testBasicScale()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(1.9 == 1.923->round(1), |'');\n" +
@@ -46,7 +46,7 @@ public abstract class AbstractTestRound extends AbstractPureTestWithCoreCompiled
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(2 == round_Number_1__Integer_1_->eval(1.9), |'');\n" +

@@ -28,7 +28,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     {
         try
         {
-            compileTestSource("function myFunc(s:Integer[1]):String[1]\n" +
+            compileTestSource("fromString.pure","function myFunc(s:Integer[1]):String[1]\n" +
                     "{\n" +
                     "    $s->toString();\n" +
                     "}\n" +
@@ -50,7 +50,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     {
         try
         {
-            compileTestSource("Class Wave\n" +
+            compileTestSource("fromString.pure","Class Wave\n" +
                     "{\n" +
                     "    wavelength: Float[1];\n" +
                     "}\n" +
@@ -85,7 +85,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     {
         try
         {
-            compileTestSource("Class Wave\n" +
+            compileTestSource("fromString.pure","Class Wave\n" +
                     "{\n" +
                     "    wavelength: Float[1];\n" +
                     "}\n" +
@@ -128,7 +128,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     @Test
     public void testEvaluateAnyWrongMultiplicity()
     {
-        compileTestSource("function myFunc(s:String[1], p:String[1]):String[1]\n" +
+        compileTestSource("fromString.pure","function myFunc(s:String[1], p:String[1]):String[1]\n" +
                 "{\n" +
                 "    $s;\n" +
                 "}\n" +
@@ -163,7 +163,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     @Test
     public void testEvaluateViolateLowerBound()
     {
-        compileTestSource("function myFunc(s:String[2..10], p:String[0..3]):String[1]\n" +
+        compileTestSource("fromString.pure","function myFunc(s:String[2..10], p:String[0..3]):String[1]\n" +
                 "{\n" +
                 "    $s->joinStrings('');\n" +
                 "}\n" +
@@ -198,7 +198,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     @Test
     public void testEvaluateViolateUpperBound()
     {
-        compileTestSource("function myFunc(s:String[0..5], p:String[0..3]):String[1]\n" +
+        compileTestSource("fromString.pure","function myFunc(s:String[0..5], p:String[0..3]):String[1]\n" +
                 "{\n" +
                 "    $s->joinStrings('');\n" +
                 "}\n" +
@@ -233,7 +233,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     @Test
     public void testEvaluateUnboundedMultiplicity()
     {
-        compileTestSource("function myFunc(s:String[*], x:Integer[1]):String[1]\n" +
+        compileTestSource("fromString.pure","function myFunc(s:String[*], x:Integer[1]):String[1]\n" +
                 "{\n" +
                 "    $s->joinStrings('');\n" +
                 "}\n" +
@@ -261,7 +261,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
     {
         try
         {
-            compileTestSource("function myFunc():Boolean[1]\n" +
+            compileTestSource("fromString.pure","function myFunc():Boolean[1]\n" +
                     "{\n" +
                     "    fail('Failed');\n" +
                     "}\n" +
@@ -280,7 +280,7 @@ public abstract class AbstractTestEvaluate extends AbstractPureTestWithCoreCompi
 
     @Test
     public void testEvaluateEval() {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "  assert([] == evaluate_Function_1__List_MANY__Any_MANY_->eval(first_T_MANY__T_$0_1$_, list([])), |'');" +

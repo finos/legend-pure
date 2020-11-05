@@ -17,14 +17,27 @@ package org.finos.legend.pure.runtime.java.compiled;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestClassWithParamSuperType extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testTypeParamsAndExtends()
     {
-        compileTestSource("Class A<P>\n" +
+        compileTestSource("fromString.pure","Class A<P>\n" +
                           "{\n" +
                           "    test : P[1];\n" +
                           "}" +
@@ -44,7 +57,7 @@ public class TestClassWithParamSuperType extends AbstractPureTestWithCoreCompile
     @Test
     public void testTypeParamsMulParamsAndExtends()
     {
-        compileTestSource("Class A<P|m>\n" +
+        compileTestSource("fromString.pure","Class A<P|m>\n" +
                           "{\n" +
                           "    test : P[m];\n" +
                           "}" +
@@ -61,8 +74,7 @@ public class TestClassWithParamSuperType extends AbstractPureTestWithCoreCompile
         this.compileAndExecute("test():Any[*]");
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

@@ -20,6 +20,7 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +40,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
     @Test
     public void testSerializationPrimitiveTypes() throws Exception
     {
-        this.compileTestSource(
+       compileTestSource("fromString.pure",
                 "import meta::json::*;\n" +
                         "function meta::pure::functions::asserts::assertJsonStringsEqual(expected:String[1], actual:String[1]):Boolean[1]\n" +
                         "{\n" +
@@ -58,7 +59,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
     @Test
     public void testSerializationEnumProperty() throws Exception
     {
-        this.compileTestSource(
+       compileTestSource("fromString.pure",
                 "import meta::json::*;\n" +
                         "function test():Boolean[1]\n" +
                         "{\n" +
@@ -73,7 +74,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
     @Test
     public void testSerializationClassProperty() throws Exception
     {
-        this.compileTestSource(
+       compileTestSource("fromString.pure",
                 "import meta::json::*;\n" +
                         "function test():Boolean[1]\n" +
                         "{\n" +
@@ -88,7 +89,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
     @Test
     public void testSerializationClassWithAssociation() throws Exception
     {
-        this.compileTestSource(
+       compileTestSource("fromString.pure",
                 "import meta::json::*;\n" +
                         "function test():Boolean[1]\n" +
                         "{\n" +
@@ -185,7 +186,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
                         "   Pound: x -> $x*453.59;\n" +
                         "}";
 
-        compileTestSource("testFunc.pure",
+        compileTestSource("fromString.pure",
                 "import pkg::*;\n" +
                         massDefinition +
                         "function testUnitToJson():Any[*]\n" +
@@ -208,7 +209,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
                         "   Pound: x -> $x*453.59;\n" +
                         "}";
 
-        compileTestSource("testFunc.pure",
+        compileTestSource("fromString.pure",
                 "import pkg::*;\n" +
                         massDefinition +
                         "Class A\n" +
@@ -235,7 +236,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
                         "   Pound: x -> $x*453.59;\n" +
                         "}";
 
-        compileTestSource("testFunc.pure",
+        compileTestSource("fromString.pure",
                 "import pkg::*;\n" +
                         massDefinition +
                         "Class A\n" +
@@ -262,7 +263,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
                         "   Pound: x -> $x*453.59;\n" +
                         "}";
 
-        compileTestSource("testFunc.pure",
+        compileTestSource("fromString.pure",
                 "import pkg::*;\n" +
                         massDefinition +
                         "Class A\n" +
@@ -289,7 +290,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
                         "   Pound: x -> $x*453.59;\n" +
                         "}";
 
-        compileTestSource("testFunc.pure",
+        compileTestSource("fromString.pure",
                 "import pkg::*;\n" +
                         massDefinition +
                         "Class A\n" +
@@ -317,7 +318,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
                         "   Pound: x -> $x*453.59;\n" +
                         "}";
 
-        compileTestSource("testFunc.pure",
+        compileTestSource("fromString.pure",
                 "import pkg::*;\n" +
                         massDefinition +
                         "function testSerializeKilogramType():Any[*]\n" +

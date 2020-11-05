@@ -18,11 +18,20 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.multiplicity.AbstractTestToOne;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 
 public class TestToOne extends AbstractTestToOne
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+    }
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

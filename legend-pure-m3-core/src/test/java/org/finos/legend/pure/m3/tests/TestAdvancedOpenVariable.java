@@ -15,14 +15,21 @@
 package org.finos.legend.pure.m3.tests;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
 import org.junit.Test;
 
 public abstract class TestAdvancedOpenVariable extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testNestedOpenVariables()
     {
-        compileTestSource("function func(a:String[1]):Function<{String[1]->String[1]}>[*]\n" +
+        compileTestSource("fromString.pure","function func(a:String[1]):Function<{String[1]->String[1]}>[*]\n" +
                 "{\n" +
                 "     [{z:String[1]|$z+$a},{z:String[1]|$z+$a+'2'}];\n" +
                 "}\n" +
@@ -38,7 +45,7 @@ public abstract class TestAdvancedOpenVariable extends AbstractPureTestWithCoreC
     @Test
     public void testOpenVariablesForPropagatedBusinessDates()
     {
-        compileTestSource("Class <<temporal.businesstemporal>> MyClass\n" +
+        compileTestSource("fromString.pure","Class <<temporal.businesstemporal>> MyClass\n" +
                 "{\n" +
                 "  account : Account[1]; \n" +
                 "}\n" +

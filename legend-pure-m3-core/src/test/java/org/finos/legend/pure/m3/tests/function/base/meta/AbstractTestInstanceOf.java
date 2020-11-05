@@ -22,7 +22,7 @@ public abstract class AbstractTestInstanceOf extends PureExpressionTest
     @Test
     public void testInstanceOfEnumeration()
     {
-        compileTestSource("Enum test::Enum1 { VALUE1, VALUE2 }\n" +
+        compileTestSource("fromString.pure","Enum test::Enum1 { VALUE1, VALUE2 }\n" +
                 "Enum test::Enum2 { VALUE3, VALUE4 }\n" +
                 "Class test::MyClass {}\n");
 
@@ -51,7 +51,7 @@ public abstract class AbstractTestInstanceOf extends PureExpressionTest
     @Test
     public void testIndirectInstanceOfEnumeration()
     {
-        compileTestSource("Enum test::Enum1 { VALUE1, VALUE2 }\n" +
+        compileTestSource("fromString.pure","Enum test::Enum1 { VALUE1, VALUE2 }\n" +
                 "Enum test::Enum2 { VALUE3, VALUE4 }\n" +
                 "Class test::MyClass {}\n" +
                 "function test::indirectInstanceOf(val:Any[1], type:Type[1]):Boolean[1]\n" +

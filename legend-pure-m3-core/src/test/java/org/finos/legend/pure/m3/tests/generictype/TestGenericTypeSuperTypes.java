@@ -26,14 +26,26 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestGenericTypeSuperTypes extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testDSBCase()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "\n" +
                 "Class test::Post\n" +
                 "{\n" +
@@ -69,7 +81,7 @@ public class TestGenericTypeSuperTypes extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testWithMultiLevelTypeAndMultiplicityArguments()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "\n" +
                 "Class test::A<T,U,V|a,b,c> {}\n" +
                 "Class test::B<W,X|d,e> extends A<W,X,String|d,e,1> {}\n" +
@@ -84,7 +96,7 @@ public class TestGenericTypeSuperTypes extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testWithNestedTypeArguments()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "\n" +
                 "Class test::A<W> {}\n" +
                 "Class test::B<X> {}\n" +

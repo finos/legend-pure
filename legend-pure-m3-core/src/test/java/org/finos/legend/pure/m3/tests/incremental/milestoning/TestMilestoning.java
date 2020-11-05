@@ -20,11 +20,41 @@ import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
 {
+
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("userId.pure");
+        runtime.delete("sourceId.pure");
+        runtime.delete("sourceA.pure");
+        runtime.delete("sourceB.pure");
+        runtime.delete("classes.pure");
+        runtime.delete("classB.pure");
+        runtime.delete("association.pure");
+        runtime.delete("testFunc.pure");
+        runtime.delete("test.pure");
+        runtime.delete("/model/go.pure");
+        runtime.delete("/test/myClass.pure");
+
+        try
+        {
+            runtime.compile();
+        } catch (PureCompilationException e) {
+            setUp();
+        }
+    }
 
     @Test
     public void testBusinessTemporalClassStability() throws Exception

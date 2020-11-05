@@ -22,7 +22,9 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiled;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.tools.ToolProvider;
@@ -35,6 +37,11 @@ import java.util.jar.JarOutputStream;
 
 public class TestMemoryFileManager extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
     @Test
     public void testLoadClassesFromZipInputStream() throws IOException
     {
@@ -81,8 +88,7 @@ public class TestMemoryFileManager extends AbstractPureTestWithCoreCompiled
         }
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

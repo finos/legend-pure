@@ -28,7 +28,7 @@ public abstract class AbstractTestToOneMany extends PureExpressionTest
     @Test
     public void testBasic()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert([1] == [1]->toOneMany(), |'');\n" +
@@ -40,7 +40,7 @@ public abstract class AbstractTestToOneMany extends PureExpressionTest
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert([1] == toOneMany_T_MANY__T_$1_MANY$_->eval([1]), |'');\n" +

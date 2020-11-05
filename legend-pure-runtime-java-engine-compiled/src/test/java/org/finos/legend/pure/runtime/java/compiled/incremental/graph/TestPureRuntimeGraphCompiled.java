@@ -23,11 +23,16 @@ import org.finos.legend.pure.m3.inlinedsl.graph.incremental.TestPureRuntimeGraph
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.BeforeClass;
 
 public class TestPureRuntimeGraphCompiled extends TestPureRuntimeGraph
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getExtra());
+    }
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
@@ -38,8 +43,7 @@ public class TestPureRuntimeGraphCompiled extends TestPureRuntimeGraph
         return Lists.fixedSize.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
 
-    @Override
-    public Pair<String, String> getExtra()
+    public static Pair<String, String> getExtra()
     {
         return null;
     }

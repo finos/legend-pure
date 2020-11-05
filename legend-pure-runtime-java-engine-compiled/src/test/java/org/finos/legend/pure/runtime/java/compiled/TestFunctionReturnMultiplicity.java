@@ -21,16 +21,37 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestFunctionReturnMultiplicity extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getFactoryRegistryOverride());
+        compileTestSource("Class A{" +
+                "   b:Integer[1];" +
+                "}" +
+                "Class Result<T|m>\n" +
+                "{\n" +
+                "   values:T[m];\n" +
+                "}\n");
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testReturnNull()
     {
-        compileTestSource("function process():String[*]\n" +
+        compileTestSource("fromString.pure","function process():String[*]\n" +
                 "{\n" +
                 "    ['a','b']\n" +
                 "}\n" +
@@ -49,7 +70,7 @@ public class TestFunctionReturnMultiplicity extends AbstractPureTestWithCoreComp
     @Test
     public void testReturnManyTypeConversion()
     {
-        compileTestSource("function process():Any[*]\n" +
+        compileTestSource("fromString.pure","function process():Any[*]\n" +
                 "{\n" +
                 "    ['a', 1, 2.0, %2015-03-12, %2015-03-12T23:59:00, true, Class]\n" +
                 "}\n" +
@@ -68,7 +89,7 @@ public class TestFunctionReturnMultiplicity extends AbstractPureTestWithCoreComp
     @Test
     public void testReturnExactlyOnePrimitiveTypeConversion()
     {
-        compileTestSource("function process():Any[*]\n" +
+        compileTestSource("fromString.pure","function process():Any[*]\n" +
                 "{\n" +
                 "    ['a']\n" +
                 "}\n" +
@@ -85,7 +106,7 @@ public class TestFunctionReturnMultiplicity extends AbstractPureTestWithCoreComp
     @Test
     public void testReturnExactlyOneNonPrimitiveTypeConversion()
     {
-        compileTestSource("function process():Any[*]\n" +
+        compileTestSource("fromString.pure","function process():Any[*]\n" +
                 "{\n" +
                 "    [Class]\n" +
                 "}\n" +
@@ -103,13 +124,7 @@ public class TestFunctionReturnMultiplicity extends AbstractPureTestWithCoreComp
     public void testReturnTypeMultiplicityArg()
     {
 
-        compileTestSource("Class A{" +
-                "   b:Integer[1];" +
-                "}" +
-                "Class Result<T|m>\n" +
-                "{\n" +
-                "   values:T[m];\n" +
-                "}\n" +
+        compileTestSource("fromString.pure",
                 "function process<T|m>(f:FunctionDefinition<{->T[m]}>[1]):Result<T|m>[1]\n" +
                 "{\n" +
                 "    let vals = $f->eval();\n" +
@@ -146,13 +161,7 @@ public class TestFunctionReturnMultiplicity extends AbstractPureTestWithCoreComp
     public void testReturnTypeMultiplicityArgWithLet()
     {
 
-        compileTestSource("Class A{" +
-                "   b:Integer[1];" +
-                "}" +
-                "Class Result<T|m>\n" +
-                "{\n" +
-                "   values:T[m];\n" +
-                "}\n" +
+        compileTestSource("fromString.pure",
                 "function process<T|m>(f:FunctionDefinition<{->T[m]}>[1]):Result<T|m>[1]\n" +
                 "{\n" +
                 "    let vals = $f->eval();\n" +
@@ -192,14 +201,12 @@ public class TestFunctionReturnMultiplicity extends AbstractPureTestWithCoreComp
         }).makeString(","));
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
 
-    @Override
-    protected CoreInstanceFactoryRegistry getFactoryRegistryOverride()
+    protected static CoreInstanceFactoryRegistry getFactoryRegistryOverride()
     {
         return CoreJavaModelFactoryRegistry.REGISTRY;
     }

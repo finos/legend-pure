@@ -22,7 +22,7 @@ public abstract class AbstractTestCeiling extends AbstractPureTestWithCoreCompil
     @Test
     public void testBasic()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(2 == 1.3->ceiling(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestCeiling extends AbstractPureTestWithCoreCompil
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(2 == ceiling_Number_1__Integer_1_->eval(1.3), |'');\n" +

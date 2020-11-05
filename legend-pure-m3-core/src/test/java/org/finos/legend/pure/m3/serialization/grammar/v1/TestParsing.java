@@ -23,11 +23,24 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestParsing extends AbstractPureTestWithCoreCompiledPlatform
 {
+
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void parsingEOFError()
     {
@@ -49,7 +62,7 @@ public class TestParsing extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testParseEmptyList()
     {
-        compileTestSource("function go():Any[*]\n" +
+        compileTestSource("fromString.pure", "function go():Any[*]\n" +
                 "{\n" +
                 "   []\n" +
                 "}\n");
@@ -77,7 +90,7 @@ public class TestParsing extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class test::TestClass\n" +
+            compileTestSource("fromString.pure", "Class test::TestClass\n" +
                     "{\n" +
                     "   prop:String[1];\n" +
                     "}\n" +

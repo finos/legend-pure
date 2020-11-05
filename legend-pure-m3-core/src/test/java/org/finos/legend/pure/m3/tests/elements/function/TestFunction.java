@@ -18,17 +18,31 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.Printer;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("fromString.pure");
+        runtime.delete("fromString2.pure");
+        runtime.delete("fromString3.pure");
+    }
+
     @Test
     public void testFunctionTypeWithWrongTypes()
     {
         try
         {
-            compileTestSource("function myFunc(f:{String[1]->{String[1]->Booelean[1]}[1]}[*]):String[1]\n" +
+            compileTestSource("fromString.pure","function myFunc(f:{String[1]->{String[1]->Booelean[1]}[1]}[*]):String[1]\n" +
                     "{\n" +
                     "   'ee';\n" +
                     "}\n");
@@ -45,7 +59,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("function myFunc():String[1]\n" +
+            compileTestSource("fromString.pure","function myFunc():String[1]\n" +
                     "{\n" +
                     "    ^ErrorType(name = 'ok');\n" +
                     "}\n");
@@ -62,7 +76,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class A{name : String[1];}\n" +
+            compileTestSource("fromString.pure","Class A{name : String[1];}\n" +
                     "function myFunc():A[1]\n" +
                     "{\n" +
                     "    ^A(nameError = 'ok');\n" +
@@ -80,7 +94,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("function myFunc():String[1]\n" +
+            compileTestSource("fromString.pure","function myFunc():String[1]\n" +
                     "{\n" +
                     "    'a'->cast(@Error);\n" +
                     "}\n");
@@ -98,7 +112,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class A<E>{}\n" +
+            compileTestSource("fromString.pure","Class A<E>{}\n" +
                     "\n" +
                     "function myFunc():String[1]\n" +
                     "{\n" +
@@ -116,13 +130,13 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
     public void testReturnTypeValidationWithTypeParameter()
     {
         // This should work because Nil is the bottom type
-        compileTestSource("function test1<T>(t:T[1]):T[0..1]\n" +
+        compileTestSource("fromString.pure","function test1<T>(t:T[1]):T[0..1]\n" +
                 "{\n" +
                 "    []\n" +
                 "}");
         try
         {
-            compileTestSource("function test2<T>(t:T[1]):T[1]\n" +
+            compileTestSource("fromString2.pure","function test2<T>(t:T[1]):T[1]\n" +
                     "{\n" +
                     "    5\n" +
                     "}");
@@ -135,7 +149,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
 
         try
         {
-            compileTestSource("function test3<T,U>(t:T[1], u:U[1]):T[1]\n" +
+            compileTestSource("fromString3.pure","function test3<T,U>(t:T[1], u:U[1]):T[1]\n" +
                     "{\n" +
                     "    $u\n" +
                     "}");
@@ -152,7 +166,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("function test1<|m>(a:Any[m]):Any[m]\n" +
+            compileTestSource("fromString.pure","function test1<|m>(a:Any[m]):Any[m]\n" +
                     "{\n" +
                     "    1\n" +
                     "}");
@@ -164,7 +178,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
 
         try
         {
-            compileTestSource("function test2<|m,n>(a:Any[m], b:Any[n]):Any[m]\n" +
+            compileTestSource("fromString2.pure","function test2<|m,n>(a:Any[m], b:Any[n]):Any[m]\n" +
                     "{\n" +
                     "    $b\n" +
                     "}");

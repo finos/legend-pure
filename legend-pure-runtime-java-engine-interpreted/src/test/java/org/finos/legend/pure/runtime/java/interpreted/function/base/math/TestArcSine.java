@@ -17,11 +17,15 @@ package org.finos.legend.pure.runtime.java.interpreted.function.base.math;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.math.AbstractTestArcSine;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.BeforeClass;
 
 public class TestArcSine extends AbstractTestArcSine
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

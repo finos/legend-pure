@@ -26,10 +26,16 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPackageTreeIterable extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
     @Test
     public void testAllPackagesReached_DepthFirst()
     {

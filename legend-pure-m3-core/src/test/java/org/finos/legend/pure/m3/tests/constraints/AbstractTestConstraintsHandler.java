@@ -28,7 +28,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     {
         try
         {
-            this.compileTestSource("Class Employee" +
+            compileTestSource("fromString.pure","Class Employee" +
                     "[" +
                     "   rule1 : $this.lastName->toOne()->length() < 10" +
                     "]" +
@@ -70,7 +70,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     {
         try
         {
-            this.compileTestSource("Class Employee" +
+            compileTestSource("fromString.pure","Class Employee" +
                     "[" +
                     "   rule1 : $this.lastName->toOne()->length() < 10" +
                     "]" +
@@ -122,7 +122,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testClassConstraintHandler()
     {
-        this.compileTestSource("Class Employee" +
+        compileTestSource("fromString.pure","Class Employee" +
                 "[" +
                 "   rule1 : $this.lastName->toOne()->length() < 10" +
                 "]" +
@@ -161,7 +161,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testClassConstraintHandlerSignature()
     {
-        this.compileTestSource("Class Employee" +
+        compileTestSource("fromString.pure","Class Employee" +
                 "[" +
                 "   rule1 : $this.lastName->toOne()->length() < 10" +
                 "]" +
@@ -194,7 +194,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testClassConstraintHandlerNoException()
     {
-        this.compileTestSource("Class Employee" +
+        compileTestSource("fromString.pure","Class Employee" +
                 "[" +
                 "   rule1 : $this.lastName->toOne()->length() < 10" +
                 "]" +
@@ -249,7 +249,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testGenericTypeConstraintHandlerNoException()
     {
-        this.compileTestSource("Class Employee" +
+        compileTestSource("fromString.pure","Class Employee" +
                 "[" +
                 "   rule1 : $this.lastName->toOne()->length() < 10," +
                 "   rule2: $this.lastName->toOne()->length() > 3" +
@@ -303,7 +303,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testGenericTypeConstraintHandlerCopyAfterDynamicNew()
     {
-        this.compileTestSource("Class Employee" +
+        compileTestSource("fromString.pure","Class Employee" +
                 "[" +
                 "   rule1 : $this.lastName->toOne()->length() < 10" +
                 "]" +
@@ -352,7 +352,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testClassConstraintHandlerCopyAfterDynamicNew()
     {
-        this.compileTestSource("Class Employee" +
+        compileTestSource("fromString.pure","Class Employee" +
                 "[" +
                 "   rule1 : $this.lastName->toOne()->length() < 10" +
                 "]" +
@@ -398,7 +398,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testEvaluateConstraint()
     {
-        this.compileTestSource("Class Employee" +
+        compileTestSource("fromString.pure","Class Employee" +
                 "[" +
                 "   rule1 : $this.lastName->toOne()->length() < 10" +
                 "]" +
@@ -439,7 +439,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testConstraintManagerWithExtendedConstraintGrammar()
     {
-        this.compileTestSource("Class Position\n" +
+        compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -501,7 +501,7 @@ public abstract class AbstractTestConstraintsHandler extends AbstractPureTestWit
     @Test
     public void testConstraintManager2WithExtendedConstraintGrammar()
     {
-        this.compileTestSource("Class Position\n" +
+        compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +

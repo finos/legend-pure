@@ -17,11 +17,18 @@ package org.finos.legend.pure.runtime.java.interpreted.incremental.function;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeFunction_NoDependencies extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
     @Test
     public void testPureRuntimeFunctionNoDependencies() throws Exception
     {
@@ -51,8 +58,7 @@ public class TestPureRuntimeFunction_NoDependencies extends AbstractPureTestWith
         Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

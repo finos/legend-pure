@@ -19,17 +19,30 @@ import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestParameters extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testFunctionParametersTypes()
     {
         try
         {
-            compileTestSource("function called(param:Integer[1]):Nil[0]\n" +
+            compileTestSource("fromString.pure","function called(param:Integer[1]):Nil[0]\n" +
                               "{\n" +
                               "   print($param, 1);\n" +
                               "}\n" +
@@ -54,7 +67,7 @@ public class TestParameters extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("Class Employee\n" +
+            compileTestSource("fromString.pure","Class Employee\n" +
                               "{\n" +
                               "    name:String[1];\n" +
                               "}\n" +
@@ -80,7 +93,7 @@ public class TestParameters extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("function test():Nil[0]\n" +
+            compileTestSource("fromString.pure","function test():Nil[0]\n" +
                     "{\n" +
                     "    print(a:String[1]|'a'+$a->eval('errre'));\n" +
                     "}\n");
@@ -102,8 +115,7 @@ public class TestParameters extends AbstractPureTestWithCoreCompiled
         }
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

@@ -24,7 +24,7 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
     @Test
     public void testEnumeration()
     {
-        compileTestSource("Enum BooleanEnum\n" +
+        compileTestSource("fromString.pure","Enum BooleanEnum\n" +
                 "{\n" +
                 "   TRUE, FALSE\n" +
                 "}\n" +
@@ -41,7 +41,7 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
     @Test
     public void testEnumerationAsFuncParam()
     {
-        compileTestSource("Enum BooleanEnum\n" +
+        compileTestSource("fromString.pure","Enum BooleanEnum\n" +
                 "{\n" +
                 "   TRUE, FALSE\n" +
                 "}\n" +
@@ -60,7 +60,7 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
     @Test
     public void testEnumerationVariable()
     {
-        compileTestSource("Enum BooleanEnum\n" +
+        compileTestSource("fromString.pure","Enum BooleanEnum\n" +
                 "{\n" +
                 "   TRUE, FALSE\n" +
                 "}\n" +
@@ -76,7 +76,7 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
     @Test
     public void testEnumerationUsedAsAPropertyType()
     {
-        compileTestSource("Enum BooleanEnum\n" +
+        compileTestSource("fromString.pure","Enum BooleanEnum\n" +
                 "{\n" +
                 "   TRUE, FALSE\n" +
                 "}\n" +

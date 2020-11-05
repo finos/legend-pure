@@ -15,10 +15,17 @@
 package org.finos.legend.pure.m3.inlinedsl.path.milestoning;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestMilestonedPropertyUsageInFunctonExpressionsWithPath extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
     @Test
     public void testLatestDateCompilationValidationAndPropagationDate() throws Exception
     {

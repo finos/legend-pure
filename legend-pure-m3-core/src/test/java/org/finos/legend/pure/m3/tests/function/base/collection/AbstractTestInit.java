@@ -22,7 +22,7 @@ public abstract class AbstractTestInit extends PureExpressionTest
     @Test
     public void testBasic()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert([1,2] == [1,2,3]->init(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestInit extends PureExpressionTest
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert([1,2] ==init_T_MANY__T_MANY_->eval([1,2,3]), |'');\n" +

@@ -21,11 +21,23 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestMeasureGraphCorrectness  extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+    @After
+    public void clearRuntime() {
+        runtime.delete("testModel.pure");
+        runtime.delete("testSource.pure");
+    }
+
     private static String massDefinition =
             "Measure pkg::Mass\n" +
                     "{\n" +

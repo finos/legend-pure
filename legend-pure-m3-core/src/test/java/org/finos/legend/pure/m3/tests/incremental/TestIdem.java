@@ -15,11 +15,23 @@
 package org.finos.legend.pure.m3.tests.incremental;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestIdem extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("sourceId.pure");
+    }
+
     @Test
     public void testClass() throws Exception
     {

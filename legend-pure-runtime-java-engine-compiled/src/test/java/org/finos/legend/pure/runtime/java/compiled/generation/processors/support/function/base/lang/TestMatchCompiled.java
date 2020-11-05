@@ -20,18 +20,22 @@ import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestMatch;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestMatchCompiled extends AbstractTestMatch
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getFactoryRegistryOverride());
+    }
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
 
-    @Override
-    protected CoreInstanceFactoryRegistry getFactoryRegistryOverride()
+    protected static CoreInstanceFactoryRegistry getFactoryRegistryOverride()
     {
         return CoreJavaModelFactoryRegistry.REGISTRY;
     }
@@ -66,7 +70,7 @@ public class TestMatchCompiled extends AbstractTestMatch
                     "{\n" +
                     "   name:String[*];\n" +
                     "}\n";
-            this.compileTestSource(func);
+            this.compileTestSource("fromString.pure", func);
         }
         catch (Exception e)
         {

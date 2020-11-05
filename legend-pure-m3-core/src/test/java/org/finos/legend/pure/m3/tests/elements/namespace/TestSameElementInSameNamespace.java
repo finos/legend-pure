@@ -17,11 +17,26 @@ package org.finos.legend.pure.m3.tests.elements.namespace;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestSameElementInSameNamespace extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("fromString.pure");
+        runtime.delete("/test/testSource.pure");
+        runtime.delete("/test/testSource1.pure");
+        runtime.delete("/test/testSource2.pure");
+    }
+
     @Test
     public void testClass()
     {

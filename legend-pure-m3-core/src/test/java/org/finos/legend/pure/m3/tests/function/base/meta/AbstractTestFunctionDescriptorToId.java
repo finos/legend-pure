@@ -29,7 +29,7 @@ public abstract class AbstractTestFunctionDescriptorToId extends AbstractPureTes
     {
         try
         {
-            compileTestSource(
+            compileTestSource("testFunc.pure",
                     "function test():String[1]\n" +
                     "{\n" +
                     "   meta::pure::functions::meta::functionDescriptorToId('meta::pure::functions::meta::pathToElement(path:String[1]):PackageableElement[1]');\n" +
@@ -52,7 +52,7 @@ public abstract class AbstractTestFunctionDescriptorToId extends AbstractPureTes
     @Test
     public void testCorrectDescriptorNoException()
     {
-            compileTestSource(
+            compileTestSource("testFunc.pure",
                     "function test():String[1]\n" +
                     "{\n" +
                     "   meta::pure::functions::meta::functionDescriptorToId('meta::pure::functions::meta::pathToElement(String[1]):PackageableElement[1]');\n" +

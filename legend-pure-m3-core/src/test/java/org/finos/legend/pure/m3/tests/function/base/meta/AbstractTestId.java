@@ -22,7 +22,7 @@ public abstract class AbstractTestId extends PureExpressionTest
     @Test
     public void testBasic()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(!(1->id()->isEmpty()), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestId extends PureExpressionTest
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(!id_Any_1__String_1_->eval(1)->isEmpty(),|'');\n" +

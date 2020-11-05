@@ -18,11 +18,26 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("sourceId.pure");
+        runtime.delete("userId.pure");
+        runtime.delete("other.pure");
+    }
+
     @Test
     public void testPureRuntimeFunctionPointer() throws Exception
     {
@@ -378,8 +393,7 @@ public class TestPureRuntimeFunction_AsPointer extends AbstractPureTestWithCoreC
         }
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

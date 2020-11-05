@@ -23,10 +23,15 @@ import org.finos.legend.pure.m3.tests.incremental.function.TestPureRuntimeFuncti
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeFunction_ConstraintCompiled extends TestPureRuntimeFunction_Constraint
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getExtra());
+    }
 
     @Override
     @Test
@@ -35,8 +40,7 @@ public class TestPureRuntimeFunction_ConstraintCompiled extends TestPureRuntimeF
         super.testPureRuntimeFunctionConstraint();
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
@@ -47,8 +51,7 @@ public class TestPureRuntimeFunction_ConstraintCompiled extends TestPureRuntimeF
         return Lists.fixedSize.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
 
-    @Override
-    public Pair<String, String> getExtra()
+    public static Pair<String, String> getExtra()
     {
         return null;
     }

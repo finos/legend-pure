@@ -24,13 +24,37 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepos
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithCoreCompiled
 {
-    @Override
-    protected RichIterable<? extends CodeRepository> getCodeRepositories()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getCodeStorage(), getCodeRepositories(), null);
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("/datamart_datamt/testFile1.pure");
+        runtime.delete("/datamart_datamt/testFile2.pure");
+        runtime.delete("/datamart_datamt/testFile3.pure");
+        runtime.delete("/model/testFile1.pure");
+        runtime.delete("/model/testFile3.pure");
+
+        try
+        {
+            runtime.compile();
+        } catch (PureCompilationException e)
+        {
+            setUp();
+        }
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         return Lists.immutable.with(
                 SVNCodeRepository.newDatamartCodeRepository("dtm"),
@@ -45,8 +69,7 @@ public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithC
         );
     }
 
-    @Override
-    protected MutableCodeStorage getCodeStorage()
+    protected static MutableCodeStorage getCodeStorage()
     {
         return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
     }

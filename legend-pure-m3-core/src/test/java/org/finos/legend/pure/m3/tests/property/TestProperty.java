@@ -20,15 +20,28 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestProperty extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+    }
+
+
     @Test
     public void testGetPath()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "Class test::A\n" +
                 "{\n" +
                 "   prop1 : String[1];\n" +
@@ -77,7 +90,7 @@ public class TestProperty extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testGetSourceType()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "Class test::A\n" +
                 "{\n" +
                 "   prop1 : String[1];\n" +

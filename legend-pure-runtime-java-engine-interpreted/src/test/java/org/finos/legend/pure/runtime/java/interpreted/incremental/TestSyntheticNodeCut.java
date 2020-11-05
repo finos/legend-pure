@@ -19,15 +19,28 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("testSource.pure");
+    }
+
     @Test
     public void testEnsurePropertySourceTypeIsNotResolved()
     {
-        compileTestSource("Class A{name:String[1];}\n" +
+        compileTestSource("testSource.pure","Class A{name:String[1];}\n" +
                 "function\n" +
                 "   {doc.doc = 'Get the property with the given name from the given class. Note that this searches only properties defined directly on the class, not those inherited from super-classes or those which come from associations.'}\n" +
                 "   meta::pure::functions::meta::classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]\n" +
@@ -257,8 +270,7 @@ public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
                 func.getValueForMetaPropertyToOne(M3Properties.expressionSequence).printWithoutDebug("", 10));
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

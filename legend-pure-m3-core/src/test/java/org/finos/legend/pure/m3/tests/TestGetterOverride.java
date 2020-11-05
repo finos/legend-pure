@@ -15,15 +15,21 @@
 package org.finos.legend.pure.m3.tests;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
 import org.junit.Test;
 
 public abstract class TestGetterOverride extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
 
     @Test
     public void testSimple()
     {
-        compileTestSource("Enum myEnum{A,B}" +
+        compileTestSource("fromString.pure","Enum myEnum{A,B}" +
                 "function\n" +
                 "   {doc.doc = 'Get the property with the given name from the given class. Note that this searches only properties defined directly on the class, not those inherited from super-classes or those which come from associations.'}\n" +
                 "   meta::pure::functions::meta::classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]\n" +
@@ -119,7 +125,7 @@ public abstract class TestGetterOverride extends AbstractPureTestWithCoreCompile
     @Test
     public void testRemoveOverride()
     {
-        compileTestSource("Enum myEnum{A,B}" +
+        compileTestSource("fromString.pure","Enum myEnum{A,B}" +
                 "function\n" +
                 "   {doc.doc = 'Get the property with the given name from the given class. Note that this searches only properties defined directly on the class, not those inherited from super-classes or those which come from associations.'}\n" +
                 "   meta::pure::functions::meta::classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]\n" +
@@ -211,7 +217,7 @@ public abstract class TestGetterOverride extends AbstractPureTestWithCoreCompile
     @Test
     public void testRemoveOverrideWithMay()
     {
-        compileTestSource("Enum myEnum{A,B}" +
+        compileTestSource("fromString.pure","Enum myEnum{A,B}" +
                 "function\n" +
                 "   {doc.doc = 'Get the property with the given name from the given class. Note that this searches only properties defined directly on the class, not those inherited from super-classes or those which come from associations.'}\n" +
                 "   meta::pure::functions::meta::classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]\n" +

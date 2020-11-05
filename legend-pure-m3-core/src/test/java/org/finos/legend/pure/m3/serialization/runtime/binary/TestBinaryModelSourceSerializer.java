@@ -41,7 +41,9 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalR
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -49,6 +51,17 @@ import java.util.Collection;
 
 public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("/test/model/testSource.pure");
+        runtime.delete("/test/model/testSource2.pure");
+    }
+
     @Test
     public void testSimpleClassSerialization()
     {
@@ -135,7 +148,7 @@ public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCom
     @Test
     public void testNonConcreteGenericTypeReference()
     {
-        this.compileTestSourceM3("/test/model/testSource1.pure",
+        this.compileTestSourceM3("/test/model/testSource.pure",
                 "import test::*;\n" +
                         "\n" +
                         "Class test::TopClass<X,Y>\n" +
@@ -206,7 +219,7 @@ public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCom
     @Test
     public void testFunctionTypeReference()
     {
-        this.runtime.createInMemorySource("/test/model/testSource1.pure",
+        this.runtime.createInMemorySource("/test/model/testSource.pure",
                 "import test::matrix::*;\n" +
                         "\n" +
                         "Class test::matrix::Matrix\n" +
@@ -250,7 +263,7 @@ public class TestBinaryModelSourceSerializer extends AbstractPureTestWithCoreCom
     @Test
     public void testTreePath()
     {
-        this.compileTestSource("/test/model/testSource1.pure",
+        this.compileTestSource("/test/model/testSource.pure",
                 "import test::treepath::*;\n" +
                         "Class test::treepath::TestClass1\n" +
                         "{\n" +

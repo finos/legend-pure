@@ -22,18 +22,29 @@ import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 public class TestNewInstance extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+        runtime.delete("testModel.pure");
+        runtime.delete("testFunc.pure");
+        runtime.delete("testSource.pure");
+    }
+
     @Test
     public void testSimpleGeneralizationUnknownProperty()
     {
         try
         {
-            compileTestSource("Class A\n" +
+            compileTestSource("fromString.pure","Class A\n" +
                     "{\n" +
                     "   propA:String[1];\n" +
                     "}\n" +
@@ -367,7 +378,7 @@ public class TestNewInstance extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testNewEnumeration()
     {
-        compileTestSource("Enum TestEnum {VAL1, VAL2}");
+        compileTestSource("fromString.pure","Enum TestEnum {VAL1, VAL2}");
         try
         {
             compileTestSource("testSource.pure",

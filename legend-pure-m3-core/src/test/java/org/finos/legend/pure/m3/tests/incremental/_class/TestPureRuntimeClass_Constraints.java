@@ -18,11 +18,25 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("sourceId.pure");
+        runtime.delete("userId.pure");
+        runtime.delete("/test/testModel.pure");
+    }
+
     @Test
     public void testPureRuntimeClassConstraintError() throws Exception
     {
@@ -152,7 +166,7 @@ public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.runtime.createInMemorySource("file1.pure",
+            this.runtime.createInMemorySource("sourceId.pure",
                     "Class A\n" +
                             "[ $this.name ==  t() ]\n" +
                             "{\n" +
@@ -166,7 +180,7 @@ public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCo
         }
         catch (Exception e)
         {
-            this.assertPureException(PureCompilationException.class, "The system can't find a match for the function: t()", "file1.pure", 2, 18, 2, 18, 2, 18, e);
+            this.assertPureException(PureCompilationException.class, "The system can't find a match for the function: t()", "sourceId.pure", 2, 18, 2, 18, 2, 18, e);
         }
     }
 

@@ -20,13 +20,33 @@ import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.UUID;
 
 public class TestInstanceCollectionType extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+
+        try
+        {
+            runtime.compile();
+        } catch (PureCompilationException e) {
+            setUp();
+        }
+    }
+
     @Test
     public void testPrimitivesSameType()
     {
@@ -46,7 +66,7 @@ public class TestInstanceCollectionType extends AbstractPureTestWithCoreCompiled
     @Test
     public void testClassesSameType()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "Class test::A {}\n" +
                 "Class test::B extends A {}\n" +
                 "Class test::C extends B {}\n" +
@@ -65,7 +85,7 @@ public class TestInstanceCollectionType extends AbstractPureTestWithCoreCompiled
     @Test
     public void testClassesMixedTypes()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "Class test::A {}\n" +
                 "Class test::B extends A {}\n" +
                 "Class test::C extends B {}\n" +
@@ -96,7 +116,7 @@ public class TestInstanceCollectionType extends AbstractPureTestWithCoreCompiled
     @Test
     public void testClassesWithGenerics()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "Class test::A<X|m> {}\n" +
                 "Class test::B<T|n> extends A<T|n> {}\n" +
                 "Class test::C<U|o> extends B<U|o> {}\n" +
@@ -123,7 +143,7 @@ public class TestInstanceCollectionType extends AbstractPureTestWithCoreCompiled
     @Test
     public void testClassesWithAndWithoutGenerics()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "Class test::A {}\n" +
                 "Class test::B<T|m> extends A {}\n" +
                 "Class test::C<U|n> extends B<U|o> {}\n" +
@@ -138,7 +158,7 @@ public class TestInstanceCollectionType extends AbstractPureTestWithCoreCompiled
     @Test
     public void testFunctionTypes()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "Class test::A<X> {}\n" +
                 "Class test::B<T> extends A<T> {}\n" +
                 "Class test::C<U> extends B<U> {}\n" +
@@ -154,7 +174,7 @@ public class TestInstanceCollectionType extends AbstractPureTestWithCoreCompiled
     @Test
     public void testClasses()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "Class test::A {}\n" +
                 "Class test::B extends A {}\n" +
                 "Class test::C extends B {}\n" +
@@ -186,10 +206,11 @@ public class TestInstanceCollectionType extends AbstractPureTestWithCoreCompiled
     private void assertValueSpecificationGenericType(String message, String expectedGenericTypeString, String valueSpecificationString)
     {
         String functionDescriptor = "test::" + UUID.randomUUID().toString().replace('-', '_') + "():Any[*]";
-        compileTestSource("import test::*;\nfunction " + functionDescriptor + "\n{\n" + valueSpecificationString + "\n}\n");
+        compileTestSource("sourceId.pure","import test::*;\nfunction " + functionDescriptor + "\n{\n" + valueSpecificationString + "\n}\n");
         FunctionDefinition<?> function = (FunctionDefinition<?>)this.runtime.getFunction(functionDescriptor);
         ValueSpecification valueSpecification = function._expressionSequence().getFirst();
         assertGenericTypesEqual((message == null) ? valueSpecificationString : message, expectedGenericTypeString, valueSpecification._genericType());
+        runtime.delete("sourceId.pure");
     }
 
     private void assertGenericTypesEqual(String message, String expectedGenericTypeString, CoreInstance actualGenericType)

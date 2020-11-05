@@ -20,12 +20,16 @@ import org.finos.legend.pure.m3.tools.ThrowableTools;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
+@Ignore
 public class TestCompilationError extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
     @Ignore
     @Test
     public void testCompileError()
@@ -57,8 +61,7 @@ public class TestCompilationError extends AbstractPureTestWithCoreCompiled
         }
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

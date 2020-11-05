@@ -22,7 +22,7 @@ public abstract class AbstractTestCanReactivateDynamically extends AbstractPureT
     @Test
     public void testBasicInstanceValue()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(true == canReactivateDynamically({|1}->evaluateAndDeactivate().expressionSequence->toOne()), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestCanReactivateDynamically extends AbstractPureT
     @Test
     public void testSimpleFuncExpressionParams()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(true == canReactivateDynamically({|1->map(s|$s->toString())->joinStrings('')->map(x|'*' + $x + '*')}->evaluateAndDeactivate().expressionSequence->toOne()), |'');\n" +
@@ -44,7 +44,7 @@ public abstract class AbstractTestCanReactivateDynamically extends AbstractPureT
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(true == canReactivateDynamically_ValueSpecification_1__Boolean_1_->eval({|1}->evaluateAndDeactivate().expressionSequence->toOne()), |'');\n" +

@@ -17,11 +17,20 @@ package org.finos.legend.pure.runtime.java.interpreted.function.base.collection;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.collection.AbstractTestInit;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
+import org.junit.BeforeClass;
 
 public class TestInterpretedInit extends AbstractTestInit
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+    }
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

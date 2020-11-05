@@ -38,13 +38,31 @@ import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("sourceId.pure");
+        runtime.delete("sourceId2.pure");
+        runtime.delete("sourceId3.pure");
+        runtime.delete("domain.pure");
+        runtime.delete("mainModel.pure");
+
+        try
+        {
+            runtime.compile();
+        } catch (PureCompilationException e) {
+            setUp();
+        }
+    }
 
     @Rule
     public final ExpectedException expectedEx = ExpectedException.none();
@@ -526,8 +544,8 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     public void testRemovalOfOriginalMilestonedPropertyAndMilestonedPropertyGeneration() throws Exception
     {
         expectedEx.expect(PureCompilationException.class);
-        expectedEx.expectMessage("Compilation error at (resource:sourceId1.pure line:8 column:7), \"The property 'account' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]");
-        this.runtime.createInMemorySource("sourceId1.pure",
+        expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:8 column:7), \"The property 'account' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]");
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import model::domain::subdom1::account::*;" +
                         "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account \n" +
                         "{}" +
@@ -555,8 +573,8 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     public void testRemovalOfOriginalMilestonedPropertyAndGenerationOfAllPropertyViaAssociation() throws Exception
     {
         expectedEx.expect(PureCompilationException.class);
-        expectedEx.expectMessage("Compilation error at (resource:sourceId1.pure line:8 column:7), \"The property 'account' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]");
-        this.runtime.createInMemorySource("sourceId1.pure",
+        expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:8 column:7), \"The property 'account' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]");
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import model::domain::subdom1::account::*;" +
                         "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account \n" +
                         "{}" +
@@ -581,7 +599,7 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     public void testNoArgPropertyNotGeneratedWhenSourceClassIsNotTemporal() throws Exception
     {
         expectedEx.expectMessage("The property 'legalEntity' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]");
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import model::domain::subdom1::entity::*;" +
                         "import model::domain::subdom1::product::*;" +
                         "Class <<temporal.businesstemporal>> model::domain::subdom1::entity::LegalEntity \n" +
@@ -600,7 +618,7 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     @Test
     public void testGenerationOfNoArgQualifiedPropertyFromAssociationWhereTargetClassInheritsFromClassWithBusinessTemporalStereotype() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import model::domain::subdom1::account::*;" +
                         "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account \n" +
                         "{}" +
@@ -623,7 +641,7 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     @Test
     public void testGenerationOfNoArgQualifiedPropertyFromAssociationWhereTargetClassInheritsFromClassWithBusinessTemporalStereotypeWithMultipleSources() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "" +
                         "Class <<temporal.businesstemporal>> model::domain::subdom1::account::Account \n" +
                         "{}" +
@@ -654,7 +672,7 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     @Test
     public void testPropertiesInterceptedAndTransformedToQualifiedPropertiesWhereSourceAndTargetAreBusinessTemporal() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import model::domain::subdom1::entity::*;" +
                         "import model::domain::subdom1::product::*;" +
                         "Class <<temporal.businesstemporal>> model::domain::subdom1::entity::LegalEntity \n" +
@@ -673,7 +691,7 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     @Test
     public void testValidationOfOverridenProperties() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import model::domain::subdom1::entity::*;" +
                         "import model::domain::subdom1::product::*;" +
                         "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::inheritance::VehicleOwner \n" +
@@ -739,7 +757,7 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     @Test
     public void testMilestoningPropertyGenerationFromInheritanceHierarchySource() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::domain::*;" +
                         "Class <<temporal.businesstemporal>> meta::test::domain::A{}\n" +
                         "\n" +
@@ -762,7 +780,7 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     @Test
     public void testQualifiedPropertyGenerationForAssociations() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::domain::*;" +
                         "Class <<temporal.businesstemporal>> meta::test::domain::A{}\n" +
                         "\n" +
@@ -799,7 +817,7 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     @Test
     public void testQualifiedPropertyGenerationForAssociationsInDifferentSources() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::domain::*;" +
                         "Class <<temporal.businesstemporal>> meta::test::domain::A{}\n" +
                         "\n" +
@@ -863,7 +881,7 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     @Test
     public void testEdgePointPropertyOwnerIsNotOverriddenWhenMultiplePropertiesAreProcessedViaAssociation() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::domain::*;" +
                         "Class <<temporal.businesstemporal>> meta::test::domain::A{}\n" +
                         "\n" +
@@ -951,7 +969,7 @@ public class TestMilestoningPropertyProcessor extends AbstractTestMilestoning
     @Test
     public void testAssociationPropertiesWithSamePropertyNameProcessTypeArgumentsCorrectly() throws Exception
     {
-        this.runtime.createInMemorySource("sourceId1.pure",
+        this.runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::domain::*;" +
                         "Class <<temporal.businesstemporal>> meta::test::domain::A{}\n" +
                         "\n" +

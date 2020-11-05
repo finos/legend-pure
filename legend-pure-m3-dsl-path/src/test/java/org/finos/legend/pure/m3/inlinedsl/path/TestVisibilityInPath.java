@@ -24,13 +24,26 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepos
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestVisibilityInPath extends AbstractPureTestWithCoreCompiled
 {
-    @Override
-    protected RichIterable<? extends CodeRepository> getCodeRepositories()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getCodeStorage(), getCodeRepositories(), null);
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("file.pure");
+        runtime.delete("function.pure");
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         return Lists.immutable.with(
                 SVNCodeRepository.newDatamartCodeRepository("dtm"),
@@ -45,8 +58,7 @@ public class TestVisibilityInPath extends AbstractPureTestWithCoreCompiled
         );
     }
 
-    @Override
-    protected MutableCodeStorage getCodeStorage()
+    protected static MutableCodeStorage getCodeStorage()
     {
         return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
     }

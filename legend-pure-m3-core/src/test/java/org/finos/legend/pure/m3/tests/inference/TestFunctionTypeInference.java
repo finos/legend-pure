@@ -24,18 +24,28 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setObserver()
-    {
+    public static void setUp() {
+        setUpRuntime(getExtra());
+
+        //set observer
         System.setProperty("pure.typeinference.test", "true");
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("inferenceTest.pure");
+
+        try
+        {
+            runtime.compile();
+        } catch (PureCompilationException e) {
+            setUp();
+        }
     }
 
     @AfterClass
@@ -193,7 +203,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void ensureNoCrashWhenAnyIsUsedForAFunctionType() throws Exception
     {
-        compileTestSource("function f<T>(a:T[*]):T[*]\n" +
+        compileTestSource("inferenceTest.pure","function f<T>(a:T[*]):T[*]\n" +
                           "{\n" +
                           "     $a;\n" +
                           "}\n" +
@@ -211,7 +221,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void ensureInferenceIsResilientEnoughToHaveFunctionsProcessedDuringFunctionExpressionProcessing() throws Exception
     {
-        compileTestSource("Class TabularDataSet{}\n" +
+        compileTestSource("inferenceTest.pure","Class TabularDataSet{}\n" +
                           "function project<T>(set:T[*], paths:meta::pure::metamodel::path::Path<T,Any|*>[*]):TabularDataSet[1]{^TabularDataSet()}\n" +
                           "Class QueryFunctionPair extends Pair<meta::pure::metamodel::function::Function<Any>, meta::pure::metamodel::function::Function<{->String[1]}>>{}\n" +
                           "function f<T>(a:T[*]):T[*]\n" +
@@ -298,7 +308,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testFunctionTypeForListOfAbstractProperties()
     {
-        compileTestSource("function test::propByName(name:String[1]):AbstractProperty<Any>[0..1]\n" +
+        compileTestSource("inferenceTest.pure","function test::propByName(name:String[1]):AbstractProperty<Any>[0..1]\n" +
                 "{\n" +
                 "  []\n" +
                 "}\n" +
@@ -682,7 +692,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testMap() throws Exception
     {
-        compileTestSource("Class Person" +
+        compileTestSource("inferenceTest.pure","Class Person" +
                           "{" +
                           " age:Integer[1];" +
                           "}" +

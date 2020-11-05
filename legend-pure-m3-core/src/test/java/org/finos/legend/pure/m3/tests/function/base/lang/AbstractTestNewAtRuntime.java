@@ -29,7 +29,7 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
     {
         try
         {
-            compileTestSource("Class test::Person\n" +
+            compileTestSource("fromString.pure","Class test::Person\n" +
                     "{\n" +
                     "   lastName:String[1];\n" +
                     "}\n" +
@@ -51,7 +51,7 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
     {
         try
         {
-            compileTestSource("Class Person\n" +
+            compileTestSource("fromString.pure","Class Person\n" +
                     "{\n" +
                     "   lastName:String[1];\n" +
                     "}\n" +
@@ -70,7 +70,7 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
     @Test
     public void testNewNil() throws Exception
     {
-        compileTestSource("function testNewNil():Nil[1]\n" +
+        compileTestSource("fromString.pure","function testNewNil():Nil[1]\n" +
                 "{\n" +
                 "    ^Nil();\n" +
                 "}");
@@ -94,7 +94,7 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
     @Test
     public void testNewWithReverseZeroToOneProperty()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        this.compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::Car(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   print($car.owner.car->size()->toString(), 1);\n" +
@@ -134,7 +134,7 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
     @Test
     public void testNewWithReverseZeroToManyProperty()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        this.compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::Car(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   print($car.owner.cars->size()->toString(), 1);\n" +
@@ -174,7 +174,7 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
     @Test
     public void testNewWithReverseOneToOneProperty()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        this.compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::Car(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   print($car.owner.car->size()->toString(), 1);\n" +
@@ -214,7 +214,7 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
     @Test
     public void testNewWithReverseOneToManyProperty()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        this.compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::Car(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   print($car.owner.cars->size()->toString(), 1);\n" +
@@ -254,7 +254,7 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
     @Test
     public void testNewWithChildWithReverseOneToManyProperty()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        this.compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::Car(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe', cars=[^test::Car(name='Audi')]));\n" +
                 "   print($car.owner.cars->size()->toString(), 1);\n" +
@@ -365,7 +365,7 @@ public abstract class AbstractTestNewAtRuntime extends AbstractPureTestWithCoreC
                         "Class B<T> \n{ prop1:String[*];\n prop2:T[*]; }\n" +
                         "function test::testFn():Any[*] { ^A<String, Integer>(prop1=[], prop2=[]); ^B<Integer>(prop1='Hello', prop2=[]);}\n"+
                         "function test::testGenericFn<R, T>():Any[*] { ^A<R, T>(prop1=[], prop2=[]); }\n";
-        this.compileTestSource(source);
+        this.compileTestSource("fromString.pure",source);
         this.compileAndExecute("test::testFn():Any[*]");
         // TODO should this be allowed?
 //        this.compileAndExecute("test::testGenericFn():Any[*]");

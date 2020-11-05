@@ -23,7 +23,7 @@ public abstract class AbstractTestReturn extends AbstractPureTestWithCoreCompile
     @Test
     public void testReturn()
     {
-        compileTestSource("function funcWithReturn():String[1]\n" +
+        compileTestSource("fromString.pure","function funcWithReturn():String[1]\n" +
                 "{\n" +
                 "   'Hello';\n" +
                 "}\n" +
@@ -38,7 +38,7 @@ public abstract class AbstractTestReturn extends AbstractPureTestWithCoreCompile
     @Test
     public void testReturnWithInheritance()
     {
-        compileTestSource("Class TypeA\n" +
+        compileTestSource("fromString.pure","Class TypeA\n" +
                 "{\n" +
                 "   name : String[1];\n" +
                 "}\n" +
@@ -61,7 +61,7 @@ public abstract class AbstractTestReturn extends AbstractPureTestWithCoreCompile
     @Test
     public void testReturnWithMultiplicityMany()
     {
-        compileTestSource("function process():String[*]\n" +
+        compileTestSource("fromString.pure","function process():String[*]\n" +
                 "{\n" +
                 "    ['a','b']\n" +
                 "}\n" +

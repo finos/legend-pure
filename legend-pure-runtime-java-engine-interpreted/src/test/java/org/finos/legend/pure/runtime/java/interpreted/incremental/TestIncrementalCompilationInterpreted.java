@@ -16,11 +16,41 @@ package org.finos.legend.pure.runtime.java.interpreted.incremental;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.incremental.AbstractTestIncrementalCompilation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestIncrementalCompilationInterpreted extends AbstractTestIncrementalCompilation
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getCodeRepositories());
+    }
+    @After
+    public void cleanRuntime() {
+        runtime.delete("s1.pure");
+        runtime.delete("s2.pure");
+        runtime.delete("s3.pure");
+        runtime.delete("s4.pure");
+        runtime.delete("s5.pure");
+        runtime.delete("sourceId1.pure");
+        runtime.delete("sourceId2.pure");
+        runtime.delete("sourceId3.pure");
+        runtime.delete("/model/sourceId1.pure");
+        runtime.delete("/model/domain/sourceId3.pure");
+        runtime.delete("/datamart_other/sourceId2.pure");
+        runtime.delete("/system/tests/sourceId1.pure");
+        runtime.delete("/system/tests/resources/sourceId2.pure");
+
+        try{
+            runtime.compile();
+        } catch (PureCompilationException e) {
+            setUp();
+        }
+    }
+
     @Test
     @Override
     public void test14() {
@@ -39,8 +69,7 @@ public class TestIncrementalCompilationInterpreted extends AbstractTestIncrement
         super.test21();
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

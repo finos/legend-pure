@@ -15,11 +15,24 @@
 package org.finos.legend.pure.m3.inlinedsl.graph;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestMilestonedPropertyUsageInGraph extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("file.pure");
+    }
+
     @Test
     public void testGeneratedQualifiedPropertyUsage() throws Exception
     {

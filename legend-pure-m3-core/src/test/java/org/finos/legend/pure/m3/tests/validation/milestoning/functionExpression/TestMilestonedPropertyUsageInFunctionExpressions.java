@@ -16,17 +16,28 @@ package org.finos.legend.pure.m3.tests.validation.milestoning.functionExpression
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 
 public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("sourceId.pure");
+        runtime.delete("source.pure");
+        runtime.delete("test.pure");
+        runtime.delete("domain.pure");
+    }
 
     @Rule
     public final ExpectedException expectedEx = ExpectedException.none();
@@ -824,17 +835,9 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}\n");
         this.runtime.compile();
 
-        this.runtime.createInMemorySource("test.pure",
-                "import meta::test::milestoning::domain::*;\n" +
-                        "function go():Any[*]\n" +
-                        "{\n" +
-                        "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
-                        "}\n");
-        this.runtime.compile();
-
         this.expectedEx.expect(PureCompilationException.class);
         this.expectedEx.expectMessage("Compilation error at (resource:test.pure line:4 column:55), \"The property 'classificationAllVersionsInRange' is milestoned with stereotypes: [ businesstemporal ] and requires 2 date parameters : [start, end]\"");
-        this.runtime.modify("test.pure",
+        this.runtime.createInMemorySource("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
@@ -859,6 +862,14 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-5, %2018-1-9)}\n" +
+                        "}\n");
+        this.runtime.compile();
+
+        this.runtime.modify("test.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
                         "}\n");
         this.runtime.compile();
     }
@@ -876,17 +887,9 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}\n");
         this.runtime.compile();
 
-        this.runtime.createInMemorySource("test.pure",
-                "import meta::test::milestoning::domain::*;\n" +
-                        "function go():Any[*]\n" +
-                        "{\n" +
-                        "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
-                        "}\n");
-        this.runtime.compile();
-
         this.expectedEx.expect(PureCompilationException.class);
         this.expectedEx.expectMessage("Compilation error at (resource:test.pure line:4 column:55), \"The property 'classificationAllVersionsInRange' is milestoned with stereotypes: [ processingtemporal ] and requires 2 date parameters : [start, end]\"");
-        this.runtime.modify("test.pure",
+        this.runtime.createInMemorySource("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
@@ -911,6 +914,14 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-5, %2018-1-9)}\n" +
+                        "}\n");
+        this.runtime.compile();
+
+        this.runtime.createInMemorySource("test.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
                         "}\n");
         this.runtime.compile();
     }
@@ -950,6 +961,8 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
         this.runtime.compile();
     }
 
+    @ToFix
+    @Ignore
     @Test
     public void testAllVersionsInRangePropertyUsageForCrossTemporal()
     {
@@ -969,20 +982,6 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
 
         this.runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
-                        "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product{\n" +
-                        "   classification : Classification[*];\n" +
-                        "}\n" +
-                        "Class  <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
-                        "   exchangeName : String[0..1];\n" +
-                        "}\n" +
-                        "function go():Any[*]\n" +
-                        "{\n" +
-                        "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
-                        "}\n");
-        this.runtime.compile();
-
-        this.runtime.modify("test.pure",
-                "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.bitemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
                         "}\n" +
@@ -1033,6 +1032,20 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "   classification : Classification[*];\n" +
                         "}\n" +
                         "Class  <<temporal.bitemporal>> meta::test::milestoning::domain::Classification{\n" +
+                        "   exchangeName : String[0..1];\n" +
+                        "}\n" +
+                        "function go():Any[*]\n" +
+                        "{\n" +
+                        "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
+                        "}\n");
+        this.runtime.compile();
+
+        this.runtime.modify("test.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product{\n" +
+                        "   classification : Classification[*];\n" +
+                        "}\n" +
+                        "Class  <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
                         "   exchangeName : String[0..1];\n" +
                         "}\n" +
                         "function go():Any[*]\n" +

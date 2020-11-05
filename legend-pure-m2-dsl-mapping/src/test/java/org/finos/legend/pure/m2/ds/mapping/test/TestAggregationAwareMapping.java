@@ -19,13 +19,26 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.InstanceSetImplem
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.aggregationAware.AggregationAwareSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.modelToModel.PureInstanceSetImplementation;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Comparator;
 
 public class TestAggregationAwareMapping extends AbstractPureMappingTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("mapping.pure");
+    }
+
     @Test
     public void testAggregationAwareMappingGrammarSingleAggregate()
     {

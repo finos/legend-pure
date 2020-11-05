@@ -22,15 +22,28 @@ import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("fromString.pure");
+        runtime.delete("fromString2.pure");
+    }
+
     @Test
     public void testSimpleMatching()
     {
-        this.runtime.createInMemorySource("wweweqeqqwe.pure","function func(v:String[1]):Integer[1]\n" +
+        this.runtime.createInMemorySource("fromString.pure","function func(v:String[1]):Integer[1]\n" +
                 "{\n" +
                 "    $v->length();\n" +
                 "}\n" +
@@ -55,7 +68,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testMatchingWithMultipleMatches()
     {
-        this.runtime.createInMemorySource("wqqwdssd.pure", "function func(v:String[1]):Integer[1]\n" +
+        this.runtime.createInMemorySource("fromString.pure", "function func(v:String[1]):Integer[1]\n" +
                 "{\n" +
                 "    $v->length();\n" +
                 "}\n" +
@@ -89,7 +102,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testMatchingWithDisjointMultiplicities()
     {
-        this.runtime.createInMemorySource("qwwqewewqqw.pure","function func(v:String[1]):Integer[1]\n" +
+        this.runtime.createInMemorySource("fromString.pure","function func(v:String[1]):Integer[1]\n" +
                 "{\n" +
                 "    $v->length();\n" +
                 "}\n" +
@@ -123,7 +136,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testMatchingWithOverlappingMultiplicities()
     {
-        this.runtime.createInMemorySource("qqwqwwqeq.pure", "function func(v:String[1]):Integer[1]\n" +
+        this.runtime.createInMemorySource("fromString.pure", "function func(v:String[1]):Integer[1]\n" +
                 "{\n" +
                 "    $v->length();\n" +
                 "}\n" +
@@ -157,7 +170,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testMatchingWithEmptySetsAndTypeParameters()
     {
-        compileTestSource("function func(v:Pair<String,String>[*]):Integer[1]\n" +
+        compileTestSource("fromString.pure","function func(v:Pair<String,String>[*]):Integer[1]\n" +
                 "{\n" +
                 "    1;\n" +
                 "}\n" +
@@ -182,7 +195,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("testCode.pure",
+            compileTestSource("fromString.pure",
                     "function func(v:String[1]):Nil[0]\n" +
                             "{\n" +
                             "    [];\n" +
@@ -198,7 +211,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
             assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "func(_:String[2])\n" +
                     PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
                     "\tfunc(String[1]):Nil[0]\n" +
-                    PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "testCode.pure", 7, 5, 7, 5, 7, 8, e);
+                    PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "fromString.pure", 7, 5, 7, 5, 7, 8, e);
         }
     }
 
@@ -207,7 +220,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("testSource.pure",
+            compileTestSource("fromString.pure",
                     "function func(v:Pair<String,String>[1]):Integer[1]\n" +
                             "{\n" +
                             "    1;\n" +
@@ -223,7 +236,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
             assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "func(_:Pair<String, Integer>[1])\n" +
                     PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
                     "\tfunc(Pair[1]):Integer[1]\n" +
-                    PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "testSource.pure", 7, 5, 7, 5, 7, 8, e);
+                    PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, "fromString.pure", 7, 5, 7, 5, 7, 8, e);
         }
     }
 
@@ -232,7 +245,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            this.runtime.createInMemorySource("testSource.pure",
+            this.runtime.createInMemorySource("fromString.pure",
                     "function func(c:Class<Any>[1]):Integer[1]\n" +
                             "{\n" +
                             "    $c.name->toOne()->length();\n" +
@@ -247,7 +260,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "Error finding match for function 'func': Type argument mismatch for Class<T>; got: Class", "testSource.pure", 7, 5, 7, 5, 7, 8, e);
+            assertPureException(PureCompilationException.class, "Error finding match for function 'func': Type argument mismatch for Class<T>; got: Class", "fromString.pure", 7, 5, 7, 5, 7, 8, e);
         }
     }
 
@@ -260,7 +273,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
         Assert.assertNotNull(mapMany);
         Assert.assertNotEquals(mapOne, mapMany);
 
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "    [1, 2, 3, 4]->map(i | $i * 2);\n" +
@@ -278,7 +291,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testMatchingWithFullyQualifiedReference()
     {
-        this.runtime.createInMemorySource("testSource.pure",
+        this.runtime.createInMemorySource("fromString.pure",
                 "import test::pkg2::*;\n" +
                         "\n" +
                         "function test::pkg1::splitPackageName(packageName:String[1]):String[*]\n" +
@@ -319,7 +332,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            this.runtime.createInMemorySource("testSource.pure",
+            this.runtime.createInMemorySource("fromString.pure",
                     "import test::pkg2::*;\n" +
                             "\n" +
                             "function test::pkg1::splitPackageName(packageName:String[1]):String[*]\n" +
@@ -351,14 +364,14 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                     "\ttest::pkg2::splitPackageName(String[1]):String[*]\n" +
                     "\ttest::pkg2::splitPackageName(String[1], String[1]):String[*]\n" +
                     PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE +
-                    "\ttest::pkg1::splitPackageName(String[1]):String[*]\n", "testSource.pure", 20, 15, 20, 15, 20, 30, e);
+                    "\ttest::pkg1::splitPackageName(String[1]):String[*]\n", "fromString.pure", 20, 15, 20, 15, 20, 30, e);
         }
     }
 
     @Test
     public void testTooManyMatches()
     {
-        compileTestSource("testSource1.pure",
+        compileTestSource("fromString.pure",
                 "function test::pkg1::func(i:Integer[1]):Integer[1]\n" +
                         "{\n" +
                         "  $i * 2\n" +
@@ -370,7 +383,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
                         "}");
         try
         {
-            compileTestSource("testSource2.pure",
+            compileTestSource("fromString2.pure",
                     "import test::pkg1::*;\n" +
                             "import test::pkg2::*;\n" +
                             "function test::pkg3::testFn():Any[*]\n" +
@@ -383,7 +396,7 @@ public class TestMatching extends AbstractPureTestWithCoreCompiledPlatform
         {
             assertPureException(PureCompilationException.class, "Too many matches for func(_:Integer[1]):\n" +
                     "\ttest::pkg1::func(Integer[1]):Integer[1]\n" +
-                    "\ttest::pkg2::func(Integer[1]):Integer[1]", "testSource2.pure", 5, 3, 5, 3, 5, 6, e);
+                    "\ttest::pkg2::func(Integer[1]):Integer[1]", "fromString2.pure", 5, 3, 5, 3, 5, 6, e);
         }
     }
 

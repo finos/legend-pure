@@ -33,11 +33,23 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineD
 import org.finos.legend.pure.m3.statelistener.VoidM3M4StateListener;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.statelistener.VoidM4StateListener;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestLineInfo extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testLineInfoForStaticInstanceGeneratedM3() throws Exception
     {

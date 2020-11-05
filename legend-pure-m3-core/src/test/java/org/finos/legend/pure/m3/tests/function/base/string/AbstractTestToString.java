@@ -22,7 +22,7 @@ public abstract class AbstractTestToString extends AbstractPureTestWithCoreCompi
     @Test
     public void testBasic()
     {
-            compileTestSource(
+           compileTestSource("fromString.pure",
                     "function test():Boolean[1]\n" +
                             "{\n" +
                             "   assert('1' == 1->toString(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestToString extends AbstractPureTestWithCoreCompi
     @Test
     public void testEval()
     {
-        compileTestSource(
+       compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert('1' == toString_Any_1__String_1_->eval(1), |'');\n" +

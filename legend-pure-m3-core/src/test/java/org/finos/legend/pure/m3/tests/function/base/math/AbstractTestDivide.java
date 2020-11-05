@@ -21,7 +21,7 @@ public abstract class AbstractTestDivide extends AbstractPureTestWithCoreCompile
 
     @Test
     public void testBasic() {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(6.0 == 12/2, |'');\n" +
@@ -31,7 +31,7 @@ public abstract class AbstractTestDivide extends AbstractPureTestWithCoreCompile
 
     @Test
     public void testComplex() {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(3.0 == 12/2/2, |'');\n" +

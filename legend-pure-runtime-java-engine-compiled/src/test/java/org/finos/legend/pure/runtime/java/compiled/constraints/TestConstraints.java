@@ -21,11 +21,32 @@ import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.constraints.AbstractTestConstraints;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestConstraints extends AbstractTestConstraints
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getFactoryRegistryOverride());
+        runtime.createInMemorySource("employee.pure", "Class Employee" +
+                "{" +
+                "   lastName:String[1];" +
+                "}\n");
+        runtime.compile();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("/test/source1.pure");
+        runtime.delete("/test/source2.pure");
+        runtime.delete("fromString.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testInheritanceInSeparateFile()
     {
@@ -67,14 +88,12 @@ public class TestConstraints extends AbstractTestConstraints
         }
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
 
-    @Override
-    protected CoreInstanceFactoryRegistry getFactoryRegistryOverride()
+    protected static CoreInstanceFactoryRegistry getFactoryRegistryOverride()
     {
         return CoreJavaModelFactoryRegistry.REGISTRY;
     }

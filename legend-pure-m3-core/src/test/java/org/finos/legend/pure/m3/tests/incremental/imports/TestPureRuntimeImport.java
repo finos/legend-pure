@@ -17,10 +17,24 @@ package org.finos.legend.pure.m3.tests.incremental.imports;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeImport extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("other.pure");
+        runtime.delete("userId.pure");
+        runtime.delete("sourceId.pure");
+    }
 
     @Test
     public void testPureRuntimeImport_Modify()

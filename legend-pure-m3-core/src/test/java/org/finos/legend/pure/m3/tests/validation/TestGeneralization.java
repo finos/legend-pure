@@ -18,17 +18,31 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.regex.Pattern;
 
 public class TestGeneralization extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("testSource.pure");
+        runtime.delete("fromString.pure");
+        runtime.delete("/test/testModel.pure");
+    }
+
     @Test
     public void testClassGeneralizationToEnum()
     {
-        compileTestSource("Enum test::TestEnum {A, B, C}");
+        compileTestSource("fromString.pure","Enum test::TestEnum {A, B, C}");
         try
         {
             compileTestSource("testSource.pure", "Class test::TestClass extends test::TestEnum {}");
@@ -43,7 +57,7 @@ public class TestGeneralization extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testEnumGeneralizationToEnum()
     {
-        compileTestSource("Enum test::TestEnum {A, B, C}");
+        compileTestSource("fromString.pure","Enum test::TestEnum {A, B, C}");
         try
         {
             compileTestSource("testSource.pure", "Enum test::TestEnum2 extends test::TestEnum {}");
@@ -79,7 +93,7 @@ public class TestGeneralization extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class A<T>{prop:T[1];}\n" +
+            compileTestSource("fromString.pure","Class A<T>{prop:T[1];}\n" +
                     "Class B extends A<String>{}\n" +
                     "Class C extends A<Integer>{}\n" +
                     "Class D extends B,C{}\n" +

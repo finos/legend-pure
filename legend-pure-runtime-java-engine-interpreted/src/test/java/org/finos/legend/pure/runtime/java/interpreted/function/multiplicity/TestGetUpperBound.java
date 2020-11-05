@@ -17,10 +17,15 @@ package org.finos.legend.pure.runtime.java.interpreted.function.multiplicity;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestGetUpperBound extends PureExpressionTest
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
     @Test
     public void testGetUpperBoundZeroManyError()
     {
@@ -33,8 +38,7 @@ public class TestGetUpperBound extends PureExpressionTest
         assertExpressionRaisesPureException("Cannot cast a collection of size 0 to multiplicity [1]", 3, 18, "OneMany->getUpperBound()");
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

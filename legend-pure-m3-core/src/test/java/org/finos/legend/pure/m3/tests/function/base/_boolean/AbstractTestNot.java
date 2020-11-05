@@ -22,7 +22,7 @@ public abstract class AbstractTestNot extends AbstractPureTestWithCoreCompiled
     @Test
     public void testBasicParse()
     {
-            compileTestSource(
+            compileTestSource("fromString.pure",
                     "function test():Boolean[1]\n" +
                             "{\n" +
                             "   assert(true == not(false), |'');\n" +
@@ -34,7 +34,7 @@ public abstract class AbstractTestNot extends AbstractPureTestWithCoreCompiled
     @Test
     public void testEvalParse()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(true == not_Boolean_1__Boolean_1_->eval(false), |'');\n" +
