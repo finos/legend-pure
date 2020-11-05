@@ -35,6 +35,11 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     @After
     public void cleanRuntime() {
         runtime.delete("fromString.pure");
+         try{
+            runtime.compile();
+         } catch (PureCompilationException e) {
+            setUp();
+         }
     }
 
     @Test
