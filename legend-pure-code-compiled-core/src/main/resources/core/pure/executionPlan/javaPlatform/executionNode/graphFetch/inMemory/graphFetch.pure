@@ -244,7 +244,7 @@ function <<access.private>> meta::alloy::runtime::java::createFetchClasses(path:
 
    let classConventions = $conventions->forClass($fetchClass);
 
-   let hasExplodeProperty = $node.mapping.classMappings()->filter(x | $x->instanceOf(meta::pure::mapping::InstanceSetImplementation))->cast(@meta::pure::mapping::InstanceSetImplementation)->filter(si|$si->containsExplodeProperty())->size() > 0;
+   let hasExplodeProperty = $node.mapping.rootClassMappingByClass($data.targetTree.class)->meta::pure::router::routing::resolveOperation($node.mapping)->filter(x | $x->instanceOf(meta::pure::mapping::InstanceSetImplementation))->cast(@meta::pure::mapping::InstanceSetImplementation)->filter(si|$si->containsExplodeProperty())->size() > 0;
 
    let sourceAndTargetStreams = if($hasExplodeProperty,
                                    |generateExplodeSourceAndTargetStreams($returnsChecked, $checkedTarget, $checkedSource, $classConventions, $defectList, $data, $mapperClass, $constrainedTarget),
