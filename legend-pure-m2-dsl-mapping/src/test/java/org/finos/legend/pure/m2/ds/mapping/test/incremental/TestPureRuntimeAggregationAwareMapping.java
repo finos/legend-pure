@@ -18,6 +18,8 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m2.ds.mapping.test.AbstractPureMappingTestWithCoreCompiled;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 
@@ -202,6 +204,19 @@ public class TestPureRuntimeAggregationAwareMapping extends AbstractPureMappingT
             ")";
 
     private static final String function = "function myFunction(d: FiscalCalendar[1]) : FiscalCalendar[1] {$d}";
+
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("source1.pure");
+        runtime.delete("source2.pure");
+        runtime.delete("source3.pure");
+    }
 
     @Test
     public void testCreateAndDeleteAggregationAwareMapping() throws Exception

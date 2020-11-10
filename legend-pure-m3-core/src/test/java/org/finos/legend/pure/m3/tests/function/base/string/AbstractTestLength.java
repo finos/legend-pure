@@ -22,7 +22,7 @@ public abstract class AbstractTestLength extends AbstractPureTestWithCoreCompile
     @Test
     public void testBasic()
     {
-            compileTestSource(
+            compileTestSource("fromString.pure",
                     "function test():Boolean[1]\n" +
                             "{\n" +
                             "   assert(5 == 'hello'->length(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestLength extends AbstractPureTestWithCoreCompile
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(5 == length_String_1__Integer_1_->eval('hello'), |'');\n" +

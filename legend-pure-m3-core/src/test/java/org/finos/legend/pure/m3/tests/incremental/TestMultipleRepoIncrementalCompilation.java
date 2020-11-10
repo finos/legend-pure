@@ -25,12 +25,25 @@ import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithD
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWithCoreCompiledPlatform
 {
-    @Override
-    protected RichIterable<? extends CodeRepository> getCodeRepositories()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getCodeStorage(), getCodeRepositories(), getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("/model/sourceId.pure");
+        runtime.delete("/datamart_other/file1.pure");
+        runtime.delete("/datamart_other/file2.pure");
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         CodeRepository platform = CodeRepository.newPlatformCodeRepository();
         CodeRepository core = new TestCodeRepositoryWithDependencies("core", null, Sets.mutable.with(platform));
@@ -40,8 +53,7 @@ public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWith
         return Lists.immutable.with(platform, system, model, other);
     }
 
-    @Override
-    protected MutableCodeStorage getCodeStorage()
+    protected static MutableCodeStorage getCodeStorage()
     {
         return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
     }

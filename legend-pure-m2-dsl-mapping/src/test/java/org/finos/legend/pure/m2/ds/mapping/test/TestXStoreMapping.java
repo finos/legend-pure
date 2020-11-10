@@ -14,11 +14,24 @@
 
 package org.finos.legend.pure.m2.ds.mapping.test;
 
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestXStoreMapping extends AbstractPureMappingTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("mapping.pure");
+    }
+
     @Test
     public void testXStoreMapping()
     {

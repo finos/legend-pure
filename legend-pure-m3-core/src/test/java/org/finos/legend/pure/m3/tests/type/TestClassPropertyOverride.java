@@ -20,11 +20,24 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestClassPropertyOverride extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("file.pure");
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testSimpleOverride()
     {
@@ -312,7 +325,7 @@ public class TestClassPropertyOverride extends AbstractPureTestWithCoreCompiledP
 
     private void assertCompiles(String code)
     {
-        compileTestSource(code);
+        compileTestSource("file.pure",code);
     }
 
     private void assertCompilationException(String code)

@@ -22,7 +22,7 @@ public abstract class AbstractTestParseDate extends AbstractPureTestWithCoreComp
     @Test
     public void testBasicParse()
     {
-            compileTestSource(
+            compileTestSource("fromString.pure",
                     "function test():Boolean[1]\n" +
                             "{\n" +
                             "   assert(%2018-08-31 == '%2018-08-31'->parseDate(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestParseDate extends AbstractPureTestWithCoreComp
     @Test
     public void testEvalParse()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(%2018-08-31 == parseDate_String_1__Date_1_->eval('%2018-08-31'), |'');\n" +

@@ -20,15 +20,34 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.incremental.association.TestPureRuntimeAssociation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 
 public class TestPureRuntimeAssociationCompiled extends TestPureRuntimeAssociation
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getExtra());
+    }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @After
+    public void cleanRuntime() {
+        runtime.delete("userId.pure");
+        runtime.delete("sourceId.pure");
+
+        try
+        {
+            runtime.compile();
+        } catch (PureCompilationException e) {
+            setUp();
+        }
+    }
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
@@ -39,8 +58,7 @@ public class TestPureRuntimeAssociationCompiled extends TestPureRuntimeAssociati
         return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
 
-    @Override
-    public Pair<String, String> getExtra()
+    public static Pair<String, String> getExtra()
     {
         return null;
     }

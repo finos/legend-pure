@@ -21,7 +21,7 @@ public abstract class AbstractTestPrecedence extends AbstractPureTestWithCoreCom
 
     @Test
     public void testBasic() {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(14 == 2+3*4, |'');\n" +
@@ -31,7 +31,7 @@ public abstract class AbstractTestPrecedence extends AbstractPureTestWithCoreCom
 
     @Test
     public void testWithTimes() {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(32 == (2+3*4) + 3*2*2 + 1*6, |'');\n" +
@@ -41,7 +41,7 @@ public abstract class AbstractTestPrecedence extends AbstractPureTestWithCoreCom
 
     @Test
     public void testWithTimesAndDivide() {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(12.0 == (2+3*4/2) + 12/2/2/3 + 1*6/2, |'');\n" +
@@ -51,7 +51,7 @@ public abstract class AbstractTestPrecedence extends AbstractPureTestWithCoreCom
 
     @Test
     public void testWithTimesAndRelational() {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(false == 1 + 2 * 3 > 4 * 5 + 6, |'');\n" +
@@ -61,7 +61,7 @@ public abstract class AbstractTestPrecedence extends AbstractPureTestWithCoreCom
 
     @Test
     public void testWithTimesAndRelationalComplex() {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(false == 1 + 2 + 3*4/5 -9 > 1 + 2*2, |'');\n" +

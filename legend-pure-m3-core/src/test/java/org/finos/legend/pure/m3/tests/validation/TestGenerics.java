@@ -20,17 +20,34 @@ import org.finos.legend.pure.m3.serialization.Loader;
 import org.finos.legend.pure.m3.statelistener.VoidM3M4StateListener;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("fromString.pure");
+         try{
+            runtime.compile();
+         } catch (PureCompilationException e) {
+            setUp();
+         }
+    }
+
     @Test
     public void testGenericInstanceWithoutTypeArguments()
     {
         try
         {
-            compileTestSource("Class Address\n" +
+            compileTestSource("fromString.pure","Class Address\n" +
                     "{\n" +
                     "   value:String[1];\n" +
                     "}\n" +
@@ -53,7 +70,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Address\n" +
+            compileTestSource("fromString.pure","Class Address\n" +
                            "{\n" +
                            "   value:String[1];\n" +
                            "}\n" +
@@ -108,6 +125,8 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
                             "                                Address instance Class\n" +
                             "    name(Property):\n" +
                             "        test instance String", elem.printWithoutDebug("", 10));
+
+        setUp();
     }
 
     @Test
@@ -127,6 +146,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
         catch (Exception e)
         {
             assertPureException(PureCompilationException.class, "AddressXX has not been defined!", 7, 11, e);
+            setUp();
         }
     }
 
@@ -153,6 +173,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
         catch (Exception e)
         {
             assertPureException(PureCompilationException.class, "Property: 'address' / Type Error: 'Address' not a subtype of 'OtherType'", 13, 51, e);
+            setUp();
         }
     }
 
@@ -161,7 +182,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Address\n" +
+            compileTestSource("fromString.pure","Class Address\n" +
                     "{\n" +
                     "   value:String[1];\n" +
                     "}\n" +
@@ -187,7 +208,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Address\n" +
+            compileTestSource("fromString.pure","Class Address\n" +
                            "{\n" +
                            "   value:String[1];\n" +
                            "}\n" +
@@ -245,7 +266,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class A<E>\n" +
+            compileTestSource("fromString.pure","Class A<E>\n" +
                     "{\n" +
                     "   value:E[1];\n" +
                     "}\n" +
@@ -264,7 +285,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     @Test
     public void testGenericWithGeneralization()
     {
-        compileTestSource("Class A<E>\n" +
+        compileTestSource("fromString.pure","Class A<E>\n" +
                        "{\n" +
                        "   value:E[1];\n" +
                        "}\n" +
@@ -318,7 +339,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class A<E>\n" +
+            compileTestSource("fromString.pure","Class A<E>\n" +
                     "{\n" +
                     "   value:E[1];\n" +
                     "}\n" +
@@ -349,7 +370,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class A<T>\n" +
+            compileTestSource("fromString.pure","Class A<T>\n" +
                     "{\n" +
                     "   value:T[1];\n" +
                     "}\n" +
@@ -380,7 +401,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Person<T>{firstName:T[1];}\n" +
+            compileTestSource("fromString.pure","Class Person<T>{firstName:T[1];}\n" +
                            "function test(p:Person[1]):Nil[0]\n" +
                            "{\n" +
                            "   [];\n" +
@@ -398,7 +419,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Person<T>{firstName:T[1];}\n" +
+            compileTestSource("fromString.pure","Class Person<T>{firstName:T[1];}\n" +
                     "function test():Person[*]\n" +
                     "{\n" +
                     "   [];\n" +
@@ -416,7 +437,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("testSource.pure",
+            compileTestSource("fromString.pure",
                     "Class SuperClass<T>\n" +
                             "{\n" +
                             "  prop:T[1];\n" +
@@ -428,7 +449,7 @@ public class TestGenerics extends AbstractPureTestWithCoreCompiledPlatform
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "Type argument mismatch for the class SuperClass<T> (expected 1, got 0): SuperClass", "testSource.pure", 5, 24, e);
+            assertPureException(PureCompilationException.class, "Type argument mismatch for the class SuperClass<T> (expected 1, got 0): SuperClass", "fromString.pure", 5, 24, e);
         }
     }
 }

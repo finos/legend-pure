@@ -20,12 +20,19 @@ import org.finos.legend.pure.m3.coreinstance.PackageCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.PackageInstance;
 import org.finos.legend.pure.m4.coreinstance.indexing.IDIndex;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNull;
 
 public class TestIDIndex extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
     private static String TEST_PACKAGE = "TestPackage";
 
     private static IDIndex<String, Package> getIDIndex()

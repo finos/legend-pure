@@ -39,9 +39,8 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureException;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
 
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -52,62 +51,105 @@ import java.util.regex.Pattern;
 
 public abstract class AbstractPureTestWithCoreCompiled
 {
-    protected PureRuntime runtime;
-    protected ModelRepository repository;
-    protected Context context;
-    protected ProcessorSupport processorSupport;
-    protected FunctionExecution functionExecution;
+    protected static PureRuntime runtime;
+    protected static ModelRepository repository;
+    protected static Context context;
+    protected static ProcessorSupport processorSupport;
+    protected static FunctionExecution functionExecution;
+    protected static RichIterable<? extends CodeRepository> codeRepositories;
 
     public CodeRepository getRepositoryByName(String name)
     {
-        return getCodeRepositories().select(c -> c.getName().equals(name)).getFirst();
+        return codeRepositories.select(c -> c.getName().equals(name)).getFirst();
     }
 
-    @Before
-    public final void setUpRuntime()
+    public static final void setUpRuntime()
     {
-        this.functionExecution = this.getFunctionExecution();
-        this.runtime = new PureRuntimeBuilder(getCodeStorage())
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getFactoryRegistryOverride(), getOptions(), getExtra(), getCodeRepositories());
+    }
+
+    public static final void setUpRuntime(FunctionExecution execution)
+    {
+        setUpRuntime(execution, getCodeStorage(), getFactoryRegistryOverride(), getOptions(), getExtra(), getCodeRepositories());
+    }
+
+    public static final void setUpRuntime(Pair<String, String> extra)
+    {
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getFactoryRegistryOverride(), getOptions(), extra, getCodeRepositories());
+    }
+
+    public static final void setUpRuntime(FunctionExecution execution, CoreInstanceFactoryRegistry registry)
+    {
+        setUpRuntime(execution, getCodeStorage(), registry, getOptions(), getExtra(), getCodeRepositories());
+    }
+
+    public static final void setUpRuntime(FunctionExecution execution, Pair<String, String> extra)
+    {
+        setUpRuntime(execution, getCodeStorage(), getFactoryRegistryOverride(), getOptions(), extra, getCodeRepositories());
+    }
+
+    public static final void setUpRuntime(FunctionExecution execution, RuntimeOptions options)
+    {
+        setUpRuntime(execution, getCodeStorage(), getFactoryRegistryOverride(), options, getExtra(), getCodeRepositories());
+    }
+
+    public static final void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, RichIterable<? extends CodeRepository> repositories)
+    {
+        setUpRuntime(execution, codeStorage, getFactoryRegistryOverride(), getOptions(), getExtra(), repositories);
+    }
+
+    public static final void setUpRuntime(MutableCodeStorage codeStorage, RichIterable<? extends CodeRepository> repositories, Pair<String, String> extra)
+    {
+        setUpRuntime(getFunctionExecution(), codeStorage, getFactoryRegistryOverride(), getOptions(), extra, repositories);
+    }
+
+
+//    @Before
+    public static final void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, RuntimeOptions options, Pair<String, String> extra, RichIterable<? extends CodeRepository> repositories)
+    {
+        codeRepositories = repositories;
+        functionExecution = execution;
+        runtime = new PureRuntimeBuilder(codeStorage)
                 .withRuntimeStatus(getPureRuntimeStatus())
-                .withFactoryRegistryOverride(getFactoryRegistryOverride()).setTransactionalByDefault(isTransactionalByDefault())
-                .withOptions(getOptions())
+                .withFactoryRegistryOverride(registry).setTransactionalByDefault(isTransactionalByDefault())
+                .withOptions(options)
                 .build();
-        this.functionExecution.init(this.runtime, new Message(""));
-        this.runtime.loadAndCompileCore();
-        if (this.getExtra() != null)
+        functionExecution.init(runtime, new Message(""));
+        runtime.loadAndCompileCore();
+        if (extra != null)
         {
-            this.runtime.createInMemoryAndCompile(this.getExtra());
+            runtime.createInMemoryAndCompile(extra);
         }
-        this.repository = this.runtime.getModelRepository();
-        this.context = this.runtime.getContext();
-        this.processorSupport = this.functionExecution.getProcessorSupport() == null ? this.runtime.getProcessorSupport() : this.functionExecution.getProcessorSupport();
-        if (this.functionExecution.getConsole() != null)
+        repository = runtime.getModelRepository();
+        context = runtime.getContext();
+        processorSupport = functionExecution.getProcessorSupport() == null ? runtime.getProcessorSupport() : functionExecution.getProcessorSupport();
+        if (functionExecution.getConsole() != null)
         {
-            this.functionExecution.getConsole().enableBufferLines();
+            functionExecution.getConsole().enableBufferLines();
         }
     }
 
-    public Pair<String, String> getExtra()
+    public static Pair<String, String> getExtra()
     {
         return null;
     }
 
 
-    @After
-    public final void tearDownRuntime()
+    @AfterClass
+    public static final void tearDownRuntime()
     {
-        if (this.runtime != null)
+        if (runtime != null)
         {
-            this.runtime.reset();
+            runtime.reset();
         }
-        this.runtime = null;
-        this.repository = null;
-        this.context = null;
-        this.processorSupport = null;
-        this.functionExecution = null;
+        runtime = null;
+        repository = null;
+        context = null;
+        processorSupport = null;
+        functionExecution = null;
     }
 
-    protected boolean isTransactionalByDefault()
+    protected static boolean isTransactionalByDefault()
     {
         return true;
     }
@@ -118,7 +160,7 @@ public abstract class AbstractPureTestWithCoreCompiled
      *
      * @return function execution
      */
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return VoidFunctionExecution.VOID_FUNCTION_EXECUTION;
     }
@@ -129,32 +171,32 @@ public abstract class AbstractPureTestWithCoreCompiled
      *
      * @return Pure runtime status
      */
-    protected PureRuntimeStatus getPureRuntimeStatus()
+    protected static PureRuntimeStatus getPureRuntimeStatus()
     {
         return VoidPureRuntimeStatus.VOID_PURE_RUNTIME_STATUS;
     }
 
-    protected MutableCodeStorage getCodeStorage()
+    protected static MutableCodeStorage getCodeStorage()
     {
-        return PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories());
+        return PureCodeStorage.createCodeStorage(getCodeStorageRoot(), Lists.immutable.with(CodeRepository.newPlatformCodeRepository()));
     }
 
-    protected Path getCodeStorageRoot()
+    protected static Path getCodeStorageRoot()
     {
         return Paths.get("..", "pure-code", "local");
     }
 
-    protected RichIterable<? extends CodeRepository> getCodeRepositories()
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
     {
         return Lists.immutable.with(CodeRepository.newPlatformCodeRepository());
     }
 
-    protected CoreInstanceFactoryRegistry getFactoryRegistryOverride()
+    protected static CoreInstanceFactoryRegistry getFactoryRegistryOverride()
     {
         return null;
     }
 
-    protected RuntimeOptions getOptions()
+    protected static RuntimeOptions getOptions()
     {
         return new RuntimeOptions()
         {
@@ -192,9 +234,9 @@ public abstract class AbstractPureTestWithCoreCompiled
      * @param sourceId source id
      * @param source   source code
      */
-    protected SourceMutation compileTestSource(String sourceId, String source)
+    protected static SourceMutation compileTestSource(String sourceId, String source)
     {
-        return this.runtime.createInMemoryAndCompile(Tuples.pair(sourceId, source));
+        return runtime.createInMemoryAndCompile(Tuples.pair(sourceId, source));
     }
 
     protected SourceMutation compileTestSourceM3(String sourceId, String source)
@@ -207,7 +249,7 @@ public abstract class AbstractPureTestWithCoreCompiled
      *
      * @param source source code
      */
-    protected void compileTestSource(String source)
+    protected static void compileTestSource(String source)
     {
         compileTestSource("testSource_" + UUID.randomUUID().toString().replace('-', '_') + CodeStorage.PURE_FILE_EXTENSION, source);
     }
@@ -486,7 +528,7 @@ public abstract class AbstractPureTestWithCoreCompiled
 
     protected void assertRepoExists(String repositoryName)
     {
-        Assert.assertNotNull("This test relies on the " + repositoryName + " repository", getCodeRepositories().select(c->c.getName().equals(repositoryName)).getFirst());
+        Assert.assertNotNull("This test relies on the " + repositoryName + " repository", codeRepositories.select(c->c.getName().equals(repositoryName)).getFirst());
     }
 
 }

@@ -31,11 +31,24 @@ import org.finos.legend.pure.m3.execution.test.TestRunner;
 import org.finos.legend.pure.m3.execution.test.TestStatus;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestTestRunner extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     private final Function<CoreInstance, String> getPath = new Function<CoreInstance, String>()
     {
         @Override
@@ -57,7 +70,7 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
     @Test
     public void testRun() throws Exception
     {
-        compileTestSource("function <<test.Test>> a::b::test():Boolean[1]\n" +
+        compileTestSource("fromString.pure","function <<test.Test>> a::b::test():Boolean[1]\n" +
                         "{\n" +
                         "   print('1', 1);\n"+
                         "   assert(true, |'');\n" +
@@ -141,14 +154,14 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
         Assert.assertTrue(groups.get(0).getMessage().startsWith("2"));
         Verify.assertInstanceOf(AssertFailTestStatus.class, groups.get(0).getStatus());
 
-        Assert.assertEquals("'setup AB'", this.functionExecution.getConsole().getLine(0));
-        Assert.assertEquals("'setup ABC'", this.functionExecution.getConsole().getLine(1));
+        Assert.assertEquals("'setup AB'", this.functionExecution.getConsole().getLine(5));
+        Assert.assertEquals("'setup ABC'", this.functionExecution.getConsole().getLine(6));
     }
 
     @Test
     public void testExclusion()
     {
-        compileTestSource("function <<test.Test>> a::b::test():Boolean[1]\n" +
+        compileTestSource("fromString.pure","function <<test.Test>> a::b::test():Boolean[1]\n" +
                 "{\n" +
                 "   print('1', 1);\n"+
                 "   assert(true, |'');\n" +
@@ -187,8 +200,7 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
         Verify.assertInstanceOf(SuccessTestStatus.class, group.getStatus());
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

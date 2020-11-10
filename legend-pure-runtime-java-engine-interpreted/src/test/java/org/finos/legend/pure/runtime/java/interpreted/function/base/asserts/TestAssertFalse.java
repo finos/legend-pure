@@ -14,14 +14,22 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.asserts;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestAssertFalse extends PureExpressionTest
 {
-String extra = "function meta::pure::functions::asserts::assertFalse(condition:Boolean[1]):Boolean[1]\n" +
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), extra);
+    }
+
+    public static Pair<String, String> extra = Tuples.pair("/system/extra.pure","function meta::pure::functions::asserts::assertFalse(condition:Boolean[1]):Boolean[1]\n" +
         "{\n" +
         "    assert(!$condition);\n" +
         "}\n" +
@@ -47,38 +55,37 @@ String extra = "function meta::pure::functions::asserts::assertFalse(condition:B
         "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
         "{\n" +
         "    assert($condition, | format($formatString, $formatArgs));\n" +
-        "}";
+        "}");
 
     @Test
     public void testFailWithoutMessage()
     {
-        assertExpressionRaisesPureException("Assert failed", 3, 9, "assertFalse(true)", extra);
+        assertExpressionRaisesPureException("Assert failed", 3, 9, "assertFalse(true)");
         assertExpressionRaisesPureException("Assert failed", 3, 9, "assertFalse(2 == 2)");
     }
 
     @Test
     public void testFailWithMessageString()
     {
-        assertExpressionRaisesPureException("Test message", 3, 9, "assertFalse(true, 'Test message')", extra);
+        assertExpressionRaisesPureException("Test message", 3, 9, "assertFalse(true, 'Test message')");
         assertExpressionRaisesPureException("Test message", 3, 9, "assertFalse(2 == 2, 'Test message')");
     }
 
     @Test
     public void testFailWithFormattedMessage()
     {
-        assertExpressionRaisesPureException("Test message: 5", 3, 9, "assertFalse(true, 'Test message: %d', 2 + 3)", extra);
+        assertExpressionRaisesPureException("Test message: 5", 3, 9, "assertFalse(true, 'Test message: %d', 2 + 3)");
         assertExpressionRaisesPureException("Test message: 5", 3, 9, "assertFalse(2 == 2, 'Test message: %d', 2 + 3)");
     }
 
     @Test
     public void testFailWithMessageFunction()
     {
-        assertExpressionRaisesPureException("Test message: 5", 3, 9, "assertFalse(true, |format('Test message: %d', 2 + 3))", extra);
+        assertExpressionRaisesPureException("Test message: 5", 3, 9, "assertFalse(true, |format('Test message: %d', 2 + 3))");
         assertExpressionRaisesPureException("Test message: 5", 3, 9, "assertFalse(2 == 2, |format('Test message: %d', 2 + 3))");
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

@@ -21,11 +21,27 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+// TODO: Investigate tests with setUp() added, those are causing other tests fail when runtime is shared
 public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("file.pure");
+        runtime.delete("function.pure");
+    }
+
+
     @Test
     public void testExceptionScenarios() throws Exception
     {
@@ -160,6 +176,8 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         RichIterable<? extends CoreInstance> simpleAddressProperties = Instance.getValueForMetaPropertyToManyResolved(address, M3Properties.resolvedProperties, processorSupport);
         Assert.assertEquals("Missing simpleProperties", 1, simpleAddressProperties.size());
+
+        setUp();
     }
 
 
@@ -198,6 +216,8 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         RichIterable<? extends CoreInstance> simpleAddressProperties = Instance.getValueForMetaPropertyToManyResolved(address, M3Properties.resolvedProperties, processorSupport);
         Assert.assertEquals("Invalid simpleProperties", 0, simpleAddressProperties.size());
+
+        setUp();
     }
 
     @Test
@@ -337,6 +357,8 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         CoreInstance address = managersChildren.getLast();
         Assert.assertEquals("Home", address.getValueForMetaPropertyToOne("name").getName());
+
+        setUp();
     }
 
     @Test
@@ -359,17 +381,11 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
                         "                | $prefix->toOne() + ' ' + $this.firstName + ' ' + $this.lastName + ', ' + $suffixes->joinStrings(', ')))\n" +
                         "    }:String[1];" +
                         "}\n");
-        this.runtime.createInMemorySource("function.pure",
-                "function test():Any[*]\n" +
-                        "{\n" +
-                        "    print(#Person{+[nameWithTitle(String[1])]}#,2);\n" +
-                        "}\n");
-        this.runtime.compile();
 
 
         try
         {
-            this.runtime.modify("function.pure",
+            this.runtime.createInMemorySource("function.pure",
                     "function test():Any[*]\n" +
                             "{\n" +
                             "    print(#Person {+[nameWithTitle()]}#,2);\n" +
@@ -396,6 +412,13 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
         {
             assertPureException("Parameter type mismatch for function 'nameWithTitle'. Expected:String, Found:Integer", 3, 21, e);
         }
+
+        this.runtime.modify("function.pure",
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "    print(#Person{+[nameWithTitle(String[1])]}#,2);\n" +
+                        "}\n");
+        this.runtime.compile();
     }
 
     @Test
@@ -439,13 +462,6 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
         RichIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(tree, M3Properties.resolvedProperties, processorSupport);
         Assert.assertEquals(4, properties.size());
 
-
-        this.runtime.modify("function.pure",
-                "function test():Any[*]\n" +
-                        "{\n" +
-                        "    print(#Person{+[nameWithPrefixAndSuffix(String[0..1], String[*])]}#,2);\n" +
-                        "}\n");
-        this.runtime.compile();
 
         this.runtime.modify("function.pure",
                 "function test():Any[*]\n" +
@@ -498,6 +514,13 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
         {
             assertPureException("Error finding match for function 'nameWithPrefixAndSuffix'. Incorrect number of parameters, function expects 2 parameters", 3, 21, e);
         }
+
+        this.runtime.modify("function.pure",
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "    print(#Person{+[nameWithPrefixAndSuffix(String[0..1], String[*])]}#,2);\n" +
+                        "}\n");
+        this.runtime.compile();
     }
 
     @Test
@@ -551,13 +574,6 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
         this.runtime.modify("function.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
-                        "    print(#Person{+[nameWithPrefixAndSuffix(String[0..1], String[*])]}#,2);\n" +
-                        "}\n");
-        this.runtime.compile();
-
-        this.runtime.modify("function.pure",
-                "function test():Any[*]\n" +
-                        "{\n" +
                         "    print(#Person{-[nameWithPrefixAndSuffix(String[0..1], String[*])]}#,2);\n" +
                         "}\n");
         this.runtime.compile();
@@ -606,6 +622,13 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
         {
             assertPureException("Error finding match for function 'nameWithPrefixAndSuffix'. Incorrect number of parameters, function expects 2 parameters", 3, 21, e);
         }
+
+        this.runtime.modify("function.pure",
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "    print(#Person{+[nameWithPrefixAndSuffix(String[0..1], String[*])]}#,2);\n" +
+                        "}\n");
+        this.runtime.compile();
     }
 
     @Test
@@ -722,6 +745,8 @@ public class TestTreePathCompilation extends AbstractPureTestWithCoreCompiledPla
 
         RichIterable<? extends CoreInstance> simpleAddressProperties = Instance.getValueForMetaPropertyToManyResolved(address, M3Properties.resolvedProperties, processorSupport);
         Assert.assertEquals("Missing simpleProperties", 1, simpleAddressProperties.size());
+
+        setUp();
     }
 
     private void assertContainsTaggedValue(CoreInstance element, String tag)

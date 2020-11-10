@@ -18,15 +18,28 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testStaticInstance()
     {
-        compileTestSource("Class Person\n" +
+        compileTestSource("fromString.pure","Class Person\n" +
                           "{\n" +
                           "   lastName:String[1];\n" +
                           "}\n" +
@@ -45,14 +58,14 @@ public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
     @Test
     public void testGetterFromStaticInstance()
     {
-        compileTestSource("Class Person\n" +
+        compileTestSource("fromString.pure","Class Person\n" +
                 "{\n" +
                 "   lastName:String[1];\n" +
                 "}\n" +
-                "^Person p (lastName='last')\n" +
+                "^Person a (lastName='last')\n" +
                 "function testGet():Nil[0]\n" +
                 "{\n" +
-                "    print(p.lastName, 1);\n" +
+                "    print(a.lastName, 1);\n" +
                 "}\n");
         this.execute("testGet():Nil[0]");
         Assert.assertEquals("'last'", this.functionExecution.getConsole().getLine(0));
@@ -63,7 +76,7 @@ public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("Class test::Person\n" +
+            compileTestSource("fromString.pure","Class test::Person\n" +
                     "{\n" +
                     "   lastName:String[1];\n" +
                     "}\n" +
@@ -80,8 +93,7 @@ public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
         }
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

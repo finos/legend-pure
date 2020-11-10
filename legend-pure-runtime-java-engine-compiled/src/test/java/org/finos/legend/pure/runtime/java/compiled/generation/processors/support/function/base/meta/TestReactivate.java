@@ -20,7 +20,9 @@ import org.finos.legend.pure.m3.tools.ThrowableTools;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.regex.Matcher;
@@ -28,6 +30,14 @@ import java.util.regex.Pattern;
 
 public class TestReactivate extends AbstractTestReactivate
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+    @After
+    public void cleanRuntime() {
+        runtime.delete("testSource.pure");
+    }
     @Test
     public void testVariableScopeFail()
     {
@@ -54,8 +64,7 @@ public class TestReactivate extends AbstractTestReactivate
 
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

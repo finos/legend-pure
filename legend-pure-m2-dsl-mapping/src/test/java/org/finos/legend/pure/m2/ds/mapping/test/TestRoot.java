@@ -15,11 +15,24 @@
 package org.finos.legend.pure.m2.ds.mapping.test;
 
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestRoot extends AbstractPureMappingTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("userId.pure");
+    }
+
     @Test
     public void testRoot() throws Exception
     {

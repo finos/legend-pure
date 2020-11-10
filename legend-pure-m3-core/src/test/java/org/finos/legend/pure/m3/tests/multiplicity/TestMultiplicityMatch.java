@@ -20,188 +20,189 @@ import org.finos.legend.pure.m3.navigation.generictype.match.ParameterMatchBehav
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.multiplicity.MultiplicityMatch;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.*;
 
 public class TestMultiplicityMatch extends AbstractPureTestWithCoreCompiledPlatform
 {
-    private CoreInstance zeroMany;
-    private CoreInstance oneMany;
-    private CoreInstance zeroOne;
-    private CoreInstance zeroTen;
-    private CoreInstance one;
-    private CoreInstance oneSix;
-    private CoreInstance two;
-    private CoreInstance threeSeventeen;
-    private CoreInstance m;
-    private CoreInstance n;
+    private static CoreInstance zeroMany;
+    private static CoreInstance oneMany;
+    private static CoreInstance zeroOne;
+    private static CoreInstance zeroTen;
+    private static CoreInstance one;
+    private static CoreInstance oneSix;
+    private static CoreInstance two;
+    private static CoreInstance threeSeventeen;
+    private static CoreInstance m;
+    private static CoreInstance n;
 
-    @Before
-    public void setUpMultiplicities()
+    @BeforeClass
+    public static void setUp()
     {
-        this.zeroMany = newMultiplicity(0, -1);
-        this.oneMany = newMultiplicity(1, -1);
-        this.zeroOne = newMultiplicity(0, 1);
-        this.zeroTen = newMultiplicity(0, 10);
-        this.one = newMultiplicity(1, 1);
-        this.oneSix = newMultiplicity(1, 6);
-        this.two = newMultiplicity(2, 2);
-        this.threeSeventeen = newMultiplicity(3, 17);
-        this.m = newMultiplicity("m");
-        this.n = newMultiplicity("n");
+        setUpRuntime(getExtra());
+        
+        zeroMany = newMultiplicity(0, -1);
+        oneMany = newMultiplicity(1, -1);
+        zeroOne = newMultiplicity(0, 1);
+        zeroTen = newMultiplicity(0, 10);
+        one = newMultiplicity(1, 1);
+        oneSix = newMultiplicity(1, 6);
+        two = newMultiplicity(2, 2);
+        threeSeventeen = newMultiplicity(3, 17);
+        m = newMultiplicity("m");
+        n = newMultiplicity("n");
     }
 
     @Test
     public void testConcreteCovariantMultiplicityMatches()
     {
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.zeroMany, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.oneMany, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.zeroOne, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.zeroTen, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.one, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.oneSix, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.two, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.threeSeventeen, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroMany, zeroMany, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroMany, oneMany, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroMany, zeroOne, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroMany, zeroTen, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroMany, one, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroMany, oneSix, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroMany, two, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroMany, threeSeventeen, true));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneMany, this.zeroMany, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneMany, this.oneMany, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneMany, this.zeroOne, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneMany, this.zeroTen, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneMany, this.one, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneMany, this.oneSix, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneMany, this.two, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneMany, this.threeSeventeen, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneMany, zeroMany, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneMany, oneMany, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneMany, zeroOne, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneMany, zeroTen, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneMany, one, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneMany, oneSix, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneMany, two, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneMany, threeSeventeen, true));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.zeroMany, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.oneMany, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.zeroOne, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.zeroTen, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.one, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.oneSix, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.two, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.threeSeventeen, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, zeroMany, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, oneMany, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroOne, zeroOne, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, zeroTen, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroOne, one, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, oneSix, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, two, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, threeSeventeen, true));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.zeroMany, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.oneMany, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.zeroOne, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.zeroTen, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.one, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.oneSix, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.two, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.threeSeventeen, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroTen, zeroMany, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroTen, oneMany, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroTen, zeroOne, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroTen, zeroTen, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroTen, one, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroTen, oneSix, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroTen, two, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroTen, threeSeventeen, true));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.one, this.zeroMany, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.one, this.oneMany, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.one, this.zeroOne, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.one, this.zeroTen, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.one, this.one, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.one, this.oneSix, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.one, this.two, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.one, this.threeSeventeen, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(one, zeroMany, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(one, oneMany, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(one, zeroOne, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(one, zeroTen, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(one, one, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(one, oneSix, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(one, two, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(one, threeSeventeen, true));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneSix, this.zeroMany, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneSix, this.oneMany, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneSix, this.zeroOne, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneSix, this.zeroTen, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneSix, this.one, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneSix, this.oneSix, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneSix, this.two, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneSix, this.threeSeventeen, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneSix, zeroMany, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneSix, oneMany, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneSix, zeroOne, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneSix, zeroTen, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneSix, one, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneSix, oneSix, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneSix, two, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneSix, threeSeventeen, true));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.zeroMany, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.oneMany, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.zeroOne, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.zeroTen, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.one, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.oneSix, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.two, this.two, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.threeSeventeen, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, zeroMany, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, oneMany, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, zeroOne, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, zeroTen, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, one, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, oneSix, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(two, two, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, threeSeventeen, true));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.zeroMany, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.oneMany, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.zeroOne, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.zeroTen, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.one, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.oneSix, true));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.two, true));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.threeSeventeen, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, zeroMany, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, oneMany, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, zeroOne, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, zeroTen, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, one, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, oneSix, true));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, two, true));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(threeSeventeen, threeSeventeen, true));
     }
 
     @Test
     public void testConcreteContravariantMultiplicityMatches()
     {
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.zeroMany, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.oneMany, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.zeroOne, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.zeroTen, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.one, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.oneSix, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.two, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.threeSeventeen, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroMany, zeroMany, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroMany, oneMany, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroMany, zeroOne, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroMany, zeroTen, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroMany, one, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroMany, oneSix, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroMany, two, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroMany, threeSeventeen, false));
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneMany, this.zeroMany, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneMany, this.oneMany, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneMany, this.zeroOne, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneMany, this.zeroTen, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneMany, this.one, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneMany, this.oneSix, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneMany, this.two, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneMany, this.threeSeventeen, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneMany, zeroMany, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneMany, oneMany, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneMany, zeroOne, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneMany, zeroTen, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneMany, one, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneMany, oneSix, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneMany, two, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneMany, threeSeventeen, false));
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.zeroMany, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.oneMany, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.zeroOne, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.zeroTen, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.one, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.oneSix, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.two, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.threeSeventeen, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroOne, zeroMany, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, oneMany, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroOne, zeroOne, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroOne, zeroTen, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, one, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, oneSix, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, two, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, threeSeventeen, false));
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.zeroMany, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.oneMany, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.zeroOne, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.zeroTen, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.one, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.oneSix, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.two, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.threeSeventeen, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroTen, zeroMany, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroTen, oneMany, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroTen, zeroOne, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroTen, zeroTen, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroTen, one, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroTen, oneSix, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroTen, two, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroTen, threeSeventeen, false));
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.one, this.zeroMany, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.one, this.oneMany, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.one, this.zeroOne, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.one, this.zeroTen, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.one, this.one, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.one, this.oneSix, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.one, this.two, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.one, this.threeSeventeen, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(one, zeroMany, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(one, oneMany, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(one, zeroOne, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(one, zeroTen, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(one, one, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(one, oneSix, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(one, two, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(one, threeSeventeen, false));
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneSix, this.zeroMany, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneSix, this.oneMany, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneSix, this.zeroOne, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneSix, this.zeroTen, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneSix, this.one, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.oneSix, this.oneSix, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneSix, this.two, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneSix, this.threeSeventeen, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneSix, zeroMany, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneSix, oneMany, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneSix, zeroOne, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneSix, zeroTen, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneSix, one, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(oneSix, oneSix, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneSix, two, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneSix, threeSeventeen, false));
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.two, this.zeroMany, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.two, this.oneMany, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.zeroOne, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.two, this.zeroTen, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.one, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.two, this.oneSix, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.two, this.two, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.threeSeventeen, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(two, zeroMany, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(two, oneMany, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, zeroOne, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(two, zeroTen, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, one, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(two, oneSix, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(two, two, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, threeSeventeen, false));
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.zeroMany, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.oneMany, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.zeroOne, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.zeroTen, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.one, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.oneSix, false));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.two, false));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.threeSeventeen, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(threeSeventeen, zeroMany, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(threeSeventeen, oneMany, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, zeroOne, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, zeroTen, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, one, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, oneSix, false));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, two, false));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(threeSeventeen, threeSeventeen, false));
     }
 
     @Test
@@ -213,53 +214,53 @@ public class TestMultiplicityMatch extends AbstractPureTestWithCoreCompiledPlatf
 
         CoreInstance m2 = newMultiplicity("m");
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, m2, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.n, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.zeroMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.oneMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.zeroOne, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.zeroTen, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.one, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.oneSix, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.two, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.threeSeventeen, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, m2, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, n, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, zeroMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, oneMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, zeroOne, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, zeroTen, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, one, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, oneSix, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, two, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, threeSeventeen, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, m2, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.n, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.zeroMany, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.oneMany, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.zeroOne, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.zeroTen, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.one, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.oneSix, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.two, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.m, this.threeSeventeen, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, m2, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, n, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, zeroMany, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, oneMany, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, zeroOne, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, zeroTen, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, one, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, oneSix, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, two, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(m, threeSeventeen, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, m2, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.n, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.zeroMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.oneMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.zeroOne, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.zeroTen, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.one, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.oneSix, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.two, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.threeSeventeen, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, m2, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, n, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, zeroMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, oneMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, zeroOne, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, zeroTen, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, one, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, oneSix, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, two, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, threeSeventeen, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, m2, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.n, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.zeroMany, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.oneMany, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.zeroOne, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.zeroTen, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.one, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.oneSix, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.two, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.n, this.threeSeventeen, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, m2, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, n, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, zeroMany, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, oneMany, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, zeroOne, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, zeroTen, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, one, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, oneSix, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, two, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(n, threeSeventeen, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
     }
 
     @Test
@@ -269,29 +270,29 @@ public class TestMultiplicityMatch extends AbstractPureTestWithCoreCompiledPlatf
         ParameterMatchBehavior targetParameterMatchBehavior = ParameterMatchBehavior.MATCH_ANYTHING;
         ParameterMatchBehavior valueParameterMatchBehavior = ParameterMatchBehavior.MATCH_CAUTIOUSLY;
 
-        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroMany, this.m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertTrue(MultiplicityMatch.multiplicityMatches(zeroMany, m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroMany, m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneMany, this.m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneMany, this.m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneMany, m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneMany, m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroOne, this.m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroOne, m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.zeroTen, this.m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroTen, m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(zeroTen, m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.one, this.m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.one, this.m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(one, m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(one, m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneSix, this.m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.oneSix, this.m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneSix, m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(oneSix, m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.two, this.m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(two, m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
 
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
-        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(this.threeSeventeen, this.m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
+        Assert.assertFalse(MultiplicityMatch.multiplicityMatches(threeSeventeen, m, false, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior));
     }
 
     @Test
@@ -300,13 +301,13 @@ public class TestMultiplicityMatch extends AbstractPureTestWithCoreCompiledPlatf
         NullMatchBehavior valueNullMatchBehavior = NullMatchBehavior.ERROR;
         ParameterMatchBehavior targetParameterMatchBehavior = ParameterMatchBehavior.ERROR;
         ParameterMatchBehavior valueParameterMatchBehavior = ParameterMatchBehavior.ERROR;
-        MultiplicityMatch exactMatchZeroMany = MultiplicityMatch.newMultiplicityMatch(this.zeroMany, this.zeroMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch exactMatchOneMany = MultiplicityMatch.newMultiplicityMatch(this.oneMany, this.oneMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch exactMatchZeroMany = MultiplicityMatch.newMultiplicityMatch(zeroMany, zeroMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch exactMatchOneMany = MultiplicityMatch.newMultiplicityMatch(oneMany, oneMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
         Assert.assertEquals(exactMatchZeroMany, exactMatchOneMany);
         Assert.assertEquals(0, exactMatchOneMany.compareTo(exactMatchZeroMany));
         Assert.assertEquals(0, exactMatchZeroMany.compareTo(exactMatchOneMany));
 
-        MultiplicityMatch exactMatchOneSix = MultiplicityMatch.newMultiplicityMatch(this.oneSix, this.oneSix, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch exactMatchOneSix = MultiplicityMatch.newMultiplicityMatch(oneSix, oneSix, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
         Assert.assertEquals(exactMatchZeroMany, exactMatchOneSix);
         Assert.assertEquals(0, exactMatchOneMany.compareTo(exactMatchOneSix));
     }
@@ -317,13 +318,13 @@ public class TestMultiplicityMatch extends AbstractPureTestWithCoreCompiledPlatf
         NullMatchBehavior valueNullMatchBehavior = NullMatchBehavior.MATCH_ANYTHING;
         ParameterMatchBehavior targetParameterMatchBehavior = ParameterMatchBehavior.MATCH_ANYTHING;
         ParameterMatchBehavior valueParameterMatchBehavior = ParameterMatchBehavior.MATCH_CAUTIOUSLY;
-        MultiplicityMatch zeroManyMatch = MultiplicityMatch.newMultiplicityMatch(this.zeroMany, this.zeroMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch oneManyMatch = MultiplicityMatch.newMultiplicityMatch(this.zeroMany, this.oneMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch zeroOneMatch = MultiplicityMatch.newMultiplicityMatch(this.zeroMany, this.zeroOne, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch oneMatch = MultiplicityMatch.newMultiplicityMatch(this.zeroMany, this.one, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch mMatch = MultiplicityMatch.newMultiplicityMatch(this.zeroMany, this.m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch nMatch = MultiplicityMatch.newMultiplicityMatch(this.zeroMany, this.n, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch nullMatch = MultiplicityMatch.newMultiplicityMatch(this.zeroMany, null, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch zeroManyMatch = MultiplicityMatch.newMultiplicityMatch(zeroMany, zeroMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch oneManyMatch = MultiplicityMatch.newMultiplicityMatch(zeroMany, oneMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch zeroOneMatch = MultiplicityMatch.newMultiplicityMatch(zeroMany, zeroOne, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch oneMatch = MultiplicityMatch.newMultiplicityMatch(zeroMany, one, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch mMatch = MultiplicityMatch.newMultiplicityMatch(zeroMany, m, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch nMatch = MultiplicityMatch.newMultiplicityMatch(zeroMany, n, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch nullMatch = MultiplicityMatch.newMultiplicityMatch(zeroMany, null, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
 
         Assert.assertNotNull(zeroManyMatch);
         Assert.assertNotNull(oneManyMatch);
@@ -396,13 +397,13 @@ public class TestMultiplicityMatch extends AbstractPureTestWithCoreCompiledPlatf
         NullMatchBehavior valueNullMatchBehavior = NullMatchBehavior.MATCH_ANYTHING;
         ParameterMatchBehavior targetParameterMatchBehavior = ParameterMatchBehavior.MATCH_ANYTHING;
         ParameterMatchBehavior valueParameterMatchBehavior = ParameterMatchBehavior.ERROR;
-        MultiplicityMatch zeroManyMatch = MultiplicityMatch.newMultiplicityMatch(this.m, this.zeroMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch oneManyMatch = MultiplicityMatch.newMultiplicityMatch(this.m, this.oneMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch zeroOneMatch = MultiplicityMatch.newMultiplicityMatch(this.m, this.zeroOne, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch oneMatch = MultiplicityMatch.newMultiplicityMatch(this.m, this.one, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch mMatch = MultiplicityMatch.newMultiplicityMatch(this.m, newMultiplicity("m"), true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch nMatch = MultiplicityMatch.newMultiplicityMatch(this.m, this.n, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
-        MultiplicityMatch nullMatch = MultiplicityMatch.newMultiplicityMatch(this.m, null, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch zeroManyMatch = MultiplicityMatch.newMultiplicityMatch(m, zeroMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch oneManyMatch = MultiplicityMatch.newMultiplicityMatch(m, oneMany, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch zeroOneMatch = MultiplicityMatch.newMultiplicityMatch(m, zeroOne, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch oneMatch = MultiplicityMatch.newMultiplicityMatch(m, one, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch mMatch = MultiplicityMatch.newMultiplicityMatch(m, newMultiplicity("m"), true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch nMatch = MultiplicityMatch.newMultiplicityMatch(m, n, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
+        MultiplicityMatch nullMatch = MultiplicityMatch.newMultiplicityMatch(m, null, true, valueNullMatchBehavior, targetParameterMatchBehavior, valueParameterMatchBehavior);
 
         Assert.assertNotNull(zeroManyMatch);
         Assert.assertNotNull(oneManyMatch);
@@ -469,14 +470,14 @@ public class TestMultiplicityMatch extends AbstractPureTestWithCoreCompiledPlatf
         assertComparesEqual(nullMatch, nullMatch);
     }
 
-    private CoreInstance newMultiplicity(int lower, int upper)
+    private static CoreInstance newMultiplicity(int lower, int upper)
     {
-        return Multiplicity.newMultiplicity(lower, upper, this.processorSupport);
+        return Multiplicity.newMultiplicity(lower, upper, processorSupport);
     }
 
-    private CoreInstance newMultiplicity(String parameterName)
+    private static CoreInstance newMultiplicity(String parameterName)
     {
-        return Multiplicity.newMultiplicity(parameterName, this.processorSupport);
+        return Multiplicity.newMultiplicity(parameterName, processorSupport);
     }
 
     private void assertComparesEqual(MultiplicityMatch match1, MultiplicityMatch match2)

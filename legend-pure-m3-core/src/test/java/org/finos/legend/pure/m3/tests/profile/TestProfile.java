@@ -22,15 +22,28 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestProfile extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("/test/testSource.pure");
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testProfile()
     {
-        compileTestSource("Profile test::myProfile\n" +
+        compileTestSource("fromString.pure","Profile test::myProfile\n" +
                 "{\n" +
                 "  stereotypes: [st1, st2];\n" +
                 "  tags: [t1, t2, t3];\n" +

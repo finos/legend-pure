@@ -27,7 +27,7 @@ public abstract class AbstractTestMap extends AbstractPureTestWithCoreCompiled
     @Test
     public void testMapWithMultiplicityInferencePropertyOwner()
     {
-        compileTestSource("Class Employee<|m>\n" +
+        compileTestSource("fromString.pure","Class Employee<|m>\n" +
                 "{\n" +
                 "    prop:String[m];\n" +
                 "}\n" +
@@ -48,7 +48,7 @@ public abstract class AbstractTestMap extends AbstractPureTestWithCoreCompiled
     @Test
     public void testMapWithMultiplicityInferenceFunctionWhichIsNotAProperty()
     {
-        compileTestSource("function f<|m>(s:String[m]):String[m]\n" +
+        compileTestSource("fromString.pure","function f<|m>(s:String[m]):String[m]\n" +
                 "{\n" +
                 "    $s\n" +
                 "}\n" +
@@ -76,7 +76,7 @@ public abstract class AbstractTestMap extends AbstractPureTestWithCoreCompiled
                 "       if(true, | $this->map($valueFunc) , | 1.0);" +
                 "   }:Float[1];  " +
                 "\n}";
-        compileTestSource("mapCode.pure", code);
+        compileTestSource("fromString.pure", code);
     }
 
     @Test
@@ -89,7 +89,7 @@ public abstract class AbstractTestMap extends AbstractPureTestWithCoreCompiled
                 "}";
 
         compileTestSource("classes.pure", classes);
-        compileTestSource("autoMapFunction.pure", testFunction);
+        compileTestSource("fromString.pure", testFunction);
         CoreInstance autoMap = Automap.getAutoMapExpressionSequence(Instance.getValueForMetaPropertyToManyResolved(this.runtime.getCoreInstance("test_A_1__Any_MANY_"), M3Properties.expressionSequence, this.processorSupport).getFirst());
         Assert.assertNotNull(autoMap);
     }

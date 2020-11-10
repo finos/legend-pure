@@ -18,9 +18,12 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.PureCompiledExecutionException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -28,6 +31,17 @@ import java.nio.file.Paths;
 
 public class TestGenerationWithPureStacktraceIncluded extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getCodeRepositories());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testExceptionStacktrace()
     {
@@ -73,7 +87,7 @@ public class TestGenerationWithPureStacktraceIncluded extends AbstractPureTestWi
         String code =
                 "Class A { qp(){ func55($this); }:Number[1]; } \n" +
                 "function func55(a:A[1]):Number[1] { 55; }";
-        compileTestSource("thisReferenceCode.pure", code);
+        compileTestSource("fromString.pure", code);
     }
 
     @Test
@@ -104,19 +118,17 @@ public class TestGenerationWithPureStacktraceIncluded extends AbstractPureTestWi
                 "   $current;            \n" +
                 "}" +
                 "";
-        compileTestSource("jsiCode.pure", code);
+        compileTestSource("fromString.pure", code);
     }
 
 
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().shouldIncludePureStackTrace().build();
     }
 
-    @Override
-    protected MutableCodeStorage getCodeStorage()
+    protected static MutableCodeStorage getCodeStorage()
     {
         //target\generated-sources\
         Path pureCodeDirectory = Paths.get("target\\generated-sources\\");

@@ -21,17 +21,46 @@ import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.incremental.milestoning.TestMilestoning;
 import org.finos.legend.pure.m3.tools.test.ToFix;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestPureRuntimeMilestoningCompiled extends TestMilestoning
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getExtra());
+    }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @After
+    public void cleanRuntime() {
+        runtime.delete("userId.pure");
+        runtime.delete("sourceId.pure");
+        runtime.delete("sourceA.pure");
+        runtime.delete("sourceB.pure");
+        runtime.delete("classes.pure");
+        runtime.delete("classB.pure");
+        runtime.delete("association.pure");
+        runtime.delete("testFunc.pure");
+        runtime.delete("test.pure");
+        runtime.delete("trader.pure");
+        runtime.delete("/model/go.pure");
+        runtime.delete("/test/myClass.pure");
+
+        try
+        {
+            runtime.compile();
+        } catch (PureCompilationException e) {
+            setUp();
+        }
+    }
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
@@ -51,8 +80,7 @@ public class TestPureRuntimeMilestoningCompiled extends TestMilestoning
         super.testStabilityOnTemporalStereotypeRemovalWithAssociation();
     }
 
-    @Override
-    public Pair<String, String> getExtra()
+    public static Pair<String, String> getExtra()
     {
         return null;
     }

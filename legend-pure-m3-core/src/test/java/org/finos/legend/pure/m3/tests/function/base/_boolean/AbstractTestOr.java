@@ -22,7 +22,7 @@ public abstract class AbstractTestOr extends AbstractPureTestWithCoreCompiled
     @Test
     public void testBasicParse()
     {
-            compileTestSource(
+            compileTestSource("fromString.pure",
                     "function test():Boolean[1]\n" +
                             "{\n" +
                             "   assert(true == or(true, true), |'');\n" +
@@ -36,7 +36,7 @@ public abstract class AbstractTestOr extends AbstractPureTestWithCoreCompiled
     @Test
     public void testEvalParse()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(true == or_Boolean_1__Boolean_1__Boolean_1_->eval(true, true), |'');\n" +

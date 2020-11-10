@@ -19,11 +19,25 @@ import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeFunction_AsFunctionExpressionParam extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("sourceId.pure");
+        runtime.delete("userId.pure");
+    }
+
     @Test
     public void testPureRuntimeFunctionParamDependencies() throws Exception
     {
@@ -144,8 +158,7 @@ public class TestPureRuntimeFunction_AsFunctionExpressionParam extends AbstractP
         Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

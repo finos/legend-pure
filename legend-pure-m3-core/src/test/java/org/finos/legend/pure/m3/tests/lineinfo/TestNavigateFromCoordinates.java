@@ -16,7 +16,9 @@ package org.finos.legend.pure.m3.tests.lineinfo;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Scanner;
@@ -28,6 +30,16 @@ public class TestNavigateFromCoordinates extends AbstractPureTestWithCoreCompile
     //      profile in a stereotype (routes to the value)
     //      profile in a tagged value (routes to the tag)
     //      value of an enum (routes to extractEnumValue)
+
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("sourceId.pure");
+    }
 
     @Test
     public void testNavigation1() throws Exception

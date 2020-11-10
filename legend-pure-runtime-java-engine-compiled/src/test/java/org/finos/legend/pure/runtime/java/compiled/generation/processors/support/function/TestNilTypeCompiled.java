@@ -24,15 +24,28 @@ import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getFactoryRegistryOverride());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testNilCastToIntegerReturnValueMany() throws Exception
     {
-        this.compileTestSource("function test::testFn1():Integer[*]\n" +
+        compileTestSource("fromString.pure","function test::testFn1():Integer[*]\n" +
                 "{\n" +
                 "    []\n" +
                 "}\n");
@@ -43,7 +56,7 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
     @Test
     public void testNilCastToIntegerReturnValueZeroOne() throws Exception
     {
-        this.compileTestSource("function test::testFn2():Integer[0..1]\n" +
+        compileTestSource("fromString.pure","function test::testFn2():Integer[0..1]\n" +
                 "{\n" +
                 "    []\n" +
                 "}\n");
@@ -54,7 +67,7 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
     @Test
     public void testNilVariableCastToStringReturnValueMany() throws Exception
     {
-        this.compileTestSource("function test::testFn3():String[*]\n" +
+        compileTestSource("fromString.pure","function test::testFn3():String[*]\n" +
                 "{\n" +
                 "    let x = [];\n" +
                 "    $x;\n" +
@@ -66,7 +79,7 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
     @Test
     public void testNilVariableCastToStringReturnValueZeroOne() throws Exception
     {
-        this.compileTestSource("function test::testFn4():String[0..1]\n" +
+        compileTestSource("fromString.pure","function test::testFn4():String[0..1]\n" +
                 "{\n" +
                 "    let x = [];\n" +
                 "    $x;\n" +
@@ -78,7 +91,7 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
     @Test
     public void testNilAsStringParamMany() throws Exception
     {
-        this.compileTestSource("function test::testHelper1(strings:String[*]):String[1]\n" +
+        compileTestSource("fromString.pure","function test::testHelper1(strings:String[*]):String[1]\n" +
                 "{\n" +
                 "    joinStrings($strings, '')\n" +
                 "}\n" +
@@ -94,7 +107,7 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
     @Test
     public void testNilVariableAsIntegerParamMany() throws Exception
     {
-        this.compileTestSource("function test::testHelper2(nums:Integer[*]):Integer[1]\n" +
+        compileTestSource("fromString.pure","function test::testHelper2(nums:Integer[*]):Integer[1]\n" +
                 "{\n" +
                 "    plus($nums)\n" +
                 "}\n" +
@@ -111,7 +124,7 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
     @Test
     public void testNilAsPairParamZeroOne() throws Exception
     {
-        this.compileTestSource("function test::testHelper3(y:Pair<Integer,Any>[0..1]):Integer[1]\n" +
+        compileTestSource("fromString.pure","function test::testHelper3(y:Pair<Integer,Any>[0..1]):Integer[1]\n" +
                 "{\n" +
                 "    if($y->isEmpty(), |7, |$y->toOne().first)\n" +
                 "}\n" +
@@ -127,7 +140,7 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
     @Test
     public void testNilVariableAsPairParamZeroOne() throws Exception
     {
-        this.compileTestSource("function test::testHelper3(y:Pair<Integer,Any>[0..1]):Integer[1]\n" +
+        compileTestSource("fromString.pure","function test::testHelper3(y:Pair<Integer,Any>[0..1]):Integer[1]\n" +
                 "{\n" +
                 "    if($y->isEmpty(), |7, |$y->toOne().first)\n" +
                 "}\n" +
@@ -144,7 +157,7 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
     @Test
     public void testNilVariableAsParam() throws Exception
     {
-        this.compileTestSource("function test::testHelper1(strings:String[*]):String[1]\n" +
+        compileTestSource("fromString.pure","function test::testHelper1(strings:String[*]):String[1]\n" +
                 "{\n" +
                 "    joinStrings($strings, '')\n" +
                 "}\n" +
@@ -169,7 +182,7 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
     @Test
     public void testNilTypeAsReturnValue() throws Exception
     {
-        this.compileTestSource("function test::testHelper4(strings:String[*]): Nil[0]\n" +
+        compileTestSource("fromString.pure","function test::testHelper4(strings:String[*]): Nil[0]\n" +
                 "{\n" +
                 "   print('', 1);\n" +
                 "}\n" +
@@ -186,7 +199,7 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
     @Test
     public void testNilWithAddInMap() throws Exception
     {
-        compileTestSource("function test::testFn():String[1]\n" +
+        compileTestSource("fromString.pure","function test::testFn():String[1]\n" +
                 "{\n" +
                 "  let dummy = [];\n" +
                 "  ['a', 'b', 'c', 'd']->map(s | add($dummy, $s))->joinStrings(', ');\n" +
@@ -194,14 +207,12 @@ public class TestNilTypeCompiled extends AbstractPureTestWithCoreCompiled
         assertValue("a, b, c, d", this.execute("test::testFn():String[1]"));
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
 
-    @Override
-    protected CoreInstanceFactoryRegistry getFactoryRegistryOverride()
+    protected static CoreInstanceFactoryRegistry getFactoryRegistryOverride()
     {
         return CoreJavaModelFactoryRegistry.REGISTRY;
     }

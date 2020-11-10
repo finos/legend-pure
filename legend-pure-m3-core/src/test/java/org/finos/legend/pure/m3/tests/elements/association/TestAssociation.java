@@ -19,18 +19,27 @@ import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("fromString.pure");
+        runtime.delete("fromString2.pure");
+    }
+
     @Test
     public void testAssociationNotEnoughProperties()
     {
         try
         {
-            compileTestSource("Class Product\n" +
+            compileTestSource("fromString.pure","Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -57,7 +66,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Product\n" +
+            compileTestSource("fromString.pure","Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -86,7 +95,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Product\n" +
+            compileTestSource("fromString.pure","Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -109,7 +118,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Product\n" +
+            compileTestSource("fromString.pure","Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -137,7 +146,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Product\n" +
+            compileTestSource("fromString.pure","Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -162,7 +171,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
 
     @Test
     public void testAssociationWithValidQualifiedPropertyIsProcessedWithoutError() {
-        compileTestSource("Class Product\n" +
+        compileTestSource("fromString.pure","Class Product\n" +
                 "{\n" +
                 "   name : String[1];\n" +
                 "}\n" +
@@ -188,7 +197,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Product\n" +
+            compileTestSource("fromString.pure","Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -228,7 +237,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Product\n" +
+            compileTestSource("fromString.pure","Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -268,7 +277,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Product\n" +
+            compileTestSource("fromString.pure","Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "   orderVersions : OrderVersion[*];\n" +
@@ -313,7 +322,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Product\n" +
+            compileTestSource("fromString.pure","Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "}\n" +
@@ -353,7 +362,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("Class Product\n" +
+            compileTestSource("fromString.pure","Class Product\n" +
                     "{\n" +
                     "   name : String[1];\n" +
                     "   synonymsByName(st:String[1]){$this.synonyms->filter(s | $s.name == $st)->toOne()}: Synonym[1];"+
@@ -398,7 +407,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
         // TODO consider whether we want to allow this case
         try
         {
-            compileTestSource("testSource.pure",
+            compileTestSource("fromString.pure",
                     "Class Class1 {}\n" +
                             "Class Class2 {}\n" +
                             "Association Association12\n" +
@@ -419,7 +428,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("testSource.pure",
+            compileTestSource("fromString.pure",
                     "Class Class1 {}\n" +
                             "Association Association12\n" +
                             "{\n" +
@@ -430,7 +439,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "Property conflict on association Association12: property 'prop' defined more than once with the same target type", "testSource.pure", 2, 1, 2, 13, 6, 1, e);
+            assertPureException(PureCompilationException.class, "Property conflict on association Association12: property 'prop' defined more than once with the same target type", "fromString.pure", 2, 1, 2, 13, 6, 1, e);
         }
     }
 
@@ -439,7 +448,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
     {
         try
         {
-            compileTestSource("testSource.pure",
+            compileTestSource("fromString.pure",
                     "Class Class1\n" +
                             "{\n" +
                             "  prop:Class2[*];\n" +
@@ -454,14 +463,14 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "Property conflict on class Class1: property 'prop' defined more than once", "testSource.pure", 1, 1, 1, 7, 4, 1, e);
+            assertPureException(PureCompilationException.class, "Property conflict on class Class1: property 'prop' defined more than once", "fromString.pure", 1, 1, 1, 7, 4, 1, e);
         }
     }
 
     @Test
     public void testAssociationWithPropertyNameConflictInOtherSource()
     {
-        compileTestSource("testSource1.pure",
+        compileTestSource("fromString.pure",
                 "Class Class1\n" +
                         "{\n" +
                         "  prop:Class2[*];\n" +
@@ -469,7 +478,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
                         "Class Class2 {}\n");
         try
         {
-            compileTestSource("testSource2.pure",
+            compileTestSource("fromString2.pure",
                     "Association Association12\n" +
                             "{\n" +
                             "  prop:Class2[*];\n" +
@@ -479,17 +488,17 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "Property conflict on class Class1: property 'prop' defined more than once", "testSource1.pure", 1, 1, 1, 7, 4, 1, e);
+            assertPureException(PureCompilationException.class, "Property conflict on class Class1: property 'prop' defined more than once", "fromString.pure", 1, 1, 1, 7, 4, 1, e);
         }
     }
 
     @Test
     public void testAssociationWithNonClass()
     {
-        compileTestSource("testSource1.pure", "Class Class1 {}");
+        compileTestSource("fromString.pure", "Class Class1 {}");
         try
         {
-            compileTestSource("testSource2.pure",
+            compileTestSource("fromString2.pure",
                     "Association Association1\n" +
                             "{\n" +
                             "  prop1 : Class1[1];\n" +
@@ -499,12 +508,12 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "Association 'Association1' can only be applied to Classes; 'String' is not a Class", "testSource2.pure", 1, 1, 1, 13, 5, 1, e);
+            assertPureException(PureCompilationException.class, "Association 'Association1' can only be applied to Classes; 'String' is not a Class", "fromString2.pure", 1, 1, 1, 13, 5, 1, e);
         }
 
         try
         {
-            compileTestSource("testSource3.pure",
+            compileTestSource("fromString3.pure",
                     "Association Association2\n" +
                             "{\n" +
                             "  prop1 : Integer[1];\n" +
@@ -514,12 +523,12 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "Association 'Association2' can only be applied to Classes; 'Integer' is not a Class", "testSource3.pure", 1, 1, 1, 13, 5, 1, e);
+            assertPureException(PureCompilationException.class, "Association 'Association2' can only be applied to Classes; 'Integer' is not a Class", "fromString3.pure", 1, 1, 1, 13, 5, 1, e);
         }
 
         try
         {
-            compileTestSource("testSource4.pure",
+            compileTestSource("fromString4.pure",
                     "Association Association3\n" +
                             "{\n" +
                             "  prop1 : Integer[1];\n" +
@@ -529,7 +538,7 @@ public class TestAssociation extends AbstractPureTestWithCoreCompiledPlatform
         }
         catch (Exception e)
         {
-            assertPureException(PureCompilationException.class, "Association 'Association3' can only be applied to Classes; 'Date' is not a Class", "testSource4.pure", 1, 1, 1, 13, 5, 1, e);
+            assertPureException(PureCompilationException.class, "Association 'Association3' can only be applied to Classes; 'Date' is not a Class", "fromString4.pure", 1, 1, 1, 13, 5, 1, e);
         }
     }
 }

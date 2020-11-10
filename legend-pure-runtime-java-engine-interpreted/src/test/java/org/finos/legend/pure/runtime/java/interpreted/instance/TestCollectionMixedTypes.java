@@ -21,15 +21,28 @@ import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestCollectionMixedTypes extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testSimple()
     {
-        compileTestSource("Class Employee{lastName:String[1];}\n" +
+        compileTestSource("fromString.pure","Class Employee{lastName:String[1];}\n" +
                           "function test():GenericType[1]\n" +
                           "{\n" +
                           "    let a = [^Employee(lastName='William'),'a string',123,false];\n" +
@@ -43,7 +56,7 @@ public class TestCollectionMixedTypes extends AbstractPureTestWithCoreCompiled
     @Test
     public void testWithTypeArguments()
     {
-        compileTestSource("Class MyType<T>{}\n" +
+        compileTestSource("fromString.pure","Class MyType<T>{}\n" +
                           "Class A{}\n" +
                           "Class B extends A{}\n" +
                           "Class C{}\n" +
@@ -62,7 +75,7 @@ public class TestCollectionMixedTypes extends AbstractPureTestWithCoreCompiled
     @Test
     public void testWithTypeMultiplicities()
     {
-        compileTestSource("Class MyType<|m>{}\n" +
+        compileTestSource("fromString.pure","Class MyType<|m>{}\n" +
                 "function test():GenericType[1]\n" +
                 "{\n" +
                 "    let argpa = [^MyType<|1..2>(), ^MyType<|3..5>()];\n" +
@@ -76,7 +89,7 @@ public class TestCollectionMixedTypes extends AbstractPureTestWithCoreCompiled
     @Test
     public void testWithTypeMultiplicitiesWithMany()
     {
-        compileTestSource("Class MyType<|m>{}\n" +
+        compileTestSource("fromString.pure","Class MyType<|m>{}\n" +
                           "function test():GenericType[1]\n" +
                           "{\n" +
                           "    let argpa = [^MyType<|1..2>(), ^MyType<|3..5>(), ^MyType<|*>()];\n" +
@@ -87,8 +100,7 @@ public class TestCollectionMixedTypes extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals("MyType<|*>", GenericType.print(genericType, this.processorSupport));
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

@@ -20,14 +20,39 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.incremental._class.TestPureRuntimeClass_AsFunctionReturn;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestPureRuntimeClass_AsFunctionReturnCompiled extends TestPureRuntimeClass_AsFunctionReturn
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getExtra());
+    }
+
+    @After
+    public void clearRuntime() {
+        runtime.delete("other.pure");
+        runtime.delete("userId.pure");
+        runtime.delete("sourceId.pure");
+        runtime.delete("sourceId2.pure");
+        runtime.delete("/test/testFileB.pure");
+        runtime.delete("/test/testFileA.pure");
+
+        try
+        {
+            runtime.compile();
+        } catch (PureCompilationException e) {
+            setUp();
+        }
+    }
+
     @Test
     @Ignore
     public void testPureRuntimeClassAsQualifiedPropertyReturn()
@@ -35,8 +60,7 @@ public class TestPureRuntimeClass_AsFunctionReturnCompiled extends TestPureRunti
         testPureRuntimeClassAsQualifiedPropertyReturn();
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
@@ -48,8 +72,7 @@ public class TestPureRuntimeClass_AsFunctionReturnCompiled extends TestPureRunti
                 new CompiledClassloaderStateVerifier());
     }
 
-    @Override
-    public Pair<String, String> getExtra()
+    public static Pair<String, String> getExtra()
     {
         return null;
     }

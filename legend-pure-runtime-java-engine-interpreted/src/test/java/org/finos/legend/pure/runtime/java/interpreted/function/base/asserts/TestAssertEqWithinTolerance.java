@@ -17,10 +17,17 @@ package org.finos.legend.pure.runtime.java.interpreted.function.base.asserts;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestAssertEqWithinTolerance extends PureExpressionTest
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
     @Test
     public void testFailure()
     {
@@ -52,8 +59,7 @@ public class TestAssertEqWithinTolerance extends PureExpressionTest
         assertExpressionRaisesPureException("\nexpected: 2.718281828459045\nactual:   2.7182818284590455", 3, 9, "assertEqWithinTolerance(2.718281828459045, 2.7182818284590455, 0.0000000000000001)");
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

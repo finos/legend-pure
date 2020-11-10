@@ -22,7 +22,7 @@ public abstract class AbstractTestNewInferenceAtRuntime extends AbstractPureTest
     @Test
     public void testSimple() throws Exception
     {
-        compileTestSource("Class Structure<Z,K>" +
+        compileTestSource("fromString.pure","Class Structure<Z,K>" +
                           "{" +
                           "     a:Z[1];" +
                           "     b:K[1];" +
@@ -44,7 +44,7 @@ public abstract class AbstractTestNewInferenceAtRuntime extends AbstractPureTest
     @Test
     public void deeper() throws Exception
     {
-        compileTestSource("Class Structure<Z,K>" +
+        compileTestSource("fromString.pure","Class Structure<Z,K>" +
                           "{" +
                           "     a:Z[1];" +
                           "     b:K[1];" +
@@ -77,7 +77,7 @@ public abstract class AbstractTestNewInferenceAtRuntime extends AbstractPureTest
     @Test
     public void deeperEvenMore() throws Exception
     {
-        compileTestSource("Class Structure<Z,K>" +
+        compileTestSource("fromString.pure","Class Structure<Z,K>" +
                           "{" +
                           "     a:Z[1];" +
                           "     b:K[1];" +
@@ -115,7 +115,7 @@ public abstract class AbstractTestNewInferenceAtRuntime extends AbstractPureTest
     @Test
     public void deeperEvenMoreUsingClassFunction() throws Exception
     {
-        compileTestSource("Class M<U,V>" +
+        compileTestSource("fromString.pure","Class M<U,V>" +
                           "{" +
                           "  vals : Structure<U,V>[*];" +
                           "  put(t:U[1], v:V[1]){^$this(vals += structure($t,$v))}:M<U,V>[1];" +
@@ -148,7 +148,7 @@ public abstract class AbstractTestNewInferenceAtRuntime extends AbstractPureTest
     @Test
     public void deeperEvenMoreUsingClassFunctionInFunc() throws Exception
     {
-        compileTestSource("Class M<U,V>" +
+        compileTestSource("fromString.pure","Class M<U,V>" +
                           "{" +
                           "  vals : Structure<U,V>[*];" +
                           "  put(t:U[1], v:V[1]){let a = 'String';^$this(vals += structure($t,$v));}:M<U,V>[1];" +
@@ -187,7 +187,7 @@ public abstract class AbstractTestNewInferenceAtRuntime extends AbstractPureTest
     @Test
     public void usingLet() throws Exception
     {
-        compileTestSource("Class M<U,V>" +
+        compileTestSource("fromString.pure","Class M<U,V>" +
                           "{" +
                           //"  put(t:U[1], v:V[1]){$this}:M<U,V>[1];" +
                           "}" +
@@ -213,7 +213,7 @@ public abstract class AbstractTestNewInferenceAtRuntime extends AbstractPureTest
     @Test
     public void allWithTypeInference() throws Exception
     {
-        compileTestSource("function test():Any[*]\n" +
+        compileTestSource("fromString.pure","function test():Any[*]\n" +
                           "{" +
                           "   meta::pure::metamodel::function::ConcreteFunctionDefinition.all()->map(f|pair($f.name->toOne(),$f))" +
                           "}");

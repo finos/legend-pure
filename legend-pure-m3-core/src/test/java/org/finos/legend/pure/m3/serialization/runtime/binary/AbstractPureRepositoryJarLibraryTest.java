@@ -39,9 +39,7 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.Writer;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -49,6 +47,11 @@ import java.io.IOException;
 public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureTestWithCoreCompiledPlatform
 {
     protected PureRepositoryJarLibrary library;
+
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
 
     @Before
     public void setUpLibrary() throws IOException

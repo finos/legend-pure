@@ -18,10 +18,27 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimePath extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("sourceId.pure");
+        runtime.delete("sourceIdA.pure");
+        runtime.delete("sourceIdB.pure");
+        runtime.delete("function.pure");
+        runtime.delete("userId.pure");
+    }
+
     @Test
     public void testPureRuntimeProperty()
     {

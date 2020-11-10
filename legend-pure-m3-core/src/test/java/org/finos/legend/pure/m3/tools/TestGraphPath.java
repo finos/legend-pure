@@ -19,15 +19,13 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 public class TestGraphPath extends AbstractPureTestWithCoreCompiledPlatform
 {
-    @Before
-    public void testModel()
-    {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
         compileTestSource("/test/testModel.pure",
                 "import test::domain::*;\n" +
                         "Class test::domain::ClassA\n" +

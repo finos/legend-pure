@@ -21,7 +21,9 @@ import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeDiagram extends AbstractPureTestWithCoreCompiled
@@ -81,6 +83,18 @@ public class TestPureRuntimeDiagram extends AbstractPureTestWithCoreCompiled
             "                           target=A)\n" +
             "}\n"
     );
+
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete(TEST_DIAGRAM_SOURCE_ID);
+        runtime.delete(TEST_MODEL_SOURCE_ID);
+    }
 
     @Test
     public void testPureRuntimeDiagram_UnloadModel() throws Exception

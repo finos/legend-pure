@@ -21,11 +21,24 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestIfCompiled extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testUnAssignedIfInFuncExpression()
     {
@@ -41,7 +54,7 @@ public class TestIfCompiled extends AbstractPureTestWithCoreCompiled
                     "   let a = 'be';\n" +
                     "   if(true, | let b = 'true', | 'false');\n" +
                     "}";
-            this.compileTestSource(func);
+            this.compileTestSource("fromString.pure",func);
         }
         catch (Exception e)
         {
@@ -54,7 +67,7 @@ public class TestIfCompiled extends AbstractPureTestWithCoreCompiled
     {
         try
         {
-            compileTestSource("Class A\n" +
+            compileTestSource("fromString.pure","Class A\n" +
                     "{\n" +
                     "  id : Integer[1];\n" +
                     "}\n" +
@@ -77,7 +90,7 @@ public class TestIfCompiled extends AbstractPureTestWithCoreCompiled
     @Test
     public void testIfWithFloatVersusInteger()
     {
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString.pure","import test::*;\n" +
                 "function test::testFn(test:Boolean[1]):Number[1]\n" +
                 "{\n" +
                 "    let result = if($test, |1.0, |3);\n" +
@@ -119,8 +132,7 @@ public class TestIfCompiled extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals(3L, falseValue);
     }
 
-    @Override
-    public FunctionExecution getFunctionExecution()
+    public static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

@@ -17,10 +17,23 @@ package org.finos.legend.pure.m3.tests.incremental._class;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeClass_InCast extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("sourceId.pure");
+        runtime.delete("userId.pure");
+    }
+
     @Test
     public void testPureRuntimeClassUsedInCast() throws Exception
     {

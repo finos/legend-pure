@@ -21,15 +21,28 @@ import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestCallWithParameter extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testCallWithString()
     {
-        compileTestSource("function testWithParam(val:String[1]):Nil[0]\n" +
+        compileTestSource("fromString.pure","function testWithParam(val:String[1]):Nil[0]\n" +
                           "{\n" +
                           "    print($val,1);\n" +
                           "}\n");
@@ -41,7 +54,7 @@ public class TestCallWithParameter extends AbstractPureTestWithCoreCompiled
     @Test
     public void testCallWithInteger()
     {
-        compileTestSource("function testWithParam(val:Integer[1]):Nil[0]\n" +
+        compileTestSource("fromString.pure","function testWithParam(val:Integer[1]):Nil[0]\n" +
                           "{\n" +
                           "    print($val,1);\n" +
                           "}\n");
@@ -53,7 +66,7 @@ public class TestCallWithParameter extends AbstractPureTestWithCoreCompiled
     @Test
     public void testCallWithFloat()
     {
-        compileTestSource("function testWithParam(val:Float[1]):Nil[0]\n" +
+        compileTestSource("fromString.pure","function testWithParam(val:Float[1]):Nil[0]\n" +
                           "{\n" +
                           "    print($val->toString(),1);\n" +
                           "}\n");
@@ -66,7 +79,7 @@ public class TestCallWithParameter extends AbstractPureTestWithCoreCompiled
     @Test
     public void testCallWithBoolean()
     {
-        compileTestSource("function testWithParam(val:Boolean[1]):Nil[0]\n" +
+        compileTestSource("fromString.pure","function testWithParam(val:Boolean[1]):Nil[0]\n" +
                           "{\n" +
                           "    print($val,1);\n" +
                           "}\n");
@@ -78,7 +91,7 @@ public class TestCallWithParameter extends AbstractPureTestWithCoreCompiled
     @Test
     public void testCallWithDate()
     {
-        compileTestSource("function testWithParam(val:Date[1]):Nil[0]\n" +
+        compileTestSource("fromString.pure","function testWithParam(val:Date[1]):Nil[0]\n" +
                           "{\n" +
                           "    print($val->toString(),1);\n" +
                           "}\n");
@@ -89,7 +102,7 @@ public class TestCallWithParameter extends AbstractPureTestWithCoreCompiled
     @Test
     public void testCallWithLatestDate()
     {
-        compileTestSource("Class Order{" +
+        compileTestSource("fromString.pure","Class Order{" +
                           "    p:Product[0..1];\n" +
                           "    latestProduct(){\n" +
                           "                     $this.p(%latest);\n" +
@@ -101,7 +114,7 @@ public class TestCallWithParameter extends AbstractPureTestWithCoreCompiled
     @Test
     public void testCallWithEnumParameter()
     {
-        compileTestSource("Enum HELLO\n" +
+        compileTestSource("fromString.pure","Enum HELLO\n" +
                           "{\n" +
                           "     DUDE\n" +
                           "}\n" +
@@ -120,7 +133,7 @@ public class TestCallWithParameter extends AbstractPureTestWithCoreCompiled
     @Test
     public void testCallWithClassParameter()
     {
-        compileTestSource("Class A\n" +
+        compileTestSource("fromString.pure","Class A\n" +
                                   "{\n" +
                                   "     name:String[1];\n" +
                                   "}\n" +
@@ -133,8 +146,7 @@ public class TestCallWithParameter extends AbstractPureTestWithCoreCompiled
         Assert.assertEquals("'A'", this.functionExecution.getConsole().getLine(0));
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

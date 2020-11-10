@@ -22,7 +22,7 @@ public abstract class AbstractTestParseFloat extends AbstractPureTestWithCoreCom
     @Test
     public void testBasicParse()
     {
-            compileTestSource(
+            compileTestSource("fromString.pure",
                     "function test():Boolean[1]\n" +
                             "{\n" +
                             "   assert(1.5 == '1.5'->parseFloat(), |'');\n" +
@@ -33,7 +33,7 @@ public abstract class AbstractTestParseFloat extends AbstractPureTestWithCoreCom
     @Test
     public void testEvalParse()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(1.5 == parseFloat_String_1__Float_1_->eval('1.5'), |'');\n" +

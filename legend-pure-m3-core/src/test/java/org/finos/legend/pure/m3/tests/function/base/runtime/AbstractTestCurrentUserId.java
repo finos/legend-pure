@@ -19,8 +19,11 @@ import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+//This Abstract class is never used
+@Ignore
 public abstract class AbstractTestCurrentUserId extends AbstractPureTestWithCoreCompiled
 {
 

@@ -17,14 +17,29 @@ package org.finos.legend.pure.runtime.java.compiled;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestMultiplicityArgument extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+        runtime.delete("fromString2.pure");
+        runtime.delete("fromString3.pure");
+    }
+
     @Test
     public void testMulti()
     {
-        compileTestSource("Class JSONResult<P|m> extends ServiceResult<P|m>\n" +
+        compileTestSource("fromString.pure","Class JSONResult<P|m> extends ServiceResult<P|m>\n" +
                           "{" +
                           " \n" +
                           "}" +
@@ -50,19 +65,19 @@ public class TestMultiplicityArgument extends AbstractPureTestWithCoreCompiled
         String source = "function test::foo<T|m>(x:T[m], y:String[1]):T[m]{$x}\n" +
                         "function test::bar(s:String[1]):String[1] { $s + 'bar' }\n" +
                         "function test::testFn():Any[*] {test::foo('one string', 'two string')->test::bar()}\n";
-        this.compileTestSource(source);
+        this.compileTestSource("fromString.pure",source);
         this.compileAndExecute("test::testFn():Any[*]");
     }
 
     @Test
     public void testGenericTypeWithMultiplicityArgument()
     {
-        compileTestSource("Class test::TestClass<|m>\n" +
+        compileTestSource("fromString.pure","Class test::TestClass<|m>\n" +
                 "{\n" +
                 "  names : String[m];\n" +
                 "}\n");
 
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString3.pure","import test::*;\n" +
                 "function test::testClass1():TestClass<|1>[1]\n" +
                 "{\n" +
                 "  ^TestClass<|1>(names='one name');\n" +
@@ -75,7 +90,7 @@ public class TestMultiplicityArgument extends AbstractPureTestWithCoreCompiled
                 "  $name;" +
                 "}\n");
 
-        compileTestSource("import test::*;\n" +
+        compileTestSource("fromString2.pure","import test::*;\n" +
                 "function test::testClass0_1():TestClass<|0..1>[1]\n" +
                 "{\n" +
                 "  ^TestClass<|0..1>(names=[]);\n" +
@@ -89,8 +104,7 @@ public class TestMultiplicityArgument extends AbstractPureTestWithCoreCompiled
                 "}\n");
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

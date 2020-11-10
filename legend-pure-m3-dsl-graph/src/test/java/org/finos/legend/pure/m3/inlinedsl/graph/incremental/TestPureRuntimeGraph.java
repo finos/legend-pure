@@ -20,10 +20,27 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.RuntimeVerifier.FunctionExecutionStateVerifier;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeGraph extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("sourceId.pure");
+        runtime.delete("source1.pure");
+        runtime.delete("source2.pure");
+        runtime.delete("userId.pure");
+        runtime.delete("enumSourceId.pure");
+    }
+
     @Test
     public void testPureRuntimeGraphRemoveClass()
     {

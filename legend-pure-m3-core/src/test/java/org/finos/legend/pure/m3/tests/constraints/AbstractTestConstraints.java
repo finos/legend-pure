@@ -18,6 +18,7 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,7 +28,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testFunction()
     {
-        this.compileTestSource("function myFunction(s:String[1], k:Integer[1]):String[1]" +
+       compileTestSource("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]" +
                 "[" +
                 "   $s->startsWith('A')," +
                 "   $return->startsWith('A')," +
@@ -48,7 +49,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("function myFunction(s:String[1], k:Integer[1]):String[1]" +
+           compileTestSource("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]" +
                     "[" +
                     "   $s->startsWith('A')," +
                     "   $return->startsWith('A')," +
@@ -75,7 +76,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("function myFunction(s:String[1], k:Integer[1]):String[1]" +
+           compileTestSource("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]" +
                     "[" +
                     "   pre1:$s->startsWith('A')," +
                     "   pre2:$k > 2" +
@@ -101,7 +102,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("function myFunction(s:String[1], k:Integer[1]):String[1]" +
+           compileTestSource("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]" +
                     "[" +
                     "   $s->startsWith('A')," +
                     "   $return->startsWith('A')," + //this is a postconstraint
@@ -129,13 +130,15 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Employee" +
+            runtime.modify("employee.pure", "Class Employee" +
                     "[" +
                     "   $this.lastName->startsWith('A')" +
                     "]" +
                     "{" +
                     "   lastName:String[1];" +
-                    "}\n" +
+                    "}\n");
+            runtime.compile();
+           compileTestSource("fromString.pure",
                     "function testNew():Any[*]\n" +
                     "{\n" +
                     "   let t = ^Employee(lastName = 'CDE')" +
@@ -145,7 +148,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         }
         catch (Exception e)
         {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 4, 12, e);
+            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 3, 12, e);
         }
     }
 
@@ -154,37 +157,39 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Employee\n" +
-                    "[\n" +
-                    "  one: $this.lastName->startsWith('A'),\n" +
-                    "  one: $this.lastName->endsWith('A')\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   lastName:String[1];\n" +
-                    "}\n" +
+           compileTestSource("fromString.pure", "Class EmployeeWithError\n" +
+                           "[\n" +
+                           "  one: $this.lastName->startsWith('A'),\n" +
+                           "  one: $this.lastName->endsWith('A')\n" +
+                           "]\n" +
+                           "{\n" +
+                           "   lastName:String[1];\n" +
+                           "}\n" +
                     "function testNew():Any[*]\n" +
                     "{\n" +
-                    "   let t = ^Employee(lastName = 'CDE')" +
+                    "   let t = ^EmployeeWithError(lastName = 'CDE')" +
                     "}\n");
             this.execute("testNew():Any[*]");
             Assert.fail();
         }
         catch (Exception e)
         {
-            this.assertOriginatingPureException(PureCompilationException.class, "Constraints for Employee must be unique, [one] is duplicated", 4, 3, e);
+            this.assertOriginatingPureException(PureCompilationException.class, "Constraints for EmployeeWithError must be unique, [one] is duplicated", 4, 3, e);
         }
     }
 
     @Test
     public void testNewOk()
     {
-        this.compileTestSource("Class Employee" +
+        runtime.modify("employee.pure", "Class Employee" +
                 "[" +
                 "   rule1 : $this.lastName->startsWith('A')" +
                 "]" +
                 "{" +
                 "   lastName:String[1];" +
-                "}\n" +
+                "}\n");
+        runtime.compile();
+       compileTestSource("fromString.pure",
                 "function testNew():Any[*]\n" +
                 "{\n" +
                 "   let t = ^Employee(lastName = 'ABC')" +
@@ -195,7 +200,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testNewWarn()
     {
-        this.compileTestSource("Class Employee" +
+        runtime.modify("employee.pure", "Class Employee" +
                 "[" +
                 "   warn($this.lastName->startsWith('A'), 'ok')" +
                 "]" +
@@ -205,7 +210,9 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "function meta::pure::functions::constraints::warn(b:Boolean[1], message:String[1]):Boolean[1]\n" +
                 "{\n" +
                 "    if($b,|$b,|print($message, 1);true;)\n" +
-                "}" +
+                "}");
+        runtime.compile();
+       compileTestSource("fromString.pure",
                 "function testNew():Any[*]\n" +
                 "{\n" +
                 "   let t = ^Employee(lastName = 'CDE')" +
@@ -216,21 +223,23 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testClassWithMoreThanOneConstraint()
     {
-        this.compileTestSource("Class Employee" +
+        runtime.modify("employee.pure", "Class Employee" +
                 "[" +
                 "   warn($this.lastName->startsWith('A'), 'ok')," +
                 "   $this.lastName->endsWith('E')" +
                 "]" +
                 "{" +
                 "   lastName:String[1];" +
-                "}\n" +
-                "function testNew():Any[*]\n" +
-                "{\n" +
-                "   let t = ^Employee(lastName = 'CDE')" +
-                "}" +
+                "}\n"+
                 "function meta::pure::functions::constraints::warn(b:Boolean[1], message:String[1]):Boolean[1]\n" +
                 "{\n" +
                 "    if($b,|$b,|print($message, 1);true;)\n" +
+                "}");
+        runtime.compile();
+       compileTestSource("fromString.pure",
+                "function testNew():Any[*]\n" +
+                "{\n" +
+                "   let t = ^Employee(lastName = 'CDE')" +
                 "}" +
                 "\n");
         this.execute("testNew():Any[*]");
@@ -239,10 +248,12 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testClassWithFilterConstraint()
     {
-        this.compileTestSource("Class Employee\n" +
+        runtime.modify("employee.pure", "Class Employee\n" +
                 "{\n" +
                 "  id:Integer[1];\n" +
-                "}\n" +
+                "}\n");
+        runtime.compile();
+       compileTestSource("fromString.pure",
                 "Class Firm\n" +
                 "[\n" +
                 "   $this.employees->filter(e | ($e.id < $this.minId) || ($e.id > $this.maxId))->isEmpty()\n" +
@@ -268,17 +279,19 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         }
         catch (Exception e)
         {
-            this.assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Firm", 21, 4, e);
+            this.assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Firm", 17, 4, e);
         }
     }
 
     @Test
     public void testClassWithMapConstraint()
     {
-        this.compileTestSource("Class Employee\n" +
+        runtime.modify("employee.pure", "Class Employee\n" +
                 "{\n" +
                 "  id:Integer[1];\n" +
-                "}\n" +
+                "}\n");
+        runtime.compile();
+       compileTestSource("fromString.pure",
                 "Class Firm\n" +
                 "[\n" +
                 "   $this.employees->removeDuplicates(e | $e.id, [])->size() == $this.employees->size()\n" +
@@ -302,7 +315,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         }
         catch (Exception e)
         {
-            this.assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Firm", 19, 4, e);
+            this.assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Firm", 15, 4, e);
         }
     }
 
@@ -311,13 +324,15 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Employee" +
+            runtime.modify("employee.pure", "Class Employee" +
                     "[" +
                     "   $this.lastName->startsWith('A')" +
                     "]" +
                     "{" +
                     "   lastName:String[1];" +
-                    "}\n" +
+                    "}\n");
+            runtime.compile();
+           compileTestSource("fromString.pure",
                     "function testNew():Any[*]\n" +
                     "{\n" +
                     "   let t = ^Employee(lastName = 'ABC');\n" +
@@ -329,7 +344,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         catch (Exception e)
         {
             //e.printStackTrace();
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 5, 4, e);
+            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 4, 4, e);
         }
     }
 
@@ -339,13 +354,15 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Employee" +
+            runtime.modify("employee.pure", "Class Employee" +
                     "[" +
                     "   $this.lastName->startsWith('A')" +
                     "]" +
                     "{" +
                     "   lastName:String[1];" +
-                    "}\n" +
+                    "}\n");
+            runtime.compile();
+           compileTestSource("fromString.pure",
                     "Class Manager extends Employee\n" +
                     "{\n" +
                     "  manages:Employee[*];\n" +
@@ -358,7 +375,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
             Assert.fail("This should fail constraint validation");
         } catch (Exception e)
         {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 8, 12, e);
+            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 7, 12, e);
         }
     }
 
@@ -367,13 +384,15 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Employee" +
+            runtime.modify("employee.pure", "Class Employee" +
                     "[" +
                     "   $this.lastName->startsWith('A')" +
                     "]" +
                     "{" +
                     "   lastName:String[1];" +
-                    "}\n" +
+                    "}\n");
+            runtime.compile();
+           compileTestSource("fromString.pure",
                     "Class Manager extends Employee\n" +
                     "[" +
                     "   $this.manages->size() > 1" +
@@ -389,7 +408,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
             Assert.fail("This should fail constraint validation");
         } catch (Exception e)
         {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 8, 12, e);
+            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 7, 12, e);
         }
     }
 
@@ -398,13 +417,15 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Employee" +
+            runtime.modify("employee.pure", "Class Employee" +
                     "[" +
                     "    $this.lastName->toOne()->length() < 10" +
                     "]" +
                     "{" +
                     "   lastName:String[0..1];" +
-                    "}\n" +
+                    "}\n");
+            runtime.compile();
+           compileTestSource("fromString.pure",
                     "function testNew():Any[*]\n" +
                     "{\n" +
                     "   let t = ^Employee(lastName = '1234567891011121213454545')" +
@@ -415,21 +436,22 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         catch (Exception e)
         {
             //e.printStackTrace();
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 4, 12, e);
+            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 3, 12, e);
         }
     }
 
     @Test
     public void tesIdInConstraint()
     {
-
-        this.compileTestSource("Class Employee" +
+        runtime.modify("employee.pure", "Class Employee" +
                 "[" +
                 "   rule1 : $this.lastName->toOne()->length() < 10" +
                 "]" +
                 "{" +
                 "   lastName:String[0..1];" +
-                "}\n" +
+                "}\n");
+        runtime.compile();
+       compileTestSource("fromString.pure",
                 "function testNew():Any[*]\n" +
                 "{\n" +
                 "   let t = ^Employee(lastName = '123456789')" +
@@ -443,13 +465,15 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Employee" +
+            runtime.modify("employee.pure", "Class Employee" +
                     "[" +
                     "   rule1 : $this.lastName->toOne()->length() < 10" +
                     "]" +
                     "{" +
                     "   lastName:String[0..1];" +
-                    "}\n" +
+                    "}\n");
+            runtime.compile();
+           compileTestSource("fromString.pure",
                     "function testNew():Any[*]\n" +
                     "{\n" +
                     "   let t = ^Employee(lastName = '1234567893536536536')" +
@@ -460,7 +484,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         catch (Exception e)
         {
             //e.printStackTrace();
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 4, 12, e);
+            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 3, 12, e);
         }
 
     }
@@ -470,7 +494,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Employee" +
+           compileTestSource("fromString.pure","Class Employee" +
                     "[" +
                     "  : $this.lastName->toOne()->length() < 10" +
                     "]" +
@@ -496,25 +520,25 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Employee" +
-                    "[" +
-                    "   rule1 : $this.lastName->toOne()->length() < 10" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[0..1];" +
-                    "}\n" +
+           compileTestSource("fromString.pure", "Class EmployeeWithError" +
+                           "[" +
+                           "   rule1 : $this.lastName->toOne()->length() < 10" +
+                           "]" +
+                           "{" +
+                           "   lastName:String[0..1];" +
+                           "}\n" +
                     "function testNew():Any[*] {\n" +
-                    "  let r = dynamicNew(Employee,\n" +
+                    "  let r = dynamicNew(EmployeeWithError,\n" +
                     "                   [\n" +
                     "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
-                    "                   ])->cast(@Employee);\n" +
+                    "                   ])->cast(@EmployeeWithError);\n" +
                     "}\n");
             this.execute("testNew():Any[*]");
             Assert.fail();
         }
         catch (Exception e)
         {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 3, 11, e);
+            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class EmployeeWithError", 3, 11, e);
         }
 
     }
@@ -524,13 +548,15 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Employee" +
+            runtime.modify("employee.pure", "Class Employee" +
                     "[" +
                     "   rule1 : $this.lastName->toOne()->length() < 10" +
                     "]" +
                     "{" +
                     "   lastName:String[0..1];" +
-                    "}\n" +
+                    "}\n");
+            runtime.compile();
+           compileTestSource("fromString.pure",
                     "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
                     "{\n" +
                     "  [];\n" +
@@ -555,7 +581,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         }
         catch (Exception e)
         {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 12, 11, e);
+            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 11, 11, e);
         }
 
     }
@@ -564,13 +590,15 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Employee" +
+            runtime.modify("employee.pure", "Class Employee" +
                     "[" +
                     "   rule1 : $this.lastName->toOne()->length() < 10" +
                     "]" +
                     "{" +
                     "   lastName:String[0..1];" +
-                    "}\n" +
+                    "}\n");
+            runtime.compile();
+           compileTestSource("fromString.pure",
                     "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
                     "{\n" +
                     "  [];\n" +
@@ -595,20 +623,21 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         }
         catch (Exception e)
         {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 12, 11, e);
+            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 11, 11, e);
         }
 
     }
     @Test
     public void testPureRuntimeClassConstraintFunctionEvaluate() throws Exception
     {
-        this.compileTestSource("Class Employee" +
+        runtime.modify("employee.pure", "Class Employee" +
                 "[" +
                 "   $this.lastName->startsWith('A')" +
                 "]" +
                 "{" +
                 "   lastName:String[1];" +
-                "}\n" +
+                "}\n");
+       compileTestSource("fromString.pure",
                 "function testNew():Any[*]\n" +
                 "{\n" +
                 "   let t = ^Employee(lastName = 'AAAAAA');" +
@@ -622,7 +651,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintGrammar()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -646,7 +675,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("function myFunction(s:String[1], k:Integer[1]):String[1]\n" +
+           compileTestSource("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -666,13 +695,18 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
         catch (Exception e)
         {
             this.assertOriginatingPureException(PureParserException.class, "Complex constraint specifications are supported only for class definitions", 3, 4, e);
+            runtime.modify("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]\n" +
+                    "{" +
+                    "   $s+$k->toString();" +
+                    "}\n");
+            runtime.compile();
         }
     }
 
     @Test
     public void testExtendedConstraintGrammarOptionalOwner()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -692,7 +726,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintGrammarOptionalLevelAndMessage()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -714,7 +748,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -740,7 +774,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -768,7 +802,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -796,7 +830,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -824,7 +858,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -853,7 +887,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -880,7 +914,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintGrammarMultipleConstraints()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -911,7 +945,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintGrammarMultipleConstraintTypes()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -936,7 +970,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintGrammarMultipleConstraintTypesAlternating()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -968,7 +1002,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -1005,7 +1039,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -1036,7 +1070,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintExecutionPassesWithOwner()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1076,7 +1110,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -1121,7 +1155,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -1164,7 +1198,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintExecutionPassesWithGlobalOwner()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1201,7 +1235,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintExecutionCopyPassesWithOwner()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1242,7 +1276,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -1289,7 +1323,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -1333,7 +1367,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintExecutionDynamicNewPassesWithOwner()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1378,7 +1412,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -1428,7 +1462,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -1478,7 +1512,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     {
         try
         {
-            this.compileTestSource("Class Position\n" +
+           compileTestSource("fromString.pure","Class Position\n" +
                     "[\n" +
                     "   c1\n" +
                     "   (\n" +
@@ -1527,7 +1561,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintExecutionCanEvaluateConstraint()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1569,7 +1603,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintExecutionCanEvaluateConstraintMessage()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1614,7 +1648,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintExecutionCanGetOwnerExtIdEnforcement()
     {
-        this.compileTestSource("Class Position\n" +
+       compileTestSource("fromString.pure","Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +

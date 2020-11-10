@@ -32,20 +32,11 @@ public abstract class AbstractTestCompileValueSpecification extends AbstractPure
             "   $vs.result->toOne()->reactivate(^Map<String, List<Any>>())->cast(@Function<{->Any[*]}>)->toOne()->eval();\n" +
             "}\n";
 
-    @Before
-    public void loadAnySystemFile()
-    {
-        //Load any system file to make sure the system is set up in a "normal" state
-        //this initializes the global classloader
-        this.runtime.createInMemorySource("sourceId.pure", "function test():Boolean[1]{true;}");
-        this.runtime.compile();
-    }
-
 
     @Test
     public void testEvalSingle()
     {
-        compileTestSource(
+        compileTestSource("testSource.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "let result = compileValueSpecification_String_m__CompilationResult_m_->eval('123');" +
@@ -58,7 +49,7 @@ public abstract class AbstractTestCompileValueSpecification extends AbstractPure
     @Test
     public void testEvalList()
     {
-        compileTestSource(
+        compileTestSource("testSource.pure",
                 "function test():Any[*]\n" +
                         "{\n" +
                         "let result = compileValueSpecification_String_m__CompilationResult_m_->eval(['123', '456']);" +

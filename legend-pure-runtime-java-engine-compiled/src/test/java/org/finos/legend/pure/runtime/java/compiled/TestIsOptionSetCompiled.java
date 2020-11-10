@@ -17,11 +17,20 @@ package org.finos.legend.pure.runtime.java.compiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.runtime.AbstractTestIsOptionSet;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 
 public class TestIsOptionSetCompiled extends AbstractTestIsOptionSet
 {
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getOptions());
+    }
+    @After
+    public void clearRuntime() {
+        runtime.delete("fromString.pure");
+    }
+     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

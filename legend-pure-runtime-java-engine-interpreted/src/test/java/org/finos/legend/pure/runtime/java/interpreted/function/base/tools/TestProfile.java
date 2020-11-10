@@ -17,11 +17,18 @@ package org.finos.legend.pure.runtime.java.interpreted.function.base.tools;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestProfile extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution());
+    }
+
     @Test
     public void testPathToElementProfile()
     {
@@ -86,8 +93,7 @@ public class TestProfile extends AbstractPureTestWithCoreCompiled
                 "                [>1] C instance Package", this.functionExecution.getConsole().getLine(1));
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

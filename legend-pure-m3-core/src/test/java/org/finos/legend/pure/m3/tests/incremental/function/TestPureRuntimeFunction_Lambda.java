@@ -19,13 +19,27 @@ import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.regex.Pattern;
 
 public class TestPureRuntimeFunction_Lambda extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
+    @After
+    public void cleanRuntime() {
+        runtime.delete("other.pure");
+        runtime.delete("userId.pure");
+        runtime.delete("sourceId.pure");
+    }
+
     @Test
     public void testPureRuntimeFunctionLambdaCollection() throws Exception
     {

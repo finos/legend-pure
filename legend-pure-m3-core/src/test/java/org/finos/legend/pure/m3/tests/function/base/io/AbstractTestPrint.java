@@ -23,7 +23,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrint()
     {
-        compileTestSource("function testPrint():Nil[0]\n" +
+        compileTestSource("fromString.pure","function testPrint():Nil[0]\n" +
                 "{\n" +
                 "    print('Hello World', 1);\n" +
                 "}\n");
@@ -34,7 +34,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testArrowWithAFunctionWithNoParameters()
     {
-        compileTestSource("function testArrowWithFunctionNoParameters():Nil[0]\n" +
+        compileTestSource("fromString.pure","function testArrowWithFunctionNoParameters():Nil[0]\n" +
                 "{\n" +
                 "    'a'->print(1);\n" +
                 "}\n");
@@ -45,7 +45,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrintInteger()
     {
-        compileTestSource("function testPrintInteger():Nil[0]\n" +
+        compileTestSource("fromString.pure","function testPrintInteger():Nil[0]\n" +
                 "{\n" +
                 "    print(123, 1);\n" +
                 "}\n");
@@ -56,7 +56,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrintFloat()
     {
-        compileTestSource("function testPrintFloat():Nil[0]\n" +
+        compileTestSource("fromString.pure","function testPrintFloat():Nil[0]\n" +
                 "{\n" +
                 "    print(123.456, 1);\n" +
                 "}\n");
@@ -67,7 +67,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrintDate()
     {
-        compileTestSource("function testPrintDate():Nil[0]\n" +
+        compileTestSource("fromString.pure","function testPrintDate():Nil[0]\n" +
                 "{\n" +
                 "    print(%2016-07-08, 1);\n" +
                 "}\n");
@@ -78,7 +78,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrintBoolean()
     {
-        compileTestSource("function testPrintBoolean():Nil[0]\n" +
+        compileTestSource("fromString.pure","function testPrintBoolean():Nil[0]\n" +
                 "{\n" +
                 "    print(true, 1);\n" +
                 "}\n");
@@ -89,7 +89,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrintIntegerCollection()
     {
-        compileTestSource("function testPrintIntegerCollection():Nil[0]\n" +
+        compileTestSource("fromString.pure","function testPrintIntegerCollection():Nil[0]\n" +
                 "{\n" +
                 "    print([1, 2, 3], 1);\n" +
                 "}\n");
@@ -104,7 +104,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrintFloatCollection()
     {
-        compileTestSource("function testPrintFloatCollection():Nil[0]\n" +
+        compileTestSource("fromString.pure","function testPrintFloatCollection():Nil[0]\n" +
                 "{\n" +
                 "    print([1.0, 2.5, 3.0], 1);\n" +
                 "}\n");
@@ -119,7 +119,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrintDateCollection()
     {
-        compileTestSource("function testPrintDateCollection():Nil[0]\n" +
+        compileTestSource("fromString.pure","function testPrintDateCollection():Nil[0]\n" +
                 "{\n" +
                 "    print([%1973-11-13T23:09:11, %2016-07-08], 1);\n" +
                 "}\n");
@@ -133,7 +133,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrintStringCollection()
     {
-        compileTestSource("function testPrintStringCollection():Nil[0]\n" +
+        compileTestSource("fromString.pure","function testPrintStringCollection():Nil[0]\n" +
                 "{\n" +
                 "    print([\'testString\', \'2.5\', \'%2016-07-08\'], 1);\n" +
                 "}\n");
@@ -148,7 +148,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrintMixedCollection()
     {
-        compileTestSource("function testPrintMixedCollection():Nil[0]\n" +
+        compileTestSource("fromString.pure","function testPrintMixedCollection():Nil[0]\n" +
                 "{\n" +
                 "    print([1, 2.5, \'testString\', %2016-07-08], 1);\n" +
                 "}\n");
@@ -283,7 +283,7 @@ public abstract class AbstractTestPrint extends AbstractPureTestWithCoreCompiled
     @Test
     public void testPrintObj()
     {
-        compileTestSource("Class A\n" +
+        compileTestSource("fromString.pure","Class A\n" +
                        "{\n" +
                        "    test : String[1];\n" +
                        "    test2 : String[1];\n" +

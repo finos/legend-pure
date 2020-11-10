@@ -15,10 +15,11 @@
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class AbstractTestCompare extends AbstractPureTestWithCoreCompiled {
-
+public abstract class AbstractTestCompare extends AbstractPureTestWithCoreCompiled {
     @Test
     public void testDecimalLongCompare()
     {

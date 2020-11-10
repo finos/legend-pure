@@ -17,10 +17,16 @@ package org.finos.legend.pure.runtime.java.compiled.processors;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
+import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestFunctionProcessor extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getCodeRepositories());
+    }
 
     @Test
     public void testProcessFunctionDefinitionContent()
@@ -83,8 +89,7 @@ public class TestFunctionProcessor extends AbstractPureTestWithCoreCompiled
                 "}\n");
     }
 
-    @Override
-    protected FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

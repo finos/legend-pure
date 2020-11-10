@@ -18,6 +18,7 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore
 public class TestGraphDependencies extends AbstractPureTestWithCoreCompiled
 {
 //    @Test

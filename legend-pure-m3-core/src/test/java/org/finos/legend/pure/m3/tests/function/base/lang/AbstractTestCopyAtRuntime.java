@@ -26,7 +26,7 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
     @Test
     public void testCopyWithReverseZeroToOneProperty()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::Car(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   let newCar = ^$car(name='Veyron', owner=^test::Owner(firstName='John', lastName='Roe'));\n" +
@@ -70,7 +70,7 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
     @Test
     public void testCopyIncrementIntegerProperty()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::Car(name='Bugatti', accidents=0);\n" +
                 "   let newCar = ^$car(accidents = $car.accidents + 1);\n" +
@@ -100,7 +100,7 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
     @Test
     public void testCopyWithReverseZeroToManyProperty()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::Car(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   let newCar = ^$car(name='Veyron', owner=^test::Owner(firstName='John', lastName='Roe'));\n" +
@@ -144,7 +144,7 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
     @Test
     public void testCopyWithReverseOneToOneProperty()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::Car(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   let newCar = ^$car(name='Veyron', owner=^test::Owner(firstName='John', lastName='Roe'));\n" +
@@ -188,7 +188,7 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
     @Test
     public void testCopyWithReverseOneToManyProperty()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::Car(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   let newCar = ^$car(name='Veyron', owner=^test::Owner(firstName='John', lastName='Roe'));\n" +
@@ -232,7 +232,7 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
     @Test
     public void testCopyWithChildWithReverseOneToManyProperty()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::Car(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe', cars=[^test::Car(name='Audi')]));\n" +
                 "   let newCar = ^$car(name='Veyron');\n" +
@@ -281,7 +281,7 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
     @Test
     public void testCopyWithRedefinedManyToManyAssociation()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let john = ^test::Owner(firstName='John', lastName='Roe');\n" +
                 "   let pierre = ^$john(firstName='Pierre', lastName='Doe');\n" +
@@ -325,7 +325,7 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
     @Test
     public void testCopyWithRedefinedOneToOneAssociation()
     {
-        this.compileTestSource("function test(): Any[*]\n" +
+        compileTestSource("fromString.pure","function test(): Any[*]\n" +
                 "{\n" +
                 "   let audi = ^test::Car(name='Audi');\n" +
                 "   let bugatti = ^$audi(name='Bugatti');\n" +
@@ -372,7 +372,7 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
                 "Class A<T1, T2> \n{ prop1:T1[*];\n prop2:T2[*]; }\n" +
                         "Class B<T> \n{ prop1:String[*];\n prop2:T[*]; }\n" +
                         "function test::testFn():Any[*] { let a = ^A<String, Integer>(prop1='string', prop2=[1,2]); let a1 = ^$a(prop2=[]); ^B<Integer>(prop1='Hello', prop2=[]);}\n";
-        this.compileTestSource(source);
+        compileTestSource("fromString.pure",source);
         this.compileAndExecute("test::testFn():Any[*]");
     }
 
@@ -388,7 +388,7 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
                                 "   assert($x0->sourceInformation().source == $x1->sourceInformation().source, |'');\n" +
                                 "   assert($x0->sourceInformation().source != $x2->sourceInformation().source, |'');" +
                                 "}\n";
-        this.compileTestSource(source);
+        compileTestSource("fromString.pure",source);
         this.compileAndExecute("test::testFn():Any[*]");
     }
 }

@@ -16,11 +16,24 @@ package org.finos.legend.pure.runtime.java.interpreted.function;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestEqualityFunctionIntegrity extends AbstractPureTestWithCoreCompiled
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("testSource.pure");
+    }
+
     @Test
     public void testCannotOverrideIs()
     {

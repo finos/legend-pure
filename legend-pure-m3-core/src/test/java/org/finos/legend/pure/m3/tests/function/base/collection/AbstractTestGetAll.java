@@ -22,7 +22,7 @@ public abstract class AbstractTestGetAll extends PureExpressionTest
     @Test
     public void testBasic()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(!Class.all()->isEmpty(),|'');\n" +
@@ -36,7 +36,7 @@ public abstract class AbstractTestGetAll extends PureExpressionTest
     @Test
     public void testEval()
     {
-        compileTestSource(
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert(!getAll_Class_1__T_MANY_->eval(Class)->isEmpty(), |'');\n" +

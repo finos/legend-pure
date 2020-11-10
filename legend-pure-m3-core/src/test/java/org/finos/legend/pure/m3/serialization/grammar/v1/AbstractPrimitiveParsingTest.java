@@ -23,11 +23,17 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 
 import java.util.UUID;
 
 public abstract class AbstractPrimitiveParsingTest extends AbstractPureTestWithCoreCompiledPlatform
 {
+    @BeforeClass
+    public static void setUp() {
+        setUpRuntime(getExtra());
+    }
+
     protected abstract String getPrimitiveTypeName();
 
     protected void assertParsesTo(String expectedName, String string)
