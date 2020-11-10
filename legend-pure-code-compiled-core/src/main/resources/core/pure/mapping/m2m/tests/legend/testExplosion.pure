@@ -107,12 +107,42 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testMappingWithSetsUs
    assert(jsonEquivalent('{"firstName":"Pierre","lastName":"Doe"}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0',
+   doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize. GraphFetch tree demonstrates usage of explosion at a property level.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+}
+meta::pure::mapping::modelToModel::test::alloy::explosion::testExplosionAtPropertyLevel(): Boolean[1]
+{
+   let tree = #{TargetFirm {name,firmEmployees{firmName, fullName, streetAddress, dateOfBirth}} }#;
+
+   let result = execute(
+      |TargetFirm.all()->graphFetch($tree)->serialize($tree),
+      mappingWithSetsUsingAndNotUsingExplosion,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(),
+                                class=_SimpleFirm,
+                                url='data:application/json,{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim","dateOfBirth":"2020-11-09","address":{"street":"first"}},{"fullName":"Pam","dateOfBirth":"2020-11-10","address":{"street":"second"}}]}'
+                             )
+      ),
+      []
+   );
+   assert(jsonEquivalent('{"name": "Dunder Mifflin","firmEmployees": [{"firmName": "Dunder Mifflin","fullName": "Jim","streetAddress": "first","dateOfBirth": "2020-11-09"},{"firmName": "Dunder Mifflin","fullName": "Pam","streetAddress": "second","dateOfBirth": "2020-11-10"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
 Class meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint
 [  hasLongName: $this.fullName->size() > 4 ]
 {
    firmName : String[1];
    fullName : String[1];
    streetAddress: String[0..1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::explosion::TargetFirm
+{
+    name: String[1];
+    firmEmployees: meta::pure::mapping::modelToModel::test::shared::dest::FirmEmployee[*];
 }
 
 ###Mapping
@@ -162,10 +192,26 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::explosion::mappingWithSe
                type      : $src.type
             }
 
+  TargetFirm : Pure
+  {
+    ~src _SimpleFirm
+    name : $src.name,
+    firmEmployees : $src
+  }
+
   FirmEmployeeWithConstraint : Pure
             {
                ~src _SimpleFirm
                firmName : $src.name,
                fullName* : $src.simpleEmployees.fullName
+            }
+
+  FirmEmployee : Pure
+            {
+               ~src _SimpleFirm
+               firmName : $src.name,
+               fullName* : $src.simpleEmployees.fullName,
+               streetAddress* : $src.simpleEmployees.address.street,
+               dateOfBirth* : $src.simpleEmployees.dateOfBirth
             }
 )

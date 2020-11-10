@@ -52,15 +52,11 @@ Class meta::pure::mapping::modelToModel::test::shared::dest::PersonWithConstrain
 
 Class meta::pure::mapping::modelToModel::test::shared::dest::FirmEmployee
 {
-   
    firmName : String[1];
    fullName : String[1];
+   dateOfBirth : StrictDate[0..1];
    streetAddress: String[0..1];
-   
 }
-
-
-
 
 Class meta::pure::mapping::modelToModel::test::shared::dest::Address
 {
@@ -70,7 +66,7 @@ Class meta::pure::mapping::modelToModel::test::shared::dest::Address
 
 Class meta::pure::mapping::modelToModel::test::shared::dest::AddressExtension
 {
-    stuff : String[1];  
+    stuff : String[1];
 }
 
 Class meta::pure::mapping::modelToModel::test::shared::dest::Vehicle
@@ -114,6 +110,7 @@ Class meta::pure::mapping::modelToModel::test::shared::src::_Person
 Class meta::pure::mapping::modelToModel::test::shared::src::_SimplePerson
 {
    fullName : String[1];
+   dateOfBirth : StrictDate[0..1];
    address : Address[1];
 }
 
