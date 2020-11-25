@@ -37,8 +37,6 @@ import java.util.EnumSet;
 
 public class PureIDEServer extends Application<ServerConfiguration>
 {
-    private final PureSession pureSession = new PureSession();
-
     public static void main(String[] args) throws Exception
     {
         new PureIDEServer().run(args);
@@ -71,6 +69,7 @@ public class PureIDEServer extends Application<ServerConfiguration>
                 (configuration.swagger.getContextRoot().endsWith("/") ? "" : "/") + "api")
         );
 
+        PureSession pureSession = new PureSession(configuration.sourceLocationConfiguration);
 
         environment.jersey().register(new Concept(pureSession));
 

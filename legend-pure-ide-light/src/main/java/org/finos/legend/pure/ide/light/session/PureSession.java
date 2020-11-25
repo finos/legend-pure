@@ -19,6 +19,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.eclipse.collections.impl.utility.Iterate;
+import org.finos.legend.pure.ide.light.SourceLocationConfiguration;
 import org.finos.legend.pure.ide.light.api.execution.test.CallBack;
 import org.finos.legend.pure.ide.light.helpers.response.IDEResponse;
 import org.finos.legend.pure.m3.SourceMutation;
@@ -44,6 +45,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -54,13 +56,15 @@ public class PureSession
     private PureRuntime pureRuntime;
     public MutableCodeStorage codeStorage;
     private FunctionExecution functionExecution;
+    private SourceLocationConfiguration sourceLocationConfiguration;
     private final ConcurrentMutableMap<Integer, TestRunnerWrapper> testRunnersById = ConcurrentHashMap.newMap();
     private final AtomicInteger executionCount = new AtomicInteger(0);
 
     public Message message = new Message("");
 
-    public PureSession()
+    public PureSession(SourceLocationConfiguration sourceLocationConfiguration)
     {
+        this.sourceLocationConfiguration = sourceLocationConfiguration;
         this.initialize();
     }
 
@@ -68,15 +72,28 @@ public class PureSession
 
     private FunctionExecution initialize()
     {
+        String rootPath = Optional.ofNullable(sourceLocationConfiguration)
+                .flatMap(s -> Optional.ofNullable(s.welcomeFileDirectory))
+                .orElse(System.getProperty("java.io.tmpdir"));
+
+        String coreFilesLocation = Optional.ofNullable(sourceLocationConfiguration)
+                .flatMap(s -> Optional.ofNullable(s.coreFilesLocation))
+                .orElse("legend-pure-code-compiled-core/src/main/resources/core");
+
+        String ideFilesLocation = Optional.ofNullable(sourceLocationConfiguration)
+                .flatMap(s -> Optional.ofNullable(s.ideFilesLocation))
+                .orElse("legend-pure-ide-light/src/main/resources/pure_ide");
+
         this.functionExecution = new FunctionExecutionInterpreted(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
+
         try
         {
             MutableList<RepositoryCodeStorage> repos = Lists.mutable
                     .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
-                    .with(new MutableFSCodeStorage(CodeRepository.newCoreCodeRepository(), Paths.get("legend-pure-code-compiled-core/src/main/resources/core")))
-                    .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get("legend-pure-ide-light/src/main/resources/pure_ide")));
+                    .with(new MutableFSCodeStorage(CodeRepository.newCoreCodeRepository(), Paths.get(coreFilesLocation)))
+                    .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
 
-            this.codeStorage = new PureCodeStorage(Paths.get(System.getProperty("java.io.tmpdir")), repos.toArray(new RepositoryCodeStorage[0]));
+            this.codeStorage = new PureCodeStorage(Paths.get(rootPath), repos.toArray(new RepositoryCodeStorage[0]));
             this.pureRuntime = new PureRuntimeBuilder(this.codeStorage).withMessage(this.message).setUseFastCompiler(true).build();
             this.functionExecution.init(this.pureRuntime, this.message);
             this.codeStorage.initialize(this.message);
