@@ -1873,6 +1873,23 @@ function meta::java::codeGeneration::code::js_map(stream: Code[1], func: Code[1]
    );
 }
 
+function meta::java::codeGeneration::code::js_mapAllowingNullValues(stream: Code[1], func: Code[1]):Code[1]
+{
+   let funcType    = $func.type->cast(@meta::java::metamodel::FunctionType);
+   let funcReturn  = $funcType.returnType;
+   let updatedFunc = if($func->instanceOf(Lambda) && $func->cast(@Lambda).parameters->size() == 1
+                        ,| let orgFunc       = $func->cast(@Lambda);
+                           let newExpression = j_if($orgFunc.parameters->toOne()->j_eq(j_null()), j_null()->j_return(), $orgFunc.expression)->j_block();
+                           ^$orgFunc(expression = $newExpression);
+                        ,| $func);
+   let map         = $stream->prepareStreamForCallWithLambda($updatedFunc)->j_invoke('map', $updatedFunc, javaStream($funcReturn));
+
+   if($funcReturn->isJavaList(),
+      | $map->js_flatMap(j_methodReference(javaClass('java.util.Collection'), 'stream', javaFunctionType($funcReturn, javaStream($funcReturn->elementTypeOfJavaList())))),
+      | $map
+   );
+}
+
 function meta::java::codeGeneration::code::js_flatMap(stream: Code[1], func: Code[1]):Code[1]
 {
    let funcType   = $func.type->cast(@meta::java::metamodel::FunctionType);

@@ -131,6 +131,78 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testExplosionAtProper
    assert(jsonEquivalent('{"name": "Dunder Mifflin","firmEmployees": [{"firmName": "Dunder Mifflin","fullName": "Jim","streetAddress": "first","dateOfBirth": "2020-11-09"},{"firmName": "Dunder Mifflin","fullName": "Pam","streetAddress": "second","dateOfBirth": "2020-11-10"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0',
+   doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+}
+meta::pure::mapping::modelToModel::test::alloy::explosion::testMappingWithExplosionAtPropertyLevel(): Boolean[1]
+{
+   let tree = #{TargetFirm {name,firmEmployees{firmName}} }#;
+
+   let result =  execute(
+      |TargetFirm.all()->graphFetch($tree)->serialize($tree),
+      mappingWithSetsUsingAndNotUsingExplosion,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(),
+                                class=_SimpleFirm,
+                                url='data:application/json,{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim","dateOfBirth":"2020-11-09","address":{"street":"first"}},{"fullName":"Pam","dateOfBirth":"2020-11-10","address":{"street":"second"}}]}'
+                             )
+      ),
+      []
+   );
+   assert(jsonEquivalent('{"name": "Dunder Mifflin","firmEmployees": [{"firmName": "Dunder Mifflin"}, {"firmName": "Dunder Mifflin"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0',
+   doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+}
+meta::pure::mapping::modelToModel::test::alloy::explosion::testExplosionAtPropertyLevelNotUsingAllProperties(): Boolean[1]
+{
+   let tree = #{TargetFirm {name,firmEmployees{firmName, fullName}} }#;
+
+   let result = execute(
+      |TargetFirm.all()->graphFetch($tree)->serialize($tree),
+      mappingWithSetsUsingAndNotUsingExplosion,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(),
+                                class=_SimpleFirm,
+                                url='data:application/json,{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim","dateOfBirth":"2020-11-09","address":{"street":"first"}},{"fullName":"Pam","dateOfBirth":"2020-11-10","address":{"street":"second"}}]}'
+                             )
+      ),
+      []
+   );
+   assert(jsonEquivalent('{"name": "Dunder Mifflin","firmEmployees": [{"firmName": "Dunder Mifflin","fullName": "Jim"},{"firmName": "Dunder Mifflin","fullName": "Pam"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0',
+   doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch and serialize. GraphFetch tree demonstrates usage of explosion at a property level.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+}
+meta::pure::mapping::modelToModel::test::alloy::explosion::testExplosionAtPropertyLevelWithNullResult(): Boolean[1]
+{
+   let tree = #{TargetFirm {name,firmEmployees{firmName, fullName, streetAddress, dateOfBirth}} }#;
+
+   let result = execute(
+      |TargetFirm.all()->graphFetch($tree)->serialize($tree),
+      mappingWithSetsUsingAndNotUsingExplosion,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(),
+                                class=_SimpleFirm,
+                                url='data:application/json,{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim","address":{"street":"first"}},{"fullName":"Pam","dateOfBirth":"2020-11-10"}]}'
+                             )
+      ),
+      []
+   );
+   assert(jsonEquivalent('{"name": "Dunder Mifflin","firmEmployees": [{"firmName": "Dunder Mifflin","fullName": "Jim","streetAddress": "first","dateOfBirth": null},{"firmName": "Dunder Mifflin","fullName": "Pam","streetAddress": null,"dateOfBirth": "2020-11-10"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
 Class meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint
 [  hasLongName: $this.fullName->size() > 4 ]
 {

@@ -705,7 +705,8 @@ function <<access.private>> meta::alloy::runtime::java::generateExplodeMapOne(se
    let explosionPropertyVarDeclaration = $explosionPropertyMappings->map(pm|
                                 let property = $pm.property;
                                 let propertyVariable = j_variable(javaList($conventions->pureTypeToJavaType($property)), $property.name->toOne() + '_list');
-                                $propertyVariable->j_declare($pm.transform.expressionSequence->at(0)->evaluateAndDeactivate()->generateJava($conventions, $debug->indent())););
+                                let updatedConventions = $conventions->updateConventionsForExplosion();
+                                $propertyVariable->j_declare($pm.transform.expressionSequence->at(0)->evaluateAndDeactivate()->generateJava($updatedConventions, $debug->indent())););
 
    let lengthVariable = j_variable(javaInt(), 'length');
    let lengthVarDeclaration = $lengthVariable->j_declare(j_variable(javaList($conventions->pureTypeToJavaType($explosionPropertyMappings->at(0).property)), $explosionPropertyMappings->at(0).property.name->toOne() + '_list')->j_invoke('size',[],javaInt()));
@@ -730,4 +731,16 @@ function <<access.private>> meta::alloy::runtime::java::generateExplodeMapOne(se
                                    ->concatenate($errorHandlingCodeBlock)
                                    ->concatenate($indexStreamDeclaration)
                                    ->concatenate($returnStatement);
+}
+
+function meta::alloy::runtime::java::updateConventionsForExplosion(conventions:Conventions[1]):Conventions[1]
+{
+  let libToBeReplaced = $conventions.libraries->filter(l|$l.functionCoders->get('map_T_MANY__Function_1__V_MANY_')->isNotEmpty())->toOne();
+  let funcCodersToBeAdded = [fc2(map_T_MANY__Function_1__V_MANY_,                                    {ctx,collection,func          | $collection->j_streamOf()->js_mapAllowingNullValues($func)}),
+                              fc (map_T_m__Function_1__V_m_,                                          fcAlias(                        map_T_MANY__Function_1__V_MANY_)),
+                              fc (map_T_$0_1$__Function_1__V_$0_1$_,                                  fcAlias(                        map_T_MANY__Function_1__V_MANY_))];
+
+  let updatedLibrary = ^$libToBeReplaced(functionCoders = $libToBeReplaced.functionCoders->putAll($funcCodersToBeAdded->map(fc| pair($fc.pureFunction, $fc.coder))));
+
+  ^$conventions(libraries = $conventions.libraries->filter(c | $c != $libToBeReplaced)->concatenate($updatedLibrary));
 }

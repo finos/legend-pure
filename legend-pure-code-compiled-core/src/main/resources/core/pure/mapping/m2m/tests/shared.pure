@@ -60,7 +60,7 @@ Class meta::pure::mapping::modelToModel::test::shared::dest::FirmEmployee
 
 Class meta::pure::mapping::modelToModel::test::shared::dest::Address
 {
-   street : String[1];
+   street : String[0..1];
    extension : AddressExtension[0..1];
 }
 
@@ -111,7 +111,7 @@ Class meta::pure::mapping::modelToModel::test::shared::src::_SimplePerson
 {
    fullName : String[1];
    dateOfBirth : StrictDate[0..1];
-   address : Address[1];
+   address : Address[0..1];
 }
 
 Association  meta::pure::mapping::modelToModel::test::shared::src::_Firm_Person
