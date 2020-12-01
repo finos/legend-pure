@@ -91,8 +91,8 @@ public class FunctionDefinitionValidator implements MatchRunner<FunctionDefiniti
         validateEqualityFunctions(functionDefinition);
         validateFunctionDefinitionReturnType(functionDefinition, functionType, processorSupport);
         VisibilityValidation.validateFunctionDefinition(functionDefinition, context, validatorState, processorSupport);
-        ElementWithConstraintsValidator.validateConstraints(functionDefinition, functionDefinition._preConstraints(), state);
-        ElementWithConstraintsValidator.validateConstraints(functionDefinition, functionDefinition._postConstraints(), state);
+        ElementWithConstraintsValidator.validateConstraints(functionDefinition, functionDefinition._preConstraints(), state, matcher , modelRepository , context);
+        ElementWithConstraintsValidator.validateConstraints(functionDefinition, functionDefinition._postConstraints(), state, matcher, modelRepository, context);
 
     }
 

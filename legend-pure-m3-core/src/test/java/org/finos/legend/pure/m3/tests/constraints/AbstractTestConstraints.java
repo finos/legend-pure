@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.tests.constraints;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
@@ -668,6 +669,71 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "   startDate: Date[1];\n" +
                 "   endDate: Date[1];\n" +
                 "}");
+    }
+
+    @Test
+    public void testExtendedConstraintGrammarCompilationFailure()
+    {
+        try {
+            this.compileTestSource("fromString.pure", "Class Position\n" +
+                    "[\n" +
+                    "   c1\n" +
+                    "   (\n" +
+                    "      ~owner            : Finance\n" +
+                    "      ~externalId       : 'My_Ext_Id'\n" +
+                    "      ~function         : $this.contractId->startsWith('A')\n" +
+                    "      ~enforcementLevel : Error\n" +
+                    "      ~message          : 'Contract ID: ' + $this.contractId\n" +
+                    "   )\n" +
+                    "]\n" +
+                    "{\n" +
+                    "   contractId: String[0..1];\n" +
+                    "   positionType: String[1];\n" +
+                    "   startDate: Date[1];\n" +
+                    "   endDate: Date[1];\n" +
+                    "}");
+            Assert.fail();
+        }
+        catch(Exception e)
+        {
+            String expectedError = "The system can't find a match for the function: startsWith(_:String[0..1],_:String[1])\n" +
+                                    "\n" +
+                                    "No functions, in packages already imported, match the function name.\n" +
+                                    "\n" +
+                                    "These functions, in packages not imported, match the function name. Add the package to imports so that the function is in scope.\n" +
+                                    "\tmeta::pure::functions::string::startsWith(String[1], String[1]):Boolean[1]\n";
+
+            this.assertOriginatingPureException(PureUnmatchedFunctionException.class, expectedError,7,45,e);
+        }
+    }
+
+    @Test
+    public void testExtendedConstraintGrammarMessageCompilationFailure()
+    {
+        try {
+            this.compileTestSource("fromString.pure", "Class Position\n" +
+                    "[\n" +
+                    "   c1\n" +
+                    "   (\n" +
+                    "      ~owner            : Finance\n" +
+                    "      ~externalId       : 'My_Ext_Id'\n" +
+                    "      ~function         : $this.contractId->toOne()->startsWith('A')\n" +
+                    "      ~enforcementLevel : Error\n" +
+                    "      ~message          : 'Contract ID: ' + $this.contractId\n" +
+                    "   )\n" +
+                    "]\n" +
+                    "{\n" +
+                    "   contractId: String[0..1];\n" +
+                    "   positionType: String[1];\n" +
+                    "   startDate: Date[1];\n" +
+                    "   endDate: Date[1];\n" +
+                    "}");
+            Assert.fail();
+        }
+        catch(Exception e)
+        {
+            this.assertOriginatingPureException(PureCompilationException.class, "Required multiplicity: 1, found: 0..1",9,51,e);
+        }
     }
 
     @Test
