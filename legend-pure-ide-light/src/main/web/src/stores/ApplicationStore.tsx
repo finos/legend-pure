@@ -17,7 +17,7 @@
 import React, { createContext, useContext } from 'react';
 import type { SuperGenericFunction } from 'Utilities/GeneralUtil';
 import { guaranteeNonNullable, isString, ApplicationError } from 'Utilities/GeneralUtil';
-import { makeAutoObservable } from 'mobx';
+import { action, makeAutoObservable } from 'mobx';
 import { Logger, LOG_EVENT } from 'Utilities/Logger';
 import { useLocalObservable } from 'mobx-react-lite';
 import { NetworkClient } from 'Utilities/NetworkClient';
@@ -94,7 +94,11 @@ export class ApplicationStore {
   actionAlertInfo?: ActionAlertInfo;
 
   constructor() {
-    makeAutoObservable(this);
+    makeAutoObservable(this, {
+      setBlockingAlert: action,
+      setActionAltertInfo: action,
+      setNotification: action,
+    });
     this.coreClient = new NetworkClient({});
     this.client = new PureClient(this.coreClient);
     this.logger = new Logger();

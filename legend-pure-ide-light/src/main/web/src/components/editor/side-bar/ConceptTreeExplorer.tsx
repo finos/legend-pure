@@ -223,7 +223,7 @@ export const ConceptTreeExplorer = observer(() => {
             <div className="panel__header__actions">
               <button className="panel__header__action explorer__btn__refresh"
                 onClick={refreshTree}
-                title="Refresh tree"
+                title="Refresh Tree"
               ><MdRefresh /></button>
               <button className="panel__header__action"
                 onClick={collapseTree}

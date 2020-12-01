@@ -16,10 +16,11 @@
 
 import React, { createContext, useContext } from 'react';
 import { useLocalObservable } from 'mobx-react-lite';
-import { flowResult, makeAutoObservable } from 'mobx';
+import { editor as monacoEditorAPI } from 'monaco-editor';
+import { action, flowResult, makeAutoObservable } from 'mobx';
 import type { ApplicationStore, ActionAlertInfo, BlockingAlertInfo } from './ApplicationStore';
 import { ActionAlertType, ActionAlertActionType, useApplicationStore } from './ApplicationStore';
-import { ACTIVITY_MODE, DEFAULT_SIDE_BAR_SIZE, AUX_PANEL_MODE, DEFAULT_AUX_PANEL_SIZE } from 'Stores/EditorConfig';
+import { ACTIVITY_MODE, DEFAULT_SIDE_BAR_SIZE, AUX_PANEL_MODE, DEFAULT_AUX_PANEL_SIZE, MONOSPACE_FONT_FAMILY } from 'Stores/EditorConfig';
 import type { Clazz, PlainObject } from 'Utilities/GeneralUtil';
 import { guaranteeType, guaranteeNonNullable, assertNonNullable, assertTrue } from 'Utilities/GeneralUtil';
 import type { EditorState } from 'Stores/EditorState';
@@ -42,6 +43,19 @@ import type { UsageConcept } from 'Models/Usage';
 import { getUsageConceptLabel, Usage } from 'Models/Usage';
 import type { CommandResult } from 'Models/Command';
 import { CommandFailureResult, deserializeCommandResult } from 'Models/Command';
+import { LOG_EVENT } from 'Utilities/Logger';
+
+// FontFaceSet API is still experimental and has not been added to Typescript lib
+// See https://developer.mozilla.org/en-US/docs/Web/API/FontFaceSet
+// See https://github.com/microsoft/TypeScript/issues/30984
+declare global {
+  interface Document {
+    fonts: {
+      check(font: string, text?: string): boolean;
+      load(font: string, text?: string): Promise<unknown[]>
+    }
+  }
+}
 
 class SearchCommandState {
   text = '';
@@ -49,7 +63,12 @@ class SearchCommandState {
   isRegExp = false;
 
   constructor() {
-    makeAutoObservable(this);
+    makeAutoObservable(this, {
+      reset: action,
+      setText: action,
+      setCaseSensitive: action,
+      setRegExp: action,
+    });
   }
 
   reset(): void {
@@ -108,7 +127,22 @@ export class EditorStore {
   testRunnerState?: TestRunnerState;
 
   constructor(applicationStore: ApplicationStore) {
-    makeAutoObservable(this);
+    makeAutoObservable(this, {
+      setBlockGlobalHotkeys: action,
+      setBackdrop: action,
+      setExpandedMode: action,
+      setOpenFileSearchCommand: action,
+      setOpenTextSearchCommand: action,
+      setAuxPanelSize: action,
+      setActiveAuxPanelMode: action,
+      setSideBarSize: action,
+      setActionAltertInfo: action,
+      setConsoleText: action,
+      setSearchState: action,
+      setTestRunnerState: action,
+      pullInitializationActivity: action,
+      pullExecutionStatus: action,
+    });
     this.applicationStore = applicationStore;
     this.directoryTreeState = new DirectoryTreeState(this);
     this.conceptTreeState = new ConceptTreeState(this);
@@ -182,6 +216,7 @@ export class EditorStore {
           yield func();
         }
         yield Promise.all([
+          this.preloadTextEditorFont(),
           openWelcomeFilePromise,
           directoryTreeInitPromise,
           conceptTreeInitPromise,
@@ -368,7 +403,7 @@ export class EditorStore {
       const WAIT_TIME_TO_TRIGGER_STATUS_CHECK = 1000;
       let executionPromiseFinished = false;
       let executionPromiseResult: PlainObject<ExecutionResult> | undefined;
-      yield Promise.all([executionPromise.then(value => {
+      yield Promise.all<void>([executionPromise.then(value => {
         executionPromiseFinished = true;
         executionPromiseResult = value;
       }), new Promise(resolve => setTimeout(() => {
@@ -685,6 +720,19 @@ export class EditorStore {
   createGlobalHotKeyAction = (handler: (event?: KeyboardEvent | undefined) => void): (event: KeyboardEvent | undefined) => void => (event: KeyboardEvent | undefined): void => {
     event?.preventDefault();
     if (!this.blockGlobalHotkeys) { handler(event) }
+  }
+
+  // Since we use a custom monospaced font for `monaco-editor` we want to make sure we can load it before any rendering and measuring happens
+  *preloadTextEditorFont(this: EditorStore): Generator<Promise<unknown>, void, unknown> {
+    const fontLoadFailureErrorMessage = `Monospaced font '${MONOSPACE_FONT_FAMILY}' has not been loaded properly, text editor display problem might occur`;
+    yield document.fonts.load(`1em ${MONOSPACE_FONT_FAMILY}`).then(() => {
+      if (document.fonts.check(`1em ${MONOSPACE_FONT_FAMILY}`)) {
+        monacoEditorAPI.remeasureFonts();
+        this.applicationStore.logger.info(LOG_EVENT.EDITOR_FONT_LOADED, `Monospaced font '${MONOSPACE_FONT_FAMILY}' has been loaded`);
+      } else {
+        this.applicationStore.notifyError(fontLoadFailureErrorMessage);
+      }
+    }).catch(() => this.applicationStore.notifyError(fontLoadFailureErrorMessage));
   }
 }
 
