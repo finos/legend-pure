@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { makeAutoObservable } from 'mobx';
+import { action, makeAutoObservable } from 'mobx';
 
 export enum ACTION_STATE {
   INITIAL = 'INITIAL',
@@ -27,7 +27,15 @@ export class ActionState {
   state = ACTION_STATE.INITIAL;
 
   constructor() {
-    makeAutoObservable(this);
+    makeAutoObservable(this, {
+      withState: action,
+      initial: action,
+      inProgress: action,
+      fail: action,
+      pass: action,
+      conclude: action,
+      reset: action,
+    });
   }
 
   withState(val: ACTION_STATE): ActionState { this.state = val; return this }

@@ -77,11 +77,7 @@ module.exports = (env, arg) => {
   const enableAsyncTypeCheck = Boolean(arg.enableAsyncTypeCheck);
   const config = {
     mode: arg.mode,
-    // WIP: workaround until `webpack-dev-server` watch mode works with webpack@5
-    // See https://github.com/webpack/webpack-dev-server/issues/2758#issuecomment-710086019
-    target: isEnvDevelopment ? 'web' : 'browserslist',
     bail: isEnvProduction, // fail-fast in production build
-    bail: isEnvProduction,
     entry: { main: './src/index.tsx' },
     output: {
       path: path.join(__dirname, `../../../target/classes/${BaseConfig.contentRoute}`),
@@ -95,14 +91,17 @@ module.exports = (env, arg) => {
       ? 'cheap-module-source-map'
       : 'source-map',
     watchOptions: {
-      poll: 1000,
       ignored: /node_modules/,
     },
     devServer: {
       compress: true, // enable gzip compression for everything served to reduce traffic size
-      publicPath: '/',
+      dev: {
+        publicPath: '/',
+      },
       open: true,
       port: 3000,
+      host: "localhost",
+      firewall: false,
       openPage: BaseConfig.baseRoute,
       // redirect 404s to /index.html
       historyApiFallback: {
@@ -110,23 +109,31 @@ module.exports = (env, arg) => {
         // See https://github.com/bripkens/connect-history-api-fallback#disabledotrule
         disableDotRule: true
       },
-      // suppress HMR and WDS messages about updated chunks
-      // NOTE: there is a bug that the line '[HMR] Waiting for update signal from WDS...' is not suppressed
-      // See https://github.com/webpack/webpack-dev-server/issues/2166
-      clientLogLevel: 'warn',
-      stats: {
-        // Make Webpack Dev Middleware less verbose, consider `quiet` and `noInfo` options as well
-        // NOTE: Use custom reporter to output errors and warnings from TS fork checker in `stylish` format. It's less verbose and
-        // repetitive. Since we use the custom plugin, we want to mute `errors` and `warnings` from `webpack-dev-middleware`
-        // See https://github.com/webpack-contrib/webpack-stylish
-        // See https://github.com/TypeStrong/fork-ts-checker-webpack-plugin/issues/119
-        all: false,
-        colors: true,
-        timings: true,
+      client: {
+        // suppress HMR and WDS messages about updated chunks
+        // NOTE: there is a bug that the line '[HMR] Waiting for update signal from WDS...' is not suppressed
+        // See https://github.com/webpack/webpack-dev-server/issues/2166
+        logging: 'warn',
       },
     },
+    infrastructureLogging: {
+      // Only warnings and errors
+      // See https://webpack.js.org/configuration/other-options/#infrastructurelogginglevel
+      level: 'info',
+    },
+    stats: {
+      // Make Webpack Dev Middleware less verbose, consider `quiet` and `noInfo` options as well
+      // NOTE: Use custom reporter to output errors and warnings from TS fork checker in `stylish` format. It's less verbose and
+      // repetitive. Since we use the custom plugin, we want to mute `errors` and `warnings` from `webpack-dev-middleware`
+      // See https://github.com/webpack-contrib/webpack-stylish
+      // See https://github.com/TypeStrong/fork-ts-checker-webpack-plugin/issues/119
+      all: false,
+      logging: 'warn',
+      colors: true,
+      timings: true,
+    },
     resolve: {
-      extensions: ['.js', '.jsx', '.ts', '.tsx'],
+      extensions: ['.ts', '.tsx', '.js'],
       alias: {
         ServerConfig: path.resolve(__dirname, '../resources/ideLightConfig.json'),
         BaseConfig: path.resolve(__dirname, 'ide.config.json'),
@@ -197,8 +204,32 @@ module.exports = (env, arg) => {
         }
       ]
     },
+    optimization: isEnvDevelopment
+      ? {
+        // Keep runtime chunk minimal by enabling runtime chunk
+        // See https://webpack.js.org/guides/build-performance/#minimal-entry-chunk
+        runtimeChunk: true,
+        // Avoid extra optimization step, turning off spli-chunk optimization
+        // See https://webpack.js.org/guides/build-performance/#avoid-extra-optimization-steps
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        splitChunks: false,
+      }
+      : {
+        splitChunks: {
+          cacheGroups: {
+            defaultVendors: {
+              test: /node_modules/,
+              chunks: 'initial',
+              name: 'vendor',
+              priority: -10,
+              enforce: true
+            }
+          }
+        }
+      },
     plugins: [
-      new CleanWebpackPlugin(),
+      isEnvProduction && new CleanWebpackPlugin(),
       (enableAdvancedMode || isEnvProduction) && new CircularDependencyPlugin({
         exclude: /node_modules/,
         include: /src.+\.(?:t|j)sx?$/,
@@ -265,11 +296,7 @@ module.exports = (env, arg) => {
         },
         eslint: {
           enabled: true,
-          files: [
-            'src/**/*.ts',
-            'src/**/*.tsx',
-            'style/**/*.ts',
-          ],
+          files: 'src/**/*.{ts,tsx}',
           options: {
             // See https://eslint.org/docs/developer-guide/nodejs-api#cliengine
             configFile: (isEnvProduction || enableAdvancedMode) ? paths.advancedEslintConfig : paths.eslintConfig,
@@ -277,22 +304,7 @@ module.exports = (env, arg) => {
         },
         formatter: isEnvProduction ? 'codeframe' : undefined
       }),
-    ].filter(Boolean)
+    ].filter(Boolean),
   };
-  if (isEnvProduction) {
-    config.optimization = {
-      splitChunks: {
-        cacheGroups: {
-          defaultVendors: {
-            test: /node_modules/,
-            chunks: 'initial',
-            name: 'vendor',
-            priority: -10,
-            enforce: true
-          }
-        }
-      }
-    };
-  }
   return config;
 };

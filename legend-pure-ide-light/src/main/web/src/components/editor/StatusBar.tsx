@@ -47,7 +47,7 @@ export const StatusBar = observer((props: {
           disabled={editorStore.executionState.isInProgress}
           onClick={executeGo}
           tabIndex={-1}
-          title={'Execute (F9)'}
+          title="Execute (F9)"
         ><FaHammer /></button>
         <button
           className={clsx('editor__status-bar__action editor__status-bar__action__toggler',
@@ -55,7 +55,7 @@ export const StatusBar = observer((props: {
           )}
           onClick={toggleExpandMode}
           tabIndex={-1}
-          title={'Maximize/Minimize'}
+          title="Maximize/Minimize"
         ><FaRegWindowMaximize /></button>
         <button
           className={clsx('editor__status-bar__action editor__status-bar__action__toggler',
@@ -63,7 +63,7 @@ export const StatusBar = observer((props: {
           )}
           onClick={toggleAuxPanel}
           tabIndex={-1}
-          title={'Toggle auxiliary panel (Ctrl + `)'}
+          title="Toggle auxiliary panel (Ctrl + `)"
         ><FaTerminal /></button>
       </div>
     </div >

@@ -16,7 +16,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
-import 'Style/CssLoader';
+import 'Style/main.scss';
 import { configure as hotkeysConfigure } from 'react-hotkeys';
 import { editor as monacoEditorAPI, languages as monacoLanguagesAPI } from 'monaco-editor';
 import { configuration, language, theme } from 'Utilities/LanguageUtil';

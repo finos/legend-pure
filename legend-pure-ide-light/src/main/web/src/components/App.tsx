@@ -20,8 +20,65 @@ import { ApplicationStoreProvider } from 'Stores/ApplicationStore';
 import { NotificationSnackbar } from 'Components/shared/NotificationSnackbar';
 import { ActionAlert } from 'Components/application/ActionAlert';
 import { BlockingAlert } from 'Components/application/BlockingAlert';
-import { MuiThemeProvider } from '@material-ui/core';
-import { materialUiTheme } from 'Style/MaterialUITheme';
+import { MuiThemeProvider, createMuiTheme } from '@material-ui/core';
+
+const materialUiTheme = createMuiTheme({
+  props: {
+    MuiButtonBase: {
+      // No more ripple
+      disableRipple: true,
+    },
+  },
+  transitions: {
+    // So we have `transition: none;` everywhere
+    create: (): string => 'none'
+  },
+  typography: {
+    fontFamily: 'Roboto',
+    fontSize: 10,
+    htmlFontSize: 10,
+  },
+  // Overriding global theme, specific theme for each component can be customized at component level
+  // See https://material-ui.com/customization/globals/
+  overrides: {
+    MuiTooltip: {
+      tooltip: {
+        background: 'var(--color-dark-grey-100)',
+        color: 'var(--color-light-grey-100)',
+        fontSize: '1.2rem',
+        maxWidth: 'inherit'
+      },
+      tooltipPlacementTop: {
+        margin: '0.5rem 0',
+      },
+    },
+    MuiPaper: {
+      root: {
+        borderRadius: 0,
+      },
+      rounded: {
+        borderRadius: 0,
+      }
+    },
+    MuiDialog: {
+      scrollPaper: {
+        alignItems: 'flex-start'
+      },
+      paper: {
+        margin: 0
+      },
+      root: {
+        marginTop: '4.8rem'
+      }
+    },
+    MuiList: {
+      padding: {
+        paddingTop: 0,
+        paddingBottom: 0,
+      }
+    }
+  }
+});
 
 export const App: React.FC = () => (
   <ApplicationStoreProvider>
