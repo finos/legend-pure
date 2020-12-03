@@ -306,7 +306,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::accept
             $variable+' = acceptMany(node.path('+escapedString($p.name->toOne())+'), this::'+$e->readMethodName($conventions)+','+$defectRecorder+');\n';
          },
          {u: Unit[1] |
-            $variable+' = acceptMany(node.path('+escapedString($p.name->toOne())+'), this::accept'+$propertyType.name->toOne()->meta::alloy::runtime::java::convertToJavaCompatibleClassName()+','+$defectRecorder+');\n';
+            $variable+' = acceptMany(node.path('+escapedString($p.name->toOne())+'), this::accept'+$propertyType.name->toOne()->meta::java::codeGeneration::convention::convertToJavaCompatibleClassName()+','+$defectRecorder+');\n';
          },
          {a: Any[1] |
             $variable+' = acceptMany(node.path('+escapedString($p.name->toOne())+'), this::accept'+$propertyType.name->toOne()+','+$defectRecorder+');\n';
@@ -438,8 +438,8 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::create
 function <<access.private>> meta::alloy::runtime::java::graphFetch::json::createUnitAcceptMethod(type:Type[1], conventions:Conventions[1]): meta::java::metamodel::Method[1]
 {
     let javaType                = $conventions->pureTypeToJavaType($type, PureOne);
-    let simpleJavaName          = $type.name->toOne()->meta::alloy::runtime::java::convertToJavaCompatibleClassName();
-    let fullJavaName            = $javaType->meta::java::tostring::typePathToString(true)->meta::alloy::runtime::java::convertToJavaCompatibleClassName();
+    let simpleJavaName          = $type.name->toOne()->meta::java::codeGeneration::convention::convertToJavaCompatibleClassName();
+    let fullJavaName            = $javaType->meta::java::tostring::typePathToString(true)->meta::java::codeGeneration::convention::convertToJavaCompatibleClassName();
     let acceptibleTokens        = $conventions->jacksonTokenTypesFor($type);
     let getCurrentTokenErrorMsg = '"Unexpected " + parser.getCurrentToken() + " for PURE '+ $type.name->toOne()+'"';
     let getNextTokenErrorMsg    = '"Unexpected " + parser.nextToken() + " for PURE '+ $type.name->toOne()+'"';

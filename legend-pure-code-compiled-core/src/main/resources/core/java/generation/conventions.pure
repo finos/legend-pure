@@ -359,7 +359,7 @@ function <<access.private>> meta::java::codeGeneration::convention::generateClas
       | javaEnum(javaPackage($javaPkgName), $pe.name->toUpperFirstCharacter()->toOne() + $suffix),
       | let className = $pe.name->toUpperFirstCharacter()->toOne();
         if($pe->instanceOf(Unit),
-           |javaClass(javaPackage($javaPkgName), $className->meta::alloy::runtime::java::convertToJavaCompatibleClassName() + $suffix),
+           |javaClass(javaPackage($javaPkgName), $className->convertToJavaCompatibleClassName() + $suffix),
            |javaClass(javaPackage($javaPkgName), $className + $suffix)
         );
    );
