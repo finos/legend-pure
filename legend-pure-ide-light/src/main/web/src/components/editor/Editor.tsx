@@ -85,6 +85,7 @@ export const EditorInner = observer(() => {
     [HOTKEY.GO_TO_FILE]: HOTKEY_MAP[HOTKEY.GO_TO_FILE],
     [HOTKEY.FULL_RECOMPILE]: HOTKEY_MAP[HOTKEY.FULL_RECOMPILE],
     [HOTKEY.RUN_TEST]: HOTKEY_MAP[HOTKEY.RUN_TEST],
+    [HOTKEY.TOGGLE_OPEN_TABS_MENU]: HOTKEY_MAP[HOTKEY.TOGGLE_OPEN_TABS_MENU],
   };
   const handlers = {
     [HOTKEY.SEARCH_FILE]: editorStore.createGlobalHotKeyAction(() => { editorStore.setOpenFileSearchCommand(true) }),
@@ -99,6 +100,9 @@ export const EditorInner = observer(() => {
     }),
     [HOTKEY.FULL_RECOMPILE]: editorStore.createGlobalHotKeyAction((event: KeyboardEvent | undefined) => { flowResult(editorStore.fullReCompile(Boolean(event?.shiftKey ?? event?.ctrlKey))).catch(applicationStore.alertIllegalUnhandledError) }),
     [HOTKEY.RUN_TEST]: editorStore.createGlobalHotKeyAction((event: KeyboardEvent | undefined) => { flowResult(editorStore.executeFullTestSuite(event?.shiftKey)).catch(applicationStore.alertIllegalUnhandledError) }),
+    // NOTE: right now this is fairly simplistic, we can create it to navigate in 2 directions like `Tab` and `Shift + Tab`.
+    // in VSCode for example, they always show the current tab on top/bottom based on the navigation direction
+    [HOTKEY.TOGGLE_OPEN_TABS_MENU]: editorStore.createGlobalHotKeyAction(() => { editorStore.setShowOpenedTabsMenu(!editorStore.showOpenedTabsMenu) }),
   };
 
   // Cleanup the editor

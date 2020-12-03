@@ -14,25 +14,33 @@
  * limitations under the License.
  */
 
-@import 'abstracts/mixins';
+.icon {
+  @include flexCenter;
+  font-family: 'Raleway';
+  font-weight: 900;
+  user-select: none;
+}
 
-// Base
-@import 'base/variables';
-@import 'base/base';
-@import 'base/utils';
-@import 'base/common';
-@import 'base/icon';
-@import 'base/button';
-@import 'base/input';
-@import 'base/panel';
-@import 'base/modal';
-@import 'base/menu';
+.icon--flat-data {
+  svg {
+    font-size: 1.2rem;
+  }
+}
 
-// Reset (overrie library styles)
-@import 'reset/monaco-editor';
-@import 'reset/react-reflex';
+.icon--connection,
+.icon--config {
+  svg {
+    font-size: 1.6rem;
+  }
+}
 
-// Components
-@import 'components/shared';
-@import 'components/app';
-@import 'components/editor';
+.icon--function {
+  font-family: 'Roboto Condensed';
+  font-size: 1.2rem;
+  letter-spacing: 0.1rem;
+  user-select: none;
+}
+
+.icon__tab {
+  font-size: 1.6rem;
+}

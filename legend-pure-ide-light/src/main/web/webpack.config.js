@@ -100,8 +100,11 @@ module.exports = (env, arg) => {
       },
       open: true,
       port: 3000,
+      // NOTE: check `host` and `static` after next upgrade of `webpack-dev-server@4.0.0.beta`
+      // See https://github.com/webpack/webpack-dev-server/issues/2874
+      // See https://github.com/webpack/webpack-dev-server/issues/2893
       host: "localhost",
-      firewall: false,
+      static: { watch: false },
       openPage: BaseConfig.baseRoute,
       // redirect 404s to /index.html
       historyApiFallback: {

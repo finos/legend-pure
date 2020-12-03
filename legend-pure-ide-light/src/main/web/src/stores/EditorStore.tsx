@@ -91,6 +91,7 @@ export class EditorStore {
   // Tabs
   currentEditorState?: EditorState;
   openedEditorStates: EditorState[] = [];
+  showOpenedTabsMenu = false;
   // App states
   isInExpandedMode = true;
   backdrop = false;
@@ -128,6 +129,7 @@ export class EditorStore {
 
   constructor(applicationStore: ApplicationStore) {
     makeAutoObservable(this, {
+      setShowOpenedTabsMenu: action,
       setBlockGlobalHotkeys: action,
       setBackdrop: action,
       setExpandedMode: action,
@@ -150,6 +152,7 @@ export class EditorStore {
 
   get isAuxPanelMaximized(): boolean { return this.auxPanelSize === this.maxAuxPanelSize }
 
+  setShowOpenedTabsMenu(val: boolean): void { this.showOpenedTabsMenu = val }
   setBlockGlobalHotkeys(val: boolean): void { this.blockGlobalHotkeys = val }
   setCurrentEditorState(val: EditorState | undefined): void { this.currentEditorState = val }
   setBackdrop(val: boolean): void { this.backdrop = val }

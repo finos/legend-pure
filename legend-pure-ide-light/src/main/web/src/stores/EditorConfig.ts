@@ -33,6 +33,7 @@ export enum HOTKEY {
   GO_TO_FILE = 'GO_TO_FILE',
   FULL_RECOMPILE = 'FULL_RECOMPILE',
   RUN_TEST = 'RUN_TEST',
+  TOGGLE_OPEN_TABS_MENU = 'TOGGLE_OPEN_TABS_MENU',
 }
 
 export const HOTKEY_MAP: Record<HOTKEY, string[]> = Object.freeze({
@@ -43,6 +44,7 @@ export const HOTKEY_MAP: Record<HOTKEY, string[]> = Object.freeze({
   [HOTKEY.GO_TO_FILE]: ['ctrl+f1'],
   [HOTKEY.FULL_RECOMPILE]: ['f11', 'ctrl+f11', 'shift+f11'],
   [HOTKEY.RUN_TEST]: ['f10', 'shift+f10'],
+  [HOTKEY.TOGGLE_OPEN_TABS_MENU]: ['ctrl+alt+tab'],
 });
 
 export enum ACTIVITY_MODE {
