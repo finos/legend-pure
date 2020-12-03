@@ -416,7 +416,14 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForPrope
 
 function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNode(srcNode:GraphFetchTree[1], setImplementation: PureInstanceSetImplementation[1], tgtNode:GraphFetchTree[1], extensions:meta::pure::router::extension::RouterExtension[*]): GraphFetchTree[1]
 {
-   let subTrees = $tgtNode.subTrees->cast(@PropertyGraphFetchTree)->fold({st,n | $n->enrichSourceTreeNodeForProperty($setImplementation, $st, $extensions)}, $srcNode);
+   let setContainsExplodeProperty = $setImplementation.propertyMappings->filter(pm|if($pm->instanceOf(PurePropertyMapping),| $pm->cast(@PurePropertyMapping).explodeProperty->isTrue(), |false))->isNotEmpty();
+   let subTreeProperties          = $tgtNode.subTrees->cast(@PropertyGraphFetchTree).property.name;
+   let requiredTgtSubTrees        = $tgtNode.subTrees->cast(@PropertyGraphFetchTree)->concatenate(if($setContainsExplodeProperty, 
+                                                                                                     |$setImplementation.propertyMappings.property->map(p | if(!$p.name->in($subTreeProperties),
+                                                                                                                                                               |^PropertyGraphFetchTree(property = $p),
+                                                                                                                                                               |[])),
+                                                                                                     |[]));
+   let subTrees = $requiredTgtSubTrees->fold({st,n | $n->enrichSourceTreeNodeForProperty($setImplementation, $st, $extensions)}, $srcNode);
 }
 
 function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeAtPath(srcNode:GraphFetchTree[1], path:List<PropertyPathNode>[1], setImplementation: PureInstanceSetImplementation[1], tgtPgft:PropertyGraphFetchTree[1], extensions:meta::pure::router::extension::RouterExtension[*]): GraphFetchTree[1]
