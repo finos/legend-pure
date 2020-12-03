@@ -24,6 +24,8 @@ import type { EditorState } from 'Stores/EditorState';
 import { FileEditorState } from 'Stores/EditorState';
 import { ContextMenu } from 'Components/shared/ContextMenu';
 import { FileEditor } from 'Components/editor/edit-panel/FileEditor';
+import { TabIcon } from 'Components/shared/Icon';
+import { DropdownMenu } from 'Components/shared/DropdownMenu';
 
 export const EditPanelSplashScreen: React.FC = () => {
   const commandListWidth = 300;
@@ -106,14 +108,16 @@ export const EditPanel = observer(() => {
     }
   };
   const openTab = (editorState: EditorState): () => void => (): void => editorStore.openState(editorState);
+  const showOpenTabMenu = (): void => editorStore.setShowOpenedTabsMenu(true);
+  const hideOpenTabMenu = (): void => editorStore.setShowOpenedTabsMenu(false);
 
   if (!currentEditorState) {
     return <EditPanelSplashScreen />;
   }
   return (
     <div className="panel edit-panel">
-      <ContextMenu disabled={true} className="panel__header edit-panel__header">
-        <div className="edit-panel__header__tabs">
+      <div className="panel__header edit-panel__header">
+        <ContextMenu disabled={true} className="edit-panel__header__tabs">
           {openedEditorStates.map(editorState => (
             <div
               key={editorState.uuid}
@@ -139,8 +143,33 @@ export const EditPanel = observer(() => {
               </ContextMenu>
             </div>
           ))}
+        </ContextMenu>
+        <div className="panel__header__actions">
+          <DropdownMenu
+            className="panel__header__action"
+            disabled={!openedEditorStates.length}
+            open={editorStore.showOpenedTabsMenu}
+            onOpen={showOpenTabMenu}
+            onClose={hideOpenTabMenu}
+            content={
+              <div className="menu">
+                {openedEditorStates.map(editorState => (
+                  <div key={editorState.uuid} className={clsx('menu__item', { 'menu__item--selected': editorState === currentEditorState })} onClick={openTab(editorState)}>{editorState.headerName}</div>
+                ))}
+              </div>
+            }
+            menuProps={{
+              anchorOrigin: { vertical: 'bottom', horizontal: 'right' },
+              transformOrigin: { vertical: 'top', horizontal: 'right' }
+            }}
+          >
+            <button
+              className="panel__header__action edit-panel__header__action"
+              title="Go to Tab... (Ctrl + Alt + Tab)"
+            ><TabIcon /></button>
+          </DropdownMenu>
         </div>
-      </ContextMenu>
+      </div>
       <div
         // NOTE: This is one small but extremely important line. Using `key` we effectivly force-remounting the element editor
         // component every time current element editor state is changed. This is great to control errors that has to do with stale states
