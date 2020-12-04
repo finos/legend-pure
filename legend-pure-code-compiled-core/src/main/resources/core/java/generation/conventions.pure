@@ -357,11 +357,8 @@ function <<access.private>> meta::java::codeGeneration::convention::generateClas
    let javaPkgName = $zoneRoot + $conventions->identifier($package->elementToPath()->replace('::', '.'));
    if($pe->instanceOf(Enumeration),
       | javaEnum(javaPackage($javaPkgName), $pe.name->toUpperFirstCharacter()->toOne() + $suffix),
-      | let className = $pe.name->toUpperFirstCharacter()->toOne();
-        if($pe->instanceOf(Unit),
-           |javaClass(javaPackage($javaPkgName), $className->convertToJavaCompatibleClassName() + $suffix),
-           |javaClass(javaPackage($javaPkgName), $className + $suffix)
-        );
+      | let className = $pe.name->sanitizeIdentifier()->toUpperFirstCharacter()->toOne();
+        javaClass(javaPackage($javaPkgName), $className + $suffix);
    );
 }
 
@@ -1242,6 +1239,16 @@ function meta::java::codeGeneration::convention::javaType(conventions:Convention
 {
    let conversion = $conventions->typeConversion($type);
    if($mult == PureOne, |$conversion.oneJavaType, |$conversion.nonOneJavaType)->listIfMulti($mult);
+}
+
+function <<access.private>> meta::java::codeGeneration::convention::sanitizeIdentifier(name: String[1]): String[1]
+{
+   $name->sanitizeJavaKeywords()->replaceIllegalSymbols();
+}
+
+function <<access.private>> meta::java::codeGeneration::convention::replaceIllegalSymbols(symbol: String[1]): String[1]
+{
+   $symbol->replace('~', '_Tilde_');
 }
 
 function <<access.private>> meta::java::codeGeneration::convention::sanitizeJavaKeywords(name: String[1]): String[1]
