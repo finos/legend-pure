@@ -357,7 +357,7 @@ function <<access.private>> meta::java::codeGeneration::convention::generateClas
    let javaPkgName = $zoneRoot + $conventions->identifier($package->elementToPath()->replace('::', '.'));
    if($pe->instanceOf(Enumeration),
       | javaEnum(javaPackage($javaPkgName), $pe.name->toUpperFirstCharacter()->toOne() + $suffix),
-      | let className = $pe.name->sanitizeIdentifier()->toUpperFirstCharacter()->toOne();
+      | let className = $pe.name->toOne()->sanitizeIdentifier()->toUpperFirstCharacter()->toOne();
         javaClass(javaPackage($javaPkgName), $className + $suffix);
    );
 }
