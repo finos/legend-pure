@@ -83,6 +83,26 @@ meta::pure::functions::string::isDigit(string:String[1], start:Integer[1], end:I
    ($realStart < $realEnd) && range($realStart, $realEnd)->forAll(i | $string->substring($i, $i + 1)->inRange('0', '9'));
 }
 
+function {doc.doc = 'Return whether string non-empty and composed entirely of letters.'}
+meta::pure::functions::string::isLetter(string:String[1]):Boolean[1]
+{
+   $string->isLetter(0, $string->length());
+}
+
+function {doc.doc = 'Return whether the range [start, end) of string is non-empty and composed entirely of letters.'}
+meta::pure::functions::string::isLetter(string:String[1], start:Integer[1], end:Integer[1]):Boolean[1]
+{
+   let realStart = max($start, 0);
+   let realEnd = min($end, $string->length());
+   ($realStart < $realEnd) && !range($realStart, $realEnd)->exists(i | let c = $string->substring($i, $i+1); !$c->inRange('a', 'z') && !$c->inRange('A', 'Z'););
+}
+
+function {doc.doc = 'Return whether string non-empty and composed entirely of digits or letters.'}
+meta::pure::functions::string::isAlphaNumeric(string:String[1]):Boolean[1]
+{
+   ($string->length() > 0) && !range($string->length())->exists(i| let c = $string->substring($i, $i+1); !$c->isDigit() && !$c->isLetter(););
+}
+
 function {doc.doc = 'Returns a string representing a collection of pairs'}
 meta::pure::functions::string::makeString<K,V>(collection : Pair<K,V>[*]) : String[1]
 {
