@@ -108,7 +108,7 @@ Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::ModelToModelExecu
    pathToMapping : String[1];
    pathToClasses : String[*];
    connection : meta::protocols::pure::vX_X_X::metamodel::runtime::Connection[1];
-   pureModelContextData : meta::protocols::pure::vX_X_X::metamodel::BasePureModelContextData[1];
+   pureModelContextData : meta::protocols::pure::vX_X_X::metamodel::PureModelContextData[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::GraphFetchM2MExecutionNode extends ExecutionNode
@@ -233,13 +233,10 @@ Class meta::protocols::pure::vX_X_X::metamodel::AlloySDLC extends meta::protocol
    project : String[0..1];
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::BasePureModelContextData extends meta::protocols::pure::vX_X_X::metamodel::PureModelContext
+Class meta::protocols::pure::vX_X_X::metamodel::PureModelContextData extends meta::protocols::pure::vX_X_X::metamodel::PureModelContext
 {
    origin : meta::protocols::pure::vX_X_X::metamodel::PureModelContextPointer[0..1];
-   domain : meta::protocols::pure::vX_X_X::metamodel::domain::Domain[0..1];
-   stores : meta::protocols::pure::vX_X_X::metamodel::store::Store[*];
-   mappings : meta::protocols::pure::vX_X_X::metamodel::mapping::Mapping[*];
-   diagrams : meta::protocols::pure::vX_X_X::metamodel::diagram::Diagram[*];
+   elements : meta::protocols::pure::vX_X_X::metamodel::PackageableElement[*];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::PureModelContextText extends meta::protocols::pure::vX_X_X::metamodel::PureModelContext
@@ -249,7 +246,7 @@ Class meta::protocols::pure::vX_X_X::metamodel::PureModelContextText extends met
 
 Class meta::protocols::pure::vX_X_X::metamodel::PureModelContextComposite extends meta::protocols::pure::vX_X_X::metamodel::PureModelContext
 {
-   data : meta::protocols::pure::vX_X_X::metamodel::BasePureModelContextData[0..1];
+   data : meta::protocols::pure::vX_X_X::metamodel::PureModelContextData[0..1];
    pointer : meta::protocols::pure::vX_X_X::metamodel::PureModelContextPointer[0..1];
 }
 
