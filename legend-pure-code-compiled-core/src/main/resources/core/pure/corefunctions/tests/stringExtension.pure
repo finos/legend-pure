@@ -68,6 +68,41 @@ function <<test.Test>> meta::pure::functions::string::tests::testIsDigit():Boole
    assertFalse('a312987b'->isDigit(3, -3));
 }
 
+function <<test.Test>> meta::pure::functions::string::tests::testIsLetter():Boolean[1]
+{
+   assert('a'->isLetter());
+   assert('A'->isLetter());
+   assert('GoldmanSachs'->isLetter());
+   assertFalse('200West'->isLetter());
+   assertFalse('Goldman Sachs'->isLetter());
+   assert('Goldman Sachs'->isLetter(0, 7));
+   assert('Goldman Sachs'->isLetter(8, 13));
+   assertFalse(''->isLetter());
+   assertFalse('-'->isLetter());
+   assertFalse('#'->isLetter());
+   assertFalse('%'->isLetter());
+}
+
+function <<test.Test>> meta::pure::functions::string::tests::testIsAlphaNumeric():Boolean[1]
+{
+   assert('0'->isAlphaNumeric());
+   assert('1234567890'->isAlphaNumeric());
+   assertFalse('-123'->isAlphaNumeric());
+   assertFalse('123e+10'->isAlphaNumeric());
+   assertFalse('+100'->isAlphaNumeric());
+   assert('a'->isAlphaNumeric());
+   assert('GOLDMANSACHS'->isAlphaNumeric());
+   assert('200West'->isAlphaNumeric());
+   assertFalse('GOLDMAN SACHS'->isAlphaNumeric());
+   assertFalse('GOLDMAN+SACHS'->isAlphaNumeric());
+   assertFalse('GOLDMAN&SACHS'->isAlphaNumeric());
+   assertFalse(''->isAlphaNumeric());
+   assertFalse(' '->isAlphaNumeric());
+   assertFalse('-'->isAlphaNumeric());
+   assertFalse('#'->isAlphaNumeric());
+   assertFalse('%'->isAlphaNumeric());
+}
+
 function <<test.Test>> meta::pure::functions::string::tests::testSplitOnCamelCase():Boolean[1]
 {
    let pairs = [
