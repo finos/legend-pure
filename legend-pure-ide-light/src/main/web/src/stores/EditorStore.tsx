@@ -647,9 +647,9 @@ export class EditorStore {
       this.setBlockingAlert({ message: 'Finding concept usages...', prompt: `Finding references of ${getUsageConceptLabel(concept)}`, showLoading: true });
       const usages = ((yield this.applicationStore.client.getUsages(concept.owner
         ? (concept.type
-          ? 'meta::ide::findusages::findUsagesForEnum_String_1__String_1__SourceInformation_MANY_'
-          : 'meta::ide::findusages::findUsagesForProperty_String_1__String_1__SourceInformation_MANY_')
-        : 'meta::ide::findusages::findUsagesForPath_String_1__SourceInformation_MANY_', (concept.owner ? [`'${concept.owner}'`] : []).concat(`'${concept.path}'`))) as PlainObject<Usage>[])
+          ? 'meta::pure::ide::findusages::findUsagesForEnum_String_1__String_1__SourceInformation_MANY_'
+          : 'meta::pure::ide::findusages::findUsagesForProperty_String_1__String_1__SourceInformation_MANY_')
+        : 'meta::pure::ide::findusages::findUsagesForPath_String_1__SourceInformation_MANY_', (concept.owner ? [`'${concept.owner}'`] : []).concat(`'${concept.path}'`))) as PlainObject<Usage>[])
         .map(usage => deserialize(Usage, usage));
       this.setSearchState(new UsageResultState(this, concept, usages));
       this.openAuxPanel(AUX_PANEL_MODE.SEARCH_RESULT, true);

@@ -22,7 +22,7 @@ import meta::pure::executionPlan::toString::*;
 import meta::pure::runtime::*;
 import meta::pure::router::clustering::*;
 import meta::pure::executionPlan::*;
-import meta::java::codeGeneration::tests::functions::string::*;
+import meta::java::generation::tests::functions::string::*;
 
 function meta::pure::executionPlan::toString::planToStringWithoutFormatting(e:ExecutionPlan[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
 {

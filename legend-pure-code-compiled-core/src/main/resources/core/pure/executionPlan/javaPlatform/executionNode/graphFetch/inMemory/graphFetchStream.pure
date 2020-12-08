@@ -15,11 +15,11 @@
 import meta::alloy::runtime::java::*;
 import meta::alloy::runtime::java::graphFetch::stream::*;
 import meta::alloy::runtime::java::naming::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
 import meta::java::metamodel::factory::*;
 import meta::java::metamodel::project::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 import meta::pure::dataQuality::*;
 import meta::pure::executionPlan::engine::*;
 

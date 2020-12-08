@@ -13,17 +13,17 @@
 // limitations under the License.
 
 import meta::java::metamodel::*;
-import meta::java::tostring::test::*;
+import meta::java::serialization::test::*;
 import meta::java::metamodel::factory::*;
-import meta::java::annotations::java::validation::constraints::*;
-import meta::java::annotations::json::*;
+import meta::java::metamodel::annotations::java::validation::constraints::*;
+import meta::java::metamodel::annotations::json::*;
 
-function <<test.Test>> meta::java::tostring::test::classToString():Boolean[1]
+function <<test.Test>> meta::java::serialization::test::classToString():Boolean[1]
 {
    let finosPackage = ^meta::java::metamodel::Package(name = 'finos', parent = ^meta::java::metamodel::Package(name = 'org'));
    let c = ^meta::java::metamodel::Class(simpleName = 'MyClass',
                                          modifiers = [Modifier.Protected, Modifier.Abstract],
-                                         annotations = [^meta::java::annotations::json::JsonIgnoreProperties(ignoreUnknown=true)],
+                                         annotations = [^meta::java::metamodel::annotations::json::JsonIgnoreProperties(ignoreUnknown=true)],
                                          typeParameters = ^TypeVariable(name = 'T', bounds = [javaObject(),javaString()]),
                                          superType = ^ParameterizedType(rawType=^meta::java::metamodel::Class(simpleName='OtherType', package=$finosPackage),
                                                                         typeArguments = javaString()),
@@ -113,11 +113,11 @@ function <<test.Test>> meta::java::tostring::test::classToString():Boolean[1]
                 '    protected void doWildCardThing(java.util.List<? extends java.lang.Object> p) {\n'+
                 '        myCode();\n'+
                 '    }\n'+
-                '}\n', $c->meta::java::tostring::classToString(true));
+                '}\n', $c->meta::java::serialization::classToString(true));
 }
 
 
-function <<test.Test>> meta::java::tostring::test::smartClassToString():Boolean[1]
+function <<test.Test>> meta::java::serialization::test::smartClassToString():Boolean[1]
 {
    // Class in same package is considered imported
    test('package org.finos.test;\n' +
@@ -182,7 +182,7 @@ function <<test.Test>> meta::java::tostring::test::smartClassToString():Boolean[
 
 }
 
-function meta::java::tostring::test::test(expected:String[1], class:meta::java::metamodel::Class[1]):Boolean[1]
+function meta::java::serialization::test::test(expected:String[1], class:meta::java::metamodel::Class[1]):Boolean[1]
 {
-   assertEquals($expected, $class->meta::java::tostring::classToString());
+   assertEquals($expected, $class->meta::java::serialization::classToString());
 }

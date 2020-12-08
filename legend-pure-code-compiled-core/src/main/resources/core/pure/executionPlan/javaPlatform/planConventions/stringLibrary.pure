@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::functions::string::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::functions::string::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::factory::*;
 import meta::java::metamodel::project::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 import meta::pure::executionPlan::engine::*;
 
-function meta::java::codeGeneration::functions::string::register(conventions: Conventions[1]): Conventions[1]
+function meta::java::generation::functions::string::register(conventions: Conventions[1]): Conventions[1]
 {   
    let library  = $conventions->className(Library);
    
@@ -85,7 +85,7 @@ function meta::java::codeGeneration::functions::string::register(conventions: Co
 }
 
 
-function <<access.private>> meta::java::codeGeneration::functions::string::addPureToStringMethod(class:meta::java::metamodel::Class[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::functions::string::addPureToStringMethod(class:meta::java::metamodel::Class[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
 {
    let any           = j_parameter(javaObject(), 'any');
    let dateClasses = [Date, StrictDate, DateTime]->map(t| $conventions->pureTypeToJavaType($t, PureOne))->cast(@meta::java::metamodel::Class)->removeDuplicates();
@@ -114,7 +114,7 @@ function <<access.private>> meta::java::codeGeneration::functions::string::addPu
    )->nonNull());
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::string::addToRepresentationMethod(class:meta::java::metamodel::Class[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::functions::string::addToRepresentationMethod(class:meta::java::metamodel::Class[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
 {
    let any         = j_parameter(javaObject(), 'any');
    let dateClasses = [Date, StrictDate, DateTime]->map(t| $conventions->pureTypeToJavaType($t, PureOne))->cast(@meta::java::metamodel::Class)->removeDuplicates();
@@ -137,7 +137,7 @@ function <<access.private>> meta::java::codeGeneration::functions::string::addTo
    ));   
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::string::addFormatToolMethods(class:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::functions::string::addFormatToolMethods(class:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
 {
    let builder      = j_parameter(javaStringBuilder(), 'builder');
    let character    = j_parameter(javaChar(),          'character');
@@ -429,7 +429,7 @@ function <<access.private>> meta::java::codeGeneration::functions::string::addFo
       );
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::string::addFormatMethod(class:meta::java::metamodel::Class[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::functions::string::addFormatMethod(class:meta::java::metamodel::Class[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
 {
    let formatString  = j_parameter(javaString(),           'formatString');
    let formatArgs    = j_parameter(javaList(javaObject()), 'formatArgs');
@@ -609,7 +609,7 @@ function <<access.private>> meta::java::codeGeneration::functions::string::addFo
    ));
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::string::codeDateToString(conventions: Conventions[1], date:Code[1]): Code[1]
+function <<access.private>> meta::java::generation::functions::string::codeDateToString(conventions: Conventions[1], date:Code[1]): Code[1]
 {
    let pureDate = $conventions->className(PureDate);
    if($conventions->dateType() == $pureDate,
@@ -618,7 +618,7 @@ function <<access.private>> meta::java::codeGeneration::functions::string::codeD
    );
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::string::codeDateFormat(conventions: Conventions[1], date:Code[1], formatString:Code[1]): Code[1]
+function <<access.private>> meta::java::generation::functions::string::codeDateFormat(conventions: Conventions[1], date:Code[1], formatString:Code[1]): Code[1]
 {
    let pureDate = $conventions->className(PureDate);
    if($conventions->dateType() == $pureDate,

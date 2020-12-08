@@ -74,7 +74,7 @@ export class PureClient {
   });
 
   getConceptChildren = (path?: string): Promise<PlainObject<ConceptNode>[]> => this.networkClient.get(`${this.baseUrl}/execute`, undefined, undefined, {
-    func: 'meta::ide::display_ide(String[1]):String[1]',
+    func: 'meta::pure::ide::display_ide(String[1]):String[1]',
     param: path ? `'${path}'` : '\'::\'',
     format: 'raw',
     mode: this.mode,

@@ -17,14 +17,14 @@ import meta::alloy::runtime::java::graphFetch::common::*;
 import meta::alloy::runtime::java::naming::*;
 import meta::alloy::runtime::java::platform::*;
 import meta::alloy::runtime::java::typeInfo::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::convention::jackson::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::convention::jackson::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::project::*;
 import meta::java::metamodel::factory::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 import meta::pure::executionPlan::*;
 import meta::pure::graphFetch::execution::*;
 import meta::pure::mapping::modelToModel::*;
@@ -421,7 +421,7 @@ function <<access.private>> meta::alloy::runtime::java::generateMappingAdaptorPr
    );
 
    let method = ^meta::java::metamodel::Method(
-      annotations = ^meta::java::annotations::override::Override(),
+      annotations = ^meta::java::metamodel::annotations::override::Override(),
       modifiers   = [meta::java::metamodel::Modifier.Public],
       name        = $conventions->getterName($p),
       returnType  = $returnType,

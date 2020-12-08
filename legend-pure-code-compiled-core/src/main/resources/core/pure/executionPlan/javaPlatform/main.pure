@@ -16,14 +16,14 @@ import meta::alloy::runtime::java::*;
 import meta::alloy::runtime::java::graphFetch::common::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::graphFetch::executionPlan::*;
-import meta::java::codeGeneration::utils::*;
-import meta::java::tostring::*;
+import meta::java::generation::utils::*;
+import meta::java::serialization::*;
 import meta::pure::mapping::*;
 import meta::pure::executionPlan::*;
 import meta::pure::metamodel::constraint::*;
 import meta::pure::graphFetch::*;
 import meta::java::metamodel::project::*;
-import meta::java::codeGeneration::convention::*;
+import meta::java::generation::convention::*;
 import meta::alloy::runtime::java::typeInfo::*;
 
 Profile meta::alloy::runtime::java::roadmap::feature
@@ -164,7 +164,7 @@ function meta::alloy::runtime::java::projectToImplementation(project:Project[1])
            (
              package = $cl.package->packageToString(),
              name    = $cl.simpleName,
-             source  = $cl->meta::java::tostring::classToString()
+             source  = $cl->meta::java::serialization::classToString()
           )
        })
     );

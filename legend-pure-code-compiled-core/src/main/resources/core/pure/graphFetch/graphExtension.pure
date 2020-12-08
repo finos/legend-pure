@@ -22,7 +22,7 @@ import meta::pure::mapping::modelToModel::*;
 import meta::pure::mapping::modelToModel::inMemory::*;
 import meta::pure::mapping::*;
 import meta::pure::graphFetch::*;
-import meta::java::codeGeneration::deepFetch::*;
+import meta::java::generation::deepFetch::*;
 
 
 Class meta::pure::graphFetch::ExtendedRootGraphFetchTree<T> extends RootGraphFetchTree<T>
