@@ -151,8 +151,3 @@ function <<access.private>> meta::alloy::runtime::java::createUnitDependencies(c
          let conversionFunctionCodeWithDependency = $generatedConversionFunctionCode;,
        | ^Code(type=^meta::java::metamodel::Type()));
 }
-
-function meta::alloy::runtime::java::convertToJavaCompatibleClassName(name:String[1]): String[1]
-{
-   $name->replace('~', '_Tilde_');
-}
