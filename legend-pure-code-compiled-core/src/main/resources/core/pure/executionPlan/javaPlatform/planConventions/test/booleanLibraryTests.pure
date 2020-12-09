@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import meta::alloy::runtime::java::*;
-import meta::java::codeGeneration::tests::*;
+import meta::java::generation::tests::*;
 import meta::java::metamodel::factory::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0', doc.todo='empty equalities' }
-meta::java::codeGeneration::tests::functions::boolean::testEquals() : Boolean[1]
+meta::java::generation::tests::functions::boolean::testEquals() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('equalities on one primitive true', {|5 == 5}, '5L == 5L', javaBoolean())
@@ -51,7 +51,7 @@ meta::java::codeGeneration::tests::functions::boolean::testEquals() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::boolean::testBooleanInQualities() : Boolean[1]
+meta::java::generation::tests::functions::boolean::testBooleanInQualities() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('true > null', {|true > []}, 'org.finos.legend.engine.plan.dependencies.util.Library.greaterThan(true, (Boolean) null)', javaBoolean())
@@ -73,7 +73,7 @@ meta::java::codeGeneration::tests::functions::boolean::testBooleanInQualities() 
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X' }
-meta::java::codeGeneration::tests::functions::boolean::pureTests() : Boolean[1]
+meta::java::generation::tests::functions::boolean::pureTests() : Boolean[1]
 {
    javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
       meta::pure::functions::boolean::tests::testIsPrimitive__Boolean_1_,

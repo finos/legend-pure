@@ -17,7 +17,7 @@
  */
 
 import meta::pure::executionPlan::engine::*;
-import meta::java::codeGeneration::convention::*;
+import meta::java::generation::convention::*;
 import meta::java::metamodel::factory::*;
 
 Class meta::pure::executionPlan::engine::IConstantResult {}

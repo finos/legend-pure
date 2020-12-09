@@ -270,7 +270,7 @@ Enum
 {
    Dog,
    Cat,
-   {meta::java::enumValue.name='Guinea Pig'}Guinea_Pig
+   {meta::java::metamodel::profiles::enumValue.name='Guinea Pig'}Guinea_Pig
    
 }
 

@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::functions::date::pure::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::functions::date::pure::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::factory::*;
 import meta::java::metamodel::project::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 import meta::pure::executionPlan::engine::*;
 
-function meta::java::codeGeneration::functions::date::pure::register(conventions: Conventions[1]): Conventions[1]
+function meta::java::generation::functions::date::pure::register(conventions: Conventions[1]): Conventions[1]
 {
    let pureDate = $conventions->className(PureDate);
    let library  = $conventions->className(Library);

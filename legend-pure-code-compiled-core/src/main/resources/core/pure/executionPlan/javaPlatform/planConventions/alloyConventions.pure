@@ -15,20 +15,20 @@
 import meta::alloy::runtime::java::platform::*;
 import meta::pure::executionPlan::engine::*;
 import meta::pure::router::extension::*;
-import meta::java::codeGeneration::convention::*;
+import meta::java::generation::convention::*;
 
 function meta::alloy::runtime::java::alloyConventions(extensions:meta::pure::router::extension::RouterExtension[*]): Conventions[1]
 {
    newConventions($extensions)
       ->applyJavaEngineDependencies($extensions)
-      ->meta::java::codeGeneration::functions::boolean::register()
-      ->meta::java::codeGeneration::functions::collection::register()
-      ->meta::java::codeGeneration::functions::date::pure::register()
-      ->meta::java::codeGeneration::functions::lang::register()
-      ->meta::java::codeGeneration::functions::assert::register()
-      ->meta::java::codeGeneration::functions::math::register()
-      ->meta::java::codeGeneration::functions::meta::register()
-      ->meta::java::codeGeneration::functions::multiplicity::register()
-      ->meta::java::codeGeneration::functions::string::register()
-      ->meta::java::codeGeneration::functions::unit::register()
+      ->meta::java::generation::functions::boolean::register()
+      ->meta::java::generation::functions::collection::register()
+      ->meta::java::generation::functions::date::pure::register()
+      ->meta::java::generation::functions::lang::register()
+      ->meta::java::generation::functions::assert::register()
+      ->meta::java::generation::functions::math::register()
+      ->meta::java::generation::functions::meta::register()
+      ->meta::java::generation::functions::multiplicity::register()
+      ->meta::java::generation::functions::string::register()
+      ->meta::java::generation::functions::unit::register()
 }

@@ -72,7 +72,7 @@ public class ExecutionManager
 
     private static final OutputFormat DEFAULT_OUTPUT_FORMAT = OutputFormat.JSON;
 
-    private static final String EXECUTE_FUNCTION = "meta::ide::execute_String_$0_1$__List_MANY__String_$0_1$__String_$0_1$__String_$0_1$__String_$0_1$__List_MANY__String_$0_1$__List_MANY__String_MANY_";
+    private static final String EXECUTE_FUNCTION = "meta::pure::ide::execute_String_$0_1$__List_MANY__String_$0_1$__String_$0_1$__String_$0_1$__String_$0_1$__List_MANY__String_$0_1$__List_MANY__String_MANY_";
 
     private final FunctionExecutionParser parser;
     private final FunctionExecution functionExecution;

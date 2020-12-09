@@ -256,7 +256,7 @@ function meta::json::schema::additionalProperties( hasAdditionalProperties:Boole
 
 function meta::json::schema::enum( type:Enumeration<Any>[1] ) : JSONKeyValue[1]
 {
-       let enumValues = $type->enumValues()->map(s|  let enumTagValue = $s->cast(@ElementWithTaggedValues)->value4Tag('name',meta::java::enumValue); 
+       let enumValues = $type->enumValues()->map(s|  let enumTagValue = $s->cast(@ElementWithTaggedValues)->value4Tag('name',meta::java::metamodel::profiles::enumValue); 
                                                      let value = if($enumTagValue->isNotEmpty(),
                                                                       |assert($enumTagValue->size()==1,'can only have 1 enumTagValue per enumValue');
                                                                        $enumTagValue.value->toOne();,
