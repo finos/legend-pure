@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import meta::alloy::runtime::java::*;
-import meta::java::codeGeneration::tests::*;
+import meta::java::generation::tests::*;
 import meta::java::metamodel::factory::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::multiplicity::testToOne() : Boolean[1]
+meta::java::generation::tests::functions::multiplicity::testToOne() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('toOne from one', {|5->toOne()}, 'org.finos.legend.engine.plan.dependencies.util.Library.toOne(5L)', javaLong())
@@ -30,7 +30,7 @@ meta::java::codeGeneration::tests::functions::multiplicity::testToOne() : Boolea
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::multiplicity::testToOneMany() : Boolean[1]
+meta::java::generation::tests::functions::multiplicity::testToOneMany() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('toOneMany from one', {|5->toOneMany()}, 'org.finos.legend.engine.plan.dependencies.util.Library.toOneMany(5L)', javaLong()->javaList())

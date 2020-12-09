@@ -28,14 +28,14 @@ import meta::pure::graphFetch::execution::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::mapping::modelToModel::inMemory::*;
 import meta::pure::graphFetch::executionPlan::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::convention::jackson::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::convention::jackson::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::project::*;
 import meta::java::metamodel::factory::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 
 function <<access.private>> meta::alloy::runtime::java::generateInterfaceForUnit(typeInfo:UnitTypeInfo[1], unitIface:meta::java::metamodel::Class[1],conventions:Conventions[1], debug:DebugContext[1]): meta::java::metamodel::Class[*]
 {
@@ -66,9 +66,9 @@ function <<access.private>> meta::alloy::runtime::java::createUnitClasses(contex
     let unitTypesInMapping = $context.typeInfos->allUnitInfos()->map(uti | $uti.unit());
     let unitClassesUsed = $unitTypesInMapping->map(u| let conversionFunction = $u->cast(@Unit).conversionFunction->evaluateAndDeactivate()->toOne();
                                                       let inverseFunction = meta::pure::functions::math::calculateInverseFunction($conversionFunction)->evaluateAndDeactivate()->toOne();
-                                                      let generatedConversionFunction = $conversionFunction.expressionSequence->toOne()->cast(@ValueSpecification)->meta::java::codeGeneration::expression::generateJava($conventions, $debug)->codeToString($conventions);
-                                                      let generatedInverseFunction = $inverseFunction.expressionSequence->toOne()->cast(@ValueSpecification)->meta::java::codeGeneration::expression::generateJava($conventions, $debug)->codeToString($conventions);
-                                                      let variableCode = $conversionFunction->meta::java::codeGeneration::expression::getUnitConversionFunctionVariableName($conventions, $debug);
+                                                      let generatedConversionFunction = $conversionFunction.expressionSequence->toOne()->cast(@ValueSpecification)->meta::java::generation::expression::generateJava($conventions, $debug)->codeToString($conventions);
+                                                      let generatedInverseFunction = $inverseFunction.expressionSequence->toOne()->cast(@ValueSpecification)->meta::java::generation::expression::generateJava($conventions, $debug)->codeToString($conventions);
+                                                      let variableCode = $conversionFunction->meta::java::generation::expression::getUnitConversionFunctionVariableName($conventions, $debug);
 
                                                       $conventions->implClassName($u)
                                                                ->addModifiers('public')
@@ -140,14 +140,14 @@ function <<access.private>> meta::alloy::runtime::java::createUnitClasses(contex
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::createUnitDependencies(context:GenerationContext[1], debug:DebugContext[1]): meta::java::codeGeneration::code::Code[1]
+function <<access.private>> meta::alloy::runtime::java::createUnitDependencies(context:GenerationContext[1], debug:DebugContext[1]): meta::java::generation::code::Code[1]
 {
    let conventions = $context.conventions;
    let unitTypesInMapping = $context.typeInfos->allUnitInfos()->map(uti | $uti.unit());
    if ($unitTypesInMapping->size() > 0,
        | let u = $unitTypesInMapping->first();
          let conversionFunction = $u->cast(@Unit).conversionFunction->evaluateAndDeactivate()->toOne();
-         let generatedConversionFunctionCode = $conversionFunction.expressionSequence->toOne()->cast(@ValueSpecification)->meta::java::codeGeneration::expression::generateJava($conventions, $debug);
+         let generatedConversionFunctionCode = $conversionFunction.expressionSequence->toOne()->cast(@ValueSpecification)->meta::java::generation::expression::generateJava($conventions, $debug);
          let conversionFunctionCodeWithDependency = $generatedConversionFunctionCode;,
        | ^Code(type=^meta::java::metamodel::Type()));
 }

@@ -14,13 +14,13 @@
 
 import meta::alloy::runtime::java::*;
 import meta::pure::functions::tests::model::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::tests::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::tests::*;
 import meta::java::metamodel::factory::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::collection::testCollectionCreations() : Boolean[1]
+meta::java::generation::tests::functions::collection::testCollectionCreations() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('Add to list', {|['A', 'B']->add('C')}, 'java.util.stream.Stream.concat(java.util.Arrays.asList("A", "B").stream(), java.util.Optional.ofNullable("C").map(java.util.stream.Stream::of).orElseGet(java.util.stream.Stream::empty)).collect(java.util.stream.Collectors.toList())', javaList(javaString()))
@@ -62,7 +62,7 @@ meta::java::codeGeneration::tests::functions::collection::testCollectionCreation
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::collection::testCollectionRestrictions() : Boolean[1]
+meta::java::generation::tests::functions::collection::testCollectionRestrictions() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('distinct singletons', {|[1]->distinct()}, 'java.util.stream.Stream.<Long>of(1L).distinct().collect(java.util.stream.Collectors.toList())', javaList(javaLong()))
@@ -89,7 +89,7 @@ meta::java::codeGeneration::tests::functions::collection::testCollectionRestrict
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::collection::testBooleanCombinators() : Boolean[1]
+meta::java::generation::tests::functions::collection::testBooleanCombinators() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('And true', {|[true,true]->and()}, 'java.util.Arrays.asList(true, true).stream().reduce(true, (Boolean x, Boolean y) -> x && y)', javaBoolean())
@@ -112,7 +112,7 @@ meta::java::codeGeneration::tests::functions::collection::testBooleanCombinators
 // We need broader support before being able to test the other map signatures
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::collection::testMap() : Boolean[1]
+meta::java::generation::tests::functions::collection::testMap() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('map over multiple', {|[1, 2, 3]->map(n|$n+1)}, 'java.util.Arrays.asList(1L, 2L, 3L).stream().map((Long n) -> java.util.Arrays.<Long>asList(n, 1L).stream().reduce(0L, org.finos.legend.engine.plan.dependencies.util.Library::integerPlus).longValue()).collect(java.util.stream.Collectors.toList())', javaList(javaLong()))
@@ -125,7 +125,7 @@ meta::java::codeGeneration::tests::functions::collection::testMap() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::collection::testCollectionQueries() : Boolean[1]
+meta::java::generation::tests::functions::collection::testCollectionQueries() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('size of none', {|[1,2]->filter(n|false)->size()}, 'java.util.Arrays.asList(1L, 2L).stream().filter((Long n) -> false).count()', javaLong())
@@ -161,7 +161,7 @@ meta::java::codeGeneration::tests::functions::collection::testCollectionQueries(
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::collection::testSortBy() : Boolean[1]
+meta::java::generation::tests::functions::collection::testSortBy() : Boolean[1]
 {
       javaExpressionTests(alloyConventions([]))
       ->addTest('Test sortBy()',
@@ -178,7 +178,7 @@ meta::java::codeGeneration::tests::functions::collection::testSortBy() : Boolean
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::collection::testPartsOfCollections() : Boolean[1]
+meta::java::generation::tests::functions::collection::testPartsOfCollections() : Boolean[1]
 {
    let conventions = alloyConventions([]);
    
@@ -252,7 +252,7 @@ meta::java::codeGeneration::tests::functions::collection::testPartsOfCollections
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::collection::testPureTests() : Boolean[1]
+meta::java::generation::tests::functions::collection::testPureTests() : Boolean[1]
 {
    javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
       meta::pure::functions::collection::tests::removeDuplicates::testRemoveDuplicatesPrimitiveNonStandardFunction__Boolean_1_,

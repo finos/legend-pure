@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::utils::*;
 import meta::alloy::runtime::java::platform::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::functions::meta::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::functions::meta::*;
 import meta::java::metamodel::factory::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 
-function meta::java::codeGeneration::functions::meta::register(conventions: Conventions[1]): Conventions[1]
+function meta::java::generation::functions::meta::register(conventions: Conventions[1]): Conventions[1]
 {
     let lib = newConventionsLibrary()
       ->addFunctionCoders([
@@ -34,11 +34,11 @@ function meta::java::codeGeneration::functions::meta::register(conventions: Conv
    
     $conventions->registerClassCoder(
          ClassPurpose.ENUMERATION,
-         meta::java::codeGeneration::functions::meta::generateEnumeration_Type_1__Conventions_1__DebugContext_1__Class_1_
+         meta::java::generation::functions::meta::generateEnumeration_Type_1__Conventions_1__DebugContext_1__Class_1_
       )->registerLibrary($lib);
 }
 
-function meta::java::codeGeneration::functions::meta::extractEnumValue(fe:FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1]): Code[1]
+function meta::java::generation::functions::meta::extractEnumValue(fe:FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1]): Code[1]
 {
    let params    = $fe.parametersValues->evaluateAndDeactivate();
    let type      = $params->at(0).genericType.typeArguments->at(0).rawType->toOne();
@@ -48,7 +48,7 @@ function meta::java::codeGeneration::functions::meta::extractEnumValue(fe:Functi
    $enumType->j_field($enumValue, $enumType)->dependsOn(enumTypeDependency($type, $conventions, $debug));
 }
 
-function meta::java::codeGeneration::functions::meta::enumValues(fe:FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1]): Code[1]
+function meta::java::generation::functions::meta::enumValues(fe:FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1]): Code[1]
 {
    let params    = $fe.parametersValues->evaluateAndDeactivate();
    let type      = $params->at(0).genericType.typeArguments->at(0).rawType->toOne();
@@ -57,7 +57,7 @@ function meta::java::codeGeneration::functions::meta::enumValues(fe:FunctionExpr
    javaArrays()->j_invoke('asList', $enumType->j_invoke('values', [], javaArray($enumType)), javaList($enumType))->dependsOn(enumTypeDependency($type, $conventions, $debug));
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::meta::enumTypeDependency(type:Type[1], conventions:Conventions[1], debug:DebugContext[1]) : CodeDependency[1] 
+function <<access.private>> meta::java::generation::functions::meta::enumTypeDependency(type:Type[1], conventions:Conventions[1], debug:DebugContext[1]) : CodeDependency[1]
 {
    let name = $type->elementToPath();
    let dep = newDependency(
@@ -68,7 +68,7 @@ function <<access.private>> meta::java::codeGeneration::functions::meta::enumTyp
         });  
 }
 
-function meta::java::codeGeneration::functions::meta::generateEnumeration(type:Type[1], conventions: Conventions[1], debug: DebugContext[1]): meta::java::metamodel::Class[1]
+function meta::java::generation::functions::meta::generateEnumeration(type:Type[1], conventions: Conventions[1], debug: DebugContext[1]): meta::java::metamodel::Class[1]
 {
    print(if($debug.debug,|$debug.space+'generateEnumeration: \''+$type.name->toOne()+'\'\n', |''));
    let pkgAndName=$conventions->className($type);

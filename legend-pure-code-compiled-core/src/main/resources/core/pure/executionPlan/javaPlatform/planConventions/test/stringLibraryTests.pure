@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import meta::alloy::runtime::java::*;
-import meta::java::codeGeneration::tests::*;
+import meta::java::generation::tests::*;
 import meta::java::metamodel::factory::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::string::testLiteral() : Boolean[1]
+meta::java::generation::tests::functions::string::testLiteral() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('String literal', {|'"String" literal\n\t\\'}, '"\\"String\\" literal\\n\\t\\\\"', javaString())
@@ -28,7 +28,7 @@ meta::java::codeGeneration::tests::functions::string::testLiteral() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::string::testContents() : Boolean[1]
+meta::java::generation::tests::functions::string::testContents() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('String contains', {|'Hello, World'->contains('ello')}, '"Hello, World".contains("ello")', javaBoolean())
@@ -42,7 +42,7 @@ meta::java::codeGeneration::tests::functions::string::testContents() : Boolean[1
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::string::testParsing() : Boolean[1]
+meta::java::generation::tests::functions::string::testParsing() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('String parseInteger', {|'777'->parseInteger()}, 'Long.parseLong("777")', javaLong())
@@ -55,7 +55,7 @@ meta::java::codeGeneration::tests::functions::string::testParsing() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::string::testExtractions() : Boolean[1]
+meta::java::generation::tests::functions::string::testExtractions() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('Substring', {|'Hello, World'->substring(7, 11)}, '"Hello, World".substring((int) 7L, (int) 11L)', javaString())
@@ -86,7 +86,7 @@ meta::java::codeGeneration::tests::functions::string::testExtractions() : Boolea
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::string::testPositional() : Boolean[1]
+meta::java::generation::tests::functions::string::testPositional() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('IndexOf in String', {|'Hello, World'->indexOf('W')}, '(long) "Hello, World".indexOf("W")', javaLong())
@@ -98,7 +98,7 @@ meta::java::codeGeneration::tests::functions::string::testPositional() : Boolean
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::string::stringConcatenation() : Boolean[1]
+meta::java::generation::tests::functions::string::stringConcatenation() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('JoinStrings args: none', {|['what', 'so', 'ever']->joinStrings()}, 'java.util.Arrays.asList("what", "so", "ever").stream().collect(java.util.stream.Collectors.joining(""))', javaString())
@@ -114,7 +114,7 @@ meta::java::codeGeneration::tests::functions::string::stringConcatenation() : Bo
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0', doc.todo='Add lots more tests' }
-meta::java::codeGeneration::tests::functions::string::toString() : Boolean[1]
+meta::java::generation::tests::functions::string::toString() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('String toString', {|3->toString()}, 'org.finos.legend.engine.plan.dependencies.util.Library.pureToString(3L)', javaString())
@@ -124,7 +124,7 @@ meta::java::codeGeneration::tests::functions::string::toString() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::string::split() : Boolean[1]
+meta::java::generation::tests::functions::string::split() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('String Split', {|'happy-go-lucky'->split('-')}, 'org.finos.legend.engine.plan.dependencies.util.Library.split("happy-go-lucky", "-")', javaList(javaString()))
@@ -140,7 +140,7 @@ meta::java::codeGeneration::tests::functions::string::split() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::string::stringInequality() : Boolean[1]
+meta::java::generation::tests::functions::string::stringInequality() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       // >
@@ -220,7 +220,7 @@ meta::java::codeGeneration::tests::functions::string::stringInequality() : Boole
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::string::testPureTests() : Boolean[1]
+meta::java::generation::tests::functions::string::testPureTests() : Boolean[1]
 {
    javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
       meta::pure::functions::lang::tests::greaterThan::testGreaterThan_String__Boolean_1_,

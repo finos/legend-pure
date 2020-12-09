@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import meta::json::schema::tests::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::utils::*;
 import meta::json::schema::fromSchema::tests::*;
 import meta::json::schema::fromSchema::*;
 import meta::pure::metamodel::serialization::grammar::*;
@@ -168,7 +168,7 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToEnum(pat
   let enumValues = $enum->enumValues()->map( v:Enum[1]   | 
                                                     let original = $valuesMap->get($v->id())->toOne();
                                                    if($original!=$v->id(),
-                                                      |let e = $v->cast(@ElementWithTaggedValues)->addTag(meta::java::enumValue,'name',$original)->cast(@Enum);
+                                                      |let e = $v->cast(@ElementWithTaggedValues)->addTag(meta::java::metamodel::profiles::enumValue,'name',$original)->cast(@Enum);
                                                         ^$e(name=$v->id()); ,
                                                       |^$v(name=$v->id()));
                                     )->toOneMany();   

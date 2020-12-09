@@ -13,15 +13,15 @@
 // limitations under the License.
 
 import meta::alloy::runtime::java::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::tests::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::tests::*;
 import meta::java::metamodel::factory::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::utils::*;
-import meta::java::tostring::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::utils::*;
+import meta::java::serialization::*;
 
-function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix>> meta::java::codeGeneration::tests::functions::math::testLiterals() : Boolean[1]
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix>> meta::java::generation::tests::functions::math::testLiterals() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('Number literal', {|5.2->cast(@Number)}, 'new java.math.BigDecimal("5.2")', javaNumber())
@@ -37,7 +37,7 @@ function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix>> m
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::math::testBasicOperators() : Boolean[1]
+meta::java::generation::tests::functions::math::testBasicOperators() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       // Number
@@ -102,7 +102,7 @@ meta::java::codeGeneration::tests::functions::math::testBasicOperators() : Boole
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::math::testAverage() : Boolean[1]
+meta::java::generation::tests::functions::math::testAverage() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('Number Average', {| average([5.0,1,2.0,8,3])}, 'org.finos.legend.engine.plan.dependencies.util.Library.average(java.util.Arrays.<Number>asList(5.0, 1L, 2.0, 8L, 3L))', javaDouble())
@@ -116,7 +116,7 @@ meta::java::codeGeneration::tests::functions::math::testAverage() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::math::testRound() : Boolean[1]
+meta::java::generation::tests::functions::math::testRound() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('Number Round 1', {| round(2.5)}, 'org.finos.legend.engine.plan.dependencies.util.Library.round(2.5)', javaLong())
@@ -130,7 +130,7 @@ meta::java::codeGeneration::tests::functions::math::testRound() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::math::testLimitations() : Boolean[1]
+meta::java::generation::tests::functions::math::testLimitations() : Boolean[1]
 {
    javaExpressionTests(meta::alloy::runtime::java::alloyConventions([]))
       // Number
@@ -186,7 +186,7 @@ meta::java::codeGeneration::tests::functions::math::testLimitations() : Boolean[
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::math::testTrigs() : Boolean[1]
+meta::java::generation::tests::functions::math::testTrigs() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('Number Sin 1', {| sin(0)}, 'Math.sin(new Long(0L).doubleValue())', javaDouble())
@@ -211,7 +211,7 @@ meta::java::codeGeneration::tests::functions::math::testTrigs() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::math::testInequalities() : Boolean[1]
+meta::java::generation::tests::functions::math::testInequalities() : Boolean[1]
 {
    javaExpressionTests(meta::alloy::runtime::java::alloyConventions([]))
       // >
@@ -291,7 +291,7 @@ meta::java::codeGeneration::tests::functions::math::testInequalities() : Boolean
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::math::testPureTests() : Boolean[1]
+meta::java::generation::tests::functions::math::testPureTests() : Boolean[1]
 {
    javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
       meta::pure::functions::lang::tests::greaterThan::testGreaterThan_Number__Boolean_1_,

@@ -208,7 +208,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=36.00000)
 
     TypeView JsonIgnoreProperties_19_19_19_19_18_18_18_18_18_18_18_18_18_18_18_18_18_17_16_$_16(
-        type=meta::java::annotations::json::JsonIgnoreProperties,
+        type=meta::java::metamodel::annotations::json::JsonIgnoreProperties,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,

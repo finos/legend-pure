@@ -1,0 +1,110 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::json::*;
+import meta::external::avro::*;
+import meta::external::avro::metamodel::*;
+
+Class meta::external::avro::metamodel::AvroProperties
+{
+    <<equality.Key>> props: JSONKeyValue[*];
+}
+
+Class meta::external::avro::metamodel::LogicalType
+{
+    <<equality.Key>> name: String[1];
+}
+
+Class meta::external::avro::metamodel::AvroSchema extends AvroProperties
+{
+    <<equality.Key>> logicalType: LogicalType[0..1];
+}
+
+Class meta::external::avro::metamodel::AvroNullSchema extends AvroSchema
+{
+}
+
+Class meta::external::avro::metamodel::AvroBooleanSchema extends AvroSchema
+{
+}
+
+Class meta::external::avro::metamodel::AvroIntSchema extends AvroSchema
+{
+}
+
+Class meta::external::avro::metamodel::AvroLongSchema extends AvroSchema
+{
+}
+
+Class meta::external::avro::metamodel::AvroFloatSchema extends AvroSchema
+{
+}
+
+Class meta::external::avro::metamodel::AvroDoubleSchema extends AvroSchema
+{
+}
+
+Class meta::external::avro::metamodel::AvroStringSchema extends AvroSchema
+{
+}
+
+Class meta::external::avro::metamodel::AvroArraySchema extends AvroSchema
+{
+    <<equality.Key>> elementType: AvroSchema[1];
+}
+
+Class meta::external::avro::metamodel::AvroUnionSchema extends AvroSchema
+{
+    <<equality.Key>> types: AvroSchema[*];
+}
+
+Class meta::external::avro::metamodel::AvroSchemaName
+{
+    <<equality.Key>> name: String[0..1];
+    <<equality.Key>> space: String[0..1];
+
+    name() {let name = if($this.name->isEmpty(), |'', |$this.name->toOne());
+    if($this.space->isEmpty(), |$name, | $this.space->toOne()+'.'+$name );}: String[1];
+}
+
+Class meta::external::avro::metamodel::AvroNamedSchema extends AvroSchema
+{
+    <<equality.Key>> name: AvroSchemaName[1];
+    <<equality.Key>> doc: String[0..1];
+    <<equality.Key>> aliases: AvroSchemaName[*];
+}
+
+Class meta::external::avro::metamodel::AvroRecordSchema extends AvroNamedSchema
+{
+    <<equality.Key>> fields: AvroSchemaField[*];
+}
+
+Class meta::external::avro::metamodel::AvroEnumSchema extends AvroNamedSchema
+{
+    <<equality.Key>> symbols: String[*];
+}
+
+Class meta::external::avro::metamodel::AvroSchemaField extends AvroProperties
+{
+    <<equality.Key>> name: String[1];
+    <<equality.Key>> schema: AvroSchema[1];
+    <<equality.Key>> default: JSONElement[0..1];
+    <<equality.Key>> order: Order[0..1];
+    <<equality.Key>> aliases: String[*];
+}
+
+Enum meta::external::avro::metamodel::Order
+{
+    ASCENDING, DESCENDING, IGNORE
+}

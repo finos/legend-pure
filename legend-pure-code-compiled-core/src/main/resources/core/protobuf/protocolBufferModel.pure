@@ -1,0 +1,91 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::external::protobuf::metamodel::*;
+
+Class meta::external::protobuf::metamodel::Message extends meta::external::protobuf::metamodel::ProtoBufType
+{
+   name:String[1];
+   fields:Field[*];
+   reservedFieldNames:String[*];
+   reservedFieldNumbers:Integer[*];
+}
+
+
+Class meta::external::protobuf::metamodel::Field
+{
+   binaryFieldNumber:Integer[1];
+   name:String[1];
+   type:ProtoBufType[1];
+   repeated:Boolean[1];
+}
+
+
+Class meta::external::protobuf::metamodel::ProtoBufType
+{
+}
+
+Class meta::external::protobuf::metamodel::MessagePtr extends meta::external::protobuf::metamodel::ProtoBufType
+{
+   name : String[1];
+}
+
+Class meta::external::protobuf::metamodel::EnumPtr extends meta::external::protobuf::metamodel::ProtoBufType
+{
+   name : String[1];
+}
+
+Class meta::external::protobuf::metamodel::Enumeration extends meta::external::protobuf::metamodel::ProtoBufType
+{
+   name : String[1];
+   values:meta::external::protobuf::metamodel::Enum[*];
+}
+
+Class meta::external::protobuf::metamodel::Enum
+{
+   constant : String[1];
+   constantNumber : Integer[1];
+}
+
+Class meta::external::protobuf::metamodel::ScalarType extends ProtoBufType
+{
+}
+
+Class meta::external::protobuf::metamodel::Int32 extends ScalarType
+{
+}
+
+Class meta::external::protobuf::metamodel::Int64 extends ScalarType
+{
+}
+
+Class meta::external::protobuf::metamodel::Bool extends ScalarType
+{
+}
+
+Class meta::external::protobuf::metamodel::String extends ScalarType
+{
+}
+
+Class meta::external::protobuf::metamodel::Double extends ScalarType
+{
+}
+
+Class meta::external::protobuf::metamodel::Float extends ScalarType
+{ 
+}
+
+Class meta::external::protobuf::metamodel::Timestamp extends ScalarType
+{   
+}

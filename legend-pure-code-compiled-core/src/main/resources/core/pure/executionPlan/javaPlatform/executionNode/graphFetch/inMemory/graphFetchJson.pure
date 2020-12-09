@@ -18,13 +18,13 @@ import meta::json::*;
 import meta::alloy::runtime::java::graphFetch::json::*;
 import meta::alloy::runtime::java::naming::*;
 import meta::alloy::runtime::java::typeInfo::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::convention::jackson::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::convention::jackson::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::factory::*;
 import meta::java::metamodel::project::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 import meta::pure::dataQuality::*;
 import meta::pure::executionPlan::engine::*;
 import meta::pure::mapping::modelToModel::*;
@@ -439,7 +439,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::create
 {
     let javaType                = $conventions->pureTypeToJavaType($type, PureOne);
     let simpleJavaName          = $type.name->toOne()->sanitizeIdentifier();
-    let fullJavaName            = $javaType->meta::java::tostring::typePathToString(true)->sanitizeIdentifier();
+    let fullJavaName            = $javaType->meta::java::serialization::typePathToString(true)->sanitizeIdentifier();
     let acceptibleTokens        = $conventions->jacksonTokenTypesFor($type);
     let getCurrentTokenErrorMsg = '"Unexpected " + parser.getCurrentToken() + " for PURE '+ $type.name->toOne()+'"';
     let getNextTokenErrorMsg    = '"Unexpected " + parser.nextToken() + " for PURE '+ $type.name->toOne()+'"';

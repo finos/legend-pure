@@ -182,7 +182,7 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
 
 function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::findValidPaths(p:PackageableElement[*], extensions:meta::pure::router::extension::RouterExtension[*]):String[*]
 {
-   let validForTests = ['meta::java::codeGeneration::tests', 'meta::pure::tests', 'apps::pure', 'apps::global']->concatenate($extensions.validTestPackages);
+   let validForTests = ['meta::java::generation::tests', 'meta::pure::tests', 'apps::pure', 'apps::global']->concatenate($extensions.validTestPackages);
    $validForTests->concatenate($p->map(op|$op->findValidPathsFromPackage()))->removeDuplicates();
 }
 
