@@ -14,32 +14,32 @@
 
 // Created as of PURE Model trunk version 41018 on 2019-01-15T07:48:27.576+0000
 
-Class meta::external::avro::generation::tests::model::latest::A
+Class meta::external::format::avro::generation::tests::model::latest::A
 {
-  b : meta::external::avro::generation::tests::model::latest::B[0..1];
-  e : meta::external::avro::generation::tests::model::latest::E[*];
+  b : meta::external::format::avro::generation::tests::model::latest::B[0..1];
+  e : meta::external::format::avro::generation::tests::model::latest::E[*];
 }
 
-Class meta::external::avro::generation::tests::model::latest::B
+Class meta::external::format::avro::generation::tests::model::latest::B
 {
   i : Integer[1];
-  c : meta::external::avro::generation::tests::model::latest::C[1];
+  c : meta::external::format::avro::generation::tests::model::latest::C[1];
 }
 
-Class meta::external::avro::generation::tests::model::latest::C
+Class meta::external::format::avro::generation::tests::model::latest::C
 {
   s : String[1];
 }
 
-Class meta::external::avro::generation::tests::model::latest::RootClasses
+Class meta::external::format::avro::generation::tests::model::latest::RootClasses
 {
 }
 
-Enum meta::external::avro::generation::tests::model::latest::E
+Enum meta::external::format::avro::generation::tests::model::latest::E
 {
   E1,
-  E2
-}
+  E2}
 
-// meta::external::avro::generation::tests::buildVersion('lastest') at T2;
+
+// meta::external::format::avro::generation::tests::buildVersion('lastest') at T2;
 // lastest -> 2_0_0

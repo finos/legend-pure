@@ -13,23 +13,23 @@
 // limitations under the License.
 
 import meta::pure::metamodel::constraint::*;
-import meta::external::rosetta::generation::*;
+import meta::external::format::rosetta::generation::*;
 import meta::pure::functions::collection::*;
 import meta::pure::functions::lang::*;
 
-Class meta::external::rosetta::generation::State
+Class meta::external::format::rosetta::generation::State
 {
    processingNot :Boolean[0..1];
    processingIf :Boolean[0..1];
    processingMap: Boolean[0..1];
 }
 
-function meta::external::rosetta::generation::translateConstraints(clazz:Class<Any>[1]):String[*]
+function meta::external::format::rosetta::generation::translateConstraints(clazz:Class<Any>[1]):String[*]
 {
    $clazz.constraints->map(c|$c->translateConstraint('   '));
 }
 
-function meta::external::rosetta::generation::translateConstraint(constraint:Constraint[1], indent:String[1]):String[1]
+function meta::external::format::rosetta::generation::translateConstraint(constraint:Constraint[1], indent:String[1]):String[1]
 {
    if($constraint.name!='one_of_constraint',
    |$indent+'condition '+$constraint.name->toOne()+':\n'
@@ -37,13 +37,13 @@ function meta::external::rosetta::generation::translateConstraint(constraint:Con
    |$indent+'condition: one-of');
 }
 
-function meta::external::rosetta::generation::generateFunction(f:FunctionDefinition<Any>[1],  state: State[1]):String[1]
+function meta::external::format::rosetta::generation::generateFunction(f:FunctionDefinition<Any>[1],  state: State[1]):String[1]
 {
    functionDispatch()->get($f.expressionSequence->cast(@FunctionExpression)->evaluateAndDeactivate().functionName->toOne())
                      ->toOne()->eval($f.expressionSequence->cast(@FunctionExpression)->evaluateAndDeactivate()->toOne(), $state);
 }
 
-function meta::external::rosetta::generation::functionDispatch():Map<String, meta::pure::metamodel::function::LambdaFunction<{meta::pure::metamodel::valuespecification::FunctionExpression[1], State[1]->String[1]}>>[1]
+function meta::external::format::rosetta::generation::functionDispatch():Map<String, meta::pure::metamodel::function::LambdaFunction<{meta::pure::metamodel::valuespecification::FunctionExpression[1], State[1]->String[1]}>>[1]
 {
    [
       pair('size',{f:FunctionExpression[1], state:State[1]|$f.parametersValues->at(0)->asString($state)+ ' count'}),
@@ -97,14 +97,14 @@ function meta::external::rosetta::generation::functionDispatch():Map<String, met
 
 }
 
-function meta::external::rosetta::generation::removeTrailingArrows(value:String[1], state:State[1]):String[1]
+function meta::external::format::rosetta::generation::removeTrailingArrows(value:String[1], state:State[1]):String[1]
 {
    if( $state.processingMap->isEmpty() || ($state.processingMap->isNotEmpty() && $state.processingMap->toOne()==false),
       |if($value->trim()->endsWith('->'),|$value->trim()->substring(0,$value->trim()->length()-2),|$value),
       |$value);
 }
 
-function meta::external::rosetta::generation::twoParamFunction(operator:String[1]):LambdaFunction<{FunctionExpression[1], State[1]->String[1]}>[1]
+function meta::external::format::rosetta::generation::twoParamFunction(operator:String[1]):LambdaFunction<{FunctionExpression[1], State[1]->String[1]}>[1]
 {
   { f:FunctionExpression[1], state:State[1]|let leftside = $f.parametersValues->at(0)->asString($state)->removeTrailingArrows($state)->possiblyAddParenthesis();
                                             let rightSide = $f.parametersValues->at(1)->asString($state)->removeTrailingArrows($state)->possiblyAddParenthesis();
@@ -113,12 +113,12 @@ function meta::external::rosetta::generation::twoParamFunction(operator:String[1
 
 
 
-function meta::external::rosetta::generation::possiblyAddParenthesis(value:String[1] ): String[1]
+function meta::external::format::rosetta::generation::possiblyAddParenthesis(value:String[1] ): String[1]
 {
    if($value->contains(' and ') || $value->contains(' or ')  ,| ['( ', $value, ' )']->joinStrings(),| $value);
 }
 
-function meta::external::rosetta::generation::asString(f:ValueSpecification[1], state:State[1]):String[1]
+function meta::external::format::rosetta::generation::asString(f:ValueSpecification[1], state:State[1]):String[1]
 {
    $f->match(
                [

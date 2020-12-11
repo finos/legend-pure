@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::avro::generation::tests::model::trunk::*;
+import meta::external::format::avro::generation::tests::model::trunk::*;
 
-Class meta::external::avro::generation::tests::model::trunk::A
+Class meta::external::format::avro::generation::tests::model::trunk::A
 {
    b: B[0..1];
    e: E[*];
 }
 
-Class meta::external::avro::generation::tests::model::trunk::B
+Class meta::external::format::avro::generation::tests::model::trunk::B
 {
    i: Integer[1];
    c: C[1];
 }
 
-Class meta::external::avro::generation::tests::model::trunk::C
+Class meta::external::format::avro::generation::tests::model::trunk::C
 {
    s: String[1];
 }
 
-Enum meta::external::avro::generation::tests::model::trunk::E
+Enum meta::external::format::avro::generation::tests::model::trunk::E
 {
    E1, E2
 }

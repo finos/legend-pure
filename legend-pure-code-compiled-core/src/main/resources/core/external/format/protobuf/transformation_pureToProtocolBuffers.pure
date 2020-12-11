@@ -12,64 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::protobuf::metamodel::*;
+import meta::external::format::protobuf::metamodel::*;
 import meta::pure::generation::*;
 import meta::pure::generation::metamodel::*;
-import meta::external::protobuf::generation::*;
+import meta::external::format::protobuf::generation::*;
 
-Class meta::external::protobuf::generation::ProtobufConfig extends GenerationConfiguration
-{  
-}
-
-Class meta::external::protobuf::generation::ProtobufOutput extends GenerationOutput
-{  
-}
-
-function meta::external::protobuf::generation::transform(input:ProtobufConfig[1]):ProtobufOutput[*]
+function meta::external::format::protobuf::generation::transform(input:ProtobufConfig[1]):ProtobufOutput[*]
 {
    meta::alloy::test::mayExecuteAlloyTest(
        {clientVersion, serverVersion, host, port|
                    let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::protobuf::alloyGenerateProtobuf_ProtobufConfig_1__String_1__Integer_1__String_1__ProtobufOutput_MANY_';
                    let xf = $fStr->pathToElement()->cast(@Function<{ProtobufConfig[1], String[1], Integer[1], String[1]->GenerationOutput[*]}>);
                    $xf->evaluate([$input, $host, $port, $serverVersion]->map(v|list($v)))->toOneMany()->cast(@ProtobufOutput);},
-       |meta::external::protobuf::generation::internal_transform($input)
+       |meta::external::format::protobuf::generation::internal_transform($input)
     )->toOneMany();  
 }
 
-function <<Generation.Transformation>> meta::external::protobuf::generation::internal_transform(input:ProtobufConfig[1]):ProtobufOutput[*]
+function <<Generation.Transformation>> meta::external::format::protobuf::generation::internal_transform(input:ProtobufConfig[1]):ProtobufOutput[*]
 {
    assertFalse($input.class->isEmpty(),'a class must be provided to protobuf transform');
    let possibleElement = forgivingPathToElement($input.class->toOne());
    assertNotEmpty($possibleElement, | $input.class->toOne() + ' was not found');
-   meta::external::protobuf::generation::generateProtobufFromPure($input, $possibleElement->toOne()->cast(@Class<Any>));
+   meta::external::format::protobuf::generation::generateProtobufFromPure($input, $possibleElement->toOne()->cast(@Class<Any>));
 }
 
-function meta::external::protobuf::generation::generateProtobufFromPureWithScope(config:ProtobufConfig[1]):ProtobufOutput[*]
+function meta::external::format::protobuf::generation::generateProtobufFromPureWithScope(config:ProtobufConfig[1]):ProtobufOutput[*]
 {
    $config.scopeElements->filter(e| !$e->instanceOf(Package))->map(e|assert($e->instanceOf(Class),' Protobuf generation of ' + $e->type().name->toOne()+ ' is not currently supported. Tried to generate Protobuf for '+ $e->elementToPath()) ;);
    let classElements = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Class))->cast(@Class<Any>);
-   $classElements->map(c| $config->meta::external::protobuf::generation::generateProtobufFromPure($c));
+   $classElements->map(c| $config->meta::external::format::protobuf::generation::generateProtobufFromPure($c));
 }
 
-function meta::external::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1]):ProtobufOutput[*]
+function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1]):ProtobufOutput[*]
 {
-   let content =$class->map(c|$c->classToMessage())->map(s|$s->meta::external::protobuf::serialization::toString())->removeDuplicates()->joinStrings('\n');
+   let content =$class->map(c|$c->classToMessage())->map(s|$s->meta::external::format::protobuf::serialization::toString())->removeDuplicates()->joinStrings('\n');
    ^ProtobufOutput(content=$content,fileName=$class->elementToPath()->pathToFileName('proto'), format = 'proto');
 }
 
-function <<access.private>>  meta::external::protobuf::generation::defaultConfig():ProtobufConfig[1]
-{
- ^ProtobufConfig();
-}
-
-function  {service.contentType='txt', service.url='/meta/protobuf/{cls}'}  meta::external::protobuf::generation::transform(cls:String[1]):String[1]
-{
-   ^ProtobufConfig(class=$cls)->transform()->at(0).content;
-     
-
-}
-
-function meta::external::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoBufType[*]
+function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoBufType[*]
 {
    let allClasses = $class->scanTypes([])->removeDuplicates()->remove(Any);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
@@ -86,16 +66,16 @@ function meta::external::protobuf::generation::classToMessage(class:Class<Any>[1
             $allClasses
             ->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->cast(@meta::pure::metamodel::type::Enumeration<Any>)
             ->map(e|
-                  ^meta::external::protobuf::metamodel::Enumeration
+                  ^meta::external::format::protobuf::metamodel::Enumeration
                   (
                      name = $e->enumName(),
-                     values = $e->enumValues()->map(v|^meta::external::protobuf::metamodel::Enum(constant=$v->toString(), constantNumber=$e->enumValues()->indexOf($v)))
+                     values = $e->enumValues()->map(v|^meta::external::format::protobuf::metamodel::Enum(constant=$v->toString(), constantNumber=$e->enumValues()->indexOf($v)))
                   )
              )
          );
 }
 
-function meta::external::protobuf::generation::propertyToField(property:Property<Nil,Any|*>[1], index:Integer[1], typesMap:Map<Type, ProtoBufType>[1]):Field[1]
+function meta::external::format::protobuf::generation::propertyToField(property:Property<Nil,Any|*>[1], index:Integer[1], typesMap:Map<Type, ProtoBufType>[1]):Field[1]
 {
    ^Field
    (
@@ -106,32 +86,32 @@ function meta::external::protobuf::generation::propertyToField(property:Property
    );
 }
 
-function <<access.private>> meta::external::protobuf::generation::seedPureTypeToProtoBufTypeMapping(types:Type[*]):Map<Type, ProtoBufType>[1]
+function <<access.private>> meta::external::format::protobuf::generation::seedPureTypeToProtoBufTypeMapping(types:Type[*]):Map<Type, ProtoBufType>[1]
 {
    newMap(
       [
-         pair(Integer, ^meta::external::protobuf::metamodel::Int64()),
-         pair(Float, ^meta::external::protobuf::metamodel::Double()),
-         pair(String, ^meta::external::protobuf::metamodel::String()),
-         pair(Boolean, ^meta::external::protobuf::metamodel::Bool()),
-         pair(DateTime , ^meta::external::protobuf::metamodel::Timestamp()),
-         pair(Date , ^meta::external::protobuf::metamodel::Timestamp()),
-         pair(StrictDate , ^meta::external::protobuf::metamodel::Timestamp()),
-         pair(Number , ^meta::external::protobuf::metamodel::Double()),
-         pair(Any, ^meta::external::protobuf::metamodel::MessagePtr(name='google.protobuf.Any'))
+         pair(Integer, ^meta::external::format::protobuf::metamodel::Int64()),
+         pair(Float, ^meta::external::format::protobuf::metamodel::Double()),
+         pair(String, ^meta::external::format::protobuf::metamodel::String()),
+         pair(Boolean, ^meta::external::format::protobuf::metamodel::Bool()),
+         pair(DateTime , ^meta::external::format::protobuf::metamodel::Timestamp()),
+         pair(Date , ^meta::external::format::protobuf::metamodel::Timestamp()),
+         pair(StrictDate , ^meta::external::format::protobuf::metamodel::Timestamp()),
+         pair(Number , ^meta::external::format::protobuf::metamodel::Double()),
+         pair(Any, ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Any'))
       ]
       ->concatenate
       (
-         $types->filter(c|$c->instanceOf(Class))->map(c|pair($c, ^meta::external::protobuf::metamodel::MessagePtr(name=$c.name->toOne())))
+         $types->filter(c|$c->instanceOf(Class))->map(c|pair($c, ^meta::external::format::protobuf::metamodel::MessagePtr(name=$c.name->toOne())))
       )
       ->concatenate
       (
-         $types->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->map(c|pair($c, ^meta::external::protobuf::metamodel::EnumPtr(name=$c.name->toOne())))
+         $types->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->map(c|pair($c, ^meta::external::format::protobuf::metamodel::EnumPtr(name=$c.name->toOne())))
       )
    )
 }
 
-function meta::external::protobuf::generation::scanTypes(t:Type[1], processed:Type[*]):Type[*]
+function meta::external::format::protobuf::generation::scanTypes(t:Type[1], processed:Type[*]):Type[*]
 {
    if (!$processed->contains($t),
        |$t->concatenate(if($t->instanceOf(Class),

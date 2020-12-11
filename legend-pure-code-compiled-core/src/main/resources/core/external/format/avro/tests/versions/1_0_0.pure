@@ -14,24 +14,25 @@
 
 // Created as of PURE Model trunk version 41018 on 2019-01-15T07:45:38.176+0000
 
-Class meta::external::avro::generation::tests::model::1_0_0::A
+Class meta::external::format::avro::generation::tests::model::1_0_0::A
 {
-  b : meta::external::avro::generation::tests::model::1_0_0::B[0..1];
-  e : meta::external::avro::generation::tests::model::1_0_0::E[*];
+  b : meta::external::format::avro::generation::tests::model::1_0_0::B[0..1];
+  e : meta::external::format::avro::generation::tests::model::1_0_0::E[*];
 }
 
-Class meta::external::avro::generation::tests::model::1_0_0::B
+Class meta::external::format::avro::generation::tests::model::1_0_0::B
 {
   i : Integer[1];
 }
 
-Class meta::external::avro::generation::tests::model::1_0_0::RootClasses
+Class meta::external::format::avro::generation::tests::model::1_0_0::RootClasses
 {
 }
 
-Enum meta::external::avro::generation::tests::model::1_0_0::E
+Enum meta::external::format::avro::generation::tests::model::1_0_0::E
 {
   E1,
   E2}
 
-// meta::external::avro::generation::tests::buildVersion('1_0_0') at T1;
+
+// meta::external::format::avro::generation::tests::buildVersion('1_0_0') at T1;
