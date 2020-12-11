@@ -161,7 +161,7 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::alloyExe
    // This choice is made as ExecutionContext information can affect the results computed by the executionPlan endpoint
    // If we have either of the two ExecutionContexts in the conditional - throwing the generated execution plan to the executePlan endpoint does *not* return the same results as hittign execute with function,mapping, and runtime
    // hence we default to old behaviour in the case of AuthContext of VectorBatchQueryContext, otherwise we use the two execution plan endpoints
-   let typeAndresultJSON = if(isOptionSet('ExecPlan') && !($context->isNotEmpty() && $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute1->fold({a,b|$a->eval($context) || $b}, true)),
+   let typeAndresultJSON = if(isOptionSet('ExecPlan') && !($context->isNotEmpty() && $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute1->fold({a,b|$a->eval($context) || $b}, false)),
       | let planGenerated = if(isOptionSet('PlanLocal'),
                                {|
                                   let basicPlan = if($m.name->isEmpty(),
