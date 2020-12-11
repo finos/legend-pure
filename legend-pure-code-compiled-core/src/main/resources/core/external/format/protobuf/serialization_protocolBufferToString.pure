@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::protobuf::metamodel::*;
+import meta::external::format::protobuf::metamodel::*;
 
-function meta::external::protobuf::serialization::toString(p:ProtoBufType[1]):String[1]
+function meta::external::format::protobuf::serialization::toString(p:ProtoBufType[1]):String[1]
 {
    $p->match(
       [
-         message:Message[1]|'message ' + $message.name + ' {\n' + $message.fields->map(f | $f->meta::external::protobuf::serialization::toString())->joinStrings(';\n') + ';\n}',
-         enum:meta::external::protobuf::metamodel::Enumeration[1]| 'enum '+$enum.name+' {\n'+$enum.values->map(v|'   '+$v.constant+' = '+$enum.values->indexOf($v)->toString())->joinStrings(';\n')+';\n}'
+         message:Message[1]|'message ' + $message.name + ' {\n' + $message.fields->map(f | $f->meta::external::format::protobuf::serialization::toString())->joinStrings(';\n') + ';\n}',
+         enum:meta::external::format::protobuf::metamodel::Enumeration[1]| 'enum '+$enum.name+' {\n'+$enum.values->map(v|'   '+$v.constant+' = '+$enum.values->indexOf($v)->toString())->joinStrings(';\n')+';\n}'
       ]
    )
    
 }
 
-function meta::external::protobuf::serialization::toString(field:Field[1]):String[1]
+function meta::external::format::protobuf::serialization::toString(field:Field[1]):String[1]
 {
    ' ' + if($field.repeated, | 'repeated ', | '') + $field.type->match(
                                                                   [

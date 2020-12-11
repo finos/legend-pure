@@ -13,10 +13,10 @@
 // limitations under the License.
 
 ###Diagram
-Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=335.00000)
+Diagram meta::external::format::protobuf::metamodel::Diagram(width=1091.59252, height=335.00000)
 {
     TypeView Field_$_0(
-        type=meta::external::protobuf::metamodel::Field,
+        type=meta::external::format::protobuf::metamodel::Field,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -28,7 +28,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=72.00000)
 
     TypeView ScalarType_$_1(
-        type=meta::external::protobuf::metamodel::ScalarType,
+        type=meta::external::format::protobuf::metamodel::ScalarType,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -40,7 +40,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=92.00000)
 
     TypeView Int64_$_2(
-        type=meta::external::protobuf::metamodel::Int64,
+        type=meta::external::format::protobuf::metamodel::Int64,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -52,7 +52,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=36.00000)
 
     TypeView Double_$_3(
-        type=meta::external::protobuf::metamodel::Double,
+        type=meta::external::format::protobuf::metamodel::Double,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -64,7 +64,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=36.00000)
 
     TypeView Int32_$_4(
-        type=meta::external::protobuf::metamodel::Int32,
+        type=meta::external::format::protobuf::metamodel::Int32,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -76,7 +76,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=36.00000)
 
     TypeView Float_$_5(
-        type=meta::external::protobuf::metamodel::Float,
+        type=meta::external::format::protobuf::metamodel::Float,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -88,7 +88,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=36.00000)
 
     TypeView String_$_6(
-        type=meta::external::protobuf::metamodel::String,
+        type=meta::external::format::protobuf::metamodel::String,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -100,7 +100,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=36.00000)
 
     TypeView Bool_$_7(
-        type=meta::external::protobuf::metamodel::Bool,
+        type=meta::external::format::protobuf::metamodel::Bool,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -112,7 +112,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=36.00000)
 
     TypeView Enum_$_8(
-        type=meta::external::protobuf::metamodel::Enum,
+        type=meta::external::format::protobuf::metamodel::Enum,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -124,7 +124,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=60.00000)
 
     TypeView Message_$_9(
-        type=meta::external::protobuf::metamodel::Message,
+        type=meta::external::format::protobuf::metamodel::Message,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -136,7 +136,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=72.00000)
 
     TypeView Timestamp_$_10(
-        type=meta::external::protobuf::metamodel::Timestamp,
+        type=meta::external::format::protobuf::metamodel::Timestamp,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -148,7 +148,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=36.00000)
 
     TypeView Enumeration_$_11(
-        type=meta::external::protobuf::metamodel::Enumeration,
+        type=meta::external::format::protobuf::metamodel::Enumeration,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -160,7 +160,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=48.00000)
 
     TypeView MessagePtr_$_12(
-        type=meta::external::protobuf::metamodel::MessagePtr,
+        type=meta::external::format::protobuf::metamodel::MessagePtr,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -172,7 +172,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=48.00000)
 
     TypeView EnumPtr_$_13(
-        type=meta::external::protobuf::metamodel::EnumPtr,
+        type=meta::external::format::protobuf::metamodel::EnumPtr,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -184,7 +184,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         height=48.00000)
 
     TypeView ProtoBufType_$_14(
-        type=meta::external::protobuf::metamodel::ProtoBufType,
+        type=meta::external::format::protobuf::metamodel::ProtoBufType,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -197,7 +197,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
 
 
 
-    PropertyView pview_15(property=meta::external::protobuf::metamodel::Field.type,
+    PropertyView pview_15(property=meta::external::format::protobuf::metamodel::Field.type,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -210,7 +210,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         propertyPosition=(858.48553, 116.00000),
         multiplicityPosition=(874.49334, 137.00000))
 
-    PropertyView pview_16(property=meta::external::protobuf::metamodel::Message.fields,
+    PropertyView pview_16(property=meta::external::format::protobuf::metamodel::Message.fields,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -223,7 +223,7 @@ Diagram meta::external::protobuf::metamodel::Diagram(width=1091.59252, height=33
         propertyPosition=(638.79315, 247.29582),
         multiplicityPosition=(638.79315, 268.29582))
 
-    PropertyView pview_17(property=meta::external::protobuf::metamodel::Enumeration.values,
+    PropertyView pview_17(property=meta::external::format::protobuf::metamodel::Enumeration.values,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,

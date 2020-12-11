@@ -15,54 +15,38 @@
 import meta::json::*;
 import meta::pure::generation::*;
 import meta::pure::generation::metamodel::*;
-import meta::external::avro::generation::*;
-import meta::external::avro::metamodel::*;
-import meta::external::avro::serialization::*;
+import meta::external::format::avro::generation::*;
+import meta::external::format::avro::metamodel::*;
+import meta::external::format::avro::serialization::*;
 
-
-Class meta::external::avro::generation::AvroConfig extends GenerationConfiguration
+function  meta::external::format::avro::generation::transform(input: AvroConfig[1]): AvroOutput[*]
 {
-   {doc.doc = 'Adds namespace derived from package to Avro schema.'}
-   includeNamespace: Boolean[0..1];
-   includeNamespace() {if($this.includeNamespace->isEmpty(), |true, |$this.includeNamespace->toOne());} :Boolean[1];
+  meta::alloy::test::mayExecuteAlloyTest(
+       {clientVersion, serverVersion, host, port|
+                   let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::avro::alloyGenerateAvro_AvroConfig_1__String_1__Integer_1__String_1__AvroOutput_MANY_';
+                   let xf = $fStr->pathToElement()->cast(@Function<{AvroConfig[1], String[1], Integer[1], String[1]->AvroOutput[*]}>);
+                   $xf->evaluate([$input, $host, $port, $serverVersion]->map(v|list($v)))->toOneMany()->cast(@AvroOutput);},
+       | meta::external::format::avro::generation::internal_transform($input)
+    )->toOneMany();   
+}
 
-   {doc.doc = 'Includes properties from super types.'}
-   includeSuperTypes: Boolean[0..1];
-   includeSuperTypes() {if($this.includeSuperTypes->isEmpty(), |true, |$this.includeSuperTypes->toOne());} :Boolean[1];
-
-   {doc.doc = 'Includes properties from associations.'}
-   includeAssociations: Boolean[0..1];
-   includeAssociations() {if($this.includeAssociations->isEmpty(), |true, |$this.includeAssociations->toOne());} :Boolean[1];
-
-   {doc.doc = 'Includes generated milestoning properties.'}
-   includeGeneratedMilestoning: Boolean[0..1];
-   includeGeneratedMilestoning() {if($this.includeGeneratedMilestoning->isEmpty(), |false, |$this.includeGeneratedMilestoning->toOne());} :Boolean[1];
-   
-   {doc.doc = 'Timestamp logical type. Default is timestamp-micros. Possible values: timestamp-millis, timestamp-micros, or any other registered types.'}
-   timestampLogicalType: String[0..1];
-   timestampLogicalType() {if($this.timestampLogicalType->isEmpty(), |'timestamp-micros', |$this.timestampLogicalType->toOne());} :String[1];
-   
-   {doc.doc = 'Generates properties from specified profile tags.'}
-   propertyProfile: Profile[*];
-   propertyProfile(){if($this.propertyProfile->isEmpty(), |[], |$this.propertyProfile;)} :Profile[*];
- 
-   {doc.doc = 'Override namespace in generated schema.'}
-   namespaceOverride: Map<String, String>[0..1];
-   namespaceOverride(){if($this.namespaceOverride->isEmpty(), |^Map<String,String>(), |$this.namespaceOverride->toOne();)}:Map<String,String>[1];
+function <<access.private,Generation.Transformation>> meta::external::format::avro::generation::internal_transform(input: AvroConfig[1]): AvroOutput[*]
+{
+   assertFalse($input.class->isEmpty(),'a class must be provided to avro transform');
+   let possibleElement = forgivingPathToElement($input.class->toOne());
+   assertNotEmpty($possibleElement, | $input.class->toOne() + ' was not found');
+   assertFalse($possibleElement->size()>1, | $input.class->toOne() + ' more than one found ');
+   $input->meta::external::format::avro::generation::generateAvroFromPure($possibleElement->toOne()->cast(@Class<Any>));
 }
 
 
-Class meta::external::avro::generation::AvroOutput extends GenerationOutput
-{
-}
 
-
-Class meta::external::avro::generation::AvroState
+Class meta::external::format::avro::generation::AvroState
 {
    seenNames: Map<AvroSchemaName, AvroSchema>[1];
 }
 
-Profile meta::external::avro::generation::Avro
+Profile meta::external::format::avro::generation::Avro
 {
    stereotypes:[
         ignore
@@ -73,59 +57,38 @@ Profile meta::external::avro::generation::Avro
    ];
 }
 
-
-function  meta::external::avro::generation::transform(input: AvroConfig[1]): AvroOutput[*]
+function <<access.protected>> meta::external::format::avro::generation::versionedClassToAavroSchema(versionedClassName: String[1], packageOverride: String[1], prettyJSON: Boolean[1]): String[1]
 {
-  meta::alloy::test::mayExecuteAlloyTest(
-       {clientVersion, serverVersion, host, port|
-                   let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::avro::alloyGenerateAvro_AvroConfig_1__String_1__Integer_1__String_1__AvroOutput_MANY_';
-                   let xf = $fStr->pathToElement()->cast(@Function<{AvroConfig[1], String[1], Integer[1], String[1]->AvroOutput[*]}>);
-                   $xf->evaluate([$input, $host, $port, $serverVersion]->map(v|list($v)))->toOneMany()->cast(@AvroOutput);},
-       | meta::external::avro::generation::internal_transform($input)
-    )->toOneMany();   
+   let versionedClass = $versionedClassName->meta::pure::functions::meta::pathToElement()->cast(@Class<Any>);
+   let package = $packageOverride->meta::pure::functions::meta::pathToElement()->cast(@Package);
+
+   let namespace = $versionedClass.package->toOne()->elementToPath('.');
+   let namespaceOverride = $package->elementToPath('.');
+
+   let schemaInJSON = meta::external::format::avro::generation::classToAvroSchema($versionedClass, ^AvroConfig(namespaceOverride=[pair($namespace, $namespaceOverride)]->newMap()))->meta::external::format::avro::serialization::avroSchemaToJSON();
+
+   if($prettyJSON, |$schemaInJSON->toPrettyJSONString(), |$schemaInJSON->toCompactJSONString());
 }
 
-
-function <<access.private,Generation.Transformation>> meta::external::avro::generation::internal_transform(input: AvroConfig[1]): AvroOutput[*]
-{
-   assertFalse($input.class->isEmpty(),'a class must be provided to avro transform');
-   let possibleElement = forgivingPathToElement($input.class->toOne());
-   assertNotEmpty($possibleElement, | $input.class->toOne() + ' was not found');
-   assertFalse($possibleElement->size()>1, | $input.class->toOne() + ' more than one found ');
-   $input->meta::external::avro::generation::generateAvroFromPure($possibleElement->toOne()->cast(@Class<Any>));
-}
-
-function meta::external::avro::generation::generateAvroFromPureWithScope(config: AvroConfig[1]): AvroOutput[*]
+function meta::external::format::avro::generation::generateAvroFromPureWithScope(config: AvroConfig[1]): AvroOutput[*]
 {
    $config.scopeElements->filter(e| !$e->instanceOf(Package))->map(e|assert($e->instanceOf(Type),' Avro generation of ' + $e->type().name->toOne()+ ' is not currently supported. Tried to generate Protobuf for '+ $e->elementToPath()) ;);
    let scopeElements = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Class))->cast(@Class<Any>);
-   $scopeElements->map(c| $config->meta::external::avro::generation::generateAvroFromPure($c));
+   $scopeElements->map(c| $config->meta::external::format::avro::generation::generateAvroFromPure($c));
 }
 
-function meta::external::avro::generation::generateAvroFromPure(config: AvroConfig[1], class: Class<Any>[1]): AvroOutput[*]
+function meta::external::format::avro::generation::generateAvroFromPure(config: AvroConfig[1], class: Class<Any>[1]): AvroOutput[*]
 {
-   let content = $class->meta::external::avro::generation::classToAvroSchema($config)->avroSchemaToJSON()->toCompactJSONString();
+   let content = $class->meta::external::format::avro::generation::classToAvroSchema($config)->avroSchemaToJSON()->toCompactJSONString();
    ^AvroOutput(content=$content,fileName=$class->elementToPath()->pathToFileName('avro'), format='json');
 }
 
-function  meta::external::avro::generation::defaultConfig():AvroConfig[1]
-{
-   ^AvroConfig(includeNamespace=true,includeSuperTypes=true,includeAssociations=true,
-               includeGeneratedMilestoning=false,timestampLogicalType='timestamp-micros',propertyProfile=[],
-               namespaceOverride=^Map<String,String>());
-}
-
-function <<access.private, Generation.Configuration>>  meta::external::avro::generation::describeConfiguration():GenerationParameter[*]
-{
-  meta::pure::generation::describeConfiguration(AvroConfig,meta::external::avro::generation::defaultConfig__AvroConfig_1_,[]);
-}
-
-function meta::external::avro::generation::classToAvroSchema(class: Class<Any>[1], config: AvroConfig[1]): AvroSchema[1]
+function meta::external::format::avro::generation::classToAvroSchema(class: Class<Any>[1], config: AvroConfig[1]): AvroSchema[1]
 {
    $class->classToAvroSchma(^AvroState(seenNames=newMap([]->cast(@Pair<AvroSchemaName, AvroSchema>))), $config).first;
 }
 
-function <<access.private>> meta::external::avro::generation::propertyToAvroSchema(property: AbstractProperty<Any>[1], state: AvroState[1], config: AvroConfig[1]): Pair<AvroSchema, AvroState>[1]
+function <<access.private>> meta::external::format::avro::generation::propertyToAvroSchema(property: AbstractProperty<Any>[1], state: AvroState[1], config: AvroConfig[1]): Pair<AvroSchema, AvroState>[1]
 {
    let propertyType = $property.genericType.rawType->toOne();
    let avroSchemaAndState = $propertyType->match([
@@ -145,7 +108,7 @@ function <<access.private>> meta::external::avro::generation::propertyToAvroSche
    pair($avroSchema, $avroSchemaAndState.second);
 }
 
-function <<access.private>> meta::external::avro::generation::primitiveTypeToAvroSchema(type: PrimitiveType[1], avroType: String[0..1], config: AvroConfig[1]): AvroSchema[0..1]
+function <<access.private>> meta::external::format::avro::generation::primitiveTypeToAvroSchema(type: PrimitiveType[1], avroType: String[0..1], config: AvroConfig[1]): AvroSchema[0..1]
 {
    if ($type == String, | ^AvroStringSchema(), |
       if ($type == Float, | if($avroType->isNotEmpty() && $avroType->toOne() =='float',|^AvroFloatSchema(), |^AvroDoubleSchema()), |
@@ -159,7 +122,7 @@ function <<access.private>> meta::external::avro::generation::primitiveTypeToAvr
    ))))))));
 }
 
-function <<access.private>> meta::external::avro::generation::enumerationToAvroSchema(enumeration: Enumeration<Any>[1], state: AvroState[1], config: AvroConfig[1]): Pair<AvroSchema,AvroState>[1]
+function <<access.private>> meta::external::format::avro::generation::enumerationToAvroSchema(enumeration: Enumeration<Any>[1], state: AvroState[1], config: AvroConfig[1]): Pair<AvroSchema,AvroState>[1]
 {
    let name = $enumeration->enumerationToName($config);
    if($state.seenNames->keys()->contains($name), |
@@ -169,7 +132,7 @@ function <<access.private>> meta::external::avro::generation::enumerationToAvroS
       pair($schema, ^$state(seenNames=$state.seenNames->put($name, $schema))););
 }
 
-function <<access.private>> meta::external::avro::generation::classToAvroSchma(class: Class<Any>[1], state: AvroState[1], config: AvroConfig[1]): Pair<AvroSchema,AvroState>[1]
+function <<access.private>> meta::external::format::avro::generation::classToAvroSchma(class: Class<Any>[1], state: AvroState[1], config: AvroConfig[1]): Pair<AvroSchema,AvroState>[1]
 {
    let specifics = $class.specializations.specific->cast(@Class<Any>);
    if($specifics->isNotEmpty(), |
@@ -193,26 +156,26 @@ function <<access.private>> meta::external::avro::generation::classToAvroSchma(c
       pair($schema, ^$newState(seenNames=$newState.seenNames->put($name, $schema)));););
 }
 
-function <<access.private>> meta::external::avro::generation::enumerationToName(enumeration: Enumeration<Any>[1], config: AvroConfig[1]): AvroSchemaName[1]
+function <<access.private>> meta::external::format::avro::generation::enumerationToName(enumeration: Enumeration<Any>[1], config: AvroConfig[1]): AvroSchemaName[1]
 {
    let namespace = if($config.includeNamespace(), | possiblyOverrideNamespace(elementToPath($enumeration->cast(@PackageableElement).package->toOne(),'.'), $config), |[]);
    ^AvroSchemaName(name=$enumeration->enumName(), space=$namespace);
 }
 
-function <<access.private>> meta::external::avro::generation::classToName(class: Class<Any>[1], config: AvroConfig[1]): AvroSchemaName[1]
+function <<access.private>> meta::external::format::avro::generation::classToName(class: Class<Any>[1], config: AvroConfig[1]): AvroSchemaName[1]
 {
    let namespace = if($config.includeNamespace(), | possiblyOverrideNamespace(elementToPath($class.package->toOne(),'.'), $config), |[]);
    ^AvroSchemaName(name=$class.name->toOne(), space=$namespace);
 }
 
-function <<access.private>> meta::external::avro::generation::possiblyOverrideNamespace(namespace: String[1], config: AvroConfig[1]): String[1]
+function <<access.private>> meta::external::format::avro::generation::possiblyOverrideNamespace(namespace: String[1], config: AvroConfig[1]): String[1]
 {
    if($config.namespaceOverride->isEmpty(), |$namespace, | 
        let override = $config.namespaceOverride->toOne()->get($namespace)->cast(@String);
        if ($override->isEmpty(), | $namespace, | $override->toOne()););
 }
 
-function <<access.private>> meta::external::avro::generation::propertiesFromClass(class: Class<Any>[1], config:AvroConfig[1]): AbstractProperty<Any>[*]
+function <<access.private>> meta::external::format::avro::generation::propertiesFromClass(class: Class<Any>[1], config:AvroConfig[1]): AbstractProperty<Any>[*]
 {
    let classes = if($config.includeSuperTypes(), |
    $class->union($class->superTypes()), |
@@ -228,7 +191,7 @@ function <<access.private>> meta::external::avro::generation::propertiesFromClas
    if($config.includeGeneratedMilestoning(), | $props, |$props->filter(p|!$p->meta::pure::milestoning::hasGeneratedMilestoningPropertyStereotype()));
 }
 
-function <<access.private>> meta::external::avro::generation::superTypes(class: Class<Any>[1]): Class<Any>[*]
+function <<access.private>> meta::external::format::avro::generation::superTypes(class: Class<Any>[1]): Class<Any>[*]
 {
    $class.generalizations.general.rawType->map(rw |
       $rw->match([
@@ -238,7 +201,7 @@ function <<access.private>> meta::external::avro::generation::superTypes(class: 
    );
 }
 
-function <<access.private>> meta::external::avro::generation::defaultValue(default: String[1], type: AvroSchema[1]): JSONElement[0..1]
+function <<access.private>> meta::external::format::avro::generation::defaultValue(default: String[1], type: AvroSchema[1]): JSONElement[0..1]
 {
    $type->match([
       null:AvroNullSchema[1]| ^JSONNull(),
@@ -255,12 +218,12 @@ function <<access.private>> meta::external::avro::generation::defaultValue(defau
    ]);
 }
 
-function <<access.private>> meta::external::avro::generation::isAvroPropertyTaggedValue(taggedValue: TaggedValue[1], config: AvroConfig[1]): Boolean[1]
+function <<access.private>> meta::external::format::avro::generation::isAvroPropertyTaggedValue(taggedValue: TaggedValue[1], config: AvroConfig[1]): Boolean[1]
 { 
    $config.propertyProfile->contains($taggedValue.tag.profile);
 }
 
-function <<access.private>> meta::external::avro::generation::taggedValuesToAvroProperties(taggedValues: TaggedValue[*], config: AvroConfig[1]): JSONKeyValue[*]
+function <<access.private>> meta::external::format::avro::generation::taggedValuesToAvroProperties(taggedValues: TaggedValue[*], config: AvroConfig[1]): JSONKeyValue[*]
 {
    $taggedValues->filter(tv|$tv->isAvroPropertyTaggedValue($config))->map(tv|newJSONKeyValue($tv.tag.value, $tv.value->parseJSON()));
 }

@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::protobuf::generation::*;
+import meta::external::format::protobuf::generation::*;
 import meta::pure::executionPlan::profiles::*;
-import meta::external::protobuf::serialization::*;
-import meta::external::protobuf::generation::tests::*;
+import meta::external::format::protobuf::serialization::*;
+import meta::external::format::protobuf::generation::tests::*;
 
-Class meta::external::protobuf::generation::tests::Trade
+Class meta::external::format::protobuf::generation::tests::Trade
 {
    type:String[1];
    id:Integer[1];
@@ -26,20 +26,20 @@ Class meta::external::protobuf::generation::tests::Trade
    account : Account[1];
 }
 
-Enum meta::external::protobuf::generation::tests::MyEnum
+Enum meta::external::format::protobuf::generation::tests::MyEnum
 {
    a,b
 }
 
-Class meta::external::protobuf::generation::tests::Account
+Class meta::external::format::protobuf::generation::tests::Account
 {
    name : String[1];
    t : Trade[1];
-   enum : meta::external::protobuf::generation::tests::MyEnum[1];
+   enum : meta::external::format::protobuf::generation::tests::MyEnum[1];
    aDate:StrictDate[1];
 }
 
-function <<test.Test>> meta::external::protobuf::generation::tests::testClassToProtoBuf():Boolean[1]
+function <<test.Test>> meta::external::format::protobuf::generation::tests::testClassToProtoBuf():Boolean[1]
 {
    assertEquals('message Trade {\n'+
                 ' string type = 1;\n'+
@@ -58,10 +58,10 @@ function <<test.Test>> meta::external::protobuf::generation::tests::testClassToP
                 '   a = 0;\n'+
                 '   b = 1;\n'+
                 '}'
-                ,classToMessage(Trade)->map(m|$m->meta::external::protobuf::serialization::toString())->joinStrings('\n'));
+                ,classToMessage(Trade)->map(m|$m->meta::external::format::protobuf::serialization::toString())->joinStrings('\n'));
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
+function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
 {
    assertEquals('message Trade {\n'+
                 ' string type = 1;\n'+
@@ -80,5 +80,5 @@ function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::protobuf::
                 '   a = 0;\n'+
                 '   b = 1;\n'+
                 '}'
-                ,meta::external::protobuf::generation::transform(^ProtobufConfig(class='meta::external::protobuf::generation::tests::Trade')).content);
+                ,meta::external::format::protobuf::generation::transform(^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::Trade')).content);
 }

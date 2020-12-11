@@ -13,63 +13,63 @@
 // limitations under the License.
 
 import meta::json::*;
-import meta::external::avro::*;
-import meta::external::avro::metamodel::*;
+import meta::external::format::avro::*;
+import meta::external::format::avro::metamodel::*;
 
-Class meta::external::avro::metamodel::AvroProperties
+Class meta::external::format::avro::metamodel::AvroProperties
 {
     <<equality.Key>> props: JSONKeyValue[*];
 }
 
-Class meta::external::avro::metamodel::LogicalType
+Class meta::external::format::avro::metamodel::LogicalType
 {
     <<equality.Key>> name: String[1];
 }
 
-Class meta::external::avro::metamodel::AvroSchema extends AvroProperties
+Class meta::external::format::avro::metamodel::AvroSchema extends AvroProperties
 {
     <<equality.Key>> logicalType: LogicalType[0..1];
 }
 
-Class meta::external::avro::metamodel::AvroNullSchema extends AvroSchema
+Class meta::external::format::avro::metamodel::AvroNullSchema extends AvroSchema
 {
 }
 
-Class meta::external::avro::metamodel::AvroBooleanSchema extends AvroSchema
+Class meta::external::format::avro::metamodel::AvroBooleanSchema extends AvroSchema
 {
 }
 
-Class meta::external::avro::metamodel::AvroIntSchema extends AvroSchema
+Class meta::external::format::avro::metamodel::AvroIntSchema extends AvroSchema
 {
 }
 
-Class meta::external::avro::metamodel::AvroLongSchema extends AvroSchema
+Class meta::external::format::avro::metamodel::AvroLongSchema extends AvroSchema
 {
 }
 
-Class meta::external::avro::metamodel::AvroFloatSchema extends AvroSchema
+Class meta::external::format::avro::metamodel::AvroFloatSchema extends AvroSchema
 {
 }
 
-Class meta::external::avro::metamodel::AvroDoubleSchema extends AvroSchema
+Class meta::external::format::avro::metamodel::AvroDoubleSchema extends AvroSchema
 {
 }
 
-Class meta::external::avro::metamodel::AvroStringSchema extends AvroSchema
+Class meta::external::format::avro::metamodel::AvroStringSchema extends AvroSchema
 {
 }
 
-Class meta::external::avro::metamodel::AvroArraySchema extends AvroSchema
+Class meta::external::format::avro::metamodel::AvroArraySchema extends AvroSchema
 {
     <<equality.Key>> elementType: AvroSchema[1];
 }
 
-Class meta::external::avro::metamodel::AvroUnionSchema extends AvroSchema
+Class meta::external::format::avro::metamodel::AvroUnionSchema extends AvroSchema
 {
     <<equality.Key>> types: AvroSchema[*];
 }
 
-Class meta::external::avro::metamodel::AvroSchemaName
+Class meta::external::format::avro::metamodel::AvroSchemaName
 {
     <<equality.Key>> name: String[0..1];
     <<equality.Key>> space: String[0..1];
@@ -78,24 +78,24 @@ Class meta::external::avro::metamodel::AvroSchemaName
     if($this.space->isEmpty(), |$name, | $this.space->toOne()+'.'+$name );}: String[1];
 }
 
-Class meta::external::avro::metamodel::AvroNamedSchema extends AvroSchema
+Class meta::external::format::avro::metamodel::AvroNamedSchema extends AvroSchema
 {
     <<equality.Key>> name: AvroSchemaName[1];
     <<equality.Key>> doc: String[0..1];
     <<equality.Key>> aliases: AvroSchemaName[*];
 }
 
-Class meta::external::avro::metamodel::AvroRecordSchema extends AvroNamedSchema
+Class meta::external::format::avro::metamodel::AvroRecordSchema extends AvroNamedSchema
 {
     <<equality.Key>> fields: AvroSchemaField[*];
 }
 
-Class meta::external::avro::metamodel::AvroEnumSchema extends AvroNamedSchema
+Class meta::external::format::avro::metamodel::AvroEnumSchema extends AvroNamedSchema
 {
     <<equality.Key>> symbols: String[*];
 }
 
-Class meta::external::avro::metamodel::AvroSchemaField extends AvroProperties
+Class meta::external::format::avro::metamodel::AvroSchemaField extends AvroProperties
 {
     <<equality.Key>> name: String[1];
     <<equality.Key>> schema: AvroSchema[1];
@@ -104,7 +104,7 @@ Class meta::external::avro::metamodel::AvroSchemaField extends AvroProperties
     <<equality.Key>> aliases: String[*];
 }
 
-Enum meta::external::avro::metamodel::Order
+Enum meta::external::format::avro::metamodel::Order
 {
     ASCENDING, DESCENDING, IGNORE
 }

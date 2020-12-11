@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::rosetta::generation::*;
+import meta::external::format::rosetta::generation::*;
 import meta::java::generation::functions::lang::*;
 
-function meta::external::rosetta::generation::enumToCDMEnum(enum:Enumeration<Any>[1]):String[1]
+function meta::external::format::rosetta::generation::enumToRosettaEnum(enum:Enumeration<Any>[1]):String[1]
 {
    'enum'
    +' '+$enum->enumName()->toOne() + ':'
@@ -23,28 +23,28 @@ function meta::external::rosetta::generation::enumToCDMEnum(enum:Enumeration<Any
    +$enum->enumValues()->processEnumValues('   ')
 }
 
-function meta::external::rosetta::generation::processEnumValues(values: Any[*], space:String[1]):String[1]
+function meta::external::format::rosetta::generation::processEnumValues(values: Any[*], space:String[1]):String[1]
 {
    $values->map(e| $space+$e->id()+ $e->cast(@AnnotatedElement).taggedValues->processTaggedValues()+ '')->joinStrings('','','')
 }
 
-function meta::external::rosetta::generation::classToCDMString(class: Class<Any>[1]):String[1]
+function meta::external::format::rosetta::generation::classToRosettaString(class: Class<Any>[1]):String[1]
 {   
     if($class->isAbstract(),| 'abstract ',|'') 
    +'type '+ $class.name->toOne() 
    + $class.generalizations->processGeneralizations() 
    + $class.taggedValues->processTaggedValues() 
    + $class.stereotypes->processStereotypes()
-   + $class.properties->processProperties('   ') + if($class.constraints->isEmpty(),|'',|($class->meta::external::rosetta::generation::translateConstraints()->joinStrings('\n','\n','')));
+   + $class.properties->processProperties('   ') + if($class.constraints->isEmpty(),|'',|($class->meta::external::format::rosetta::generation::translateConstraints()->joinStrings('\n','\n','')));
 }
 
-function meta::external::rosetta::generation::processStereotypes(stereotypes: Stereotype[*]):String[1]
+function meta::external::format::rosetta::generation::processStereotypes(stereotypes: Stereotype[*]):String[1]
 {
    $stereotypes->map (s | '   [' +$s.profile.name->toOne() + ' '  + $s.value->toOne() + ']\n')->joinStrings();
 
 }
 
-function meta::external::rosetta::generation::processProperties(properties:Property<Any,Any|*>[*], space:String[1]):String[1]
+function meta::external::format::rosetta::generation::processProperties(properties:Property<Any,Any|*>[*], space:String[1]):String[1]
 {
    $properties->map(p|
                     $space+ $p.name->toOne()+
@@ -55,7 +55,7 @@ function meta::external::rosetta::generation::processProperties(properties:Prope
                 )->joinStrings()
 }
 
-function meta::external::rosetta::generation::processMultiplicity(m:Multiplicity[1]): String[1]
+function meta::external::format::rosetta::generation::processMultiplicity(m:Multiplicity[1]): String[1]
 {
    if(multiplicityRepository()->get($m)->isEmpty(),
       |' ('+ $m.lowerBound.value->toOne()->toString()+'..'+if($m.upperBound.value->isNotEmpty(),|$m.upperBound.value->toOne()->toString(),|'*')+')',
@@ -63,7 +63,7 @@ function meta::external::rosetta::generation::processMultiplicity(m:Multiplicity
    );
 }
 
-function meta::external::rosetta::generation::processType(type:Type[1]):String[1]
+function meta::external::format::rosetta::generation::processType(type:Type[1]):String[1]
 {
    if(typeRepository()->get($type)->isNotEmpty(),
       |typeRepository()->get($type)->toOne(),
@@ -71,25 +71,25 @@ function meta::external::rosetta::generation::processType(type:Type[1]):String[1
       );
 }
 
-function meta::external::rosetta::generation::processTaggedValues(t:TaggedValue[*]):String[1]
+function meta::external::format::rosetta::generation::processTaggedValues(t:TaggedValue[*]):String[1]
 {
    let tag = doc->tag('doc');
    let values =  $t->filter(t | $t.tag == $tag)->map(t | $t.value);
    if($values->isNotEmpty(),|$values->joinStrings(' <"',',','">\n'),|'\n');
 }
 
-function meta::external::rosetta::generation::processGeneralizations(gen:Generalization[*]):String[1]
+function meta::external::format::rosetta::generation::processGeneralizations(gen:Generalization[*]):String[1]
 {
    let generalizations =  $gen->filter(g|$g.general.rawType->toOne()!=Any)->map(g|$g.general.rawType->cast(@Class<Any>).name);
    if($generalizations->isNotEmpty(),| $generalizations->joinStrings(' extends ',',', ':'),|':');
 }
 
-function meta::external::rosetta::generation::isAbstract(class:PackageableElement[*]):Boolean[1]
+function meta::external::format::rosetta::generation::isAbstract(class:PackageableElement[*]):Boolean[1]
 {
     ($class.stereotypes.profile->cast(@Profile)->containsAny([meta::pure::profiles::typemodifiers]));
 }
 
-function meta::external::rosetta::generation::typeRepository():Map<Type,String>[1]
+function meta::external::format::rosetta::generation::typeRepository():Map<Type,String>[1]
 {
    [
       pair(String, ' string'),
@@ -101,7 +101,7 @@ function meta::external::rosetta::generation::typeRepository():Map<Type,String>[
    ]->newMap();
 }
 
-function meta::external::rosetta::generation::multiplicityRepository():Map<Multiplicity,String>[1]
+function meta::external::format::rosetta::generation::multiplicityRepository():Map<Multiplicity,String>[1]
 {
    [
       pair(ZeroMany, ' (0..*)'),
