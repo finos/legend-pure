@@ -261,7 +261,7 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::explosion::mappingWithSe
                ~src _S_Person
                firstName : $src.fullName->substring(0, $src.fullName->indexOf(' ')),
                lastName  : $src.fullName->substring($src.fullName->indexOf(' ')+1, $src.fullName->length()),
-               type      : $src.type
+               type      : $src._type
             }
 
   TargetFirm : Pure

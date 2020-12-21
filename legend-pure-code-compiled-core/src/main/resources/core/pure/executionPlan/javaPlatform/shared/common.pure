@@ -214,7 +214,7 @@ function meta::alloy::runtime::java::generateInterfaceForClass(typeInfo: ClassTy
       $withPropertyGetters
    );
    
-   let dataRecordClass   = JsonDataRecord->concatenate($conventions.extensions.plan_javaRuntime_common_generateInterfaceForClass);
+   let dataRecordClass   = [JsonDataRecord, XmlDataRecord]->concatenate($conventions.extensions.plan_javaRuntime_common_generateInterfaceForClass);
    let iReferencedObject = $conventions->className(IReferencedObject);
    if($typeInfo.class->in($dataRecordClass),
       |$withQualifiedPropertyGetters,
