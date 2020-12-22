@@ -99,7 +99,7 @@ public class PureJarMojo extends AbstractMojo
         else
         {
             // If repositories are not specified, add all non-scratch repositories
-            result.addAllIterable(PureRepositoriesExternal.repositories.collect(CodeRepository.GET_NAME));
+            result.addAllIterable(PureRepositoriesExternal.repositories.collect(CodeRepository::getName));
         }
 
         if (this.excludedRepositories != null)

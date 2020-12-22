@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.tools;
 
-import org.eclipse.collections.api.block.function.Function2;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.list.ImmutableList;
@@ -30,8 +29,8 @@ import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.tuple.primitive.PrimitiveTuples;
 import org.eclipse.collections.impl.utility.internal.IteratorIterate;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.tools.GraphPath.Edge;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -43,20 +42,6 @@ import java.util.NoSuchElementException;
 
 public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
 {
-    private static final Function2<String, ProcessorSupport, CoreInstance> GET_BY_USER_PATH = new Function2<String, ProcessorSupport, CoreInstance>()
-    {
-        @Override
-        public CoreInstance value(String path, ProcessorSupport processorSupport)
-        {
-            CoreInstance node = processorSupport.package_getByUserPath(path);
-            if (node == null)
-            {
-                throw new IllegalArgumentException("Unknown path: " + path);
-            }
-            return node;
-        }
-    };
-
     private final ImmutableSet<String> startNodePaths;
     private final ImmutableSet<CoreInstance> startNodes;
     private final SearchFilter searchFilter;
@@ -65,7 +50,7 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
     private GraphPathIterable(Iterable<String> startNodePaths, SearchFilter searchFilter, ProcessorSupport processorSupport)
     {
         this.startNodePaths = Sets.immutable.withAll(startNodePaths);
-        this.startNodes = this.startNodePaths.collectWith(GET_BY_USER_PATH, processorSupport);
+        this.startNodes = this.startNodePaths.collectWith(GraphPathIterable::getByUserPath, processorSupport);
         this.searchFilter = (searchFilter == null) ? getDefaultSearchFilter() : searchFilter;
         this.processorSupport = processorSupport;
     }
@@ -97,6 +82,21 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
         return this.searchFilter.filter(resolvedGraphPath, this.processorSupport);
     }
 
+    private CoreInstance getByUserPath(String path)
+    {
+        return getByUserPath(path, this.processorSupport);
+    }
+
+    private static CoreInstance getByUserPath(String path, ProcessorSupport processorSupport)
+    {
+        CoreInstance node = processorSupport.package_getByUserPath(path);
+        if (node == null)
+        {
+            throw new IllegalArgumentException("Unknown path: " + path);
+        }
+        return node;
+    }
+
     private class GraphPathIterator implements Iterator<GraphPath>
     {
         private final MutableSet<GraphPath> visited = Sets.mutable.empty();
@@ -107,7 +107,7 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
         {
             for (String startNodePath : GraphPathIterable.this.startNodePaths)
             {
-                enqueue(GraphPath.buildPath(startNodePath), Lists.immutable.with(GET_BY_USER_PATH.value(startNodePath, GraphPathIterable.this.processorSupport)));
+                enqueue(GraphPath.buildPath(startNodePath), Lists.immutable.with(getByUserPath(startNodePath)));
             }
             update();
         }
@@ -396,7 +396,7 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
 
         protected boolean allEdgePropertiesSatisfy(GraphPath path, Predicate<? super String> predicate)
         {
-            return path.getEdges().allSatisfy(Predicates.attributePredicate(Edge.GET_PROPERTY, predicate));
+            return path.getEdges().allSatisfy(Predicates.attributePredicate(Edge::getProperty, predicate));
         }
     }
 

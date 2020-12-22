@@ -24,8 +24,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-
 public class TestClassLoaderCodeStorage
 {
     private ClassLoaderCodeStorage testCodeStorage;
@@ -131,9 +129,9 @@ public class TestClassLoaderCodeStorage
     @Test
     public void testRepositoryName()
     {
-        Verify.assertSetsEqual(Sets.mutable.with("platform"), this.platformCodeStorage.getRepositories().collect(CodeRepository.GET_NAME).toSet());
-        Verify.assertSetsEqual(Sets.mutable.with("test"), this.testCodeStorage.getRepositories().collect(CodeRepository.GET_NAME).toSet());
-        Verify.assertSetsEqual(Sets.mutable.with("platform", "test"), this.combinedCodeStorage.getRepositories().collect(CodeRepository.GET_NAME).toSet());
+        Verify.assertSetsEqual(Sets.mutable.with("platform"), this.platformCodeStorage.getRepositories().collect(CodeRepository::getName).toSet());
+        Verify.assertSetsEqual(Sets.mutable.with("test"), this.testCodeStorage.getRepositories().collect(CodeRepository::getName).toSet());
+        Verify.assertSetsEqual(Sets.mutable.with("platform", "test"), this.combinedCodeStorage.getRepositories().collect(CodeRepository::getName).toSet());
     }
 
     @Test(expected = RuntimeException.class)

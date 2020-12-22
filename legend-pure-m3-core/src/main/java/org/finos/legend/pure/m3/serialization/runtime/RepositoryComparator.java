@@ -15,7 +15,6 @@
 package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
@@ -48,7 +47,7 @@ public class RepositoryComparator implements Comparator<String>
 
     public RepositoryComparator(RichIterable<? extends CodeRepository> repositories)
     {
-        this.repositories = repositories.toMap(CodeRepository.GET_NAME, Functions.<CodeRepository>getPassThru()).toImmutable();
+        this.repositories = repositories.toMap(CodeRepository::getName, Functions.<CodeRepository>getPassThru()).toImmutable();
     }
 
     @Override
