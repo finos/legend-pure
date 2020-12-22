@@ -581,7 +581,7 @@ public class GraphPath
 
     private static class ToOnePropertyEdge extends Edge
     {
-        private static final Pattern PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
+        private static final Pattern PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*+");
 
         private ToOnePropertyEdge(String property)
         {
@@ -637,7 +637,7 @@ public class GraphPath
 
     private static class ToManyPropertyAtIndexEdge extends ToManyPropertyEdge
     {
-        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*)\\[([0-9]+)\\]");
+        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*+)\\[([0-9]++)\\]");
 
         private final int index;
 
@@ -692,7 +692,7 @@ public class GraphPath
 
     private static class ToManyPropertyWithNameEdge extends ToManyPropertyEdge
     {
-        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*)\\['(.*)'\\]");
+        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*+)\\['(.*)'\\]");
 
         private final String valueName;
 
@@ -748,7 +748,7 @@ public class GraphPath
 
     private static class ToManyPropertyWithStringKeyEdge extends ToManyPropertyEdge
     {
-        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*)\\[([a-zA-Z_][a-zA-Z0-9_]*)='(.*)'\\]");
+        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*+)\\[([a-zA-Z_][a-zA-Z0-9_]*+)='(.*)'\\]");
 
         private final String keyProperty;
         private final String key;
