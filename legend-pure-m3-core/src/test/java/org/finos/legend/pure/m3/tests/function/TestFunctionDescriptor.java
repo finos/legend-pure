@@ -73,6 +73,8 @@ public class TestFunctionDescriptor
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("pkg1::pkg2::func():Boolean[1]"));
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("pkg1::pkg2::func(Integer[1]  , \t String[1..*], SomeClass[*]):Boolean[1]"));
         Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("pkg1::pkg2::func(Integer[1], String[ 1..  5]):Boolean[1]"));
+        Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("   pkg1::pkg2::func  (   \t Integer [ 1 ] , String [ 1       ..  5   ] )   : Boolean\t[  1 ] "));
+        Assert.assertTrue(FunctionDescriptor.isValidFunctionDescriptor("func(Integer[16..20]):Boolean[1]"));
     }
 
     @Test
@@ -124,18 +126,21 @@ public class TestFunctionDescriptor
     public void testFunctionDescriptorToIdSimple() throws InvalidFunctionDescriptorException
     {
         Assert.assertEquals("pkg1::pkg2::pkg3::func_Integer_1__String_1_", FunctionDescriptor.functionDescriptorToId("pkg1::pkg2::pkg3::func(Integer[1]):String[1]"));
+        Assert.assertEquals("pkg1::pkg2::pkg3::func_Integer_1__String_1_", FunctionDescriptor.functionDescriptorToId("    pkg1::pkg2::pkg3::func ( Integer  \t [ 1 ]   ) : String [ 1 ]   "));
     }
 
     @Test
     public void testFunctionDescriptorToIdNoPackage() throws InvalidFunctionDescriptorException
     {
         Assert.assertEquals("func_Integer_1__String_1_", FunctionDescriptor.functionDescriptorToId("func(Integer[1]):String[1]"));
+        Assert.assertEquals("func_Integer_1__String_1_", FunctionDescriptor.functionDescriptorToId("\t  \tfunc ( Integer\t[1])   : String[1]\t\t"));
     }
 
     @Test
     public void testFunctionDescriptorToIdNoParameters() throws InvalidFunctionDescriptorException
     {
         Assert.assertEquals("pkg::myFunc__String_1_", FunctionDescriptor.functionDescriptorToId("pkg::myFunc():String[1]"));
+        Assert.assertEquals("pkg::myFunc__String_1_", FunctionDescriptor.functionDescriptorToId(" \t \tpkg::myFunc(       ) : String[\t\t1\t]"));
     }
 
     @Test
