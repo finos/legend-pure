@@ -18,11 +18,11 @@ import java.util.regex.Pattern;
 
 public class CodeStorageTools
 {
-    private static final Pattern VALID_NON_ROOT_PATH_PATTERN = Pattern.compile("^/?(\\w+/)*\\w+(/|(\\.\\w+))?$");
-    private static final Pattern VALID_NON_ROOT_FOLDER_PATTERN = Pattern.compile("^(\\w+)?(/\\w+)+/?$");
-    private static final Pattern VALID_FILE_PATTERN = Pattern.compile("^/?(\\w+/)*\\w+\\.\\w+$");
-    private static final Pattern PURE_FILE_PATTERN = Pattern.compile("^/?(\\w+/)*\\w+\\.(?i)pure$");
-    private static final Pattern CANONICAL_NON_ROOT_PATH_PATTERN = Pattern.compile("^(/\\w+)+(\\.\\w+)?$");
+    private static final Pattern VALID_NON_ROOT_PATH_PATTERN = Pattern.compile("^/?+(\\w++/)*\\w++(/|(\\.\\w++))?$");
+    private static final Pattern VALID_NON_ROOT_FOLDER_PATTERN = Pattern.compile("^(\\w++)?(/\\w++)++/?$");
+    private static final Pattern VALID_FILE_PATTERN = Pattern.compile("^/?+(\\w++/)*+\\w++\\.\\w++$");
+    private static final Pattern PURE_FILE_PATTERN = Pattern.compile("^/?+(\\w++/)*+\\w++\\.(?i)pure$");
+    private static final Pattern CANONICAL_NON_ROOT_PATH_PATTERN = Pattern.compile("^(/\\w++)++(\\.\\w++)?$");
 
     private CodeStorageTools()
     {

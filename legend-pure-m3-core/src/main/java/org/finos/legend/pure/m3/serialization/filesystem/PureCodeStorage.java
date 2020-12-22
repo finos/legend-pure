@@ -81,7 +81,7 @@ public class PureCodeStorage implements MutableCodeStorage
         this.root = root;
         this.codeStorages = Lists.immutable.with(codeStorages);
         this.codeStorageByName = indexCodeStoragesByName(codeStorages).toImmutable();
-        this.repositoriesByName = this.codeStorages.asLazy().flatCollect(RepositoryCodeStorage.GET_REPOSITORIES).groupByUniqueKey(CodeRepository.GET_NAME, UnifiedMap.<String, CodeRepository>newMap(this.codeStorageByName.size())).toImmutable();
+        this.repositoriesByName = this.codeStorages.asLazy().flatCollect(RepositoryCodeStorage.GET_REPOSITORIES).groupByUniqueKey(CodeRepository::getName, UnifiedMap.newMap(this.codeStorageByName.size())).toImmutable();
     }
 
     @Override
@@ -1041,7 +1041,7 @@ public class PureCodeStorage implements MutableCodeStorage
 
     public static RichIterable<CodeRepository> getVisibleRepositories(RichIterable<CodeRepository> codeRepositories,CodeRepository repository)
     {
-        return codeRepositories.select(repository.isVisible);
+        return codeRepositories.select(repository::isVisible);
     }
 
     public static SetIterable<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, Iterable<String> repositoryNames)

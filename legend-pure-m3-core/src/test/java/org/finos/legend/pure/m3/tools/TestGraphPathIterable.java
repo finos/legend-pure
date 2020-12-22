@@ -23,15 +23,14 @@ import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestGraphPathIterable extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
         compileTestSource("/test/testModel.pure",
                 "import test::domain::*;\n" +
@@ -50,31 +49,31 @@ public class TestGraphPathIterable extends AbstractPureTestWithCoreCompiledPlatf
     @Test
     public void testFromPackage()
     {
-        MutableSet<String> paths = GraphPathIterable.newGraphPathIterable(Lists.immutable.with("test::domain"), 1, this.processorSupport).collect(GraphPath.GET_DESCRIPTION).toSet();
+        MutableSet<String> paths = GraphPathIterable.newGraphPathIterable(Lists.immutable.with("test::domain"), 1, processorSupport).collect(GraphPath::getDescription).toSet();
         Verify.assertContainsAll(paths, "test::domain.package", "test::domain.name", "test::domain", "test::domain.children[0]", "test::domain.children[1]");
     }
 
     @Test
     public void testClassAToClassB()
     {
-        CoreInstance classB = this.runtime.getCoreInstance("test::domain::ClassB");
-        Predicate<GraphPath> endsWithClassB = Predicates.attributePredicate(Functions.bind(GraphPath.RESOLVE, this.processorSupport), Predicates.equal(classB));
+        CoreInstance classB = runtime.getCoreInstance("test::domain::ClassB");
+        Predicate<GraphPath> endsWithClassB = Predicates.attributePredicate(Functions.bind(GraphPath::resolve, processorSupport), Predicates.equal(classB));
 
-        MutableSet<String> paths1 = GraphPathIterable.newGraphPathIterable(Lists.immutable.with("test::domain::ClassA"), Predicates.equal(classB), 5, this.processorSupport).collectIf(endsWithClassB, GraphPath.GET_DESCRIPTION).toSet();
+        MutableSet<String> paths1 = GraphPathIterable.newGraphPathIterable(Lists.immutable.with("test::domain::ClassA"), Predicates.equal(classB), 5, processorSupport).collectIf(endsWithClassB, GraphPath::getDescription).toSet();
         Verify.assertSetsEqual(Sets.mutable.with("test::domain::ClassA.package.children[1]", "test::domain::ClassA.properties[1].genericType.rawType.resolvedNode", "test::domain::ClassA.properties[1].classifierGenericType.typeArguments[1].rawType.resolvedNode"), paths1);
     }
 
     @Test
     public void testFromClassA()
     {
-        MutableSet<String> paths = GraphPathIterable.newGraphPathIterable(Lists.immutable.with("test::domain::ClassA"), this.processorSupport).collect(GraphPath.GET_DESCRIPTION).toSet();
+        MutableSet<String> paths = GraphPathIterable.newGraphPathIterable(Lists.immutable.with("test::domain::ClassA"), processorSupport).collect(GraphPath::getDescription).toSet();
         Verify.assertContainsAll(paths, "test::domain::ClassA.properties[1].genericType.rawType.resolvedNode", "test::domain::ClassA.properties[1].classifierGenericType.typeArguments[1].rawType.resolvedNode");
     }
 
     @Test
     public void testFromClassAWithLimitedProperties()
     {
-        MutableSet<String> paths = GraphPathIterable.newGraphPathIterable(Lists.immutable.with("test::domain::ClassA"), Lists.immutable.with("properties", "genericType", "rawType"), -1, this.processorSupport).collect(GraphPath.GET_DESCRIPTION).toSet();
+        MutableSet<String> paths = GraphPathIterable.newGraphPathIterable(Lists.immutable.with("test::domain::ClassA"), Lists.immutable.with("properties", "genericType", "rawType"), -1, processorSupport).collect(GraphPath::getDescription).toSet();
         Verify.assertSetsEqual(Sets.mutable.with("test::domain::ClassA", "test::domain::ClassA.properties[0]", "test::domain::ClassA.properties[0].genericType", "test::domain::ClassA.properties[0].genericType.rawType", "test::domain::ClassA.properties[1]", "test::domain::ClassA.properties[1].genericType", "test::domain::ClassA.properties[1].genericType.rawType"), paths);
     }
 }
