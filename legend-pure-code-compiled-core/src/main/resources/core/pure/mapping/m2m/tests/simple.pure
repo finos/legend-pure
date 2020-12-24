@@ -316,6 +316,31 @@ Mapping meta::pure::mapping::modelToModel::test::simple::simpleModelMappingWithA
 
 )
 
+Mapping meta::pure::mapping::modelToModel::test::simple::simpleModelMappingWithMultipleClassMappings
+(
+   *Person : Pure
+            {
+               ~src _Person
+               firstName : $src.fullName->substring(0, $src.fullName->indexOf(' ')),
+               lastName : $src.fullName->substring($src.fullName->indexOf(' ')+1, $src.fullName->length())
+            }
+
+   Person[p1] : Pure
+   {
+       ~src _Person
+       firstName : $src.fullName->substring(0, $src.fullName->indexOf(' ')),
+       lastName : $src.fullName->substring($src.fullName->indexOf(' ')+1, $src.fullName->length())
+   }
+
+   Firm : Pure
+   {
+      ~src _Firm
+      legalName : $src.name,
+      employees[p1] : $src.employees
+   }
+
+)
+
 ###Mapping
 import meta::pure::mapping::modelToModel::test::shared::src::*;
 import meta::pure::mapping::modelToModel::test::shared::dest::*;
