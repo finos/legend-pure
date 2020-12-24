@@ -354,6 +354,8 @@ function <<access.private>> meta::alloy::runtime::java::generateMappingAdaptorPr
                        },
                        | []
                     );
+   let implicitMultiplicityCheckRequired = $p->functionReturnType().rawType->toOne()->instanceOf(Class);
+   let propertyMultiplicity              = $p.multiplicity;
 
    let body = $assocCheck->concatenate(      
       if($propertyMappings->isEmpty() && $p.owner->instanceOf(Class) && $setImplementation->isNoMappingPassThru($p),
@@ -386,18 +388,28 @@ function <<access.private>> meta::alloy::runtime::java::generateMappingAdaptorPr
          | javaUnsupportedOperationException()->j_new(j_string('Unimplemented as not requested \'' + $p.name->toOne() +'\''))->j_throw(),
          | 
       if($propertyMappings->size() == 1,
-         {| 
-            let code = $propertyMappings->at(0)->generatePropertyMapping($setImplementation, $tree, $class, $conventions, $extensions, $debug->indent());
-            if($returnType == $code.type,
-               |$code,
-               |
-            if(isJavaList($returnType) && ($returnType->elementTypeOfJavaList() == $code.type->toBoxed()),
-               |$code->j_listOf($returnType),
-               |
-            if(isJavaList($returnType),
-               |$code->j_listOf($returnType),
-               |$code->j_cast($returnType)
-            )))->j_return();
+         {|
+            let code        = $propertyMappings->at(0)->generatePropertyMapping($setImplementation, $tree, $class, $conventions, $extensions, $debug->indent());
+            let updatedCode = if($returnType == $code.type,
+                                 |$code,
+                                 |
+                              if(isJavaList($returnType) && ($returnType->elementTypeOfJavaList() == $code.type->toBoxed()),
+                                 |$code->j_listOf($returnType),
+                                 |
+                              if(isJavaList($returnType),
+                                 |$code->j_listOf($returnType),
+                                 |$code->j_cast($returnType)
+                              )));
+            
+            let codeWithMultiplicityCast = if($implicitMultiplicityCheckRequired,
+                                              |if($propertyMultiplicity->isToOne(),
+                                                  | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('toOne', $updatedCode, $returnType),
+                                                  |
+                                                  if($propertyMultiplicity->isZeroOne(),
+                                                     | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('first', $updatedCode, $returnType),
+                                                     | $updatedCode)),
+                                              |$updatedCode);
+            $codeWithMultiplicityCast->j_return();
          },
          {| // Union
             let mappings            = $propertyMappings->map(propertyMapping| $propertyMapping->generatePropertyMapping($setImplementation, $tree, $class, $conventions, $extensions, $debug->indent()));
@@ -412,20 +424,34 @@ function <<access.private>> meta::alloy::runtime::java::generateMappingAdaptorPr
                   );
                }
             );
-            let returnStatement = javaStream()->j_invoke('of', $declaresAndStreams.second, javaStream($streamType))
-                                     ->js_flatMap(j_identity($streamType))
-                                     ->js_resolve($returnType)->j_return();                                                                                        
+            let mergedResult              = javaStream()->j_invoke('of', $declaresAndStreams.second, javaStream($streamType))
+                                                        ->js_flatMap(j_identity($streamType))
+                                                        ->js_resolve($returnType);
+            let codeWithMultiplicityCast  = if($implicitMultiplicityCheckRequired,
+                                               |if($propertyMultiplicity->isToOne(),
+                                                   | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('toOne', $mergedResult, $returnType),
+                                                   |
+                                                   if($propertyMultiplicity->isZeroOne(),
+                                                      | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('first', $mergedResult, $returnType),
+                                                      | $mergedResult)),
+                                               |$mergedResult);
+            let returnStatement           = $codeWithMultiplicityCast->j_return();
             [$declaresAndStreams.first->concatenate($returnStatement)];
          }
       )))))
    );
+
+   let rtEx             = j_parameter(javaRuntimeException(), 'e');
+   let bodyWithTryCatch = j_try($body->toOneMany(),
+                                j_catch($rtEx, javaRuntimeException()->j_new(j_string('Exception thrown while fetching value for property ' + $p.name->toOne() + '[' + $setImplementation.class->elementToPath() + '].\n')->j_invoke('concat', $rtEx->j_invoke('getMessage', [], javaString()), javaString()))->j_throw())
+                              );
 
    let method = ^meta::java::metamodel::Method(
       annotations = ^meta::java::metamodel::annotations::override::Override(),
       modifiers   = [meta::java::metamodel::Modifier.Public],
       name        = $conventions->getterName($p),
       returnType  = $returnType,
-      body        = $body->codesToString($class)
+      body        = $bodyWithTryCatch->codesToString($class)
    );
 
    mergeProjects(
