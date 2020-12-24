@@ -166,6 +166,48 @@ function meta::java::generation::convention::jackson::jacksonXmlParserGetter(con
    )))))))))));
 }
 
+function meta::java::generation::convention::jackson::jacksonXmlParserGetter(conventions:Conventions[1], parser:Code[1], type:Type[1]): Code[1]
+{
+  let pureDate = $conventions->className(PureDate);
+  let text     = $parser->j_invoke('getText', [], javaString());
+
+  if($type == String,
+    | $text,
+    |
+  if($type == Boolean,
+    | javaBooleanBoxed()->j_invoke('valueOf', $text, javaBoolean()),
+    |
+  if($type == Integer,
+    | javaLongBoxed()->j_invoke('valueOf', $text, javaLong()),
+    |
+  if($type == Float,
+    | javaDoubleBoxed()->j_invoke('valueOf', $text, javaDouble()),
+    |
+  if($type == Decimal,
+    | j_new(javaBigDecimal(), $text),
+    |
+  if($type == Number,
+    | j_new(javaBigDecimal(), $text),
+    |
+  if($type == StrictDate,
+    | $pureDate->j_invoke('parsePureDate', $text, $pureDate),
+    |
+  if($type == DateTime,
+    | $pureDate->j_invoke('parsePureDate', $text, $pureDate),
+    |
+  if($type == Date,
+    | $pureDate->j_invoke('parsePureDate', $text, $pureDate),
+    |
+  if($type->instanceOf(Enumeration),
+    | $conventions->pureTypeToJavaType($type, PureOne)->j_invoke('valueOf', $text),
+    |
+  if($type->instanceOf(Unit) || $type->instanceOf(Measure),
+    | $conventions->pureTypeToJavaType($type, PureOne)->j_invoke('valueOf', $text),
+    | fail('Unsupported type: ' + $type.name->toOne());
+      j_null();
+   )))))))))));
+}
+
 function meta::java::generation::convention::jackson::jacksonGeneratorWrite(conventions:Conventions[1], generator:Code[1], data:Code[1], type:Type[1], config: AlloySerializationConfig[0..1]): Code[1]
 {
    if($type == String,

@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License.acc
 
 import meta::alloy::runtime::java::*;
 import meta::java::generation::code::*;
@@ -195,8 +195,27 @@ function meta::alloy::runtime::java::newClassStructureDefect(conventions:Convent
    $conventions->codeType($conventions->className(DataQualityBasicDefectClass))->codeToString($conventions)+'.newClassStructureDefect('+$message+', '+$definer+')';
 }
 
+function meta::alloy::runtime::java::newClassStructureDefect(conventions:Conventions[1], message:Code[1], definer:Code[1]): Code[1]
+{
+   $conventions->className(DataQualityBasicDefectClass)->j_invoke('newClassStructureDefect', [$message, $definer]);
+}
+
 function meta::alloy::runtime::java::newNoInputDefect(conventions:Conventions[1], definer:String[1]): String[1]
 {
    $conventions->codeType($conventions->className(DataQualityBasicDefectClass))->codeToString($conventions)+'.newNoInputDefect('+$definer+')';
 }
 
+function meta::alloy::runtime::java::newRelativePathNode(conventions:Conventions[1], propertyName:Code[1]): Code[1]
+{
+   $conventions->className(DataQualityBasicRelativePathNodeClass)->j_invoke('newRelativePathNode', $propertyName);
+}
+
+function meta::alloy::runtime::java::newRelativePathNode(conventions:Conventions[1], propertyName:Code[1], index:Code[1]): Code[1]
+{
+   $conventions->className(DataQualityBasicRelativePathNodeClass)->j_invoke('newRelativePathNode', [$propertyName, $index]);
+}
+
+function meta::alloy::runtime::java::prefixDefectPath(conventions:Conventions[1], defect:Code[1], pathNode:Code[1]): Code[1]
+{
+   $conventions->className(DataQualityBasicDefectClass)->j_invoke('prefixPath', [$defect, $pathNode]);
+}
