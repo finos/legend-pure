@@ -47,7 +47,7 @@ public class FunctionDescriptor
     private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_NUM = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+(\\d++)\\s*+\\.\\.\\s*+(\\d++)\\]\\s*+$");
     private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_MANY = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+(\\d++)\\s*+\\.\\.\\s*+(\\*)\\]\\s*+$");
     private static final Pattern TYPE_WITH_MULTIPLICITY_PARAMETER = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+([a-zA-Z]\\w*+)\\s*+\\]\\s*+$");
-    private static final Pattern FULL_MATCH = Pattern.compile("^\\s*+([\\w\\d_$]++::)*+[\\w\\d_$]++\\s*+\\(\\s*+(\\w++\\s*+\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+(?!,\\s*+\\)),?\\s*+)*\\s*+\\)\\s*+:\\s*+\\w++\\s*+\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+$");
+    private static final Pattern FULL_MATCH = Pattern.compile("^\\s*+([\\w\\d_$]++::)*+[\\w\\d_$]++\\s*+\\(\\s*+(\\w++\\s*+\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+(?!,\\s*+\\)),?+\\s*+)*+\\s*+\\)\\s*+:\\s*+\\w++\\s*+\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+$");
 
     /**
      * Return whether string is possibly a function descriptor.  This
