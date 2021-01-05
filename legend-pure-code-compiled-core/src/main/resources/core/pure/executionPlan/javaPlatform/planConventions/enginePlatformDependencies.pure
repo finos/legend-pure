@@ -196,6 +196,8 @@ function meta::pure::executionPlan::engine::applyJavaEngineDependencies(conventi
       ->addMethod(javaMethod('public', javaPredicate(javaTypeVar('T')), 'distinctByKey', [javaParam(javaFunction(javaTypeVar('T'), javaWildcard()), 'p0')]))
       ->addMethod(javaMethod('public', javaDouble(), 'divide', [javaParam(javaNumber(), 'p0'), javaParam(javaNumber(), 'p1')]))
       ->addMethod(javaMethod('public', javaInt(), 'findEndOfDateFormatString', [javaParam(javaString(), 'p0'), javaParam(javaInt(), 'p1')]))
+      ->addMethod(javaMethod('public', javaTypeVar('T'), 'first', [javaParam(javaList(javaTypeVar('T')), 'p0')]))
+      ->addMethod(javaMethod('public', javaTypeVar('T'), 'first', [javaParam(javaTypeVar('T'), 'p0')]))
       ->addMethod(javaMethod('public', $jPureDate, 'firstDayOfMonth', [javaParam($jPureDate, 'p0')]))
       ->addMethod(javaMethod('public', $jPureDate, 'firstDayOfQuarter', [javaParam($jPureDate, 'p0')]))
       ->addMethod(javaMethod('public', $jPureDate, 'firstDayOfThisMonth', []))
@@ -330,7 +332,8 @@ function meta::pure::executionPlan::engine::applyJavaEngineDependencies(conventi
       ->addMethod(javaMethod('public', javaCollection(javaParameterizedType($jIChecked, [javaTypeVar('T')])), 'readCheckedObjects', []));
 
    let jIGraphFetchM2MExecutionNodeContext = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.inMemory.IGraphFetchM2MExecutionNodeContext')
-      ->addMethod(javaMethod('public', $jIStoreStreamReader, 'createReader', [javaParam(javaString(), 'p0')]));
+      ->addMethod(javaMethod('public', $jIStoreStreamReader, 'createReader', [javaParam(javaString(), 'p0')]))
+      ->addMethod(javaMethod('public', javaURL(), 'createUrl', [javaParam(javaString(), 'p0')]));
 
    let jConstrained = javaClass('public', 'org.finos.legend.engine.plan.dependencies.domain.dataQuality.Constrained')
       ->addMethod(javaMethod('public', javaList($jIDefect), 'allConstraints', []))

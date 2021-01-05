@@ -46,7 +46,7 @@ function meta::java::generation::functions::collection::register(conventions: Co
       ->addFunctionCoders([
          fc2(at_T_MANY__Integer_1__T_1_,                                         {ctx,collection,index         | $collection->j_invoke('get', $index->j_cast(javaInt()))}),
          fc2(indexOf_T_MANY__T_1__Integer_1_,                                    {ctx,collection,obj           | $collection->j_invoke('indexOf', $obj)}),
-         fc1(first_T_MANY__T_$0_1$_,                                             {ctx,collection               | $collection->j_streamOf()->js_findFirst()->jo_orElseNull()}),
+         fc1(first_T_MANY__T_$0_1$_,                                             {ctx,collection               | $library->j_invoke('first', $collection, if($collection.type->isJavaList(), |$collection.type->elementTypeOfJavaList(), |$collection.type))}),
 
          fc1(range_Integer_1__Integer_MANY_,                                     {ctx,stop                     | javaLongStream()->j_invoke('range', [j_long(0), $stop])->j_invoke('boxed', [])}), 
          fc2(range_Integer_1__Integer_1__Integer_MANY_,                          {ctx,start,stop               | javaLongStream()->j_invoke('range', [$start, $stop])->j_invoke('boxed', [])}), 

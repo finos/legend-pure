@@ -153,6 +153,7 @@ function meta::alloy::runtime::java::createGeneratedMilestonedPropertiesForClass
 
    let milestonedClass = $milestonedProperties->fold(
       {mp, project|
+         let returnType     = $conventions->pureTypeToJavaType($mp);
          let srcMp          = $mp->meta::pure::milestoning::getSourceMilestonedProperty($set);
          let childSetImpl   = $set.parent.rootClassMappingByClass($mp->functionReturnType().rawType->cast(@Class<Any>)->toOne());
          let mapperClass    = $conventions->mapperClassName($childSetImpl->toOne(), $extensions);
@@ -166,12 +167,24 @@ function meta::alloy::runtime::java::createGeneratedMilestonedPropertiesForClass
                                                                                       ),
                                        $conventions->pureTypeToJavaType($mp)
                                       )->j_return();
-
+         
+         let propertyMultiplicity     = $mp.multiplicity;
+         let bodyWithMultiplicityCast = if($propertyMultiplicity->isToOne(),
+                                           | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('toOne', $body, $returnType),
+                                           |
+                                           if($propertyMultiplicity->isZeroOne(),
+                                              | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('first', $body, $returnType),
+                                              | $body));
+         
+         let rtEx                     = j_parameter(javaRuntimeException(), 'e');
+         let bodyWithTryCatch         = j_try($bodyWithMultiplicityCast->toOneMany(),
+                                              j_catch($rtEx, javaRuntimeException()->j_new(j_string('Exception thrown while fetching value for property ' + $mp.name->toOne() + '[' + $set.class->elementToPath() + '].\n')->j_invoke('concat', $rtEx->j_invoke('getMessage', [], javaString()), javaString()))->j_throw())
+                                        );
          let newProject = newProject()->addClass($class->addMethod(
-            javaMethod('public', $conventions->pureTypeToJavaType($mp), $conventions->getterName($mp), $params->cast(@meta::java::metamodel::Parameter), $body->codeToString($conventions))
+            javaMethod('public', $returnType, $conventions->getterName($mp), $params->cast(@meta::java::metamodel::Parameter), $bodyWithTryCatch->codeToString($conventions))
          ));
 
-         mergeProjects($project->concatenate($newProject)->concatenate($body->dependencies()->resolveAndGetProjects())->toOneMany());
+         mergeProjects($project->concatenate($newProject)->concatenate($bodyWithTryCatch->dependencies()->resolveAndGetProjects())->toOneMany());
       },
       newProject()
    );
