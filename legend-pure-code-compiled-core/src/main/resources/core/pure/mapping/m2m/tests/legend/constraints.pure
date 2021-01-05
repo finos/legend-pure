@@ -110,6 +110,24 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::testSourceConstrain
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
+{  serverVersion.start='vX_X_X' }
+meta::pure::mapping::modelToModel::test::alloy::constraints::testSourceConstraintsWithNewPropertyAssociation():Boolean[1]
+{
+   let result = execute( |ProductTaxonomy.all()->graphFetchChecked(#{ProductTaxonomy {id}}#)->serialize(#{ProductTaxonomy {id}}#),
+                          m2mconstraintnewmapping2,
+                          ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=ProductTaxonomy,
+                             url='data:application/json,{"id":"1"}'
+                             )
+                           ),
+                           []
+                       );
+  
+   assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"id\\":\\"1\\"}"},"value":{"id":"1"}},"value":{"id":"1"}}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 { serverVersion.start='vX_X_X' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::testIsEqualConstraint():Boolean[1]
 {
@@ -143,6 +161,32 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::testIsDistinctConst
                 );
 
    assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"b\\":true}"},"value":{"b":true}},"value":{"b":true}}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::TaxonomyValue
+{
+   id : String[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::Taxonomy
+{
+   id : String[1];
+}
+
+Association meta::pure::mapping::modelToModel::test::alloy::constraints::Taxonomy_TaxonomyValue
+{
+   taxonomy:meta::pure::mapping::modelToModel::test::alloy::constraints::Taxonomy[1];
+   taxonomyValue:meta::pure::mapping::modelToModel::test::alloy::constraints::TaxonomyValue[*];
+}
+
+// Test new in M2M execution with properties from associations
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::ProductTaxonomy
+[
+   [^Taxonomy(id='1', taxonomyValue=[^TaxonomyValue(id='t1')]),^Taxonomy(id='2', taxonomyValue=[^TaxonomyValue(id='t2')])]->filter(t | $t.id == $this.id)->isNotEmpty()
+]
+{
+   id: String[1];
 }
 
 Class meta::pure::mapping::modelToModel::test::alloy::constraints::Firm
@@ -296,6 +340,16 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::constraints::m2mconstrai
       make : $src.make,
       engineSize : $src.engineSize
   }
+)
+
+###Mapping
+Mapping meta::pure::mapping::modelToModel::test::alloy::constraints::m2mconstraintnewmapping2
+(
+  meta::pure::mapping::modelToModel::test::alloy::constraints::ProductTaxonomy : Pure
+   {
+      ~src meta::pure::mapping::modelToModel::test::alloy::constraints::ProductTaxonomy
+      id : $src.id
+  }   
 )
 
 
