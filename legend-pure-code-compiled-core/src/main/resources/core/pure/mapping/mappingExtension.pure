@@ -237,9 +237,9 @@ function meta::pure::router::routing::findMappingsFromProperty(p:AbstractPropert
                                           | let embeddedMappings = $sourceMappings->resolveOperation($mapping)->cast(@PropertyMappingsImplementation)->map(s|$s.propertyMappingsByPropertyName($p.name->toOne())->map(pm | $pm->reprocessAggregationAwarePropertyMapping())->filter(p|$p->instanceOf(EmbeddedSetImplementation)))->cast(@EmbeddedSetImplementation);
                                             let containers = $embeddedMappings->map(e | ^SetImplementationContainer(id=$e.id, setImplementation=$e));
                                             ^OperationSetImplementation(id='embedded_operation', root=true, class=$c->cast(@Class<Any>), parent=$mapping, parameters=$containers, operation=$sourceMappings->at(0)->cast(@OperationSetImplementation).operation);,
-                                          | let embeddedRelationalIds = $extensions.mapping_extractRelationalPropertyMappingFromEmbedded->map(f|$f->eval($p, $sourceMappings, $mapping));
-                                            if(!$embeddedRelationalIds->isEmpty(),
-                                               | let classMappingsById = $mapping._classMappingByIdRecursive($embeddedRelationalIds)->map(x | $mapping.classMappingById($x.id));
+                                          | let targetSetIds = $sourceMappings->resolveOperation($mapping)->cast(@PropertyMappingsImplementation)->map(s|$s.propertyMappingsByPropertyName($p.name->toOne())).targetSetImplementationId;
+                                            if(!$targetSetIds->isEmpty(),
+                                               | let classMappingsById = $targetSetIds->map(id | $mapping.classMappingById($id));
                                                  if($classMappingsById->isEmpty(),
                                                     |$mapping.rootClassMappingByClass($c->cast(@Class<Any>))->potentiallyResolveOperation($mapping),
                                                     |$classMappingsById
