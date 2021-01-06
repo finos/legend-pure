@@ -441,17 +441,12 @@ function <<access.private>> meta::alloy::runtime::java::generateMappingAdaptorPr
       )))))
    );
 
-   let rtEx             = j_parameter(javaRuntimeException(), 'e');
-   let bodyWithTryCatch = j_try($body->toOneMany(),
-                                j_catch($rtEx, javaRuntimeException()->j_new(j_string('Exception thrown while fetching value for property ' + $p.name->toOne() + '[' + $setImplementation.class->elementToPath() + '].\n')->j_invoke('concat', $rtEx->j_invoke('getMessage', [], javaString()), javaString()))->j_throw())
-                              );
-
    let method = ^meta::java::metamodel::Method(
       annotations = ^meta::java::metamodel::annotations::override::Override(),
       modifiers   = [meta::java::metamodel::Modifier.Public],
       name        = $conventions->getterName($p),
       returnType  = $returnType,
-      body        = $bodyWithTryCatch->codesToString($class)
+      body        = $body->codesToString($class)
    );
 
    mergeProjects(
