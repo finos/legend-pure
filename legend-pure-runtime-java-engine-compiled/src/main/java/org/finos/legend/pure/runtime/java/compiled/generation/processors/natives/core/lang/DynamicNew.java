@@ -14,7 +14,12 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.lang;
 
+import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -25,6 +30,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuild
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.SourceInfoProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
 public class DynamicNew extends AbstractNative
 {
@@ -33,6 +40,43 @@ public class DynamicNew extends AbstractNative
                 "dynamicNew_Class_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Any_1_","dynamicNew_Class_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Function_$0_1$__Any_1_",
                 "dynamicNew_GenericType_1__KeyValue_MANY__Any_1_","dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Any_1_",
                 "dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Any_1_","dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Function_$0_1$__Any_1_");
+    }
+
+    // In dynamicNew function default values must be handled
+    @Override
+    public ListIterable<String> transformParameterValues(ListIterable<? extends CoreInstance> parametersValues, CoreInstance topLevelElement, ProcessorSupport processorSupport, ProcessorContext processorContext) {
+
+        CoreInstance genericType = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(0), M3Properties.genericType, M3Properties.typeArguments, processorSupport);
+        ListIterable<String> defaultValues = genericType != null ? InstantiationHelpers.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport),
+                collectPropertiesWithValuesProvided(parametersValues, processorSupport), true, processorContext).select(s -> !s.isEmpty()) : Lists.immutable.empty();
+
+        MutableList<String> transformedParams = FastList.newList(parametersValues.size());
+
+        for (int index=0 ; index < parametersValues.size(); index++)
+        {
+            CoreInstance parameterValue = parametersValues.get(index);
+            if (defaultValues.size() > 0 && index == 1) {
+                ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(parameterValue, M3Properties.values, processorSupport);
+                String type = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(parameterValue, M3Properties.genericType, processorSupport), true, processorSupport);
+
+                MutableList<String> processedValues = FastList.newList();
+                values.forEach(new Procedure<CoreInstance>()
+                {
+                    @Override
+                    public void value(CoreInstance coreInstance)
+                    {
+                        processedValues.add(ValueSpecificationProcessor.processValueSpecification(topLevelElement, coreInstance, processorContext));
+                    }
+                });
+                processedValues.addAllIterable(defaultValues);
+
+                transformedParams.add(processedValues.size() > 1 ? "Lists.mutable.<" + type + ">with(" + processedValues.makeString(",") + ")" : processedValues.makeString(","));
+            } else {
+                transformedParams.add(ValueSpecificationProcessor.processValueSpecification(topLevelElement, parameterValue, processorContext));
+            }
+        }
+
+        return transformedParams;
     }
 
     @Override
@@ -86,6 +130,37 @@ public class DynamicNew extends AbstractNative
 
         String newObjectStatement =  newObject + "," + newOverrideInstance + ","+getterOverrides+",es)";
         return "Pure.handleValidation(false,"+ newObjectStatement +","+ SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation())+",es)";
+    }
+
+    private String formatDefaultValueString(String name, String value)
+    {
+        return "new org.finos.legend.pure.generated.Root_meta_pure_functions_lang_KeyValue_Impl(\"Anonymous_NoCounter\")._key(\"" + name + "\")._value(" + value + ")";
+    }
+
+    private static ListIterable<String> collectPropertiesWithValuesProvided (ListIterable<? extends CoreInstance> parametersValues, ProcessorSupport processorSupport)
+    {
+        ListIterable<? extends CoreInstance> simpleFunctionExpression = Instance.getValueForMetaPropertyToManyResolved(parametersValues.get(1), M3Properties.values, processorSupport);
+
+        return simpleFunctionExpression.collect(new Function<CoreInstance, String>() {
+             @Override
+             public String valueOf(CoreInstance each) {
+                 ListIterable<? extends CoreInstance> functionArguments = Instance.getValueForMetaPropertyToManyResolved(each, M3Properties.parametersValues, processorSupport);
+                 CoreInstance key = Instance.getValueForMetaPropertyToManyResolved(functionArguments.get(2), M3Properties.values, processorSupport).getFirst();
+                 if(key.getValueForMetaPropertyToOne(M3Properties.key) != null &&
+                         key.getValueForMetaPropertyToOne(M3Properties.key).getValueForMetaPropertyToMany(M3Properties.values).getFirst().getName().equals(M3Properties.key))
+                 {
+                     ListIterable<String> name = key.getValueForMetaPropertyToOne(M3Properties.expression).getValueForMetaPropertyToMany(M3Properties.values).collect(new Function<CoreInstance, String>() {
+                         @Override
+                         public String valueOf(CoreInstance coreInstance) { return coreInstance.getName(); }
+                     });
+                     return name.getFirst();
+                 }
+                 return null;
+             }
+        }
+        );
+
+
     }
 
 }

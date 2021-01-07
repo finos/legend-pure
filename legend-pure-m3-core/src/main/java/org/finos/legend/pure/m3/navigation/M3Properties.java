@@ -38,6 +38,7 @@ public class M3Properties
     public static final String constraints = "constraints";
     public static final String constraintsManager = "constraintsManager";
     public static final String contravariant = "contravariant";
+    public static final String defaultValue = "defaultValue";
     public static final String diagram = "diagram";
     public static final String elementOverride = "elementOverride";
     public static final String endLine = "endLine";
