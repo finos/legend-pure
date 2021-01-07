@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.lang;
 
+import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -52,6 +53,7 @@ public class NewWithKeyExpr extends AbstractNative
                 + "(\"" + newId + "\")" + (addGenericType ? "._classifierGenericType("
                 + InstantiationHelpers.buildGenericType(genericType, processorSupport) + ")" : "")
                 + InstantiationHelpers.manageKeyValues(genericType, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), keyValues, processorContext)
+                + InstantiationHelpers.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), collectPropertiesWithValuesProvided(keyValues), false, processorContext).makeString("")
                 + (_Class.computeConstraintsInHierarchy(_class,processorSupport).isEmpty()?"":"._validate(false,"+ SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation())+",es)");
 
     }
@@ -72,5 +74,27 @@ public class NewWithKeyExpr extends AbstractNative
                 "                return CoreGen.newObject(clazz, name, keyExpressions, es);\n" +
                 "            }\n" +
                 "        }";
+    }
+
+    private String formatDefaultValueString(String methodName, String value)
+    {
+        return "._" + methodName + "(" + value + ")";
+    }
+
+    private static ListIterable<String> collectPropertiesWithValuesProvided (ListIterable<? extends CoreInstance> keyValues)
+    {
+        return keyValues.collect(new Function<CoreInstance, String>() {
+            @Override
+            public String valueOf(CoreInstance coreInstance) {
+                if (coreInstance.getValueForMetaPropertyToOne(M3Properties.key) != null) {
+                    ListIterable<String> name = coreInstance.getValueForMetaPropertyToOne(M3Properties.key).getValueForMetaPropertyToMany(M3Properties.values).collect(new Function<CoreInstance, String>() {
+                        @Override
+                        public String valueOf(CoreInstance coreInstance) { return coreInstance.getName(); }
+                    });
+                    return name.getFirst();
+                }
+                return null;
+            }
+        });
     }
 }

@@ -126,4 +126,26 @@ public class Property
         CoreInstance sourceGenericType = Function.getParameterGenericType(property, 0, processorSupport);
         return Instance.getValueForMetaPropertyToOneResolved(sourceGenericType, M3Properties.rawType, processorSupport);
     }
+
+    public static CoreInstance getDefaultValueExpression(CoreInstance defaultValue)
+    {
+        if(defaultValue != null) {
+            return defaultValue.getValueForMetaPropertyToOne(M3Properties.functionDefinition).getValueForMetaPropertyToOne(M3Properties.expressionSequence);
+        }
+        return null;
+    }
+
+    public static ListIterable<? extends CoreInstance> getDefaultValue(CoreInstance defaultValue)
+    {
+        if(defaultValue != null) {
+            CoreInstance expressionSequence = defaultValue.getValueForMetaPropertyToOne(M3Properties.functionDefinition).getValueForMetaPropertyToOne(M3Properties.expressionSequence);
+            ListIterable<? extends CoreInstance> values = expressionSequence.getValueForMetaPropertyToMany(M3Properties.values);
+            if (values.size() == 0) {
+                values = Lists.immutable.with(expressionSequence);
+            }
+
+            return values;
+        }
+        return Lists.immutable.empty();
+    }
 }

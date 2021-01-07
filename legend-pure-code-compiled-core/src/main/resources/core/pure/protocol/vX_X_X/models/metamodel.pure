@@ -199,6 +199,7 @@ Class meta::protocols::pure::vX_X_X::metamodel::domain::Association extends meta
 
 Class meta::protocols::pure::vX_X_X::metamodel::domain::Property extends meta::protocols::pure::vX_X_X::metamodel::domain::AnnotatedElement
 {
+   defaultValue : meta::protocols::pure::vX_X_X::metamodel::domain::DefaultValue[0..1];
    name : String[1];
    multiplicity : meta::protocols::pure::vX_X_X::metamodel::domain::Multiplicity[1];
    type : String[1];
@@ -228,6 +229,12 @@ Class meta::protocols::pure::vX_X_X::metamodel::domain::Enumeration extends meta
 Class meta::protocols::pure::vX_X_X::metamodel::domain::EnumValue extends meta::protocols::pure::vX_X_X::metamodel::domain::AnnotatedElement
 {
    value : String[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::domain::DefaultValue extends meta::protocols::pure::vX_X_X::metamodel::PackageableElement, meta::protocols::pure::vX_X_X::metamodel::domain::AnnotatedElement
+{
+   value :  meta::protocols::pure::vX_X_X::metamodel::valueSpecification::ValueSpecification[1];
+   sourceInformation : SourceInformation[0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::domain::Measure extends meta::protocols::pure::vX_X_X::metamodel::PackageableElement
