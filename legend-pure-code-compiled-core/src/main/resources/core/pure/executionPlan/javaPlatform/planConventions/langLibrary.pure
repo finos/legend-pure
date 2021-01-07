@@ -169,7 +169,8 @@ function meta::java::generation::functions::lang::processNew(fe: FunctionExpress
                                 pair($s,$e););
          
    let typeInfo = meta::alloy::runtime::java::typeInfo::newTypeInfoSet()
-                     ->meta::alloy::runtime::java::typeInfo::addForClassWithAllProperties($cls);   
+                     ->meta::alloy::runtime::java::typeInfo::addForClassWithAllProperties($cls)
+                     ->meta::alloy::runtime::java::typeInfo::addForClassWithAllPropertiesViaAssociations($cls);   
     
    let props = $typeInfo->meta::alloy::runtime::java::typeInfo::allProperties($cls);
    
