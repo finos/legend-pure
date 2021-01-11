@@ -355,7 +355,7 @@ function <<access.private>> meta::alloy::runtime::java::addConstructorForUrlRead
 
    $class->addConstructor(javaConstructor('public', $context,
             [
-               $in->j_declare(javaURL()->j_new(j_string($newUrl))->j_invoke('openStream', [])),
+               $in->j_declare($context->j_invoke('createUrl', j_string($newUrl))->j_invoke('openStream', [])),
                $reader->j_assign($readerClass->j_new($in)),
                $reader->j_invoke('initReading', [], javaVoid())
       ]->j_ioExTryCatch()->codesToString($class)
