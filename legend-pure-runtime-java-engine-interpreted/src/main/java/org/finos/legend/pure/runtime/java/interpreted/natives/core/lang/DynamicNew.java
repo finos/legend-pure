@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.interpreted.natives.core.lang;
 
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -27,7 +26,6 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
@@ -73,7 +71,6 @@ public class DynamicNew extends NativeFunction
 
         //TODO - extend to cover generics
         boolean shouldValidate = Iterate.isEmpty(Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport));
-        MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(classifier);
 
         // Set property values
         for (CoreInstance keyValue : keyValues)
@@ -110,25 +107,6 @@ public class DynamicNew extends NativeFunction
                             return object.printWithoutDebug("", 1);
                         }
                     }).makeString(",") + "' provided for class property '" + key + "': " + ex.getInfo());
-                }
-            }
-        }
-
-        // Set default values if the values for any required fields were not provided
-        for (CoreInstance property: propertiesByName)
-        {
-            if(property.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null && instance.getValueForMetaPropertyToMany(property.getName()).size() == 0)
-            {
-                CoreInstance expression = Property.getDefaultValueExpression(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
-
-                ListIterable<? extends CoreInstance> values = org.finos.legend.pure.m3.navigation.property.Property.getDefaultValue(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
-                for (CoreInstance value : values)
-                {
-                    if (Instance.instanceOf(expression, M3Paths.EnumStub, processorSupport)) {
-                        Instance.addValueToProperty(instance, property.getName(), value.getValueForMetaPropertyToOne(M3Properties.resolvedEnum), processorSupport);
-                    } else {
-                        Instance.addValueToProperty(instance, property.getName(), value, processorSupport);
-                    }
                 }
             }
         }

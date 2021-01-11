@@ -68,8 +68,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Concre
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunctionInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunctionInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValueInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.PropertyInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
@@ -132,13 +130,10 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Co
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ConstraintContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ConstraintsContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ContravarianceTypeParameterContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefaultValueContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefaultValueExpressionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DefinitionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DerivedPropertyContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DslContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumDefinitionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumReferenceContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumValueContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EqualNotEqualContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionContext;
@@ -177,7 +172,6 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.Pr
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ProgramLineContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertiesContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyExpressionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyOrFunctionExpressionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.PropertyRefContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.QualifiedNameContext;
@@ -962,8 +956,11 @@ public class AntlrContextToM3CoreInstance
         CoreInstance result = null;
         CoreInstance end = null;
         CoreInstance step = null;
+        IdentifierContext property;
         MutableList<CoreInstance> expressions = Lists.mutable.of();
         MutableList<ValueSpecification> parameters = FastList.newList();
+        CoreInstance parameter;
+        boolean function;
         if (ctx.combinedExpression() != null)
         {
             return this.combinedExpression(ctx.combinedExpression(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
@@ -1032,7 +1029,66 @@ public class AntlrContextToM3CoreInstance
             {
                 if (pfCtx.propertyExpression() != null)
                 {
-                   result = propertyExpression(pfCtx.propertyExpression(), result, parameters, typeParametersNames, lambdaContext, space, importId);
+                    parameters.clear();
+                    function = false;
+                    property = pfCtx.propertyExpression().identifier();
+                    if (pfCtx.propertyExpression().functionExpressionParameters() != null)
+                    {
+                        function = true;
+                        FunctionExpressionParametersContext fepCtx = pfCtx.propertyExpression().functionExpressionParameters();
+                        if (fepCtx.combinedExpression() != null)
+                        {
+                            for (CombinedExpressionContext ceCtx : fepCtx.combinedExpression())
+                            {
+                                parameter = this.combinedExpression(ceCtx, "param", typeParametersNames, lambdaContext, space + this.tabs(4), true, importId, addLines);
+                                parameters.add((ValueSpecification)parameter);
+                            }
+                        }
+                    }
+                    else if (pfCtx.propertyExpression().functionExpressionLatestMilestoningDateParameter() != null)
+                    {
+                        function = true;
+                        ListIterate.forEachWith(pfCtx.propertyExpression().functionExpressionLatestMilestoningDateParameter().LATEST_DATE(), new Procedure2<TerminalNode, MutableList<ValueSpecification>>()
+                        {
+                            @Override
+                            public void value(TerminalNode terminalNode, MutableList<ValueSpecification> parameters)
+                            {
+                                InstanceValueInstance iv = InstanceValueInstance.createPersistent(repository, sourceInformation.getPureSourceInformation(terminalNode.getSymbol()), null, null);
+                                iv._values(Lists.immutable.with(repository.newLatestDateCoreInstance()));
+                                parameters.add(iv);
+                            }
+                        }, parameters);
+                    }
+                    if (!function)
+                    {
+                        SimpleFunctionExpressionInstance sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(property.getStart()), null, null, importId, null);
+                        InstanceValue instanceValue = this.doWrap(property, false);
+                        //Going to become an auto-map lambda so set a name to be used for the lambda
+                        instanceValue.setName(lambdaContext.getLambdaFunctionUniqueName());
+                        instanceValue._multiplicity(this.getPureOne());
+                        GenericTypeInstance gt = GenericTypeInstance.createPersistent(this.repository);
+                        Type ti = (Type)this.processorSupport.package_getByUserPath("String");
+                        gt._rawTypeCoreInstance(ti);
+                        instanceValue._genericType(gt);
+                        sfe._propertyName(instanceValue);
+                        sfe._parametersValues(Lists.mutable.of((ValueSpecification) result));
+                        result = sfe;
+                    }
+                    else
+                    {
+                        SimpleFunctionExpressionInstance sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(property.getStart()), null, null, importId, null);
+                        InstanceValue instanceValue = this.doWrap(property, false);
+                        //Going to become an auto-map lambda so set a name to be used for the lambda
+                        instanceValue.setName(lambdaContext.getLambdaFunctionUniqueName());
+                        instanceValue._multiplicity(this.getPureOne());
+                        GenericTypeInstance gt = GenericTypeInstance.createPersistent(this.repository);
+                        Type ti = (Type)this.processorSupport.package_getByUserPath("String");
+                        gt._rawTypeCoreInstance(ti);
+                        instanceValue._genericType(gt);
+                        sfe._qualifiedPropertyName(instanceValue);
+                        sfe._parametersValues(Lists.mutable.of((ValueSpecification) result).withAll(parameters));
+                        result = sfe;
+                    }
                 }
                 else
                 {
@@ -1050,72 +1106,6 @@ public class AntlrContextToM3CoreInstance
         if (ctx.equalNotEqual() != null)
         {
             result = this.equalNotEqual(ctx.equalNotEqual(), (ValueSpecification)result, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
-        }
-        return result;
-    }
-
-    private CoreInstance propertyExpression(PropertyExpressionContext ctx, CoreInstance result, MutableList<ValueSpecification> parameters, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, ImportGroup importId)
-    {
-        parameters.clear();
-        boolean function = false;
-        IdentifierContext property = ctx.identifier();
-        CoreInstance parameter;
-        if (ctx.functionExpressionParameters() != null)
-        {
-            function = true;
-            FunctionExpressionParametersContext fepCtx = ctx.functionExpressionParameters();
-            if (fepCtx.combinedExpression() != null)
-            {
-                for (CombinedExpressionContext ceCtx : fepCtx.combinedExpression())
-                {
-                    parameter = this.combinedExpression(ceCtx, "param", typeParametersNames, lambdaContext, space + this.tabs(4), true, importId, addLines);
-                    parameters.add((ValueSpecification)parameter);
-                }
-            }
-        }
-        else if (ctx.functionExpressionLatestMilestoningDateParameter() != null)
-        {
-            function = true;
-            ListIterate.forEachWith(ctx.functionExpressionLatestMilestoningDateParameter().LATEST_DATE(), new Procedure2<TerminalNode, MutableList<ValueSpecification>>()
-            {
-                @Override
-                public void value(TerminalNode terminalNode, MutableList<ValueSpecification> parameters)
-                {
-                    InstanceValueInstance iv = InstanceValueInstance.createPersistent(repository, sourceInformation.getPureSourceInformation(terminalNode.getSymbol()), null, null);
-                    iv._values(Lists.immutable.with(repository.newLatestDateCoreInstance()));
-                    parameters.add(iv);
-                }
-            }, parameters);
-        }
-        if (!function)
-        {
-            SimpleFunctionExpressionInstance sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(property.getStart()), null, null, importId, null);
-            InstanceValue instanceValue = this.doWrap(property, false);
-            //Going to become an auto-map lambda so set a name to be used for the lambda
-            instanceValue.setName(lambdaContext.getLambdaFunctionUniqueName());
-            instanceValue._multiplicity(this.getPureOne());
-            GenericTypeInstance gt = GenericTypeInstance.createPersistent(this.repository);
-            Type ti = (Type)this.processorSupport.package_getByUserPath("String");
-            gt._rawTypeCoreInstance(ti);
-            instanceValue._genericType(gt);
-            sfe._propertyName(instanceValue);
-            sfe._parametersValues(Lists.mutable.of((ValueSpecification) result));
-            result = sfe;
-        }
-        else
-        {
-            SimpleFunctionExpressionInstance sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(property.getStart()), null, null, importId, null);
-            InstanceValue instanceValue = this.doWrap(property, false);
-            //Going to become an auto-map lambda so set a name to be used for the lambda
-            instanceValue.setName(lambdaContext.getLambdaFunctionUniqueName());
-            instanceValue._multiplicity(this.getPureOne());
-            GenericTypeInstance gt = GenericTypeInstance.createPersistent(this.repository);
-            Type ti = (Type)this.processorSupport.package_getByUserPath("String");
-            gt._rawTypeCoreInstance(ti);
-            instanceValue._genericType(gt);
-            sfe._qualifiedPropertyName(instanceValue);
-            sfe._parametersValues(Lists.mutable.of((ValueSpecification) result).withAll(parameters));
-            result = sfe;
         }
         return result;
     }
@@ -1454,7 +1444,17 @@ public class AntlrContextToM3CoreInstance
         }
         else if (ctx.enumReference() != null)
         {
-            result = enumReference(ctx.enumReference(), importId, useImportStubsInInstanceParser);
+            String enumeration = this.getQualifiedNameString(ctx.enumReference().qualifiedName());
+            String enumValue = ctx.enumReference().identifier().getText();
+            if (useImportStubsInInstanceParser)
+            {
+                ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, enumeration, importId);
+                result = EnumStubInstance.createPersistent(this.repository, enumValue, is);
+            }
+            else
+            {
+                result = findEnum(enumeration, enumValue, this.repository);
+            }
         }
         else if (ctx.stereotypeReference() != null)
         {
@@ -2185,21 +2185,6 @@ public class AntlrContextToM3CoreInstance
             enumValue.setKeyValues(Lists.immutable.of("Root", "children", "meta", "children", "pure", "children", "metamodel", "children", "extension", "children", "ElementWithTaggedValues", "properties", "taggedValues"), Lists.mutable.<CoreInstance>withAll(tags));
         }
         return enumValue;
-    }
-
-    private CoreInstance enumReference(EnumReferenceContext enumReference, ImportGroup importId, boolean useImportStubsInInstanceParser)
-    {
-        String enumeration = this.getQualifiedNameString(enumReference.qualifiedName());
-        String enumValue = enumReference.identifier().getText();
-        if (useImportStubsInInstanceParser)
-        {
-            ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, enumeration, importId);
-            return EnumStubInstance.createPersistent(this.repository, enumValue, is);
-        }
-        else
-        {
-            return findEnum(enumeration, enumValue, this.repository);
-        }
     }
 
     private Enumeration enumParser(EnumDefinitionContext ctx, ImportGroup importId) throws PureParserException
@@ -2976,17 +2961,13 @@ public class AntlrContextToM3CoreInstance
         }
     }
 
-    private void simpleProperty(PropertyContext ctx, MutableList<Property<? extends CoreInstance, ?>> properties, MutableList<String> typeParameterNames,
-                                MutableList<String> multiplicityParameterNames, ImportStub isOwner, ImportGroup importId, boolean addLines)
+    private void simpleProperty(PropertyContext ctx, MutableList<Property<? extends CoreInstance, ?>> properties, MutableList<String> typeParameterNames, MutableList<String> multiplicityParameterNames, ImportStub isOwner, ImportGroup importId, boolean addLines)
     {
         ListIterable<CoreInstance> stereotypes = null;
         ListIterable<TaggedValue> tags = null;
-        DefaultValue defaultValue = null;
         GenericType genericType;
         Multiplicity multiplicity;
         String aggregation = "None";
-        String propertyName = ctx.identifier().getText();
-
         if (ctx.stereotypes() != null)
         {
             stereotypes = this.stereotypes(ctx.stereotypes(), importId);
@@ -3006,10 +2987,6 @@ public class AntlrContextToM3CoreInstance
                 aggregation = "Shared";
             }
         }
-        if (ctx.defaultValue() != null)
-        {
-            defaultValue = defaultValue(ctx.defaultValue(), importId, propertyName);
-        }
         genericType = this.type(ctx.propertyReturnType().type(), typeParameterNames, "", importId, addLines);
         multiplicity = this.buildMultiplicity(ctx.propertyReturnType().multiplicity().multiplicityArgument());
 
@@ -3023,12 +3000,12 @@ public class AntlrContextToM3CoreInstance
                 break;
             }
         }
+        String propertyName = ctx.identifier().getText();
         SourceInformation propertySourceInfo = this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart(), ctx.identifier().getStart(), ctx.getStop());
         PropertyInstance propertyInstance = PropertyInstance.createPersistent(this.repository, propertyName, propertySourceInfo, aggKind, genericType, multiplicity, null);
         propertyInstance._stereotypesCoreInstance(stereotypes);
         propertyInstance._taggedValues(tags);
         propertyInstance._name(propertyName);
-        propertyInstance._defaultValue(defaultValue);
 
         GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository, propertySourceInfo);
         ClassInstance propertyType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.Property);
@@ -3574,74 +3551,6 @@ public class AntlrContextToM3CoreInstance
         TaggedValueInstance taggedValueInstance = TaggedValueInstance.createPersistent(this.repository,
                 this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().getSymbol(), ctx.STRING().getSymbol()), importStubInstance, this.removeQuotes(ctx.STRING()));
         return taggedValueInstance;
-    }
-
-    private DefaultValue defaultValue(DefaultValueContext ctx, ImportGroup importId, String propertyName)
-    {
-        LambdaFunction defaultValueFunctionLambda = null;
-
-        DefaultValueExpressionContext expression = ctx.defaultValueExpression();
-
-        ++this.functionCounter;
-        LambdaContext lambdaContext = new LambdaContext(propertyName + "_defaultValue_" + this.functionCounter);
-
-        DefaultValueInstance defaultValueInstance = DefaultValueInstance.createPersistent(this.repository,
-                this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.EQUAL().getSymbol(), ctx.getStop()));
-
-        CoreInstance defaultValueExpression = this.defaultValueExpression(ctx.defaultValueExpression(), importId, lambdaContext);
-        if ( defaultValueExpression != null )
-        {
-            SourceInformation source = defaultValueExpression.getSourceInformation();
-            defaultValueFunctionLambda = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), source);
-            CoreInstance functionType = this.repository.newAnonymousCoreInstance(source, this.processorSupport.package_getByUserPath(M3Paths.FunctionType), true);
-
-            CoreInstance functionTypeGt = this.repository.newAnonymousCoreInstance(source, this.processorSupport.package_getByUserPath(M3Paths.GenericType), true);
-            Instance.setValueForProperty(functionTypeGt, M3Properties.rawType, functionType, this.processorSupport);
-
-            CoreInstance lambdaFunctionClass = this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction);
-            CoreInstance lambdaGenericType = org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(lambdaFunctionClass, this.processorSupport);
-            Instance.setValueForProperty(lambdaGenericType, M3Properties.typeArguments, functionTypeGt, this.processorSupport);
-
-            Instance.setValueForProperty(defaultValueFunctionLambda, M3Properties.expressionSequence, defaultValueExpression, this.processorSupport);
-            Instance.setValueForProperty(defaultValueFunctionLambda, M3Properties.classifierGenericType, lambdaGenericType, this.processorSupport);
-            Instance.setValueForProperty(functionType, M3Properties.function, defaultValueFunctionLambda, this.processorSupport);
-        }
-
-        defaultValueInstance._functionDefinition(defaultValueFunctionLambda);
-
-        return defaultValueInstance;
-    }
-
-    private CoreInstance defaultValueExpression(DefaultValueExpressionContext ctx, ImportGroup importId, LambdaContext lambdaContext)
-    {
-        CoreInstance result = null;
-
-        if (ctx.instanceLiteralToken() != null)
-        {
-            result = this.instanceLiteralToken(ctx.instanceLiteralToken(), true);
-        }  else if(ctx.instanceReference() != null)
-        {
-            result = instanceReference(ctx.instanceReference(), Lists.mutable.empty(), lambdaContext, importId, this.tabs(4), addLines);
-        } else if (ctx.expressionInstance() != null)
-        {
-            result = this.expressionInstanceParser(ctx.expressionInstance(), FastList.<String>newList(), lambdaContext, importId, addLines, this.tabs(4));
-        }
-        else if (ctx.defaultValueExpressionsArray() != null)
-        {
-            MutableList<CoreInstance> expressions = Lists.mutable.of();
-            for (DefaultValueExpressionContext eCtx : ctx.defaultValueExpressionsArray().defaultValueExpression())
-            {
-                expressions.add(this.defaultValueExpression(eCtx, importId, lambdaContext));
-            }
-            result = this.doWrap(expressions, ctx.defaultValueExpressionsArray().getStart().getLine(), ctx.defaultValueExpressionsArray().getStart().getCharPositionInLine(), ctx.getStop().getLine(), ctx.getStop().getCharPositionInLine());
-
-        }
-
-        if(ctx.propertyExpression() != null)
-        {
-            result = propertyExpression(ctx.propertyExpression(), result, FastList.newList(), Lists.mutable.empty(), lambdaContext, this.tabs(4), importId);
-        }
-        return result;
     }
 
     private String removeQuotes(TerminalNode stringNode)
@@ -4269,15 +4178,6 @@ public class AntlrContextToM3CoreInstance
             this.pureOne = (Multiplicity)this.processorSupport.package_getByUserPath(M3Paths.PureOne);
         }
         return this.pureOne;
-    }
-
-    private Multiplicity getOneMany()
-    {
-        if (this.oneMany == null)
-        {
-            this.oneMany = (Multiplicity)this.processorSupport.package_getByUserPath(M3Paths.OneMany);
-        }
-        return this.oneMany;
     }
 
     public static final class LambdaContext

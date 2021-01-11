@@ -47,7 +47,6 @@ public class M3Paths
     public static final String Date = ModelRepository.DATE_TYPE_NAME;
     public static final String DateTime = ModelRepository.DATETIME_TYPE_NAME;
     public static final String Decimal = ModelRepository.DECIMAL_TYPE_NAME;
-    public static final String DefaultValue = "meta::pure::metamodel::function::property::DefaultValue";
     public static final String elementOverride = "meta::pure::metamodel::type::ElementOverride" ;
     public static final String ElementWithConstraints = "meta::pure::metamodel::extension::ElementWithConstraints";
     public static final String ElementWithStereotypes = "meta::pure::metamodel::extension::ElementWithStereotypes";
