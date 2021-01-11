@@ -239,7 +239,7 @@ function meta::pure::router::routing::findMappingsFromProperty(p:AbstractPropert
                                             ^OperationSetImplementation(id='embedded_operation', root=true, class=$c->cast(@Class<Any>), parent=$mapping, parameters=$containers, operation=$sourceMappings->at(0)->cast(@OperationSetImplementation).operation);,
                                           | let targetSetIds = $sourceMappings->resolveOperation($mapping)->cast(@PropertyMappingsImplementation)->map(s|$s.propertyMappingsByPropertyName($p.name->toOne())).targetSetImplementationId;
                                             if(!$targetSetIds->isEmpty(),
-                                               | let classMappingsById = $targetSetIds->map(id | $mapping.classMappingById($id));
+                                               | let classMappingsById = $mapping._classMappingByIdRecursive($targetSetIds)->map(x | $mapping.classMappingById($x.id));
                                                  if($classMappingsById->isEmpty(),
                                                     |$mapping.rootClassMappingByClass($c->cast(@Class<Any>))->potentiallyResolveOperation($mapping),
                                                     |$classMappingsById
