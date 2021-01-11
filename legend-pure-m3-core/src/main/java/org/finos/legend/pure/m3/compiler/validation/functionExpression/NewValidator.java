@@ -141,8 +141,7 @@ public class NewValidator
                 if (!(propertyOwner instanceof Association))
                 {
                     CoreInstance propertyMultiplicity = Property.resolvePropertyReturnMultiplicity(genericType, property, processorSupport);
-                    ListIterable<? extends CoreInstance> defaultValue = org.finos.legend.pure.m3.navigation.property.Property.getDefaultValue(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
-                    if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(propertyMultiplicity) && !(org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isValid(propertyMultiplicity, 0) || defaultValue.size() > 0))
+                    if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(propertyMultiplicity) && !org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isValid(propertyMultiplicity, 0))
                     {
                         StringBuilder message = new StringBuilder("Missing value(s) for required property '");
                         message.append(propertyName);

@@ -89,7 +89,7 @@ classBody: CURLY_BRACKET_OPEN
 properties: ( property | qualifiedProperty )*
 ;
 
-property: stereotypes? taggedValues? aggregation? identifier COLON propertyReturnType defaultValue? END_LINE
+property: stereotypes? taggedValues? aggregation? identifier COLON propertyReturnType END_LINE
 ;
 
 qualifiedProperty:  stereotypes? taggedValues? identifier qualifiedPropertyBody COLON propertyReturnType  END_LINE
@@ -215,15 +215,6 @@ taggedValues: CURLY_BRACKET_OPEN taggedValue (COMMA taggedValue)* CURLY_BRACKET_
 ;
 
 taggedValue: qualifiedName DOT identifier EQUAL STRING
-;
-
-defaultValue: EQUAL defaultValueExpression
-;
-
-defaultValueExpression: (instanceReference)(propertyExpression) | expressionInstance | instanceLiteralToken | defaultValueExpressionsArray
-;
-
-defaultValueExpressionsArray: BRACKET_OPEN ( defaultValueExpression (COMMA defaultValueExpression)* )? BRACKET_CLOSE
 ;
 
 profile: PROFILE qualifiedName

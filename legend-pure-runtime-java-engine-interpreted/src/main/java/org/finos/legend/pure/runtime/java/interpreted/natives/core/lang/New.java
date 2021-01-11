@@ -131,28 +131,43 @@ public class New extends NativeFunction
             {
                 throw new PureExecutionException(sourceInfoForErrors, "The property '" + key + "' can't be found in the type '" + classifier.getName() + "' or in its hierarchy.");
             }
+            CoreInstance propertyGenericType = GenericType.resolvePropertyReturnType(Instance.extractGenericTypeFromInstance(instance, processorSupport), property, processorSupport);
+
             CoreInstance expression = Instance.getValueForMetaPropertyToOneResolved(keyValue, M3Properties.expression, processorSupport);
+            CoreInstance expressionMultiplicity = Instance.getValueForMetaPropertyToOneResolved(expression, M3Properties.multiplicity, processorSupport);
+            Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(expression, functionExpressionToUseInStack, processorSupport, this.functionExecution);
+            CoreInstance evaluatedExpression = executor.execute(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, evaluationVariableContext, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
 
-            setValuesToProperty(expression, keyInstance, property, instance, sourceInfoForErrors, classifierGenericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, context, processorSupport);
-        }
+            ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(evaluatedExpression, M3Properties.values, processorSupport);
 
-        // Set default values if the values for any required fields were not provided
-        for (CoreInstance property: propertiesByName)
-        {
-            if(property.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null && instance.getValueForMetaPropertyToMany(property.getName()).size() == 0)
+            if (org.finos.legend.pure.m3.navigation.measure.Measure.isUnitOrMeasureInstance(evaluatedExpression, processorSupport))
             {
-                CoreInstance expression = Property.getDefaultValueExpression(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
-                SourceInformation sourceInfoForErrors = expression.getSourceInformation();
+                values = Lists.mutable.with(evaluatedExpression);
+            }
 
-                if (Instance.instanceOf(expression, M3Paths.EnumStub, processorSupport)) {
-                    ListIterable<? extends CoreInstance> values = org.finos.legend.pure.m3.navigation.property.Property.getDefaultValue(property.getValueForMetaPropertyToOne(M3Properties.defaultValue));
-                    for (CoreInstance value : values)
-                    {
-                        Instance.addValueToProperty(instance, property.getName(), value.getValueForMetaPropertyToOne(M3Properties.resolvedEnum), processorSupport);
-                    }
-                } else {
-                    setValuesToProperty(expression, expression, property, instance, sourceInfoForErrors, classifierGenericType, evaluationVariableContext, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport, context, processorSupport);
-                }
+            if (values.notEmpty() && !ValueSpecification.isExecutable(evaluatedExpression, processorSupport) && Instance.instancesOf(values, M3Paths.ValueSpecification, processorSupport))
+            {
+                values = ValueSpecification.instanceOf(evaluatedExpression, M3Paths.Nil, processorSupport) ? Lists.immutable.<CoreInstance>empty() : Lists.immutable.with(evaluatedExpression);
+            }
+
+            CoreInstance propertyMultiplicity = Property.resolveInstancePropertyReturnMultiplicity(instance, property, processorSupport);
+
+            CoreInstance concretePropertyMultiplicity = resolveToConcreteMultiplicity(propertyMultiplicity, resolvedMultiplicityParameters);
+            if (concretePropertyMultiplicity == null)
+            {
+                throw new PureExecutionException(keyInstance.getSourceInformation(), "Error instantiating the type '" + GenericType.print(classifierGenericType, processorSupport) + "'. Could not resolve multiplicity for the property '" + Property.getPropertyName(property) + "': " + Multiplicity.print(propertyMultiplicity));
+            }
+            validateRangeUsingMultiplicity(instance, property, concretePropertyMultiplicity, values.size(), sourceInfoForErrors, processorSupport);
+
+            CoreInstance concretePropertyGenericType = resolveToConcreteGenericType(propertyGenericType, resolvedTypeParameters, resolvedMultiplicityParameters, processorSupport);
+            if (concretePropertyGenericType == null)
+            {
+                throw new PureExecutionException(keyInstance.getSourceInformation(), "Error instantiating the type '" + GenericType.print(classifierGenericType, processorSupport) + "'. Could not resolve type for the property '" + Property.getPropertyName(property) + "': " + GenericType.print(propertyGenericType, processorSupport));
+            }
+            for (CoreInstance value : values)
+            {
+                validateType(concretePropertyGenericType, value, expression, processorSupport);
+                Instance.addValueToProperty(instance, key, value, processorSupport);
             }
         }
 
@@ -180,41 +195,6 @@ public class New extends NativeFunction
         }
 
         return DefaultConstraintHandler.handleConstraints(classifier,  value, functionExpressionToUseInStack.getSourceInformation(), this.functionExecution, resolvedTypeParameters, resolvedMultiplicityParameters, variableContext, functionExpressionToUseInStack, profiler, instantiationContext, executionSupport);
-    }
-
-    private void setValuesToProperty(CoreInstance expression, CoreInstance keyInstance, CoreInstance property, final CoreInstance instance, SourceInformation sourceInfoForErrors, CoreInstance classifierGenericType, VariableContext evaluationVariableContext, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, final CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, final ProcessorSupport processorSupport)
-    {
-        CoreInstance propertyGenericType = GenericType.resolvePropertyReturnType(Instance.extractGenericTypeFromInstance(instance, processorSupport), property, processorSupport);
-
-        Executor executor = FunctionExecutionInterpreted.findValueSpecificationExecutor(expression, functionExpressionToUseInStack, processorSupport, this.functionExecution);
-        CoreInstance evaluatedExpression = executor.execute(expression, resolvedTypeParameters, resolvedMultiplicityParameters, functionExpressionToUseInStack, evaluationVariableContext, profiler, instantiationContext, executionSupport, this.functionExecution, processorSupport);
-
-        ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(evaluatedExpression, M3Properties.values, processorSupport);
-
-        if (org.finos.legend.pure.m3.navigation.measure.Measure.isUnitOrMeasureInstance(evaluatedExpression, processorSupport)) {
-            values = Lists.mutable.with(evaluatedExpression);
-        }
-
-        if (values.notEmpty() && !ValueSpecification.isExecutable(evaluatedExpression, processorSupport) && Instance.instancesOf(values, M3Paths.ValueSpecification, processorSupport)) {
-            values = ValueSpecification.instanceOf(evaluatedExpression, M3Paths.Nil, processorSupport) ? Lists.immutable.<CoreInstance>empty() : Lists.immutable.with(evaluatedExpression);
-        }
-
-        CoreInstance propertyMultiplicity = Property.resolveInstancePropertyReturnMultiplicity(instance, property, processorSupport);
-
-        CoreInstance concretePropertyMultiplicity = resolveToConcreteMultiplicity(propertyMultiplicity, resolvedMultiplicityParameters);
-        if (concretePropertyMultiplicity == null) {
-            throw new PureExecutionException(keyInstance.getSourceInformation(), "Error instantiating the type '" + GenericType.print(classifierGenericType, processorSupport) + "'. Could not resolve multiplicity for the property '" + Property.getPropertyName(property) + "': " + Multiplicity.print(propertyMultiplicity));
-        }
-        validateRangeUsingMultiplicity(instance, property, concretePropertyMultiplicity, values.size(), sourceInfoForErrors, processorSupport);
-
-        CoreInstance concretePropertyGenericType = resolveToConcreteGenericType(propertyGenericType, resolvedTypeParameters, resolvedMultiplicityParameters, processorSupport);
-        if (concretePropertyGenericType == null) {
-            throw new PureExecutionException(keyInstance.getSourceInformation(), "Error instantiating the type '" + GenericType.print(classifierGenericType, processorSupport) + "'. Could not resolve type for the property '" + Property.getPropertyName(property) + "': " + GenericType.print(propertyGenericType, processorSupport));
-        }
-        for (CoreInstance value : values) {
-            validateType(concretePropertyGenericType, value, expression, processorSupport);
-            Instance.addValueToProperty(instance, property.getName(), value, processorSupport);
-        }
     }
 
     private CoreInstance resolveToConcreteGenericType(CoreInstance genericType, Stack<MutableMap<String, CoreInstance>> resolvedTypeParametersStack, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParametersStack, ProcessorSupport processorSupport)
