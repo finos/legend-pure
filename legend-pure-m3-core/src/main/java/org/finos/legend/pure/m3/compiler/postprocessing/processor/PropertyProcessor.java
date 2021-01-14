@@ -14,12 +14,20 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.processor;
 
+import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValue;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecificationCoreInstanceWrapper;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.GenericTypeTraceability;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
 
@@ -34,7 +42,15 @@ public class PropertyProcessor extends Processor<Property>
     @Override
     public void process(Property property, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
-        // Nothing to do
+        DefaultValue defaultValue = property._defaultValue();
+        if (defaultValue != null)
+        {
+            FunctionDefinition<?> defaultValueFn = defaultValue._functionDefinition();
+            ValueSpecification defaultValueFnExpressionSequence = defaultValueFn._expressionSequence().toList().getFirst();
+
+            PostProcessor.processElement(matcher, defaultValueFnExpressionSequence, state, processorSupport);
+            PostProcessor.processElement(matcher, defaultValueFn, state, processorSupport);
+        }
     }
 
     @Override

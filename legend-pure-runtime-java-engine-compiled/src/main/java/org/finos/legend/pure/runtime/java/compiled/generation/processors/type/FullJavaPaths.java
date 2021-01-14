@@ -64,6 +64,8 @@ public class FullJavaPaths
     public static final String Property = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.Property);
     public static final String Property_Impl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.Property);
 
+    public static final String DefaultValue = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.DefaultValue);
+
     public static final String SourceInformation = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(M3Paths.SourceInformation);
     public static final String SourceInformation_Impl = JavaPackageAndImportBuilder.buildImplClassReferenceFromUserPath(M3Paths.SourceInformation);
 
