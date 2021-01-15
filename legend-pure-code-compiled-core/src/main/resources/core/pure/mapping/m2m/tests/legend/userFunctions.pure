@@ -21,7 +21,7 @@ import meta::pure::mapping::modelToModel::test::alloy::simple::userFunction::*;
 import meta::pure::mapping::modelToModel::test::alloy::utils::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
-{  serverVersion.start='v1_13_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a mapping that uses a user-defined function.',
    doc.doc='When:  a mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the mapping produces the expected result'
@@ -52,7 +52,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::canEvaluateAMappingWithA
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
-{  serverVersion.start='v1_13_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a mapping that uses a user-defined function.',
    doc.doc='When:  a mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the mapping produces the expected result'

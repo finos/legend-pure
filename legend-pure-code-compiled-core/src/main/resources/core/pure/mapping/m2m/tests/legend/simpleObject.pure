@@ -28,7 +28,7 @@ import meta::pure::mapping::modelToModel::test::simple::*;
 import meta::pure::runtime::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='V1_7_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
@@ -129,7 +129,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObje
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='V1_7_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: multiple JSON objects in an array that matches a source defintion, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized as a JSON array.'
@@ -155,7 +155,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfMultipl
 
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='V1_7_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Parse a simple JSON object, process it through an M2M mapping and serialize the result as JSON.',
    doc.todo='This does not test any more of the basic functionality but is a proxy until independent tests of the expression functions provide coverage at which point this can be removed.' 
 } 
@@ -179,7 +179,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOneObject
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_9_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a JSON object (matching a source class) that contains data for all primitive data types and an enumeration, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized handling all datatypes appropriately.'
@@ -206,7 +206,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::supportForPrimitivesAndE
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_9_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a JSON object (matching a source class) that contains data for all primitive data types and an enumeration, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized handling all datatypes appropriately checked.'
@@ -233,7 +233,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::supportForPrimitivesAndE
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_9_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a JSON object (matching a source class) that contains an empty property signaled by an empty array, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized demonstrating support for empty properties.'
@@ -258,7 +258,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::supportForEmptyValues() 
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_11_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a source class',
    doc.doc='Given: data with unused fields',
    doc.doc='When:  a mapping is executed.',
@@ -282,7 +282,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::ignoresUnwantedValues() 
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_9_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a source object containing an enumeration',
    doc.doc='Given: a mapping that maps a String to the name of the enumeration',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
@@ -305,7 +305,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::canMapToAnEnumerationNam
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_15_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a source object containing an enumeration',
    doc.doc='Given: a mapping that maps a String to the name of the enumeration and use',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
@@ -329,7 +329,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::canUseExternalEnumInMapp
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_15_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a source object containing an enumeration',
    doc.doc='Given: a mapping that maps a String to the name of the enumeration and use',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
@@ -353,7 +353,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::canUseExternalEnumValues
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
-{  serverVersion.start='vX_X_X',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a mapping that does not map optional properties',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the result has empty values for the unmapped properties.'
@@ -380,7 +380,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::unmappedOptionalProperti
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
-{  serverVersion.start='vX_X_X',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a mapping that does not map optional properties',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the result has empty values for the unmapped properties.'
@@ -407,7 +407,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::testPlusInUrl() : Boolea
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
-{  serverVersion.start='v1_15_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a source object containing an enumeration',
    doc.doc='Given: a mapping that maps a String to the name of the enumeration and use',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',

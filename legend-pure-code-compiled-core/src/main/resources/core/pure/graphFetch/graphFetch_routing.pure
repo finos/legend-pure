@@ -43,8 +43,19 @@ function meta::pure::graphFetch::routing::propertyMappingInfo(prop: PropertyGrap
                                                                                                                                                                                                                      , | let subTypeSetIDs = $routedProperty->cast(@ExtendedRoutedValueSpecification).sets->meta::pure::router::routing::resolveOperation($mapping).id;
                                                                                                                                                                                                                          $routedProperty->byPassRouterInfo()->cast(@FunctionExpression).parametersValues->at(0)->byPassRouterInfo()->cast(@FunctionExpression).parametersValues->at(1)->byPassRouterInfo()->cast(@InstanceValue).values->at(0)->cast(@FunctionDefinition<Any>).expressionSequence->cast(@ExtendedRoutedValueSpecification).propertyMapping->filter(x | $x.targetSetImplementationId->in($subTypeSetIDs));)
                                                                                                                                                                                        , |[]);
-                                                                                                let sets = if($routedProperty->instanceOf(ExtendedRoutedValueSpecification),|$routedProperty->cast(@ExtendedRoutedValueSpecification).sets->resolveOperation($mapping),|[]);
-                                                                                                ^PropertyMappingInfo(property=$property, propertyMappings=$propertyMappings, sets=$sets););
+                                                                                                let sets = if($propertyMappings->isNotEmpty(),|$propertyMappings->map(pm | $mapping.classMappingById($pm.targetSetImplementationId)),|if($routedProperty->instanceOf(ExtendedRoutedValueSpecification),|$routedProperty->cast(@ExtendedRoutedValueSpecification).sets->resolveOperation($mapping),|[]));
+                                                                                                let resolvedPropertyMappings = if ($property->instanceOf(Property) && $sets->isNotEmpty() && $propertyMappings->isEmpty(),
+                                                                                                                                   | // Property mapping present directly to the union
+                                                                                                                                     let targetSets = $routedProperty->cast(@ExtendedRoutedValueSpecification).sets;
+                                                                                                                                     let fe = $routedProperty->byPassRouterInfo()->cast(@FunctionExpression);
+                                                                                                                                     let sourceSets = $fe.parametersValues->evaluateAndDeactivate()->at(0)->cast(@ExtendedRoutedValueSpecification).sets->resolveOperation($mapping)->cast(@InstanceSetImplementation);
+                                                                                                                                     $sourceSets->map({ss |
+                                                                                                                                        let propMaps = $ss.propertyMappingsByPropertyName($property.name->toOne())->filter(x | $x.targetSetImplementationId->in($targetSets.id));
+                                                                                                                                        $propMaps->map(pm | $mapping.classMappingById($pm.targetSetImplementationId)->resolveOperation($mapping)->map(ts | ^$pm(targetSetImplementationId = $ts.id)));
+                                                                                                                                     });,
+                                                                                                                                   | $propertyMappings
+                                                                                                                               );
+                                                                                                ^PropertyMappingInfo(property=$property, propertyMappings=$resolvedPropertyMappings, sets=$sets););
 }
 
 function meta::pure::graphFetch::routing::clusterRoutedGraphFetchTree(r: RoutedGraphFetchTree[1], parentStore: Store[0..1], mapping:Mapping[1], runtime: Runtime[0..1], openVariables:Map<String, List<Any>>[1], exeCtx:ExecutionContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GraphFetchTree[1]
@@ -170,8 +181,8 @@ function meta::pure::graphFetch::routing::byPassClusteringInfo(r: GraphFetchTree
 function meta::pure::graphFetch::routing::byPassClusteringInfoDeep(r: GraphFetchTree[1]):GraphFetchTree[1]
 {
    $r->match([
-      c: ClusteredGraphFetchTree[1] | $c.tree->byPassClusteringInfo(),
-      g: GraphFetchTree[1] | ^$g(subTrees = $g.subTrees->map(x | $x->byPassClusteringInfo()))
+      c: ClusteredGraphFetchTree[1] | $c.tree->byPassClusteringInfoDeep(),
+      g: GraphFetchTree[1] | ^$g(subTrees = $g.subTrees->map(x | $x->byPassClusteringInfoDeep()))
  ]); 
 }
 

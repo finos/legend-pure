@@ -111,24 +111,9 @@ Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::ModelToModelExecu
    pureModelContextData : meta::protocols::pure::vX_X_X::metamodel::PureModelContextData[1];
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::GraphFetchM2MExecutionNode extends ExecutionNode
-{
-   trees : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::GraphFetchTree[*];
-   enableConstraints : Boolean[1];
-   store: meta::protocols::pure::vX_X_X::metamodel::store::Store[0..1];
-}
-
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::FunctionParametersValidationNode extends ExecutionNode
 {
    functionParameters:meta::protocols::pure::vX_X_X::metamodel::valueSpecification::Variable[*];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::GraphFetchExecutionNode extends ExecutionNode
-{
-   graphFetchTree : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::GraphFetchTree[1];
-   rootExecutionNode : ExecutionNode[1];
-   batchSize : Integer[0..1];
-   globalGraphFetchExecutionNode : meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::GlobalGraphFetchExecutionNode[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::GlobalGraphFetchExecutionNode extends ExecutionNode
@@ -139,14 +124,40 @@ Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::Globa
    localGraphFetchExecutionNode : meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::LocalGraphFetchExecutionNode [1];
    parentIndex : Integer[0..1];
    xStorePropertyMapping : meta::protocols::pure::vX_X_X::metamodel::mapping::xStore::XStorePropertyMapping[0..1];
+   enableConstraints : Boolean[0..1];
+   checked           : Boolean[0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::LocalGraphFetchExecutionNode extends ExecutionNode
 {
    nodeIndex : Integer[1];
+   parentIndex : Integer[0..1];
    graphFetchTree : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::GraphFetchTree[1];
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::StoreStreamReadingExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::ExecutionNode
+{
+   graphFetchTree    : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RootGraphFetchTree[1]; 
+   store             : meta::protocols::pure::vX_X_X::metamodel::store::Store[0..1];
+   connection        : meta::protocols::pure::vX_X_X::metamodel::runtime::Connection[1];
+   enableConstraints : Boolean[1];
+   checked           : Boolean[1];
+}
+
+Class <<typemodifiers.abstract>> meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::LocalGraphFetchExecutionNode
+{
+   children : meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode[*];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryRootGraphFetchExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode
+{
+   batchSize : Integer[0..1];
+   checked : Boolean[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryPropertyGraphFetchExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode
+{
+}
 
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::ErrorExecutionNode extends ExecutionNode
 {

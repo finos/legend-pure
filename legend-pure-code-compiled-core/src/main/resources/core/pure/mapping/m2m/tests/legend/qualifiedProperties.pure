@@ -20,7 +20,7 @@ import meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::*;
 import meta::pure::mapping::modelToModel::test::alloy::utils::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_11_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a class that defines a qualified property.',
    doc.doc='Given: a mapping that uses the qualified property.',
    doc.doc='When:  a mapping is executed using graphFetchChecked.',
@@ -63,7 +63,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::canEvaluateAMapping
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_11_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a class that defines a qualified property.',
    doc.doc='Given: a constraint that uses the qualified property on the source class.',
    doc.doc='When:  a mapping is executed using graphFetchChecked.',
@@ -106,7 +106,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::canEvaluateAConstra
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_11_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a class that defines a qualified property.',
    doc.doc='Given: a constraint that uses the qualified property on the source class.',
    doc.doc='Given: data that will cause the constraint to fail.',
@@ -159,7 +159,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::canEvaluateAConstra
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_11_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a class that defines a qualified property.',
    doc.doc='Given: a constraint that uses the qualified property on the target class.',
    doc.doc='When:  a mapping is executed using graphFetchChecked.',
@@ -202,7 +202,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::canEvaluateAConstra
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_11_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a class that defines a qualified property.',
    doc.doc='Given: a constraint that uses the qualified property on the target class.',
    doc.doc='Given: data that will cause the constraint to fail.',
@@ -255,7 +255,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::canEvaluateAConstra
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_11_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a class that defines a qualified property.',
    doc.doc='Given: a graph fetch tree that uses the qualified property.',
    doc.doc='When:  a mapping is executed using graphFetchChecked.',
