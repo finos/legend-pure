@@ -39,8 +39,8 @@ Class meta::protocols::pure::v1_19_0::extension::SerializerExtension_v1_19_0 ext
    scan_buildBasePureModel_buildPureModelFromMapping1 : Function<{Nil[1]->Store[*]}>[*];
    scan_buildBasePureModel_buildPureModelFromMapping2 : Store[*];
 
-   scan_buildPureModelAsText_getAllElementsFromMapping : Function<{Store[*]->Store[*]}>[1];
-   scan_buildPureModelAsText_getCorrectedElementSourceInformation : Function<{meta::pure::metamodel::PackageableElement[1] -> SourceInformation[1]}>[1];
+   scan_buildPureModelAsText_getAllElementsFromMapping : Function<{Store[*]->Store[*]}>[0..1];
+   scan_buildPureModelAsText_getCorrectedElementSourceInformation : Function<{meta::pure::metamodel::PackageableElement[1] -> SourceInformation[1]}>[0..1];
 
    scan_buildBasePureModel_findAllTypesFromMapping : Function<{Nil[1]->Type[*]}>[*];
    scan_buildBasePureModel_extractStores : Function<{Mapping[1], meta::pure::router::extension::RouterExtension[*] -> Function<{Nil[1]->meta::pure::store::Store[*]}>[*]}>[0..1];
