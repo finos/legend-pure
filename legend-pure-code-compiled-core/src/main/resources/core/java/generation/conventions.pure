@@ -1110,6 +1110,7 @@ function meta::java::generation::convention::defaultProhibitedFunctions(extensio
       deactivate_Any_MANY__ValueSpecification_1_,
       evaluateAndDeactivate_T_m__T_m_,
       meta::alloy::test::mayExecuteAlloyTest_Function_1__Function_1__X_k_,
+      meta::legend::test::mayExecuteLegendTest_Function_1__Function_1__X_k_,
 
       // Evaluation
       eval_Function_1__S_n__T_o__U_p__W_q__X_r__Y_s__Z_t__V_m_,

@@ -63,9 +63,14 @@ public class CoreExtensionCompiled extends BaseCompiledExtension
                                 "{\n" +
                                 "    static Bridge bridge = new BridgeImpl();\n" +
                                 "\n" +
-                                "    public static Object alloyTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, boolean useClientVersion, boolean useServerVersion)\n" +
+                                "    public static Object alloyTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular)\n" +
                                 "    {\n" +
-                                "        return Pure.alloyTest(es, alloyTest, regular, useClientVersion, useServerVersion, bridge);\n" +
+                                "        return Pure.alloyTest(es, alloyTest, regular, bridge);\n" +
+                                "    }\n" +
+                                "\n" +
+                                "    public static Object legendTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular)\n" +
+                                "    {\n" +
+                                "        return Pure.legendTest(es, alloyTest, regular, bridge);\n" +
                                 "    }\n" +
                                 "\n" +
                                 "    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType safeGetGenericType(Object val, MetadataAccessor ma, ProcessorSupport processorSupport)\n" +

@@ -303,8 +303,8 @@ function <<access.private>> meta::java::generation::tests::executeTests(tests:Pr
       |[]
    );
 
-   meta::alloy::test::mayExecuteAlloyTest(
-      {clientVersion, serverVersion, host, port |
+   meta::legend::test::mayExecuteLegendTest(
+      {clientVersion, serverVersion, serializationKind, host, port |
          let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::execution::execute::executePlan_ExecutionPlan_1__String_1__Integer_1__RouterExtension_MANY__String_1_';
          let xf   = $fStr->pathToElement()->cast(@Function<{ExecutionPlan[1], String[1], Integer[1], meta::pure::router::extension::RouterExtension[1] ->String[1]}>);
          let r = $xf->eval($plan, $host, $port, $extensions)->toOne()->cast(@String);

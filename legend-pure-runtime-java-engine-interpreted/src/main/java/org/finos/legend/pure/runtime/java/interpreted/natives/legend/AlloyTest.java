@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.interpreted.natives.mapping;
+package org.finos.legend.pure.runtime.java.interpreted.natives.legend;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -40,48 +40,40 @@ public class AlloyTest extends NativeFunction
 {
     private final FunctionExecutionInterpreted functionExecution;
     private final ModelRepository repository;
-    private final boolean useClientVersion;
-    private final boolean useServerVersion;
 
-    public AlloyTest(ModelRepository repository, FunctionExecutionInterpreted functionExecution, boolean useClientVersion, boolean useServerVersion)
+    public AlloyTest(ModelRepository repository, FunctionExecutionInterpreted functionExecution)
     {
         this.functionExecution = functionExecution;
         this.repository = repository;
-        this.useClientVersion = useClientVersion;
-        this.useServerVersion = useServerVersion;
     }
 
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, final ProcessorSupport processorSupport) throws PureExecutionException
     {
-        String host = System.getProperty("alloy.test.server.host");
-        String clientVersion = System.getProperty("alloy.test.version");
-        if (clientVersion == null)
-        {
-            clientVersion = System.getProperty("alloy.test.clientVersion");
-        }
+        String clientVersion = System.getProperty("alloy.test.clientVersion");
         String serverVersion = System.getProperty("alloy.test.serverVersion");
+        String host = System.getProperty("alloy.test.server.host");
         int port = System.getProperty("alloy.test.server.port") == null ? -1 : Integer.parseInt(System.getProperty("alloy.test.server.port"));
 
-        if (host != null && port == -1)
-        {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The system variable 'alloy.test.server.host' is set to '"+host+"' however 'alloy.test.server.port' has not been set!");
-        }
         if (host != null)
         {
+            if (port == -1)
+            {
+                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The system variable 'alloy.test.server.host' is set to '"+host+"' however 'alloy.test.server.port' has not been set!");
+            }
+            if (clientVersion == null)
+            {
+                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The system variable 'alloy.test.clientVersion' should be set");
+            }
+            if (serverVersion == null)
+            {
+                throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "The system variable 'alloy.test.serverVersion' should be set");
+            }
             MutableList<CoreInstance> fParams = FastList.<CoreInstance>newListWith(
+                    ValueSpecificationBootstrap.newStringLiteral(this.repository, clientVersion, this.functionExecution.getProcessorSupport()),
+                    ValueSpecificationBootstrap.newStringLiteral(this.repository, serverVersion, this.functionExecution.getProcessorSupport()),
                     ValueSpecificationBootstrap.newStringLiteral(this.repository, host, this.functionExecution.getProcessorSupport()),
                     ValueSpecificationBootstrap.newIntegerLiteral(this.repository, port, this.functionExecution.getProcessorSupport()));
-
-            if (this.useClientVersion)
-            {
-                fParams.add(0, ValueSpecificationBootstrap.newStringLiteral(this.repository, clientVersion, this.functionExecution.getProcessorSupport()));
-            }
-
-            if (this.useServerVersion)
-            {
-                fParams.add(1, ValueSpecificationBootstrap.newStringLiteral(this.repository, serverVersion, this.functionExecution.getProcessorSupport()));
-            }
 
             return this.functionExecution.executeFunctionExecuteParams(FunctionCoreInstanceWrapper.toFunction(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport)),
                     fParams,

@@ -58,8 +58,8 @@ Class meta::json::schema::generation::JSONSchemaOutput extends GenerationOutput
 
 function meta::json::schema::generation::toJSONSchema( input:JSONSchemaConfig[1] ) : JSONSchemaOutput[*]
 {
-    meta::alloy::test::mayExecuteAlloyTest(
-       {clientVersion, serverVersion, host, port|
+    meta::legend::test::mayExecuteLegendTest(
+       {clientVersion, serverVersion, serializationKind, host, port|
                    let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::json::alloyGenerateJson_JSONSchemaConfig_1__String_1__Integer_1__String_1__JSONSchemaOutput_MANY_';
                    let xf = $fStr->pathToElement()->cast(@Function<{JSONSchemaConfig[1], String[1], Integer[1], String[1]->GenerationOutput[*]}>);
                    $xf->evaluate([$input, $host, $port, $serverVersion]->map(v|list($v)))->toOneMany()->cast(@JSONSchemaOutput);},
