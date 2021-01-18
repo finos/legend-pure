@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.meta;
+package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.legend;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -23,11 +23,11 @@ import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
-public class MayExecuteAlloyTest extends AbstractNative
+public class MayExecuteLegendTest extends AbstractNative
 {
-    public MayExecuteAlloyTest()
+    public MayExecuteLegendTest()
     {
-        super("mayExecuteAlloyTest_Function_1__Function_1__X_k_");
+        super("mayExecuteLegendTest_Function_1__Function_1__X_k_");
     }
 
     @Override
@@ -38,6 +38,6 @@ public class MayExecuteAlloyTest extends AbstractNative
         CoreInstance functionType = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.genericType, M3Properties.typeArguments, M3Properties.rawType, processorSupport);
         CoreInstance param = functionType.getValueForMetaPropertyToOne(M3Properties.returnType);
         String type = TypeProcessor.typeToJavaPrimitiveWithMul(param, functionType.getValueForMetaPropertyToOne(M3Properties.returnMultiplicity), true, processorContext);
-        return "(("+type+")CoreGen.alloyTest(es, " + transformedParams.get(0) + "," + transformedParams.get(1) + ", true, true))";
+        return "(("+type+")CoreGen.legendTest(es, " + transformedParams.get(0) + "," + transformedParams.get(1) + "))";
     }
 }

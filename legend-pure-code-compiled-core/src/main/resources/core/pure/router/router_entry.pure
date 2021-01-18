@@ -51,23 +51,23 @@ function meta::pure::router::executeWithDeepFetch<T|m>(f:FunctionDefinition<{->T
 
 function meta::pure::router::execute<T|y>(f:FunctionDefinition<{->T[y]}>[1], m:Mapping[1], runtime:Runtime[1], extensions:meta::pure::router::extension::RouterExtension[*]):Result<T|y>[1]
 {
-   traceSpan(|(meta::alloy::test::mayExecuteAlloyTest(
-       {clientVersion, serverVersion, host, port |
-                     let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::execution::execute::alloyExecute_FunctionDefinition_1__Mapping_1__Runtime_1__ExecutionContext_$0_1$__String_1__Integer_1__String_1__String_1__RouterExtension_MANY__Result_1_';
-                     let xf = $fStr->pathToElement()->cast(@Function<{FunctionDefinition<{->T[y]}>[1], Mapping[1], Runtime[1],ExecutionContext[1] ,String[1], Integer[1], String[1], String[1], meta::pure::router::extension::RouterExtension[*]->Result<T|y>[1]}>);
-                     $xf->evaluate([$f, $m, $runtime, ^ExecutionContext() , $host, $port, $serverVersion, 'SEMI_INTERACTIVE']->map(v|list($v))->concatenate(list($extensions)))->toOne()->cast(@Result<T|y>);},
-       |^RoutingQuery<T|y>(fn=$f)->execute($m, $runtime, ^ExecutionContext(), $extensions, noDebug())
-   )), 'query execution',|traceSpan({|[pair('query-execution-info', $extensions.entry_execute->toOne()->eval($f,$m,$runtime))]->newMap()}, 'build query tags'), false);
+  execute($f, $m, $runtime, ^ExecutionContext(), $extensions);
 }
 
 function meta::pure::router::execute<T|y>(f:FunctionDefinition<{->T[y]}>[1], m:Mapping[1], runtime:Runtime[1], exeCtx:ExecutionContext[1], extensions:meta::pure::router::extension::RouterExtension[*]):Result<T|y>[1]
 {
-   traceSpan(|(meta::alloy::test::mayExecuteAlloyTest(
-       {clientVersion, serverVersion, host, port |
-                     let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::execution::execute::alloyExecute_FunctionDefinition_1__Mapping_1__Runtime_1__ExecutionContext_$0_1$__String_1__Integer_1__String_1__String_1__RouterExtension_MANY__Result_1_';
-                     let xf = $fStr->pathToElement()->cast(@Function<{FunctionDefinition<{->T[y]}>[1], Mapping[1], Runtime[1],ExecutionContext[1], String[1], Integer[1], String[1], String[1], meta::pure::router::extension::RouterExtension[*]->Result<T|y>[1]}>);
-                     $xf->evaluate([$f, $m, $runtime, $exeCtx, $host, $port, $serverVersion, 'SEMI_INTERACTIVE']->map(v|list($v))->concatenate(list($extensions)))->toOne()->cast(@Result<T|y>);},
-         |^RoutingQuery<T|y>(fn=$f)->execute($m, $runtime, $exeCtx, $extensions, noDebug());
+   traceSpan(|(meta::legend::test::mayExecuteLegendTest(
+       {clientVersion, serverVersion, serializationKind, host, port |
+           if($serializationKind == 'json',
+            | let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::execution::execute::alloyExecute_FunctionDefinition_1__Mapping_1__Runtime_1__ExecutionContext_$0_1$__String_1__Integer_1__String_1__String_1__RouterExtension_MANY__Result_1_';
+              let xf = $fStr->pathToElement()->cast(@Function<{FunctionDefinition<{->T[y]}>[1], Mapping[1], Runtime[1],ExecutionContext[1], String[1], Integer[1], String[1], String[1], meta::pure::router::extension::RouterExtension[*]->Result<T|y>[1]}>);
+              $xf->evaluate([$f, $m, $runtime, $exeCtx, $host, $port, $serverVersion, 'SEMI_INTERACTIVE']->map(v|list($v))->concatenate(list($extensions)))->toOne()->cast(@Result<T|y>);,
+            | let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::execution::execute::legendExecute_FunctionDefinition_1__Mapping_1__Runtime_1__ExecutionContext_$0_1$__String_1__Integer_1__String_1__String_1__String_1__RouterExtension_MANY__Result_1_';
+              let xf = $fStr->pathToElement()->cast(@Function<{FunctionDefinition<{->T[y]}>[1], Mapping[1], Runtime[1],ExecutionContext[1], String[1], Integer[1], String[1], String[1], String[1], meta::pure::router::extension::RouterExtension[*]->Result<T|y>[1]}>);
+              $xf->evaluate([$f, $m, $runtime, $exeCtx, $host, $port, $serverVersion, $serializationKind, 'FULL_INTERACTIVE']->map(v|list($v))->concatenate(list($extensions)))->toOne()->cast(@Result<T|y>);
+           )
+       },
+       |^RoutingQuery<T|y>(fn=$f)->execute($m, $runtime, $exeCtx, $extensions, noDebug());
    )), 'query execution',|traceSpan({|[pair('query-execution-info',  $extensions.entry_execute->toOne()->eval($f,$m,$runtime))]->newMap()}, 'build query tags'), false);
 }
 

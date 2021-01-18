@@ -71,7 +71,8 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.core.meta.*;
 import org.finos.legend.pure.runtime.java.interpreted.natives.core.string.*;
 import org.finos.legend.pure.runtime.java.interpreted.natives.core.tools.Profile;
 import org.finos.legend.pure.runtime.java.interpreted.natives.core.tracing.TraceSpan;
-import org.finos.legend.pure.runtime.java.interpreted.natives.mapping.AlloyTest;
+import org.finos.legend.pure.runtime.java.interpreted.natives.legend.AlloyTest;
+import org.finos.legend.pure.runtime.java.interpreted.natives.legend.LegendTest;
 import org.finos.legend.pure.runtime.java.interpreted.natives.runtime.CurrentUserId;
 import org.finos.legend.pure.runtime.java.interpreted.natives.runtime.Guid;
 import org.finos.legend.pure.runtime.java.interpreted.natives.runtime.IsOptionSet;
@@ -347,7 +348,8 @@ public class FunctionExecutionInterpreted implements FunctionExecution
         this.nativeFunctions.put("datePart_Date_1__Date_1_", new DatePart(repository));
         this.nativeFunctions.put("adjust_Date_1__Integer_1__DurationUnit_1__Date_1_", new AdjustDate(repository));
         this.nativeFunctions.put("dateDiff_Date_1__Date_1__DurationUnit_1__Integer_1_", new DateDiff(repository));
-        this.nativeFunctions.put("mayExecuteAlloyTest_Function_1__Function_1__X_k_", new AlloyTest(repository, this, true, true));
+        this.nativeFunctions.put("mayExecuteLegendTest_Function_1__Function_1__X_k_", new LegendTest(repository, this));
+        this.nativeFunctions.put("mayExecuteAlloyTest_Function_1__Function_1__X_k_", new AlloyTest(repository, this));
 
         NewDate newDate = new NewDate(repository);
         this.nativeFunctions.put("date_Integer_1__Date_1_", newDate);
