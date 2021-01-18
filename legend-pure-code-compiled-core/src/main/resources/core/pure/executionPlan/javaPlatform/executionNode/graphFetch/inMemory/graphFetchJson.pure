@@ -16,6 +16,7 @@ import meta::alloy::runtime::java::*;
 import meta::pure::graphFetch::execution::*;
 import meta::json::*;
 import meta::alloy::runtime::java::graphFetch::json::*;
+import meta::alloy::runtime::java::graphFetch::storeStreamReading::*;
 import meta::alloy::runtime::java::naming::*;
 import meta::alloy::runtime::java::typeInfo::*;
 import meta::java::generation::code::*;
@@ -35,16 +36,16 @@ function meta::alloy::runtime::java::graphFetch::json::jsonReaderClass(conventio
    $conventions->planNodeClass('public', $path, 'JsonDataReader_' + $conventions->identifier($srcTreeClass->elementToPath('_')));
 }
 
-function meta::alloy::runtime::java::graphFetch::json::createJsonReading(data:GraphFetchModelToModelData[1], path:String[1], readableClasses:Class<Any>[*], readableEnums:Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::alloy::runtime::java::graphFetch::json::createJsonReading(pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], readableClasses:Class<Any>[*], readableEnums:Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    newProject()
-      ->addClasses(createJsonReadingClass($data, $path, $readableClasses, $readableEnums, $context, $debug))
+      ->addClasses(createJsonReadingClass($pureClass, $javaInterface, $path, $readableClasses, $readableEnums, $context, $debug))
       ->addMavenDependency('com.fasterxml.jackson.core', 'jackson-core', '2.10.3');
 }
 
-function meta::alloy::runtime::java::graphFetch::json::createJsonReadingClass(data:GraphFetchModelToModelData[1], path:String[1], readableClasses:Class<Any>[*], readableEnums:Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): meta::java::metamodel::Class[1]
+function meta::alloy::runtime::java::graphFetch::json::createJsonReadingClass(pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], readableClasses:Class<Any>[*], readableEnums:Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): meta::java::metamodel::Class[1]
 {
-   let proto = $context.conventions->jsonReaderClass($path, $data.sourceTree.class)
+   let proto = $context.conventions->jsonReaderClass($path, $pureClass)
       ->implements($context.conventions->className(StoreStreamReader))
       ->usingKnownPackages($context.conventions->knownPackages())
       ->imports($context.conventions->constrainedImports())
@@ -178,7 +179,7 @@ function meta::alloy::runtime::java::graphFetch::json::createJsonReadingClass(da
              '}'
          )
       )
-      ->addReadCheckedObjects($data, $path, $context);
+      ->addReadCheckedObjects($pureClass, $javaInterface, $path, $context);
 }
 
 function <<access.private>> meta::alloy::runtime::java::graphFetch::json::acceptManyMethod(conventions:Conventions[1]): meta::java::metamodel::Method[1]
@@ -364,13 +365,13 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::valida
 
 function <<access.private>> meta::alloy::runtime::java::graphFetch::json::createObject(class:Class<Any>[1], proto:meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1]): String[1]
 {   
-   'this.stack.push(new '+$context.conventions->codeType($class->dataClass($path, $context.conventions))->codeToString($context.conventions)+'());\n'
+   'this.stack.push(new '+$context.conventions->codeType($class->streamReadingDataClass($path, $context.conventions))->codeToString($context.conventions)+'());\n'
 }
 
 function <<access.private>> meta::alloy::runtime::java::graphFetch::json::returnCheckedObject(class:Class<Any>[1], proto:meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1]): String[1]
 {
    let conventions            = $context.conventions;
-   let dataClass              = $class->dataClass($path, $conventions);
+   let dataClass              = $class->streamReadingDataClass($path, $conventions);
    let objectAccess           = '(('+$conventions->codeType($dataClass)->codeToString($conventions)+') this.stack.peek())';
    let javaClass              = $conventions->className($class);
    let checked                = $conventions->className(Checked);
@@ -461,13 +462,13 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::create
     );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addReadCheckedObjects(proto:meta::java::metamodel::Class[1], data:GraphFetchModelToModelData[1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addReadCheckedObjects(proto:meta::java::metamodel::Class[1], pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
 {
    let conv            = $context.conventions;
    let checkedClass    = $context.baseProject->toOne()->resolve($conv->className(Checked));
-   let checkedSource   = javaParameterizedType($checkedClass, $data.sourceClass);
+   let checkedSource   = javaParameterizedType($checkedClass, $javaInterface);
    let checked         = j_variable($checkedSource, 'object');
-   let sourceRead      = $data.sourceTree.class->readMethodName($conv);
+   let sourceRead      = $pureClass->readMethodName($conv);
    let ioEx            = j_parameter(javaIOException(), 'e');
    let jThis           = j_this($proto);
    let recordType      = $conv->className(JsonDataRecord);

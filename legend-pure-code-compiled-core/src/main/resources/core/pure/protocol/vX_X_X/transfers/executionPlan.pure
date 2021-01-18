@@ -87,34 +87,12 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::execution
                resultSizeRange = $alloc.resultSizeRange->isEmpty()->if(|[],|$alloc.resultSizeRange->toOne()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()),
                varName = $alloc.varName
             ),
-         g:meta::pure::mapping::modelToModel::GraphFetchM2MExecutionNode[1]|
-            ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::GraphFetchM2MExecutionNode(
-               _type = 'graphFetchM2M',
-               resultType = $g.resultType->transformResultType($mapping, $extensions),
-               resultSizeRange = $g.resultSizeRange->isEmpty()->if(|[],|$g.resultSizeRange->toOne()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()),
-               trees = $g.trees->map(t|$t->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformGraphFetchTree([], newMap([]->cast(@Pair<String,List<Any>>)), $extensions)),
-               enableConstraints = $g.enableConstraints,
-               store=$g.connections->map(c|$c.element->match($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).transfers_executionPlan_transformNode_GraphFetchM2MExecutionNode->concatenate([
-                  any: Any[*] | []
-               ])->toOneMany()))->first()
-            );,
          exp:meta::pure::executionPlan::FunctionParametersValidationNode[1]|
            ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::FunctionParametersValidationNode(
               _type = 'function-parameters-validation',
               resultType = $exp.resultType->transformResultType($mapping, $extensions),
               functionParameters = $exp.functionParameters->map(p | ^meta::protocols::pure::vX_X_X::metamodel::valueSpecification::Variable(_type='var', name=$p.name, supportsStream=$p.supportsStream, class=$p.type->elementToPath(), multiplicity=$p.multiplicity->isEmpty()->if(| [],| $p.multiplicity->toOne()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity())))
            ),
-         g:meta::pure::graphFetch::executionPlan::GraphFetchExecutionNode[1]|
-            ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::GraphFetchExecutionNode
-            (
-               _type = 'graphFetchExecutionNode',
-               resultType = $g.resultType->transformResultType($mapping, $extensions),
-               resultSizeRange = $g.resultSizeRange->isEmpty()->if(|[],|$g.resultSizeRange->toOne()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()),
-               rootExecutionNode = $g.rootExecutionNode->transformNode($mapping, $extensions),
-               graphFetchTree = $g.graphFetchTree->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformGraphFetchTree([], newMap([]->cast(@Pair<String,List<Any>>)), $extensions),
-               batchSize = $g.batchSize,
-               globalGraphFetchExecutionNode = $g.globalGraphFetchExecutionNode->transformNode($mapping, $extensions)->cast(@meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::GlobalGraphFetchExecutionNode)
-            ),
          g:meta::pure::graphFetch::executionPlan::GlobalGraphFetchExecutionNode[1]|
             ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::GlobalGraphFetchExecutionNode
             (
@@ -126,7 +104,9 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::execution
                children = $g.children->map(s | $s->transformNode($mapping, $extensions))->cast(@meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::GlobalGraphFetchExecutionNode),
                localGraphFetchExecutionNode = $g.localGraphFetchExecutionNode->transformNode($mapping, $extensions)->cast(@meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::LocalGraphFetchExecutionNode),
                parentIndex = $g.parentIndex,
-               xStorePropertyMapping = $g.xStorePropertyMapping->map(x | $x->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::xStore::transformXStorePropertyMapping($mapping, $extensions))
+               xStorePropertyMapping = $g.xStorePropertyMapping->map(x | $x->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::xStore::transformXStorePropertyMapping($mapping, $extensions)),
+               enableConstraints = $g.enableConstraints,
+               checked = $g.checked
             ),
          e:meta::pure::executionPlan::ErrorExecutionNode[1]|
             ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::ErrorExecutionNode
@@ -144,6 +124,41 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::execution
                _type = 'freeMarkerConditionalExecutionNode',
                resultType = $f.resultType->transformResultType($mapping, $extensions),
                resultSizeRange = $f.resultSizeRange->isEmpty()->if(|[],|$f.resultSizeRange->toOne()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity())
+            ),
+         f:meta::pure::mapping::modelToModel::graphFetch::executionPlan::StoreStreamReadingExecutionNode[1]|
+            ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::StoreStreamReadingExecutionNode(
+               _type = 'storeStreamReading',
+               resultType = $f.resultType->transformResultType($mapping, $extensions),
+               resultSizeRange = $f.resultSizeRange->isEmpty()->if(|[],|$f.resultSizeRange->toOne()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()),
+               graphFetchTree = $f.graphFetchTree->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformGraphFetchTree([], newMap([]->cast(@Pair<String,List<Any>>)), $extensions)->cast(@meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RootGraphFetchTree),
+               store = $f.store->match($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).transfers_executionPlan_transformNode_StoreStreamReadingExecutionNode->concatenate([
+                  any: Any[*] | []
+               ])->toOneMany()),
+               connection = $f.connection->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::runtime::transformConnection($extensions),
+               enableConstraints = $f.enableConstraints,
+               checked = $f.checked
+            ),
+         f:meta::pure::mapping::modelToModel::graphFetch::executionPlan::InMemoryRootGraphFetchExecutionNode[1]|
+            ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryRootGraphFetchExecutionNode(
+               _type = 'inMemoryRootGraphFetch',
+               resultType = $f.resultType->transformResultType($mapping, $extensions),
+               resultSizeRange = $f.resultSizeRange->isEmpty()->if(|[],|$f.resultSizeRange->toOne()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()),
+               nodeIndex = $f.nodeIndex,
+               parentIndex = $f.parentIndex,
+               graphFetchTree = $f.graphFetchTree->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformGraphFetchTree([], newMap([]->cast(@Pair<String,List<Any>>)), $extensions),
+               batchSize = $f.batchSize,
+               checked = $f.checked,
+               children = $f.children->map(x | $x->transformNode($mapping, $extensions))->cast(@meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode)
+            ),
+         f:meta::pure::mapping::modelToModel::graphFetch::executionPlan::InMemoryPropertyGraphFetchExecutionNode[1]|
+            ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryPropertyGraphFetchExecutionNode(
+               _type = 'inMemoryPropertyGraphFetch',
+               resultType = $f.resultType->transformResultType($mapping, $extensions),
+               resultSizeRange = $f.resultSizeRange->isEmpty()->if(|[],|$f.resultSizeRange->toOne()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()),
+               nodeIndex = $f.nodeIndex,
+               parentIndex = $f.parentIndex,
+               graphFetchTree = $f.graphFetchTree->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformGraphFetchTree([], newMap([]->cast(@Pair<String,List<Any>>)), $extensions),
+               children = $f.children->map(x | $x->transformNode($mapping, $extensions))->cast(@meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode)
             )
       ])->toOneMany()
    );

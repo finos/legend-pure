@@ -21,7 +21,7 @@ import meta::pure::mapping::modelToModel::test::alloy::explosion::*;
 import meta::pure::graphFetch::execution::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0' }
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0' }
 meta::pure::mapping::modelToModel::test::alloy::explosion::testBasicExplosion():Any[*]
 {
    let tree = #{FirmEmployee {firmName, fullName} }#;
@@ -42,7 +42,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testBasicExplosion():
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0' }
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0' }
 meta::pure::mapping::modelToModel::test::alloy::explosion::testMultiplePropertyExplosion():Any[*]
 {
    let tree = #{FirmEmployee {firmName, fullName, streetAddress} }#;
@@ -63,7 +63,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testMultiplePropertyE
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0' }
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0' }
 meta::pure::mapping::modelToModel::test::alloy::explosion::testTargetConstraintsViolatedWithExplosion():Boolean[1]
 {
    let tree = #{FirmEmployeeWithConstraint {firmName, fullName} }#;
@@ -84,7 +84,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testTargetConstraints
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>> 
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0',
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0',
    doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping with sets using and not using explosion mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
@@ -108,7 +108,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testMappingWithSetsUs
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0',
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0',
    doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize. GraphFetch tree demonstrates usage of explosion at a property level.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
@@ -132,7 +132,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testExplosionAtProper
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0',
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0',
    doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
@@ -156,7 +156,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testMappingWithExplos
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0',
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0',
    doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
@@ -180,7 +180,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testExplosionAtProper
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0',
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0',
    doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize. GraphFetch tree demonstrates usage of explosion at a property level.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'

@@ -20,7 +20,7 @@ import meta::pure::mapping::modelToModel::test::alloy::simple::nilHandling::*;
 import meta::pure::mapping::modelToModel::test::alloy::utils::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_11_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a mapping that uses [] for Nil in an if',
    doc.doc='Given: data that reaches the []',
    doc.doc='When:  a mapping is executed using graphFetch and serialize.',
@@ -43,7 +43,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::canHandleNilWhileMapping
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_11_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a mapping that uses [] for Nil in an if',
    doc.doc='Given: data that does not reach the []',
    doc.doc='When:  a mapping is executed using graphFetch and serialize.',

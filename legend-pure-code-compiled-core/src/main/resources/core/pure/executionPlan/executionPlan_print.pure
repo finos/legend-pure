@@ -53,8 +53,8 @@ function <<access.public>> meta::pure::executionPlan::toString::planNodeToString
          p:MultiResultSequenceExecutionNode[1]|'MultiResultSequence\n'+$space+'('+header($p, $space, $extensions)+$e->childrenToString($space+'  ', $extensions)+'\n'+$space+')\n',
          p:ErrorExecutionNode[1]|'Error\n'+$space+'('+header($p, $space, $extensions)+'\n'+$space+'  message = '+ $p.message->replace('\n', '\\n')->replace('\r','\\r')+$e->childrenToString($space+'  ', $extensions)+'\n'+$space+')\n',
          e:FunctionParametersValidationNode[1] | 'FunctionParametersValidationNode\n'+ $space+ '(' + '\n'+ $space +'  functionParameters = '+  $e.functionParameters->map(p|$p.name+':'+$p.type->elementToPath()+ '[' + printMultiplicity($p.multiplicity->toOne()) + ']')->makeString('[',', ',']')+'\n'+$space+')\n',
-         g:GraphFetchM2MExecutionNode[1] | $g->meta::pure::mapping::modelToModel::plan::graphFetchPlanNodeToString($space, $extensions),
-         g:meta::pure::graphFetch::executionPlan::GraphFetchExecutionNode[1] | $g->meta::pure::graphFetch::executionPlan::graphExecutionNodeToString($space, $extensions)
+         g:meta::pure::graphFetch::executionPlan::GlobalGraphFetchExecutionNode[1] | $g->meta::pure::graphFetch::executionPlan::globalGraphFetchExecutionNodeToString($space, $extensions),
+         g:meta::pure::mapping::modelToModel::graphFetch::executionPlan::StoreStreamReadingExecutionNode[1] | $g->meta::pure::mapping::modelToModel::graphFetch::executionPlan::storeStreamReadingExecutionNodeToString($space, $extensions)
 
       ])->toOneMany()
    );

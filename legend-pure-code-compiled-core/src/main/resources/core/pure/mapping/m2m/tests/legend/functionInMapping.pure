@@ -20,7 +20,7 @@ import meta::pure::mapping::modelToModel::test::alloy::simple::function::*;
 import meta::pure::mapping::modelToModel::test::alloy::utils::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_11_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a mapping that calls a function: at(0).',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the mapping completes without error and no defects are reported'
