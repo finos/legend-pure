@@ -106,6 +106,7 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
 
    $allMappings
       ->concatenate($stores)
+      ->concatenate($extensions->map(e|$e.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).scan_buildPureModelAsText_getAllElementsFromMapping2->map(z|$z->eval($stores))))
       ->concatenate($profiles)
       ->concatenate($found.classes)
       ->concatenate($found.enumerations)
