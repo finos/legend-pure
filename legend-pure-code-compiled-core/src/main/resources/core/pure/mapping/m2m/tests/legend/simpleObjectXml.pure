@@ -27,9 +27,7 @@ import meta::pure::mapping::modelToModel::test::shared::dest::*;
 import meta::pure::executionPlan::profiles::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{
-   serverVersion.start='v1_19_0',
-   doc.doc='Given: a single XML object that matches a source defintion, and an M2M mapping',
+{  doc.doc='Given: a single XML object that matches a source defintion, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
 } 
@@ -57,9 +55,7 @@ meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlSerializeOfOneObje
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{
-   serverVersion.start='v1_19_0',
-   doc.doc='Parse a multiple xml object, process it through an M2M mapping and serialize the result as JSON.'
+{  doc.doc='Parse a multiple xml object, process it through an M2M mapping and serialize the result as JSON.'
 } 
 meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlSerializeOfMultipleObjects() : Boolean[1]
 {
@@ -89,9 +85,7 @@ meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlSerializeOfMultipl
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{
-   serverVersion.start='v1_19_0',
-   doc.doc='Parse a multiple xml object, process it through an M2M mapping and serialize the result as JSON with defects.'
+{  doc.doc='Parse a multiple xml object, process it through an M2M mapping and serialize the result as JSON with defects.'
 } 
 meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlSerializeOfMultipleObjectsChecked() : Boolean[1]
 {
@@ -159,7 +153,6 @@ meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlSerializeOfMultipl
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  
-   serverVersion.start='v1_19_0',
    doc.doc='Parse a simple Xml object, process it through an M2M mapping and serialize the result as JSON.'
 } 
 meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlSerializeOneObjectReverse() : Boolean[1]
@@ -186,9 +179,7 @@ meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlSerializeOneObject
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{
-   serverVersion.start='v1_19_0',
-   doc.doc='Given: a Xml object (matching a source class) that contains data for all primitive data types and an enumeration, and an M2M mapping',
+{  doc.doc='Given: a Xml object (matching a source class) that contains data for all primitive data types and an enumeration, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized handling all datatypes appropriately.'
 } 
@@ -228,9 +219,7 @@ meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlSupportForPrimitiv
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{
-   serverVersion.start='v1_19_0',
-   doc.doc='Given: a Xml object (matching a source class) that contains an empty tags, and an M2M mapping',
+{  doc.doc='Given: a Xml object (matching a source class) that contains an empty tags, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized demonstrating support for empty properties.'
 } 
@@ -262,9 +251,7 @@ meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlSupportForEmptyVal
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{
-   serverVersion.start='v1_19_0',
-   doc.doc='Given: a Xml object (matching a source class) that contains properties with hyphen/preriod, and an M2M mapping',
+{  doc.doc='Given: a Xml object (matching a source class) that contains properties with hyphen/preriod, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized demonstrating support for reserver characters being removed.'
 } 
@@ -296,8 +283,7 @@ meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlSupportForReplacem
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{
-   serverVersion.start='v1_19_0',
+{  
    doc.doc='Given: a source class',
    doc.doc='Given: data with unused fields',
    doc.doc='When:  a mapping is executed.',
@@ -333,8 +319,7 @@ meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlIgnoresUnwantedVal
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{
-   serverVersion.start='v1_19_0',
+{  
    doc.doc='Parse a complex XML object, process it through an M2M mapping and serialize the result as JSON.'   
 } 
 meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlDeserializeComplexObject() : Boolean[1]
@@ -366,9 +351,7 @@ meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlDeserializeComplex
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{
-   serverVersion.start='v1_19_0',
-   doc.doc='Parse a complex XML object, process it through an M2M mapping and serialize the result as checked JSON.'
+{  doc.doc='Parse a complex XML object, process it through an M2M mapping and serialize the result as checked JSON.'
 } 
 meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlDeserializeComplexObjectChecked() : Boolean[1]
 {
@@ -432,9 +415,7 @@ meta::pure::mapping::modelToModel::test::xmlStore::simple::xmlDeserializeComplex
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{
-   serverVersion.start='v1_19_0',
-   doc.doc='Given: a single XML object that matches a source defintion, and an M2M mapping',
+{  doc.doc='Given: a single XML object that matches a source defintion, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
 } 

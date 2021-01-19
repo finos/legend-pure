@@ -23,7 +23,7 @@ import meta::pure::mapping::modelToModel::test::alloy::simple::multiplicities::o
 import meta::pure::runtime::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: an M2M mapping that uses toOne() from multiplicities of [0..1], [1], [*] to a target multiplicity of [1]',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
@@ -48,7 +48,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::multiplicities::multipli
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: an M2M mapping that uses toOne() from multiplicities of [0..1], [1], [*] to a target multiplicity of [0..1]',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
@@ -73,7 +73,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::multiplicities::multipli
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: an M2M mapping that uses toOne() from multiplicities of [0..1], [1], [*] to a target multiplicity of [*]',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'

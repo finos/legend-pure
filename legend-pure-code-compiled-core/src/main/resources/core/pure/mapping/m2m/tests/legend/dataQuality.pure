@@ -28,7 +28,7 @@ import meta::pure::mapping::modelToModel::*;
 import meta::pure::runtime::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a class that defines no constraints.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the mapping completes without error and no defects are reported'
@@ -57,7 +57,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::canUseGraphFetchChe
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a class that defines no constraints.',
    doc.doc='Given: a superclass that defines no constraints.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
@@ -87,7 +87,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::canUseGraphFetchChe
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_9_0',
    doc.doc='Given: a source object that meets its constriants that maps to a target object that also meets its constraints.',
    doc.doc='When:  the mapping is executed using graphFetch.',
    doc.doc='Then:  the mapping completes without error'
@@ -111,7 +111,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::constraintsPassWhen
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_9_0',
    doc.doc='Given: a source object that meets its constriants that maps to a target object that also meets its constraints.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the result is a Checked object containing the target and source along with no defects.'
@@ -139,7 +139,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::constraintsPassForV
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_16_0',
    doc.doc='Given: a source object that meets its constriants that fails to map to a target object for a property to meet its constraints.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the result is a Checked object containing the target and source along with a defects.'
@@ -187,7 +187,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::unmappedConstraintP
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_16_0',
    doc.doc='Given: a source object that meets its constriants that fails to map to a target object for a property to meet its constraints via a qualified property.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the result is a Checked object containing the target and source along with a defects.'
@@ -226,7 +226,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::unmappedConstraintP
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>> 
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_9_0',
    doc.doc='Given: a class that defines constraints.',
    doc.doc='Given: data that fails one constraint.',
    doc.doc='When:  the mapping is executed using graphFetch.',
@@ -266,7 +266,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::constraintsFailForI
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>> 
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a class that defines constraints.',
    doc.doc='Given: data that fails two constraints.',
    doc.doc='When:  the mapping is executed using graphFetch.',
@@ -316,7 +316,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::constraintsFailForI
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>> 
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_9_0',
    doc.doc='Given: a class that inherits constraints.',
    doc.doc='Given: data that meets those constraints.',
    doc.doc='When:  the mapping is executed using graphFetch.',
@@ -346,7 +346,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::constraintsAreInher
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>> 
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a class that inherits constraints.',
    doc.doc='Given: data that fails a constraint on the superclass and one on the subclass.',
    doc.doc='When:  the mapping is executed using graphFetch.',
@@ -396,7 +396,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::constraintsAreInher
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a source object that meets its constriants but maps to a target object that fails.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the result is a Checked object containing the target and source along with a defect explaining the error.'
@@ -434,7 +434,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::returnCheckResultWi
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a source object that meets its constriants but maps to a target objects that fails for some child element.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the result is a Checked object containing the target and source along with a defect explaining the error.  The defect should contain the path to the failing object including indexes in any intermediate collections.'
@@ -535,7 +535,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::returnCheckResultWi
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a source object that fails its constriants.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the result is a Checked object containing the target and source containing a Checked for the source which includes the defect.'
@@ -583,7 +583,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::returnCheckResultWi
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>> 
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_9_0',
    doc.doc='Given: a class that defines a constraint.',
    doc.doc='Given: a superclass without constraints.',
    doc.doc='Given: data that meets the constraint.',
@@ -614,7 +614,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::canDefineConstraint
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>> 
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a class that defines a constraint.',
    doc.doc='Given: a superclass without constraints.',
    doc.doc='Given: data that fails the constraint.',
@@ -655,7 +655,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::canDefineConstraint
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a source object that fails due to a breach of multiplicity.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the result is a Checked object without a target and a no-source defect.  The source of the Checked will be another Checked containing the defect for the source and the offending source data.'
@@ -717,7 +717,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::returnCheckResultWi
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a source object that fails due to a breach of multiplicity.',
    doc.doc='When: the mapping is executed using graphFetchChecked.',
    doc.doc='Then: the result is a Checked object without a target and a no-source defect.  The source of the Checked will be another Checked containing the defect for the source and the offending source data.'
@@ -826,7 +826,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::returnCheckResultWi
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a source object that fails its constriants.',
    doc.doc='Given: an execution constraint that requests no constraint checking.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
@@ -855,7 +855,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::returnCheckResultWi
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a source object that fails its constriants.',
    doc.doc='Given: an execution constraint that requests no constraint checking.',
    doc.doc='When:  the mapping is executed using graphFetch.',
@@ -875,7 +875,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::executionSucceedsFo
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a source object that meets its constriants but maps to a target object that fails.',
    doc.doc='Given: an execution constraint that requests no constraint checking.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
@@ -904,7 +904,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::returnCheckResultWi
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a source object that meets its constriants but maps to a target object that fails.',
    doc.doc='Given: an execution constraint that requests no constraint checking.',
    doc.doc='When:  the mapping is executed using graphFetch.',
@@ -924,7 +924,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::executionSucceedsFo
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a source object that meets its constriants but maps to a target objects that fails for some child element.',
    doc.doc='Given: graph fetch tree that does not include the properties.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
@@ -1004,7 +1004,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::fetchGraphIsExpande
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a source object that fails its constriants.',
    doc.doc='Given: graph fetch tree that does not include the properties.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
@@ -1532,7 +1532,7 @@ Class meta::pure::mapping::modelToModel::test::dataQuality::Parent
 Class meta::pure::mapping::modelToModel::test::dataQuality::Widget extends Parent {}
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.DataQuality>>
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_15_0',
    doc.doc='Given: a class that inherits a constraint that calls a qualified property.',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
    doc.doc='Then:  the result is a Checked object containing the target and source.'

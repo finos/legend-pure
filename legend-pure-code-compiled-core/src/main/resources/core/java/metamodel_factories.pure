@@ -2740,8 +2740,6 @@ function <<access.private>> meta::java::metamodel::project::mergeClass(base: Pro
       {| $base->addClass($srcDirPath, $class)},
       {|
          let existing = $base->getClass($srcDirPath, $classFullName)->toOne();
-         
-         let imports = $existing.additionalImports->concatenate($class.additionalImports)->removeDuplicates();
 
          let superType = if($existing.superType->isEmpty(),
                             {|$class.superType},
@@ -2756,21 +2754,15 @@ function <<access.private>> meta::java::metamodel::project::mergeClass(base: Pro
 
          let interfaces = $existing.interfaces->concatenate($class.interfaces)->map(i|$i->typePathToString(true))->removeDuplicates()->map(i|$i->javaType());
          
-         let newlyDefinedFields = $class.fields->filter({newField |
-            let existingField = $existing.fields->filter({m | $m.name == $newField.name});
-            assert($existingField->isEmpty() || (($existingField.type == $newField.type) && ($existingField->toOne().value == $newField.value)), | 'Cannot merge field ' + $newField.name + ' in ' + $classFullName);
-            $existingField->isEmpty();
-         });
-         let fields = $existing.fields->concatenate($newlyDefinedFields);
-         
-         let newlyDefinedMethods = $class.methods->filter({newMethod|
+         let newlyDefined = $class.methods->filter({newMethod|
             let existingMethod = $existing.methods->filter({m| $m.name == $newMethod.name && $m.parameters.type == $newMethod.parameters.type});
             assert($existingMethod->isEmpty() || $existingMethod->toOne().body == $newMethod.body, | 'Cannot merge implementations of ' + $newMethod->methodSignature() + ' in ' + $classFullName);
             $existingMethod->isEmpty();
          });
-         let methods = $existing.methods->concatenate($newlyDefinedMethods);
+         
+         let methods = $existing.methods->concatenate($newlyDefined);
 
-         $base->replaceClass(^$existing(additionalImports=$imports, superType=$superType, interfaces=$interfaces, fields=$fields, methods=$methods));
+         $base->replaceClass(^$existing(superType=$superType, interfaces=$interfaces, methods=$methods));
       }
    );
 }

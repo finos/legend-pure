@@ -63,15 +63,11 @@ Class meta::pure::router::extension::RouterExtension
    
    graphExtension_calculateSourceTree : Function<{Nil[1]->RootGraphFetchTree<Any>[1]}>[0..1];
    
-   <<doc.deprecated>> graphFetch_recursivelyBuildGlobalNodeStructure : Function<{ClusteredGraphFetchTree[1], String[*], String[1], Map<String, List<Any>>[1], Mapping[1], Runtime[1], ExecutionContext[1], DebugContext[1] -> Function<{Nil[1]->GlobalGraphFetchExecutionNode[1]}>[*]}>[0..1];
-   <<doc.deprecated>> graphFetch_executionPlan_1 : Function<{StoreQuery[1], RoutedValueSpecification[0..1], ClusteredGraphFetchTree[1], String[*], Mapping[1], Runtime[1], ExecutionContext[1], DebugContext[1]->Function<{Nil[1]->Pair<ExecutionNode, GlobalGraphFetchExecutionNode>[1]}>[*]}>[0..1];
-   <<doc.deprecated>> graphFetch_executionPlan_2 : Function<{Nil[1]->Function<{StoreQuery[1]->Integer[0..1]}>[1]}>[0..1];
-   <<doc.deprecated>> graphFetch_localGraphFetchExecutionNodeToString : Function<{String[1], meta::pure::router::extension::RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];
-   
-   graphFetch_executionPlan_planGraphFetchExecution : Function<{StoreQuery[1], RoutedValueSpecification[0..1], ClusteredGraphFetchTree[1], String[*], Mapping[1], Runtime[1], ExecutionContext[1], Boolean[1], Boolean[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1] -> LocalGraphFetchExecutionNode[1]}>[*]}>[0..1];
-   graphFetch_executionPlan_addCrossStoreChildren : Function<{ClusteredGraphFetchTree[1], String[*], String[1], Map<String, List<Any>>[1], Mapping[1], Runtime[1], ExecutionContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->LocalGraphFetchExecutionNode[1]}>[*]}>[0..1];
-   graphFetch_executionPlan_localGraphFetchExecutionNodeToString : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];   
-   
+   graphFetch_recursivelyBuildGlobalNodeStructure : Function<{ClusteredGraphFetchTree[1], String[*], String[1], Map<String, List<Any>>[1], Mapping[1], Runtime[1], ExecutionContext[1], DebugContext[1] -> Function<{Nil[1]->GlobalGraphFetchExecutionNode[1]}>[*]}>[0..1];
+   graphFetch_executionPlan_1 : Function<{StoreQuery[1], RoutedValueSpecification[0..1], ClusteredGraphFetchTree[1], String[*], Mapping[1], Runtime[1], ExecutionContext[1], DebugContext[1]->Function<{Nil[1]->Pair<ExecutionNode, GlobalGraphFetchExecutionNode>[1]}>[*]}>[0..1];
+   graphFetch_executionPlan_2 : Function<{Nil[1]->Function<{StoreQuery[1]->Integer[0..1]}>[1]}>[0..1];
+   graphFetch_localGraphFetchExecutionNodeToString : Function<{String[1], meta::pure::router::extension::RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];
+      
    executionPlan_print_planNodeToString : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];
    executionPlan_print_connectionToString: Function<{RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];
    executionPlan_print_typeToString : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];
@@ -85,12 +81,8 @@ Class meta::pure::router::extension::RouterExtension
    
    java_conventions_defaultProhibitedFunctions : Function<Any>[*];
    java_mappingAdaptor : Function<{Nil[1]->String[1]}>[*];
-   java_graphFetch_generateCodeForLocalGraphFetchNode : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->Project[1]}>[*]}>[0..1];
-   <<doc.deprecated>> java_graphFetch_generateGraphNodeImplementation : Function<{meta::java::metamodel::Class[1], GenerationContext[1] -> Function<{Nil[1]->meta::java::metamodel::Class[1]}>[*]}>[0..1];
-   java_graphFetch_updateImplementationClassWithStoreSpecificFieldsAndMethods : Function<{meta::java::metamodel::Class[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->Project[1]}>[*]}>[0..1];
-   java_graphFetch_inMemory_applyTypeFilter : Function<{InstanceSetImplementation[1], Code[1], Code[1..*], GenerationContext[1], DebugContext[1]->Function<{Nil[1]->Code[*]}>[*]}>[0..1];
-   java_graphFetch_inMemory_generatePropertyMapping1 : Function<{Nil[1]->FunctionDefinition<Any>[1]}>[*];
-   java_graphFetch_inMemory_generatePropertyMapping2 : Function<{Nil[1]->ValueTransformer<Any>[1]}>[*];
+   java_graphFetch_generateCodeForLocalGraphFetchNode : Function<{String[1], GenerationContext[1], DebugContext[1] -> Function<{Nil[1]->Project[1]}>[*]}>[0..1];
+   java_graphFetch_generateGraphNodeImplementation : Function<{meta::java::metamodel::Class[1], GenerationContext[1] -> Function<{Nil[1]->meta::java::metamodel::Class[1]}>[*]}>[0..1];
    
    plan_javaRuntime_main_prepare1 : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GenerationContext[1]}>[*]}>[0..1];
    plan_javaRuntime_main_prepare2 : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GenerationContext[1]}>[*]}>[0..1];

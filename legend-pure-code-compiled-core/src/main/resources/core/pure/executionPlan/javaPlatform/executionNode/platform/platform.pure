@@ -31,10 +31,7 @@ function <<access.private>> meta::alloy::runtime::java::prepareForPlatformNode(p
 {   
    if($p.expression->cast(@FunctionExpression)->isSerialize($extensions),
       | prepareForSerialize($p, $path, $context, $debug),
-      | if($p.expression->cast(@FunctionExpression)->isUnionOnGraphFetch(),
-           | prepareForUnionOnGraphFetch($p, $path, $context, $extensions, $debug),
-           | $context
-        )
+      | $context
     );
 }
 
@@ -48,11 +45,8 @@ function <<access.private>> meta::alloy::runtime::java::generateImplementionForP
       |
    if($p.expression->cast(@FunctionExpression)->isExtractPkValuesFromRelationalObjectReferences(),
       | generateImplementationForExtractPkValuesFromRelationalObjectReferences($p, $path, $context, $debug),
-      |
-   if($p.expression->cast(@FunctionExpression)->isUnionOnGraphFetch(),
-      | generateImplementationForUnionOnGraphFetch($p, $path, $context, $extensions, $debug),
-      | generateImplementionForExpression($p, $path, $context, $debug)
-   ))));
+      | generateImplementionForExpression($p, $path, $context, $debug))
+   ));
 }
 
 function <<access.private>> meta::alloy::runtime::java::isExtractPkValuesFromRelationalObjectReferences(fe:FunctionExpression[1]):Boolean[1]
@@ -118,19 +112,5 @@ function meta::alloy::runtime::java::generateImplementationForExtractPkValuesFro
 
    let executeClass          = buildExecuteClass($executeBody, $executionContextVar, $path, $conventions);
 
-   generatedCode(newProject()->addClasses($executeClass), $executeClass);
-}
-
-function <<access.private>> meta::alloy::runtime::java::prepareForUnionOnGraphFetch(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
-{
-   let childNodeInfos = $context->childNodeInfosForPath($path);
-   ^$context(nodeInfos = $context.nodeInfos->concatenate(^NodeInfo(path = $path, returnType = $childNodeInfos->at(0).returnType, graphFetchTrees = $childNodeInfos.graphFetchTrees->removeDuplicatesBy(x | $x.class))));
-}
-
-function <<access.private>> meta::alloy::runtime::java::generateImplementationForUnionOnGraphFetch(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
-{
-   let conventions  = $context.conventions;
-   let interface    = $conventions->className(IPlatformPureExpressionExecutionNodeGraphFetchUnionSpecifics);
-   let executeClass = $conventions->planNodeClass('public', $path, 'Execute')->imports($interface)->implements($interface);
    generatedCode(newProject()->addClasses($executeClass), $executeClass);
 }

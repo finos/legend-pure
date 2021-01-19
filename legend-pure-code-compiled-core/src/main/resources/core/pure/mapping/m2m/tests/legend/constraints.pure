@@ -22,7 +22,7 @@ import meta::pure::executionPlan::profiles::*;
 import meta::pure::mapping::modelToModel::test::alloy::constraints::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{  serverVersion.start='v1_19_0' }
+{  serverVersion.start='v1_11_0' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::testTargetConstraintsWhenRequiredPropertiesAreNotSpecifiedOnGraphFetchTree():Boolean[1]
 {
     let result = execute( |Firm.all()->graphFetchChecked(#{Firm {name} }#)->serialize(#{Firm {name} }#),
@@ -40,7 +40,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::testTargetConstrain
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{  serverVersion.start='v1_19_0' }
+{  serverVersion.start='v1_11_0' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::testQueryOnTypeWithFailingConstraintSucceedsWithConstraintsDisabled():Boolean[1]
 {
     let result = execute( |Firm.all()->graphFetch(#{Firm {name} }#)->serialize(#{Firm {name} }#),
@@ -57,7 +57,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::testQueryOnTypeWith
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{  serverVersion.start='v1_19_0' }
+{  serverVersion.start='v1_11_0' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::testQueryOnSourceTypeWithFailingConstraintSucceedsWithConstraintsDisabled():Boolean[1]
 {
    let result = execute( |Firm2.all()->graphFetch(#{Firm2 {name} }#)->serialize(#{Firm2 {name} }#),
@@ -74,7 +74,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::testQueryOnSourceTy
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
-{  serverVersion.start='v1_19_0' }
+{  serverVersion.start='v1_11_0' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::testSourceConstraintsWhenRelatedTargetPropertiesAreNotSpecifiedOnGraphFetchTree():Boolean[1]
 {
     let result = execute( |Firm2.all()->graphFetchChecked(#{Firm2 {name} }#)->serialize(#{Firm2 {name} }#),
@@ -92,7 +92,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::testSourceConstrain
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{  serverVersion.start='v1_19_0' }
+{  serverVersion.start='vX_X_X' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::testSourceConstraintsWithNew():Boolean[1]
 {
    let result = execute( |Car.all()->graphFetchChecked(#{Car {engineSize}}#)->serialize(#{Car {engineSize}}#),
@@ -110,7 +110,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::testSourceConstrain
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{  serverVersion.start='v1_19_0' }
+{  serverVersion.start='vX_X_X' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::testSourceConstraintsWithNewPropertyAssociation():Boolean[1]
 {
    let result = execute( |ProductTaxonomy.all()->graphFetchChecked(#{ProductTaxonomy {id}}#)->serialize(#{ProductTaxonomy {id}}#),
@@ -128,7 +128,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::testSourceConstrain
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{ serverVersion.start='v1_19_0' }
+{ serverVersion.start='vX_X_X' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::testIsEqualConstraint():Boolean[1]
 {
    let result = execute(|B.all()->graphFetchChecked(#{B { b }}#)->serialize(#{B { b }}#),
@@ -146,7 +146,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::testIsEqualConstrai
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{ serverVersion.start='v1_19_0' }
+{ serverVersion.start='vX_X_X' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::testIsDistinctConstraint():Boolean[1]
 {
    let result = execute(|C.all()->graphFetchChecked(#{C { b }}#)->serialize(#{C { b }}#),

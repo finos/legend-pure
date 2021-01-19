@@ -13,8 +13,11 @@ function <<meta::pure::profiles::test.Test>> meta::pure::executionPlan::tests::t
    let clusteredTree = ^meta::pure::graphFetch::routing::ClusteredGraphFetchTree(openVars = []->cast(@Pair<String, List<Any>>)->newMap(), s = $sysMapping, tree = $routedTree, store = ^meta::pure::store::Store());
 
    let voidResultType = ^meta::pure::executionPlan::VoidResultType(type = Any);
+   let dummyNode = ^meta::pure::executionPlan::ExecutionNode(resultType = $voidResultType);
+   
    let localGraphNode = ^meta::pure::graphFetch::executionPlan::LocalGraphFetchExecutionNode(graphFetchTree = $routedTree, resultType = $voidResultType, nodeIndex = 0);
-   let globalGraphNode =  ^meta::pure::graphFetch::executionPlan::GlobalGraphFetchExecutionNode(store = ^meta::pure::store::Store(), localGraphFetchExecutionNode = $localGraphNode, graphFetchTree = $clusteredTree, resultType = $voidResultType);
+   let gobalGraphNode =  ^meta::pure::graphFetch::executionPlan::GlobalGraphFetchExecutionNode(store = ^meta::pure::store::Store(), localGraphFetchExecutionNode = $localGraphNode, graphFetchTree = $clusteredTree, resultType = $voidResultType);
+   let graphNode = ^meta::pure::graphFetch::executionPlan::GraphFetchExecutionNode(globalGraphFetchExecutionNode = $gobalGraphNode, rootExecutionNode = ^$dummyNode(executionNodes = $dummyNode->concatenate($dummyNode)), graphFetchTree = $clusteredTree, resultType = $voidResultType);
 
-   assertEquals(2, $globalGraphNode->meta::pure::executionPlan::allNodes([])->size());
+   assertEquals(6, $graphNode->meta::pure::executionPlan::allNodes([])->size());
 }

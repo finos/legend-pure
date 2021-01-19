@@ -22,7 +22,7 @@ import meta::pure::mapping::modelToModel::test::alloy::simple::sourceAssociation
 import meta::pure::runtime::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='v1_19_0',
+{  serverVersion.start='v1_11_0',
    doc.doc='Given: a mapping that navigates an association on the source',
    doc.doc='When:  a mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the data is correctly transformed.'

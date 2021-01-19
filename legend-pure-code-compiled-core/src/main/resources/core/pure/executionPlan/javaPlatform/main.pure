@@ -13,10 +13,7 @@
 // limitations under the License.
 
 import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::graphFetch::inMemory::*;
-import meta::pure::mapping::modelToModel::graphFetch::executionPlan::*;
 import meta::alloy::runtime::java::graphFetch::common::*;
-import meta::alloy::runtime::java::graphFetch::storeStreamReading::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::graphFetch::executionPlan::*;
 import meta::java::generation::utils::*;
@@ -182,18 +179,18 @@ function meta::alloy::runtime::java::prepare(node:ExecutionNode[1], path:String[
       f:FreeMarkerConditionalExecutionNode[1] |
          let contextFromTrueBlock = $f.trueBlock->prepare($path+'.trueBlock', $contextFromChildren, $extensions, $debug);
          if($f.falseBlock->isEmpty(), |$contextFromTrueBlock, |$f.falseBlock->toOne()->prepare($path+'.falseBlock', $contextFromTrueBlock, $extensions, $debug));,
+      g:GraphFetchExecutionNode[1] | 
+         let contextFromRoot = $g.rootExecutionNode->prepare($path+'.graphRoot', $contextFromChildren, $extensions, $debug);
+         $g.globalGraphFetchExecutionNode->prepare($path+'.globalGraph', $contextFromRoot, $extensions, $debug);,
       g:GlobalGraphFetchExecutionNode[1] | 
          let contextFromGlobalChildren = $g.children->size()->range()->fold({x, ctx | $g.children->at($x)->prepare($path+'.globalChild' + $x->toString(), $ctx, $extensions, $debug)}, $contextFromChildren);
          $g.localGraphFetchExecutionNode->prepare($path+'.localGraph', $contextFromGlobalChildren, $extensions, $debug);,
-      g:InMemoryGraphFetchExecutionNode[1] | 
-         $g.children->size()->range()->fold({x, ctx | $g.children->at($x)->prepare($path+'.localChild' + $x->toString(), $ctx, $extensions, $debug)}, $contextFromChildren),
       e:ExecutionNode[1] | $contextFromChildren
    ])->toOneMany());
 
    $node->match($extensions.plan_javaRuntime_main_prepare2->map(x|$x->eval($path, $contextFromOtherNodes, $extensions, $debug))->concatenate([
-      g:GlobalGraphFetchExecutionNode[1]             | $g->prepareForGlobalGraphFetchNode($path, $contextFromOtherNodes, $debug),
-      g:InMemoryGraphFetchExecutionNode[1]           | $g->prepareForInMemoryGraphFetch($path, $contextFromOtherNodes, $debug),
-      g:StoreStreamReadingExecutionNode[1]           | $g->prepareForStoreStreamReading($path, $contextFromOtherNodes, $debug),
+      g:GraphFetchM2MExecutionNode[1]                | $g->prepareForGraphFetchModelToModel($path, $contextFromOtherNodes, $extensions, $debug),
+      g:GraphFetchExecutionNode[1]                   | $g->prepareForGraphQuery($path, $contextFromOtherNodes, $debug),
       p:PureExpressionPlatformExecutionNode[1]       | $p->prepareForPlatformNode($path, $contextFromOtherNodes, $extensions, $debug),      
       e:ExecutionNode[1]                             |  $contextFromOtherNodes
    ])->toOneMany());
@@ -223,8 +220,8 @@ function <<access.private>> meta::alloy::runtime::java::prepareChildNodes(nodes:
 function meta::alloy::runtime::java::generatePlatformCode(node:ExecutionNode[1], path:String[1], mapping:Mapping[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedNode[1]
 {
    let generated = $node->match($extensions.plan_javaRuntime_main_generatePlatformCode1->map(e|$e->eval($path, $context, $extensions, $debug))->concatenate([
+      g:GraphFetchM2MExecutionNode[1]                | $g->generateGraphFetchModelToModel($path, $context, $extensions, $debug),
       l:LocalGraphFetchExecutionNode[1]              | $l->generateCodeForLocalGraphFetchNode($path, $context, $extensions, $debug),
-      l:StoreStreamReadingExecutionNode[1]           | $l->generateCodeForStoreStreamReadingExecutionNode($path, $context, $extensions, $debug),
       p:PureExpressionPlatformExecutionNode[1]       | $p->generateImplementionForPlatformNode($path, $context, $extensions, $debug),
       e:ExecutionNode[1]                             | ^GeneratedCode()
    ])->toOneMany());
@@ -237,14 +234,16 @@ function meta::alloy::runtime::java::generatePlatformCode(node:ExecutionNode[1],
    let newNode = ^$node(executionNodes=$children.node, implementation=$generated.implementation);
 
    $newNode->match($extensions.plan_javaRuntime_main_generatePlatformCode2->map(e|$e->eval($path, $mapping, $context, $extensions, $fullProject, $debug))->concatenate([
+      g:GraphFetchExecutionNode[1] |
+         let transformedRoot = $g.rootExecutionNode->generatePlatformCode($path+'.graphRoot', $mapping, $context, $extensions, $debug);
+         let transformedGlobal = $g.globalGraphFetchExecutionNode->generatePlatformCode($path+'.globalGraph', $mapping, $context, $extensions, $debug);
+         let transformedGlobalNode = $transformedGlobal.node->cast(@GlobalGraphFetchExecutionNode);
+         ^GeneratedNode(node=^$g(rootExecutionNode = $transformedRoot.node, globalGraphFetchExecutionNode = $transformedGlobalNode), project = mergeProjectsNullable($fullProject->concatenate($transformedRoot.project)->concatenate($transformedGlobal.project)));,
       g:GlobalGraphFetchExecutionNode[1] |
          let transformedChildren = $g.children->size()->range()->map(x | $g.children->at($x)->generatePlatformCode($path+'.globalChild' + $x->toString(), $mapping, $context, $extensions, $debug));
          let transformedLocal = $g.localGraphFetchExecutionNode->generatePlatformCode($path+'.localGraph', $mapping, $context, $extensions, $debug);
          let transformedLocalNode = $transformedLocal.node->cast(@LocalGraphFetchExecutionNode);
          ^GeneratedNode(node=^$g(children = $transformedChildren.node->cast(@GlobalGraphFetchExecutionNode), localGraphFetchExecutionNode = $transformedLocalNode), project = mergeProjectsNullable($fullProject->concatenate($transformedChildren.project)->concatenate($transformedLocal.project)));,
-      g:InMemoryGraphFetchExecutionNode[1] | 
-         let transformedChildren = $g.children->size()->range()->map(x | $g.children->at($x)->generatePlatformCode($path+'.localChild' + $x->toString(), $mapping, $context, $extensions, $debug));
-         ^GeneratedNode(node=^$g(children = $transformedChildren.node->cast(@InMemoryGraphFetchExecutionNode)), project = mergeProjectsNullable($fullProject->concatenate($transformedChildren.project)));,
       f:FreeMarkerConditionalExecutionNode[1] |
          let transformedTrueBlock = $f.trueBlock->generatePlatformCode($path+'.trueBlock', $mapping, $context, $extensions, $debug);
          let transformedFalseBlock = if($f.falseBlock->isEmpty(), |[], |$f.falseBlock->toOne()->generatePlatformCode($path+'.falseBlock', $mapping, $context, $extensions, $debug));

@@ -74,6 +74,7 @@ function meta::pure::executionPlan::allNodes(node: ExecutionNode[1], extensions:
       $extensions.executionPlan_execution_allNodes->map(e|$e->eval($extensions))->concatenate(
          [
             f : FreeMarkerConditionalExecutionNode[1] | $f->concatenate($f.trueBlock->concatenate($f.falseBlock)->map(n | $n->allNodes($extensions))),
+            g : meta::pure::graphFetch::executionPlan::GraphFetchExecutionNode[1] | $g->concatenate($g.rootExecutionNode->concatenate($g.globalGraphFetchExecutionNode)->map(n | $n->allNodes($extensions))),
             g : meta::pure::graphFetch::executionPlan::GlobalGraphFetchExecutionNode[1] | $g->concatenate($g.children->concatenate($g.localGraphFetchExecutionNode)->map(n | $n->allNodes($extensions))),
             e : ExecutionNode[1] | $e->concatenate($e.executionNodes->map(n | $n->allNodes($extensions)))
          ]
