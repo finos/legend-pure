@@ -55,7 +55,7 @@ function meta::alloy::runtime::java::graphFetch::common::generateCodeForLocalGra
    let storeProject  = $node->match([
       i : meta::pure::mapping::modelToModel::graphFetch::executionPlan::InMemoryGraphFetchExecutionNode[1] | $i->meta::alloy::runtime::java::graphFetch::inMemory::generateInMemoryStoreGraphFetchProject($path, $context, $extensions, $debug)
    ]->concatenate(
-      $extensions.java_graphFetch_generateCodeForLocalGraphFetchNode->map(f|$f->eval($path, $context, $extensions, $debug))
+      $extensions.java_graphFetch_graphFetchCommon_generateCodeForLocalGraphFetchNode->map(f|$f->eval($path, $context, $extensions, $debug))
    )->toOneMany());
 
    generatedCode(
@@ -179,7 +179,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::common::upda
 {
    $node->match([
       i : meta::pure::mapping::modelToModel::graphFetch::executionPlan::InMemoryGraphFetchExecutionNode[1] | $implClass->meta::alloy::runtime::java::graphFetch::inMemory::enrichForInMemoryGraphExecution($i, $context, $extensions, $debug)
-   ]->concatenate($extensions.java_graphFetch_updateImplementationClassWithStoreSpecificFieldsAndMethods->map(f|$f->eval($implClass, $context, $extensions, $debug)))->toOneMany())
+   ]->concatenate($extensions.java_graphFetch_graphFetchCommon_updateImplementationClassWithStoreSpecificFieldsAndMethods->map(f|$f->eval($implClass, $context, $extensions, $debug)))->toOneMany())
 }
 
 function <<access.private>> meta::alloy::runtime::java::graphFetch::common::updateImplementationClassWithInstanceSizeMethods(implClass: meta::java::metamodel::Class[1], nodeType: Class<Any>[1], context: GenerationContext[1]): Project[1]

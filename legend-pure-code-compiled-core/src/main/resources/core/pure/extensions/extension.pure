@@ -85,9 +85,13 @@ Class meta::pure::router::extension::RouterExtension
    
    java_conventions_defaultProhibitedFunctions : Function<Any>[*];
    java_mappingAdaptor : Function<{Nil[1]->String[1]}>[*];
-   java_graphFetch_generateCodeForLocalGraphFetchNode : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->Project[1]}>[*]}>[0..1];
+
+   <<doc.deprecated>> java_graphFetch_generateCodeForLocalGraphFetchNode : Function<{String[1], GenerationContext[1], DebugContext[1] -> Function<{Nil[1]->Project[1]}>[*]}>[0..1];
    <<doc.deprecated>> java_graphFetch_generateGraphNodeImplementation : Function<{meta::java::metamodel::Class[1], GenerationContext[1] -> Function<{Nil[1]->meta::java::metamodel::Class[1]}>[*]}>[0..1];
-   java_graphFetch_updateImplementationClassWithStoreSpecificFieldsAndMethods : Function<{meta::java::metamodel::Class[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->Project[1]}>[*]}>[0..1];
+
+   java_graphFetch_graphFetchCommon_generateCodeForLocalGraphFetchNode : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->Project[1]}>[*]}>[0..1];
+   java_graphFetch_graphFetchCommon_updateImplementationClassWithStoreSpecificFieldsAndMethods : Function<{meta::java::metamodel::Class[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->Project[1]}>[*]}>[0..1];
+
    java_graphFetch_inMemory_applyTypeFilter : Function<{InstanceSetImplementation[1], Code[1], Code[1..*], GenerationContext[1], DebugContext[1]->Function<{Nil[1]->Code[*]}>[*]}>[0..1];
    java_graphFetch_inMemory_generatePropertyMapping1 : Function<{Nil[1]->FunctionDefinition<Any>[1]}>[*];
    java_graphFetch_inMemory_generatePropertyMapping2 : Function<{Nil[1]->ValueTransformer<Any>[1]}>[*];
