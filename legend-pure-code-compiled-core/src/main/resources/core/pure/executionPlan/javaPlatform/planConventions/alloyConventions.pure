@@ -31,4 +31,5 @@ function meta::alloy::runtime::java::alloyConventions(extensions:meta::pure::rou
       ->meta::java::generation::functions::multiplicity::register()
       ->meta::java::generation::functions::string::register()
       ->meta::java::generation::functions::unit::register()
+      ->meta::java::generation::functions::runtime::register()
 }

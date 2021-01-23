@@ -76,6 +76,8 @@ function meta::java::metamodel::factory::javaResultSet():              meta::jav
 function meta::java::metamodel::factory::javaSqlDate():                meta::java::metamodel::Class[1] { javaClass('java.sql.Date'); }
 function meta::java::metamodel::factory::javaSqlTimestamp():                meta::java::metamodel::Class[1] { javaClass('java.sql.Timestamp'); }
 
+function meta::java::metamodel::factory::javaUUID():                   meta::java::metamodel::Class[1] { javaClass('java.util.UUID');}
+
 function meta::java::metamodel::factory::javaCollection(t:meta::java::metamodel::Type[1]) : meta::java::metamodel::Type[1]
 {
    ^meta::java::metamodel::ParameterizedType(rawType=javaClass('java.util.Collection'), typeArguments=$t->toBoxed());

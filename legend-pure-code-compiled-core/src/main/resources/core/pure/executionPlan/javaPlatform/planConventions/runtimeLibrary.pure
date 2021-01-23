@@ -1,0 +1,17 @@
+import meta::java::generation::convention::*;
+import meta::pure::executionPlan::engine::*;
+import meta::java::metamodel::factory::*;
+import meta::java::generation::code::*;
+
+function meta::java::generation::functions::runtime::register(conventions: Conventions[1]): Conventions[1]
+{
+  let library  = $conventions->className(Library);
+
+  let lib = newConventionsLibrary()
+    ->usesJavaPackage('java.util')  
+    ->addFunctionCoders([
+        fc0(meta::pure::runtime::generateGuid__String_1_, {ctx | j_invoke(javaUUID(), 'randomUUID', [], javaUUID())->j_toString()})
+    ]);
+
+  $conventions->registerLibrary($lib);
+}
