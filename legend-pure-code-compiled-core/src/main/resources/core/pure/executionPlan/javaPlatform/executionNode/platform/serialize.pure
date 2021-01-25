@@ -172,11 +172,11 @@ function <<access.private>> meta::alloy::runtime::java::serialize::prepareTree(d
 
 function <<access.private>> meta::alloy::runtime::java::serialize::treeForClass(data:SerializeData[1], class:Class<Any>[1]): RootGraphFetchTree<Any>[1]
 {
-   if($class == $data.tree.class,
+   if($class->_subTypeOf($data.tree.class),
       | $data.tree,
       |
-   if($data.auxiliaryTrees->exists(t|$t.class == $class),
-      | $data.auxiliaryTrees->filter(t|$t.class == $class)->toOne(),
+   if($data.auxiliaryTrees->exists(t|$class->_subTypeOf($t.class)),
+      | $data.auxiliaryTrees->filter(t|$class->_subTypeOf($t.class))->toOne(),
       | ^RootGraphFetchTree<Any>(class=$class->cast(@Class<Any>))
    ));               
 }
