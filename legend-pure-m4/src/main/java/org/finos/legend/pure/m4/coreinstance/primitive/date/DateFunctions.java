@@ -61,6 +61,20 @@ public class DateFunctions
         return DateWithSubsecond.newDateWithSubsecond(year, month, day, hour, minute, second, subsecond);
     }
 
+    public static StrictTimeWithMinute newPureStrictTime(int hour, int minute)
+    {
+        return StrictTimeWithMinute.newStrictTimeWithMinute(hour, minute);
+    }
+    public static StrictTimeWithSecond newPureStrictTime(int hour, int minute, int second)
+    {
+        return StrictTimeWithSecond.newStrictTimeWithSecond(hour, minute, second);
+    }
+
+    public static StrictTimeWithSubsecond newPureStrictTime(int hour, int minute, int second, String subsecond)
+    {
+        return StrictTimeWithSubsecond.newStrictTimeWithSubsecond(hour, minute, second, subsecond);
+    }
+
     public static PureDate fromCalendar(GregorianCalendar calendar)
     {
         return fromCalendar(calendar, Calendar.MILLISECOND);
@@ -298,6 +312,11 @@ public class DateFunctions
     public static PureDate parsePureDate(String string)
     {
         return DateFormat.parsePureDate(string, 0, string.length());
+    }
+
+    public static PureDate parsePureDateToStrictTime(String string)
+    {
+        return DateFormat.parseStrictTime(string, 0, string.length());
     }
 
     static void validateMonth(int month)

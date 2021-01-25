@@ -22,7 +22,7 @@ rightSide :         (BRACKET_OPEN (element (COMMA element)*)? BRACKET_CLOSE) | e
 element :           metaClass | literalElement | instance | SELF
 ;
 
-literalElement :    STRING | INTEGER | FLOAT | DATE | BOOLEAN
+literalElement :    STRING | INTEGER | FLOAT | DATE | BOOLEAN | STRICTTIME
 ;
 
 sourceInfo :        VALID_STRING_EXT COLON INTEGER COMMA INTEGER COMMA INTEGER COMMA INTEGER COMMA INTEGER COMMA INTEGER SOURCE_INFO_CLOSE
