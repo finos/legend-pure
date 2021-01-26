@@ -70,11 +70,12 @@ public class ModelRepository
     public static final String STRICT_DATE_TYPE_NAME = "StrictDate";
     public static final String DATETIME_TYPE_NAME = "DateTime";
     public static final String LATEST_DATE_TYPE_NAME = "LatestDate";
+    public static final String STRICT_TIME_TYPE_NAME = "StrictTime";
     public static final String FLOAT_TYPE_NAME = "Float";
     public static final String DECIMAL_TYPE_NAME = "Decimal";
     public static final String INTEGER_TYPE_NAME = "Integer";
     public static final String STRING_TYPE_NAME = "String";
-    public static final ImmutableSet<String> PRIMITIVE_TYPE_NAMES = Sets.immutable.with(BOOLEAN_TYPE_NAME, DATE_TYPE_NAME, STRICT_DATE_TYPE_NAME, DATETIME_TYPE_NAME, LATEST_DATE_TYPE_NAME, FLOAT_TYPE_NAME, DECIMAL_TYPE_NAME, INTEGER_TYPE_NAME, STRING_TYPE_NAME, BINARY_TYPE_NAME);
+    public static final ImmutableSet<String> PRIMITIVE_TYPE_NAMES = Sets.immutable.with(BOOLEAN_TYPE_NAME, DATE_TYPE_NAME, STRICT_DATE_TYPE_NAME, DATETIME_TYPE_NAME, LATEST_DATE_TYPE_NAME, STRICT_TIME_TYPE_NAME, FLOAT_TYPE_NAME, DECIMAL_TYPE_NAME, INTEGER_TYPE_NAME, STRING_TYPE_NAME, BINARY_TYPE_NAME);
 
 
     public static final String BOOLEAN_TRUE = "true";
@@ -276,6 +277,14 @@ public class ModelRepository
             }
             return newDateCoreInstance(name);
         }
+        if (classifier.equals(getTopLevel(STRICT_TIME_TYPE_NAME)))
+        {
+            if (sourceInformation != null)
+            {
+                throw new IllegalArgumentException("Instances of " + STRICT_TIME_TYPE_NAME + " may not have source information");
+            }
+            return newStrictTimeCoreInstance(name);
+        }
         if (classifier.equals(getTopLevel(FLOAT_TYPE_NAME)))
         {
             if (sourceInformation != null)
@@ -443,6 +452,11 @@ public class ModelRepository
         return newDateTimeCoreInstance(getPureDate(name));
     }
 
+    public CoreInstance newStrictTimeCoreInstance(String name)
+    {
+        return newStrictTimeCoreInstance(getPureDateToStrictTime(name));
+    }
+
     // Should be used only by BinaryRepositorySerializer
     public CoreInstance newDateCoreInstance(String name, int internalSyntheticId)
     {
@@ -484,6 +498,15 @@ public class ModelRepository
         return newDateCoreInstance(value, DATETIME_TYPE_NAME);
     }
 
+    public DateCoreInstance newStrictTimeCoreInstance(PureDate value)
+    {
+        if (!value.hasHour())
+        {
+            throw new PureCompilationException("StrictTime must include time information, got: " + value);
+        }
+        return newDateCoreInstance(value, STRICT_TIME_TYPE_NAME);
+    }
+
     private DateCoreInstance newDateCoreInstance(PureDate value, String typeName)
     {
         return newDateCoreInstance(value, getOrCreateTopLevel(typeName, null), nextId());
@@ -492,6 +515,18 @@ public class ModelRepository
     private DateCoreInstance newDateCoreInstance(PureDate value, CoreInstance classifier, int internalSyntheticId)
     {
         return PrimitiveCoreInstance.newDateCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    private PureDate getPureDateToStrictTime(String name)
+    {
+        try
+        {
+            return DateFunctions.parsePureDateToStrictTime(name);
+        }
+        catch (Exception e)
+        {
+            throw new IllegalArgumentException("Invalid Pure StrictTime: '" + name + "'", e);
+        }
     }
 
     private PureDate getPureDate(String name)

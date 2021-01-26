@@ -1169,6 +1169,10 @@ public class AntlrContextToM3CoreInstance
             {
                 result = this.repository.newDateCoreInstance(ctx.getText());
             }
+            else if (ctx.STRICTTIME() != null)
+            {
+                result = this.repository.newStrictTimeCoreInstance(ctx.getText());
+            }
             else if (ctx.BOOLEAN() != null)
             {
                 result = this.repository.newBooleanCoreInstance(ctx.getText());
