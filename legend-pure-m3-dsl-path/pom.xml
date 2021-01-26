@@ -19,14 +19,14 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.6.1-SNAPSHOT</version>
+        <version>1.6.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <name>Legend Pure - Base - M3 DSL Path</name>
     <artifactId>legend-pure-m3-dsl-path</artifactId>
     <packaging>jar</packaging>
-    <version>1.6.1-SNAPSHOT</version>
+    <version>1.6.1</version>
 
     <build>
         <plugins>
