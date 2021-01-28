@@ -60,13 +60,13 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::t
       name = $class.name->toOne(),
       package = if($class.package->isEmpty(),|[],|$class.package->toOne()->elementToPath()),
       superTypes = $class.generalizations->map(g | $g.general.rawType->toOne()->elementToPath()),
-      properties = $properties->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformProperty()),
+      properties = $properties->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformProperty($extensions)),
       qualifiedProperties = $qualifiedProperties->map(q|$q->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformQualifiedProperty($extensions)),
       stereotypes = $class.stereotypes->map(s|$s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformStereotype()),
       taggedValues = $class.taggedValues->map(t|$t->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformTaggedValue()),
       setImplementation = $class.setImplementation->map(s|$s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::transformSetImplementation($mapping, $extensions)),
       rootClass = $class.class->map(c|$c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformClass($extensions)),
-      localProperties = $class.localProperties->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformProperty())
+      localProperties = $class.localProperties->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformProperty($extensions))
    );
 }
 

@@ -28,6 +28,7 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
@@ -141,6 +142,50 @@ public class InstantiationHelpers
                 }
             }
         }).makeString("");
+    }
+
+    public static ListIterable<String> manageDefaultValues(final Function2<String, String, String> formatString, final CoreInstance sourceClass, boolean doSingleWrap, final ProcessorContext processorContext)
+    {
+        final ProcessorSupport processorSupport = processorContext.getSupport();
+        ListIterable<? extends CoreInstance> properties = sourceClass.getValueForMetaPropertyToMany(M3Properties.properties);
+
+        return properties.collect(new Function<CoreInstance, String>()
+        {
+            @Override
+            public String valueOf(CoreInstance coreInstance)
+            {
+
+                if (coreInstance.getValueForMetaPropertyToOne(M3Properties.defaultValue) != null)
+                {
+                    boolean propertyIsToOne = Multiplicity.isToOne(Instance.getValueForMetaPropertyToOneResolved(coreInstance, M3Properties.multiplicity, processorSupport), false);
+
+                    CoreInstance expression = Property.getDefaultValueExpression(Instance.getValueForMetaPropertyToOneResolved(coreInstance, M3Properties.defaultValue, processorSupport));
+
+                    String value = ValueSpecificationProcessor.processValueSpecification(expression, processorContext);
+
+                    if("this".equals(value))
+                    {
+                        CoreInstance expressionRawType = Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToOneResolved(expression, M3Properties.genericType, processorSupport), M3Properties.rawType, processorSupport);
+                        value = PackageableElement.getSystemPathForPackageableElement(expressionRawType, "_") + processorContext.getClassImplSuffix() + "." + value;
+                    }
+
+                    CoreInstance expressionMultiplicity = Multiplicity.newMultiplicity(expression.getValueForMetaPropertyToMany(M3Properties.values).size(), processorSupport);
+
+                    if ((doSingleWrap || !propertyIsToOne)
+                           && (Multiplicity.isLowerZero(expressionMultiplicity) || Multiplicity.isToOne(expressionMultiplicity)))
+                    {
+                       //wrap
+                       value = "CompiledSupport.toPureCollection(" + value + ")";
+                    }
+
+                    return formatString.apply(coreInstance.getName(), value);
+                }
+                else
+                {
+                    return "";
+                }
+            }
+        });
     }
 
     public static String manageId(ListIterable<? extends CoreInstance> parametersValues, ProcessorSupport processorSupport)
