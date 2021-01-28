@@ -1,0 +1,15 @@
+import meta::alloy::runtime::java::*;
+import meta::java::generation::tests::*;
+import meta::java::generation::tests::functions::lang::*;
+import meta::java::metamodel::factory::*;
+import meta::pure::runtime::*;
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
+meta::java::generation::tests::functions::runtime::testGenerateGuid() : Boolean[1]
+{
+   javaExpressionTests(alloyConventions([]))
+      ->addTest('GenerateGuid', {|generateGuid()}, 'java.util.UUID.randomUUID().toString()', javaString())
+        ->assert('%s instanceof String')
+        ->runTests();
+}
