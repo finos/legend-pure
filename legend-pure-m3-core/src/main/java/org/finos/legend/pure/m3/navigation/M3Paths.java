@@ -107,6 +107,7 @@ public class M3Paths
     public static final String SourceInformation = "meta::pure::functions::meta::SourceInformation";
     public static final String Stereotype = "meta::pure::metamodel::extension::Stereotype";
     public static final String StrictDate = ModelRepository.STRICT_DATE_TYPE_NAME;
+    public static final String StrictTime = ModelRepository.STRICT_TIME_TYPE_NAME;
     public static final String String = ModelRepository.STRING_TYPE_NAME;
     public static final String Tag = "meta::pure::metamodel::extension::Tag";
     public static final String TaggedValue = "meta::pure::metamodel::extension::TaggedValue";

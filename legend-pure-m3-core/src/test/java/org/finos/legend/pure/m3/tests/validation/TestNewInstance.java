@@ -419,6 +419,48 @@ public class TestNewInstance extends AbstractPureTestWithCoreCompiledPlatform
     }
 
     @Test
+    public void testTimeWithWrongStrictTimeType()
+    {
+        compileTestSource("testModel.pure",
+                "Class A\n" +
+                        "{\n" +
+                        "    prop:StrictTime[1];\n" +
+                        "}");
+        try
+        {
+            compileTestSource(
+                    "testFunc.pure",
+                    "function testFunc():A[1]\n" +
+                            "{\n" +
+                            "    ^A(prop=%2014-02-07T07:03:01)\n" +
+                            "}");
+            Assert.fail("Expected compilation exception");
+        }
+        catch (Exception e)
+        {
+            assertPureException(PureCompilationException.class, "Type Error: DateTime not a subtype of StrictTime", "testFunc.pure", 3, 12, 3, 12, 3, 12, e);
+        }
+    }
+
+    @Test
+    public void testTimeWithStrictTimeType()
+    {
+        compileTestSource("testModel.pure",
+                "Class A\n" +
+                        "{\n" +
+                        "    prop:StrictTime[1];\n" +
+                        "}");
+
+        compileTestSource(
+                "testFunc.pure",
+                "function testFunc():A[1]\n" +
+                        "{\n" +
+                        "    ^A(prop=%07:03:01)\n" +
+                        "}");
+
+    }
+
+    @Test
     public void testFunctionSignature()
     {
         compileTestSource("testModel.pure",

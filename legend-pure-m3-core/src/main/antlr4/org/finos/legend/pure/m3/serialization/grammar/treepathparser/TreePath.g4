@@ -62,7 +62,7 @@ packagePath: (Identifier '::')+
 literalType: primitve multiplicity
 ;
 
-primitve: 'String' | 'Number' | 'Integer' | 'Float' | 'Decimal' | 'Boolean' | 'Date' | 'StrictDate' | 'DateTime'
+primitve: 'String' | 'Number' | 'Integer' | 'Float' | 'Decimal' | 'Boolean' | 'Date' | 'StrictDate' | 'DateTime' | 'StrictTime'
 ;
 
 enumType: qualifiedClassName multiplicity
@@ -96,6 +96,7 @@ INTEGER: (DIGIT)+;
 FLOAT: (DIGIT)* '.' (DIGIT)+ (['e', 'E'] (['+', '-'])? (DIGIT)+)? (['f', 'F'])?;
 DECIMAL: ((DIGIT)* '.' (DIGIT)+ | (DIGIT)+) (['e', 'E'] (['+', '-'])? (DIGIT)+)? ['d', 'D'];
 DATE: '%' ('-')? (DIGIT)+ ('-'(DIGIT)+ ('-'(DIGIT)+ ('T' DATE_TIME (DATE_TZ)?)?)?)?;
+STRICTTIME: '%' DATE_TIME;
 DATE_TIME: (DIGIT)+ (':'(DIGIT)+ (':'(DIGIT)+ ('.'(DIGIT)+)?)?)?;
 DATE_TZ: ('+'|'-')(DIGIT)(DIGIT)(DIGIT)(DIGIT);
 
