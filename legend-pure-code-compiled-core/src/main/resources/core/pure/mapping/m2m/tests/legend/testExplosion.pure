@@ -32,13 +32,13 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testBasicExplosion():
       ^Runtime(connections = ^JsonModelConnection(
                                 element=^ModelStore(),
                                 class=_SimpleFirm,
-                                url='data:application/json,{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim"},{"fullName":"Pam"}]}'
+                                url='data:application/json,{"name":"Anonymous Company","simpleEmployees":[{"fullName":"teddy"},{"fullName":"jianglai"}]}'
                              )
       ),
       []
    );
 
-   assert(jsonEquivalent('[{"firmName":"Dunder Mifflin","fullName":"Jim"},{"firmName":"Dunder Mifflin","fullName":"Pam"}]'->parseJSON(), $result.values->toOne()->parseJSON()));
+   assert(jsonEquivalent('[{"firmName":"Anonymous Company","fullName":"teddy"},{"firmName":"Anonymous Company","fullName":"jianglai"}]'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
@@ -53,13 +53,13 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testMultiplePropertyE
       ^Runtime(connections = ^JsonModelConnection(
                                 element=^ModelStore(),
                                 class=_SimpleFirm,
-                                url='data:application/json,{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim","address":{"street":"first"}},{"fullName":"Pam","address":{"street":"second"}}]}'
+                                url='data:application/json,{"name":"Anonymous Company","simpleEmployees":[{"fullName":"teddy","address":{"street":"first"}},{"fullName":"jianglai","address":{"street":"second"}}]}'
                              )
       ),
       []
    );
 
-   assert(jsonEquivalent('[{"firmName":"Dunder Mifflin","fullName":"Jim","streetAddress":"first"},{"firmName":"Dunder Mifflin","fullName":"Pam","streetAddress":"second"}]'->parseJSON(), $result.values->toOne()->parseJSON()));
+   assert(jsonEquivalent('[{"firmName":"Anonymous Company","fullName":"teddy","streetAddress":"first"},{"firmName":"Anonymous Company","fullName":"jianglai","streetAddress":"second"}]'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
@@ -74,13 +74,13 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testTargetConstraints
       ^Runtime(connections = ^JsonModelConnection(
                                 element=^ModelStore(),
                                 class=_SimpleFirm,
-                                url='data:application/json,{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim"},{"fullName":"Pam"}]}'
+                                url='data:application/json,{"name":"Anonymous Company","simpleEmployees":[{"fullName":"teddy"},{"fullName":"jianglai"}]}'
                              )
       ),
       []
    );
 
-   assert(jsonEquivalent('[{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"hasLongName","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint","message":"Constraint :[hasLongName] violated in the Class FirmEmployeeWithConstraint"}],"source":{"defects":[],"source":{"number":1,"record":"{\\"name\\":\\"Dunder Mifflin\\",\\"simpleEmployees\\":[{\\"fullName\\":\\"Jim\\"},{\\"fullName\\":\\"Pam\\"}]}"},"value":{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim"},{"fullName":"Pam"}]}},"value":{"fullName":"Jim","firmName":"Dunder Mifflin"}},{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"hasLongName","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint","message":"Constraint :[hasLongName] violated in the Class FirmEmployeeWithConstraint"}],"source":{"defects":[],"source":{"number":1,"record":"{\\"name\\":\\"Dunder Mifflin\\",\\"simpleEmployees\\":[{\\"fullName\\":\\"Jim\\"},{\\"fullName\\":\\"Pam\\"}]}"},"value":{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim"},{"fullName":"Pam"}]}},"value":{"fullName":"Pam","firmName":"Dunder Mifflin"}}]'->parseJSON(), $result.values->toOne()->parseJSON()));
+   assert(jsonEquivalent('[{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"hasLongName","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint","message":"Constraint :[hasLongName] violated in the Class FirmEmployeeWithConstraint"}],"source":{"defects":[],"source":{"number":1,"record":"{\\"name\\":\\"Anonymous Company\\",\\"simpleEmployees\\":[{\\"fullName\\":\\"teddy\\"},{\\"fullName\\":\\"jianglai\\"}]}"},"value":{"name":"Anonymous Company","simpleEmployees":[{"fullName":"teddy"},{"fullName":"jianglai"}]}},"value":{"fullName":"teddy","firmName":"Anonymous Company"}},{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"hasLongName","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint","message":"Constraint :[hasLongName] violated in the Class FirmEmployeeWithConstraint"}],"source":{"defects":[],"source":{"number":1,"record":"{\\"name\\":\\"Anonymous Company\\",\\"simpleEmployees\\":[{\\"fullName\\":\\"teddy\\"},{\\"fullName\\":\\"jianglai\\"}]}"},"value":{"name":"Anonymous Company","simpleEmployees":[{"fullName":"teddy"},{"fullName":"jianglai"}]}},"value":{"fullName":"jianglai","firmName":"Anonymous Company"}}]'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>> 
@@ -123,12 +123,12 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testExplosionAtProper
       ^Runtime(connections = ^JsonModelConnection(
                                 element=^ModelStore(),
                                 class=_SimpleFirm,
-                                url='data:application/json,{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim","dateOfBirth":"2020-11-09","address":{"street":"first"}},{"fullName":"Pam","dateOfBirth":"2020-11-10","address":{"street":"second"}}]}'
+                                url='data:application/json,{"name":"Anonymous Company","simpleEmployees":[{"fullName":"teddy","dateOfBirth":"2020-11-09","address":{"street":"first"}},{"fullName":"jianglai","dateOfBirth":"2020-11-10","address":{"street":"second"}}]}'
                              )
       ),
       []
    );
-   assert(jsonEquivalent('{"name": "Dunder Mifflin","firmEmployees": [{"firmName": "Dunder Mifflin","fullName": "Jim","streetAddress": "first","dateOfBirth": "2020-11-09"},{"firmName": "Dunder Mifflin","fullName": "Pam","streetAddress": "second","dateOfBirth": "2020-11-10"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
+   assert(jsonEquivalent('{"name": "Anonymous Company","firmEmployees": [{"firmName": "Anonymous Company","fullName": "teddy","streetAddress": "first","dateOfBirth": "2020-11-09"},{"firmName": "Anonymous Company","fullName": "jianglai","streetAddress": "second","dateOfBirth": "2020-11-10"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
@@ -147,12 +147,12 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testMappingWithExplos
       ^Runtime(connections = ^JsonModelConnection(
                                 element=^ModelStore(),
                                 class=_SimpleFirm,
-                                url='data:application/json,{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim","dateOfBirth":"2020-11-09","address":{"street":"first"}},{"fullName":"Pam","dateOfBirth":"2020-11-10","address":{"street":"second"}}]}'
+                                url='data:application/json,{"name":"Anonymous Company","simpleEmployees":[{"fullName":"teddy","dateOfBirth":"2020-11-09","address":{"street":"first"}},{"fullName":"jianglai","dateOfBirth":"2020-11-10","address":{"street":"second"}}]}'
                              )
       ),
       []
    );
-   assert(jsonEquivalent('{"name": "Dunder Mifflin","firmEmployees": [{"firmName": "Dunder Mifflin"}, {"firmName": "Dunder Mifflin"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
+   assert(jsonEquivalent('{"name": "Anonymous Company","firmEmployees": [{"firmName": "Anonymous Company"}, {"firmName": "Anonymous Company"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
@@ -171,12 +171,12 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testExplosionAtProper
       ^Runtime(connections = ^JsonModelConnection(
                                 element=^ModelStore(),
                                 class=_SimpleFirm,
-                                url='data:application/json,{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim","dateOfBirth":"2020-11-09","address":{"street":"first"}},{"fullName":"Pam","dateOfBirth":"2020-11-10","address":{"street":"second"}}]}'
+                                url='data:application/json,{"name":"Anonymous Company","simpleEmployees":[{"fullName":"teddy","dateOfBirth":"2020-11-09","address":{"street":"first"}},{"fullName":"jianglai","dateOfBirth":"2020-11-10","address":{"street":"second"}}]}'
                              )
       ),
       []
    );
-   assert(jsonEquivalent('{"name": "Dunder Mifflin","firmEmployees": [{"firmName": "Dunder Mifflin","fullName": "Jim"},{"firmName": "Dunder Mifflin","fullName": "Pam"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
+   assert(jsonEquivalent('{"name": "Anonymous Company","firmEmployees": [{"firmName": "Anonymous Company","fullName": "teddy"},{"firmName": "Anonymous Company","fullName": "jianglai"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
@@ -195,12 +195,12 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testExplosionAtProper
       ^Runtime(connections = ^JsonModelConnection(
                                 element=^ModelStore(),
                                 class=_SimpleFirm,
-                                url='data:application/json,{"name":"Dunder Mifflin","simpleEmployees":[{"fullName":"Jim","address":{"street":"first"}},{"fullName":"Pam","dateOfBirth":"2020-11-10"}]}'
+                                url='data:application/json,{"name":"Anonymous Company","simpleEmployees":[{"fullName":"teddy","address":{"street":"first"}},{"fullName":"jianglai","dateOfBirth":"2020-11-10"}]}'
                              )
       ),
       []
    );
-   assert(jsonEquivalent('{"name": "Dunder Mifflin","firmEmployees": [{"firmName": "Dunder Mifflin","fullName": "Jim","streetAddress": "first","dateOfBirth": null},{"firmName": "Dunder Mifflin","fullName": "Pam","streetAddress": null,"dateOfBirth": "2020-11-10"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
+   assert(jsonEquivalent('{"name": "Anonymous Company","firmEmployees": [{"firmName": "Anonymous Company","fullName": "teddy","streetAddress": "first","dateOfBirth": null},{"firmName": "Anonymous Company","fullName": "jianglai","streetAddress": null,"dateOfBirth": "2020-11-10"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
 Class meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint
