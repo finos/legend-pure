@@ -41,7 +41,7 @@ public class ReflectionTools
         }
         catch(Exception e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return null;
     }
@@ -76,7 +76,7 @@ public class ReflectionTools
         }
         catch(Exception e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return null;
     }
@@ -90,7 +90,7 @@ public class ReflectionTools
         }
         catch(Exception e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 

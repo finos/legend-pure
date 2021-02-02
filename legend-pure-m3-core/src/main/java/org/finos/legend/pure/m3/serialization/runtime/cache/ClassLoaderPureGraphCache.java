@@ -115,7 +115,7 @@ public class ClassLoaderPureGraphCache implements PureGraphCache
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
             modelRepository.clear();
             this.state.update(false, -1L, false, e);
             return false;
