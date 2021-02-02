@@ -65,6 +65,50 @@ meta::pure::mapping::modelToModel::test::alloy::simple::canHandleNonNilWhileMapp
    assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
 }
 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_19_0',
+   doc.doc='Given: a mapping that uses [] for simple property',
+   doc.doc='When:  a mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the mapping conversion should succeed.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::canHandleSimplePropertyMappedToNil() : Boolean[1]
+{
+   let tree = #{Target {s}}#;
+
+   let result = execute(
+      |Target.all()->graphFetch($tree)->serialize($tree),
+      mapToNil,
+      testJsonRuntime(Source, '{"i":1}'),
+      []
+   );
+
+   let json = $result.values->toOne();
+   let expected= '{"s":null}';
+   assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_19_0',
+   doc.doc='Given: a mapping that uses [] for complex property',
+   doc.doc='When:  a mapping is executed using graphFetch and serialize.',
+   doc.doc='Then:  the mapping conversion should succeed.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::canHandleComplexPropertyMappedToNil() : Boolean[1]
+{
+   let tree = #{Target {nested {a, b}}}#;
+
+   let result = execute(
+      |Target.all()->graphFetch($tree)->serialize($tree),
+      mapToNilComplexProperty,
+      testJsonRuntime(Source, '{"i":1}'),
+      []
+   );
+
+   let json = $result.values->toOne();
+   let expected= '{"nested":null}';
+   assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
+}
+
 Class meta::pure::mapping::modelToModel::test::alloy::simple::nilHandling::Source
 {
    i: Integer[1];
@@ -73,6 +117,13 @@ Class meta::pure::mapping::modelToModel::test::alloy::simple::nilHandling::Sourc
 Class meta::pure::mapping::modelToModel::test::alloy::simple::nilHandling::Target
 {
    s: String[0..1];
+   nested: TargetNested[0..1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::nilHandling::TargetNested
+{
+   a: String[0..1];
+   b: String[0..1];
 }
 
 ###Mapping
@@ -84,5 +135,36 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::simple::nilHandling::map
       {
          ~src Source
          s: if($src.i == 0, |[], |'Non-Zero')
+      }
+)
+
+###Mapping
+import meta::pure::mapping::modelToModel::test::alloy::simple::nilHandling::*;
+
+Mapping meta::pure::mapping::modelToModel::test::alloy::simple::nilHandling::mapToNil
+(
+   Target: Pure
+      {
+         ~src Source
+         s: []
+      }
+)
+
+###Mapping
+import meta::pure::mapping::modelToModel::test::alloy::simple::nilHandling::*;
+
+Mapping meta::pure::mapping::modelToModel::test::alloy::simple::nilHandling::mapToNilComplexProperty
+(
+   Target: Pure
+      {
+         ~src Source
+         nested: []->cast(@Source)
+      }
+
+   TargetNested: Pure
+      {
+         ~src Source
+         a: [],
+         b: 'b'
       }
 )
