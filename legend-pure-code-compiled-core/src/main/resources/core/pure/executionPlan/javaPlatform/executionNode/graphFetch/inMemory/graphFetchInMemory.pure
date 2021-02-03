@@ -76,6 +76,7 @@ function meta::alloy::runtime::java::graphFetch::inMemory::enrichForInMemoryGrap
    let qualifiersProject    = $class->createQualifiedPropertiesForClass($allQualifiers, $conventions, $debug->indent());
    let constraintsProject   = $class->createConstraintCheckingForClass($currentClass, $context, $debug->indent());
    let sourceReferenceClass = $class
+                                 ->addPropertyWithGetterAndSetter('setId$', javaString(), $conventions)
                                  ->addPropertyWithGetterAndSetter(inMemorySource(), javaObject(), $conventions)
                                  ->addPropertyWithGetterAndSetter($conventions->referencedObjectReference(), javaString(), $conventions);
 
@@ -187,6 +188,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::inMemory::ge
       $graphObjects
          ->j_streamOf()
          ->js_filter(j_lambda($graphObject, $graphObject->j_ne(j_null())))
+         ->js_filter(j_lambda($graphObject, $graphObject->j_invoke($conventions->getterName('setId$'), [], javaString())->j_eq(j_string($pm.owner.id->toOne()))))
          ->js_flatMap(
             j_lambda(
                $graphObject,
@@ -216,9 +218,14 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::inMemory::ge
          );
    };
 
-   let transformPropertyMethodCodes = $propertyMappings->tail()->fold({pm, stream |
-      javaStream()->j_invoke('concat', [$stream, $singlePropMappingStreamGenerator->eval($pm)], javaStream($conventions->className(GraphInstance)))
-   }, $singlePropMappingStreamGenerator->eval($propertyMappings->at(0)))->j_return();
+   let graphInstanceStream = javaStream($conventions->className(GraphInstance));
+   let streamVarGenerator  = {pm : PropertyMapping[1] | j_variable($graphInstanceStream, 'propertyStream_' + $propertyMappings->indexOf($pm)->toString())};
+
+   let transformPropertyMethodCodes = $propertyMappings->map({pm |
+      $streamVarGenerator->eval($pm)->j_declare($singlePropMappingStreamGenerator->eval($pm));
+   })->concatenate(
+      javaStream()->j_invoke('of', $propertyMappings->map(p | $streamVarGenerator->eval($p)), $graphInstanceStream)->js_flatMap(j_identity($graphInstanceStream))->j_return()
+   );
 
    let transformPropertyMethod = javaMethod(['public'], javaStream($conventions->className(GraphInstance)), 'transformProperty', [$graphObjects], $transformPropertyMethodCodes->codesToString($executeClassWithFields));
    let executeClass            = $executeClassWithFields ->addMethod($transformPropertyMethod);
@@ -290,15 +297,15 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::inMemory::se
                                                          | [$milestoneDateGetter->eval(^ProcessingTemporal()), $milestoneDateGetter->eval(^BusinessTemporal())],
                                                          | []
                                                      )));
-                         $result->objectCreationCodes($graphImplClass, $src, $milestoningDateValues->concatenate($primitiveSubTrees.property->cast(@Property<Nil,Any|*>)->zip($propertyValues)), $wrapAsGraphInstance, $conventions);
+                         $result->objectCreationCodes($graphImplClass, $set, $src, $milestoningDateValues->concatenate($primitiveSubTrees.property->cast(@Property<Nil,Any|*>)->zip($propertyValues)), $wrapAsGraphInstance, $conventions);
                    );
    
    [$src->j_declare($input->j_cast($srcJavaClass))]->concatenate($set->applyTypeFilter($src, $transform, $context, $extensions, $debug->indent()))->toOneMany();
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::inMemory::objectCreationCodes(var: Code[1], class: meta::java::metamodel::Class[1], src: Code[1], propertyAssignments: Pair<Property<Nil,Any|*>, Code>[*], wrapAsGraphInstance: Boolean[1], conventions: Conventions[1]): Code[1..*]
+function <<access.private>> meta::alloy::runtime::java::graphFetch::inMemory::objectCreationCodes(var: Code[1], class: meta::java::metamodel::Class[1], set: InstanceSetImplementation[1], src: Code[1], propertyAssignments: Pair<Property<Nil,Any|*>, Code>[*], wrapAsGraphInstance: Boolean[1], conventions: Conventions[1]): Code[1..*]
 {
-   let initializationCodes = [$var->j_declare($class->j_new([])), $var->j_invoke($conventions->setterName(inMemorySource()), $src, javaVoid())];
+   let initializationCodes = [$var->j_declare($class->j_new([])), $var->j_invoke($conventions->setterName(inMemorySource()), $src, javaVoid()), $var->j_invoke($conventions->setterName('setId$'), j_string($set.id), javaVoid())];
    let assignmentCodes     = $propertyAssignments->map(p | $var->j_invoke($conventions->setterName($p.first), $p.second, javaVoid()));
    let returnCodes         = if($wrapAsGraphInstance, | $conventions->createGraphInstance($class, $var), | $var)->j_return();
 
@@ -341,7 +348,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::inMemory::ge
             },
             {|
                let transformFunction = $propertyMapping->toOne()->match([ppm : PurePropertyMapping[1] | $ppm.transform]->concatenate($extensions.java_graphFetch_inMemory_generatePropertyMapping1)->toOneMany());
-               let transformType     = $conventions->pureTypeToJavaType($transformFunction->functionReturnType(), $property->functionReturnMultiplicity());
+               let transformType     = $conventions->pureTypeToJavaType(if($transformFunction->functionReturnType().rawType == Nil, | $property->functionReturnType(), | $transformFunction->functionReturnType()), $property->functionReturnMultiplicity());
                let javaExpression    = $transformFunction.expressionSequence->at(0)->evaluateAndDeactivate()->generateJava($conventions, $debug->indent());
                let valueTransformer  = $propertyMapping->toOne()->match([ppm : PurePropertyMapping[1] | $ppm.transformer]->concatenate($extensions.java_graphFetch_inMemory_generatePropertyMapping2)->toOneMany());
                let code              = if ($valueTransformer->isEmpty(), | $javaExpression, | $javaExpression->applyTransformer($valueTransformer->toOne(), $conventions, $debug->indent()));
@@ -503,7 +510,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::inMemory::pr
           | $set->generatePropertyMappingTransform($prop, $set.propertyMappingsByPropertyName($prop.name->toOne())->head(), $src, $conventions, $extensions, $debug->indent())
       );
    });
-   let transformLambdaCodes = $var->objectCreationCodes($class, $src, $primitiveSubTrees.property->cast(@Property<Nil,Any|*>)->zip($propertyValues), $wrapAsGraphInstance, $conventions);
+   let transformLambdaCodes = $var->objectCreationCodes($class, $set, $src, $primitiveSubTrees.property->cast(@Property<Nil,Any|*>)->zip($propertyValues), $wrapAsGraphInstance, $conventions);
    let mapToObjectCodes     = $javaIntStream
          ->j_invoke('range', [j_int(0), $explodeListLength], $javaIntStream)
          ->j_invoke('mapToObj', j_lambda($idx, $transformLambdaCodes->j_block()), $returnElementType->javaStream())
