@@ -87,10 +87,17 @@ public abstract class AbstractCompiledStateIntegrityTest
     protected static CoreInstance propertyStubClass;
     protected static CoreInstance enumStubClass;
 
+    @Deprecated
     protected static void initialize(MutableCodeStorage codeStorage, RichIterable<? extends Parser> parsers, RichIterable<? extends InlineDSL> inlineDSLs)
     {
+        initialize(codeStorage);
+    }
+
+    protected static void initialize(MutableCodeStorage codeStorage)
+    {
         runtime = new PureRuntimeBuilder(codeStorage)
-                .withRuntimeStatus(new PrintPureRuntimeStatus(System.out)).setTransactionalByDefault(false)
+                .withRuntimeStatus(new PrintPureRuntimeStatus(System.out))
+                .setTransactionalByDefault(false)
                 .buildAndInitialize();
 
         repository = runtime.getModelRepository();
@@ -105,6 +112,18 @@ public abstract class AbstractCompiledStateIntegrityTest
     @AfterClass
     public static void cleanUp()
     {
+        if (runtime != null)
+        {
+            runtime.reset();
+        }
+        if (repository != null)
+        {
+            repository.clear();
+        }
+        if (context != null)
+        {
+            context.clear();
+        }
         runtime = null;
         repository = null;
         context = null;
