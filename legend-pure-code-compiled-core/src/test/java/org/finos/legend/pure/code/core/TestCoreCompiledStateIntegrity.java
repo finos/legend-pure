@@ -20,6 +20,7 @@ public class TestCoreCompiledStateIntegrity extends AbstractCompiledStateIntegri
 
     @Test
     @Ignore
+    @Override
     public void testPackageHasChildrenWithDuplicateNames()
     {
         // TODO fix this test
@@ -28,6 +29,7 @@ public class TestCoreCompiledStateIntegrity extends AbstractCompiledStateIntegri
 
     @Test
     @Ignore
+    @Override
     public void testReferenceUsages()
     {
         // TODO fix this test
