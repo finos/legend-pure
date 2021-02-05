@@ -282,3 +282,8 @@ function meta::pure::functions::string::makeString(any:Any[*], prefix:String[1],
 {
     $any->map(x | $x->toString())->joinStrings($prefix, $separator, $suffix)
 }
+
+function {doc.doc ='Validates a string is a UUID as per RFC4122'}  meta::pure::functions::string::isUUID(value:String[0..1]):Boolean[1]
+{
+   $value->makeString()->matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
+}
