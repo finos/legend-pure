@@ -221,14 +221,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildDoma
    $found.classes->map(c | $c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformClass($extensions))
      ->concatenate($associations->map(c | $c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformAssociation($extensions)))
      ->concatenate($found.enumerations->map(e | $e->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformEnum()))
-     ->concatenate($profiles->map(p|^meta::protocols::pure::vX_X_X::metamodel::domain::Profile
-                                     (
-                                       _type = 'profile',
-                                       name = $p.name->toOne(),
-                                       package = if($p.package->isEmpty(),|[],|$p.package->toOne()->elementToPath()),
-                                       stereotypes = $p.p_stereotypes->map(s|$s.value),
-                                       tags = $p.p_tags->map(t|$t.value)
-                                     )
+     ->concatenate($profiles->map(p |$p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformProfile($extensions)
                                    ))
      ->concatenate($found.measures->map(m|$m->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMeasure($extensions)));
 }

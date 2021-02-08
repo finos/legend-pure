@@ -218,8 +218,20 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transform
       returnType = $f->functionReturnType().rawType->toOne()->elementToPath(),
       returnMultiplicity = $f->functionReturnMultiplicity()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()->toOne(),
       preConstraints  = $f.preConstraints->map(c |$c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformConstraint($extensions)),
-      postConstraints  = $f.postConstraints->map(c |$c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformConstraint($extensions))
+      postConstraints  = $f.postConstraints->map(c |$c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformConstraint($extensions)),
+      stereotypes = $f.stereotypes->map(s|$s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformStereotype()),
+      taggedValues = $f.taggedValues->map(t|$t->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformTaggedValue())
+
    )
 }
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformProfile(p:Profile[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::domain::Profile[1]
 
-
+{   ^meta::protocols::pure::vX_X_X::metamodel::domain::Profile(_type = 'profile',
+                                                               name = $p.name->toOne(),
+                                                               package = if($p.package->isEmpty(),|[],|$p.package->toOne()->elementToPath()),
+                                                               stereotypes = $p.p_stereotypes->map(s|$s.value),
+                                                               tags = $p.p_tags->map(t|$t.value)
+                                           
+                                                          )
+                                   
+}

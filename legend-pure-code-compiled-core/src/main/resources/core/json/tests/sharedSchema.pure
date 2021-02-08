@@ -1,0 +1,84 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::json::schema::tests::profile::*;
+import meta::json::schema::fromSchema::*;
+import meta::json::schema::fromSchema::tests::*;
+import meta::json::*;
+import meta::json::schema::generation::*;
+
+Profile meta::json::schema::tests::profile::GeneratedProfile
+{
+   stereotypes:[customStereoType1,customStereoType2];
+   tags:[customTag1,customTag2,customTag3];
+
+}
+
+Class <<GeneratedProfile.customStereoType1>>  {meta::pure::profiles::doc.doc='A simple description',GeneratedProfile.customTag1='10',GeneratedProfile.customTag2='first',GeneratedProfile.customTag2='second'}meta::json::schema::tests::ClassWithCustomProfiles
+{
+   <<GeneratedProfile.customStereoType1>> simpleString : String[0..1];
+   <<GeneratedProfile.customStereoType2>> {GeneratedProfile.customTag3='false'} arrayMaxItemOne : String[0..10];
+}
+
+function <<test.Test>> meta::json::schema::tests::roundTrip::testCustomProfile():Boolean[1]
+{
+   
+     let generatedJSONFromClass = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::ClassWithCustomProfiles,meta::json::schema::tests::profile],
+                                                         useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true,schemaSpecification=JSONSchemaSpecification.OPEN_API_V3_0_3 ));
+   
+
+   
+   
+   let jsonSchema  = ' {\n' +
+        '  "x-customStereoType1": true,\n' +
+        '  "description": "A simple description",\n' +
+        '  "title": "meta::json::schema::tests::ClassWithCustomProfiles",\n' +
+        '  "x-customTag2": [\n' +
+        '"first",\n' +
+        '"second"\n' +
+        '  ],\n' +
+        '  "type": "object",\n' +
+        '  "properties":   {\n' +
+        '    "simpleString":     {\n' +
+        '      "x-customStereoType1": true,\n' +
+        '      "type": "string"\n' +
+        '    },\n' +
+        '    "arrayMaxItemOne":     {\n' +
+        '      "x-customStereoType2": true,\n' +
+        '      "maxItems": 10,\n' +
+        '      "type": "array",\n' +
+        '      "x-customTag3": "false",\n' +
+        '      "items":       {\n' +
+        '        "type": "string"\n' +
+        '      }\n' +
+        '    }\n' +
+        '  },\n' +
+        '  "x-customTag1": 10\n' +
+        '}';
+          assert(jsonEquivalent($jsonSchema->parseJSON(),$generatedJSONFromClass.content->toOne()->parseJSON()));
+
+     
+      
+      
+    let prefix = 'meta::json::schema::tests';
+    let fileMap = [schemaInput('/ClassWithCustomProfiles.json', $jsonSchema,$prefix)]; 
+    let generatedClassFromJSON =  $fileMap->JSONSchemaToPure(); 
+     //should return  a Profile the schemas
+   
+   let generatedClass  = $generatedClassFromJSON->filter(p|$p.name=='ClassWithCustomProfiles')->toOne();
+   let generatedProfile  = $generatedClassFromJSON->filter(p|$p.name=='GeneratedProfile')->toOne();
+   assert(jsonEquivalent(meta::json::schema::tests::ClassWithCustomProfiles->toSerializer()->parseJSON(),$generatedClass->toOne()->toSerializer()->parseJSON()));
+   assert(jsonEquivalent(meta::json::schema::tests::profile::GeneratedProfile->toSerializer()->parseJSON(),$generatedProfile->toOne()->toSerializer()->parseJSON()));
+   
+}
