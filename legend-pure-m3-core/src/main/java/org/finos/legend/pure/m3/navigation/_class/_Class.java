@@ -15,8 +15,6 @@
 package org.finos.legend.pure.m3.navigation._class;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -24,14 +22,16 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
+import org.eclipse.collections.impl.utility.LazyIterate;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.io.IOException;
@@ -40,28 +40,10 @@ public class _Class
 {
     public static final String KEY_STEREOTYPE = "Key";
 
-    private static final Function<CoreInstance, String> GET_NAME_FOR_PRINT = new Function<CoreInstance, String>()
-    {
-        @Override
-        public String valueOf(CoreInstance instance)
-        {
-            return instance.getValueForMetaPropertyToOne(M3Properties.name).getName();
-        }
-    };
-
-    private static final Predicate2<CoreInstance, String> PROPERTY_HAS_NAME = new Predicate2<CoreInstance, String>()
-    {
-        @Override
-        public boolean accept(CoreInstance property, String name)
-        {
-            return property.getValueForMetaPropertyToOne(M3Properties.name).getName().equals(name);
-        }
-    };
-
     public static final ImmutableList<String> SIMPLE_PROPERTIES_PROPERTIES = Lists.immutable.with(M3Properties.properties, M3Properties.propertiesFromAssociations);
     public static final ImmutableList<String> QUALIFIED_PROPERTIES_PROPERTIES = Lists.immutable.with(M3Properties.qualifiedProperties, M3Properties.qualifiedPropertiesFromAssociations);
     public static final ImmutableList<String> ORIGINAL_MILESTONED_PROPERTIES = Lists.immutable.with(M3Properties.originalMilestonedProperties);
-    public static final ImmutableList<String> ALL_PROPERTIES_PROPERTIES = SIMPLE_PROPERTIES_PROPERTIES.newWithAll(QUALIFIED_PROPERTIES_PROPERTIES.newWithAll(ORIGINAL_MILESTONED_PROPERTIES));
+    public static final ImmutableList<String> ALL_PROPERTIES_PROPERTIES = SIMPLE_PROPERTIES_PROPERTIES.newWithAll(QUALIFIED_PROPERTIES_PROPERTIES).newWithAll(ORIGINAL_MILESTONED_PROPERTIES);
 
 
     /**
@@ -90,41 +72,22 @@ public class _Class
         return computePropertiesByName(classifier, QUALIFIED_PROPERTIES_PROPERTIES, processorSupport);
     }
 
-    public static ListIterable<CoreInstance> findQualifiedPropertiesUsingGeneralization(CoreInstance classifier, String propertyName, ProcessorSupport processorSupport)
+    public static ListIterable<QualifiedProperty<?>> findQualifiedPropertiesUsingGeneralization(CoreInstance classifier, String propertyName, ProcessorSupport processorSupport)
     {
-        MutableList<CoreInstance> result = Lists.mutable.empty();
-        for (CoreInstance type : Type.getGeneralizationResolutionOrder(classifier, processorSupport))
-        {
-            for (String propertyProperty : QUALIFIED_PROPERTIES_PROPERTIES)
-            {
-                ListIterable<CoreInstance> properties = (ListIterable<CoreInstance>) Instance.getValueForMetaPropertyToManyResolved(type, propertyProperty, processorSupport);
-                properties.selectWith(PROPERTY_HAS_NAME, propertyName, result);
-            }
-        }
+        MutableList<QualifiedProperty<?>> result = Lists.mutable.empty();
+        LazyIterate.flatCollect(Type.getGeneralizationResolutionOrder(classifier, processorSupport),
+                t -> LazyIterate.flatCollect(QUALIFIED_PROPERTIES_PROPERTIES, p -> Instance.getValueForMetaPropertyToManyResolved(t, p, processorSupport)))
+                .select(qp -> propertyName.equals(qp.getValueForMetaPropertyToOne(M3Properties.name).getName()))
+                .forEach(qp -> result.add((QualifiedProperty<?>) qp));
         return result;
     }
 
-    public static CoreInstance findQualifiedPropertyWithNoExplicitArgsUsingGeneralization(CoreInstance classifier, String propertyName, ProcessorSupport processorSupport)
+    public static QualifiedProperty<?> findQualifiedPropertyWithNoExplicitArgsUsingGeneralization(CoreInstance classifier, String propertyName, ProcessorSupport processorSupport)
     {
-        for (CoreInstance type : Type.getGeneralizationResolutionOrder(classifier, processorSupport))
-        {
-            for (String propertyProperty : QUALIFIED_PROPERTIES_PROPERTIES)
-            {
-                ListIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(type, propertyProperty, processorSupport);
-                for (CoreInstance property : properties)
-                {
-                    if (property.getValueForMetaPropertyToOne(M3Properties.name).getName().equals(propertyName))
-                    {
-                        CoreInstance funcType = processorSupport.function_getFunctionType(property);
-                        if (funcType.getValueForMetaPropertyToMany(M3Properties.parameters).size() == 1)
-                        {
-                            return property;
-                        }
-                    }
-                }
-            }
-        }
-        return null;
+        return (QualifiedProperty<?>) LazyIterate.flatCollect(Type.getGeneralizationResolutionOrder(classifier, processorSupport),
+                t -> LazyIterate.flatCollect(QUALIFIED_PROPERTIES_PROPERTIES, p -> Instance.getValueForMetaPropertyToManyResolved(t, p, processorSupport)))
+                .detect(qp -> propertyName.equals(qp.getValueForMetaPropertyToOne(M3Properties.name).getName()) &&
+                        processorSupport.function_getFunctionType(qp).getValueForMetaPropertyToMany(M3Properties.parameters).size() == 1);
     }
 
     public static ListIterable<CoreInstance> getEqualityKeyProperties(CoreInstance classifier, ProcessorSupport processorSupport)
