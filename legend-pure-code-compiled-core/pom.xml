@@ -94,6 +94,12 @@
             <artifactId>legend-pure-m2-dsl-diagram</artifactId>
             <scope>test</scope>
         </dependency>
+	
+	<dependency>
+	    <groupId>org.finos.legend.pure</groupId>
+	    <artifactId>legend-pure-m2-store-relational</artifactId>
+	    <scope>test</scope>
+	</dependency>
 
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
