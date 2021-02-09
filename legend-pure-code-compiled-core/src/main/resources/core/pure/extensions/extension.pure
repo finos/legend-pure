@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import meta::pure::mapping::*;
+import meta::relational::mapping::*;
+import meta::relational::metamodel::*;
 import meta::pure::graphFetch::routing::*;
 import meta::pure::graphFetch::*;
 import meta::java::generation::convention::*;
@@ -28,6 +30,7 @@ import meta::pure::router::extension::*;
 import meta::pure::router::clustering::*;
 import meta::pure::store::*;
 import meta::pure::graphFetch::executionPlan::*;
+import meta::relational::functions::sqlQueryToString::*;
 
 Class meta::pure::router::extension::RouterExtension
 {
@@ -110,8 +113,16 @@ Class meta::pure::router::extension::RouterExtension
    
    plan_javaRuntime_enginePlatformDependencies_conventions : Function<{Conventions[1]->Conventions[1]}>[0..1];
 
+   pureToSQL_buildUniqueName : Function<{Boolean[1], Boolean[1], RouterExtension[*] -> Function<{Nil[1]->String[1]}>[*]}>[0..1];
+   
+   relational_execution_postProcessors : Function<{PostProcessorResult[1], Runtime[1], RoutedValueSpecification[0..1], Mapping[0..1], Database[0..1], ExecutionContext[1] -> PostProcessorResult[1]}>[*];
+   relational_plan_postProcessors : Function<{PostProcessorResult[1], Runtime[1], RoutedValueSpecification[0..1], Mapping[0..1], Database[0..1], ExecutionContext[1] -> PostProcessorResult[1]}>[*];
+   
    mapping_sourceClass : Function<{Nil[1] -> Class<Any>[1]}>[*];
    mapping_extractRelationalPropertyMappingFromEmbedded : Function<{AbstractProperty<Any>[1], SetImplementation[*], Mapping[1] -> String[*]}>[0..1];
+   
+   sqlQueryToString_processOperation : Function<{Nil[1], Format[1], GenerationState[1], Config[1], RouterExtension[*] -> Function<{Nil[1]->String[1]}>[*]}>[0..1];
+   sqlQueryToString_isBooleanOperation : Function<{Nil[1] -> Boolean[1]}>[*];
    
    tdsSchema_resolveSchemaImpl : Function<{FunctionExpression[1], Map<String, List<Any>>[1], RouterExtension[*] -> Pair<Function<Any>, Function<{->SchemaState[1]}>>[*]}>[0..1];
    

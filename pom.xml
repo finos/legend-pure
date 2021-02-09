@@ -51,6 +51,8 @@
         <module>legend-pure-m2-dsl-diagram</module>
         <module>legend-pure-runtime-java-extension-dsl-diagram</module>
 
+        <module>legend-pure-m2-store-relational</module>
+
         <module>legend-pure-runtime-java-extension-external-shared</module>
 
         <module>legend-pure-configuration-external</module>
@@ -377,6 +379,11 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-m2-external-json</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-store-relational</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
