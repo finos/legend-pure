@@ -22,13 +22,13 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.8.0</version>
+        <version>1.8.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>legend-pure-m2-store-relational</artifactId>
     <packaging>jar</packaging>
-    <version>1.8.0</version>
+    <version>1.8.1-SNAPSHOT</version>
     <name>Legend Pure - Base - M2 Store Relational</name>
 
     <build>
