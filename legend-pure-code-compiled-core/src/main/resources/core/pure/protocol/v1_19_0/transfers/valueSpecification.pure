@@ -426,6 +426,12 @@ function <<access.private>> meta::protocols::pure::v1_19_0::transformation::from
                      _type = 'mappingInstance',
                      fullPath = $m->elementToPath()->toOne()
                    ),
+                 r:meta::pure::runtime::Runtime[1]|
+                     ^meta::protocols::pure::v1_19_0::metamodel::valueSpecification::raw::RuntimeInstance
+                     (
+                        _type = 'runtimeInstance',
+                        runtime = $r->meta::protocols::pure::v1_19_0::transformation::fromPureGraph::runtime::transformRuntime($extensions)
+                     ),
                  l:List<Any>[1]|
                      ^meta::protocols::pure::v1_19_0::metamodel::valueSpecification::raw::List
                      (
