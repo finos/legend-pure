@@ -1167,7 +1167,7 @@ function <<test.Test>> {serverVersion.start='vX_X_X'} meta::json::schema::genera
     assertEquals($expectedjson->meta::json::parseJSON()->toPrettyJSONString(),$jsonSchema->at(0).content->meta::json::parseJSON()->toPrettyJSONString());
 }
 
-function <<test.Test>>  meta::json::schema::generation::tests::testProfile():Boolean[1]
+function <<test.Test>> { meta::pure::executionPlan::profiles::serverVersion.start='v1_17_0'}  meta::json::schema::generation::tests::testProfile():Boolean[1]
 {
     let jsonSchema = toJSONSchema(^JSONSchemaConfig(class='meta::json::schema::tests::ClassWithProfile',
                                                     includeAllRelatedTypes=false  ));
