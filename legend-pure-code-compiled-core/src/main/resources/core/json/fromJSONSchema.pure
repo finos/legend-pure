@@ -44,8 +44,6 @@ function meta::json::schema::fromSchema::JSONSchemaToPure(schemas:SchemaInput[*]
    let processed = $schemas->map(s|$s->processSchema());  
    let processedWithSuperType = $processed->JSONSchemaSuperTypes();
    let extendedProfile =    $processedWithSuperType.extendedTags->distinct()->createProfile($schemas.pathPrefix->at(0)->makeString());
-
-   
    let pathSchemas = $processedWithSuperType->map(s | pair($s.fileName->refToFullPath([]),$s);)->newMap();
    $pathSchemas->values()->map(s | let parsedFileName =  $s.fileName->refToFullPath([]);
                                  if( JSONSchemaIsObject($s.parsedSchema),
@@ -139,7 +137,6 @@ function <<access.private>> meta::json::schema::fromSchema::processSchema(schema
                            | if($parsedSchema.keyValuePairs->getValueForKey('oneOf')->isNotEmpty(),
                                |$parsedSchema.keyValuePairs->getValueForKey('oneOf'),
                                |[]));
-
     let subTypes = if($subTypeRefs->isNotEmpty() && $subTypeRefs->toOne()->instanceOf(JSONArray),
                       | let refs = $subTypeRefs->cast(@JSONArray).values->map(v |$v->cast(@JSONObject).keyValuePairs->getValueForKey('$ref'));
                         if($refs->isNotEmpty(),
@@ -148,8 +145,7 @@ function <<access.private>> meta::json::schema::fromSchema::processSchema(schema
                        | [] );
    let properties = $updatedSchema.keyValuePairs->getValueForKey('properties');
 
-   let extendedTags = $updatedSchema->getExtendedTags()->distinct();
-
+   let extendedTags = $updatedSchema->getExtendedTags('')->distinct();
 
 
 ^ProcessedSchema(fileName=$schema.fileName,
@@ -165,13 +161,14 @@ function <<access.private>> meta::json::schema::fromSchema::processSchema(schema
 }
 
 
-function <<access.private>> meta::json::schema::fromSchema::getExtendedTags(object:JSONObject[1]):JSONKeyValue[*]
+function <<access.private>> meta::json::schema::fromSchema::getExtendedTags(object:JSONObject[1],rootKey:String[1]):JSONKeyValue[*]
 {
-    $object.keyValuePairs->map(k |$k.value->match([o:JSONObject[1] | $o->getExtendedTags(),
-                                                  e:JSONElement[1]|if($k.key.value->startsWith('x-'),|$k,|[])
+    $object.keyValuePairs->map(k |$k.value->match([o:JSONObject[1] | $o->getExtendedTags($k.key.value),
+                                                  e:JSONElement[1]|if(!$k.key.value->isJSONSchemaKey() && $rootKey!='properties'     ,|$k,|[])
                                                      ]));
 
 }
+
 
 function <<access.private>> meta::json::schema::fromSchema::createProfile(values:JSONKeyValue[*],pathPrefix:String[1]):Profile[0..1]
 {
@@ -181,22 +178,21 @@ function <<access.private>> meta::json::schema::fromSchema::createProfile(values
                                               e:JSONElement[1] | true
                                              ])).key.value->distinct()->sort()->map(t | ^Tag(value= $t->extendedTagToPure() ,profile =$profile) ) ;
  let sts =  $values->filter(v|$v.value->instanceOf(JSONBoolean) && $v.value->cast(@JSONBoolean).value && !$v.key.value->in($tags) ).key.value->distinct()->sort()->map(s | ^Stereotype(profile=$profile,value= $s->extendedTagToPure()));
-   
-  if($tags->size()+$sts->size()>1,
+  if($tags->size()+$sts->size()>0,
      |^$profile(p_stereotypes=$sts,p_tags=$tags);,
      |[]);         
 
 }
 
-
 function <<access.private>> meta::json::schema::fromSchema::extendedTagToPure(tag:String[1]):String[1]
 {
-$tag->split('-')->tail()->joinStrings('_');
-   
- 
-   
-
+if($tag->startsWith('x-'),
+   |$tag->split('-')->tail()->joinStrings('_'),
+   |$tag->split('-')->joinStrings('_')
+  ); 
 }
+
+
 
 function <<access.private>> meta::json::schema::fromSchema::extractObjectFromColletion(array:JSONArray[1]):JSONObject[*]
 {
@@ -209,7 +205,10 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaIsObject(s
 {
    
    let type = $schema.keyValuePairs->getValueForKey('type');
-   $type->isNotEmpty() && ( $type->cast(@JSONString).value->toOne() == 'object');
+    $type->isNotEmpty() && ( $type->cast(@JSONString).value->toOne() == 'object') &&  !$schema.keyValuePairs.key.value->containsAny(['anyOf','oneOf']) 
+   
+   
+   ;
 }
 
 function <<access.private>> meta::json::schema::fromSchema::JSONSchemaSuperTypes(schemas:ProcessedSchema[*]):ProcessedSchema[*]
@@ -335,17 +334,23 @@ function  <<access.private>> meta::json::schema::fromSchema::isDiscriminator(fun
 
 function  <<access.private>> meta::json::schema::fromSchema::fragmentToFunction(fileName:String[1],functionSchema:JSONObject[1],pathPrefix:String[0..1],pathSchemas:Map<String,ProcessedSchema>[1],extendedProfile:Profile[0..1]):PackageableElement[1]
 {
-  
-  let types = $functionSchema->getTypesFromFragment(); 
-   
+
+  let types = $functionSchema->getTypesFromFragment();
+
   let functionName = $fileName->refToFileName();
   let isDiscriminator = $functionSchema->isDiscriminator();
+
+   let typeRoot = $functionSchema.keyValuePairs->getValueForKey('type');
+   let objectST = if($typeRoot->isNotEmpty() && ( $typeRoot->cast(@JSONString).value->toOne() == 'object'),
+                         |stereotype(JSONSchemaTypeExtension,'object'),|[]);
+
+
   let rawType = if($isDiscriminator,
-                   |  let rootType = $pathSchemas->get($fileName).subTypes->map(s| $pathSchemas->get($s).rootSuperTypes)->first(); 
+                   |  let rootType = $pathSchemas->get($fileName).subTypes->map(s| $pathSchemas->get($s).rootSuperTypes)->first();
                         $rootType->toOne()->newClassfromReference([],$pathPrefix);,
                    |$functionSchema->fragmentType();
                  );
-   
+
   let multiplicity = if($functionSchema->fragmentIsArrayType(),
                         |ZeroMany,
                         |if($isDiscriminator,
@@ -362,21 +367,45 @@ function  <<access.private>> meta::json::schema::fromSchema::fragmentToFunction(
   let functionDef = meta::json::schema::fromSchema::fragmentPlaceHolder_Any_$0_1$__Boolean_1_;
   let ft =$functionDef->functionType();
   let ftparam =$ft.parameters->at(0);
-  
-  let property = if($isDiscriminator, 
+
+  let property = if($isDiscriminator,
                    |let pname =  $functionSchema.keyValuePairs->getValueForKey('discriminator')->toOne()->cast(@JSONObject).keyValuePairs ->getValueForKey('propertyName')->cast(@JSONString).value->toOne();
                     let p =  newProperty($pname, ^GenericType(rawType=$rawType), ^GenericType(rawType=String),PureOne);
                      $p->propertyParameter('value') ;,
                     |$ft.parameters->at(0)
                   );
-  
+
    let updatedFT = ^$ft(parameters=^$ftparam(multiplicity=$multiplicity,genericType=$type));
   let expressionSequence = $functionSchema->fragmentToValueSpecifcation([],$fileName,$pathPrefix,$property,[],[],$property,$pathSchemas)->toOneMany()->cast(@SimpleFunctionExpression)->wrapWithIF($ftparam,false)->evaluateAndDeactivate();
-  if($expressionSequence->isEmpty(),|fail('Unable to import schema, please check that it is correctly specified:\n'+ $fileName +'\n'+ $functionSchema->toOne()->toPrettyJSONString() ),|[]);    
+  if($expressionSequence->isEmpty(),|fail('Unable to import schema, please check that it is correctly specified:\n'+ $fileName +'\n'+ $functionSchema->toOne()->toPrettyJSONString() ),|[]);
 
 
   let def =^$functionDef(stereotypes=[],expressionSequence=$expressionSequence,functionName=$functionName,name=$name,classifierGenericType=^GenericType(typeArguments=^GenericType(rawType=$updatedFT),rawType=ConcreteFunctionDefinition))-> updatePackagableElementWithPackage($fileName->packageFromPath($pathPrefix)+$name);
-  $def->addSchemaTagsToPure($functionSchema,$extendedProfile)->cast(@PackageableElement);
+  $def->addSchemaTagsToPure($functionSchema,$extendedProfile)->cast(@ElementWithStereotypes)->addStereoType($objectST)->cast(@PackageableElement);
+
+}
+
+function <<access.private>> meta::json::schema::fromSchema::isJSONSchemaKey(tag:String[1]):Boolean[1]
+{
+   
+ let  tags = ['format','required','allOf','title','description','$schema','properties','nullable','discriminator','default','example','const','javaInterfaces','javaType','extends','maxItems','minItems']
+   ->concatenate(meta::json::schema::fromSchema::functionConstraintMap(true)->keys())
+   ->concatenate(meta::json::schema::JSONSchemaGeneration->keysFromProfile())
+   ->concatenate(meta::json::schema::JSONSchemaJavaExtension->keysFromProfile())
+   ->concatenate(meta::json::schema::JSONSchemaOpenAPIExtension->keysFromProfile())
+   ->concatenate(unsupportedKeys())->distinct();
+  $tag->in($tags);
+}
+
+function <<access.private>> meta::json::schema::fromSchema::keysFromProfile(profile:Profile[1]):String[*]
+{
+   
+ $profile.p_stereotypes.value->concatenate($profile.p_tags.value);
+}
+
+function <<access.private>> meta::json::schema::fromSchema::unsupportedKeys():String[*]
+{
+ ['additionalProperties','not','$id','id','patternProperties','propertyNames','contains','additionalItems']; 
 
 }
 
@@ -676,7 +705,6 @@ function <<access.private>> meta::json::schema::fromSchema::typeFullPath(fileNam
 
 function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToClass(fileName:String[1],processedSchema:ProcessedSchema[1],pathSchemas:Map<String,ProcessedSchema>[1],pathPrefix:String[0..1],extendedProfile:Profile[0..1]):Class<Any>[1]
 {
-
     let parsed = $processedSchema.parsedSchema;
     let javaType = $parsed.keyValuePairs->getValueForKey('javaType')->cast(@JSONString).value->first();
 
@@ -871,7 +899,7 @@ function <<access.private>> meta::json::schema::fromSchema::addSchemaTagsToPure(
                                              |$element->cast(@ElementWithStereotypes)->addStereoType(JSONSchemaGeneration,'writeOnly'),
                                        |$element));
 
-
+      
    
    let extendedSteroetypes =  $objectWithTags.keyValuePairs->filter(kv|$extendedProfile->isNotEmpty() && $kv.key.value->extendedTagToPure()->in($extendedProfile.p_stereotypes.value))->sortBy(s|$s.key.value)->map(kv|stereotype($extendedProfile->toOne(),$kv.key.value->extendedTagToPure()->toOne())); 
    let extendedTaggedValues  = $objectWithTags.keyValuePairs->filter(kv|$extendedProfile->isNotEmpty() && $kv.key.value->extendedTagToPure()->in($extendedProfile.p_tags.value))->sortBy(s|$s.key.value)->map(kv| $kv.value->getJSONElementAsString()->sort()->map(v | ^TaggedValue(tag=tag($extendedProfile->toOne(),$kv.key.value->extendedTagToPure()),value=$v))); 
