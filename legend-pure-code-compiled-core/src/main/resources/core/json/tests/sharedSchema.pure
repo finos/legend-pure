@@ -17,7 +17,7 @@ import meta::json::schema::fromSchema::*;
 import meta::json::schema::fromSchema::tests::*;
 import meta::json::*;
 import meta::json::schema::generation::*;
-
+import meta::json::schema::tests::*;
 Profile meta::json::schema::tests::profile::GeneratedProfile
 {
    stereotypes:[customStereoType1,customStereoType2];
@@ -31,16 +31,25 @@ Class <<GeneratedProfile.customStereoType1>>  {meta::pure::profiles::doc.doc='A 
    <<GeneratedProfile.customStereoType2>> {GeneratedProfile.customTag3='false'} arrayMaxItemOne : String[0..10];
 }
 
-function <<test.Test>> meta::json::schema::tests::roundTrip::testCustomProfile():Boolean[1]
+
+function <<meta::json::schema::JSONSchemaTypeExtension.object>> {meta::pure::profiles::doc.doc='Generate an object tag where there typically would not be any'} meta::json::schema::tests::functionForcedToObject(value: meta::pure::metamodel::type::Any[0..1]): Boolean[1]
+{
+  $value->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if({|[$value->meta::pure::functions::multiplicity::toOne()->meta::pure::functions::meta::instanceOf(meta::json::schema::tests::Cat), $value->meta::pure::functions::multiplicity::toOne()->meta::pure::functions::meta::instanceOf(meta::json::schema::tests::Dog)]->meta::pure::functions::collection::or()}, {|true});
+}
+
+Class  meta::json::schema::tests::SimpleClass
+{
+   p:String[1]; 
+
+}
+
+
+function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testCustomProfile():Boolean[1]
 {
    
-     let generatedJSONFromClass = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::ClassWithCustomProfiles,meta::json::schema::tests::profile],
+  let generatedJSONFromClassOpenAPI = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::ClassWithCustomProfiles,meta::json::schema::tests::profile],
                                                          useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true,schemaSpecification=JSONSchemaSpecification.OPEN_API_V3_0_3 ));
-   
-
-   
-   
-   let jsonSchema  = ' {\n' +
+   let jsonSchemaOpenAPI  = ' {\n' +
         '  "x-customStereoType1": true,\n' +
         '  "description": "A simple description",\n' +
         '  "title": "meta::json::schema::tests::ClassWithCustomProfiles",\n' +
@@ -66,19 +75,90 @@ function <<test.Test>> meta::json::schema::tests::roundTrip::testCustomProfile()
         '  },\n' +
         '  "x-customTag1": 10\n' +
         '}';
-          assert(jsonEquivalent($jsonSchema->parseJSON(),$generatedJSONFromClass.content->toOne()->parseJSON()));
+          assert(jsonEquivalent($jsonSchemaOpenAPI->parseJSON(),$generatedJSONFromClassOpenAPI.content->toOne()->parseJSON()));
 
-     
-      
       
     let prefix = 'meta::json::schema::tests';
-    let fileMap = [schemaInput('/ClassWithCustomProfiles.json', $jsonSchema,$prefix)]; 
+    let fileMap = [schemaInput('/ClassWithCustomProfiles.json', $jsonSchemaOpenAPI,$prefix)]; 
     let generatedClassFromJSON =  $fileMap->JSONSchemaToPure(); 
      //should return  a Profile the schemas
    
-   let generatedClass  = $generatedClassFromJSON->filter(p|$p.name=='ClassWithCustomProfiles')->toOne();
-   let generatedProfile  = $generatedClassFromJSON->filter(p|$p.name=='GeneratedProfile')->toOne();
-   assert(jsonEquivalent(meta::json::schema::tests::ClassWithCustomProfiles->toSerializer()->parseJSON(),$generatedClass->toOne()->toSerializer()->parseJSON()));
-   assert(jsonEquivalent(meta::json::schema::tests::profile::GeneratedProfile->toSerializer()->parseJSON(),$generatedProfile->toOne()->toSerializer()->parseJSON()));
+   let generatedClassOpenAPI  = $generatedClassFromJSON->filter(p|$p.name=='ClassWithCustomProfiles')->toOne();
+   let generatedProfileOpenAPI  = $generatedClassFromJSON->filter(p|$p.name=='GeneratedProfile')->toOne();
+  assert(jsonEquivalent(meta::json::schema::tests::ClassWithCustomProfiles->toSerializer()->parseJSON(),$generatedClassOpenAPI->toOne()->toSerializer()->parseJSON()));
+  assert(jsonEquivalent(meta::json::schema::tests::profile::GeneratedProfile->toSerializer()->parseJSON(),$generatedProfileOpenAPI->toOne()->toSerializer()->parseJSON()));
+   
+   
+   
+      
+    let generatedJSONFromClassDraft07 = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::ClassWithCustomProfiles,meta::json::schema::tests::profile],
+                                                         useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true ));
+   
+   let jsonSchemaDraft07  = ' {\n' +
+        '  "customStereoType1": true,\n' +
+        '  "description": "A simple description",\n' +
+        '  "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+        '  "title": "meta::json::schema::tests::ClassWithCustomProfiles",\n' +
+        '  "customTag2": [\n' +
+        '"first",\n' +
+        '"second"\n' +
+        '  ],\n' +
+        '  "type": "object",\n' +
+        '  "properties":   {\n' +
+        '    "simpleString":     {\n' +
+        '      "customStereoType1": true,\n' +
+        '      "type": "string"\n' +
+        '    },\n' +
+        '    "arrayMaxItemOne":     {\n' +
+        '      "customStereoType2": true,\n' +
+        '      "maxItems": 10,\n' +
+        '      "type": "array",\n' +
+        '      "customTag3": "false",\n' +
+        '      "items":       {\n' +
+        '        "type": "string"\n' +
+        '      }\n' +
+        '    }\n' +
+        '  },\n' +
+        '  "customTag1": 10\n' +
+        '}';
+   
+   assert(jsonEquivalent($jsonSchemaDraft07->parseJSON(),$generatedJSONFromClassDraft07.content->toOne()->parseJSON()));
+  let fileMapDraft07 = [schemaInput('/ClassWithCustomProfiles.json', $jsonSchemaDraft07,$prefix)]; 
+  let generatedClassFromJSONDraft07 =  $fileMapDraft07->JSONSchemaToPure(); 
+  let generatedClassDraft07  = $generatedClassFromJSON->filter(p|$p.name=='ClassWithCustomProfiles')->toOne();
+  let generatedProfileDraft07  = $generatedClassFromJSON->filter(p|$p.name=='GeneratedProfile')->toOne();
+  assert(jsonEquivalent(meta::json::schema::tests::ClassWithCustomProfiles->toSerializer()->parseJSON(),$generatedClassDraft07->toOne()->toSerializer()->parseJSON()));
+  assert(jsonEquivalent(meta::json::schema::tests::profile::GeneratedProfile->toSerializer()->parseJSON(),$generatedProfileDraft07->toOne()->toSerializer()->parseJSON()));
+
+
    
 }
+
+function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testforceFunctionToObject():Boolean[1]
+{
+   
+     let generatedJSONFromElement = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::functionForcedToObject_Any_$0_1$__Boolean_1_],
+                                                          useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true ));  
+   let jsonSchema  = '{' +
+'  "anyOf": [' +
+'    {' +
+'      "$ref": "Cat.json"' +
+'    },' +
+'    {' +
+'      "$ref": "Dog.json"' +
+'    }' +
+'  ],' +
+'  "title": "meta::json::schema::tests::functionForcedToObject",' +
+'  "type": "object",' +
+'  "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+'  "description": "Generate an object tag where there typically would not be any"' +
+'}';
+  
+   assert(jsonEquivalent($jsonSchema->parseJSON(),$generatedJSONFromElement.content->toOne()->parseJSON()));
+    let prefix = 'meta::json::schema::tests';
+    let fileMap = [schemaInput('/functionForcedToObject.json', $jsonSchema,$prefix)]; 
+    let generatedElementFromJSON =  $fileMap->JSONSchemaToPure(); 
+  assert(jsonEquivalent(meta::json::schema::tests::functionForcedToObject_Any_$0_1$__Boolean_1_->toSerializer()->parseJSON(),$generatedElementFromJSON->toOne()->toSerializer()->parseJSON()));
+}
+
+
