@@ -50,9 +50,11 @@ function <<access.private>> meta::protocols::pure::v1_19_0::transformation::from
    let section = $sections->filter(section|$section.startLine <= max($sourceInformation.startLine - 1, 0))->last();
    let startLine = $lines->at(max($sourceInformation.startLine - 1, 0));
    let endLine = $lines->at(max($sourceInformation.endLine - 1, 0));
-   let sourceLines = $startLine->substring(max($sourceInformation.startColumn -1, 0), $startLine->length())
-     ->concatenate($lines->slice($sourceInformation.startLine, max($sourceInformation.endLine - 1, 0)))
-     ->concatenate($endLine->substring(0, $sourceInformation.endColumn));
+   let sourceLines = if(max($sourceInformation.endLine - 1, 0) > $sourceInformation.startLine, |
+                              $startLine->substring(max($sourceInformation.startColumn -1, 0), $startLine->length())
+                                 ->concatenate($lines->slice($sourceInformation.startLine, max($sourceInformation.endLine - 1, 0)))
+                                 ->concatenate($endLine->substring(0, $sourceInformation.endColumn)),
+                              |  $startLine->substring(max($sourceInformation.startColumn -1, 0), $sourceInformation.endColumn));
    $section.name
      ->concatenate($section.imports)
      ->concatenate($sourceLines)
@@ -125,4 +127,10 @@ function <<access.private>> meta::protocols::pure::v1_19_0::transformation::from
 function meta::protocols::pure::v1_19_0::transformation::fromPureGraph::tests::tst():Boolean[1]
 {
   true;
+}
+
+function <<test.Test>> meta::protocols::pure::v1_19_0::transformation::fromPureGraph::tests::testParsingOneLinerMapping():Boolean[1]
+{
+  let result = ^Mapping(name = '')->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildPureModelContextTextFromMapping(meta::pure::router::extension::defaultExtensions());
+  assertEquals(1, $result.code->size());
 }
