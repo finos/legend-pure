@@ -82,6 +82,7 @@ Class meta::relational::metamodel::relation::NamedRelation extends meta::relatio
 
 Class meta::relational::metamodel::relation::Milestoning
 {
+    owner : Relation[0..1];
 }
 
 Class meta::relational::metamodel::relation::TemporalMilestoning extends Milestoning
