@@ -23,6 +23,7 @@ import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
@@ -374,6 +375,11 @@ public abstract class PrimitiveCoreInstance<T> extends AbstractCoreInstance
     public static DateCoreInstance newDateCoreInstance(PureDate value, CoreInstance classifier, int internalSyntheticId)
     {
         return new DateCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    public static StrictTimeCoreInstance newStrictTimeCoreInstance(PureStrictTime value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return new StrictTimeCoreInstance(value, classifier, internalSyntheticId);
     }
 
     public static FloatCoreInstance newFloatCoreInstance(BigDecimal value, CoreInstance classifier, int internalSyntheticId)

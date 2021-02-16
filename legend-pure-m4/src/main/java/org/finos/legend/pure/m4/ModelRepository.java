@@ -19,6 +19,8 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;
 import org.finos.legend.pure.m4.coreinstance.factory.MultipassCoreInstanceFactory;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunctions;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 import org.finos.legend.pure.m4.transaction.TransactionObserver;
@@ -42,6 +44,7 @@ import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.StrictTimeCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstanceFactory;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
@@ -454,7 +457,7 @@ public class ModelRepository
 
     public CoreInstance newStrictTimeCoreInstance(String name)
     {
-        return newStrictTimeCoreInstance(getPureDateToStrictTime(name));
+        return newStrictTimeCoreInstance(getPureStrictTime(name));
     }
 
     // Should be used only by BinaryRepositorySerializer
@@ -498,13 +501,13 @@ public class ModelRepository
         return newDateCoreInstance(value, DATETIME_TYPE_NAME);
     }
 
-    public DateCoreInstance newStrictTimeCoreInstance(PureDate value)
+    public StrictTimeCoreInstance newStrictTimeCoreInstance(PureStrictTime value)
     {
-        if (!value.hasHour())
+        if (!value.hasMinute())
         {
-            throw new PureCompilationException("StrictTime must include time information, got: " + value);
+            throw new PureCompilationException("StrictTime must include minute information, got: " + value);
         }
-        return newDateCoreInstance(value, STRICT_TIME_TYPE_NAME);
+        return newStrictTimeCoreInstance(value, STRICT_TIME_TYPE_NAME);
     }
 
     private DateCoreInstance newDateCoreInstance(PureDate value, String typeName)
@@ -517,11 +520,21 @@ public class ModelRepository
         return PrimitiveCoreInstance.newDateCoreInstance(value, classifier, internalSyntheticId);
     }
 
-    private PureDate getPureDateToStrictTime(String name)
+    private StrictTimeCoreInstance newStrictTimeCoreInstance(PureStrictTime value, String typeName)
+    {
+        return newStrictTimeCoreInstance(value, getOrCreateTopLevel(typeName, null), nextId());
+    }
+
+    private StrictTimeCoreInstance newStrictTimeCoreInstance(PureStrictTime value, CoreInstance classifier, int internalSyntheticId)
+    {
+        return PrimitiveCoreInstance.newStrictTimeCoreInstance(value, classifier, internalSyntheticId);
+    }
+
+    private PureStrictTime getPureStrictTime(String name)
     {
         try
         {
-            return DateFunctions.parsePureDateToStrictTime(name);
+            return StrictTimeFunctions.parsePureStrictTime(name);
         }
         catch (Exception e)
         {

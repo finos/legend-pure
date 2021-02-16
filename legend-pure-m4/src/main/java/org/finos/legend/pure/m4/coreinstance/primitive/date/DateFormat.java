@@ -389,11 +389,6 @@ public class DateFormat
         return (DateTime)parsePureDate(string);
     }
 
-    public static StrictTime parseDateToStrictTime(String string)
-    {
-        return (StrictTime)parseStrictTime(string, 0, string.length());
-    }
-
     /**
      * Parse a string into a Pure date.
      *
@@ -600,127 +595,13 @@ public class DateFormat
         return date;
     }
 
-    public static PureDate parseStrictTime(String string, int start, int end)
-    {
-        // Skip whitespace at start and end
-        while ((start < end) && (string.charAt(start) <= ' '))
-        {
-            start++;
-        }
-        end--;
-        while ((end > start) && (string.charAt(end) <= ' '))
-        {
-            end--;
-        }
-        end++;
-        if (start >= end)
-        {
-            throwInvalidDateString(string);
-        }
 
-        // Skip Pure date prefix character if present
-        if (string.charAt(start) == DATE_PREFIX)
-        {
-            start++;
-            if (start >= end)
-            {
-                throwInvalidDateString(string);
-            }
-        }
-
-        int previous = (string.charAt(start) == '-') ? start + 1 : start;
-        int index = findNonDigit(string, previous, end);
-
-        // Hour
-        int hour = -1;
-        try
-        {
-            hour = Integer.parseInt(string.substring(previous, index));
-        }
-        catch (NumberFormatException e)
-        {
-            throwInvalidDateString("Error parsing hour", string, start, end);
-        }
-
-        if (string.charAt(index++) != TIME_SEPARATOR)
-        {
-            throwInvalidDateString(string, start, end);
-        }
-
-        // Minute
-        int minute = -1;
-        previous = index;
-        index = findNonDigit(string, previous, end);
-        try
-        {
-            minute = Integer.parseInt(string.substring(previous, index));
-        }
-        catch (NumberFormatException e)
-        {
-            throwInvalidDateString("Error parsing minute", string, start, end);
-        }
-
-        if (index == end)
-        {
-            return StrictTimeWithMinute.newStrictTimeWithMinute(hour, minute);
-        }
-
-        if (string.charAt(index++) != TIME_SEPARATOR)
-        {
-            throwInvalidDateString("Error parsing minute", string, start, end);
-        }
-
-        // Second
-        int second = -1;
-        previous = index;
-        index = findNonDigit(string, previous, end);
-        try
-        {
-            second = Integer.parseInt(string.substring(previous, index));
-        }
-        catch (NumberFormatException e)
-        {
-            throwInvalidDateString("Error parsing second", string, start, end);
-        }
-
-        if (index == end)
-        {
-            return StrictTimeWithSecond.newStrictTimeWithSecond(hour, minute, second);
-        }
-
-        AbstractDateWithSecond strictTime;
-        if (string.charAt(index) == '.')
-        {
-            // Subsecond
-            previous = index + 1;
-            index = findNonDigit(string, previous, end);
-            if (index == previous)
-            {
-                throwInvalidDateString(string, start, end);
-            }
-            String subsecond = string.substring(previous, index);
-            strictTime = StrictTimeWithSubsecond.newStrictTimeWithSubsecond(hour, minute, second, subsecond);
-        }
-        else
-        {
-            strictTime = StrictTimeWithSecond.newStrictTimeWithSecond(hour, minute, second);
-        }
-
-        if (index < end)
-        {
-
-            throwInvalidDateString("Error parsing second", string, start, end);
-        }
-
-        return strictTime;
-    }
-
-    protected static void appendTwoDigitInt(Appendable appendable, int integer) throws IOException
+    private static void appendTwoDigitInt(Appendable appendable, int integer) throws IOException
     {
         appendZeroPaddedInt(appendable, integer, 2);
     }
 
-    protected static void appendZeroPaddedInt(Appendable appendable, int integer, int minLength) throws IOException
+    private static void appendZeroPaddedInt(Appendable appendable, int integer, int minLength) throws IOException
     {
         String string = Integer.toString(integer);
         for (int fill = minLength - string.length(); fill > 0; fill--)
