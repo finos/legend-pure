@@ -22,13 +22,13 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.10.0</version>
+        <version>1.10.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>legend-pure-code-compiled-core</artifactId>
     <packaging>jar</packaging>
-    <version>1.10.0</version>
+    <version>1.10.1-SNAPSHOT</version>
     <name>Legend Pure - Code - PAR - Core</name>
 
     <build>
