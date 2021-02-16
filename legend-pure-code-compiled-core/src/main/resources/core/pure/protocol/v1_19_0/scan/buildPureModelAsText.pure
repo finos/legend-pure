@@ -131,6 +131,6 @@ function meta::protocols::pure::v1_19_0::transformation::fromPureGraph::tests::t
 
 function <<test.Test>> meta::protocols::pure::v1_19_0::transformation::fromPureGraph::tests::testParsingOneLinerMapping():Boolean[1]
 {
-  let result = ^Mapping(name = '')->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildPureModelContextTextFromMapping(meta::pure::router::extension::defaultExtensions());
+  let result = ^Mapping(name = '')->meta::protocols::pure::v1_19_0::transformation::fromPureGraph::buildPureModelContextTextFromMapping(meta::pure::router::extension::defaultExtensions());
   assertEquals(1, $result.code->size());
 }
