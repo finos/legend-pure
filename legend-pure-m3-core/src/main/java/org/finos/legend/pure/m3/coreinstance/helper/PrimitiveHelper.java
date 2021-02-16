@@ -16,12 +16,9 @@ package org.finos.legend.pure.m3.coreinstance.helper;
 
 import org.eclipse.collections.api.block.function.Function2;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.*;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -78,6 +75,14 @@ public class PrimitiveHelper
         public FloatCoreInstance value(BigDecimal bigDecimal, ModelRepository repository)
         {
             return repository.newFloatCoreInstance(bigDecimal);
+        }
+    };
+
+    public static final Function2<PureStrictTime, ModelRepository, StrictTimeCoreInstance> STRICTTIME_TO_COREINSTANCE_FN = new Function2<PureStrictTime, ModelRepository, StrictTimeCoreInstance>()
+    {
+        public StrictTimeCoreInstance value(PureStrictTime pureStrictTime, ModelRepository repository)
+        {
+            return repository.newStrictTimeCoreInstance(pureStrictTime);
         }
     };
 

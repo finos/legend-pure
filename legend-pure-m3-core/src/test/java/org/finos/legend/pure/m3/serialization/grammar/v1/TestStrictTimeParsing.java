@@ -28,7 +28,7 @@ public class TestStrictTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("18:03", "%18:03");
         assertParsesTo("17:04", "%17:04");
 
-        assertFailsToParse("%b:09");
+        assertFailsToParse("expected: a valid identifier text; found: '%'","%b:09");
         assertFailsToParse("Invalid Pure StrictTime: '%55:09'", "%55:09");
     }
 
@@ -39,8 +39,9 @@ public class TestStrictTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("07:03", "%7:3");
         assertParsesTo("07:03", "%7:0000003");
 
-        assertFailsToParse("%07:b");
-        assertFailsToParse("%207:95");
+        assertFailsToParse("expected: one of {'->', '}', '.', ';', '&&', '||', '==', '!=', '+', '*', '-', '/', '<', '<=', '>', '>='} found: ':'","%07:b");
+        assertFailsToParse("Invalid Pure StrictTime: '%19:99'", "%19:99");
+        assertFailsToParse("Invalid Pure StrictTime: '%20:95'","%20:95");
     }
 
     @Test
@@ -50,7 +51,7 @@ public class TestStrictTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("07:03:01", "%7:3:1");
         assertParsesTo("07:03:01", "%7:3:000000001");
 
-        assertFailsToParse("%07:03:b");
+        assertFailsToParse("expected: one of {'->', '}', '.', ';', '&&', '||', '==', '!=', '+', '*', '-', '/', '<', '<=', '>', '>='} found: ':'","%07:03:b");
         assertFailsToParse("Invalid Pure StrictTime: '%07:03:95'", "%07:03:95");
     }
 
@@ -60,7 +61,7 @@ public class TestStrictTimeParsing extends AbstractPrimitiveParsingTest
         assertParsesTo("07:03:01.0003742635", "%07:03:01.0003742635");
         assertParsesTo("07:03:01.000374263500000000", "%7:3:1.000374263500000000");
 
-        assertFailsToParse("%07:03:01.95b6");
+        assertFailsToParse("expected: one of {'->', '}', '.', ';', '&&', '||', '==', '!=', '+', '*', '-', '/', '<', '<=', '>', '>='} found: 'b6'","%07:03:01.95b6");
     }
 
     @Override

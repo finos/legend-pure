@@ -14,6 +14,9 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,21 +37,6 @@ public class TestPureDate
         Assert.assertEquals("2014-03-10 16:12:35.070004235 GMT", date.format("yyyy-MM-dd HH:mm:ss.SSSS z"));
         Assert.assertEquals("2014-03-10T16:12:35.070004235+0000", date.format("yyyy-MM-dd\"T\"HH:mm:ss.SSSSZ"));
         Assert.assertEquals("2014-03-10 16:12:35.070Z", date.format("yyyy-MM-dd HH:mm:ss.SSSX"));
-    }
-
-    @Test
-    public void testStrictTimeFormat()
-    {
-        PureDate strictTimeWithHourMin = DateFunctions.newPureStrictTime(16, 12);
-        Assert.assertEquals("16:12", strictTimeWithHourMin.format("HH:mm"));
-
-        PureDate strictTimeWithHourMinSec = DateFunctions.newPureStrictTime(16, 12, 35);
-        Assert.assertEquals("16:12:35", strictTimeWithHourMinSec.format("HH:mm:ss"));
-
-        PureDate strictTimeWithHourMinSecSubSec = DateFunctions.newPureStrictTime(16, 12, 35, "070004235");
-        Assert.assertEquals("16:12:35", strictTimeWithHourMinSecSubSec.format("H:mm:ss"));
-        Assert.assertEquals("16:12:35.070004235", strictTimeWithHourMinSecSubSec.format("HH:mm:ss.SSSS"));
-        Assert.assertEquals("16:12:35.070", strictTimeWithHourMinSecSubSec.format("HH:mm:ss.SSS"));
     }
 
     @Test
@@ -96,6 +84,21 @@ public class TestPureDate
         catch (IllegalArgumentException e)
         {
             Assert.assertEquals("Cannot set multiple timezones: EST, CST", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testFormatRefersToNonexistentComponent()
+    {
+        PureDate date = DateFunctions.newPureDate(2014, 1, 1);
+        try
+        {
+            date.format("[EST]yyyy-MM-dd [CST] HH:mm:ss.SSSZ");
+            Assert.fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            Assert.assertEquals("Date has no hour: 2014-01-01", e.getMessage());
         }
     }
 
