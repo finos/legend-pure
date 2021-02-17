@@ -36,10 +36,27 @@ function meta::protocols::pure::v1_20_0::transformation::fromPureGraph::buildPur
    );
 }
 
+Class meta::protocols::pure::v1_20_0::transformation::fromPureGraph::SplitCodeResult {
+   codeLines: String[*];
+   index: Integer[1];
+}
+
+function meta::protocols::pure::v1_20_0::transformation::fromPureGraph::splitCodeIntoLines(code: String[1]):String[*]
+{
+    let result = range(0, $code->length(), 1)->fold({i, c |
+       if($i < $c.index || ($c.index > $code->length() - 1), | $c, |
+           let endColumn = if($code->indexOf('\n', $c.index) < 0, | $code->length(), | $code->indexOf('\n', $c.index));
+           let line = $code->substring(max($c.index - 1, 0), $endColumn->toOne())->replace('\n', '');
+           ^SplitCodeResult(codeLines=$c.codeLines->add($line), index=$endColumn->toOne() + 1););
+    }, ^SplitCodeResult(codeLines=[], index=0));
+
+    $result.codeLines;
+}
+
 function <<access.private>> meta::protocols::pure::v1_20_0::transformation::fromPureGraph::getSourceTextForElement(sourceInformation: meta::pure::functions::meta::SourceInformation[1]): String[1]
 {
    let content = $sourceInformation.source->readFile()->toOne();
-   let lines = $content->split('\n');
+   let lines = $content->splitCodeIntoLines();
    let count = 0;
    let sections = $lines->size()->range()->zip($lines)->fold({pair, _sections |
      if ($pair.second->trim()->startsWith('###'),
@@ -50,7 +67,7 @@ function <<access.private>> meta::protocols::pure::v1_20_0::transformation::from
    let section = $sections->filter(section|$section.startLine <= max($sourceInformation.startLine - 1, 0))->last();
    let startLine = $lines->at(max($sourceInformation.startLine - 1, 0));
    let endLine = $lines->at(max($sourceInformation.endLine - 1, 0));
-   let sourceLines = if(max($sourceInformation.endLine - 1, 0) > $sourceInformation.startLine, |
+   let sourceLines = if(max($sourceInformation.endLine, 0) > $sourceInformation.startLine, |
                               $startLine->substring(max($sourceInformation.startColumn -1, 0), $startLine->length())
                                  ->concatenate($lines->slice($sourceInformation.startLine, max($sourceInformation.endLine - 1, 0)))
                                  ->concatenate($endLine->substring(0, $sourceInformation.endColumn)),
@@ -134,4 +151,10 @@ function <<test.Test>> meta::protocols::pure::v1_20_0::transformation::fromPureG
 {
   let result = ^Mapping(name = '')->meta::protocols::pure::v1_20_0::transformation::fromPureGraph::buildPureModelContextTextFromMapping(meta::pure::router::extension::defaultExtensions());
   assertEquals(1, $result.code->size());
+}
+
+function <<test.Test>> meta::protocols::pure::v1_20_0::transformation::fromPureGraph::tests::testSplitCodeIntoLines():Boolean[1]
+{
+  let result = splitCodeIntoLines('Mapping meta::pure::mapping::modelToModel::test::filter::filterMapping\n(\nPerson : Pure\n{\n~src _Person\n\nlastName : $src.fullName\n}\n\nFirm : Puren\n{\n~src _Firm\nlegalName : $src.name,\nemployees : $src.employees\n}\n)');
+  assertEquals(16, $result->size());
 }
