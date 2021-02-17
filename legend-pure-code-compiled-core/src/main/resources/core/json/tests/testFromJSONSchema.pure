@@ -364,11 +364,12 @@ function <<access.private>> meta::json::schema::fromSchema::tests::enum():String
 {
    
    '{\n' +
-            '  "description": "Override the clearing destination/symbol",\n' +
-             '  "title": "ProductCode",\n' +
+            '  "description": "Example Enum Doc",\n' +
             '  "type": "string",\n' +
             '  "readOnly": true,\n' +
-
+               '  "javaType": \n' +
+            '    "org.example.ExampleEnum"\n' +
+            '  ,\n' +
             '  "enum": [\n' +
                '    "",\n' +
             '    "simpleEnum",\n' +
@@ -729,7 +730,7 @@ function <<test.Test>>  meta::json::schema::fromSchema::tests::discriminatorTest
                ]; 
 
    let generated =  $fileMap->JSONSchemaToPure();
-
+   assertSize($generated,7);
    let generatedPet =  $generated->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::shared::Pet')->toSerializer()->parseJSON();
    let expectedPet = meta::json::schema::fromSchema::tests::shared::Pet->toSerializer()->parseJSON();
       assert(jsonEquivalent($generatedPet,$expectedPet));
@@ -753,6 +754,7 @@ function <<test.Test>>  meta::json::schema::fromSchema::tests::discriminatorTest
    
    let generatedAnyAnimal =  $generated->filter(g|$g->elementToPath()== 'meta::json::schema::fromSchema::tests::anyAnimal_Any_$0_1$__Boolean_1_')->toSerializer()->parseJSON();
    let expectedAnyAnimal = meta::json::schema::fromSchema::tests::anyAnimal_Any_$0_1$__Boolean_1_->toSerializer()->parseJSON();
+   
    assert(jsonEquivalent($generatedAnyAnimal,$expectedAnyAnimal));
 
   
@@ -879,7 +881,7 @@ Class {meta::pure::profiles::doc.doc='A simple description'} meta::json::schema:
   <<meta::json::schema::JSONSchemaTypeExtension.null>> arrayMaxItemOne : String[0..10];
 }
             
-Enum <<meta::json::schema::JSONSchemaGeneration.readOnly>> {meta::pure::profiles::doc.doc='Override the clearing destination/symbol'} meta::json::schema::fromSchema::tests::ExampleEnum
+Enum <<meta::json::schema::JSONSchemaGeneration.readOnly>> {JSONSchemaJavaExtension.javaType='org.example.ExampleEnum', meta::pure::profiles::doc.doc='Example Enum Doc'} meta::json::schema::fromSchema::tests::ExampleEnum
 {
   simpleEnum,
 {JSONSchemaGeneration.name='enum::withcolon'}  enum__withcolon,

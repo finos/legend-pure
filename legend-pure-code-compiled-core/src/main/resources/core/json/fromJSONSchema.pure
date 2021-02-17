@@ -164,7 +164,7 @@ function <<access.private>> meta::json::schema::fromSchema::processSchema(schema
 function <<access.private>> meta::json::schema::fromSchema::getExtendedTags(object:JSONObject[1],rootKey:String[1]):JSONKeyValue[*]
 {
     $object.keyValuePairs->map(k |$k.value->match([o:JSONObject[1] | $o->getExtendedTags($k.key.value),
-                                                  e:JSONElement[1]|if(!$k.key.value->isJSONSchemaKey() && $rootKey!='properties'     ,|$k,|[])
+                                                  e:JSONElement[1]|if(!$k.key.value->isJSONSchemaKey() && !$rootKey->in(['properties','discriminator','mapping'])  ,|$k,|[])
                                                      ]));
 
 }
@@ -271,7 +271,7 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToEnum(pat
    
   
    let result = ^$enum(values=$enumValues)->cast(@ElementWithTaggedValues)
-         ->addTag(JSONSchemaGeneration,'javaType',$javaType)->addSchemaTagsToPure($schema,$extendedProfile)
+         ->addTag(JSONSchemaJavaExtension,'javaType',$javaType)->addSchemaTagsToPure($schema,$extendedProfile)
          ->cast(@Enumeration<Any>);
 }
 
