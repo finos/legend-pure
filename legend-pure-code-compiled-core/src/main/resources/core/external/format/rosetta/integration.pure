@@ -24,7 +24,7 @@ Class meta::external::format::rosetta::generation::RosettaConfig extends Generat
 
 function <<access.private, Generation.Configuration>>  meta::external::format::rosetta::generation::describeConfiguration():GenerationParameter[*]
 {
-  meta::pure::generation::describeConfiguration(RosettaConfig,meta::external::format::rosetta::generation::defaultConfig__RosettaConfig_1_,[]);
+  meta::pure::generation::describeConfiguration(RosettaConfig,meta::external::format::rosetta::generation::defaultConfig__RosettaConfig_1_, ['classes', 'enums']);
 }
 
 function  meta::external::format::rosetta::generation::defaultConfig():RosettaConfig[1]
