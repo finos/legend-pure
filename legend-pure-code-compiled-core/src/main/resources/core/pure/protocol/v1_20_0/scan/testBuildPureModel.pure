@@ -1,0 +1,48 @@
+import meta::pure::mapping::*;
+import meta::protocols::pure::v1_20_0::transformation::fromPureGraph::*;
+
+function <<test.Test>> meta::protocols::pure::v1_20_0::transformation::fromPureGraph::tests::testGetAllElementsFromMapping():Boolean[1]
+{
+  let result = meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::dataToBookWithFunction->meta::protocols::pure::v1_20_0::transformation::fromPureGraph::getAllElementsFromMapping(meta::pure::router::extension::defaultExtensions());
+   
+  let expected = ['meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::dataToBookWithFunction', 
+                  'meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::printBook__String_1_', 
+                  'meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::BookWithFunction', 
+                  'meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::BookData', 
+                  'meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::BookDataIdentifier', 
+                  'meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::BookIdentifier', 
+                  'meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::Book', 
+                  'meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::BookIdentifierType', 
+                  'meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::BookData_BookDataIdentifier', 
+                  'meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::Book_BookIdentifier'];
+
+  let actual = $result->map(x | $x->toRepresentation());
+  
+  //check if result contains all expeted elements
+  assertEquals($expected, $actual);
+}
+
+function <<test.Test>> meta::protocols::pure::v1_20_0::transformation::fromPureGraph::tests::testParsingOneLinerMapping():Boolean[1]
+{
+  let result = meta::protocols::pure::v1_20_0::transformation::fromPureGraph::tests::dummyMapping->meta::protocols::pure::v1_20_0::transformation::fromPureGraph::buildPureModelContextTextFromMapping(meta::pure::router::extension::defaultExtensions());
+
+  let actual = $result.code->replace('\r\n', '\n')->split('\n');
+  let expected = ['###Mapping', 'Mapping meta::protocols::pure::v1_20_0::transformation::fromPureGraph::tests::dummyMapping ()'];
+
+  //check if resulted string contains all expected lines of pure code
+  assertSameElements($expected, $actual);
+}
+
+function <<test.Test>> meta::protocols::pure::v1_20_0::transformation::fromPureGraph::tests::testSplitCodeIntoLines():Boolean[1]
+{
+  let actual = splitCodeIntoLines('Mapping meta::pure::mapping::modelToModel::test::filter::filterMapping\n(\nPerson : Pure\n{\n~src _Person\n\nlastName : $src.fullName\n}\n\nFirm : Puren\n{\n~src _Firm\nlegalName : $src.name,\nemployees : $src.employees\n}\n)');
+
+  let expected = ['Mapping meta::pure::mapping::modelToModel::test::filter::filterMapping', '(', 'Person : Pure', '{', '~src _Person', '', 'lastName : $src.fullName',
+                  '}', '', 'Firm : Puren', '{', '~src _Firm', 'legalName : $src.name,', 'employees : $src.employees', '}', ')'];
+
+  //check if result contains all expected lines of pure code (empty lines included!)
+  assertSameElements($expected, $actual);
+}
+
+###Mapping
+Mapping meta::protocols::pure::v1_20_0::transformation::fromPureGraph::tests::dummyMapping ()
