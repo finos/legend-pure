@@ -23,3 +23,9 @@ function meta::alloy::isMetaAlloyTestDependency(pe:PackageableElement[1]):Boolea
    //TOFIX: use packages instead of STRINGS
    $path->startsWith('meta::relational::tests') ||  $path->startsWith('meta::pure::mapping::modelToModel::test::alloy'); //isWithinPackage(meta::relational::tests) || $pe->isWithinPackage(meta::pure::mapping::modelToModel::test::alloy);
 }
+
+function meta::alloy::isMetaAlloyTestDependencyForGeneration(pe:PackageableElement[1]):Boolean[1]
+{
+   let path = $pe->elementToPath();
+   $path->startsWith('meta::json::schema::fromSchema::tests') ||  $path->startsWith('meta::json::schema::tests');
+}

@@ -57,14 +57,19 @@ function <<test.Test>> meta::json::schema::fromSchema::tests::testFromJSONSchema
    
     let simpleReference = $generated->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::simpleReference_String_$0_1$__Boolean_1_')->toSerializer()->parseJSON();
     let expectedsimpleReference = meta::json::schema::fromSchema::tests::simpleReference_String_$0_1$__Boolean_1_->toSerializer()->parseJSON();
+   
+    let simpleObject = $generated->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::SimpleObject')->toSerializer()->parseJSON();
+    let expectedObject  = meta::json::schema::fromSchema::tests::SimpleObject->toSerializer()->parseJSON();
+
 
    assert(jsonEquivalent($expectedFragment,$actualFragment));
    assert(jsonEquivalent($expectedEnum,$actualEnum));
    assert(jsonEquivalent($expectedSuperType,$actualSuperType));
    assert(jsonEquivalent($expectedsimpleReference,$simpleReference));
 
-  assert(jsonEquivalent($expectedPropertyObject,$actualPropertyObject));
-   
+   assert(jsonEquivalent($expectedPropertyObject,$actualPropertyObject));
+   assert(jsonEquivalent($expectedFragment,$actualFragment));
+
 }
 
 function    meta::json::schema::fromSchema::tests::printTransformToString(packs:PackageableElement[*]):String[1]
@@ -529,7 +534,6 @@ let cat=    '{\n' +
                ]; 
 
    let generated =  $fileMap->JSONSchemaToPure()->filter(g|$g->elementToPath()=='example::Cat')->toSerializer();
-   $generated->println();
 
 true;
 
@@ -730,6 +734,8 @@ function <<test.Test>>  meta::json::schema::fromSchema::tests::discriminatorTest
                ]; 
 
    let generated =  $fileMap->JSONSchemaToPure();
+   
+
    assertSize($generated,7);
    let generatedPet =  $generated->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::shared::Pet')->toSerializer()->parseJSON();
    let expectedPet = meta::json::schema::fromSchema::tests::shared::Pet->toSerializer()->parseJSON();
