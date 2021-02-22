@@ -309,8 +309,8 @@ function meta::pure::router::clustering::cluster(v:ValueSpecification[1], mappin
 
                r:ExtendedRoutedValueSpecification[1]|
                                               print(if($debug.debug,|$r->evaluateAndDeactivate()->asString()->debug($debug.space+'Routed: '),|''));
-                                              let crossPropertyAccesses = $analyticsDecision->isEmpty()->if(|[], |meta::pure::router::analytics::getAllCrossPropertyAccesses($r, $mapping, $extensions));
-                                              let clusterResponse = $r.value->cluster($mapping, $openVariables, $exeCtx,$depth+1, ^$debug(space = $debug.space+'   '), $analyticsDecision, $extensions);
+                                              let crossPropertyAccesses = $analyticsDecision->isEmpty()->if(|[], |meta::pure::router::analytics::getAllCrossPropertyAccesses($r, $r.mapping, $extensions));
+                                              let clusterResponse = $r.value->cluster($r.mapping, $openVariables, $r.executionContext,$depth+1, ^$debug(space = $debug.space+'   '), $analyticsDecision, $extensions);
                                               let result = $clusterResponse.cluster->evaluateAndDeactivate();
                                               let pre_y = $result->match(
                                                     [

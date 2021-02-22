@@ -179,7 +179,15 @@ function <<access.public>> meta::protocols::pure::v1_19_0::transformation::fromP
                                                source = $p.sourceSetImplementationId,
                                                target = $p.targetSetImplementationId,
                                                enumMappingId = $p.transformer->cast(@EnumerationMapping<Any>).name,
-                                               transform = meta::protocols::pure::v1_19_0::transformation::fromPureGraph::transformLambda($p.transform, $extensions)
+                                               transform = meta::protocols::pure::v1_19_0::transformation::fromPureGraph::transformLambda($p.transform, $extensions),
+                                               localMappingProperty = if ($p.localMappingProperty->isNotEmpty() && $p.localMappingProperty->toOne(),
+                                                                          | ^meta::protocols::pure::v1_19_0::metamodel::mapping::LocalMappingPropertyInfo
+                                                                            (
+                                                                               type = $p.localMappingPropertyType->toOne()->elementToPath(),
+                                                                               multiplicity = $p.localMappingPropertyMultiplicity->toOne()->meta::protocols::pure::v1_19_0::transformation::fromPureGraph::domain::transformMultiplicity()
+                                                                            ),
+                                                                          | []
+                                                                      )
                                              ),
                a:meta::pure::mapping::aggregationAware::AggregationAwarePropertyMapping[1]| ^meta::protocols::pure::v1_19_0::metamodel::mapping::modelToModel::AggregationAwarePropertyMapping
                                                       (
