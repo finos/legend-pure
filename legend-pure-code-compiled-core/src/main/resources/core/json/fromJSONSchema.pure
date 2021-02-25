@@ -300,7 +300,7 @@ function  <<access.private>> meta::json::schema::fromSchema::createConstraintFun
    let name= $functionName+'_'+ $valueType->toString()+'_$0_1$__Boolean_1_';
    let updatedPropertyParam = ^$propertyParam(multiplicity=ZeroOne);
    let constraintVS = fragmentToValueSpecifcation($JSONFragment,[],$fileName,$pathPrefix,$updatedPropertyParam,[],[],$updatedPropertyParam,$pathSchemas)->cast(@SimpleFunctionExpression)->toOne();
-  ^$constraintVS(functionName = $name)      ;
+  ^$constraintVS(functionName = $functionName)      ;
  }
 
 function <<access.private>> meta::json::schema::fromSchema::propertyParameter(property:Property<Nil, Any|*>[1],varExpressionName:String[1]):SimpleFunctionExpression[1]
@@ -321,6 +321,7 @@ function  <<access.private>> meta::json::schema::fromSchema::createConstraintFun
      let ft =$functionDef->functionType();
      let ftparam =$ft.parameters->at(0);
      let name= $functionName+'_'+ $valueType->toString()+'_$0_1$__Boolean_1_';
+     
      let updatedFT = ^$ft(parameters=^$ftparam(genericType=^GenericType(rawType=$valueType)));
      ^$functionDef(stereotypes=[],functionName=$functionName,name=$name,classifierGenericType=^GenericType(typeArguments=^GenericType(rawType=$updatedFT),rawType=ConcreteFunctionDefinition))-> updatePackagableElementWithPackage($fileName->packageFromPath($pathPrefix)+$name)->cast(@ConcreteFunctionDefinition<Any>);
 }
@@ -378,7 +379,6 @@ function  <<access.private>> meta::json::schema::fromSchema::fragmentToFunction(
    let updatedFT = ^$ft(parameters=^$ftparam(multiplicity=$multiplicity,genericType=$type));
   let expressionSequence = $functionSchema->fragmentToValueSpecifcation([],$fileName,$pathPrefix,$property,[],[],$property,$pathSchemas)->toOneMany()->cast(@SimpleFunctionExpression)->wrapWithIF($ftparam,false)->evaluateAndDeactivate();
   if($expressionSequence->isEmpty(),|fail('Unable to import schema, please check that it is correctly specified:\n'+ $fileName +'\n'+ $functionSchema->toOne()->toPrettyJSONString() ),|[]);
-
 
   let def =^$functionDef(stereotypes=[],expressionSequence=$expressionSequence,functionName=$functionName,name=$name,classifierGenericType=^GenericType(typeArguments=^GenericType(rawType=$updatedFT),rawType=ConcreteFunctionDefinition))-> updatePackagableElementWithPackage($fileName->packageFromPath($pathPrefix)+$name);
   $def->addSchemaTagsToPure($functionSchema,$extendedProfile)->cast(@ElementWithStereotypes)->addStereoType($objectST)->cast(@PackageableElement);
@@ -611,13 +611,14 @@ function  <<access.private>> meta::json::schema::fromSchema::fragmentToValueSpec
                                                                            if($refType==SchemaType.fragment,
                                                                                    | 
                                                                                      let lambda =$FunctionConstraintMap->get('$ref')->evaluateAndDeactivate();
-                                                                                     let name = $s.value->toOne()->refToFileName();
+                                                                                     let name = $s.value->toOne()->refToFileName();   
                                                                                      let func = createConstraintFunctionDefinition($refFullPath,$name,Any,$pathPrefix,$property->evaluateAndDeactivate().multiplicity)->evaluateAndDeactivate();
                                                                                      let result = ^SimpleFunctionExpression(func = $func, 
                                                                                                                              importGroup = system::imports::coreImport,
                                                                                                                              genericType = $func->toOne()->functionReturnType(),
                                                                                                                              multiplicity = $func->toOne()->functionReturnMultiplicity(),
-                                                                                                                             functionName = $func.functionName,
+                                                                                                                             
+                                                                                                                             functionName = $refFullPath->typeFullPath($pathPrefix),
                                                                                                                              parametersValues = replaceFirstParameter($lambda.expressionSequence->at(0),$property)   );,
                                                                                    |
                                                                                       let lambda =$FunctionConstraintMap->get('type')->evaluateAndDeactivate();
@@ -749,7 +750,7 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToClass(fi
                                                                                                  returnType = ^GenericType(rawType = Boolean),
                                                                                                  parameters= ^VariableExpression(name='this',multiplicity=PureOne,genericType=^GenericType(rawType=Any))
        ));                                                                                               
-                                                                  let lambdaWithDef= ^$lambda(expressionSequence=createConstraintFunctionExpression($fileName,$refSchema.fileName->toOne()->refToFileName()  ,Any,$pathPrefix,$zipped.second,$p.value->cast(@JSONObject),$pathSchemas));
+                                                                  let lambdaWithDef= ^$lambda(expressionSequence=createConstraintFunctionExpression($fileName,$refSchema.fileName->toOne()->typeFullPath($pathPrefix)  ,Any,$pathPrefix,$zipped.second,$p.value->cast(@JSONObject),$pathSchemas));
                                                    ^meta::pure::metamodel::constraint::Constraint(functionDefinition=$lambdaWithDef,
                                                                                                   name =$p.key.value);,
                                                  |[]                   
