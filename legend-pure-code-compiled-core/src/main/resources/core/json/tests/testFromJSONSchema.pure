@@ -615,6 +615,19 @@ function <<test.Test>>  meta::json::schema::fromSchema::tests::discriminatorTest
                         '      "$ref": "friendsNoMap.json"\n' +
                 '          }\n' +
                 '        },\n' +
+   
+          '"friendsMaxThree": {\n' +
+                '          "type": "array",\n' +
+               '"maxItems":3,"minItems":1,'+
+   '          "items": {\n' +
+                        '      "$ref": "friendsNoMap.json"\n' +
+                '          }\n' +
+                '        },\n'  +
+   
+  
+         '        "bestFriend": {\n' +
+                        '      "$ref": "friendsNoMap.json"\n' +
+                '        },\n' +
         '        "siblings": {\n' +
                 '          "type": "array",\n' +
                       '          "uniqueItems": true,\n' +
@@ -635,6 +648,7 @@ function <<test.Test>>  meta::json::schema::fromSchema::tests::discriminatorTest
         '            "type": "string",\n' +
         '            "enum": [\n' +
         '                "Feline",\n' +
+   
         '                "Canine,"\n' +
         '                "woof"\n' +
 
@@ -695,13 +709,6 @@ function <<test.Test>>  meta::json::schema::fromSchema::tests::discriminatorTest
         '}';
 
    
-   let friends =     '{\n' +
-                '          "type": "array",\n' +
-                '          "items": {\n' +
-                        '      "$ref": "/shared/Pet.json"\n' +
-                '          }\n' +
-                '        }\n';
-
    
    let anyAnimal =' {\n' +
         '  "$schema": "http:\\/\\/json-schema.org\\/draft-07\\/schema#",\n' +
@@ -744,12 +751,14 @@ function <<test.Test>>  meta::json::schema::fromSchema::tests::discriminatorTest
    //use grammar assertion  since  simple function references  don't serialize the same in memory and compiled 
    let generatedCat =  $generated->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::Cat')->printTransformToString();
    let expectedCat = meta::json::schema::fromSchema::tests::Cat->printTransformToString();
-   assertEquals($generatedCat,$expectedCat);
+   assertEquals($expectedCat,$generatedCat);
 
 
    let generatedDog =  $generated->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::Dog')->printTransformToString();
    let expectedDog = meta::json::schema::fromSchema::tests::Dog->printTransformToString();
-   assertEquals($generatedDog,$expectedDog);
+   
+   
+    assertEquals($expectedDog,$generatedDog);
    let friendsWithMap =  $generated->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::friends_Pet_1__Boolean_1_')->toSerializer()->parseJSON();
    let expectedfriendsWithMap = meta::json::schema::fromSchema::tests::friends_Pet_1__Boolean_1_->toSerializer()->parseJSON();
     assert(jsonEquivalent($friendsWithMap,$expectedfriendsWithMap));
@@ -763,9 +772,6 @@ function <<test.Test>>  meta::json::schema::fromSchema::tests::discriminatorTest
    
    assert(jsonEquivalent($generatedAnyAnimal,$expectedAnyAnimal));
 
-  
-   
-true;
 }
 
 function  meta::json::schema::fromSchema::tests::printschemas(expected:JSONElement[1],actual:JSONElement[1]):String[1]
@@ -781,18 +787,26 @@ Class {meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='bigCat'
   harRoar : Boolean[0..1];
 }
 Class {meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='Feline'} meta::json::schema::fromSchema::tests::Cat extends meta::json::schema::fromSchema::tests::shared::Pet
+[
+  friend_inLine : $this.friend->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if({|$this.friend->meta::pure::functions::multiplicity::toOne()->meta::json::schema::fromSchema::tests::friends()}, {|true})
+]
 {
   friend : meta::json::schema::fromSchema::tests::shared::Pet[0..1];
   hasMeow : Boolean[0..1];
 }
+
 Class {meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='woof',meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='Canine'} meta::json::schema::fromSchema::tests::Dog extends meta::json::schema::fromSchema::tests::shared::Pet
 [
+  bestFriend_inLine : $this.bestFriend->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if({|$this.bestFriend->toOne()->meta::json::schema::fromSchema::tests::friendsNoMap()}, {|true}),
   siblings_inLine : $this.siblings->meta::pure::functions::collection::isDistinct(),
+  friendsMaxThree_inLine : $this.friendsMaxThree->meta::pure::functions::collection::forAll({value|$value->meta::json::schema::fromSchema::tests::friendsNoMap()}),
   friends_inLine : $this.friends->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if({|$this.friends->meta::pure::functions::collection::isDistinct()->meta::pure::functions::boolean::and($this.friends->meta::pure::functions::collection::forAll({value|$value->meta::json::schema::fromSchema::tests::friendsNoMap()}))}, {|true})
 ]
 {
   hasBark : Boolean[0..1];
+  bestFriend : meta::json::schema::fromSchema::tests::shared::Pet[0..1];
   siblings : meta::json::schema::fromSchema::tests::Dog[*];
+  friendsMaxThree : meta::json::schema::fromSchema::tests::shared::Pet[1..3];
   friends : meta::json::schema::fromSchema::tests::shared::Pet[*];
 }
 

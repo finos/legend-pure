@@ -286,7 +286,7 @@ function <<access.protected>> meta::json::schema::toJSONSchema( type:Type[1], ro
                                let constraints = if($config.useConstraints ,| $class.constraints->map(c|$c->meta::json::schema::constraint::toJSONSchemaFromConstraint(^$config(rootElement=$class))),|[]);
 
                                let constraintsNoRef = if($config.useConstraints && $config.generateConstraintFunctionSchemas,| $class.constraints->map(c|$c->meta::json::schema::constraint::jsonSchemaConstraintsWithoutRef($config)),|$constraints);
-
+                              
                                let rootClass = $root->cast(@Class<Any>);
                                let required = $class->required();
                                let properties = properties( $class,$rootClass,$constraints,$constraintsNoRef,$config);
@@ -678,12 +678,12 @@ function <<access.private>> meta::json::schema::shouldCreateArrayProperty( prope
    && !$property.multiplicity->meta::pure::functions::multiplicity::isToOne()  || $property->hasStereotype('array',JSONSchemaTypeExtension) );
 }
 
-function <<access.private>> meta::json::schema::createProperty( property : Property<Nil,Any|*>[1], root:Class<Any>[0..1],constraintHasType:Boolean[1] ,constraint:JSONObject[*] ,config:JSONSchemaConfigInternal[1]) : JSONKeyValue[1]
+function <<access.private>> meta::json::schema::createProperty( property : Property<Nil,Any|*>[1], root:Class<Any>[0..1],constraintHasType:Boolean[1] ,constraint:JSONObject[*], constraintHasRef:Boolean[1], config:JSONSchemaConfigInternal[1]) : JSONKeyValue[1]
 {
    let format = $property->propertyFormatValue();
     assert($property.genericType.rawType!=Any || $constraintHasType ||  $property->hasStereotype('object',JSONSchemaTypeExtension) , 'Unable to generate schema for propery '+$property.name->toOne() + ' on class '+  $property.owner->elementToPath() +'. Found pure type Any: Change the data type or specify an instanceOf constraint. If using constraints, ensure useConstraints is enabled in the config' );
 
-   let type = $property->propertyType($root,$constraintHasType, $config);
+   let type =if($constraintHasRef,|[] ,|$property->propertyType($root,$constraintHasType, $config));
    let elementTags = $property->elementTags($config);
    let default = $property->value4Tag('defaultValue',JSONSchemaGeneration);
    let defaulttag =if($default->isNotEmpty(),
@@ -819,12 +819,13 @@ function <<access.private>> meta::json::schema::properties( class:Class<Any>[1],
     let properties = $class.properties;
     let values = $properties->map( p | let propertyConstraint = $constraint->filter(c| $c.property.name==$p.name).constraint;
                                        let propertyConstraintNoRef = $constraintNoRef->filter(c| $c.property.name==$p.name).constraint;
+                                       let constraintHasRef = if($propertyConstraint->isNotEmpty(),|  $propertyConstraint->map(c|$c->meta::json::schema::constraint::constraintHasRef())->toOneMany()->or() &&  $config.generateConstraintFunctionSchemas,|false);
                                        let constraintHasType =if($propertyConstraintNoRef->isNotEmpty(),
                                                                        |$propertyConstraintNoRef->map(c|$c->constraintHasType())->toOneMany()->or() ,
                                                                        | false);
                                         if($p->shouldCreateArrayProperty(),
-                                         | $p->createArrayProperty($root,$constraintHasType, $propertyConstraint,$config),
-                                         | $p->createProperty($root,$constraintHasType, $propertyConstraint,$config)
+                                         | $p->createArrayProperty($root,$constraintHasType, $propertyConstraint,$constraintHasRef,$config),
+                                         | $p->createProperty($root,$constraintHasType, $propertyConstraint,$constraintHasRef,$config)
                                       );
   );
  newJSONKeyValue( 'properties', newJSONObject( $values ) );
@@ -867,9 +868,9 @@ function  <<access.private>> meta::json::schema::definitions( class:Class<Any>[1
   );
 }
 
-function <<access.private>> meta::json::schema::createArrayProperty( property:Property<Nil,Any|*>[1],root:Class<Any>[0..1],constraintHasType:Boolean[1], constraint:JSONObject[*],config: JSONSchemaConfigInternal[1] ) : JSONKeyValue[1]
+function <<access.private>> meta::json::schema::createArrayProperty( property:Property<Nil,Any|*>[1],root:Class<Any>[0..1],constraintHasType:Boolean[1], constraint:JSONObject[*],constraintHasRef:Boolean[1],config: JSONSchemaConfigInternal[1] ) : JSONKeyValue[1]
 {
-   let propertyTypeValue = $property-> propertyType($root,$constraintHasType,$config);
+   let propertyTypeValue = if($constraintHasRef,|[],|$property-> propertyType($root,$constraintHasType,$config));
    let isUnqiue = $constraint.keyValuePairs->filter(c| $c.key.value=='uniqueItems');
 
    let elementTags = $property->elementTags($config);

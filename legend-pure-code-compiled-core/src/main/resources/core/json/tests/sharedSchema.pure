@@ -43,6 +43,74 @@ Class  meta::json::schema::tests::SimpleClass
 
 }
 
+function  meta::json::schema::tests::functionWithStringType(value: String[0..1]): Boolean[1]
+{
+  $value->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if(|$value->makeString()->matches('test') ,{|true});
+}
+
+Class meta::json::schema::tests::ClassWithFunctionReferences
+[
+  one : $this.one->meta::json::schema::tests::functionWithStringType(),
+  optional : $this.optional->meta::json::schema::tests::functionWithStringType(),
+  many : $this.many->meta::pure::functions::collection::forAll({value|$value->meta::json::schema::tests::functionWithStringType()})
+]
+
+{
+  one : String[1];
+  optional : String[0..1];
+  many : String[*];
+}
+
+
+
+function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::typeInclusionForConstraintFunctions():Boolean[1]
+{
+     let generatedJSON = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::ClassWithFunctionReferences,meta::json::schema::tests::functionWithStringType_String_$0_1$__Boolean_1_],
+                                                         useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true ));
+
+  let jsonschemaclass =       '{' +
+'  "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+'  "title": "meta::json::schema::tests::ClassWithFunctionReferences",' +
+'  "type": "object",' +
+'  "properties":   {' +
+'    "one":     {' +
+'      "$ref": "functionWithStringType.json"' +
+'    },' +
+'    "many":     {' +
+'      "type": "array",' +
+'      "items":       {' +
+'        "$ref": "functionWithStringType.json"' +
+'      }' +
+'    },' +
+'    "optional":     {' +
+'      "$ref": "functionWithStringType.json"' +
+'    }' +
+'  },' +
+'  "required": [' +
+'"one"' +
+'  ]' +
+'}'; 
+      
+     
+   let jsonschemafunc=   '{' +
+                     '  "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+                     '  "pattern": "test",' +
+                     '  "type": "string",' +
+                     '  "title": "meta::json::schema::tests::functionWithStringType"' +
+                     '}' ;
+
+  assert(jsonEquivalent($jsonschemaclass->parseJSON(),$generatedJSON->filter(c|$c.fileName == 'meta/json/schema/tests/ClassWithFunctionReferences.json').content->toOne()->parseJSON()));
+  
+  let prefix = 'meta::json::schema::tests';
+  let fileMap = [schemaInput('/ClassWithFunctionReferences.json', $jsonschemaclass,$prefix),
+                   schemaInput('/functionWithStringType.json', $jsonschemafunc,$prefix)]; 
+  let generatedClassFromJSON =  $fileMap->JSONSchemaToPure()->filter(p|$p.name=='ClassWithFunctionReferences')->toOne();
+
+  assert(jsonEquivalent(meta::json::schema::tests::ClassWithFunctionReferences->toSerializer()->parseJSON(),$generatedClassFromJSON->toOne()->toSerializer()->parseJSON()));
+
+}
+
+
 
 function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testCustomProfile():Boolean[1]
 {
@@ -160,5 +228,4 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
     let generatedElementFromJSON =  $fileMap->JSONSchemaToPure(); 
   assert(jsonEquivalent(meta::json::schema::tests::functionForcedToObject_Any_$0_1$__Boolean_1_->toSerializer()->parseJSON(),$generatedElementFromJSON->toOne()->toSerializer()->parseJSON()));
 }
-
 

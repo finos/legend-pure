@@ -147,7 +147,6 @@ function <<access.private>> meta::json::schema::fromSchema::processSchema(schema
 
    let extendedTags = $updatedSchema->getExtendedTags('')->distinct();
 
-
 ^ProcessedSchema(fileName=$schema.fileName,
                      schema=$schema.schema,
                      pathPrefix=$schema.pathPrefix,
@@ -377,7 +376,7 @@ function  <<access.private>> meta::json::schema::fromSchema::fragmentToFunction(
                   );
 
    let updatedFT = ^$ft(parameters=^$ftparam(multiplicity=$multiplicity,genericType=$type));
-  let expressionSequence = $functionSchema->fragmentToValueSpecifcation([],$fileName,$pathPrefix,$property,[],[],$property,$pathSchemas)->toOneMany()->cast(@SimpleFunctionExpression)->wrapWithIF($ftparam,false)->evaluateAndDeactivate();
+  let expressionSequence = $functionSchema->fragmentToValueSpecifcation([],$fileName,$pathPrefix,$property,[],[],$property,$pathSchemas)->toOneMany()->cast(@SimpleFunctionExpression)->wrapWithIF($ftparam,false,false)->evaluateAndDeactivate();
   if($expressionSequence->isEmpty(),|fail('Unable to import schema, please check that it is correctly specified:\n'+ $fileName +'\n'+ $functionSchema->toOne()->toPrettyJSONString() ),|[]);
 
   let def =^$functionDef(stereotypes=[],expressionSequence=$expressionSequence,functionName=$functionName,name=$name,classifierGenericType=^GenericType(typeArguments=^GenericType(rawType=$updatedFT),rawType=ConcreteFunctionDefinition))-> updatePackagableElementWithPackage($fileName->packageFromPath($pathPrefix)+$name);
@@ -461,11 +460,11 @@ function <<access.private>> meta::json::schema::fromSchema::functionConstraintMa
 
 
 
-function   meta::json::schema::fromSchema::wrapWithIF(vs:SimpleFunctionExpression[1..*],property:ValueSpecification[1],required:Boolean[1]):ValueSpecification[1..*]
+function   meta::json::schema::fromSchema::wrapWithIF(vs:SimpleFunctionExpression[1..*],property:ValueSpecification[1],required:Boolean[1],addToOne:Boolean[1]):ValueSpecification[1..*]
 {
   let lambdaMany =  {this :Any[*] |if($this ->isNotEmpty(),|$this,|true)};
   let lambdaOne =  {this :Any[0..1] |if($this ->isNotEmpty(),|$this,|true)};
-  let lambdsES = if( $property->evaluateAndDeactivate().multiplicity->hasToOneUpperBound(),
+  let lambdsES =    if( $property->evaluateAndDeactivate().multiplicity->hasToOneUpperBound(),
                        | $lambdaOne.expressionSequence->evaluateAndDeactivate()->cast(@SimpleFunctionExpression)->toOne();,
                        | $lambdaMany.expressionSequence->evaluateAndDeactivate()->cast(@SimpleFunctionExpression)->toOne();
                           );
@@ -475,10 +474,10 @@ function   meta::json::schema::fromSchema::wrapWithIF(vs:SimpleFunctionExpressio
       |  $vs;,   
       | let isNotEmpty =   $lambdsES.parametersValues->at(0)->cast(@SimpleFunctionExpression);
         let updatedNotEmpty= ^$isNotEmpty(parametersValues=$property)->toOne();
-        
+        let updatedVS = if($addToOne,|$vs->evaluateAndDeactivate()->toOne()->addToOne(),|$vs);
         let firsParam = $lambdsES.parametersValues->at(1)->cast(@InstanceValue);
         let firsParamValue = $firsParam.values->toOne()->cast(@LambdaFunction<Any>);
-        let updatedFirstParam= ^$firsParam(values=^$firsParamValue(expressionSequence=$vs));
+        let updatedFirstParam= ^$firsParam(values=^$firsParamValue(expressionSequence=$updatedVS));
      
         let result = ^$lambdsES(parametersValues=[$updatedNotEmpty,$updatedFirstParam,$lambdsES.parametersValues->at(2)]);
         $result;
@@ -487,6 +486,15 @@ function   meta::json::schema::fromSchema::wrapWithIF(vs:SimpleFunctionExpressio
    
 
 }
+
+function  <<access.private>> meta::json::schema::fromSchema::addToOne(func:SimpleFunctionExpression[1]):SimpleFunctionExpression[1]
+  {
+  let lambdaToOne =  {this :Any[0..1] |$this->toOne()};
+  let lambdaES = $lambdaToOne.expressionSequence->evaluateAndDeactivate()->cast(@SimpleFunctionExpression)->toOne();
+  let updatedEs = ^$lambdaES(parametersValues=$func.parametersValues->at(0)->evaluateAndDeactivate());
+  ^$func(parametersValues  =$updatedEs );
+     
+  }
 
 function  <<access.private>> meta::json::schema::fromSchema::multiplicityFromCollection(collection:Any[*]):Multiplicity[1]
   {
@@ -737,7 +745,6 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToClass(fi
     let zippedPropertes = $properties->zip($classProperties);
    
     let keysForInLine = functionConstraintMap(true)->keys()->filter(f|!$f->in(['$ref','type','items']));
-
     let constraints =$zippedPropertes->map( zipped| let p = $zipped.first;
                                                     let propertyObject = $p->propertyObject($class);
                                            if( $p.value->instanceOf(JSONObject) && $propertyObject.keyValuePairs->getValueForKey('$ref')->isNotEmpty() && ( $zipped.second.genericType.rawType->toOne() ->instanceOf(PrimitiveType)  || $zipped.second.genericType.rawType->toOne()==Any)  
@@ -760,21 +767,27 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToClass(fi
                                        );
      let constraintFormats = 'uuid';
 
-     let inLineConstraints = $zippedPropertes->filter(f|  
+     let inLineConstraints = $zippedPropertes->filter(f| 
+                                                               
                                                           $f.first.value->cast(@JSONObject).keyValuePairs.key.value->containsAny($keysForInLine) 
                                                                      ||  $f.first.value->cast(@JSONObject).keyValuePairs->getValueForKey('format')->cast(@JSONString).value->first()->in($constraintFormats)  
                                                                      ||   ($f.first.value->cast(@JSONObject).keyValuePairs->getValueForKey('items')->isNotEmpty() &&  $f.first.value->cast(@JSONObject).keyValuePairs->getValueForKey('items')->toOne()->instanceOf(JSONObject) &&
                                                                            (
                                                                               $f.first.value->cast(@JSONObject).keyValuePairs->getValueForKey('items')->cast(@JSONObject)->toOne().keyValuePairs.key.value->containsAny($keysForInLine) 
                                                                              ||   $f.first.value->cast(@JSONObject).keyValuePairs->getValueForKey('items')->cast(@JSONObject)->toOne().keyValuePairs->getValueForKey('format')->cast(@JSONString).value->first()->in($constraintFormats))
-                                                                            );
+                                                                            )
+                                                                     || (
+                                                                         $f.first->propertyObject($class)->meta::json::schema::fromSchema::propertyHasDiscriminatorRef($fileName,$pathSchemas)
+                                                                        ) 
                                                    )
-                                                ->map(p| let lambda = newLambdaFunction( ^FunctionType(returnMultiplicity = PureOne, 
+                                                ->map(p| 
+                                                         let lambda = newLambdaFunction( ^FunctionType(returnMultiplicity = PureOne, 
                                                                                                       returnType = ^GenericType(rawType = Boolean),
                                                                                                       parameters= ^VariableExpression(name='this',multiplicity=PureOne,genericType=^GenericType(rawType=Any))
-                                                                                                      ));  
+                                                                                                      )); 
                                                          let property = $p.second->propertyParameter('this');
-                                                           let lambdaWithDef= ^$lambda(expressionSequence=$p.first.value-> fragmentToValueSpecifcation([],$fileName,$pathPrefix,$property,[],[],$property,$pathSchemas)->toOneMany()->cast(@SimpleFunctionExpression)->wrapWithIF($p.second->propertyParameter('this'),$p.first.key.value->in($required))->evaluateAndDeactivate()->toOneMany());
+                                                         let isDiscriminatorRef =   $p.first.value->cast(@JSONObject)->meta::json::schema::fromSchema::propertyHasDiscriminatorRef($fileName,$pathSchemas);//->propertyObject($class)
+                                                           let lambdaWithDef= ^$lambda(expressionSequence=$p.first.value-> fragmentToValueSpecifcation([],$fileName,$pathPrefix,$property,[],[],$property,$pathSchemas)->toOneMany()->cast(@SimpleFunctionExpression)->wrapWithIF($p.second->propertyParameter('this'),$p.first.key.value->in($required),$isDiscriminatorRef)->evaluateAndDeactivate()->toOneMany());
                                                          ^meta::pure::metamodel::constraint::Constraint(functionDefinition=$lambdaWithDef,
                                                                                                         name=$p.first.key.value+'_inLine' ););
 
@@ -787,6 +800,13 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToClass(fi
         |$classWithTags
        )->cast(@Class<Any>);
       $result;
+}
+
+function <<access.private>> meta::json::schema::fromSchema::propertyHasDiscriminatorRef(property:JSONObject[1],fileName:String[1],pathSchemas:Map<String,ProcessedSchema>[1]):Boolean[1]
+{
+     
+   $property.keyValuePairs->getValueForKey('$ref')->isNotEmpty() &&    $pathSchemas->get($property.keyValuePairs->getValueForKey('$ref')->cast(@JSONString).value->toOne()->refToFullPath($fileName)).parsedSchema->isDiscriminator();
+   
 }
 
 function <<access.private>> meta::json::schema::fromSchema::propertyObject(property:JSONKeyValue[1],ownerClass:Class<Any>[1]):JSONObject[1]

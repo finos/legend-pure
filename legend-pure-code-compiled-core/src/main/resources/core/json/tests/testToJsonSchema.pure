@@ -1369,7 +1369,6 @@ function <<test.Test>>  meta::json::schema::generation::tests::toJSONSchemaWithC
         '      "type": "array",\n' +
         '      "items":       {\n' +
         '        "minLength": 4,\n' +
-        '        "type": "string",\n' +
         '        "$ref": "constraintRegEXFn.json",\n' +
         '        "maxLength": 10\n' +
         '      }\n' +
