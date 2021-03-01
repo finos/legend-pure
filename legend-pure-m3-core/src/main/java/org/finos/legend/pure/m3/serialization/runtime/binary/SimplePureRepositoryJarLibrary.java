@@ -167,7 +167,7 @@ public class SimplePureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
         PureRepositoryJar jar = this.jarsByRepository.get(repositoryName);
         if (jar == null)
         {
-            throw new IllegalArgumentException("Unknown repository: " + repositoryName);
+            throw new IllegalArgumentException("The Jar for the repository: " + repositoryName + " can't be found!");
         }
         return jar.getMetadata().getExternalReferenceIndex().keysView();
     }

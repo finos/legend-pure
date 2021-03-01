@@ -1,0 +1,5 @@
+{
+    "name" : "core",
+    "pattern" : "(meta)(::.*)?",
+    "dependencies" : ["platform"]
+}

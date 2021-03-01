@@ -19,7 +19,6 @@ import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;
 
-import java.util.Iterator;
 import java.util.ServiceLoader;
 
 public class JavaModelFactoryRegistryLoader
@@ -32,12 +31,11 @@ public class JavaModelFactoryRegistryLoader
     public static CoreInstanceFactoryRegistry loader()
     {
         CoreInstanceFactoryRegistry result = new CoreInstanceFactoryRegistry(IntObjectMaps.immutable.<CoreInstanceFactory>empty(), Maps.immutable.<String, CoreInstanceFactory>empty(), Maps.immutable.<String, Class>empty());
-        Iterator<JavaModelFactoryRegistry> l = ServiceLoader.load(JavaModelFactoryRegistry.class).iterator();
-        while (l.hasNext())
+        for (JavaModelFactoryRegistry l : ServiceLoader.load(JavaModelFactoryRegistry.class))
         {
             try
             {
-                result = result.combine((CoreInstanceFactoryRegistry)l.next().getClass().getDeclaredField("REGISTRY").get(null));
+                result = result.combine((CoreInstanceFactoryRegistry)l.getClass().getDeclaredField("REGISTRY").get(null));
             }
             catch (Throwable e)
             {
@@ -46,25 +44,4 @@ public class JavaModelFactoryRegistryLoader
         }
         return result;
     }
-
-//    public static CoreInstanceFactoryRegistry loaderBasicImage()
-//    {
-//        try
-//        {
-//            CoreInstanceFactoryRegistry result = new CoreInstanceFactoryRegistry(IntObjectMaps.immutable.<CoreInstanceFactory>empty(), Maps.immutable.<String, CoreInstanceFactory>empty(), Maps.immutable.<String, Class>empty());
-//            MutableList<InlineDSL> lib = Lists.mutable.withAll(new ParserService().inlineDSLs());
-//            ListIterable<Parser> parsers = Lists.mutable.<Parser>with(new M3AntlrParser(new InlineDSLLibrary(lib))).withAll(new ParserService().parsers());
-//            RichIterable<CoreInstanceFactoryRegistry> all = Lists.mutable.withAll(parsers.flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry)).withAll(lib.flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry));
-//            for (CoreInstanceFactoryRegistry r : all)
-//            {
-//                result = result.combine(r);
-//            }
-//            return result;
-//        }
-//        catch (Exception e)
-//        {
-//            throw new RuntimeException(e);
-//        }
-//
-//    }
 }
