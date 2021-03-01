@@ -26,11 +26,11 @@ function <<test.Test>> meta::protocols::pure::vX_X_X::transformation::fromPureGr
 {
   let result = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::tests::dummyMapping->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildPureModelContextTextFromMapping(meta::pure::router::extension::defaultExtensions());
 
-  let actual = $result.code->replace('\r\n', '\n')->split('\n');
-  let expected = ['###Mapping', 'Mapping meta::protocols::pure::vX_X_X::transformation::fromPureGraph::tests::dummyMapping ()'];
+  let actual = $result.code->replace('\r\n', '\n');
+  let expected = '###Mapping\nMapping meta::protocols::pure::vX_X_X::transformation::fromPureGraph::tests::dummyMapping ()';
 
-  //check if resulted string contains all expected lines of pure code
-  assertSameElements($expected, $actual);
+  //check if prepared string contains all expected lines of pure code
+  assertEquals($expected, $actual);
 }
 
 function <<test.Test>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::tests::testSplitCodeIntoLines():Boolean[1]
