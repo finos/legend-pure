@@ -503,7 +503,6 @@ public class PureCodeStorage implements MutableCodeStorage
     public RichIterable<String> getUserFiles()
     {
         MutableList<String> userFiles = Lists.mutable.empty();
-        System.out.println(this.codeStorages.collect(e -> e.getRepositories().collect(d->d.getName())));
         for (RepositoryCodeStorage codeStorage : this.codeStorages)
         {
             userFiles.addAllIterable(codeStorage.getUserFiles());
@@ -1039,7 +1038,7 @@ public class PureCodeStorage implements MutableCodeStorage
 
 
 
-    public static RichIterable<CodeRepository> getVisibleRepositories(RichIterable<CodeRepository> codeRepositories,CodeRepository repository)
+    public static RichIterable<CodeRepository> getVisibleRepositories(RichIterable<CodeRepository> codeRepositories, CodeRepository repository)
     {
         return codeRepositories.select(repository::isVisible);
     }

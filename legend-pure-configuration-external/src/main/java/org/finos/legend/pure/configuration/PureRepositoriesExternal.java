@@ -15,10 +15,64 @@
 package org.finos.legend.pure.configuration;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.impl.list.mutable.FastList;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProvider;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+
+import java.util.ServiceLoader;
 
 public class PureRepositoriesExternal
 {
-    public static RichIterable<CodeRepository> repositories = Lists.mutable.with(CodeRepository.newPlatformCodeRepository(), CodeRepository.newCoreCodeRepository());
+    public static MutableMap<String, CodeRepository> repositoriesByName = Maps.mutable.empty();
+
+    static
+    {
+        MutableList<CodeRepository> repositories = FastList.newListWith(CodeRepository.newPlatformCodeRepository());
+        for (CodeRepositoryProvider codeRepositoryProvider : ServiceLoader.load(CodeRepositoryProvider.class))
+        {
+            repositories.add(codeRepositoryProvider.repository());
+        }
+        addRepositories(repositories);
+    }
+
+    public static RichIterable<CodeRepository> repositories()
+    {
+        return repositoriesByName.valuesView();
+    }
+
+    public static void addRepositories(RichIterable<CodeRepository> repositories)
+    {
+        repositories.forEach(repository -> {
+            if (repositoriesByName.put(repository.getName(), repository) != null)
+            {
+                throw new RuntimeException("The code repository " + repository.getName() + " already exists!");
+            }
+        });
+        repositories.select(r -> r instanceof GenericCodeRepository).forEach(r -> validate((GenericCodeRepository) r));
+    }
+
+    public static CodeRepository getRepository(String repo)
+    {
+        CodeRepository found = repositoriesByName.get(repo);
+        if (found == null)
+        {
+            throw new RuntimeException("The code repository '" + repo + "' can't be found!");
+        }
+        return found;
+    }
+
+    private static void validate(GenericCodeRepository codeRepo)
+    {
+        codeRepo.getDependencies().forEach(d -> {
+                    if (!repositoriesByName.containsKey(d))
+                    {
+                        throw new RuntimeException("The dependency '" + d + "' required by the Code Repository '" + codeRepo.getName() + "' can't be found!");
+                    }
+                }
+        );
+    }
 }

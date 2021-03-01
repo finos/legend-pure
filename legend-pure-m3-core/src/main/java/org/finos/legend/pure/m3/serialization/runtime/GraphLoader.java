@@ -52,12 +52,8 @@ import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
-import org.finos.legend.pure.m3.serialization.runtime.binary.BinaryModelSourceDeserializer;
-import org.finos.legend.pure.m3.serialization.runtime.binary.DeserializationNode;
+import org.finos.legend.pure.m3.serialization.runtime.binary.*;
 import org.finos.legend.pure.m3.serialization.runtime.binary.DeserializationNode.ReferenceResolutionResult;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarLibrary;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarTools;
-import org.finos.legend.pure.m3.serialization.runtime.binary.SourceDeserializationResult;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.CachedReferenceFactory;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializerLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.Reference;
@@ -70,6 +66,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 
+import java.net.URL;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 
@@ -137,7 +134,7 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage("Reading files ...");
+            message.setMessage("    Reading "+this.loadedFiles.size()+" files ...");
         }
         MapIterable<String, byte[]> fileBytes = this.loadedFiles.isEmpty() ? this.jarLibrary.readAllFiles() : this.jarLibrary.readFiles(this.jarLibrary.getAllFiles().reject(this.fileIsLoaded));
         loadFileBytes(fileBytes, message);
@@ -155,6 +152,7 @@ public class GraphLoader
 
     public void loadRepository(String repositoryName, Message message)
     {
+        message.setMessage("  Loading '"+repositoryName+"' from PAR with "+this.jarLibrary.getFileDependencies(this.jarLibrary.getRepositoryFiles(repositoryName)).size()+" dependencies");
         loadFiles_internal(this.jarLibrary.getFileDependencies(this.jarLibrary.getRepositoryFiles(repositoryName)), message);
     }
 
@@ -243,7 +241,7 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage("Reading files ...");
+            message.setMessage("    Reading "+files.size()+" files ...");
         }
         MapIterable<String, byte[]> fileBytes = this.jarLibrary.readFiles(LazyIterate.reject(files, this.fileIsLoaded));
         loadFileBytes(fileBytes, message);
@@ -264,7 +262,7 @@ public class GraphLoader
         int fileCount = fileBytes.size();
         if (message != null)
         {
-            message.setMessage(String.format("Deserializing %,d files ...", fileCount));
+            message.setMessage(String.format("    Deserializing %,d files ...", fileCount));
         }
         final ExternalReferenceSerializerLibrary serializerLibrary = ExternalReferenceSerializerLibrary.newLibrary(this.parserLibrary);
         final ReferenceFactory referenceFactory = CachedReferenceFactory.wrap(new SimpleReferenceFactory());
@@ -305,7 +303,7 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage(String.format("Initializing %,d nodes ...", nodes.size()));
+            message.setMessage(String.format("    Initializing %,d nodes ...", nodes.size()));
         }
         for (DeserializationNode node : nodes)
         {
@@ -341,7 +339,7 @@ public class GraphLoader
         {
             if (message != null)
             {
-                message.setMessage("Resolving references, pass " + passCount + " ...");
+                message.setMessage("    Resolving references, pass " + passCount + " ...");
             }
             int newlyResolvedCount;
             int unresolvedCount;
@@ -434,7 +432,7 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage("Populating reverse references ...");
+            message.setMessage("    Populating reverse references ("+instances.size()+" instances)...");
         }
 
         MapIterable<CoreInstance, RichIterable<Processor>> processorsByType = getProcessorsByType();
@@ -479,7 +477,7 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage("Updating context ...");
+            message.setMessage("    Updating context ...");
         }
         Procedure<CoreInstance> updateContextForInstance = new Procedure<CoreInstance>()
         {
@@ -505,7 +503,7 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage("Updating source registry ...");
+            message.setMessage("    Updating source registry ...");
         }
 
         // Index top level and packaged instances by path
@@ -557,7 +555,7 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage("Updating pattern library ...");
+            message.setMessage("    Updating pattern library ...");
         }
 
         if (this.patternLibrary != null)
@@ -743,5 +741,22 @@ public class GraphLoader
                 throw new RuntimeException(errorMessage.toString(), e);
             }
         }
+    }
+
+    public static MutableList<PureRepositoryJar> findJars(MutableList<String> repoNames, ClassLoader classLoader, Message message)
+    {
+        MutableList<PureRepositoryJar> jars = FastList.newList(repoNames.size());
+        for (String repoName : repoNames)
+        {
+            String resourceName = "pure-" + repoName + ".par";
+            URL url = classLoader.getResource(resourceName);
+            if (url == null)
+            {
+                throw new RuntimeException("Could not find resource: " + resourceName);
+            }
+            message.setMessage("  Found "+resourceName+" at "+url);
+            jars.add(PureRepositoryJars.get(url));
+        }
+        return jars;
     }
 }
