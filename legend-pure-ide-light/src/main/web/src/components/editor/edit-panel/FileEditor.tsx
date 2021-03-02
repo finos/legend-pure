@@ -35,7 +35,7 @@ export const FileEditor = observer((props: {
   const applicationStore = useApplicationStore();
   const content = editorState.file.content;
   const textInput = useRef<HTMLDivElement>(null);
-  const handleResize = (width: number, height: number): void => editor?.layout({ height, width });
+  const handleResize = (width: number | undefined, height: number | undefined): void => editor?.layout({ height: height ?? 0, width: width ?? 0 });
 
   useEffect(() => {
     if (!editor && textInput.current) {

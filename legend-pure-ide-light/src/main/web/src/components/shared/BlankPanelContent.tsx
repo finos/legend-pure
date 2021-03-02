@@ -27,8 +27,8 @@ export const BlankPanelContent: React.FC<{
   const { children } = props;
   const [contentRef, contentDimensions] = useDimensions();
   const [showContent, setShowContent] = useState(false);
-  const handleResize = (width: number, height: number): void => {
-    setShowContent(width > ((contentDimensions?.width ?? 0) + DEFAULT_CONTENT_PADDING * 2) && height > ((contentDimensions?.height ?? 0) + DEFAULT_CONTENT_PADDING * 2));
+  const handleResize = (width: number | undefined, height: number | undefined): void => {
+    setShowContent((width ?? 0) > ((contentDimensions?.width ?? 0) + DEFAULT_CONTENT_PADDING * 2) && (height ?? 0) > ((contentDimensions?.height ?? 0) + DEFAULT_CONTENT_PADDING * 2));
   };
 
   return (
