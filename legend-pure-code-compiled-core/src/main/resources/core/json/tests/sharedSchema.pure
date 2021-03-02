@@ -61,6 +61,21 @@ Class meta::json::schema::tests::ClassWithFunctionReferences
   many : String[*];
 }
 
+Class meta::json::schema::tests::ClassWithInLineFunctions
+[
+  number_inLine : $this.number->meta::pure::functions::collection::in([1, 2]),
+  string_inLine : $this.string->meta::pure::functions::collection::in(['a', 'b']),
+  stringOptional_inLine : $this.stringOptional->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if({|$this.stringOptional->meta::pure::functions::multiplicity::toOne()->meta::pure::functions::collection::in(['a', 'b'])}, {|true}),
+  integer_inLine : $this.integer->meta::pure::functions::collection::in([1, 2]),
+  numberOptional_inLine : $this.numberOptional->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if({|$this.numberOptional->meta::pure::functions::multiplicity::toOne()->meta::pure::functions::collection::in([1, 2])}, {|true})
+]
+{
+  number : Float[1];
+  string : String[1];
+  stringOptional : String[0..1];
+  integer : Integer[1];
+  numberOptional : Float[0..1];
+}
 
 
 function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::typeInclusionForConstraintFunctions():Boolean[1]
@@ -145,6 +160,8 @@ function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.sta
         '}';
           assert(jsonEquivalent($jsonSchemaOpenAPI->parseJSON(),$generatedJSONFromClassOpenAPI.content->toOne()->parseJSON()));
 
+   
+   
       
     let prefix = 'meta::json::schema::tests';
     let fileMap = [schemaInput('/ClassWithCustomProfiles.json', $jsonSchemaOpenAPI,$prefix)]; 
@@ -228,4 +245,66 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
     let generatedElementFromJSON =  $fileMap->JSONSchemaToPure(); 
   assert(jsonEquivalent(meta::json::schema::tests::functionForcedToObject_Any_$0_1$__Boolean_1_->toSerializer()->parseJSON(),$generatedElementFromJSON->toOne()->toSerializer()->parseJSON()));
 }
+
+function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testinLineFunctions():Boolean[1]
+{
+     let generatedJSONFromElement = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[ meta::json::schema::tests::ClassWithInLineFunctions],
+                                                          useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true ));  
+   let jsonSchema  = '{' +
+'  "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+'  "title": "meta::json::schema::tests::ClassWithInLineFunctions",' +
+'  "type": "object",' +
+'  "properties":   {' +
+'    "number":     {' +
+'      "type": "number",' +
+'      "enum": [' +
+'1,' +
+'2' +
+'      ]' +
+'    },' +
+'    "string":     {' +
+'      "type": "string",' +
+'      "enum": [' +
+'"a",' +
+'"b"' +
+'      ]' +
+'    },' +
+'    "stringOptional":     {' +
+'      "type": "string",' +
+'      "enum": [' +
+'"a",' +
+'"b"' +
+'      ]' +
+'    },' +
+'    "integer":     {' +
+'      "type": "integer",' +
+'      "enum": [' +
+'1,' +
+'2' +
+'      ]' +
+'    },' +
+
+'    "numberOptional":     {' +
+'      "type": "number",' +
+'      "enum": [' +
+'1,' +
+'2' +
+'      ]' +
+'    }' +
+'  },' +
+'  "required": [' +
+'"number",' +
+'"string",' +
+'"integer"' +   
+'  ]' +
+'}' ;
+    
+   assert(jsonEquivalent($jsonSchema->parseJSON(),$generatedJSONFromElement.content->toOne()->parseJSON()));
+   let prefix = 'meta::json::schema::tests';
+   let fileMap = [schemaInput('/ClassWithInLineFunctions.json', $jsonSchema,$prefix)]; 
+   let generatedElementFromJSON =  $fileMap->JSONSchemaToPure(); 
+   assert(jsonEquivalent(meta::json::schema::tests::ClassWithInLineFunctions->toSerializer()->parseJSON(),$generatedElementFromJSON->toOne()->toSerializer()->parseJSON()));
+
+}
+
 

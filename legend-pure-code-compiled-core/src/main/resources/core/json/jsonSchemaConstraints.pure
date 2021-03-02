@@ -231,8 +231,12 @@ function <<access.private>> meta::json::schema::constraint::buildOr( fn:SimpleFu
 
 function <<access.private>> meta::json::schema::constraint::buildIn( fn:SimpleFunctionExpression[1],config:JSONSchemaConfigInternal[1] ) : SchemaConstraint[1]
 {
-   let value = $fn.parametersValues->at(1)->match([i:InstanceValue[1]| let value = $i.values->map(v|^JSONString(value=$v->makeString()););
-                                                                     ^SchemaConstraint(constraint= ^JSONObject(keyValuePairs= [newJSONKeyValue( 'enum',^JSONArray(values=  $value ))]) );,
+   let value = $fn.parametersValues->at(1)->match([i:InstanceValue[1]| let value = $i.values->map(v|  if($v->instanceOf(Number),    
+                                                                                                         |^JSONNumber(value=$v->cast(@Number)),
+                                                                                                         |^JSONString(value=$v->makeString()););
+                                                                                                     );
+                                                                                                     
+                                                                       ^SchemaConstraint(constraint= ^JSONObject(keyValuePairs= [newJSONKeyValue( 'enum',^JSONArray(values=  $value ))]) );,
                                                    a:Any[1] | ^SchemaConstraint(generationMessage=addError([],'only direct assignment supported e.g. $this.value == 1235 or $this.value->in(12345)' ) ) ]);
 }
 

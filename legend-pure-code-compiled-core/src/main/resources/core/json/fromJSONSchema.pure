@@ -516,7 +516,7 @@ function  <<access.private>> meta::json::schema::fromSchema::fragmentToValueSpec
                                                                            |if( $key =='enum',
                                                                                 |  let lambda = $FunctionConstraintMap->get($key->toOne()).expressionSequence->toOne()->evaluateAndDeactivate()->cast(@FunctionExpression); 
                                                                                     let initialParam = replaceFirstParameter($lambda.parametersValues->at(0),$property);
-                                                                                  ^$lambda(parametersValues=[$initialParam->concatenate(^InstanceValue(values=$a.values->cast(@JSONString).value,genericType=$lambdaParams.genericType->at(0),multiplicity=$a.values->multiplicityFromCollection()))]);             ,
+                                                                                 ^$lambda(parametersValues=[$initialParam->concatenate(^InstanceValue(values=$a.values->map(v|$v->getJSONElementValue()),genericType=$lambdaParams.genericType->at(0),multiplicity=$a.values->multiplicityFromCollection()))]);             ,
                                                                                 |$lambdaParams));
                                                                   ,            
                                            o:JSONObject[1]| let discriminator = $o.keyValuePairs->getValueForKey('discriminator')->first();
@@ -947,6 +947,18 @@ function <<access.private>> meta::json::schema::fromSchema::getJSONElementAsStri
    
 }
 
+function <<access.private>> meta::json::schema::fromSchema::getJSONElementValue(value :JSONElement[0..1]):Any[*]
+{
+   
+   if($value->isNotEmpty(),
+                     | $value->toOne()->  match([s:JSONString[1]|$s.value,
+                                                        n:JSONNumber[1] |$n.value,
+                                                        b:JSONBoolean[1]|$b.value,
+                                                        a:JSONArray[1]|$a.values->map(v| $v->getJSONElementValue()),
+                                                        a:Any[1] | []        ]);,
+      |[]); 
+   
+}
 
 function <<access.private>> meta::json::schema::fromSchema::isValidFormatTag(value:JSONString[0..1]):Boolean[1]
 {
