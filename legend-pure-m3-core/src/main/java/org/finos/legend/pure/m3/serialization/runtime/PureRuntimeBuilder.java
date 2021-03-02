@@ -133,8 +133,13 @@ public class PureRuntimeBuilder
 
     public PureRuntime buildAndInitialize()
     {
+        return buildAndInitialize(this.message);
+    }
+
+    public PureRuntime buildAndInitialize(Message message)
+    {
         PureRuntime runtime = this.build();
-        runtime.initialize(this.message);
+        runtime.initialize(message);
         return runtime;
     }
 

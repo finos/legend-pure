@@ -212,7 +212,11 @@ public class PureRuntime
                 sourcePaths.set(0, LANG_PURE);
             }
 
-            MutableList<Source> sources = null == message ? sourcePaths.collect(this.getOrLoadSource) : sourcePaths.collectWith(this.getOrLoadSourceWithMessage, message);
+            if (message != null)
+            {
+                message.setMessage("Loading "+sourcePaths.size()+" sources...");
+            }
+            MutableList<Source> sources = sourcePaths.collect(this.getOrLoadSource);
 
             ////START READ and Serialize m3.pure
             Source m3Source = this.getOrLoadSource.valueOf(M3_PURE);
@@ -266,7 +270,11 @@ public class PureRuntime
         try
         {
             LazyIterable<String> sourcePaths = getCodeStorage().getUserFiles().asLazy();
-            MutableList<Source> sources = ((message == null) ? sourcePaths.collect(this.getOrLoadSource) : sourcePaths.collectWith(this.getOrLoadSourceWithMessage, message)).reject(Source.IS_COMPILED).toList();
+            if (message != null)
+            {
+                message.setMessage("Loading "+sourcePaths.size()+" sources...");
+            }
+            MutableList<Source> sources = sourcePaths.collect(this.getOrLoadSource).reject(Source.IS_COMPILED).toList();
             compile(sources);
             return sources;
         }
@@ -742,7 +750,7 @@ public class PureRuntime
                     {
                         if (message != null)
                         {
-                            message.setMessage("Registering service patterns ...");
+                            message.setMessage("  Registering service patterns ...");
                         }
                         for (CoreInstance func : context.getClassifierInstances(getCoreInstance(M3Paths.ConcreteFunctionDefinition)))
                         {
@@ -757,7 +765,7 @@ public class PureRuntime
                         }
                         if (message != null)
                         {
-                            message.setMessage("Notifying event handlers ...");
+                            message.setMessage("  Notifying event handlers ...");
                         }
                         for (PureRuntimeEventHandler eventHandler : this.eventHandlers)
                         {
@@ -767,12 +775,12 @@ public class PureRuntime
                         this.initializationError = false;
                         if (message != null)
                         {
-                            message.setMessage("Initialization from cache complete");
+                            message.setMessage("  -> Finished building the graph from PAR files");
                         }
                     }
                     else if (message != null)
                     {
-                        message.setMessage("Could not initialize from cache");
+                        message.setMessage("  -> Could not initialize the graph using PAR files");
                     }
                 }
                 catch (RuntimeException | Error e)
@@ -880,25 +888,6 @@ public class PureRuntime
         {
             Source source = getSourceById(path);
             return (source == null) ? loadSourceFromStorage(path) : source;
-        }
-    };
-
-    private final Function2<String, Message, Source> getOrLoadSourceWithMessage = new Function2<String, Message, Source>()
-    {
-        @Override
-        public Source value(String path, Message message)
-        {
-            Source source = getSourceById(path);
-            if (source == null)
-            {
-                if (message != null)
-                {
-                    int l = path.length();
-                    message.setMessage("Loading source:<BR> ..." + path.substring(Math.max(0, l - 15), l));
-                }
-                source = loadSourceFromStorage(path);
-            }
-            return source;
         }
     };
 

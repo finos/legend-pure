@@ -15,23 +15,15 @@
 package org.finos.legend.pure.m3.serialization.runtime.cache;
 
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
-import org.finos.legend.pure.m3.serialization.runtime.GraphLoader;
-import org.finos.legend.pure.m3.serialization.runtime.Message;
-import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
-import org.finos.legend.pure.m3.serialization.runtime.RepositoryComparator;
-import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJar;
+import org.finos.legend.pure.m3.serialization.runtime.*;
 import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJarLibrary;
-import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJars;
 import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
 import org.finos.legend.pure.m4.ModelRepository;
 
-import java.net.URL;
 import java.util.concurrent.ForkJoinPool;
 
 public class ClassLoaderPureGraphCache implements PureGraphCache
@@ -92,19 +84,7 @@ public class ClassLoaderPureGraphCache implements PureGraphCache
         {
             CodeStorage codeStorage = this.runtime.getCodeStorage();
             MutableList<String> repoNames = codeStorage.getAllRepoNames().toSortedList(new RepositoryComparator(codeStorage.getAllRepositories()));
-            MutableList<PureRepositoryJar> jars = FastList.newList(repoNames.size());
-            for (String repoName : repoNames)
-            {
-                String resourceName = "pure-" + repoName + ".par";
-                URL url = this.classLoader.getResource(resourceName);
-                if (url == null)
-                {
-                    throw new RuntimeException("Could not find resource: " + resourceName);
-                }
-                jars.add(PureRepositoryJars.get(url));
-            }
-
-            PureRepositoryJarLibrary jarLibrary = SimplePureRepositoryJarLibrary.newLibrary(jars);
+            PureRepositoryJarLibrary jarLibrary = SimplePureRepositoryJarLibrary.newLibrary(GraphLoader.findJars(repoNames, this.classLoader, message));
             GraphLoader loader = new GraphLoader(modelRepository, context, parserLibrary, this.runtime.getIncrementalCompiler().getDslLibrary(), sourceRegistry, null, jarLibrary, this.forkJoinPool);
             for (String repoName : repoNames)
             {
@@ -115,7 +95,6 @@ public class ClassLoaderPureGraphCache implements PureGraphCache
         }
         catch (Exception e)
         {
-            //e.printStackTrace();
             modelRepository.clear();
             this.state.update(false, -1L, false, e);
             return false;

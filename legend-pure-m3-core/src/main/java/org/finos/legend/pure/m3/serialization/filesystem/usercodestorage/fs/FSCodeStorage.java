@@ -44,6 +44,11 @@ public class FSCodeStorage extends AbstractSingleRepositoryCodeStorage
         this.root = root;
     }
 
+    public Path getRoot()
+    {
+        return this.root;
+    }
+
     @Override
     public void initialize(Message message)
     {
