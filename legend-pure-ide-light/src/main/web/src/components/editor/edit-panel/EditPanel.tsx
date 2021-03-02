@@ -31,8 +31,8 @@ export const EditPanelSplashScreen: React.FC = () => {
   const commandListWidth = 300;
   const commandListHeight = 150;
   const [showCommandList, setShowCommandList] = useState(false);
-  const handleResize = (width: number, height: number): void => {
-    setShowCommandList(width > commandListWidth && height > commandListHeight);
+  const handleResize = (width: number | undefined, height: number | undefined): void => {
+    setShowCommandList((width ?? 0) > commandListWidth && (height ?? 0) > commandListHeight);
   };
   return (
     <ReactResizeDetector
