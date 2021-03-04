@@ -120,9 +120,13 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage("    Reading " + this.loadedFiles.size() + " files ...");
+            message.setMessage("    Reading all files ...");
         }
         MapIterable<String, byte[]> fileBytes = this.loadedFiles.isEmpty() ? this.jarLibrary.readAllFiles() : this.jarLibrary.readFiles(this.jarLibrary.getAllFiles().reject(this::fileIsLoaded));
+        if (message != null)
+        {
+            message.setMessage(String.format("    Reading all (%,d) files ...", fileBytes.size()));
+        }
         loadFileBytes(fileBytes, message);
     }
 
@@ -235,7 +239,7 @@ public class GraphLoader
     {
         if (message != null)
         {
-            message.setMessage("    Reading " + files.size() + " files ...");
+            message.setMessage(String.format("    Reading %,d files ...", + files.size()));
         }
         MapIterable<String, byte[]> fileBytes = this.jarLibrary.readFiles(LazyIterate.reject(files, this::fileIsLoaded));
         loadFileBytes(fileBytes, message);
