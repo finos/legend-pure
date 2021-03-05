@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m2.dsl.mapping.xstore;
+package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m2.dsl.mapping.aggregationAware;
+package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor;
 
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
