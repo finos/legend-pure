@@ -12,28 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m2.dsl.mapping.aggregationAware;
+package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.validator;
 
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.aggregationAware.AggregateSpecificationValueSpecificationContext;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.xStore.XStoreAssociationImplementation;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class AggregateSpecificationValueSpecificationContextUnloaderWalk implements MatchRunner<AggregateSpecificationValueSpecificationContext>
+public class XStoreValidator implements MatchRunner<XStoreAssociationImplementation>
 {
     @Override
     public String getClassName()
     {
-        return M2MappingPaths.AggregateSpecificationValueSpecificationContext;
+        return M2MappingPaths.XStoreAssociationImplementation;
     }
 
     @Override
-    public void run(AggregateSpecificationValueSpecificationContext aggSpecContext, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(XStoreAssociationImplementation instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        matcher.fullMatch(aggSpecContext._aggregateSetImplementation(), state);
+        // Potentially validate that both setImpl are in different stores
     }
 }

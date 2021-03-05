@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.m2.dsl.mapping.xstore;
+package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
@@ -21,6 +21,9 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Sets;
+import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor.XStoreProcessor;
+import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.unloader.XStoreUnbind;
+import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.validator.XStoreValidator;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
