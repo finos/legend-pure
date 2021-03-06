@@ -28,7 +28,6 @@
 
     <artifactId>legend-pure-configuration-external</artifactId>
     <packaging>jar</packaging>
-    <version>1.12.1-SNAPSHOT</version>
     <name>Legend Pure - Configuration - External</name>
 
     <build>

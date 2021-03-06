@@ -29,7 +29,6 @@
     <name>Legend Pure - Base - M3 Platform</name>
     <artifactId>legend-pure-m3-platform</artifactId>
     <packaging>jar</packaging>
-    <version>1.12.1-SNAPSHOT</version>
 
     <build>
         <plugins>

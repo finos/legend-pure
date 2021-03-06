@@ -28,7 +28,6 @@
 
     <artifactId>legend-pure-code-compiled-platform</artifactId>
     <packaging>jar</packaging>
-    <version>1.12.1-SNAPSHOT</version>
     <name>Legend Pure - Code - PAR - Platform</name>
 
     <build>

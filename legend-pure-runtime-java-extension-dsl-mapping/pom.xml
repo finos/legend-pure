@@ -28,7 +28,6 @@
 
     <artifactId>legend-pure-runtime-java-extension-dsl-mapping</artifactId>
     <packaging>jar</packaging>
-    <version>1.12.1-SNAPSHOT</version>
     <name>Legend Pure - Runtime - Java Extension - DSL Mapping</name>
 
     <build>

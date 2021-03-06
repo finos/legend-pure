@@ -28,7 +28,6 @@
 
     <artifactId>legend-pure-m2-external-json</artifactId>
     <packaging>jar</packaging>
-    <version>1.12.1-SNAPSHOT</version>
     <name>Legend Pure - Base - M2 Ext JSON</name>
 
     <build>

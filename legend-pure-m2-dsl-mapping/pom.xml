@@ -28,7 +28,6 @@
 
     <artifactId>legend-pure-m2-dsl-mapping</artifactId>
     <packaging>jar</packaging>
-    <version>1.12.1-SNAPSHOT</version>
     <name>Legend Pure - Base - M2 DSL Mapping</name>
 
     <build>
