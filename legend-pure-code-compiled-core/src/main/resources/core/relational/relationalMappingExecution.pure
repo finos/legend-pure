@@ -13,6 +13,9 @@
 // limitations under the License.
 
 import meta::relational::metamodel::*;
+import meta::relational::metamodel::execute::*;
+import meta::relational::metamodel::relation::*;
+import meta::relational::runtime::*;
 import meta::pure::mapping::*;
 
 Class meta::relational::mapping::PostProcessorResult
@@ -22,4 +25,14 @@ Class meta::relational::mapping::PostProcessorResult
    executionNodes: meta::pure::executionPlan::ExecutionNode[*];  //nodes are inserted before the relational execution
    postExecutionNodes: meta::pure::executionPlan::ExecutionNode[*];  //Nodes are inserted run after the relational execution
    templateFunctions : String[*];
+}
+
+function meta::relational::metamodel::execute::executeInDb(sql:String[1], databaseConnection:DatabaseConnection[1]):ResultSet[1]
+{
+    meta::relational::metamodel::execute::executeInDb($sql, $databaseConnection, 0, 1000)
+}
+
+function meta::relational::metamodel::execute::loadCsvToDbTable(filePath:String[1], table:Table[1], databaseConnection:DatabaseConnection[1]):Nil[0]
+{
+    loadCsvToDbTable($filePath, $table, $databaseConnection, [])
 }

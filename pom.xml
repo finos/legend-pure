@@ -26,7 +26,7 @@
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>1.12.1-SNAPSHOT</version>
+    <version>1.13.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -52,6 +52,7 @@
         <module>legend-pure-runtime-java-extension-dsl-diagram</module>
 
         <module>legend-pure-m2-store-relational</module>
+        <module>legend-pure-runtime-java-extension-store-relational</module>
 
         <module>legend-pure-runtime-java-extension-external-shared</module>
 
@@ -87,6 +88,8 @@
         <commons-lang.version>3.5</commons-lang.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.4</commons-io.version>
+        <commons-csv.version>1.5</commons-csv.version>
+        <commons-dbcp2.version>2.8.0</commons-dbcp2.version>
         <slf4j.version>1.7.25</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
         <jersey.version>2.25.1</jersey.version>
@@ -108,6 +111,7 @@
         <javax.servlet.version>3.1.0</javax.servlet.version>
         <snakeyaml.version>1.26</snakeyaml.version>
         <guava.version>30.0-jre</guava.version>
+        <h2.version>1.4.197</h2.version>
     </properties>
 
     <scm>
@@ -428,6 +432,11 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-store-relational</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-runtime-java-engine-interpreted</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -522,7 +531,22 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang.version}</version>
-                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-dbcp2</artifactId>
+                <version>${commons-dbcp2.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-csv</artifactId>
+                <version>${commons-csv.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -830,6 +854,14 @@
             </dependency>
             <!-- Class graph -->
 
+            <!-- DB drivers -->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
+            </dependency>
+            <!-- DB drivers -->
+
             <!-- Test Scope -->
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
@@ -848,6 +880,20 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-m2-dsl-diagram</artifactId>
+                <type>test-jar</type>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-dsl-mapping</artifactId>
+                <type>test-jar</type>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-store-relational</artifactId>
                 <type>test-jar</type>
                 <version>${project.version}</version>
                 <scope>test</scope>
