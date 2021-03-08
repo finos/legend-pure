@@ -28,7 +28,6 @@
 
     <artifactId>legend-pure-code-compiled-core</artifactId>
     <packaging>jar</packaging>
-    <version>1.12.1-SNAPSHOT</version>
     <name>Legend Pure - Code - PAR - Core</name>
 
     <build>
@@ -55,7 +54,7 @@
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-platform</artifactId>
-                        <version>1.12.1-SNAPSHOT</version>
+                        <version>${project.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>

@@ -28,7 +28,6 @@
 
     <artifactId>legend-pure-runtime-java-engine-interpreted</artifactId>
     <packaging>jar</packaging>
-    <version>1.12.1-SNAPSHOT</version>
     <name>Legend Pure - Runtime - Engine Interpreted</name>
 
     <build>

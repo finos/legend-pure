@@ -28,7 +28,6 @@
 
     <artifactId>legend-pure-maven-compilation-par</artifactId>
     <packaging>maven-plugin</packaging>
-    <version>1.12.1-SNAPSHOT</version>
     <name>Legend Pure - Maven - Plugin PAR</name>
 
     <build>

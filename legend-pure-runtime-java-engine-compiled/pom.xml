@@ -25,7 +25,6 @@
 
     <artifactId>legend-pure-runtime-java-engine-compiled</artifactId>
     <packaging>jar</packaging>
-    <version>1.12.1-SNAPSHOT</version>
     <name>Legend Pure - Runtime - Engine Compiled</name>
 
     <build>
