@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.12.1-SNAPSHOT</version>
+        <version>1.13.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -92,10 +92,10 @@
                         <configuration>
                             <tasks>
                                 <copy todir="target/antlr">
-                                    <fileset dir="../legend-pure-m3-core/src/main/antlr4/org/finos/legend/pure/m3/serialization/grammar/m3parser/antlr"/>
+                                    <fileset dir="../legend-pure-m3-core/src/main/antlr4/org/finos/legend/pure/m3/serialization/grammar/m3parser/antlr" />
                                 </copy>
                                 <copy todir="target/antlr">
-                                    <fileset dir="../legend-pure-m4/src/main/antlr4/org/finos/legend/pure/m4/serialization/grammar"/>
+                                    <fileset dir="../legend-pure-m4/src/main/antlr4/org/finos/legend/pure/m4/serialization/grammar" />
                                 </copy>
                             </tasks>
                         </configuration>
