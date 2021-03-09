@@ -31,14 +31,14 @@ public class ColumnDataTypeFactory
 {
     private static final String DATA_TYPE_ROOT_PACKAGE = "meta::relational::metamodel::datatype::";
     private static final ImmutableMap<String, String> COLUMN_TYPE_MAP = buildTypeMap();
-    private static final ImmutableMap<String, ImmutableList<String>> TYPE_PARAM_MAP =  pureDataTypeConstructorParameterMap();
+    private static final ImmutableMap<String, ImmutableList<String>> TYPE_PARAM_MAP = pureDataTypeConstructorParameterMap();
 
     private ColumnDataTypeFactory()
     {
         // Utility class
     }
 
-    public static String pureDataTypeConstructorString(final String typeName, final String...paramValues) throws ColumnDataTypeException
+    public static String pureDataTypeConstructorString(final String typeName, final String... paramValues) throws ColumnDataTypeException
     {
         String pureTypeName = getPureTypeName(typeName);
         if (pureTypeName == null)
@@ -47,16 +47,19 @@ public class ColumnDataTypeFactory
         }
         else
         {
-            final ListIterable<String> constructorParamNames = TYPE_PARAM_MAP.get(pureTypeName);
-            final Integer conParamLength =  constructorParamNames!=null ?  constructorParamNames.size() : 0;
-            if(conParamLength == paramValues.length)
+            ListIterable<String> constructorParamNames = TYPE_PARAM_MAP.get(pureTypeName);
+            constructorParamNames = constructorParamNames == null ? Lists.immutable.empty() : constructorParamNames;
+            final int conParamLength = constructorParamNames.size();
+            if (conParamLength == paramValues.length)
             {
                 MutableList<String> conParamsAndValues = FastList.newList();
 
-                if (paramValues.length == 1){
+                if (paramValues.length == 1)
+                {
                     conParamsAndValues.add(String.format("%s=%s", constructorParamNames.get(0), paramValues[0]));
                 }
-                else if (paramValues.length == 2){
+                else if (paramValues.length == 2)
+                {
                     conParamsAndValues.add(String.format("%s=%s", constructorParamNames.get(0), paramValues[0]));
                     conParamsAndValues.add(String.format("%s=%s", constructorParamNames.get(1), paramValues[1]));
                 }
@@ -113,7 +116,6 @@ public class ColumnDataTypeFactory
     }
 
 
-
     private static ImmutableMap<String, ImmutableList<String>> pureDataTypeConstructorParameterMap()
     {
         MutableMap<String, ImmutableList<String>> map = Maps.mutable.empty();
@@ -131,10 +133,11 @@ public class ColumnDataTypeFactory
     }
 
 
+    public static class ColumnDataTypeException extends Exception
+    {
 
-    public static class ColumnDataTypeException extends Exception{
-
-        public ColumnDataTypeException(String message) {
+        public ColumnDataTypeException(String message)
+        {
             super(message);
         }
     }

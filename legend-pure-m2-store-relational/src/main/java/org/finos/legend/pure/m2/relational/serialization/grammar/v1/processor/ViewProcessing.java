@@ -229,7 +229,7 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
     private static void processPrimaryKeys(View view, MapIterable<String, DataType> colMappingTypeByName, ModelRepository repository, ProcessorSupport processorSupport)
     {
         RichIterable<? extends Column> primaryKeyCols = view._primaryKey();
-        view._userDefinedPrimaryKey(new Boolean(primaryKeyCols.notEmpty()));
+        view._userDefinedPrimaryKey(primaryKeyCols.notEmpty());
         if (primaryKeyCols.notEmpty())
         {
             setColumnTypes(primaryKeyCols, colMappingTypeByName, processorSupport);

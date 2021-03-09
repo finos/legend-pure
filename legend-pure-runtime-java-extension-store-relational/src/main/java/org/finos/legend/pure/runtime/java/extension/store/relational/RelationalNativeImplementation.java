@@ -100,7 +100,7 @@ public class RelationalNativeImplementation
                 {
                     dbType = relationalActivity._dataSource()._type()._name();
                     dbHost = relationalActivity._dataSource()._host();
-                    dbPort = Long.valueOf(relationalActivity._dataSource()._port()).intValue();
+                    dbPort = (int)relationalActivity._dataSource()._port();
                     dbName = relationalActivity._dataSource()._name();
                 }
                 ((CompiledExecutionSupport)es).getExecutionActivityListener().relationalActivityCompleted(dbHost, dbPort, dbName, dbType, sql, executionPlanInformation, executionTimeInNanoSeconds, sqlGenerationTimeInNanoSeconds, connectionAcquisitionTimeInNanoSeconds);
@@ -217,7 +217,6 @@ public class RelationalNativeImplementation
                 }
                 catch (SQLException e1)
                 {
-                    e1.printStackTrace();
                 }
             }
             throw new PureExecutionException(SQLExceptionHandler.buildExceptionString(e, connection), e);

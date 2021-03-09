@@ -82,7 +82,6 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
         }
         catch (ClassNotFoundException e)
         {
-            e.printStackTrace();
         }
     }
 
@@ -108,7 +107,6 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
         }
         catch (SQLException ex)
         {
-            ex.printStackTrace();
             throw new PureExecutionException("Unable to create TestDatabaseConnection for user: " + user, ex);
         }
 

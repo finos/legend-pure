@@ -164,7 +164,6 @@ public class ResultSetRowIterableProvider
                 catch (SQLException e1)
                 {
                     //Nothing we can do
-                    e1.printStackTrace();
                 }
             }
 
@@ -177,7 +176,6 @@ public class ResultSetRowIterableProvider
                 catch (SQLException e1)
                 {
                     //Nothing we can do
-                    e1.printStackTrace();
                 }
             }
 
@@ -193,7 +191,6 @@ public class ResultSetRowIterableProvider
             }
             catch (Exception logException)
             {
-                logException.printStackTrace();
             }
 
             throw new PureExecutionException(sourceInformation, SQLExceptionHandler.buildExceptionString(e, connection), e);
