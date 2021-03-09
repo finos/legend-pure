@@ -206,7 +206,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::
       ^meta::protocols::pure::vX_X_X::metamodel::mapping::xStore::XStorePropertyMapping
        (
           _type = 'xStorePropertyMapping',
-          property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->at(0).rawType->toOne()->elementToPath(), property=$pm.property.name->toOne()),
+          property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->filter(l| $l->isNotEmpty())->at(0).rawType->toOne()->elementToPath(), property=$pm.property.name->toOne()),
           source = $p.sourceSetImplementationId,
           target = $p.targetSetImplementationId,
           crossExpression = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformLambda($p.crossExpression, $extensions)
