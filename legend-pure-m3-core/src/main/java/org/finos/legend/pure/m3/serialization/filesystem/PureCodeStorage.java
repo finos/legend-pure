@@ -34,11 +34,7 @@ import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.eclipse.collections.impl.utility.StringIterate;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CoreCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.ScratchCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.*;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
@@ -927,7 +923,7 @@ public class PureCodeStorage implements MutableCodeStorage
             {
                 svnCodeRepositories.add((SVNCodeRepository)repository);
             }
-            else if (repository instanceof PlatformCodeRepository || repository instanceof CoreCodeRepository)
+            else if (repository instanceof PlatformCodeRepository || repository instanceof CoreCodeRepository || repository instanceof GenericCodeRepository)
             {
                 codeStorages.add(new ClassLoaderCodeStorage(repository));
             }

@@ -21,6 +21,7 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProvider;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 
 import java.util.ServiceLoader;
@@ -31,12 +32,7 @@ public class PureRepositoriesExternal
 
     static
     {
-        MutableList<CodeRepository> repositories = FastList.newListWith(CodeRepository.newPlatformCodeRepository());
-        for (CodeRepositoryProvider codeRepositoryProvider : ServiceLoader.load(CodeRepositoryProvider.class))
-        {
-            repositories.add(codeRepositoryProvider.repository());
-        }
-        addRepositories(repositories);
+        addRepositories(FastList.newListWith(CodeRepository.newPlatformCodeRepository()).withAll(CodeRepositoryProviderHelper.findCodeRepositories()));
     }
 
     public static RichIterable<CodeRepository> repositories()
