@@ -33,7 +33,7 @@ import java.nio.charset.StandardCharsets;
 public class CsvReader
 {
     protected static final int ONE_MB_SIZE_LIMIT = 1;
-    protected static final long MEGA_BYTE = 1024 * 1024;
+    protected static final long MEGA_BYTE = 1024 * 1024L;
 
     public static Iterable<CSVRecord> readCsv(CodeStorage codeStorage, SourceInformation sourceForError, String filePath,
                                               Integer rowLimit)

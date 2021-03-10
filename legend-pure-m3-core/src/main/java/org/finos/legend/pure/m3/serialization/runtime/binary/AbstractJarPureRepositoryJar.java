@@ -129,7 +129,7 @@ abstract class AbstractJarPureRepositoryJar extends AbstractPureRepositoryJar
 
     private static int getAndCheckExpectedSize(JarEntry entry)
     {
-        long expectedSize = entry.getSize();
+        long expectedSize = entry.getSize();  //NOSONAR JARs are trusted
         if (expectedSize > Integer.MAX_VALUE)
         {
             throw new RuntimeException("Required array size too large");

@@ -124,7 +124,6 @@ class CacheNextReadOnceForwardOnlyResultSet extends AbstractCacheNextReadOnceFor
             }
             catch (Exception logException)
             {
-                logException.printStackTrace();
             }
 
             String error = SQLExceptionHandler.buildExceptionString(e, this.connection);

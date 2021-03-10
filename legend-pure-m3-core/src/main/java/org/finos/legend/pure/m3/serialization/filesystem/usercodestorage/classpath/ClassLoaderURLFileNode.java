@@ -81,7 +81,7 @@ class ClassLoaderURLFileNode extends ClassLoaderFileNode
                         return -1;
                     }
                     JarEntry entry = ((JarURLConnection)connection).getJarEntry();
-                    long size = entry.getSize();
+                    long size = entry.getSize();   //NOSONAR JARs are trusted
                     return (size > 0) ? (int)size : -1;
                 }
                 case "file":

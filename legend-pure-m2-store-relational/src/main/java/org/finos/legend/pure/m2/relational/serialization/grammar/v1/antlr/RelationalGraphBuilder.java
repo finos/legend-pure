@@ -241,7 +241,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         return localMappingPropertyFirstMul == null && localMappingPropertySecondMul == null ?
                 "" :
                 "localMappingPropertyMultiplicity = ^meta::pure::metamodel::multiplicity::Multiplicity(" +
-                        "   lowerBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(value=" + (localMappingPropertySecondMul == null ? "0" : localMappingPropertyFirstMul.getText()) + ")," +
+                        "   lowerBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(value=" + (localMappingPropertySecondMul == null || localMappingPropertyFirstMul == null? "0" : localMappingPropertyFirstMul.getText()) + ")," +
                         "   upperBound=^meta::pure::metamodel::multiplicity::MultiplicityValue(" + (secondOne.getText().equals("*") ? "" : "value=" + secondOne.getText()) + ")" +
                         "),";
     }
@@ -480,7 +480,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         }
         return "^meta::relational::metamodel::Database " + ctx.qualifiedName().identifier().getText() + sourceInformation.getPureSourceInformation(ctx.DATABASE().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.GROUP_CLOSE().getSymbol()).toM4String() +
                 (ctx.qualifiedName().packagePath() != null ? "@" + ctx.qualifiedName().packagePath().getText().substring(0, ctx.qualifiedName().packagePath().getText().length() - 2) : "") + "(name='" + ctx.qualifiedName().identifier().getText() +
-                "', package=" + (ctx.qualifiedName().packagePath() == null ? "::" : ctx.qualifiedName().packagePath().getText().substring(0, ctx.qualifiedName().packagePath().getText().length() - 2)) + ", includes = [" + includes + "], schemas=[" + schemas + "],joins=[" + joins + "],filters=[" + (filters.isEmpty() ? multiGrainFilter : !multiGrainFilter.isEmpty() ? filters +", " + multiGrainFilter : filters) + "])";
+                "', package=" + (ctx.qualifiedName().packagePath() == null ? "::" : ctx.qualifiedName().packagePath().getText().substring(0, ctx.qualifiedName().packagePath().getText().length() - 2)) + ", includes = [" + includes + "], schemas=[" + schemas + "],joins=[" + joins + "],filters=[" + (filters.isEmpty() ? multiGrainFilter : !multiGrainFilter.isEmpty() ? filters + ", " + multiGrainFilter : filters) + "])";
     }
 
     private String visitMultiGrainFiltersBlock(List<MultiGrainFilterContext> multiGrainFilters)
@@ -699,7 +699,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         String functionName = ctx.functionName().getText();
         List<FunctionArgumentContext> argCtxs = ctx.functionArgument();
         StringBuilder sb = new StringBuilder();
-        for(FunctionArgumentContext argCtx : argCtxs)
+        for (FunctionArgumentContext argCtx : argCtxs)
         {
             sb.append(visitFunctionArgument(argCtx, scopeInfo));
             sb.append(",");
@@ -710,13 +710,13 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     public String visitFunctionArgument(FunctionArgumentContext ctx, ScopeInfo scopeInfo)
     {
-        if(ctx.colWithDbOrConstant() != null)
+        if (ctx.colWithDbOrConstant() != null)
         {
             return visitColWithDbOrConstantBlock(ctx.colWithDbOrConstant(), scopeInfo);
         }
         List<FunctionArgumentContext> argCtxs = ctx.arrayOfFunctionArguments().functionArgument();
         StringBuilder sb = new StringBuilder();
-        for(FunctionArgumentContext argCtx : argCtxs)
+        for (FunctionArgumentContext argCtx : argCtxs)
         {
             sb.append(visitFunctionArgument(argCtx, scopeInfo));
             sb.append(",");
@@ -727,7 +727,7 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
 
     private String visitOp_atomicOperationBlock(Op_atomicOperationContext ctx, ScopeInfo scopeInfo)
     {
-        if(ctx.op_function() != null)
+        if (ctx.op_function() != null)
         {
             return visitOp_function(ctx.op_function(), scopeInfo);
         }
@@ -1037,7 +1037,9 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
     public String visitConstant(ConstantContext ctx)
     {
         if (ctx.STRING() != null)
+        {
             return "^meta::relational::metamodel::Literal(value=" + ctx.STRING().getText() + ")";
+        }
 
         if (ctx.INTEGER() != null)
         {
@@ -1216,13 +1218,18 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         String pureType;
         try
         {
-            if (ctx.INTEGER() != null && ctx.INTEGER().size() == 1){
+            if (ctx.INTEGER() != null && ctx.INTEGER().size() == 1)
+            {
                 pureType = ColumnDataTypeFactory.pureDataTypeConstructorString(ctx.identifier().getText(), ctx.INTEGER(0).getText());
             }
-            else if (ctx.INTEGER() != null && ctx.INTEGER().size() == 2){
+            else if (ctx.INTEGER() != null && ctx.INTEGER().size() == 2)
+            {
                 pureType = ColumnDataTypeFactory.pureDataTypeConstructorString(ctx.identifier().getText(), ctx.INTEGER(0).getText(), ctx.INTEGER(1).getText());
             }
-            else pureType = ColumnDataTypeFactory.pureDataTypeConstructorString(ctx.identifier().getText());
+            else
+            {
+                pureType = ColumnDataTypeFactory.pureDataTypeConstructorString(ctx.identifier().getText());
+            }
 
         }
         catch (ColumnDataTypeException exp)
@@ -1243,12 +1250,12 @@ public class RelationalGraphBuilder extends org.finos.legend.pure.m2.relational.
         String type = ctx.identifier().getText();
         org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalParser.MilestoningContentContext contentCtx = ctx.milestoningContent();
         String content = contentCtx.start.getInputStream().getText(Interval.of(contentCtx.start.getStartIndex(), contentCtx.stop.getStopIndex()));
-        List<String> results = relationalParsers.collect(relationalParser -> ((IRelationalParser)relationalParser).parseMilestoningDefinition(type, content, sourceInformation.getSourceName(), srcInfo.getLine() - 1, srcInfo.getEndColumn() + 1, this.importId)).reject(x -> x == null).toList();
+        List<String> results = relationalParsers.collect(relationalParser -> ((IRelationalParser) relationalParser).parseMilestoningDefinition(type, content, sourceInformation.getSourceName(), srcInfo.getLine() - 1, srcInfo.getEndColumn() + 1, this.importId)).reject(x -> x == null).toList();
         if (results.size() == 1)
         {
             return results.get(0);
         }
-        else if(results.isEmpty())
+        else if (results.isEmpty())
         {
             throw new PureParserException(srcInfo, "Milestoning type : " + type + " not supported!!");
         }

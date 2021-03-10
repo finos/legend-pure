@@ -535,7 +535,7 @@ public class ClassLoaderCodeStorage extends AbstractMultipleRepositoryCodeStorag
 
     private void collectFromJarFile(JarFile jarFile, String jarFileURL, MutableMultimap<String, URL> pathURLs) throws IOException
     {
-        Enumeration<JarEntry> entries = jarFile.entries();
+        Enumeration<JarEntry> entries = jarFile.entries();  //NOSONAR JARs are trusted
         while (entries.hasMoreElements())
         {
             JarEntry entry = entries.nextElement();

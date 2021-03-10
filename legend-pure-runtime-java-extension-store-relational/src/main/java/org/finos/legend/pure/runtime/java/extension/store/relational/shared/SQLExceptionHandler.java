@@ -38,7 +38,6 @@ public final class SQLExceptionHandler
             catch (SQLException ex)
             {
                 //Nothing we can do
-                ex.printStackTrace();
             }
 
 
@@ -54,7 +53,6 @@ public final class SQLExceptionHandler
             catch (SQLException ex)
             {
                 //Nothing we can do
-                ex.printStackTrace();
             }
             statement = null;
         }
@@ -68,7 +66,6 @@ public final class SQLExceptionHandler
             catch (SQLException ex)
             {
                 //Nothing we can do
-                ex.printStackTrace();
             }
             //Force these to null in case this is being held onto in a ResultSetIterator in the graph
             connection = null;
