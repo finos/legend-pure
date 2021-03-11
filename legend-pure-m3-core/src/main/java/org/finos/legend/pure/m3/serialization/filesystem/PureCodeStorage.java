@@ -923,7 +923,7 @@ public class PureCodeStorage implements MutableCodeStorage
             {
                 svnCodeRepositories.add((SVNCodeRepository)repository);
             }
-            else if (repository instanceof PlatformCodeRepository || repository instanceof CoreCodeRepository || repository instanceof GenericCodeRepository)
+            else if (repository instanceof PlatformCodeRepository || repository instanceof GenericCodeRepository)
             {
                 codeStorages.add(new ClassLoaderCodeStorage(repository));
             }

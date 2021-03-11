@@ -1,5 +1,5 @@
 {
   "name" : "other_test_generic_repository",
   "pattern" : "(meta)(::.*)?",
-  "dependencies" : ["test_generic_repository"]
+  "dependencies" : ["test_generic_repository", "platform"]
 }

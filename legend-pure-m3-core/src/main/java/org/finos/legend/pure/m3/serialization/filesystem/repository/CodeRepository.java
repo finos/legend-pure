@@ -96,11 +96,6 @@ public abstract class CodeRepository
         return new PlatformCodeRepository();
     }
 
-    public static CodeRepository newCoreCodeRepository()
-    {
-        return new CoreCodeRepository();
-    }
-
     public static CodeRepository newScratchCodeRepository()
     {
         return new ScratchCodeRepository();

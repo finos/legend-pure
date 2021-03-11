@@ -27,6 +27,7 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
@@ -75,9 +76,8 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                 SVNCodeRepository.newModelCodeRepository("legacy", Sets.immutable.with("")),
                 SVNCodeRepository.newModelValidationCodeRepository(),
                 SVNCodeRepository.newSystemCodeRepository(),
-                CodeRepository.newCoreCodeRepository(),
                 CodeRepository.newPlatformCodeRepository()
-                );
+                ).newWithAll(CodeRepositoryProviderHelper.findCodeRepositories());
     }
 
     protected static MutableCodeStorage getCodeStorage()
@@ -607,7 +607,6 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         Assert.assertTrue(getRepositoryByName("model_validation").isVisible(getRepositoryByName("system")));
         Assert.assertFalse(getRepositoryByName("model_validation").isVisible(getRepositoryByName("sec_div")));
         Assert.assertFalse(getRepositoryByName("model_validation").isVisible(getRepositoryByName("contracts")));
-
         compileTestSource(
                 "/model/testFile1.pure",
                 "Class model::producers::bu::A { name:String[1];}");

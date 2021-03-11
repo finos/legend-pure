@@ -17,4 +17,9 @@ public class CodeRepositoryProviderHelper
         }
         return repositories;
     }
+
+    public static boolean isCoreRepository(CodeRepository codeRepository)
+    {
+        return codeRepository != null && codeRepository.getName().startsWith("core");
+    }
 }
