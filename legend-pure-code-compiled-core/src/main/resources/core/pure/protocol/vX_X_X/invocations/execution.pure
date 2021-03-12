@@ -206,7 +206,8 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::legendEx
 
 
 
-   let handlers= $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_pre->concatenate([
+   let handlers= $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_pre->concatenate(
+                 $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_pre2->map(f | $f->eval($extensions)))->concatenate([
                pair ( builderType:String[1]|$builderType->isNotEmpty() && $builderType->toOne()=='json',
                       {resultJSON:String[1], result:JSONObject[1], m:Mapping[1], r:Runtime[1], e:ExtendedJSONDeserializationConfig[1], co:ExecutionContext[0..1]|processJsonStreamingResult($result)}),
 
@@ -216,7 +217,8 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::legendEx
                                                              | $resultClassType->cast(@Class<Any>)); // This case if is we hit the execute end point, in which case the type information is coming from the function
                                             processCSV_M2M($builderType->toOne(), $retType, $result);}
                     )
-            ]->concatenate($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_post));
+            ]->concatenate($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_post)
+             ->concatenate($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_post2->map(f | $f->eval($extensions))));
 
    let res = $handlers->filter(h|$h.first->eval($builderType))->first()->toOne().second->eval($resultJSON, $result, $m, $pureRuntime, $extendedJSONDeserializationConfig, $context);
 

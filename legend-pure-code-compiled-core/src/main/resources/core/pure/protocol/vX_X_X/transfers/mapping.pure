@@ -72,7 +72,8 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::t
 
 function <<access.public>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::transformSetImplementation(si:SetImplementation[1], mapping:Mapping[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::mapping::ClassMapping[1]
 {
-   $si->match($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).transfers_mapping_transformSetImplementation->map(f|$f->eval($mapping))->concatenate([
+   $si->match($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).transfers_mapping_transformSetImplementation->map(f|$f->eval($mapping))->concatenate(
+              $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).transfers_mapping_transformSetImplementation2->map(f|$f->eval($mapping, $extensions)))->concatenate([
       o:OperationSetImplementation[1]| $o->transformOperationSetImplementation($mapping),
       p:PureInstanceSetImplementation[1]| $p->transformPureInstanceSetImplementation($mapping, $extensions)
       ])->toOneMany()
