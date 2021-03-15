@@ -365,14 +365,17 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForPrope
                   assert($o.parameters.setImplementation->forAll(s|$s->instanceOf(PureInstanceSetImplementation)), |'Unsupported types: ' + $o.parameters.setImplementation->filter(i|!$i->instanceOf(PureInstanceSetImplementation))->type()->elementToPath());
                   $o->meta::pure::router::clustering::resolveInstanceSetImplementations($extensions);
                },
-               {i:InstanceSetImplementation[1] | 
+               {e:EmbeddedSetImplementation[1] |
+                  [];
+               },
+               {i:InstanceSetImplementation[1] |
                   assert($i->instanceOf(PureInstanceSetImplementation), 'Unsupported type: ' + $childSI->type()->elementToPath());
                   $i;
                }
             ])->cast(@PureInstanceSetImplementation)
          );
                
-         assert($childSIsResolved->isNotEmpty(), |'Mapping ' + $setImplementation.parent->elementToPath() + ' does not map class from tree: ' + $c->elementToPath());
+         assert($propertyMappings->isEmpty() || $childSIsResolved->isNotEmpty(), |'Mapping ' + $setImplementation.parent->elementToPath() + ' does not map class from tree: ' + $c->elementToPath());
          $childSIsResolved;
       },
       {a:Any[1]| []}
