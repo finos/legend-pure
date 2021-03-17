@@ -256,7 +256,7 @@ function meta::protocols::pure::vX_X_X::extension::getRelationalExtension():meta
          r:meta::relational::runtime::RelationalExecutionContext[1]|
             let importDataFlowFkCols = if($r.importDataFlowFksByTable->isEmpty(), |[],
                |$r.importDataFlowFksByTable->toOne()->keyValues()->map(p| ^meta::protocols::pure::vX_X_X::metamodel::TableForeignColumns(
-                  table=$p.first->meta::protocols::pure::vX_X_X::metamodel::refiner::matchAndTransformSetRelation(),
+                  table=$p.first->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::relational::setRelationToTablePtr(),
                   columns=$p.second.values->map(c| $c.name)))
             );
             ^meta::protocols::pure::vX_X_X::metamodel::RelationalExecutionContext
