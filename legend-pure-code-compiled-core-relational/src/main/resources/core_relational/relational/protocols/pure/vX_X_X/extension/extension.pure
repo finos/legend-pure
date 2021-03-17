@@ -1,0 +1,9 @@
+Class meta::protocols::pure::vX_X_X::extension::RelationalModuleSerializerExtension extends meta::protocols::pure::vX_X_X::extension::ModuleSerializerExtension
+{
+   transfers_connection_transformDatabaseConnection : Function<{String[1], String[1], String[1], meta::protocols::pure::vX_X_X::metamodel::store::relational::PostProcessorWithParameter[*] -> Function<{Nil[1]->meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection[1]}>[*]}>[0..1];
+   transfers_connection_transformPostProcessors : Function<{Nil[1] -> meta::protocols::pure::vX_X_X::metamodel::store::relational::postProcessor::PostProcessor[1]}>[*];
+   transfers_connection_transformAuthenticationStrategy : Function<{Nil[1] -> meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy[1]}>[*];
+   transfers_connection_transformDatasourceSpecification : Function<{Nil[1] -> meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification[1]}>[*];
+   transfers_connection_transformPostProcessorParameters : Function<{Nil[1] -> meta::protocols::pure::vX_X_X::metamodel::store::relational::PostProcessorParameter[1]}>[*];
+   transfers_milestoning_transformMilestoning : Function<{Nil[1]->meta::protocols::pure::vX_X_X::metamodel::store::relational::Milestoning[1]}>[*];
+}

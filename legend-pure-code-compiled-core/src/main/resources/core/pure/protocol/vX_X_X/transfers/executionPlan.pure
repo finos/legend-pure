@@ -16,7 +16,6 @@
 import meta::pure::executionPlan::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::runtime::*;
 import meta::protocols::*;
-import meta::relational::mapping::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connection::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::*;
 

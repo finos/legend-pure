@@ -16,10 +16,7 @@
 //-----------
 // Metamodel
 //-----------
-import meta::protocols::pure::vX_X_X::metamodel::store::relational::element::*;
-import meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::*;
 import meta::protocols::pure::vX_X_X::metamodel::domain::*;
-import meta::protocols::pure::vX_X_X::metamodel::store::relational::mapping::*;
 
 Class meta::protocols::pure::vX_X_X::metamodel::SourceInformation
 {
@@ -846,44 +843,4 @@ Class meta::protocols::pure::vX_X_X::metamodel::domain::Function extends meta::p
    parameters : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::Variable[*];
    body : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::ValueSpecification[*];
 
-}
-
-###Pure
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::Milestoning
-{
-    _type : String[1];
-   infinityDate : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::CDate[0..1];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection extends meta::protocols::pure::vX_X_X::metamodel::runtime::Connection
-{
-   type : String[1];
-   timeZone : String[0..1];
-   postProcessorWithParameter:	meta::protocols::pure::vX_X_X::metamodel::store::relational::PostProcessorWithParameter[*];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::PostProcessorWithParameter
-{
-   pp:String[1];
-   parameters: meta::protocols::pure::vX_X_X::metamodel::store::relational::PostProcessorParameter[*];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::PostProcessorParameter
-{
-   _type:String[1];
-}
-
-Class <<typemodifiers.abstract>> meta::protocols::pure::vX_X_X::metamodel::store::relational::postProcessor::PostProcessor
-{
-   _type:String[1];
-}
-
-Class <<typemodifiers.abstract>> meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
-{
-   _type: String[1];
-}
-
-Class <<typemodifiers.abstract>> meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
-{
-   _type: String[1];
 }

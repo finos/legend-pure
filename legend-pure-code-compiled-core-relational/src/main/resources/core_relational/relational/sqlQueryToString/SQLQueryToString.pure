@@ -24,6 +24,38 @@ import meta::relational::runtime::*;
 import meta::relational::functions::sqlQueryToString::functions::*;
 import meta::pure::profiles::*;
 
+Enum meta::relational::functions::sqlQueryToString::GenerationSide
+{
+   Select,
+   Where
+}
+
+Class meta::relational::functions::sqlQueryToString::GenerationState
+{
+  <<equality.Key>> generationSide : GenerationSide[1];
+  <<equality.Key>> withinWhenClause : Boolean[0..1];
+}
+
+Class meta::relational::functions::sqlQueryToString::Config
+{
+   callingFromFilter : Boolean[0..1];
+   useQuotesForTableAliasColumn : Boolean[0..1];
+   generateJoin:Boolean[0..1];
+   generateJoinTarget : TableAlias[0..1];
+}
+
+Class meta::relational::functions::sqlQueryToString::Format
+{
+   newLine:String[1];
+   indent:String[1];
+
+   indentStack:String[*];
+
+   separator(){
+      $this.newLine + $this.indentStack->makeString();
+   }:String[1];
+}
+
 Class meta::relational::functions::sqlQueryToString::DbConfig
 {
    dbType:DatabaseType[1];
@@ -108,7 +140,7 @@ function meta::relational::functions::sqlQueryToString::processOperation(relatio
 function meta::relational::functions::sqlQueryToString::processOperation(relationalOperationElement:RelationalOperationElement[1], dbConfig : DbConfig[1], format:Format[1], generationState:GenerationState[1], config:Config[1], extensions:RouterExtension[*]):String[1]
 {
 
-   $relationalOperationElement->match($extensions.sqlQueryToString_processOperation->map(f | $f->eval($dbConfig, $format, $generationState, $config, $extensions))->concatenate(
+   $relationalOperationElement->match($extensions->map(e|$e.moduleExtension('relational')->cast(@RelationalExtension).sqlQueryToString_processOperation)->map(f | $f->eval($dbConfig, $format, $generationState, $config, $extensions))->concatenate(
                                        [
                                           v:VarPlaceHolder[1]| '${'+$v.name+'}',
                                           v:VarSetPlaceHolder[1]| '${'+$v.varName+'}',
@@ -919,7 +951,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::forma
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::isBooleanOperation(relationalElement:RelationalOperationElement[1], extensions:RouterExtension[*]):Boolean[1]
 {
-   $relationalElement->match($extensions.sqlQueryToString_isBooleanOperation->concatenate([
+   $relationalElement->match($extensions.moduleExtension('relational')->cast(@RelationalExtension).sqlQueryToString_isBooleanOperation->concatenate([
       d:DynaFunction[1] | $d.name->in(['or', 'and', 'lessThan', 'lessThanEqual', 'greaterThan', 'greaterThanEqual', 'equal', 'notEqual', 'notEqualAnsi', 'startsWith', 'endsWith', 'contains', 'isEmpty', 'isNotEmpty', 'isNull', 'isNotNull','isAlphaNumeric', 'exists', 'not', 'in', 'isNumeric', 'matches'])
                                        || ($d.name == 'group' && $d.parameters->toOne()->isBooleanOperation($extensions));,
       a:Any[1] | false

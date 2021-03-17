@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import meta::json::*;
-import meta::relational::mapping::*;
 import meta::alloy::objectReference::*;
 import meta::pure::runtime::*;
 import meta::pure::mapping::*;
