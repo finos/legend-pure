@@ -13,15 +13,9 @@
 // limitations under the License.
 
 import meta::pure::mapping::*;
-import meta::relational::mapping::*;
-import meta::relational::metamodel::*;
 import meta::pure::graphFetch::routing::*;
 import meta::pure::graphFetch::*;
-import meta::java::generation::convention::*;
 import meta::pure::tds::schema::*;
-import meta::java::generation::code::*;
-import meta::java::metamodel::project::*;
-import meta::alloy::runtime::java::*;
 import meta::pure::executionPlan::*;
 import meta::pure::router::routing::*;
 import meta::pure::router::systemMapping::*;
@@ -30,7 +24,10 @@ import meta::pure::router::extension::*;
 import meta::pure::router::clustering::*;
 import meta::pure::store::*;
 import meta::pure::graphFetch::executionPlan::*;
-import meta::relational::functions::sqlQueryToString::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::code::*;
+import meta::java::metamodel::project::*;
+import meta::alloy::runtime::java::*;
 
 Class meta::pure::router::extension::RouterExtension
 {
@@ -112,22 +109,12 @@ Class meta::pure::router::extension::RouterExtension
    plan_javaRuntime_mappingAdaptor_generatePropertyMapping2 : Function<{Nil[1]->ValueTransformer<Any>[1]}>[*];
    
    plan_javaRuntime_enginePlatformDependencies_conventions : Function<{Conventions[1]->Conventions[1]}>[0..1];
-
-   pureToSQL_buildUniqueName : Function<{Boolean[1], Boolean[1], RouterExtension[*] -> Function<{Nil[1]->String[1]}>[*]}>[0..1];
-   
-   relational_execution_postProcessors : Function<{PostProcessorResult[1], Runtime[1], RoutedValueSpecification[0..1], Mapping[0..1], Database[0..1], ExecutionContext[1] -> PostProcessorResult[1]}>[*];
-   relational_plan_postProcessors : Function<{PostProcessorResult[1], Runtime[1], RoutedValueSpecification[0..1], Mapping[0..1], Database[0..1], ExecutionContext[1] -> PostProcessorResult[1]}>[*];
-   
-   relational_plan_updateConnection : Function<{Nil[1]->Connection[1]}>[*];
-   
+  
    mapping_sourceClass : Function<{Nil[1] -> Class<Any>[1]}>[*];
    mapping_extractRelationalPropertyMappingFromEmbedded : Function<{AbstractProperty<Any>[1], SetImplementation[*], Mapping[1] -> String[*]}>[0..1];
-   
-   sqlQueryToString_processOperation : Function<{Nil[1], Format[1], GenerationState[1], Config[1], RouterExtension[*] -> Function<{Nil[1]->String[1]}>[*]}>[0..1];
-   sqlQueryToString_isBooleanOperation : Function<{Nil[1] -> Boolean[1]}>[*];
-   
+
    tdsSchema_resolveSchemaImpl : Function<{FunctionExpression[1], Map<String, List<Any>>[1], RouterExtension[*] -> Pair<Function<Any>, Function<{->SchemaState[1]}>>[*]}>[0..1];
-   
+
    testExtension_testedBy : Function<{ReferenceUsage[1], RouterExtension[*] -> Function<{TestedByResult[1]->TestedByResult[1]}>[*]}>[0..1];
    
    logActivities : Function<{meta::pure::mapping::Activity[*] -> Nil[0]}>[0..1];
@@ -139,7 +126,20 @@ Class meta::pure::router::extension::RouterExtension
       let func = $this.serializerExtension->eval($version);
       $func->pathToElement()->cast(@Function<{String[1]->SerializerExtension[1]}>)->eval($this.type);
    } : SerializerExtension[1];
+
+   moduleExtensions : ModuleExtension[*];
+
+   moduleExtension(module:String[1])
+   {
+     $this.moduleExtensions->filter(f|$f.module == $module)->first()
+   } : ModuleExtension[0..1];
 }
+
+Class meta::pure::router::extension::ModuleExtension
+{
+    module : String[1];
+}
+
 
 Class meta::pure::router::extension::SerializerExtension
 {

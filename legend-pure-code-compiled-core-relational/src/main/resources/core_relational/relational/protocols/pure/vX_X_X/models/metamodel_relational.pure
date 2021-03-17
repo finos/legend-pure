@@ -64,6 +64,12 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::Relation
    primaryKey : String[*];
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::Milestoning
+{
+    _type : String[1];
+   infinityDate : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::CDate[0..1];
+}
+
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::Table extends meta::protocols::pure::vX_X_X::metamodel::store::relational::Relation
 {
    name : String[1];
@@ -348,32 +354,4 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::SchemaNameMap
 {
    in:String[1];
    out:String[1];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::RelationalDatabaseConnection extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection
-{
-   datasourceSpecification:meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification[1];
-   authenticationStrategy:meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy[1];
-   postProcessors: meta::protocols::pure::vX_X_X::metamodel::store::relational::postProcessor::PostProcessor[*];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DefaultH2AuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
-{
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::TestDatabaseAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DefaultH2AuthenticationStrategy
-{
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::LocalH2DatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
-{
-    testDataSetupCsv:String[0..1];
-    testDataSetupSqls:String[*];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::TestDatabaseConnection extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection
-{
-   testDataSetupCsv : String[0..1];
-   testDataSetupSqls : String[*];
-
 }

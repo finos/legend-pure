@@ -35,7 +35,7 @@ function meta::relational::mapping::postProcessSQLQuery(query: SQLQuery[1], stor
    let postProcessorResult = $query->defaultPlanPostProcessors($runtime,$ext,$m,$store,$exeCtx, $extensions)
                                    ->userPlanPostProcessors($runtime,$ext,$m,$store,$exeCtx);
    
-   $extensions.relational_plan_postProcessors->fold({pp, result | $pp->eval($result, $runtime, $ext, $m, $store, $exeCtx)}, $postProcessorResult);
+   $extensions->map(e|$e.moduleExtension('relational')->cast(@RelationalExtension).relational_plan_postProcessors)->fold({pp, result | $pp->eval($result, $runtime, $ext, $m, $store, $exeCtx)}, $postProcessorResult);
 }
 
 //Execution
@@ -53,7 +53,7 @@ function meta::relational::mapping::postProcessQuery(exeCtx:ExecutionContext[1],
                                       |$newQuery
                                    );
 
-   $extensions.relational_execution_postProcessors->fold({pp, result | $pp->eval($result, $runtime, [], [], $store, $exeCtx)}, ^PostProcessorResult(query = $newQueryAfterDb2Processing));
+   $extensions->map(e|$e.moduleExtension('relational')->cast(@RelationalExtension).relational_execution_postProcessors)->fold({pp, result | $pp->eval($result, $runtime, [], [], $store, $exeCtx)}, ^PostProcessorResult(query = $newQueryAfterDb2Processing));
 }
 
 //Helper Functions

@@ -16,10 +16,7 @@
 //-----------
 // Metamodel
 //-----------
-import meta::protocols::pure::v1_19_0::metamodel::store::relational::element::*;
-import meta::protocols::pure::v1_19_0::metamodel::store::relational::connection::*;
 import meta::protocols::pure::v1_19_0::metamodel::domain::*;
-import meta::protocols::pure::v1_19_0::metamodel::store::relational::mapping::*;
 
 Class meta::protocols::pure::v1_19_0::metamodel::SourceInformation
 {

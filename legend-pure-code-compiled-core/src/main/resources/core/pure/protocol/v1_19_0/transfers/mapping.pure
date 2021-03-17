@@ -20,12 +20,7 @@ import meta::flatten::metamodel::*;
 import meta::protocols::pure::v1_19_0::transformation::fromPureGraph::mapping::modelToModel::*;
 import meta::pure::mapping::xStore::*;
 import meta::pure::mapping::modelToModel::*;
-import meta::protocols::pure::v1_19_0::transformation::fromPureGraph::store::relational::*;
 import meta::protocols::pure::v1_19_0::transformation::fromPureGraph::*;
-import meta::protocols::pure::v1_19_0::metamodel::store::relational::element::*;
-import meta::protocols::pure::v1_19_0::metamodel::store::relational::mapping::*;
-import meta::relational::metamodel::relation::*;
-import meta::relational::mapping::*;
 import meta::protocols::pure::v1_19_0::transformation::fromPureGraph::mapping::csv::*;
 import meta::protocols::pure::v1_19_0::transformation::fromPureGraph::mapping::*;
 import meta::pure::mapping::*;
@@ -116,7 +111,7 @@ function <<access.private>> meta::protocols::pure::v1_19_0::transformation::from
    );
 }
 
-function meta::protocols::pure::v1_19_0::transformation::fromPureGraph::store::relational::transformOperationSetImplementation(r:OperationSetImplementation[1], mapping:Mapping[1]):meta::protocols::pure::v1_19_0::metamodel::mapping::OperationClassMapping[1]
+function meta::protocols::pure::v1_19_0::transformation::fromPureGraph::mapping::transformOperationSetImplementation(r:OperationSetImplementation[1], mapping:Mapping[1]):meta::protocols::pure::v1_19_0::metamodel::mapping::OperationClassMapping[1]
 {
    let unionType = if ($r.operation.name->startsWith('special_union'),
        | meta::protocols::pure::v1_19_0::metamodel::mapping::MappingOperation.ROUTER_UNION,

@@ -5441,7 +5441,7 @@ function meta::relational::functions::pureToSqlQuery::buildUniqueName(elements:R
 
 function meta::relational::functions::pureToSqlQuery::buildUniqueName(elements:RelationalOperationElement[*], alias:Boolean[1], selectColumns:Boolean[1], extensions:RouterExtension[*]):String[1]
 {
-   $elements->map(e | $e->match($extensions.pureToSQL_buildUniqueName->map(f | $f->eval($alias, $selectColumns, $extensions))->concatenate(
+   $elements->map(e | $e->match($extensions->map(e|$e.moduleExtension('relational')->cast(@RelationalExtension).pureToSQL_buildUniqueName)->map(f | $f->eval($alias, $selectColumns, $extensions))->concatenate(
       [
          n:RootJoinTreeNode[1]|$n->getAllNodes()->map(a|$a->match([j:RootJoinTreeNode[1]|if($alias,|$j.alias.name,|$j.alias.relationalElement->buildUniqueName($alias, $selectColumns, $extensions)),j:JoinTreeNode[1]|$j.joinName]))->makeString('_'),
          s:SelectSQLQuery[1]|'s('+if($selectColumns,|$s.columns->buildUniqueName($alias, $selectColumns, $extensions)+',',|'')+$s.data->buildUniqueName($alias, $selectColumns, $extensions)+','+$s.filteringOperation->buildUniqueName($alias, $selectColumns, $extensions)+')',

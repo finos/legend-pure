@@ -175,7 +175,7 @@ function meta::relational::mapping::generateSQLExecutionNode(query:SQLQuery[1], 
 
 function meta::relational::mapping::updateConnection(conn:Connection[1], extensions:RouterExtension[*]):Connection[1]
 {
-   $conn->match($extensions.relational_plan_updateConnection->concatenate([
+   $conn->match($extensions->map(e|$e.moduleExtension('relational')->cast(@RelationalExtension).relational_plan_updateConnection)->concatenate([
       c:DatabaseConnection[1] | $c 
    ])->toOneMany())
 }
@@ -684,4 +684,23 @@ function meta::relational::mapping::supportsStream(f:FunctionExpression[1]):Bool
       meta::pure::functions::collection::in_Any_1__Any_MANY__Boolean_1_,
       meta::pure::functions::collection::in_Any_$0_1$__Any_MANY__Boolean_1_
   ]->contains($f.func); 
+}
+
+Class meta::relational::mapping::PostProcessorResult
+{
+   query : SQLQuery[1];
+   resultPostProcessor : meta::pure::metamodel::function::Function<{Result<Any|*>[1]->Result<Any|*>[1]}>[*];
+   executionNodes: meta::pure::executionPlan::ExecutionNode[*];  //nodes are inserted before the relational execution
+   postExecutionNodes: meta::pure::executionPlan::ExecutionNode[*];  //Nodes are inserted run after the relational execution
+   templateFunctions : String[*];
+}
+
+function meta::relational::metamodel::execute::executeInDb(sql:String[1], databaseConnection:DatabaseConnection[1]):ResultSet[1]
+{
+    meta::relational::metamodel::execute::executeInDb($sql, $databaseConnection, 0, 1000)
+}
+
+function meta::relational::metamodel::execute::loadCsvToDbTable(filePath:String[1], table:Table[1], databaseConnection:DatabaseConnection[1]):Nil[0]
+{
+    loadCsvToDbTable($filePath, $table, $databaseConnection, [])
 }
