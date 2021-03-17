@@ -149,9 +149,14 @@ function meta::pure::router::builder::build(v:ValueSpecification[1], l:List<Perm
                                                                                                o:OperationSetImplementation[1]| $o->resolveOperation($e.mapping)->map(i| let pMapping = $i->match([e:EmbeddedSetImplementation[1]| $e->propertyMappingsByPropertyName($propertyName),
                                                                                                                                                                                                  a:InstanceSetImplementation[1]| $i.propertyMappingsByPropertyName($propertyName)
                                                                                                                                                                                                 ]);
-                                                                                                                                                                       assert(!$pMapping->isEmpty(), | 'No property mapping found for: ' + $propertyName + ' in mapping ' + $i.class.name->toOne() + '[' + $i.id + ']');
-                                                                                                                                                                       $pMapping->toOne();
-                                                                                                                                                                    );
+
+                                                                                                                                                                      if($pMapping->isEmpty() && ($i->isNoMappingPassThru($property) || $i->isNoMappingDefaultToEmpty($property)),
+                                                                                                                                                                        | [],                         
+                                                                                                                                                                        {| assert(!$pMapping->isEmpty(), | 'No property mapping found for: ' + $propertyName + ' in mapping ' + $i.class.name->toOne() + '[' + $i.id + ']');
+                                                                                                                                                                          $pMapping->toOne();
+                                                                                                                                                                        }
+                                                                                                                                                                      );
+                                                                                               )
                                                                                                                            ]);
 
                                                                              print(if($debug.debug,|$debug.space+'  propertyMappings found "'+$propertyMappings->size()->toString() +'" \n',|''));
