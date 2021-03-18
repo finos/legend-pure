@@ -25,7 +25,6 @@ import meta::java::metamodel::project::*;
 import meta::java::serialization::*;
 import meta::pure::executionPlan::*;
 import meta::pure::mapping::*;
-import meta::pure::mapping::modelToModel::inMemory::*;
 import meta::pure::milestoning::*;
 import meta::pure::graphFetch::*;
 import meta::pure::graphFetch::routing::*;
@@ -133,7 +132,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::common::upda
       let getterName  = $conventions->getterName($p);
       let fieldType   = $conventions->pureTypeToJavaType($p);
 
-      let noMappingDefaultToEmpty = ($fetchTree.sets->size() == 1) && $fetchTree.sets->toOne()->isNoMappingDefaultToEmpty($p);
+      let noMappingDefaultToEmpty = $p.owner->instanceOf(Class) && ($fetchTree.sets->size() == 1) && $fetchTree.sets->toOne()->defaultToEmptyProperty($p);
       let noMappingPassThru = $p.owner->instanceOf(Class) && ($fetchTree.sets->size() == 1) && $fetchTree.sets->toOne()->passThruProperty($p);
 
       if ($p.owner->instanceOf(Class) && ($fetchTree.sets->size() == 1) && $fetchTree.sets->toOne()->cast(@InstanceSetImplementation).propertyMappingsByPropertyName($p.name->toOne())->isEmpty() && !($p->hasGeneratedMilestoningDatePropertyStereotype()) && !($noMappingDefaultToEmpty || $noMappingPassThru),
@@ -244,6 +243,12 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::common::upda
    );
 
    newProject()->addClasses($implClass->addMethods([$classSizeMethod, $instanceSizeMethod]));
+}
+
+
+function <<access.private>> meta::alloy::runtime::java::graphFetch::common::defaultToEmptyProperty(setImpl:SetImplementation[1], property:AbstractProperty<Any>[1]):Boolean[1]
+{
+   !$property.multiplicity->hasLowerBound() && $property->functionReturnType().rawType->toOne()->instanceOf(DataType)
 }
 
 function <<access.private>> meta::alloy::runtime::java::graphFetch::common::passThruProperty(setImpl:SetImplementation[1], property:AbstractProperty<Any>[1]):Boolean[1]

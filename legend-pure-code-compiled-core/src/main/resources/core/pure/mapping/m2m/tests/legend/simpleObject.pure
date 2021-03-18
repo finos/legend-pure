@@ -360,7 +360,7 @@ function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly
 }
 meta::pure::mapping::modelToModel::test::alloy::simple::unmappedOptionalPropertiesAreEmpty() : Boolean[1]
 {
-   let tree = #{SomeOptionalData {s1, s2, i, f, d, sd, dt, b, c, nm} }#;
+   let tree = #{SomeOptionalData {s1, s2, i, f, d, sd, dt, b, c} }#;
 
    let result = execute(
       |SomeOptionalData.all()->graphFetch($tree)->serialize($tree),
@@ -374,7 +374,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::unmappedOptionalProperti
       []
    );
 
-   let expected = '{"s1":"Hello", "s2":[], "i":null, "f":null, "d":[], "sd":[], "dt":[], "b":null, "c":null, "nm":null}';
+   let expected = '{"s1":"Hello", "s2":[], "i":null, "f":null, "d":[], "sd":[], "dt":[], "b":null, "c":null}';
 
    assert(jsonEquivalent($expected->parseJSON(), $result.values->toOne()->parseJSON()));
 }
@@ -492,7 +492,6 @@ Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::Som
    dt : DateTime[*];
    b  : Boolean[0..1];
    c  : Colour[0..1];
-   nm : Name[0..1];
 }
 
 Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::Name

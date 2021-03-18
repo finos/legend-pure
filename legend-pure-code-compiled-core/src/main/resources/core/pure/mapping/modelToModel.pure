@@ -118,9 +118,9 @@ function meta::pure::mapping::modelToModel::inMemory::isNoMappingPassThru(setImp
 function meta::pure::mapping::modelToModel::inMemory::isNoMappingDefaultToEmpty(setImpl:SetImplementation[1], property:AbstractProperty<Any>[1]):Boolean[1]
 {
    $setImpl->match([
-      pisi:PureInstanceSetImplementation[1] | !$property.multiplicity->hasLowerBound() && $property.owner->instanceOf(Class),
-      si: SetImplementation[1]              | false
-   ]);
+      pisi:PureInstanceSetImplementation[1] | !$property.multiplicity->hasLowerBound() && $property->functionReturnType().rawType->toOne()->instanceOf(DataType),
+      si: SetImplementation[1]              | false;
+   ])
 }
 
 function meta::pure::mapping::modelToModel::inMemory::noMappingPassThruSourceProperty(setImpl:PureInstanceSetImplementation[1], property:AbstractProperty<Any>[1]):AbstractProperty<Any>[0..1]
