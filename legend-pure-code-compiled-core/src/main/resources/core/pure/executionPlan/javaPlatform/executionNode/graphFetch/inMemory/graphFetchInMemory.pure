@@ -224,7 +224,10 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::inMemory::ge
    let transformPropertyMethodCodes = $propertyMappings->map({pm |
       $streamVarGenerator->eval($pm)->j_declare($singlePropMappingStreamGenerator->eval($pm));
    })->concatenate(
-      javaStream()->j_invoke('of', $propertyMappings->map(p | $streamVarGenerator->eval($p)), $graphInstanceStream)->js_flatMap(j_identity($graphInstanceStream))->j_return()
+      if($propertyMappings->isEmpty(),
+         | javaStream()->j_invoke('empty', [], $graphInstanceStream),
+         | javaStream()->j_invoke('of', $propertyMappings->map(p | $streamVarGenerator->eval($p)), $graphInstanceStream)->js_flatMap(j_identity($graphInstanceStream))
+      )->j_return()
    );
 
    let transformPropertyMethod = javaMethod(['public'], javaStream($conventions->className(GraphInstance)), 'transformProperty', [$graphObjects], $transformPropertyMethodCodes->codesToString($executeClassWithFields));
