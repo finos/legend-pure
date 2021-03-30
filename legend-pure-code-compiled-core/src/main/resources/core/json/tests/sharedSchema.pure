@@ -77,6 +77,13 @@ Class meta::json::schema::tests::ClassWithInLineFunctions
   numberOptional : Float[0..1];
 }
 
+Enum <<meta::json::schema::JSONSchemaTypeExtension.null>> meta::json::schema::tests::NullableEnum
+{
+   one,
+   two
+
+}
+
 
 function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::typeInclusionForConstraintFunctions():Boolean[1]
 {
@@ -371,5 +378,47 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
    
 }
 
+function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testNullableEnum():Boolean[1]
 
+{
+       let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::NullableEnum]));
+       let jsonSchemaOpenAPI = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::NullableEnum],schemaSpecification=JSONSchemaSpecification.OPEN_API_V3_0_3));
 
+       let expectedJSON =  '{' +
+                           '  "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+                           '  "title": "meta::json::schema::tests::NullableEnum",' +
+                           '  "enum": [' +
+                           '"one",' +
+                           '"two",' +
+                           'null' +
+                           '  ],' +
+                           '  "type": [' +
+                           '"string",' +
+                           '"null"' +
+                           '  ]' +
+                           '}' ;
+
+       let expectedOpenAPIJSON = '{' +
+                                 '  "title": "meta::json::schema::tests::NullableEnum",' +
+                                 '  "nullable": true,' +
+                                 '  "enum": [' +
+                                 '"one",' +
+                                 '"two",' +
+                                 'null' +
+                                 '  ],' +
+                                 '  "type": "string"' +
+                                 '}';
+   
+      assert(jsonEquivalent($expectedJSON->parseJSON(),$jsonSchema.content->toOne()->parseJSON()));
+      assert(jsonEquivalent($expectedOpenAPIJSON->parseJSON(),$jsonSchemaOpenAPI.content->toOne()->parseJSON()));
+      let prefix = 'meta::json::schema::tests';
+      let fileMap = [schemaInput('/NullableEnum.json', $expectedJSON,$prefix)];
+      let fileMapOpenAPI = [schemaInput('/NullableEnum.json', $expectedOpenAPIJSON,$prefix)];
+
+      let generatedElementFromJSON =  $fileMap->JSONSchemaToPure(); 
+      let generatedElementFromJSONOpenAPI =  $fileMapOpenAPI->JSONSchemaToPure(); 
+
+      assert(jsonEquivalent(meta::json::schema::tests::NullableEnum->toSerializer()->parseJSON(),$generatedElementFromJSON->toOne()->toSerializer()->parseJSON()));
+      assert(jsonEquivalent(meta::json::schema::tests::NullableEnum->toSerializer()->parseJSON(),$generatedElementFromJSONOpenAPI->toOne()->toSerializer()->parseJSON()));
+
+}

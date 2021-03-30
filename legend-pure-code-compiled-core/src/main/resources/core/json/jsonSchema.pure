@@ -280,7 +280,7 @@ function <<access.protected>> meta::json::schema::toJSONSchema( type:Type[1], ro
                           if( $type->isEnum(),
                              |   let default = $type->value4Tag('defaultValue',JSONSchemaGeneration);
                                  let defaultTag = $default->first()->toJSONRepresentation('default',[]);
-                                $type->cast(@Enumeration<Any>)->enum()->concatenate($defaultTag)->concatenate( newJSONKeyStringValue( 'type', 'string'));,
+                                $type->cast(@Enumeration<Any>)->enum()->concatenate($defaultTag)->concatenate( newJSONKeyStringValue( 'type', 'string')->addNullType($type,$config));,
                              |
                                let class = $type->cast(@Class<Any>);
                                let constraints = if($config.useConstraints ,| $class.constraints->map(c|$c->meta::json::schema::constraint::toJSONSchemaFromConstraint(^$config(rootElement=$class))),|[]);
@@ -338,7 +338,9 @@ function meta::json::schema::additionalProperties( hasAdditionalProperties:Boole
 
 function meta::json::schema::enum( type:Enumeration<Any>[1] ) : JSONKeyValue[1]
 {
-       let enumValues = $type->enumValues()->map(s|  let enumTagValue = $s->cast(@ElementWithTaggedValues)->value4Tag('name',JSONSchemaGeneration);
+    let nullValue = if($type->hasStereotype('null',JSONSchemaTypeExtension),|^JSONNull(),|[]);    
+  
+    let enumValues = $type->enumValues()->map(s|  let enumTagValue = $s->cast(@ElementWithTaggedValues)->value4Tag('name',JSONSchemaGeneration);
                                                      let value = if($enumTagValue->isNotEmpty(),
                                                                       |assert($enumTagValue->size()==1,'can only have 1 enumTagValue per enumValue');
                                                                        $enumTagValue.value->toOne();,
@@ -346,7 +348,7 @@ function meta::json::schema::enum( type:Enumeration<Any>[1] ) : JSONKeyValue[1]
                                                                         );
 
                                                      ^JSONString(value=$value);
-                                                );
+                                                )->concatenate($nullValue);
 
 
        newJSONKeyValue('enum', ^JSONArray(values=$enumValues));
@@ -748,6 +750,13 @@ function meta::json::schema::propertyFormatValue( property:Property<Nil,Any|*>[1
       );
 }
 
+function <<access.protected>> meta::json::schema::addNullType( existingType:JSONKeyValue[1],element:AnnotatedElement[1],config: JSONSchemaConfigInternal[1]):JSONKeyValue[1]
+{
+   
+   if(!$config->isOpenAPI() && $element->cast(@ElementWithStereotypes)->hasStereotype('null',JSONSchemaTypeExtension),  
+     |   ^$existingType(value=^JSONArray(values=[$existingType.value,^JSONString(value='null')])),
+     |$existingType); 
+}
 
 function <<access.protected>> meta::json::schema::elementTags( element:AnnotatedElement[1],config: JSONSchemaConfigInternal[1]):JSONKeyValue[*]
 {

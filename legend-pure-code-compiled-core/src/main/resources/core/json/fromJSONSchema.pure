@@ -203,11 +203,24 @@ function <<access.private>> meta::json::schema::fromSchema::extractObjectFromCol
 function <<access.private>> meta::json::schema::fromSchema::JSONSchemaIsObject(schema:JSONObject[1]):Boolean[1]
 {
    
-   let type = $schema.keyValuePairs->getValueForKey('type');
-    $type->isNotEmpty() && ( $type->cast(@JSONString).value->toOne() == 'object') &&  !$schema.keyValuePairs.key.value->containsAny(['anyOf','oneOf']) 
+   let type = $schema->typeValues();
+    $type->isNotEmpty() && ( $type->contains('object')) &&  !$schema.keyValuePairs.key.value->containsAny(['anyOf','oneOf']) 
    
    
    ;
+}
+
+function <<access.private>> meta::json::schema::fromSchema::typeValues(schema:JSONObject[1]):String[*]
+{
+   
+   let type = $schema.keyValuePairs->getValueForKey('type');
+   if($type->isNotEmpty(),
+      |$type->match([s:JSONString[1]|$s.value,
+                    a:JSONArray[1]|$a.values->cast(@JSONString).value 
+               ]);,
+     |[]) ;
+   
+   
 }
 
 function <<access.private>> meta::json::schema::fromSchema::JSONSchemaSuperTypes(schemas:ProcessedSchema[*]):ProcessedSchema[*]
@@ -251,7 +264,7 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToEnum(pat
    
    let package = $path->packageFromPath($pathPrefix);
 
-   let values = $schema.keyValuePairs->getValueForKey('enum')->cast(@JSONArray).values->cast(@JSONString).value->filter(v|$v!='');
+   let values = $schema.keyValuePairs->getValueForKey('enum')->cast(@JSONArray).values->filter(e|$e->instanceOf(JSONString))->cast(@JSONString).value->filter(v|$v!='');
    
    let santizedValues = $values->map(v| let sanitized = $v-> sanitizeValue(); 
                                                     if($sanitized == $v ,
@@ -910,7 +923,11 @@ function <<access.private>> meta::json::schema::fromSchema::addSchemaTagsToPure(
     let exampleTags  =  $keyValuePairs->getValueForKey('example')->first()->getJSONElementAsString()->map(t|^TaggedValue(tag=tag(JSONSchemaGeneration,'example'),value=$t)) ;
     
     let nullableTag =  $keyValuePairs->getValueForKey('nullable');
-    let nullST = if($nullableTag->isNotEmpty(),| stereotype(JSONSchemaTypeExtension,'null'),|[]); 
+     let type = $keyValuePairs->getValueForKey('type');
+    let typeValues =  if($type->isNotEmpty() && $type->toOne()->instanceOf(JSONArray) ,|$type->toOne()-> cast(@JSONArray).values->cast(@JSONString).value,|[]);
+    
+
+    let nullST = if($nullableTag->isNotEmpty() || $typeValues->contains('null'),| stereotype(JSONSchemaTypeExtension,'null'),|[]); 
    
     let description = $objectWithTags->getDescription();
     let defaultValue = $keyValuePairs->getValueForKey('default');
