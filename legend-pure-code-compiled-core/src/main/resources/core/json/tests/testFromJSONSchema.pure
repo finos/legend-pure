@@ -110,7 +110,8 @@ function <<test.Test>> meta::json::schema::fromSchema::tests::dereferenceTest():
    assertEquals('/l.0/ch.ild.json',meta::json::schema::fromSchema::refToFullPath('../../ch.ild.json','/l.0/l1/l2/par.ent.json'));
    assertEquals('/l.0/ch.ild.json',meta::json::schema::fromSchema::refToFullPath('../../ch.ild','/l.0/l1/l2/par.ent.json'));
    assertEquals('/l0/l1/l2/child.json',meta::json::schema::fromSchema::refToFullPath('../../../l1/l2/child','/l0/l1/l2/l3/parent.json'));
-                       
+   assertEquals('/a/1/2/child.json',meta::json::schema::fromSchema::refToFullPath('../../1/2/child.json','/a/a/b/parent.json'));
+                      
 }
 
 
@@ -133,11 +134,11 @@ function <<test.Test>> meta::json::schema::fromSchema::tests::openAPITest():Bool
                   '        }, '+
                  '        "arrayMaxItemOne": {\n' +
                 '          "type": "array",\n' +
-
+                '          "description": "description",\n' +
                 '          "items": {\n' +
                 '            "type": "string",\n' +
-                '            "nullable": true\n' +
-
+                '            "nullable": true,\n' +
+                '            "description": "A combined"\n' +
                 '          },\n' +
                 '          "maxItems": 10\n' +
                 '        }\n' +
@@ -154,9 +155,8 @@ function <<test.Test>> meta::json::schema::fromSchema::tests::openAPITest():Bool
 
    let generated =  $fileMap->JSONSchemaToPure()->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::openAPI')->toSerializer()->parseJSON();
    let expected = meta::json::schema::fromSchema::tests::openAPI->toSerializer()->parseJSON();
-
+   
    assert(jsonEquivalent($expected,$generated));
-
 
 }
 
@@ -879,7 +879,7 @@ Class {meta::pure::profiles::doc.doc='A simple description'} meta::json::schema:
 {
   simpleReference : String[0..1];
   simpleString : String[0..1];
-  arrayMaxItemOne : String[0..10];
+  {meta::pure::profiles::doc.doc='A combined description'} arrayMaxItemOne : String[0..10];
 }
 Class {meta::pure::profiles::doc.doc='a Super Type Object'} meta::json::schema::fromSchema::tests::SuperType
 {
@@ -898,7 +898,7 @@ function<<JSONSchemaGeneration.readOnly>> meta::json::schema::fromSchema::tests:
 Class {meta::pure::profiles::doc.doc='A simple description'} meta::json::schema::fromSchema::tests::openAPI extends meta::json::schema::fromSchema::tests::SuperType
 {
   <<meta::json::schema::JSONSchemaTypeExtension.null>> simpleString : String[0..1];
-  <<meta::json::schema::JSONSchemaTypeExtension.null>> arrayMaxItemOne : String[0..10];
+  <<meta::json::schema::JSONSchemaTypeExtension.null>> {doc.doc='A combined description'} arrayMaxItemOne : String[0..10];
 }
             
 Enum <<meta::json::schema::JSONSchemaGeneration.readOnly>> {JSONSchemaJavaExtension.javaType='org.example.ExampleEnum', meta::pure::profiles::doc.doc='Example Enum Doc'} meta::json::schema::fromSchema::tests::ExampleEnum

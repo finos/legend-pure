@@ -289,18 +289,39 @@ Class  meta::json::schema::tests::parent::parentClass
 
 }
 
+Class  meta::json::schema::tests::parent::parent::levela::parentClass2
+{
+   childClass4:meta::json::schema::tests::parent::level1::levela::childClass4[0..1];
+   childClass3:meta::json::schema::tests::parent::level1::level2::childClass3[1];
+
+
+}
+
 Class  meta::json::schema::tests::parent::level1::childClass
 {
 
 }
+
+Class  meta::json::schema::tests::parent::level1::level2::childClass3
+{
+
+}
+
+Class  meta::json::schema::tests::parent::level1::levela::childClass4
+{
+
+}
+
 
 Class  meta::json::schema::tests::parent2::level1::level2::childClass2
 {
    parentClass:meta::json::schema::tests::parent::parentClass[1];
 
 }
+
+
 Class
-<<JSONSchemaGeneration.noAdditionalProperties>> {JSONSchemaJavaExtension.javaType = 'com.supertype' }//,JSONSchemaGeneration.polymorphicName = 'PolyExample'
+<<JSONSchemaGeneration.noAdditionalProperties>> {JSONSchemaJavaExtension.javaType = 'com.supertype' }
   meta::json::schema::tests::ClassWithProfileInterface
 {
       classType:String[1];
@@ -1513,24 +1534,7 @@ function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchem
 }
 
 
-function <<test.Test>>  meta::json::schema::generation::tests::toJSONSchemaWithNoDefinitions():Boolean[1]
-{
-    let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::parent::parentClass,meta::json::schema::tests::parent2::level1::level2::childClass2],
-                                                                           includeAllRelatedTypes = false  ));
 
-
-    assertFalse( $jsonSchema->isEmpty() );
-    assertSize($jsonSchema,2);
-    let expectedParentjson=  '{"$schema":"http:\/\/json-schema.org\/draft-07\/schema#","title":"meta::json::schema::tests::parent::parentClass","type":"object","properties":{"childClass":{"$ref":"level1\/childClass.json"},"childClass2":{"$ref":"..\/parent2\/level1\/level2\/childClass2.json"}},"required":["childClass","childClass2"]}';
-
-    let actualParentJSON =  $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/parent/parentClass.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
-
-    assertEquals($expectedParentjson->meta::json::parseJSON()->toCompactJSONString(),$actualParentJSON);
-
-    let expectedChildJSON = '{"$schema":"http:\/\/json-schema.org\/draft-07\/schema#","title":"meta::json::schema::tests::parent2::level1::level2::childClass2","type":"object","properties":{"parentClass":{"$ref":"..\/..\/..\/parent\/parentClass.json"}},"required":["parentClass"]}';
-   let actualChildJSON =  $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/parent2/level1/level2/childClass2.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
-    assertEquals($expectedChildJSON->meta::json::parseJSON()->toCompactJSONString(),$actualChildJSON);
-}
 
  function <<test.Test>> meta::json::schema::generation::tests::testOpenAPI():Boolean[1]
 {

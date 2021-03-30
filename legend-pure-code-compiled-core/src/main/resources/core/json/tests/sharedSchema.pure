@@ -308,3 +308,68 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
 }
 
 
+
+function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testComplexPaths():Boolean[1]
+{
+    let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::parent::parentClass,
+                                                                                          meta::json::schema::tests::parent2::level1::level2::childClass2,
+                                                                                          meta::json::schema::tests::parent::parent::levela::parentClass2,
+                                                                                          meta::json::schema::tests::parent::level1::childClass,
+                                                                                          meta::json::schema::tests::parent::level1::level2::childClass3,
+                                                                                          meta::json::schema::tests::parent::level1::levela::childClass4 ],
+                                                                           includeAllRelatedTypes = false  ));
+
+    assertFalse( $jsonSchema->isEmpty() );
+    assertSize($jsonSchema,6);
+   
+    let expectedParentjson=  '{"$schema":"http:\/\/json-schema.org\/draft-07\/schema#","title":"meta::json::schema::tests::parent::parentClass","type":"object","properties":{"childClass":{"$ref":"level1\/childClass.json"},"childClass2":{"$ref":"..\/parent2\/level1\/level2\/childClass2.json"}},"required":["childClass","childClass2"]}';
+
+    let actualParentJSON =  $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/parent/parentClass.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
+
+    assertEquals($expectedParentjson->meta::json::parseJSON()->toCompactJSONString(),$actualParentJSON);
+
+    let expectedChildJSON = '{"$schema":"http:\/\/json-schema.org\/draft-07\/schema#","title":"meta::json::schema::tests::parent::level1::childClass","type":"object"}';
+   let actualChildJSON =  $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/parent/level1/childClass.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
+   assertEquals($expectedChildJSON->meta::json::parseJSON()->toCompactJSONString(),$actualChildJSON);
+   
+   let expectedParent2 = '{"$schema":"http:\/\/json-schema.org\/draft-07\/schema#","title":"meta::json::schema::tests::parent::parent::levela::parentClass2","type":"object","properties":{"childClass3":{"$ref":"..\/..\/level1\/level2\/childClass3.json"},"childClass4":{"$ref":"..\/..\/level1\/levela\/childClass4.json"}},"required":["childClass3"]}';
+   let actualParent2JSON =  $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/parent/parent/levela/parentClass2.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
+   
+   assertEquals($expectedParent2->meta::json::parseJSON()->toCompactJSONString(),$actualParent2JSON);
+
+   let expectedchild2 = '{"$schema":"http:\/\/json-schema.org\/draft-07\/schema#","title":"meta::json::schema::tests::parent2::level1::level2::childClass2","type":"object","properties":{"parentClass":{"$ref":"..\/..\/..\/parent\/parentClass.json"}},"required":["parentClass"]}';
+   let actualChild2 =  $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/parent2/level1/level2/childClass2.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
+   
+   let expectedchild3 = '{"$schema":"http:\/\/json-schema.org\/draft-07\/schema#","title":"meta::json::schema::tests::parent::level1::level2::childClass3","type":"object"}';
+   let actualchild3 =  $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/parent/level1/level2/childClass3.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
+
+   let expectedchild4 = '{"$schema":"http:\/\/json-schema.org\/draft-07\/schema#","title":"meta::json::schema::tests::parent::level1::levela::childClass4","type":"object"}';
+   let actualchild4 =  $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/parent/level1/levela/childClass4.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
+
+   
+    let prefix = 'meta::json::schema::tests';
+   
+   let fileMap = [schemaInput('/parent/parentClass.json', $expectedParentjson,$prefix),
+                 schemaInput('/parent/level1/childClass.json', $expectedChildJSON,$prefix),
+                 schemaInput('/parent/parent/levela/parentClass2.json', $expectedParent2,$prefix),
+                 schemaInput('/parent2/level1/level2/childClass2.json', $expectedchild2,$prefix),         
+                 schemaInput('/parent/level1/level2/childClass3.json', $expectedchild3,$prefix),
+                 schemaInput('/parent/level1/levela/childClass4.json', $expectedchild4,$prefix)        
+
+   
+   ]; 
+    let generatedElementFromJSON =  $fileMap->JSONSchemaToPure(); 
+   
+   assert(jsonEquivalent(meta::json::schema::tests::parent::parentClass->toSerializer()->parseJSON(),$generatedElementFromJSON->filter(p|$p->elementToPath()=='meta::json::schema::tests::parent::parentClass')->toOne()->toSerializer()->parseJSON()));
+  
+   assert(jsonEquivalent(meta::json::schema::tests::parent2::level1::level2::childClass2->toSerializer()->parseJSON(),$generatedElementFromJSON->filter(p|$p->elementToPath()=='meta::json::schema::tests::parent2::level1::level2::childClass2')->toOne()->toSerializer()->parseJSON()));
+
+   assert(jsonEquivalent(meta::json::schema::tests::parent::parent::levela::parentClass2->toSerializer()->parseJSON(),$generatedElementFromJSON->filter(p|$p->elementToPath()=='meta::json::schema::tests::parent::parent::levela::parentClass2')->toOne()->toSerializer()->parseJSON()));
+
+
+   
+   
+}
+
+
+

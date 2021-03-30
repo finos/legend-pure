@@ -126,7 +126,7 @@ function meta::json::schema::generation::generateJsonSchemaFromPure(config:JSONS
    generateJsonSchemaFromPure_internal($config,$element);
 }
 
-function meta::json::schema::generateJsonSchemaFromPure_internal(config:JSONSchemaConfig[1], element: Type[1]) : JSONSchemaOutput[*]
+function  meta::json::schema::generateJsonSchemaFromPure_internal(config:JSONSchemaConfig[1], element: Type[1]) : JSONSchemaOutput[*]
 {
    let internalConfig = $config->externalToInternalConfig();
    let content = $element->toJSONSchema([],$internalConfig)->meta::json::toPrettyJSONString();
@@ -286,7 +286,7 @@ function <<access.protected>> meta::json::schema::toJSONSchema( type:Type[1], ro
                                let constraints = if($config.useConstraints ,| $class.constraints->map(c|$c->meta::json::schema::constraint::toJSONSchemaFromConstraint(^$config(rootElement=$class))),|[]);
 
                                let constraintsNoRef = if($config.useConstraints && $config.generateConstraintFunctionSchemas,| $class.constraints->map(c|$c->meta::json::schema::constraint::jsonSchemaConstraintsWithoutRef($config)),|$constraints);
-                              
+
                                let rootClass = $root->cast(@Class<Any>);
                                let required = $class->required();
                                let properties = properties( $class,$rootClass,$constraints,$constraintsNoRef,$config);
@@ -389,27 +389,34 @@ function <<access.private>> meta::json::schema::calculateJSONRef( element:Packag
    if(  ( !$root->isEmpty() ) && $element == $root,
                       | '#',
                       | if($useDefinitions || $referenceParent->isEmpty(),
-                             |'#/definitions/' + $element -> elementToPath(),
+                             | $config->JSONRefPrefix() + $element->elementName($config,true,false,[]),
                              |    let parentPath = $referenceParent->toOne()->elementPath().name->tail()->init();
                                   let elementPath = $element->elementPath().name->tail()->init();
+                            let parentWithIndex=  $parentPath->fold({p,a:Integer[1..*]| let next= $a->last()->toOne()+1;  
+                                                                    $a->concatenate($next);},0)->zip($parentPath  );
+                            let elementWithIndex=  $elementPath->fold({p,a:Integer[1..*]| let next= $a->last()->toOne()+1;  
+                                                                    $a->concatenate($next);},0)->zip($elementPath  );
 
-                                  let parentParts = $parentPath->map( parentPart | let parentIndex = $parentPath->indexOf($parentPart);
+                               let parentParts = $parentWithIndex->map( parentPart |  let parentIndex = $parentPart.first;
                                                                                     if($elementPath->size()>$parentIndex,
                                                                                         |  let elementPart = $elementPath->at($parentIndex);
-                                                                                            if($elementPart==$parentPart,
-                                                                                                 |[],
+                                                                                          if($elementPath->take($parentIndex+1)==$parentPath->take($parentIndex+1),
+                                                                                                 |[];,
                                                                                                  |'..');,
                                                                                         |'..');
 
                                                                        );
+   
+                
+   
 
-                                  let elemntParts = $elementPath->map( elementPart |let elementIndex = $elementPath->indexOf($elementPart);
+                                  let elemntParts = $elementWithIndex->map( elementPart |let elementIndex = $elementPart.first;
                                                                                     if($parentPath->size()>$elementIndex,
                                                                                            |let parentPart = $parentPath->at($elementIndex);
-                                                                                            if($elementPart==$parentPart,
+                                                                                             if($elementPath->take($elementIndex+1)==$parentPath->take($elementIndex+1),
                                                                                                  |[],
-                                                                                                 |$elementPart);,
-                                                                                           |$elementPart);
+                                                                                                 |$elementPart.second);,
+                                                                                           |$elementPart.second);
                                                                     );
                                    let allParts =  $parentParts->concatenate($elemntParts);
                                    let result = if($allParts->isNotEmpty(),
@@ -418,6 +425,16 @@ function <<access.private>> meta::json::schema::calculateJSONRef( element:Packag
 
                           );
                   );
+}
+
+
+function <<access.private>> meta::json::schema::JSONRefPrefix(config:JSONSchemaConfigInternal[1] ):String[1]
+{
+     if($config->isOpenAPI(),
+        |'#/components/schemas/' ,
+        |'#/definitions/');
+
+
 }
 
 function <<access.private>> meta::json::schema::elementName( element:PackageableElement[1],config:JSONSchemaConfigInternal[1],includePackage:Boolean[1],convertToPath:Boolean[1],newName:String[0..1] ) : String[1]
@@ -444,7 +461,7 @@ function meta::json::schema::description( element:PackageableElement[1] ) : JSON
 {
    if( meta::pure::functions::doc::hasDoc( $element ),
       | newJSONKeyStringValue( 'description',
-                                meta::pure::functions::doc::getDocs( $element )->toOne() ),
+                                meta::pure::functions::doc::getDocs( $element )->at(0) ),
       | [] );
 }
 
@@ -528,7 +545,6 @@ function meta::json::schema::isEnum( rawType:PackageableElement[*] ) : Boolean[1
    ]);
 }
 
-
 function meta::json::schema::allNonPrimitivePropertiesOfClass( class:Class<Any>[1] ) : PackageableElement[*]
 {
    let generalizationsProperties = $class.generalizations->map(g |
@@ -589,40 +605,40 @@ function meta::json::schema::allReferencedElements( class:Class<Any>[1] ) : Pack
 function <<access.private>> meta::json::schema::allReferencedElements( class:Class<Any>[1],bag:PackageableElement[*] ) : PackageableElement[*]
 {
    if(meta::pure::functions::collection::contains($bag,$class),
-      | [],
-      |
-         let generalizations                  = $class->allGeneralizations();
+                        | [],
+                        |
+                           let generalizations                  = $class->allGeneralizations();
          let specializations                  = $class.specializations->map( spec | $spec.specific)->filter( oclass | !$oclass->instanceOf(MappingClass) )->cast(@Class<Any>);
          let specializationPropertyElements   = $specializations->map( oclass | $oclass->allReferencedElements( $bag->concatenate($class)->concatenate( $generalizations) ) );
 
-         let allReferencedElements =
-          meta::pure::functions::collection::removeDuplicates(
-             $generalizations->concatenate($specializations)
-                          ->concatenate($specializationPropertyElements)
-          );
+                           let allReferencedElements =
+                            meta::pure::functions::collection::removeDuplicates(
+                               $generalizations->concatenate($specializations)
+                                            ->concatenate($specializationPropertyElements)
+                            );
 
 
           let allNonPrimitivePropertiesOfClass = $class->allNonPrimitivePropertiesOfClass();
 
-          let myPropertyElements =  $allNonPrimitivePropertiesOfClass->map( p |
-                                                    if( !$p->isClass(),
-                                                        | [],
-                                                        | $p->cast(@Class<Any>).specializations->map( class | $class.specific->cast(@Class<Any>) )
-                                                    );
-                                    )
-                                    -> concatenate( $allNonPrimitivePropertiesOfClass );
+                            let myPropertyElements =  $allNonPrimitivePropertiesOfClass->map( p |
+                                                                      if( !$p->isClass(),
+                                                                          | [],
+                                                                          | $p->cast(@Class<Any>).specializations->map( class | $class.specific->cast(@Class<Any>) )
+                                                                      );
+                                                      )
+                                                      -> concatenate( $allNonPrimitivePropertiesOfClass );
 
-         let result = $myPropertyElements->map( p | if($p->isClass(),
+                           let result = $myPropertyElements->map( p | if($p->isClass(),
                                               | $p->cast(@Class<Any>)->allReferencedElements( $bag->concatenate($class)->concatenate($allReferencedElements)),
-                                              | $p
-                                           )
-                                 )
-                            ->concatenate($allReferencedElements)
-                            ->concatenate($bag)
-                            ->concatenate($class);
+                                                                | $p
+                                                             )
+                                                   )
+                                              ->concatenate($allReferencedElements)
+                                              ->concatenate($bag)
+                                              ->concatenate($class);
 
         meta::pure::functions::collection::removeDuplicates( $result );
-   );
+         );
 }
 
 
@@ -859,7 +875,7 @@ function meta::json::schema::definitions( class:Class<Any>[1], root:Class<Any>[0
 
 function  <<access.private>> meta::json::schema::definitions( class:Class<Any>[1], root:Class<Any>[0..1], config:JSONSchemaConfigInternal[1] ) : JSONKeyValue[0..1]
 {
- let updatedConfig = ^$config(rootLevel=false);
+   let updatedConfig = ^$config(rootLevel=false);
    let values = $class->allReferencedElements()->sortBy(e|$e->elementToPath())->map( p | newJSONKeyValue( $p->elementToPath(), $p->cast(@Type)->toOne()->toJSONSchema($root,$updatedConfig) ) );
 
   if( $values->isEmpty(),
@@ -907,13 +923,13 @@ function <<access.private>>  meta::json::schema::isOpenAPI(config:JSONSchemaConf
 function <<access.private>>  meta::json::schema::addDiscriminator(pureElement:Class<Any>[1],config:JSONSchemaConfigInternal[1]):JSONKeyValue[0..1]
 {
    //class has a property with discriminator stereotype
-  if($config->isOpenAPI(), 
+  if($config->isOpenAPI(),
      |let dProperty = $pureElement.properties->filter(p|$p->hasStereotype('discriminatorProperty',JSONSchemaOpenAPIExtension));
       if($dProperty->isEmpty(),
          |[],
          | assert($dProperty->size()==1,'You can only specify one discriminator property per class, found '+ $dProperty.name->joinStrings(',') + ' on class ' +$pureElement->elementToPath() );
             let dKeyValue = newJSONKeyStringValue  ('propertyName',$dProperty.name->toOne());
-          let mappingTags = $pureElement->findAllSpecializations()->map(s |let tag = $s->cast(@Class<Any>)->toOne()->value4Tag('discriminatorName',JSONSchemaOpenAPIExtension);     
+          let mappingTags = $pureElement->findAllSpecializations()->map(s |let tag = $s->cast(@Class<Any>)->toOne()->value4Tag('discriminatorName',JSONSchemaOpenAPIExtension);
                                                                               if($tag->isNotEmpty(),
                                                                                     |$tag->map(t| newJSONKeyStringValue($t.value->toOne(),   meta::json::schema::calculateJSONRef( $s->cast(@Class<Any>)->toOne(), $pureElement,$config.useDefinitions,$pureElement, $config )   )),
                                                                                     |[]);
@@ -934,8 +950,8 @@ function <<access.private>>  meta::json::schema::addDiscriminator(pureElement:Cl
 function meta::json::schema::discriminateOneOf(sourceInstance:Any[1],propertyValue:Any[1],classSelection:Type[*],mapping:DiscriminatorMapping[*] ):Boolean[1]
 {
    let PropertyValue = if($propertyValue->instanceOf(Enum),|$propertyValue->cast(@Enum).name,|$propertyValue->toString());
-   
-   oneOf($classSelection->map(t| $t.name==$propertyValue ))  || $propertyValue->in($mapping.value);  
+
+   oneOf($classSelection->map(t| $t.name==$propertyValue ))  || $propertyValue->in($mapping.value);
 }
 
 
@@ -944,7 +960,7 @@ function meta::json::schema::discriminateOneOf(sourceInstance:Any[1],propertyVal
 function meta::json::schema::mapSchema(value:String[1],class:Type[1]):DiscriminatorMapping[1]
 {
     ^DiscriminatorMapping(value=$value,class=$class);
-   
+
 }
 Class meta::json::schema::DiscriminatorMapping
 {

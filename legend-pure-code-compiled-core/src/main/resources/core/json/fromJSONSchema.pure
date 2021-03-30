@@ -881,12 +881,24 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToProperty
                       ->cast(@ElementWithStereotypes)->addStereoType($formatSt)->addStereoType($discriminatorSt)->addStereoType($arrayST)->cast(@Property<Nil,Any|*>)->toOne();
 
     if($typeValue=='array',
-       | $pureProperty->addSchemaTagsToPure($propertyObject,$extendedProfile)->addSchemaTagsToPure( $property.value->cast(@JSONObject),$extendedProfile),
+       | $pureProperty->addSchemaTagsToPure($propertyObject,$extendedProfile)->addSchemaTagsToPure( $property.value->cast(@JSONObject),$extendedProfile)->cast(@AnnotatedElement)->mergeDocTags(),
        | $pureProperty ->addSchemaTagsToPure($propertyObject->toOne(),$extendedProfile) ;
      )->cast(@Property<Nil,Any|*>);
 
 
 
+}
+
+function <<access.private>> meta::json::schema::fromSchema::mergeDocTags(element:AnnotatedElement[1]):AnnotatedElement[1]
+
+{  let docs = $element->meta::pure::functions::doc::getDocs(  );
+  if( $docs->size()>1,
+     | let tag = doc->tag('doc');
+       let newValue = $docs->joinStrings(' ');
+       let updatedTaggedValues =   $element.taggedValues->filter(t | $t.tag != $tag)->concatenate(^TaggedValue(tag=$tag,value = $newValue->toOne()));
+        ^$element(taggedValues=$updatedTaggedValues);,
+     | $element 
+    ) ;
 }
 
 function <<access.private>> meta::json::schema::fromSchema::addSchemaTagsToPure(element:Any[1],objectWithTags:JSONObject[1],extendedProfile:Profile[0..1]):Any[1]

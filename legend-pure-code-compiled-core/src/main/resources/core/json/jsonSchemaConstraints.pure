@@ -83,7 +83,7 @@ function meta::json::schema::constraint::createType(type:Any[1] ) : JSONKeyValue
 }
 
 
-function <<access.private>> meta::json::schema::constraint::toJSONSchemaFromValueSpecification( fn:ValueSpecification[1],config:JSONSchemaConfigInternal[1] ) : SchemaConstraint[0..1]
+function  meta::json::schema::constraint::toJSONSchemaFromValueSpecification( fn:ValueSpecification[1],config:JSONSchemaConfigInternal[1] ) : SchemaConstraint[0..1]
 {
 
 
