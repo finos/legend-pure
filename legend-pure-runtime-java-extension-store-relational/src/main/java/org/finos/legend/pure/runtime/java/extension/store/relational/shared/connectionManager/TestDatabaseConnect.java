@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.shared.connectionManager;
 
-import org.apache.commons.dbcp2.BasicDataSource;
+import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function0;
 import org.eclipse.collections.api.block.procedure.Procedure2;
