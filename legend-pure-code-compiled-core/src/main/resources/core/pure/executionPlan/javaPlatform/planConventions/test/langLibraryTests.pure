@@ -220,7 +220,8 @@ meta::java::generation::tests::functions::lang::testPureTests() : Boolean[1]
       meta::pure::functions::lang::tests::match::testMatchZeroWithMany__Boolean_1_,
       meta::pure::functions::lang::tests::match::testMatchManyWithMany__Boolean_1_,
       meta::pure::functions::lang::tests::match::testMatchWithFunctions__Boolean_1_,
-      meta::pure::functions::lang::tests::match::testMatchWithFunctionsManyMatch__Boolean_1_
+      meta::pure::functions::lang::tests::match::testMatchWithFunctionsManyMatch__Boolean_1_,
+      meta::pure::functions::lang::tests::orElse::testOrElse__Boolean_1_
    ])
       ->addTestsWithin(meta::pure::functions::lang::tests::compare)
 
