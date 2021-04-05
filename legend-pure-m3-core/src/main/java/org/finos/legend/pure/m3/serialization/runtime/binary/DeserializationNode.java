@@ -14,34 +14,14 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.collection.MutableCollection;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.Reference;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public interface DeserializationNode
 {
-    Function<DeserializationNode, CoreInstance> GET_INSTANCE = new Function<DeserializationNode, CoreInstance>()
-    {
-        @Override
-        public CoreInstance valueOf(DeserializationNode node)
-        {
-            return node.getInstance();
-        }
-    };
-
-    Procedure<DeserializationNode> POPULATE_RESOLVED_PROPERTIES = new Procedure<DeserializationNode>()
-    {
-        @Override
-        public void value(DeserializationNode node)
-        {
-            node.populateResolvedProperties();
-        }
-    };
-
     boolean isTopLevel();
 
     boolean isPackaged();
