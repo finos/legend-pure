@@ -14,9 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization;
 
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.function.primitive.BooleanFunction;
-import org.eclipse.collections.api.block.procedure.Procedure2;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
@@ -34,6 +32,7 @@ import org.eclipse.collections.impl.factory.Stacks;
 import org.eclipse.collections.impl.factory.primitive.ObjectBooleanMaps;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -145,7 +144,7 @@ public class GraphSerializer
     }
 
     /**
-     * Starting from the given node, serialized all graph nodes. If addSerializedCompileState is
+     * Starting from the given node, serialize all graph nodes. If addSerializedCompileState is
      * true, then a CompileState is added to the serialized nodes to mark that they have been
      * serialized.
      *
@@ -160,7 +159,7 @@ public class GraphSerializer
     }
 
 
-    private static Serialized serialize(final SearchState state, final ProcessorSupport processorSupport)
+    private static Serialized serialize(SearchState state, ProcessorSupport processorSupport)
     {
         FastList<Obj> added = FastList.newList();
         MutableSet<CoreInstance> addedPackages = Sets.mutable.empty();
@@ -212,7 +211,7 @@ public class GraphSerializer
                         }
                         else
                         {
-                            MutableList<RValue> rValues = FastList.newList(values.size());
+                            MutableList<RValue> rValues = Lists.mutable.withInitialCapacity(values.size());
                             for (CoreInstance value : values)
                             {
                                 if (!state.isPrimitiveType(value.getClassifier()))
@@ -232,18 +231,11 @@ public class GraphSerializer
         }
         added.trimToSize();
 
-        final MutableList<Pair<Obj, Obj>> linksList = FastList.newList(links.sizeDistinct());
-        links.forEachKeyMultiValues(new Procedure2<CoreInstance, Iterable<Obj>>()
+        MutableList<Pair<Obj, Obj>> linksList = Lists.mutable.withInitialCapacity(links.sizeDistinct());
+        links.forEachKeyMultiValues((pkg, objs) ->
         {
-            @Override
-            public void value(CoreInstance pkg, Iterable<Obj> objs)
-            {
-                Obj pkgObj = buildObj(pkg, state, processorSupport);
-                for (Obj obj : objs)
-                {
-                    linksList.add(Tuples.pair(pkgObj, obj));
-                }
-            }
+            Obj pkgObj = buildObj(pkg, state, processorSupport);
+            objs.forEach(obj -> linksList.add(Tuples.pair(pkgObj, obj)));
         });
         return new Serialized(added, linksList);
     }
@@ -271,23 +263,15 @@ public class GraphSerializer
             if (values.notEmpty())
             {
                 CoreInstance property = instance.getKeyByName(key);
-                boolean isToOne = Multiplicity.isToOne(Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport), false);
-
                 PropertyValue propertyValue;
-                if (isToOne)
+                if (Multiplicity.isToOne(Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport), false))
                 {
-                    CoreInstance value = values.get(0);
-                    RValue rValue = buildRValue(value, classifierCaches, processorSupport);
+                    RValue rValue = buildRValue(values.get(0), classifierCaches, processorSupport);
                     propertyValue = new PropertyValueOne(key, rValue);
                 }
                 else
                 {
-                    MutableList<RValue> rValues = FastList.newList(values.size());
-                    for (CoreInstance value : values)
-                    {
-                        RValue rValue = buildRValue(value, classifierCaches, processorSupport);
-                        rValues.add(rValue);
-                    }
+                    MutableList<RValue> rValues = values.collect(value -> buildRValue(value, classifierCaches, processorSupport), Lists.mutable.withInitialCapacity(values.size()));
                     propertyValue = new PropertyValueMany(key, rValues);
                 }
                 obj.addPropertyValue(propertyValue);
@@ -316,15 +300,15 @@ public class GraphSerializer
         // Special handling for PrimitiveCoreInstances
         if (instance instanceof FloatCoreInstance)
         {
-            return ((FloatCoreInstance)instance).getValue().doubleValue();
+            return ((FloatCoreInstance) instance).getValue().doubleValue();
         }
         if (instance instanceof IntegerCoreInstance)
         {
-            return ((IntegerCoreInstance)instance).getValue().longValue();
+            return ((IntegerCoreInstance) instance).getValue().longValue();
         }
         if (instance instanceof PrimitiveCoreInstance<?>)
         {
-            return ((PrimitiveCoreInstance<?>)instance).getValue();
+            return ((PrimitiveCoreInstance<?>) instance).getValue();
         }
 
         // General handling
@@ -365,15 +349,14 @@ public class GraphSerializer
         throw new IllegalArgumentException(message.toString());
     }
 
-    public static Object valueSpecToJavaObject(CoreInstance instance, Context context, ProcessorSupport processorSupport,
-                                               Metadata metamodel)
+    public static Object valueSpecToJavaObject(CoreInstance instance, Context context, ProcessorSupport processorSupport, Metadata metamodel)
     {
         ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(instance, M3Properties.values, processorSupport);
         switch (values.size())
         {
             case 0:
             {
-                return FastList.newList();
+                return Lists.mutable.empty();
             }
             case 1:
             {
@@ -381,18 +364,12 @@ public class GraphSerializer
             }
             default:
             {
-                MutableList<Object> result = FastList.newList(values.size());
-                for (CoreInstance value : values)
-                {
-                    result.add(valueSpecValueToJavaObject(value, context, processorSupport, metamodel));
-                }
-                return result;
+                return values.collect(value -> valueSpecValueToJavaObject(value, context, processorSupport, metamodel), Lists.mutable.withInitialCapacity(values.size()));
             }
         }
     }
 
-    private static Object valueSpecValueToJavaObject(CoreInstance value, Context context, ProcessorSupport processorSupport,
-                                                     Metadata metamodel)
+    private static Object valueSpecValueToJavaObject(CoreInstance value, Context context, ProcessorSupport processorSupport, Metadata metamodel)
     {
         // TODO refactor this
         if (value instanceof JavaCompiledCoreInstance)
@@ -443,118 +420,91 @@ public class GraphSerializer
 
     public static void buildGraph(Serialized serialized, MetadataEager metadata, CompiledCoreInstanceBuilder instanceBuilder, ClassLoader classLoader)
     {
-        buildGraph(serialized, metadata, instanceBuilder, Sets.immutable.<CoreInstance>empty(), null, classLoader);
+        buildGraph(serialized, metadata, instanceBuilder, Sets.immutable.empty(), null, classLoader);
     }
 
     public static void buildGraph(Serialized serialized, MetadataEager metadata, CompiledCoreInstanceBuilder instanceBuilder, SetIterable<? extends CoreInstance> excluded, MutableSet<? super CoreInstance> resultExcluded, ClassLoader classLoader)
     {
-        try
+        // Create instances ....
+        serialized.getObjects().forEach(obj ->
         {
-            // Create instances ....
-            for (Obj obj : serialized.getObjects())
+            if (obj instanceof Enum)
             {
-                if (obj instanceof Enum)
+                CoreInstance instance = instanceBuilder.newEnumCoreInstance(obj.getClassifier(), obj.getName(), obj.getSourceInformation(), classLoader);
+                metadata.add(obj.getClassifier(), obj.getName(), instance);
+            }
+            else
+            {
+                CoreInstance instance = instanceBuilder.newCoreInstance(obj.getClassifier(), obj.getName(), obj.getSourceInformation(), classLoader);
+                metadata.add(obj.getClassifier(), obj.getIdentifier(), instance);
+            }
+        });
+
+        if ((resultExcluded != null) && excluded.notEmpty())
+        {
+            ModelRepository repository = excluded.getAny().getRepository();
+            ProcessorSupport processorSupport = new M3ProcessorSupport(repository);
+            addExclude(repository.getTopLevel(M3Paths.Root), metadata, resultExcluded, processorSupport);
+            excluded.forEach(e -> addExclude(e, metadata, resultExcluded, processorSupport));
+        }
+
+        // Manage properties
+        serialized.getObjects().forEach(obj ->
+        {
+            CoreInstance inst;
+            MapIterable<String, Field> fields;
+            if (obj instanceof Enum)
+            {
+                inst = metadata.getMetadata(obj.getClassifier(), obj.getName());
+                fields = instanceBuilder.getFields(EnumProcessor.ENUM_CLASS_NAME);
+            }
+            else
+            {
+                inst = metadata.getMetadata(obj.getClassifier(), obj.getIdentifier());
+                fields = instanceBuilder.getFields(obj.getClassifier());
+            }
+            obj.getPropertyValues().forEach(val ->
+            {
+                Object newValue;
+                if (val instanceof PropertyValueOne)
                 {
-                    CoreInstance instance = instanceBuilder.newEnumCoreInstance(obj.getClassifier(), obj.getName(), obj.getSourceInformation(), classLoader);
-                    metadata.add(obj.getClassifier(), obj.getName(), instance);
+                    newValue = getRValueValue(((PropertyValueOne) val).getValue(), metadata);
                 }
                 else
                 {
-                    CoreInstance instance = instanceBuilder.newCoreInstance(obj.getClassifier(), obj.getName(), obj.getSourceInformation(), classLoader);
-                    metadata.add(obj.getClassifier(), obj.getIdentifier(), instance);
+                    ListIterable<RValue> values = ((PropertyValueMany) val).getValues();
+                    newValue = values.collectWith(GraphSerializer::getRValueValue, metadata, Lists.mutable.withInitialCapacity(values.size()));
                 }
-            }
-
-            if ((resultExcluded != null) && excluded.notEmpty())
-            {
-                ModelRepository repository = excluded.getFirst().getRepository();
-                ProcessorSupport processorSupport = new M3ProcessorSupport(repository);
-                addExclude(repository.getTopLevel(M3Paths.Root), metadata, resultExcluded, processorSupport);
-                for (Object excludedOneO : excluded)
-                {
-                    CoreInstance excludedOne = (CoreInstance)excludedOneO;
-                    addExclude(excludedOne, metadata, resultExcluded, processorSupport);
-                }
-            }
-
-            // Manage properties
-            for (Obj obj : serialized.getObjects())
-            {
-                CoreInstance inst = null;
-                MapIterable<String, Field> fields = null;
-                if (obj instanceof Enum)
-                {
-                    inst = metadata.getMetadata(obj.getClassifier(), obj.getName());
-                    fields = instanceBuilder.getFields(EnumProcessor.ENUM_CLASS_NAME);
-                }
-                else
-                {
-                    inst = metadata.getMetadata(obj.getClassifier(), obj.getIdentifier());
-                    fields = instanceBuilder.getFields(obj.getClassifier());
-                }
-                for (PropertyValue val : obj.getPropertyValues())
+                try
                 {
                     Field f = fields.get("_" + val.getProperty());
                     f.setAccessible(true);
-                    if (val instanceof PropertyValueOne)
-                    {
-                        f.set(inst, getRValueValue(((PropertyValueOne)val).getValue(), metadata, classLoader));
-                    }
-                    else
-                    {
-                        ListIterable<RValue> values = ((PropertyValueMany)val).getValues();
-                        MutableList<Object> newList = FastList.newList(values.size());
-                        f.set(inst, newList);
-                        for (RValue rValue : values)
-                        {
-                            newList.add(getRValueValue(rValue, metadata, classLoader));
-                        }
-                    }
+                    f.set(inst, newValue);
                 }
-            }
+                catch (ReflectiveOperationException e)
+                {
+                    throw new RuntimeException("Error building compiled mode graph", e);
+                }
+            });
+        });
 
-            for (Pair<Obj, Obj> pair : serialized.getPackageLinks())
-            {
-                Obj packageObj = pair.getOne();
-                Obj elementObj = pair.getTwo();
-                metadata.addChild(packageObj.getClassifier(), packageObj.getIdentifier(), elementObj.getClassifier(), elementObj.getIdentifier());
-            }
-        }
-        catch (ReflectiveOperationException e)
+        serialized.getPackageLinks().forEach(pair ->
         {
-            throw new RuntimeException("Error building compiled mode graph", e);
-        }
+            Obj packageObj = pair.getOne();
+            Obj elementObj = pair.getTwo();
+            metadata.addChild(packageObj.getClassifier(), packageObj.getIdentifier(), elementObj.getClassifier(), elementObj.getIdentifier());
+        });
     }
 
-    public static int serializeAllToMetadata(Iterable<? extends CoreInstance> startingNodes, final MetadataEager metadata, final CompiledCoreInstanceBuilder instanceBuilder,
-                                             SetIterable<? extends CoreInstance> excluded, MutableSet<? super CoreInstance> resultExcluded, final ClassLoader classLoader, final ProcessorSupport processorSupport)
+    public static int serializeAllToMetadata(Iterable<? extends CoreInstance> startingNodes, MetadataEager metadata, CompiledCoreInstanceBuilder instanceBuilder,
+                                             SetIterable<? extends CoreInstance> excluded, MutableSet<? super CoreInstance> resultExcluded, ClassLoader classLoader, ProcessorSupport processorSupport)
     {
         // Collect all nodes
-        PrivateSetSearchState state = new PrivateSetSearchStateWithCompileStateMarking(Stacks.mutable.withAll(startingNodes), processorSupport);
-        while (state.hasNodes())
-        {
-            CoreInstance instance = state.nextNode();
-            if (state.shouldVisit(instance))
-            {
-                state.noteVisited(instance);
-                for (String key : instance.getKeys())
-                {
-                    for (CoreInstance value : Instance.getValueForMetaPropertyToManyResolved(instance, key, processorSupport))
-                    {
-                        if (!state.isPrimitiveType(value.getClassifier()))
-                        {
-                            state.addNode(value);
-                        }
-                    }
-                }
-            }
-        }
-        ListIterable<CoreInstance> nodes = FastList.<CoreInstance>newList(state.visited.size()).withAll(state.visited);
-        state = null; // allow garbage collection
+        ListIterable<CoreInstance> nodes = collectNodesForSerialization(startingNodes, processorSupport);
 
         // Initialize metadata
-        final ClassifierCaches classifierCaches = new ClassifierCaches(processorSupport);
-        for (CoreInstance node : nodes)
+        ClassifierCaches classifierCaches = new ClassifierCaches(processorSupport);
+        nodes.forEach(node ->
         {
             CoreInstance classifier = node.getClassifier();
             String classifierId = classifierCaches.getClassifierId(classifier);
@@ -568,104 +518,106 @@ public class GraphSerializer
                 CoreInstance instance = instanceBuilder.newCoreInstance(classifierId, node.getName(), node.getSourceInformation(), classLoader);
                 metadata.add(classifierId, IdBuilder.buildId(node, processorSupport), instance);
             }
-        }
+        });
 
         if ((resultExcluded != null) && excluded.notEmpty())
         {
-            ModelRepository repository = excluded.getFirst().getRepository();
+            ModelRepository repository = excluded.getAny().getRepository();
             addExclude(repository.getTopLevel(M3Paths.Root), metadata, resultExcluded, processorSupport);
-            for (Object excludedOneO : excluded)
-            {
-                CoreInstance excludedOne = (CoreInstance)excludedOneO;
-                addExclude(excludedOne, metadata, resultExcluded, processorSupport);
-            }
+            excluded.forEach(e -> addExclude(e, metadata, resultExcluded, processorSupport));
         }
 
         // Fill in property values
-        Function<CoreInstance, Object> processValue = new Function<CoreInstance, Object>()
+        nodes.forEach(node ->
         {
-            @Override
-            public Object valueOf(CoreInstance value)
+            CoreInstance classifier = node.getClassifier();
+            String classifierId = classifierCaches.getClassifierId(classifier);
+
+            CoreInstance inst;
+            MapIterable<String, Field> fields;
+            if (classifierCaches.isEnumeration(classifier))
             {
-                CoreInstance classifier = value.getClassifier();
-                if (classifierCaches.isPrimitiveType(classifier))
-                {
-                    return processPrimitiveTypeJava(value, processorSupport);
-                }
-                if (classifierCaches.isEnumeration(classifier))
-                {
-                    return metadata.getEnum(classifierCaches.getClassifierId(classifier), value.getName());
-                }
-                return metadata.getMetadata(classifierCaches.getClassifierId(classifier), IdBuilder.buildId(value, processorSupport));
+                inst = metadata.getMetadata(classifierId, node.getName());
+                fields = instanceBuilder.getFields(EnumProcessor.ENUM_CLASS_NAME);
             }
-        };
-        try
-        {
-            for (CoreInstance node : nodes)
+            else
             {
-                CoreInstance classifier = node.getClassifier();
-                String classifierId = classifierCaches.getClassifierId(classifier);
+                inst = metadata.getMetadata(classifierId, IdBuilder.buildId(node, processorSupport));
+                fields = instanceBuilder.getFields(classifierId);
+            }
 
-                CoreInstance inst = null;
-                MapIterable<String, Field> fields = null;
-                if (classifierCaches.isEnumeration(classifier))
+            node.getKeys().forEach(key ->
+            {
+                ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(node, key, processorSupport);
+                if (values.notEmpty())
                 {
-                    inst = metadata.getMetadata(classifierId, node.getName());
-                    fields = instanceBuilder.getFields(EnumProcessor.ENUM_CLASS_NAME);
-                }
-                else
-                {
-                    inst = metadata.getMetadata(classifierId, IdBuilder.buildId(node, processorSupport));
-                    fields = instanceBuilder.getFields(classifierId);
-                }
+                    CoreInstance property = node.getKeyByName(key);
+                    Object processedValue = Multiplicity.isToOne(Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport), false) ?
+                            processPropertyValue(values.get(0), metadata, classifierCaches, processorSupport) :
+                            values.collect(v -> processPropertyValue(v, metadata, classifierCaches, processorSupport), Lists.mutable.withInitialCapacity(values.size()));
 
-                for (String key : node.getKeys())
-                {
-                    ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(node, key, processorSupport);
-                    if (values.notEmpty())
+                    Field f = fields.get("_" + key);
+                    f.setAccessible(true);
+                    try
                     {
-                        Field f = fields.get("_" + key);
-                        f.setAccessible(true);
-
-                        CoreInstance property = node.getKeyByName(key);
-                        if (Multiplicity.isToOne(Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport), false))
-                        {
-                            CoreInstance value = values.get(0);
-                            Object processedValue = processValue.valueOf(value);
-                            f.set(inst, processedValue);
-                        }
-                        else
-                        {
-                            MutableList<Object> newList = FastList.newList(values.size());
-                            f.set(inst, newList);
-                            values.collect(processValue, newList);
-                        }
+                        f.set(inst, processedValue);
+                    }
+                    catch (ReflectiveOperationException e)
+                    {
+                        throw new RuntimeException(e);
                     }
                 }
-            }
-        }
-        catch (ReflectiveOperationException e)
-        {
-            throw new RuntimeException(e);
-        }
+            });
+        });
 
         return nodes.size();
     }
 
-    private static Object getRValueValue(RValue rValue, Metadata metadata, ClassLoader classLoader)
+    private static ListIterable<CoreInstance> collectNodesForSerialization(Iterable<? extends CoreInstance> startingNodes, ProcessorSupport processorSupport)
+    {
+        PrivateSetSearchState state = new PrivateSetSearchStateWithCompileStateMarking(Stacks.mutable.withAll(startingNodes), processorSupport);
+        while (state.hasNodes())
+        {
+            CoreInstance instance = state.nextNode();
+            if (state.shouldVisit(instance))
+            {
+                state.noteVisited(instance);
+                LazyIterate.flatCollect(instance.getKeys(), key -> Instance.getValueForMetaPropertyToManyResolved(instance, key, processorSupport))
+                        .reject(state::isPrimitiveValue)
+                        .forEach(state::addNode);
+            }
+        }
+        return Lists.mutable.withAll(state.visited);
+    }
+
+    private static Object processPropertyValue(CoreInstance value, Metadata metadata, ClassifierCaches classifierCaches, ProcessorSupport processorSupport)
+    {
+        CoreInstance classifier = value.getClassifier();
+        if (classifierCaches.isPrimitiveType(classifier))
+        {
+            return processPrimitiveTypeJava(value, processorSupport);
+        }
+        if (classifierCaches.isEnumeration(classifier))
+        {
+            return metadata.getEnum(classifierCaches.getClassifierId(classifier), value.getName());
+        }
+        return metadata.getMetadata(classifierCaches.getClassifierId(classifier), IdBuilder.buildId(value, processorSupport));
+    }
+
+    private static Object getRValueValue(RValue rValue, Metadata metadata)
     {
         if (rValue instanceof Primitive)
         {
-            return ((Primitive)rValue).getValue();
+            return ((Primitive) rValue).getValue();
         }
         if (rValue instanceof EnumRef)
         {
-            EnumRef enumRef = (EnumRef)rValue;
+            EnumRef enumRef = (EnumRef) rValue;
             return metadata.getEnum(enumRef.getEnumerationId(), enumRef.getEnumName());
         }
         if (rValue instanceof ObjRef)
         {
-            ObjRef objRef = (ObjRef)rValue;
+            ObjRef objRef = (ObjRef) rValue;
             Object result = metadata.getMetadata(objRef.getClassifierId(), objRef.getId());
             if (result == null)
             {
@@ -728,24 +680,6 @@ public class GraphSerializer
 
     public static class ClassifierCaches
     {
-        private final Function<CoreInstance, String> newClassifierId = new Function<CoreInstance, String>()
-        {
-            @Override
-            public String valueOf(CoreInstance classifier)
-            {
-                return MetadataJavaPaths.buildMetadataKeyFromType(classifier).intern();
-            }
-        };
-
-        private final BooleanFunction<CoreInstance> isEnumeration = new BooleanFunction<CoreInstance>()
-        {
-            @Override
-            public boolean booleanValueOf(CoreInstance classifier)
-            {
-                return classifier.getClassifier() == ClassifierCaches.this.enumerationClass;
-            }
-        };
-
         private final SetIterable<CoreInstance> primitiveTypes;
         private final CoreInstance enumerationClass;
         private final MutableObjectBooleanMap<CoreInstance> enumerationCache = ObjectBooleanMaps.mutable.empty();
@@ -755,6 +689,11 @@ public class GraphSerializer
         {
             this.enumerationClass = _Package.getByUserPath(M3Paths.Enumeration, processorSupport);
             this.primitiveTypes = PrimitiveUtilities.getPrimitiveTypes(processorSupport).toSet();
+        }
+
+        boolean isPrimitiveValue(CoreInstance instance)
+        {
+            return isPrimitiveType(instance.getClassifier());
         }
 
         boolean isEnum(CoreInstance instance)
@@ -769,12 +708,17 @@ public class GraphSerializer
 
         boolean isEnumeration(CoreInstance classifier)
         {
-            return this.enumerationCache.getIfAbsentPutWithKey(classifier, this.isEnumeration);
+            return this.enumerationCache.getIfAbsentPutWithKey(classifier, cl -> cl.getClassifier() == this.enumerationClass);
         }
 
         public String getClassifierId(CoreInstance classifier)
         {
-            return this.classifierIdCache.getIfAbsentPutWithKey(classifier, this.newClassifierId);
+            return this.classifierIdCache.getIfAbsentPutWithKey(classifier, ClassifierCaches::newClassifierId);
+        }
+
+        private static String newClassifierId(CoreInstance classifier)
+        {
+            return MetadataJavaPaths.buildMetadataKeyFromType(classifier).intern();
         }
     }
 

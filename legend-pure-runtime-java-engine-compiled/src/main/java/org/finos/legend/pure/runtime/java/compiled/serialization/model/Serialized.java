@@ -14,40 +14,27 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
-import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.list.mutable.FastList;
 
 public class Serialized
 {
-    private MutableList<Obj> objects;
-    private MutableList<Pair<Obj, Obj>> packageLinks;
+    private final ListIterable<Obj> objects;
+    private final ListIterable<Pair<Obj, Obj>> packageLinks;
 
-    public Serialized()
-    {
-        this.objects = FastList.newList();
-        this.packageLinks = FastList.newList();
-    }
-
-    public Serialized(MutableList<Obj> objects,  MutableList<Pair<Obj, Obj>> packageLinks)
+    public Serialized(ListIterable<Obj> objects, ListIterable<Pair<Obj, Obj>> packageLinks)
     {
         this.objects = objects;
         this.packageLinks = packageLinks;
     }
 
-    public MutableList<Obj> getObjects()
+    public ListIterable<Obj> getObjects()
     {
         return this.objects;
     }
 
-    public MutableList<Pair<Obj, Obj>> getPackageLinks()
+    public ListIterable<Pair<Obj, Obj>> getPackageLinks()
     {
         return this.packageLinks;
-    }
-
-    public void addAll(Serialized serialized)
-    {
-        this.objects.addAll(serialized.objects);
-        this.packageLinks.addAll(serialized.packageLinks);
     }
 }

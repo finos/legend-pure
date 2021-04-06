@@ -189,9 +189,7 @@ class SerializingMetadataCompilerEventHandler implements CompilerEventHandlerMet
     @Override
     public void buildMetadata(RichIterable<CoreInstance> newInstances)
     {
-        Serialized newGraphEntries = new Serialized();
-        Serialized newSerialized = GraphSerializer.serializeNew(newInstances, new M3ProcessorSupport(this.repository));
-        newGraphEntries.addAll(newSerialized);
+        Serialized newGraphEntries = GraphSerializer.serializeNew(newInstances, new M3ProcessorSupport(this.repository));
         GraphSerializer.buildGraph(newGraphEntries, this.metadataEager, this.instanceBuilder, this.javaCompilerEventHandler.getJavaCompileState().getClassLoader());
     }
 
@@ -208,5 +206,4 @@ class SerializingMetadataCompilerEventHandler implements CompilerEventHandlerMet
         this.metadataEager.rollbackTransaction();
         this.instanceBuilder.rollbackTransaction();
     }
-
 }
