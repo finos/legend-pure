@@ -603,6 +603,43 @@ function <<test.Test>> meta::pure::executionPlan::tests::tdsJoinOneDBOneExpressi
     ')\n', $result->planToString(meta::pure::router::extension::defaultRelationalExtensions()));
 }
 
+function <<test.Test>> meta::pure::executionPlan::tests::tdsJoinTwoDBWithColumnMappedViaJoins():Boolean[1]
+{
+    let result = executionPlan({|testJoinTDS_Person.all()->meta::pure::tds::project([col(p|$p.firstName, 'firstName'), col(p|$p.employerID, 'eID'), col(p|$p.managerID, 'managerID')])
+                                     ->join(testJoinTDS_Firm.all()->project([col(p|$p.firmID, 'fID'), col(p|$p.legalName, 'legalName')]), JoinType.INNER, {a,b|$a.getInteger('eID') == $b.getInteger('fID');});},
+                               meta::relational::tests::tds::tdsJoin::testJoinTDSMappingTwoDatabaseWithColumnsMappedViaJoinsAndDynaFunction, meta::relational::tests::tds::tdsJoin::twoDBRunTime(), meta::pure::router::extension::defaultRelationalExtensions());
+    let actualPlan = $result->planToString(meta::pure::router::extension::defaultRelationalExtensions());
+    let expected =   'Sequence\n'+
+                     '(\n'+
+                     '  type = TDS[(firstName, String, VARCHAR(200), \"\"), (eID, Integer, INT, \"\"), (managerID, Integer, INT, \"\"), (fID, Integer, INT, \"\"), (legalName, String, VARCHAR(200), \"\")]\n'+
+                     '  (\n'+
+                     '    Allocation\n'+
+                     '    (\n'+
+                     '      type = TDS[(firstName, String, VARCHAR(200), \"\"), (eID, Integer, INT, \"\"), (managerID, Integer, INT, \"\")]\n'+
+                     '      name = tdsVar0_0\n'+
+                     '      value = \n'+
+                     '        (\n'+
+                     '          Relational\n'+
+                     '          (\n'+
+                     '            type = TDS[(firstName, String, VARCHAR(200), \"\"), (eID, Integer, INT, \"\"), (managerID, Integer, INT, \"\")]\n'+
+                     '            resultColumns = [(\"firstName\", VARCHAR(200)), (\"eID\", INT), (\"managerID\", \"\")]\n'+
+                     '            sql = select \"root\".FIRSTNAME as \"firstName\", \"firmtable_0\".ID as \"eID\", case when \"root\".MANAGERID = 0 then 0 else \"root\".MANAGERID end as \"managerID\" from personTable as \"root\" left outer join firmTable as \"firmtable_0\" on (\"firmtable_0\".ID = \"root\".FIRMID)\n'+
+                     '            connection = TestDatabaseConnection(type = \"H2\")\n'+
+                     '          )\n'+
+                     '        )\n'+
+                     '    )\n'+
+                     '    Relational\n'+
+                     '    (\n'+
+                     '      type = TDS[(firstName, String, VARCHAR(200), \"\"), (eID, Integer, INT, \"\"), (managerID, Integer, INT, \"\"), (fID, Integer, INT, \"\"), (legalName, String, VARCHAR(200), \"\")]\n'+
+                     '      resultColumns = [(\"firstName\", INT), (\"eID\", INT), (\"managerID\", INT), (\"fID\", INT), (\"legalName\", VARCHAR(200))]\n'+
+                     '      sql = select \"tdsvar0_0_0\".firstName as \"firstName\", \"tdsvar0_0_0\".eID as \"eID\", \"tdsvar0_0_0\".managerID as \"managerID\", \"tdsvar0_0_0\".\"fID\" as \"fID\", \"tdsvar0_0_0\".\"legalName\" as \"legalName\" from (select * from (${tdsVar0_0}) as \"tdsvar0_0_1\" inner join (select \"root\".ID as \"fID\", \"root\".LEGALNAME as \"legalName\" from firmTable as \"root\") as \"firmtable_0\" on (\"tdsvar0_0_1\".eID = \"firmtable_0\".\"fID\")) as \"tdsvar0_0_0\"\n'+
+                     '      connection = TestDatabaseConnection(type = \"H2\")\n'+
+                     '    )\n'+
+                     '  )\n'+
+                     ')\n';
+   assertEquals($expected, $actualPlan);
+}
+
 function <<test.ToFix>> meta::pure::executionPlan::tests::tdsJoinTwoDBWithFilter():Boolean[1]
 {
     //TODO: Push filters down to relevant cluster
