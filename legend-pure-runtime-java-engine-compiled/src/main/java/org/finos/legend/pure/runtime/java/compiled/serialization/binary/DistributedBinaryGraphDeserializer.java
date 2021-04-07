@@ -134,33 +134,37 @@ public class DistributedBinaryGraphDeserializer
         return this.classifierIndexes.get(classifierId);
     }
 
-    private MapIterable<String, SourceCoordinates> readInstanceIndex(Reader reader, String classifier)
+    private MapIterable<String, SourceCoordinates> readInstanceIndex(String classifier)
     {
-        int instanceCount = reader.readInt();
-        MutableMap<String, SourceCoordinates> index = sourceCoordinateMapProvider.getMap(instanceCount, classifier);
-
-        int instancePartition = reader.readInt();
-        int offset = reader.readInt();
-        String filePath = DistributedBinaryGraphSerializer.getMetadataBinFilePath(Integer.toString(instancePartition));
-
-        int instancesRead = 0;
-        while (instancesRead < instanceCount)
+        String indexFilePath = DistributedBinaryGraphSerializer.getMetadataIndexFilePath(classifier);
+        try (Reader reader = this.fileReader.getReader(indexFilePath))
         {
-            int partitionInstanceCount = reader.readInt();
-            for (int i = 0; i < partitionInstanceCount; i++)
-            {
-                String identifier = this.stringIndex.getString(reader.readInt());
-                int length = reader.readInt();
-                index.put(identifier, new SourceCoordinates(identifier, filePath, offset, length));
-                offset += length;
-            }
-            instancesRead += partitionInstanceCount;
-            instancePartition++;
-            offset = 0;
-            filePath = DistributedBinaryGraphSerializer.getMetadataBinFilePath(Integer.toString(instancePartition));
-        }
+            int instanceCount = reader.readInt();
+            MutableMap<String, SourceCoordinates> index = sourceCoordinateMapProvider.getMap(instanceCount, classifier);
 
-        return index;
+            int instancePartition = reader.readInt();
+            int offset = reader.readInt();
+            String filePath = DistributedBinaryGraphSerializer.getMetadataBinFilePath(Integer.toString(instancePartition));
+
+            int instancesRead = 0;
+            while (instancesRead < instanceCount)
+            {
+                int partitionInstanceCount = reader.readInt();
+                for (int i = 0; i < partitionInstanceCount; i++)
+                {
+                    String identifier = this.stringIndex.getString(reader.readInt());
+                    int length = reader.readInt();
+                    index.put(identifier, new SourceCoordinates(identifier, filePath, offset, length));
+                    offset += length;
+                }
+                instancesRead += partitionInstanceCount;
+                instancePartition++;
+                offset = 0;
+                filePath = DistributedBinaryGraphSerializer.getMetadataBinFilePath(Integer.toString(instancePartition));
+            }
+
+            return index;
+        }
     }
 
     public static void setSourceCoordinateMapProvider(SourceCoordinateMapProvider provider)
@@ -233,10 +237,7 @@ public class DistributedBinaryGraphDeserializer
                     localIndex = this.index;
                     if (localIndex == null)
                     {
-                        try (Reader reader = DistributedBinaryGraphDeserializer.this.fileReader.getReader(DistributedBinaryGraphSerializer.getMetadataIndexFilePath(this.classifierId)))
-                        {
-                            this.index = localIndex = readInstanceIndex(reader, this.classifierId);
-                        }
+                        this.index = localIndex = readInstanceIndex(this.classifierId);
                     }
                 }
             }
@@ -276,8 +277,10 @@ public class DistributedBinaryGraphDeserializer
 
         private Obj getObj(byte[] bytes, StringIndex stringIndex, ClassifierIndex classifierIndex)
         {
-            Reader reader = BinaryReaders.newBinaryReader(bytes);
-            return getDeserializer(stringIndex, classifierIndex).deserialize(reader);
+            try (Reader reader = BinaryReaders.newBinaryReader(bytes))
+            {
+                return getDeserializer(stringIndex, classifierIndex).deserialize(reader);
+            }
         }
 
         private BinaryObjDeserializer getDeserializer(StringIndex stringIndex, ClassifierIndex classifierIndex)
@@ -414,7 +417,7 @@ public class DistributedBinaryGraphDeserializer
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Unable to open " + zipPath.toString(), e);
+                throw new RuntimeException("Unable to open " + zipPath, e);
             }
         }
 

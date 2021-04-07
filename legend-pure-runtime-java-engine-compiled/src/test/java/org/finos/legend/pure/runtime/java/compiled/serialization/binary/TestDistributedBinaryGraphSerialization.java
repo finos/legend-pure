@@ -32,7 +32,8 @@ import java.io.IOException;
 public class TestDistributedBinaryGraphSerialization extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
