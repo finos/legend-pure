@@ -45,9 +45,9 @@ function meta::java::generation::functions::lang::register(conventions: Conventi
          fc2(cast_Any_m__T_1__T_m_,                            castCoder_FuncCoderContext_1__Code_1__Code_1__Code_1_),
          fc3(if_Boolean_1__Function_1__Function_1__T_m_,       ifCoder_FuncCoderContext_1__Code_1__Code_1__Code_1__Code_1_),
          fc2(letFunction_String_1__T_m__T_m_,                  letCoder_FuncCoderContext_1__Code_1__Code_1__Code_1_),
-         fc(new_Class_1__String_1__KeyExpression_MANY__T_1_,   processNew_FunctionExpression_1__Conventions_1__DebugContext_1__Code_1_)
+         fc(new_Class_1__String_1__KeyExpression_MANY__T_1_,   processNew_FunctionExpression_1__Conventions_1__DebugContext_1__Code_1_),
 
-
+         fc2(orElse_T_$0_1$__T_1__T_1_,                        {ctx,maybe,dflt                | if($maybe->isCollectionsEmptyList(), |$dflt, |j_conditional($maybe->j_box()->j_ne(j_null()), $maybe, $dflt))})
       ]);
 
    $conventions->registerLibrary($lib);
