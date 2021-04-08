@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::executionPlan::connection::*;
+import meta::relational::functions::typeInference::*;
 import meta::pure::deepfetch::execution::*;
 import meta::pure::router::extension::*;
 import meta::relational::functions::reportDelta::*;
@@ -149,11 +150,7 @@ function <<access.private>> meta::relational::mapping::getRelationalTypeFromRela
 
    if($r->isEmpty(),
       | [] //TO FIX: support all existing tests  before introducing a fail  fail( 'Unsupported plan execution - check that you are setting Path Types - no type found for column '+$propertyName  );,
-     ,|  let type = $r->toOne().relationalOperationElement->match([t:TableAliasColumn[1]|$t.column.type,
-                                                                   c:Column[1]|$c.type,
-                                                                   a:Any[1] | []// TOFIX - support all possible Types  fail($a->type().name ->toOne() + ' is not supported in planExecution yet')
-                                                                   ]);
-         $type;
+     ,| $r->toOne().relationalOperationElement->inferRelationalType(false);
      )->cast(@meta::relational::metamodel::datatype::DataType);
 
 }
