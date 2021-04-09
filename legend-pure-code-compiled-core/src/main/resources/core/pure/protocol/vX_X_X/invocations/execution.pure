@@ -148,7 +148,7 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::buildExe
                          );,
                         |if ($serializationKind == 'json',
                             |$mappings->buildBasePureModelFromMapping($extensions).second,
-                            |$mappings->buildPureModelContextTextFromMapping($extensions)
+                            |$mappings->buildPureModelContextTextFromMappingAndQuery($f, $extensions)
                          );
                      )
          )->alloyToJSON();
