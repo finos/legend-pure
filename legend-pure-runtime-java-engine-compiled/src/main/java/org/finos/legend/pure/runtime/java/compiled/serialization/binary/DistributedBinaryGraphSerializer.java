@@ -34,7 +34,6 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.Writer;
-import org.finos.legend.pure.m4.serialization.binary.AbstractBinaryWriter;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
@@ -42,12 +41,9 @@ import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialized;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.jar.JarEntry;
+import java.util.Map;
 import java.util.jar.JarOutputStream;
 
 public class DistributedBinaryGraphSerializer
@@ -58,23 +54,22 @@ public class DistributedBinaryGraphSerializer
 
     private static final int MAX_BIN_FILE_BYTES = 512 * 1024;
 
-    public static void serialize(Serialized serialized, JarOutputStream stream) throws IOException
+    public static void serialize(Serialized serialized, JarOutputStream stream)
     {
-        serialize(serialized, new JarEntryFileWriter(stream));
+        serialize(serialized, FileWriters.newJarOutputStream(stream));
     }
 
-    public static void serialize(Serialized serialized, Path directory) throws IOException
+    public static void serialize(Serialized serialized, Path directory)
     {
-        serialize(serialized, new FileSystemFileWriter(directory));
+        serialize(serialized, FileWriters.fromDirectory(directory));
     }
 
-    public static void serialize(Serialized serialized, MutableMap<String, byte[]> fileBytes) throws IOException
+    public static void serialize(Serialized serialized, Map<String, ? super byte[]> fileBytes)
     {
-        serialize(serialized, new ByteArrayMapFileWriter(fileBytes));
+        serialize(serialized, FileWriters.fromInMemoryByteArrayMap(fileBytes));
     }
 
-    @Deprecated
-    private static void serialize(Serialized serialized, FileWriter fileWriter)
+    public static void serialize(Serialized serialized, FileWriter fileWriter)
     {
         if (serialized.getPackageLinks().notEmpty())
         {
@@ -170,12 +165,12 @@ public class DistributedBinaryGraphSerializer
         }
     }
 
-    public static void serialize(PureRuntime runtime, Path directory) throws IOException
+    public static void serialize(PureRuntime runtime, Path directory)
     {
-        serialize(runtime, new FileSystemFileWriter(directory));
+        serialize(runtime, FileWriters.fromDirectory(directory));
     }
 
-    private static void serialize(PureRuntime runtime, FileWriter fileWriter)
+    public static void serialize(PureRuntime runtime, FileWriter fileWriter)
     {
         ProcessorSupport processorSupport = runtime.getProcessorSupport();
         MutableListMultimap<String, CoreInstance> nodesByClassifierId = getNodesByClassifierId(runtime.getModelRepository(), processorSupport);
@@ -373,132 +368,6 @@ public class DistributedBinaryGraphSerializer
         {
             this.identifier = identifier;
             this.bytes = bytes;
-        }
-    }
-
-    private static class JarEntryFileWriter implements FileWriter
-    {
-        private final JarOutputStream stream;
-
-        private JarEntryFileWriter(JarOutputStream stream)
-        {
-            this.stream = stream;
-        }
-
-        @Override
-        public Writer getWriter(String path)
-        {
-            try
-            {
-                this.stream.putNextEntry(new JarEntry(path));
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException("Error getting writer for " + path, e);
-            }
-            return new AbstractBinaryWriter()
-            {
-                @Override
-                public void close()
-                {
-                    try
-                    {
-                        JarEntryFileWriter.this.stream.closeEntry();
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                @Override
-                protected void write(byte b)
-                {
-                    try
-                    {
-                        JarEntryFileWriter.this.stream.write(b);
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                @Override
-                protected void write(byte[] bytes, int offset, int length)
-                {
-                    try
-                    {
-                        JarEntryFileWriter.this.stream.write(bytes, offset, length);
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-            };
-        }
-    }
-
-    private static class FileSystemFileWriter implements FileWriter
-    {
-        private final Path root;
-
-        private FileSystemFileWriter(Path root)
-        {
-            this.root = root;
-        }
-
-        @Override
-        public Writer getWriter(String path)
-        {
-            try
-            {
-                Path fullPath = this.root.resolve(path);
-                Files.createDirectories(fullPath.getParent());
-                return BinaryWriters.newBinaryWriter(new BufferedOutputStream(Files.newOutputStream(fullPath)));
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException("Error getting writer for " + path, e);
-            }
-        }
-    }
-
-    private static class ByteArrayMapFileWriter implements FileWriter
-    {
-        private final MutableMap<String, byte[]> fileBytes;
-
-        private ByteArrayMapFileWriter(MutableMap<String, byte[]> fileBytes)
-        {
-            this.fileBytes = fileBytes;
-        }
-
-        @Override
-        public Writer getWriter(final String path)
-        {
-            return new AbstractBinaryWriter()
-            {
-                private final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
-                @Override
-                public void close()
-                {
-                    ByteArrayMapFileWriter.this.fileBytes.put(path, this.stream.toByteArray());
-                }
-
-                @Override
-                protected void write(byte b)
-                {
-                    this.stream.write(b);
-                }
-
-                @Override
-                protected void write(byte[] bytes, int offset, int length)
-                {
-                    this.stream.write(bytes, offset, length);
-                }
-            };
         }
     }
 }

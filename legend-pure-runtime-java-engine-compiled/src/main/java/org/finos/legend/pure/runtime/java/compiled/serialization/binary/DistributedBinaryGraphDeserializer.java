@@ -27,13 +27,10 @@ import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.zip.ZipEntry;
+import java.util.Map;
 import java.util.zip.ZipFile;
 
 public class DistributedBinaryGraphDeserializer
@@ -174,27 +171,32 @@ public class DistributedBinaryGraphDeserializer
 
     public static DistributedBinaryGraphDeserializer fromClassLoader(ClassLoader classLoader)
     {
-        return new DistributedBinaryGraphDeserializer(new ClassLoaderFileReader(classLoader));
+        return fromFileReader(FileReaders.fromClassLoader(classLoader));
     }
 
     public static DistributedBinaryGraphDeserializer fromDirectory(Path directory)
     {
-        return new DistributedBinaryGraphDeserializer(new FileSystemFileReader(directory));
+        return fromFileReader(FileReaders.fromDirectory(directory));
     }
 
-    public static DistributedBinaryGraphDeserializer fromInMemoryByteArrays(MapIterable<String, byte[]> fileBytes)
+    public static DistributedBinaryGraphDeserializer fromInMemoryByteArrays(Map<String, byte[]> fileBytes)
     {
-        return new DistributedBinaryGraphDeserializer(new InMemoryByteArrayFileReader(fileBytes));
+        return fromFileReader(FileReaders.fromInMemoryByteArrays(fileBytes));
     }
 
-    public static DistributedBinaryGraphDeserializer fromInMemoryByteLists(MapIterable<String, ? extends ByteList> fileBytes)
+    public static DistributedBinaryGraphDeserializer fromInMemoryByteLists(Map<String, ? extends ByteList> fileBytes)
     {
-        return new DistributedBinaryGraphDeserializer(new InMemoryByteListFileReader(fileBytes));
+        return fromFileReader(FileReaders.fromInMemoryByteLists(fileBytes));
     }
 
-    public static DistributedBinaryGraphDeserializer fromZip(Path zipPath)
+    public static DistributedBinaryGraphDeserializer fromZip(ZipFile zipFile)
     {
-        return new DistributedBinaryGraphDeserializer(new ZipFileReader(zipPath));
+        return fromFileReader(FileReaders.fromZipFile(zipFile));
+    }
+
+    public static DistributedBinaryGraphDeserializer fromFileReader(FileReader fileReader)
+    {
+        return new DistributedBinaryGraphDeserializer(fileReader);
     }
 
     private class ClassifierIndex
@@ -315,124 +317,6 @@ public class DistributedBinaryGraphDeserializer
         private static int compareByOffset(SourceCoordinates one, SourceCoordinates another)
         {
             return Integer.compare(one.offset, another.offset);
-        }
-    }
-
-    private static class ClassLoaderFileReader implements FileReader
-    {
-        private final ClassLoader classLoader;
-
-        private ClassLoaderFileReader(ClassLoader classLoader)
-        {
-            this.classLoader = classLoader;
-        }
-
-        @Override
-        public Reader getReader(String path)
-        {
-            InputStream stream = this.classLoader.getResourceAsStream(path);
-            if (stream == null)
-            {
-                throw new RuntimeException("Cannot find file '" + path + "' in the class path");
-            }
-            return BinaryReaders.newBinaryReader(stream);
-        }
-    }
-
-    private static class FileSystemFileReader implements FileReader
-    {
-        private final Path root;
-
-        private FileSystemFileReader(Path root)
-        {
-            this.root = root;
-        }
-
-        @Override
-        public Reader getReader(String path)
-        {
-            Path fullPath = this.root.resolve(path);
-            try
-            {
-                return BinaryReaders.newBinaryReader(new BufferedInputStream(Files.newInputStream(fullPath)));
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException("Error accessing file '" + path + "'", e);
-            }
-        }
-    }
-
-    private static class InMemoryByteArrayFileReader implements FileReader
-    {
-        private final MapIterable<String, byte[]> bytesByPath;
-
-        private InMemoryByteArrayFileReader(MapIterable<String, byte[]> bytesByPath)
-        {
-            this.bytesByPath = bytesByPath;
-        }
-
-        @Override
-        public Reader getReader(String path)
-        {
-            byte[] bytes = this.bytesByPath.get(path);
-            if (bytes == null)
-            {
-                throw new RuntimeException("Cannot find file '" + path + "'");
-            }
-            return BinaryReaders.newBinaryReader(bytes);
-        }
-    }
-
-    private static class InMemoryByteListFileReader implements FileReader
-    {
-        private final MapIterable<String, ? extends ByteList> bytesByPath;
-
-        private InMemoryByteListFileReader(MapIterable<String, ? extends ByteList> bytesByPath)
-        {
-            this.bytesByPath = bytesByPath;
-        }
-
-        @Override
-        public Reader getReader(String path)
-        {
-            ByteList bytes = this.bytesByPath.get(path);
-            if (bytes == null)
-            {
-                throw new RuntimeException("Cannot find file '" + path + "'");
-            }
-            return BinaryReaders.newBinaryReader(bytes);
-        }
-    }
-
-    private static class ZipFileReader implements FileReader
-    {
-        private final ZipFile zipFile;
-
-        private ZipFileReader(Path zipPath)
-        {
-            try
-            {
-                this.zipFile = new ZipFile(zipPath.toFile());
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException("Unable to open " + zipPath, e);
-            }
-        }
-
-        @Override
-        public Reader getReader(String path)
-        {
-            try
-            {
-                ZipEntry entry = this.zipFile.getEntry(path);
-                return BinaryReaders.newBinaryReader(new BufferedInputStream(this.zipFile.getInputStream(entry)));
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException("Error accessing file '" + path + "'", e);
-            }
         }
     }
 }
