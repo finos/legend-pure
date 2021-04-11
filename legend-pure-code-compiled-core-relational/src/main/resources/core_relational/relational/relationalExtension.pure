@@ -26,10 +26,20 @@ function meta::relational::metamodel::execute::executeInDb(sql:String[1], databa
    meta::relational::metamodel::execute::executeInDb($sql, $databaseConnection, 0, 1000);
 }
 
+function meta::relational::metamodel::execute::executeInDb(sql:String[1], databaseConnection:DatabaseConnection[1]):ResultSet[1]
+{
+    meta::relational::metamodel::execute::executeInDb($sql, $databaseConnection, 0, 1000)
+}
+
 function meta::relational::functions::database::executeInDb(str: String[1] , connection:DatabaseConnection[1], debug:Boolean[1]):ResultSet[1]
 {
    print(if($debug,|$str+'\n',|''));
    executeInDb($str, $connection);
+}
+
+function meta::relational::metamodel::execute::loadCsvToDbTable(filePath:String[1], table:Table[1], databaseConnection:DatabaseConnection[1]):Nil[0]
+{
+    loadCsvToDbTable($filePath, $table, $databaseConnection, [])
 }
 
 function meta::relational::metamodel::execute::createTestDatabaseConnection():DatabaseConnection[1]

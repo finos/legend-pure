@@ -29,6 +29,15 @@ import meta::relational::metamodel::join::*;
 import meta::relational::postProcessor::*;
 import meta::relational::postProcessor::filterPushDown::*;
 
+Class meta::relational::mapping::PostProcessorResult
+{
+   query : SQLQuery[1];
+   resultPostProcessor : meta::pure::metamodel::function::Function<{Result<Any|*>[1]->Result<Any|*>[1]}>[*];
+   executionNodes: meta::pure::executionPlan::ExecutionNode[*];  //nodes are inserted before the relational execution
+   postExecutionNodes: meta::pure::executionPlan::ExecutionNode[*];  //Nodes are inserted run after the relational execution
+   templateFunctions : String[*];
+}
+
 //Execution Plan
 function meta::relational::mapping::postProcessSQLQuery(query: SQLQuery[1], store:Database[1], ext:RoutedValueSpecification[0..1], m:Mapping[0..1], runtime:Runtime[1], exeCtx:ExecutionContext[1], extensions:RouterExtension[*]):PostProcessorResult[1]
 {
