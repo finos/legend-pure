@@ -1,40 +1,24 @@
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.map.MutableMap;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
-public class TestDistributedStringCaching extends AbstractPureTestWithCoreCompiled
+public class TestDistributedStringCaching extends TestStringCaching<DistributedStringCache>
 {
-    @BeforeClass
-    public static void setUp()
+    @Override
+    protected DistributedStringCache buildCache()
     {
-        setUpRuntime(getFunctionExecution());
+        return DistributedStringCache.fromNodes(GraphNodeIterable.allInstancesFromRepository(repository), processorSupport);
     }
 
-    @Test
-    public void testDistributedStringCaching()
+    @Override
+    protected void serialize(DistributedStringCache cache, FileWriter fileWriter)
     {
-        DistributedStringCache cache = DistributedStringCache.fromNodes(GraphNodeIterable.allInstancesFromRepository(runtime.getModelRepository()), runtime.getProcessorSupport());
-        String[] expectedClassifiers = cache.getClassifierStringArray();
-        String[] expectedOtherStrings = cache.getOtherStringsArray();
+        cache.write(fileWriter);
+    }
 
-        MutableMap<String, byte[]> serialization = Maps.mutable.empty();
-        cache.write(FileWriters.fromInMemoryByteArrayMap(serialization));
-        LazyStringIndex index = LazyStringIndex.fromFileReader(FileReaders.fromInMemoryByteArrays(serialization));
-
-        for (int i = 0; i < expectedClassifiers.length; i++)
-        {
-            Assert.assertEquals(expectedClassifiers[i], index.getString(i));
-        }
-
-        for (int i = 0; i < expectedOtherStrings.length; i++)
-        {
-            Assert.assertEquals(expectedOtherStrings[i], index.getString(i + expectedClassifiers.length));
-        }
+    @Override
+    protected StringIndex buildIndex(FileReader fileReader)
+    {
+        return LazyStringIndex.fromFileReader(fileReader);
     }
 }
