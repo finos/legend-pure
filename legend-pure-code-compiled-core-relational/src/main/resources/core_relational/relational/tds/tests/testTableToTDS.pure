@@ -209,17 +209,18 @@ meta::relational::tests::tds::tabletds::testExtractingDbFromTableReference():Boo
 
   let result = meta::relational::tests::tds::tabletds::EmptyMapping->buildPureModelContextTextFromMappingAndQuery(
 				{|tableToTDS(tableReference(meta::relational::tests::tds::tabletds::dummyDb,'default','dummyTable'))},
-				meta::pure::router::extension::defaultRelationalExtensions());
+				meta::pure::router::extension::defaultExtensions());
 
-  let expected = '###Mapping\r\nMapping meta::relational::tests::tds::tabletds::EmptyMapping\r\n()\n###Relational\r\n' +
-  'Database meta::relational::tests::tds::tabletds::dummyDb\r\n(\r\n   Table dummyTable( id int PRIMARY KEY, description char(32))\r\n)';
+  let expected = '###Relational\nDatabase meta::relational::tests::tds::tabletds::dummyDb\n(\n' +
+                 '   Table dummyTable( id int PRIMARY KEY, description char(32))\n)\n' +
+                 '###Mapping\nMapping meta::relational::tests::tds::tabletds::EmptyMapping()';
 
-  assertEquals($expected, $result.code);
+  let actual = $result.code->replace('\r\n', '\n');
+  assertEquals($expected, $actual);
 }
  
 ###Mapping
-Mapping meta::relational::tests::tds::tabletds::EmptyMapping
-()
+Mapping meta::relational::tests::tds::tabletds::EmptyMapping()
 
 ###Relational
 Database meta::relational::tests::tds::tabletds::dummyDb

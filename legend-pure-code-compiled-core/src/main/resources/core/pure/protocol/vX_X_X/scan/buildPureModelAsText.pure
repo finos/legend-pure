@@ -169,11 +169,13 @@ function <<access.protected>> meta::protocols::pure::vX_X_X::transformation::fro
 
   let allElementsFromMapping = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::getAllElementsFromMapping($gm, $extensions);
 
-  
-  $allElementsFromMapping
-    ->concatenate($queryDbs)
+  let allElements = $queryDbs
     ->concatenate($queryDbsFromInclude)
-    ->removeDuplicatesBy(a|$a->elementToPath());
+    ->concatenate($allElementsFromMapping)
+    ->removeDuplicatesBy(a|$a->elementToPath())
+    ->filter(a|!$a->isEmpty());
+
+  $allElements;  
 }
 
 function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::extractStoresFromTableReference<T|m>(query: FunctionDefinition<{->T[m]}>[1]): meta::relational::metamodel::Database[*]
