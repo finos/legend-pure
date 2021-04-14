@@ -16,6 +16,20 @@ Class <<typemodifiers.abstract>> meta::pure::alloy::connections::alloy::specific
 {
 }
 
+Class meta::pure::alloy::connections::alloy::specification::StaticDatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
+{
+   host: String[1];
+   port: Integer[1];
+   databaseName: String[1];
+}
+
+Class meta::pure::alloy::connections::alloy::specification::EmbeddedH2DatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
+{
+    databaseName:String[1];
+    directory:String[1];
+    autoServerMode:Boolean[1];
+}
+
 Class meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
 {
     testDataSetupCsv:String[0..1];

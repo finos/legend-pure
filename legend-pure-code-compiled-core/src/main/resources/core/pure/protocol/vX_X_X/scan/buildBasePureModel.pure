@@ -330,12 +330,30 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBase
    );
 }
 
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromStore(store:meta::pure::store::Store[1], baseVersion:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::PureModelContextData[1]
+{
+   let stores = $store->map(s|$s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::transformStore($extensions));
+   let protocol = ^Protocol(name='pure', version='vX_X_X');
+   ^meta::protocols::pure::vX_X_X::metamodel::PureModelContextData
+   (
+      _type = 'data',
+      serializer = $protocol,
+      origin = buildPureModelContextPointer(^meta::protocols::pure::vX_X_X::metamodel::PackageableElementPointer(type=meta::protocols::pure::vX_X_X::metamodel::PackageableElementType.STORE, path=$store->elementToPath()), $baseVersion, $protocol),
+      elements = $stores
+   );
+}
+
+
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromMapping(gm:Mapping[*], extensions:meta::pure::router::extension::RouterExtension[*]):meta::pure::functions::collection::Pair<meta::pure::functions::collection::List<Store>, meta::protocols::pure::vX_X_X::metamodel::PureModelContextData>[1]
 {
    let toOrigin = {m:Mapping[1], p:Protocol[1] | buildPureModelContextPointer(^meta::protocols::pure::vX_X_X::metamodel::PackageableElementPointer(type=meta::protocols::pure::vX_X_X::metamodel::PackageableElementType.MAPPING, path=$m->elementToPath()), '-1', $p)};
    buildBasePureModelFromMapping($gm, $toOrigin, $extensions);
 }
 
+
+//----------------------
+// Access using Strings
+//----------------------
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromMappingStr(mappingStr:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
 {
    let gm = $mappingStr->pathToElement()->cast(@Mapping);
@@ -347,4 +365,10 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBase
 {
    let gm = $packageStr->pathToElement()->cast(@Package);
    buildBasePureModelFromPackage($gm, '-1', $extensions)->toJsonBeta(^JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=true));
+}
+
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromStoreStr(packageStr:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
+{
+   let gm = $packageStr->pathToElement()->cast(@Store);
+   buildBasePureModelFromStore($gm, '-1', $extensions)->toJsonBeta(^JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=true));
 }
