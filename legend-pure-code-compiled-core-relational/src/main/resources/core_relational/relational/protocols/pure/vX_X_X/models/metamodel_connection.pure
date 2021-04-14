@@ -24,6 +24,11 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::R
    postProcessors: meta::protocols::pure::vX_X_X::metamodel::store::relational::postProcessor::PostProcessor[*];
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DelegatedKerberosAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
+{
+   serverPrincipal: String[0..1];
+}
+
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DefaultH2AuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
 {
 }
@@ -36,6 +41,20 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
 {
     testDataSetupCsv:String[0..1];
     testDataSetupSqls:String[*];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::EmbeddedH2DatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
+{
+    databaseName:String[1];
+    directory:String[1];
+    autoServerMode:Boolean[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::StaticDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
+{
+   host: String[1];
+   port: Integer[1];
+   databaseName: String[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::TestDatabaseConnection extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection

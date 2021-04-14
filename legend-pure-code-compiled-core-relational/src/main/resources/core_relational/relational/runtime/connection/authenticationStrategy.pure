@@ -16,6 +16,11 @@ Class <<typemodifiers.abstract>> meta::pure::alloy::connections::alloy::authenti
 {
 }
 
+Class meta::pure::alloy::connections::alloy::authentication::DelegatedKerberosAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
+{
+   serverPrincipal: String[0..1];
+}
+
 Class meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
 {
 }
