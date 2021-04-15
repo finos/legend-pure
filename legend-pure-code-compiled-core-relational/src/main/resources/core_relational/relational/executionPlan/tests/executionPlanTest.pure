@@ -1463,3 +1463,13 @@ function <<test.Test>> meta::pure::executionPlan::tests::classPathsInfluencedByP
    assertEquals('_pure.plan.root.n1.n1', $withoutPlanIdPackage);
    assertEquals('_pure.plan_abc.plan.root.n1.n1', $withPlanIdPackage);
 }
+
+function <<test.Test>> meta::pure::executionPlan::tests::testExecutionPlanGenerationAddDriverTablePkForProject():Boolean[1]
+{
+   let res = executionPlan(
+      {|Person.all()->project(p | $p.firstName, 'firstName')},
+      simpleRelationalMapping, ^Runtime(connections=^DatabaseConnection(element = relationalDB, type=DatabaseType.MemSQL)), ^RelationalExecutionContext(enableConstraints=false, addDriverTablePkForProject=true), defaultRelationalExtensions()
+   );
+   let expected = 'Relational(type=TDS[(firstName,String,VARCHAR(200),""),(ID,Integer,INT,"")]resultColumns=[("firstName",VARCHAR(200)),("ID",INT)]sql=select`root`.FIRSTNAMEas`firstName`,`root`.IDas`ID`frompersonTableas`root`connection=DatabaseConnection(type="MemSQL"))';
+   assertEquals($expected, $res->planToStringWithoutFormatting(defaultRelationalExtensions()));
+}
