@@ -75,6 +75,27 @@ function <<access.private>> meta::relational::runtime::extractDBs(m:meta::pure::
    )->removeDuplicates();
 }
 
+function meta::relational::functions::database::setUpData(t:String[1], mapping:Mapping[1]):String[*]
+{
+   let databases = $mapping->extractDBs()->removeDuplicates();
+
+   print(if($databases->size() > 1, |'WARNING: The system found multiple databases in the mapping "'+$mapping->elementToPath()+'": '+$databases.name->joinStrings(','), |''));
+
+   let database = if ($databases->size() == 1, | $databases->at(0), | ^Database(name='Default_CatchAll', includes = $databases));
+
+   meta::alloy::service::execution::setUpDataSQLs($t, $database);
+}
+
+
+function meta::relational::functions::database::setUpData(t:String[1], mapping:Mapping[*], runtime:Runtime[1]):String[*]
+{
+   let databases = $mapping->extractDBs($runtime);
+
+   let database = if ($databases->size() == 1, | $databases->at(0), | ^Database(name='Default_CatchAll', includes = $databases));
+
+   meta::alloy::service::execution::setUpDataSQLs($t, $database);
+}
+
 // This function is needed because split does not preserve empty strings
 // We work around by inserting a non-empty value, doing a split, and then removing the non-empty value
 function <<access.private>> meta::alloy::service::execution::splitWithEmptyValue(s:String[1]) : String[*]
