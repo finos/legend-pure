@@ -23,6 +23,8 @@ import meta::pure::router::extension::*;
 import meta::pure::runtime::*;
 import meta::relational::metamodel::*;
 import meta::relational::mapping::*;
+import meta::pure::alloy::connections::*;
+import meta::pure::alloy::connections::alloy::specification::*;
 
 function meta::relational::postProcessor::getCollectionThresholdLimitForDatabaseType(dbType:DatabaseType[1], isTestRun:Boolean[1]):Integer[0..1]
 {
@@ -39,7 +41,10 @@ function meta::relational::postProcessor::getCollectionThresholdLimitForDatabase
 function meta::relational::postProcessor::processInOperation(query:SQLQuery[1], runtime:Runtime[1], store:Database[0..1], exeCtx:ExecutionContext[1], extensions:RouterExtension[*]):PostProcessorResult[1]
 {
    let connection = $runtime->connectionByElement($store->toOne())->meta::relational::mapping::updateConnection($extensions)->cast(@DatabaseConnection);
-   let dbThreshold = $connection.type->getCollectionThresholdLimitForDatabaseType($connection->instanceOf(TestDatabaseConnection));
+   let dbThreshold = $connection.type->getCollectionThresholdLimitForDatabaseType(
+                                                      $connection->instanceOf(TestDatabaseConnection) ||
+                                                      ($connection->instanceOf(RelationalDatabaseConnection) && $connection->cast(@RelationalDatabaseConnection).datasourceSpecification->instanceOf(LocalH2DatasourceSpecification))
+                                                    );
 
    if($dbThreshold->isEmpty(),
       |^meta::relational::mapping::PostProcessorResult(query = $query),
