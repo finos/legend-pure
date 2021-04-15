@@ -22,7 +22,7 @@ import meta::relational::tests::model::simple::*;
 import meta::relational::mapping::*;
 import meta::relational::runtime::*;
 import meta::relational::tests::*;
-
+import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::*;
 
 
 function <<test.Test>> meta::relational::tests::tds::tabletds::testProjectStringColumn():Boolean[1]
@@ -199,8 +199,31 @@ function <<test.Test>> meta::relational::tests::tds::tabletds::testSimpleDistinc
    let result = execute(|tableToTDS(tableReference(meta::relational::tests::db,'default','personTable'))->project([col(r:TDSRow[1]|$r.getString('FIRSTNAME'), 'name')])->distinct()->take(2), EmptyMapping, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
    assertSize($result.values.rows, 2);
 }
+
+function <<test.Test>> 
+{
+  doc.doc='Make sure that buildPureModelContextTextFromMapping includes dummyDb in model code for current protocol version'
+}
+meta::relational::tests::tds::tabletds::testExtractingDbFromTableReference():Boolean[1]
+{
+
+  let result = meta::relational::tests::tds::tabletds::EmptyMapping->buildPureModelContextTextFromMappingAndQuery(
+				{|tableToTDS(tableReference(meta::relational::tests::tds::tabletds::dummyDb,'default','dummyTable'))},
+				meta::pure::router::extension::defaultExtensions());
+
+  let expected = '###Relational\nDatabase meta::relational::tests::tds::tabletds::dummyDb\n(\n' +
+                 '   Table dummyTable( id int PRIMARY KEY, description char(32))\n)\n' +
+                 '###Mapping\nMapping meta::relational::tests::tds::tabletds::EmptyMapping()';
+
+  let actual = $result.code->replace('\r\n', '\n');
+  assertEquals($expected, $actual);
+}
  
 ###Mapping
-Mapping meta::relational::tests::tds::tabletds::EmptyMapping
-()
+Mapping meta::relational::tests::tds::tabletds::EmptyMapping()
 
+###Relational
+Database meta::relational::tests::tds::tabletds::dummyDb
+(
+   Table dummyTable( id int PRIMARY KEY, description char(32))
+)

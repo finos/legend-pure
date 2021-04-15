@@ -17,7 +17,7 @@ import meta::protocols::pure::v1_19_0::transformation::fromPureGraph::*;
 
 function <<test.Test>> meta::protocols::pure::v1_19_0::transformation::fromPureGraph::tests::testGetAllElementsFromMapping():Boolean[1]
 {
-  let result = meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::dataToBookWithFunction->meta::protocols::pure::v1_19_0::transformation::fromPureGraph::getAllElementsFromMapping(meta::pure::router::extension::defaultExtensions());
+  let result = meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::dataToBookWithFunction->getAllElementsFromMapping(meta::pure::router::extension::defaultExtensions());
    
   let expected = ['meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::dataToBookWithFunction', 
                   'meta::pure::mapping::modelToModel::test::alloy::qualifiedProperties::printBook__String_1_', 
@@ -38,7 +38,7 @@ function <<test.Test>> meta::protocols::pure::v1_19_0::transformation::fromPureG
 
 function <<test.Test>> meta::protocols::pure::v1_19_0::transformation::fromPureGraph::tests::testParsingOneLinerMapping():Boolean[1]
 {
-  let result = meta::protocols::pure::v1_19_0::transformation::fromPureGraph::tests::dummyMapping->meta::protocols::pure::v1_19_0::transformation::fromPureGraph::buildPureModelContextTextFromMapping(meta::pure::router::extension::defaultExtensions());
+  let result = meta::protocols::pure::v1_19_0::transformation::fromPureGraph::tests::dummyMapping->buildPureModelContextTextFromMapping(meta::pure::router::extension::defaultExtensions());
 
   let actual = $result.code->replace('\r\n', '\n');
   let expected = '###Mapping\nMapping meta::protocols::pure::v1_19_0::transformation::fromPureGraph::tests::dummyMapping ()';
@@ -49,13 +49,11 @@ function <<test.Test>> meta::protocols::pure::v1_19_0::transformation::fromPureG
 
 function <<test.Test>> meta::protocols::pure::v1_19_0::transformation::fromPureGraph::tests::testSplitCodeIntoLines():Boolean[1]
 {
-  let actual = splitCodeIntoLines('Mapping meta::pure::mapping::modelToModel::test::filter::filterMapping\n(\nPerson : Pure\n{\n~src _Person\n\nlastName : $src.fullName\n}\n\nFirm : Puren\n{\n~src _Firm\nlegalName : $src.name,\nemployees : $src.employees\n}\n)');
-
-  let expected = ['Mapping meta::pure::mapping::modelToModel::test::filter::filterMapping', '(', 'Person : Pure', '{', '~src _Person', '', 'lastName : $src.fullName',
-                  '}', '', 'Firm : Puren', '{', '~src _Firm', 'legalName : $src.name,', 'employees : $src.employees', '}', ')'];
+  let string = 'Mapping meta::pure::mapping::modelToModel::test::filter::filterMapping\n(\nPerson : Pure\n{\n~src _Person\n\nlastName : $src.fullName\n}\n\nFirm : Puren\n{\n~src _Firm\nlegalName : $src.name,\nemployees : $src.employees\n}\n)';
+  let actual = splitCodeIntoLines($string);
 
   //check if result contains all expected lines of pure code (empty lines included!)
-  assertSameElements($expected, $actual);
+  assertEquals($string, $actual->makeString('\n'));
 }
 
 ###Mapping
