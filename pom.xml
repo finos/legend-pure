@@ -75,6 +75,8 @@
     <properties>
         <sonar.projectKey>legend-pure</sonar.projectKey>
         <sonar.moduleKey>${project.groupId}:${project.artifactId}</sonar.moduleKey>
+        <sonar.organization>finos</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
         <!-- Overridden by sub-modules without Java code -->
         <javadoc.skip>false</javadoc.skip>
@@ -115,6 +117,7 @@
         <guava.version>30.0-jre</guava.version>
         <h2.version>1.4.197</h2.version>
     </properties>
+
 
     <scm>
         <developerConnection>scm:git:https://github.com/finos/legend-pure</developerConnection>
