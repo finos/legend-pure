@@ -1537,7 +1537,12 @@ public class Pure
                     {
                         span.setTag("Exception", String.format("Timeout received before tags could be resolved"));
                     }
-                } catch (Exception e)
+                }
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                }
+                catch (Exception e)
                 {
                     if (tagsCritical)
                     {

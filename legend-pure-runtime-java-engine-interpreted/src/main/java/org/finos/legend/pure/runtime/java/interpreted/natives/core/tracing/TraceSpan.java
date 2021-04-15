@@ -209,6 +209,10 @@ public class TraceSpan extends NativeFunction
                 span.setTag("Exception", String.format("Timeout received before tags could be resolved"));
             }
         }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
         catch (Exception e)
         {
             if (tagsCritical)
