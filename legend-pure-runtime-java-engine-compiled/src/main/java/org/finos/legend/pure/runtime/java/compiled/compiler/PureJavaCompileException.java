@@ -15,15 +15,12 @@
 package org.finos.legend.pure.runtime.java.compiled.compiler;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate;
-import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.block.procedure.Procedure2;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.block.factory.Predicates;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
 
@@ -36,25 +33,6 @@ import javax.tools.JavaFileObject;
  */
 public class PureJavaCompileException extends Exception
 {
-    private static final Predicate<Diagnostic<?>> IS_ERROR_DIAGNOSTIC = new Predicate<Diagnostic<?>>()
-    {
-        @Override
-        public boolean accept(Diagnostic<?> diagnostic)
-        {
-            return (diagnostic != null) && (Diagnostic.Kind.ERROR == diagnostic.getKind());
-        }
-    };
-
-    private static final Function<Diagnostic<? extends JavaFileObject>, String> SOURCE_NAME = new Function<Diagnostic<? extends JavaFileObject>, String>()
-    {
-        @Override
-        public String valueOf(Diagnostic<? extends JavaFileObject> diagnostic)
-        {
-            JavaFileObject source = diagnostic.getSource();
-            return (source == null) ? null : source.getName();
-        }
-    };
-
     private static final int MAX_SOURCES_FOR_MESSAGE = 5;
     private static final int MAX_LINES_FOR_MESSAGE = 250;
     private static final long SOURCE_CONTEXT_LINES = 20;
@@ -79,15 +57,26 @@ public class PureJavaCompileException extends Exception
 
     public RichIterable<Diagnostic<? extends JavaFileObject>> getErrorDiagnostics()
     {
-        return LazyIterate.select(this.diagnostics, IS_ERROR_DIAGNOSTIC);
+        return LazyIterate.select(this.diagnostics, PureJavaCompileException::isErrorDiagnostic);
     }
 
     private static String createMessage(Iterable<Diagnostic<? extends JavaFileObject>> diagnostics)
     {
-        MutableList<Diagnostic<? extends JavaFileObject>> errorDiagnostics = Iterate.select(diagnostics, IS_ERROR_DIAGNOSTIC, Lists.mutable.<Diagnostic<? extends JavaFileObject>>with());
+        MutableList<Diagnostic<? extends JavaFileObject>> errorDiagnostics = Iterate.select(diagnostics, PureJavaCompileException::isErrorDiagnostic, Lists.mutable.empty());
         return (errorDiagnostics.isEmpty())
                 ? "Unknown error compiling generated Java code"
-                :new MessageBuilder(errorDiagnostics).getMessage();
+                : new MessageBuilder(errorDiagnostics).getMessage();
+    }
+
+    private static boolean isErrorDiagnostic(Diagnostic<?> diagnostic)
+    {
+        return (diagnostic != null) && (Diagnostic.Kind.ERROR == diagnostic.getKind());
+    }
+
+    private static String getSourceName(Diagnostic<? extends JavaFileObject> diagnostic)
+    {
+        JavaFileObject source = diagnostic.getSource();
+        return (source == null) ? null : source.getName();
     }
 
     private static class MessageBuilder
@@ -105,62 +94,40 @@ public class PureJavaCompileException extends Exception
 
         String getMessage()
         {
-            lines = Lists.mutable.empty();
-            lastSourceName = null;
+            this.lines = Lists.mutable.empty();
+            this.lastSourceName = null;
 
             addLine(createSummaryMessage());
-            diagnostics.forEach(new Procedure<Diagnostic<? extends JavaFileObject>>()
-                        {
-                            @Override
-                            public void value(Diagnostic<? extends JavaFileObject> diagnostic)
-                            {
-                                printLines(diagnostic.toString());
-                            }
-                        });
-            diagnostics.groupBy(SOURCE_NAME)
-                    .forEachKeyMultiValues(new Procedure2<String, Iterable<Diagnostic<? extends JavaFileObject>>>()
-                    {
-                        @Override
-                        public void value(String sourceName, Iterable<Diagnostic<? extends JavaFileObject>> diagnostics)
-                        {
-                            for (Diagnostic<? extends JavaFileObject> diagnostic: diagnostics)
-                            {
-                                printDiagnosticSource(diagnostic);
-                            }
-                        }
-                    });
-
+            this.diagnostics.forEach(diagnostic -> printLines(diagnostic.toString()));
+            this.diagnostics.groupBy(PureJavaCompileException::getSourceName).forEachValue(this::printDiagnosticSource);
             return lines.makeString("\n");
         }
 
         private void addLine(String line)
         {
-            if (lines.size() < MAX_LINES_FOR_MESSAGE)
+            if (this.lines.size() < MAX_LINES_FOR_MESSAGE)
             {
-                lines.add(line);
+                this.lines.add(line);
             }
-            else if (lines.size() == MAX_LINES_FOR_MESSAGE)
+            else if (this.lines.size() == MAX_LINES_FOR_MESSAGE)
             {
-                lines.add("... (max message size exceeded)");
+                this.lines.add("... (max message size exceeded)");
             }
         }
 
         private void printLines(String text)
         {
             String[] lines = text.split("\\n");
-            for (int i = 0; i < lines.length; i++)
-            {
-                addLine(lines[i]);
-            }
+            ArrayIterate.forEach(lines, this::addLine);
         }
 
         private String createSummaryMessage()
         {
             StringBuilder builder = new StringBuilder();
-            int count = diagnostics.size();
+            int count = this.diagnostics.size();
             builder.append(count);
             builder.append((count == 1) ? " error compiling " : " errors compiling ");
-            MutableList<String> sourceNames = LazyIterate.collect(diagnostics, SOURCE_NAME).select(Predicates.notNull(), Sets.mutable.<String>with()).toSortedList();
+            MutableList<String> sourceNames = LazyIterate.collect(this.diagnostics, PureJavaCompileException::getSourceName).select(Predicates.notNull(), Sets.mutable.empty()).toSortedList();
 
             if (sourceNames.size() <= MAX_SOURCES_FOR_MESSAGE)
             {
@@ -177,37 +144,42 @@ public class PureJavaCompileException extends Exception
 
         private void printDiagnosticSource(Diagnostic<? extends JavaFileObject> diagnostic)
         {
-            String sourceName = SOURCE_NAME.valueOf(diagnostic);
-            if (sourceName != lastSourceName) //NOSONAR
+            String sourceName = getSourceName(diagnostic);
+            if (sourceName != this.lastSourceName) //NOSONAR
             {
                 JavaFileObject source = diagnostic.getSource();
                 if (source instanceof StringJavaSource)
                 {
-                    sourceLines = ((StringJavaSource)source).getCode().split("\\n");
-                    sourceLinesHighwater = 0;
+                    this.sourceLines = ((StringJavaSource) source).getCode().split("\\n");
+                    this.sourceLinesHighwater = 0;
                     addLine("");
                     addLine(sourceName);
-                    lastSourceName = sourceName;
                 }
+                else
+                {
+                    this.sourceLines = new String[0];
+                    this.sourceLinesHighwater = 0;
+                }
+                this.lastSourceName = sourceName;
             }
-            long lineNo = Math.max(diagnostic.getLineNumber() - SOURCE_CONTEXT_LINES, sourceLinesHighwater + 1);
-            long end = Math.min(diagnostic.getLineNumber() + SOURCE_CONTEXT_LINES, sourceLines.length);
-            if (lineNo - sourceLinesHighwater > 2)
+            long lineNo = Math.max(diagnostic.getLineNumber() - SOURCE_CONTEXT_LINES, this.sourceLinesHighwater + 1);
+            long end = Math.min(diagnostic.getLineNumber() + SOURCE_CONTEXT_LINES, this.sourceLines.length);
+            if (lineNo - this.sourceLinesHighwater > 2)
             {
-                addLine(String.format("%04d:%04d ...", sourceLinesHighwater+1, lineNo-1));
-                sourceLinesHighwater = lineNo-1;
+                addLine(String.format("%04d:%04d ...", this.sourceLinesHighwater + 1, lineNo - 1));
+                this.sourceLinesHighwater = lineNo - 1;
             }
             else
             {
-                lineNo = sourceLinesHighwater + 1;
+                lineNo = this.sourceLinesHighwater + 1;
             }
 
             while (lineNo < end)
             {
-                if (sourceLinesHighwater < lineNo)
+                if (this.sourceLinesHighwater < lineNo)
                 {
-                    addLine(String.format("%04d %s", lineNo, sourceLines[(int)(lineNo-1)]));
-                    sourceLinesHighwater = lineNo;
+                    addLine(String.format("%04d %s", lineNo, this.sourceLines[(int) (lineNo - 1)]));
+                    this.sourceLinesHighwater = lineNo;
                 }
                 lineNo++;
             }
