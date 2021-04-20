@@ -203,8 +203,9 @@ public class FunctionProcessor
                 builder.append("        }\n");
             }
         }
-        builder.append("try {\n");
-        builder.append("        return ");
+        builder.append("        try\n");
+        builder.append("        {\n");
+        builder.append("            return ");
         builder.append(JavaPackageAndImportBuilder.rootPackage());
         builder.append('.');
         builder.append(IdBuilder.sourceToId(function.getSourceInformation()));
@@ -217,18 +218,20 @@ public class FunctionProcessor
             builder.append(", ");
         }
         builder.append("_getExecutionSupport());\n");
-        builder.append("}catch(Exception ex)");
-        builder.append("{");
-        builder.append("    org.finos.legend.pure.m4.exception.PureException pureException = org.finos.legend.pure.m4.exception.PureException.findPureException(ex);\n");
+        builder.append("        }\n");
+        builder.append("        catch (Exception ex)\n");
+        builder.append("        {\n");
+        builder.append("            org.finos.legend.pure.m4.exception.PureException pureException = org.finos.legend.pure.m4.exception.PureException.findPureException(ex);\n");
         builder.append("            if (pureException != null)\n");
         builder.append("            {\n");
         builder.append("                throw pureException;\n");
         builder.append("            }\n");
-        builder.append("            else\n");
+        builder.append("            if (ex instanceof RuntimeException)\n");
         builder.append("            {\n");
-        builder.append("                throw new RuntimeException(\"Unexpected error executing function _validate\" , ex);\n");
-        builder.append( "            }");
-        builder.append("}");
+        builder.append("                throw (RuntimeException)ex;\n");
+        builder.append("            }\n");
+        builder.append("            throw new RuntimeException(\"Unexpected error executing function ").append(FunctionDescriptor.getFunctionDescriptor(function, processorSupport)).append("\" , ex);\n");
+        builder.append("        }\n");
         builder.append("    }");
         return builder.toString();
     }
