@@ -50,7 +50,8 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
             ),
             authenticationStrategy = ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::TestDatabaseAuthenticationStrategy(
               _type = 'test'
-            )
+            ),
+            postProcessorWithParameter = $postProcessorsWithParams
          ),
       relational:meta::pure::alloy::connections::RelationalDatabaseConnection[1] |
          let processors = transformPostProcessors($relational.postProcessors, $extensions);
