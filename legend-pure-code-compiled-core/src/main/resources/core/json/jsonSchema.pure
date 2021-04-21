@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::metamodeJSONSchemaConfigl::path::*;
+import meta::external::format::yaml::*;
 import meta::pure::generation::*;
 import meta::pure::generation::metamodel::*;
 import meta::pure::profiles::doc::*;
@@ -24,11 +25,10 @@ import meta::json::schema::generation::*;
 import meta::json::*;
 
 
-
 Profile meta::json::schema::JSONSchemaGeneration
 {
     stereotypes:[noAdditionalProperties,readOnly,writeOnly];
-    tags:[defaultValue,javaType,name,example];
+    tags:[defaultValue,name,example,title];
 
 }
 //Stereotypes to support schema generation of types that do not exist in Pure or to force generation of a specific schema type
@@ -74,14 +74,16 @@ Class <<access.protected>> meta::json::schema::JSONSchemaConfigInternal
    rootElement:PackageableElement[0..1]; //root element for correct reletiveReferences
    schemaSpecification:JSONSchemaSpecification[1];
    scopeElements: PackageableElement[*];
+   fileType:String[1];
 }
 
 
 Enum{doc.doc='The versions of schema generation supported by the generator'}
-meta::json::schema::generation::JSONSchemaSpecification
+meta::json::schema::generation::JSONSchemaSpecification  
 {
    OPEN_API_V3_0_3,
-   JSON_SCHEMA_DRAFT_07
+   JSON_SCHEMA_DRAFT_07,
+   OPEN_API_V3_0_3_YAML
 }
 
 Class meta::json::schema::generation::JSONSchemaOutput extends GenerationOutput
@@ -129,8 +131,8 @@ function meta::json::schema::generation::generateJsonSchemaFromPure(config:JSONS
 function  meta::json::schema::generateJsonSchemaFromPure_internal(config:JSONSchemaConfig[1], element: Type[1]) : JSONSchemaOutput[*]
 {
    let internalConfig = $config->externalToInternalConfig();
-   let content = $element->toJSONSchema([],$internalConfig)->meta::json::toPrettyJSONString();
-   let types = ^JSONSchemaOutput(content=$content,fileName=$element->elementName($internalConfig,true,true,[]), format='json');
+   let content = $element->toJSONSchema([],$internalConfig)->jsonSchemaString($internalConfig);
+   let types = ^JSONSchemaOutput(content=$content,fileName=$element->elementName($internalConfig,true,true,[]), format=$internalConfig.fileType);
 $types;
 }
 
@@ -154,15 +156,23 @@ function <<access.protected>> meta::json::schema::generateFunctionSchema(config:
 
   let updatedSchema = ^$schema(keyValuePairs+=$header);
 
-  ^JSONSchemaOutput(content= $updatedSchema->meta::json::toPrettyJSONString(),fileName=$element->elementName($config,true,true,[]), format='json');
+  ^JSONSchemaOutput(content= $updatedSchema->jsonSchemaString($config),fileName=$element->elementName($config,true,true,[]), format=$config.fileType);
 
+}
 
+function <<access.private>> meta::json::schema::jsonSchemaString(element:JSONElement[1],config:JSONSchemaConfigInternal[1]):String[1]
+{
+  if($config.schemaSpecification->isYAML(),
+     |$element->meta::json::schema::JSONToYaml()->toYAMLString(),
+      |$element->meta::json::toPrettyJSONString()
+   )
+   
 }
 
 
 function <<access.private>> meta::json::schema::jsonFileName(type:Type[1],config:JSONSchemaConfigInternal[1]):String[1]
 {
-    $type->elementToPath()->pathToFileName('json');
+    $type->elementToPath()->pathToFileName($config.fileType);
 }
 
 function <<access.private>> meta::json::schema::generation::defaultConfig():JSONSchemaConfig[1]
@@ -208,7 +218,8 @@ function <<access.private>> meta::json::schema::defaultInternalConfig() : JSONSc
                              rootLevel = true,
                              generateAnyOfSubType=true,
                              generateConstraintFunctionSchemas= false,
-                             schemaSpecification = JSONSchemaSpecification.JSON_SCHEMA_DRAFT_07
+                             schemaSpecification = JSONSchemaSpecification.JSON_SCHEMA_DRAFT_07,
+                             fileType='json'
                               )
   }
 
@@ -220,15 +231,17 @@ function <<access.protected>> meta::json::schema::externalToInternalConfig(confi
         let generateAnyOfSubType = if($config.generateAnyOfSubType->isEmpty(),|true,|$config.generateAnyOfSubType->toOne());
         let generateConstraintFunctionSchemas = if($config.generateConstraintFunctionSchemas->isEmpty(),|false,|$config.generateConstraintFunctionSchemas->toOne());
         let schemaSpecification =   if($config.schemaSpecification->isEmpty(),|JSONSchemaSpecification.JSON_SCHEMA_DRAFT_07,|$config.schemaSpecification->toOne());
-        ^JSONSchemaConfigInternal(useConstraints =$useConstraints,
+        let fileType =   if($config.schemaSpecification->isEmpty(),|'json',|if($config.schemaSpecification->toOne()->meta::json::schema::isYAML() ,|'yaml',|'json'));
+
+      ^JSONSchemaConfigInternal(useConstraints =$useConstraints,
                                    includeAllRelatedTypes = $includeAllRelatedTypes,
                                    useDefinitions=$includeAllRelatedTypes,
                                    rootLevel=true,
                                    generateAnyOfSubType=$generateAnyOfSubType,
                                    generateConstraintFunctionSchemas= $generateConstraintFunctionSchemas,
                                    schemaSpecification =$schemaSpecification,
-                                   scopeElements = $config.allPackageScopeElements()
-
+                                   scopeElements = $config.allPackageScopeElements(),
+                                   fileType = $fileType 
                                      );
      );
 
@@ -449,15 +462,33 @@ function <<access.private>> meta::json::schema::elementName( element:Packageable
                       $package + $name;
                );
 
-   if($convertToPath,|$path->pathToFileName('json'),|$path);
+   if($convertToPath,|$path->pathToFileName($config.fileType),|$path);
 }
 
 
+   
 
 function meta::json::schema::title( element:PackageableElement[1] ) : JSONKeyValue[1]
 {
-   newJSONKeyStringValue( 'title', if($element->instanceOf(FunctionDefinition),|$element.package->toOne()-> elementToPath()+ '::' + $element->cast(@FunctionDefinition<Any>).functionName->toOne()->split('::')->last()->toOne();,|$element->elementToPath()) );
-}
+   let titleTag = $element->value4Tag('title',JSONSchemaGeneration);
+   
+   newJSONKeyStringValue( 'title', 
+                         if($titleTag->isNotEmpty(),
+                             |$titleTag->first()->toOne().value,  
+                             |$element->titleValue();
+                          ));  
+                      
+}   
+
+function <<access.protected>> meta::json::schema::titleValue( element:PackageableElement[1] ) : String[1]
+{
+if($element->instanceOf(FunctionDefinition),
+   |$element.package->toOne()-> elementToPath()+ '::' + $element->cast(@FunctionDefinition<Any>).functionName->toOne()->split('::')->last()->toOne();,
+    |$element->elementToPath(); 
+   );
+                                       
+}   
+
 
 function meta::json::schema::description( element:PackageableElement[1] ) : JSONKeyValue[0..1]
 {
@@ -701,6 +732,11 @@ function <<access.private>> meta::json::schema::createProperty( property : Prope
    let format = $property->propertyFormatValue();
     assert($property.genericType.rawType!=Any || $constraintHasType ||  $property->hasStereotype('object',JSONSchemaTypeExtension) , 'Unable to generate schema for propery '+$property.name->toOne() + ' on class '+  $property.owner->elementToPath() +'. Found pure type Any: Change the data type or specify an instanceOf constraint. If using constraints, ensure useConstraints is enabled in the config' );
 
+   let titleTag = $property->value4Tag('title',JSONSchemaGeneration);
+   let titleKV = if($titleTag->isNotEmpty(),|newJSONKeyStringValue('title',$titleTag->first()->toOne().value),|[]);
+
+   
+   
    let type =if($constraintHasRef,|[] ,|$property->propertyType($root,$constraintHasType, $config));
    let elementTags = $property->elementTags($config);
    let default = $property->value4Tag('defaultValue',JSONSchemaGeneration);
@@ -708,8 +744,8 @@ function <<access.private>> meta::json::schema::createProperty( property : Prope
                           | let value = $default.value->toOne()->parsePureStringtoJSONValue($property.genericType.rawType->toOne());
                                newJSONKeyValue('default',$value);,
                             |[]);
-
-   let list = $type->concatenate($defaulttag)->concatenate($elementTags)->concatenate($format)->concatenate($constraint.keyValuePairs);
+   
+   let list = $type->concatenate($titleKV)->concatenate($defaulttag)->concatenate($elementTags)->concatenate($format)->concatenate($constraint.keyValuePairs);
    let propertyObject = newJSONObject($list);
 
 
@@ -926,7 +962,12 @@ function <<access.private>> meta::json::schema::isRequired( property:Property<Ni
 }
 function <<access.private>>  meta::json::schema::isOpenAPI(config:JSONSchemaConfigInternal[1]):Boolean[1]
 {
-    $config.schemaSpecification == JSONSchemaSpecification.OPEN_API_V3_0_3;
+    $config.schemaSpecification == JSONSchemaSpecification.OPEN_API_V3_0_3 || $config.schemaSpecification == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML;
+}
+
+function <<access.private>>  meta::json::schema::isYAML(spec:JSONSchemaSpecification[1]):Boolean[1]
+{
+    $spec == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML;
 }
 
 function <<access.private>>  meta::json::schema::addDiscriminator(pureElement:Class<Any>[1],config:JSONSchemaConfigInternal[1]):JSONKeyValue[0..1]
@@ -963,7 +1004,19 @@ function meta::json::schema::discriminateOneOf(sourceInstance:Any[1],propertyVal
    oneOf($classSelection->map(t| $t.name==$propertyValue ))  || $propertyValue->in($mapping.value);
 }
 
+function  meta::json::schema::JSONToYaml(json:meta::json::JSONElement[1]):meta::external::format::yaml::YAMLElement[1]
+{
+    $json->match([
+                  b:JSONBoolean[1] |^YAMLBoolean(value=$b.value),
+                  s:JSONString[1] |^YAMLString(value=$s.value),
+                  n:JSONNumber[1] | ^YAMLNumber(value=$n.value),
+                  n:JSONNull[1] | ^YAMLNull(),
+                  a:JSONArray[1] | ^YAMLArray(values=$a.values->map(v | $v->JSONToYaml()  )),
+                  o:JSONObject[1] | ^YAMLObject(keyValuePairs=$o.keyValuePairs->map(kv | ^YAMLKeyValue(key= $kv.key->JSONToYaml()->cast(@YAMLString),value = $kv.value->JSONToYaml())))
+                 ])
 
+
+}
 
 
 function meta::json::schema::mapSchema(value:String[1],class:Type[1]):DiscriminatorMapping[1]
