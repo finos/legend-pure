@@ -38,15 +38,6 @@
         </resources>
         <plugins>
             <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-Xmx4g -Xms4g -XX:MaxPermSize=1024m</argLine>
-                    <workingDirectory>${project.parent.basedir}</workingDirectory>
-                    <!-- Required so that compiled mode web server integration tests work, the PureJavaCompiler needs this to set correct classpath-->
-                    <useManifestOnlyJar>false</useManifestOnlyJar>
-                </configuration>
-            </plugin>
-            <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
                     <filesets>

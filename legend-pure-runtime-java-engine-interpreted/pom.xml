@@ -30,18 +30,6 @@
     <packaging>jar</packaging>
     <name>Legend Pure - Runtime - Engine Interpreted</name>
 
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-Xmx4g -Xms4g -XX:MaxPermSize=1024m</argLine>
-                    <workingDirectory>${project.parent.basedir}</workingDirectory>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
     <dependencies>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>

@@ -89,14 +89,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-Xmx4g -Xms4g -XX:MaxPermSize=1024m</argLine>
-                    <useManifestOnlyJar>false</useManifestOnlyJar>
-                    <workingDirectory>${project.parent.basedir}</workingDirectory>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <executions>
