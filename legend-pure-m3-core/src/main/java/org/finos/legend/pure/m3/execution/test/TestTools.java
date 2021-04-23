@@ -26,6 +26,7 @@ public class TestTools
 
     public static final String TEST_STEREOTYPE = "Test";
     public static final String EXCLUDEALLOY_STEREOTYPE = "ExcludeAlloy";
+    public static final String EXCLUDE_ALLOY_TEXT_MODE_STEREOTYPE = "ExcludeAlloyTextMode";
     public static final String BEFORE_PACKAGE_STEREOTYPE = "BeforePackage";
     public static final String AFTER_PACKAGE_STEREOTYPE = "AfterPackage";
     public static final String TO_FIX_STEREOTYPE = "ToFix";
@@ -51,6 +52,11 @@ public class TestTools
     public static boolean hasExcludeAlloyStereotype(CoreInstance node, ProcessorSupport processorSupport)
     {
         return hasTestStereotypeWithValue(node, EXCLUDEALLOY_STEREOTYPE, processorSupport);
+    }
+
+    public static boolean hasExcludeAlloyTextModeStereotype(CoreInstance node, ProcessorSupport processorSupport)
+    {
+        return hasTestStereotypeWithValue(node, EXCLUDE_ALLOY_TEXT_MODE_STEREOTYPE, processorSupport);
     }
 
     public static boolean hasBeforePackageStereotype(CoreInstance node, ProcessorSupport processorSupport)
