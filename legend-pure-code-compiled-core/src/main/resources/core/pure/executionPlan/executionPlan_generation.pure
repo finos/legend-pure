@@ -28,6 +28,11 @@ function meta::pure::executionPlan::executionPlan(f:FunctionDefinition<Any>[1], 
    $f->executionPlan($context, $extensions, noDebug());
 }
 
+function meta::pure::executionPlan::executionPlan(f:FunctionDefinition<Any>[1], m:Mapping[1], runtime:Runtime[1], extensions:meta::pure::router::extension::RouterExtension[*], debugContext:DebugContext[1]):ExecutionPlan[1]
+{
+   $f->executionPlan($m, $runtime, ^ExecutionContext(), $extensions, $debugContext);
+}
+
 function meta::pure::executionPlan::executionPlan(f:FunctionDefinition<Any>[1], m:Mapping[1], runtime:Runtime[1], extensions:meta::pure::router::extension::RouterExtension[*]):ExecutionPlan[1]
 {
    $f->executionPlan($m, $runtime, ^ExecutionContext(), $extensions, noDebug());
