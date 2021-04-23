@@ -21,9 +21,12 @@
 @import 'base/base';
 @import 'base/utils';
 @import 'base/common';
+@import 'base/icon';
+@import 'base/button';
+@import 'base/input';
 @import 'base/panel';
 @import 'base/modal';
-@import 'base/context-menu';
+@import 'base/menu';
 
 // Reset (overrie library styles)
 @import 'reset/monaco-editor';

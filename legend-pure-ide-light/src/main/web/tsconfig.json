@@ -33,6 +33,5 @@
       "Style/*": ["style/*"]
     }
   },
-  "include": ["style/**/*.ts", "src/**/*.ts", "src/**/*.tsx"],
-  "files": ["src/index.tsx"]
+  "include": ["style/**/*.ts", "src/**/*.ts", "src/**/*.tsx"]
 }

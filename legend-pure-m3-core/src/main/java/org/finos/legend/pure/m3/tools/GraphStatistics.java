@@ -22,7 +22,6 @@ import org.eclipse.collections.api.block.function.primitive.IntFunction;
 import org.eclipse.collections.api.block.function.primitive.IntToIntFunction;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.block.procedure.primitive.ObjectIntProcedure;
-import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
 import org.eclipse.collections.api.map.primitive.ObjectIntMap;
 import org.eclipse.collections.api.multimap.Multimap;
@@ -36,17 +35,15 @@ import org.eclipse.collections.impl.factory.Bags;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
-import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStub;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 
 import java.util.Formatter;
@@ -61,7 +58,7 @@ public class GraphStatistics
 
     public static Multimap<CoreInstance, CoreInstance> allInstancesByClassifier(ModelRepository repository)
     {
-        return allInstancesByClassifier(repository, Multimaps.mutable.list.<CoreInstance, CoreInstance>empty());
+        return allInstancesByClassifier(repository, Multimaps.mutable.list.empty());
     }
 
     public static <T extends MutableMultimap<CoreInstance, CoreInstance>> T allInstancesByClassifier(ModelRepository repository, T target)
@@ -71,7 +68,7 @@ public class GraphStatistics
 
     public static Multimap<String, CoreInstance> allInstancesByClassifierPath(ModelRepository repository)
     {
-        return allInstancesByClassifierPath(repository, Multimaps.mutable.list.<String, CoreInstance>empty());
+        return allInstancesByClassifierPath(repository, Multimaps.mutable.list.empty());
     }
 
     public static <T extends MutableMultimap<String, CoreInstance>> T allInstancesByClassifierPath(ModelRepository repository, T target)
@@ -81,12 +78,12 @@ public class GraphStatistics
 
     public static Bag<CoreInstance> instanceCountByClassifier(ModelRepository repository)
     {
-        return GraphNodeIterable.fromModelRepository(repository).collect(CoreInstance.GET_CLASSIFIER, Bags.mutable.<CoreInstance>empty());
+        return GraphNodeIterable.fromModelRepository(repository).collect(CoreInstance.GET_CLASSIFIER, Bags.mutable.empty());
     }
 
     public static Bag<String> instanceCountByClassifierPath(ModelRepository repository)
     {
-        return GraphNodeIterable.fromModelRepository(repository).collect(Functions.chain(CoreInstance.GET_CLASSIFIER, PackageableElement.GET_USER_PATH), Bags.mutable.<String>empty());
+        return GraphNodeIterable.fromModelRepository(repository).collect(Functions.chain(CoreInstance.GET_CLASSIFIER, PackageableElement.GET_USER_PATH), Bags.mutable.empty());
     }
 
     public static ObjectIntMap<CoreInstance> instanceCountByClassifierAsMap(ModelRepository repository)
@@ -101,16 +98,10 @@ public class GraphStatistics
 
     public static RichIterable<CoreInstance> findUnresolvedStubs(ModelRepository repository)
     {
-        return GraphNodeIterable.fromModelRepository(repository).select(new Predicate<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance instance)
-            {
-                return ((instance instanceof ImportStub) && (((ImportStub)instance)._resolvedNode() == null)) ||
-                        ((instance instanceof PropertyStub) && (((PropertyStub)instance)._resolvedPropertyCoreInstance() == null)) ||
-                        ((instance instanceof EnumStub) && (((EnumStub)instance)._resolvedEnumCoreInstance() == null));
-            }
-        });
+        return GraphNodeIterable.fromModelRepository(repository).select(instance ->
+                ((instance instanceof ImportStub) && (((ImportStub)instance)._resolvedNode() == null)) ||
+                ((instance instanceof PropertyStub) && (((PropertyStub)instance)._resolvedPropertyCoreInstance() == null)) ||
+                ((instance instanceof EnumStub) && (((EnumStub)instance)._resolvedEnumCoreInstance() == null)));
     }
 
     private static <T> ObjectIntMap<T> instanceCountAsMap(ModelRepository repository, Function<CoreInstance, T> keyFn)
@@ -132,14 +123,7 @@ public class GraphStatistics
     public static void writeInstanceCountsByClassifierPathDeltas(Appendable appendable, String formatString, Bag<String> instanceCountsByClassifierPath1, Bag<String> instanceCountsByClassifierPath2)
     {
         final MutableSet<String> classifierPaths = Sets.mutable.empty();
-        ObjectIntProcedure<String> collectClassifierPath = new ObjectIntProcedure<String>()
-        {
-            @Override
-            public void value(String classifierPath, int count)
-            {
-                classifierPaths.add(classifierPath);
-            }
-        };
+        ObjectIntProcedure<String> collectClassifierPath = (classifierPath, count) -> classifierPaths.add(classifierPath);
         instanceCountsByClassifierPath1.forEachWithOccurrences(collectClassifierPath);
         instanceCountsByClassifierPath2.forEachWithOccurrences(collectClassifierPath);
         IntFunction<String> countFn1 = new BagCountFunction<>(instanceCountsByClassifierPath1);
@@ -224,28 +208,16 @@ public class GraphStatistics
     private static LazyIterable<GraphPath> allPathsBetween(Iterable<String> startNodePaths, Predicate<? super CoreInstance> isEndNode, int maxPathLength, ProcessorSupport processorSupport)
     {
         GraphPathIterable graphPathIterable = GraphPathIterable.newGraphPathIterable(startNodePaths, isEndNode, maxPathLength, processorSupport);
-        return graphPathIterable.select(Predicates.attributePredicate(Functions.bind(GraphPath.RESOLVE, processorSupport), isEndNode));
+        return graphPathIterable.select(Predicates.attributePredicate(Functions.bind(GraphPath::resolve, processorSupport), isEndNode));
     }
 
     public static LazyIterable<String> allTopLevelAndPackagedElementPaths(ProcessorSupport processorSupport)
     {
-        final Predicate<CoreInstance> isNotPackage = new Predicate<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance instance)
-            {
-                return !(instance instanceof Package);
-            }
-        };
-        Function<Package, ListIterable<String>> getPackageChildrenPaths = new Function<Package, ListIterable<String>>()
-        {
-            @Override
-            public ListIterable<String> valueOf(Package pkg)
-            {
-                return (ListIterable<String>) pkg._children().collectIf(isNotPackage, PackageableElement.GET_USER_PATH);
-            }
-        };
-        return LazyIterate.concatenate(_Package.SPECIAL_TYPES, PackageTreeIterable.newPackageTreeIterable((Package)processorSupport.repository_getTopLevel(M3Paths.Root)).flatCollect(getPackageChildrenPaths));
+        LazyIterable<String> packagedElements = PackageTreeIterable.newRootPackageTreeIterable(processorSupport)
+                .flatCollect(Package::_children)
+                .reject(c -> c instanceof Package)
+                .collect(PackageableElement::getUserPathForPackageableElement);
+        return _Package.SPECIAL_TYPES.asLazy().concatenate(packagedElements);
     }
 
     private static class ObjectIntMapCountFunction<T> implements IntFunction<T>

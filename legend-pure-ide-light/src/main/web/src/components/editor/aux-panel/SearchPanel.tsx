@@ -73,7 +73,7 @@ const SearchResultEntryDisplay = observer((props: {
       <div className="search-panel__entry__content">
         {searchEntry.coordinates.map(coordinate => (
           <div key={coordinate.uuid} className="search-panel__entry__content__item">
-            <div className="search-panel__entry__content__item__label" title="Go to result" onClick={goToResult(coordinate)}>
+            <div className="search-panel__entry__content__item__label" title="Go to Result" onClick={goToResult(coordinate)}>
               {`line: ${coordinate.startLine} - column: ${coordinate.startColumn}`}
             </div>
             <div className="search-panel__entry__content__item__actions">
@@ -133,7 +133,7 @@ const CandidateWithPackageImportedDisplay = observer((props: {
   return (
     <div className="search-panel__entry__content__item">
       <div className="search-panel__entry__content__item__label__candidate"
-        title="Go to result"
+        title="Go to Result"
         onClick={goToResult}>
         <div className="search-panel__entry__content__item__label__candidate-name">
           {candidate.foundName}
@@ -146,7 +146,7 @@ const CandidateWithPackageImportedDisplay = observer((props: {
         <button
           className="search-panel__entry__content__item__action"
           tabIndex={-1}
-          title="Go to result"
+          title="Go to Result"
           onClick={goToResult}
         ><FaArrowAltCircleRight /></button>
       </div>
@@ -166,7 +166,7 @@ const CandidateWithPackageNotImportedDisplay = observer((props: {
   return (
     <div className="search-panel__entry__content__item">
       <div className="search-panel__entry__content__item__label__candidate"
-        title="Add suggested import"
+        title="Add Suggested Import"
         onClick={useCandidate}>
         <div className="search-panel__entry__content__item__label__candidate-name">
           {candidate.foundName}
@@ -179,7 +179,7 @@ const CandidateWithPackageNotImportedDisplay = observer((props: {
         <button
           className="search-panel__entry__content__item__action"
           tabIndex={-1}
-          title="Go to result"
+          title="Go to Result"
           onClick={goToResult}
         ><FaArrowAltCircleRight /></button>
       </div>

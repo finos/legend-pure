@@ -412,6 +412,10 @@ public class M3AntlrParser implements Parser
                                 {
                                     return "%" + coreInstance.getName();
                                 }
+                                if (Instance.instanceOf(coreInstance, M3Paths.StrictTime, processorSupport))
+                                {
+                                    return "%" + coreInstance.getName();
+                                }
                                 return coreInstance.getName();
                             }
                             else

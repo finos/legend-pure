@@ -461,8 +461,8 @@ Class meta::legend::test::handlers::model::TestDate
 
 function <<test.Test>> meta::legend::test::handlers::testAlloyHandlers():Boolean[1]
 {
-   meta::alloy::test::mayExecuteAlloyTest(
-       {clientVersion, serverVersion, host, port|
+   meta::legend::test::mayExecuteLegendTest(
+       {clientVersion, serverVersion, serializationKind, host, port|
                    let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::testLoadModel::legendTestLoadModel_Package_1__String_1__Integer_1__String_1__Boolean_1_';
                    let xf = $fStr->pathToElement()->cast(@Function<{Package[1], String[1], Integer[1], String[1]->Boolean[1]}>);
                    $xf->evaluate([meta::legend::test::handlers::model, $host, $port, $serverVersion]->map(v|list($v)))->toOne()->cast(@Boolean);},
@@ -482,8 +482,8 @@ Class meta::legend::test::model::model::ClassWithConstraint
 
 function <<test.Test>> meta::legend::test::model::testLoadModel():Boolean[1]
 {
-   meta::alloy::test::mayExecuteAlloyTest(
-       {clientVersion, serverVersion, host, port|
+   meta::legend::test::mayExecuteLegendTest(
+       {clientVersion, serverVersion, serializationKind, host, port|
                    let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::testLoadModel::legendTestLoadModel_Package_1__String_1__Integer_1__String_1__Boolean_1_';
                    let xf = $fStr->pathToElement()->cast(@Function<{Package[1], String[1], Integer[1], String[1]->Boolean[1]}>);
                    $xf->evaluate([meta::legend::test::model::model, $host, $port, $serverVersion]->map(v|list($v)))->toOne()->cast(@Boolean);},

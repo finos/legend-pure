@@ -43,7 +43,9 @@ export class FileCoordinate {
   errorMessage?: string; // we might need to support different level of severity like warning
 
   constructor(file: string, line: number, column: number, errorMessage?: string) {
-    makeAutoObservable(this);
+    makeAutoObservable(this, {
+      setErrorMessage: action,
+    });
     this.file = file;
     this.line = line;
     this.column = column;

@@ -41,12 +41,14 @@ import org.junit.Test;
 public class TestLineInfo extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("fromString.pure");
     }
 
@@ -133,7 +135,7 @@ public class TestLineInfo extends AbstractPureTestWithCoreCompiledPlatform
         Assert.assertNotNull(funcType);
         Assert.assertEquals(M3Paths.ConcreteFunctionDefinition, PackageableElement.getUserPathForPackageableElement(funcType, "::"));
         // Note: these source coordinates may change if m3.pure changes
-        assertSourceInformation("/platform/pure/m3.pure", 2125, 1, 2125, 88, 2139, 1, funcType.getSourceInformation());
+        assertSourceInformation("/platform/pure/m3.pure", 2145, 1, 2145, 88, 2159, 1, funcType.getSourceInformation());
     }
 
     @Test

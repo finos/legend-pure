@@ -39,6 +39,7 @@ INTEGER: Integer;
 FLOAT: Float;
 DECIMAL: Decimal;
 DATE: Date;
+STRICTTIME: StrictTime;
 LATEST_DATE: '%latest';
 
 AND: '&&';

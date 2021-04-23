@@ -18,16 +18,16 @@ import meta::alloy::runtime::java::serialize::*;
 import meta::alloy::runtime::java::typeInfo::*;
 import meta::pure::dataQuality::*;
 import meta::pure::graphFetch::execution::*;
-import meta::java::codeGeneration::functions::date::pure::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::jackson::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::lib::pure::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::functions::date::pure::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::jackson::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::lib::pure::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::factory::*;
 import meta::java::metamodel::project::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::engine::*;
 import meta::pure::graphFetch::*;
@@ -172,11 +172,11 @@ function <<access.private>> meta::alloy::runtime::java::serialize::prepareTree(d
 
 function <<access.private>> meta::alloy::runtime::java::serialize::treeForClass(data:SerializeData[1], class:Class<Any>[1]): RootGraphFetchTree<Any>[1]
 {
-   if($class == $data.tree.class,
+   if($class->_subTypeOf($data.tree.class),
       | $data.tree,
       |
-   if($data.auxiliaryTrees->exists(t|$t.class == $class),
-      | $data.auxiliaryTrees->filter(t|$t.class == $class)->toOne(),
+   if($data.auxiliaryTrees->exists(t|$class->_subTypeOf($t.class)),
+      | $data.auxiliaryTrees->filter(t|$class->_subTypeOf($t.class))->toOne(),
       | ^RootGraphFetchTree<Any>(class=$class->cast(@Class<Any>))
    ));               
 }

@@ -88,6 +88,21 @@ public class TestPureDate
     }
 
     @Test
+    public void testFormatRefersToNonexistentComponent()
+    {
+        PureDate date = DateFunctions.newPureDate(2014, 1, 1);
+        try
+        {
+            date.format("[EST]yyyy-MM-dd [CST] HH:mm:ss.SSSZ");
+            Assert.fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            Assert.assertEquals("Date has no hour: 2014-01-01", e.getMessage());
+        }
+    }
+
+    @Test
     public void testInvalidSubseconds()
     {
         try

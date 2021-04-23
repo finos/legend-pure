@@ -13,17 +13,17 @@
 // limitations under the License.
 
 import meta::alloy::runtime::java::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::tests::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::tests::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::factory::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 import meta::pure::executionPlan::engine::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::date::testPureDateLiteral() : Boolean[1]
+meta::java::generation::tests::functions::date::testPureDateLiteral() : Boolean[1]
 {
    let conventions = alloyConventions([]);
    javaExpressionTests($conventions)
@@ -34,7 +34,7 @@ meta::java::codeGeneration::tests::functions::date::testPureDateLiteral() : Bool
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::date::testPureDateGetUnits() : Boolean[1]
+meta::java::generation::tests::functions::date::testPureDateGetUnits() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('Year', {| %2018-12-31->year()}, '(long) org.finos.legend.engine.plan.dependencies.domain.date.PureDate.parsePureDate("2018-12-31").getYear()', javaLong())
@@ -46,7 +46,7 @@ meta::java::codeGeneration::tests::functions::date::testPureDateGetUnits() : Boo
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::date::testPureDateCompare() : Boolean[1]
+meta::java::generation::tests::functions::date::testPureDateCompare() : Boolean[1]
 {
    javaExpressionTests(alloyConventions([]))
       ->addTest('Greater Than', {| %2019-12-31 > %2018-12-31}, 'org.finos.legend.engine.plan.dependencies.util.Library.greaterThan(org.finos.legend.engine.plan.dependencies.domain.date.PureDate.parsePureDate("2019-12-31"), org.finos.legend.engine.plan.dependencies.domain.date.PureDate.parsePureDate("2018-12-31"))', javaBoolean())
@@ -70,7 +70,7 @@ meta::java::codeGeneration::tests::functions::date::testPureDateCompare() : Bool
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::date::testPureDateDerivations() : Boolean[1]
+meta::java::generation::tests::functions::date::testPureDateDerivations() : Boolean[1]
 {
    let conventions = alloyConventions([]);
    javaExpressionTests($conventions)
@@ -115,7 +115,7 @@ meta::java::codeGeneration::tests::functions::date::testPureDateDerivations() : 
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::date::testPureDateToday() : Boolean[1]
+meta::java::generation::tests::functions::date::testPureDateToday() : Boolean[1]
 {
    let conventions = alloyConventions([]);
    let today = today();
@@ -130,7 +130,7 @@ meta::java::codeGeneration::tests::functions::date::testPureDateToday() : Boolea
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::codeGeneration::tests::functions::date::testPureDateRunPureTests() : Boolean[1]
+meta::java::generation::tests::functions::date::testPureDateRunPureTests() : Boolean[1]
 {
    javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
       meta::pure::functions::date::tests::testDateDiffYears__Boolean_1_,

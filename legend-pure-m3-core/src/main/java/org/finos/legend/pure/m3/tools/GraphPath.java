@@ -15,10 +15,7 @@
 package org.finos.legend.pure.m3.tools;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.function.Function2;
 import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.block.procedure.Procedure2;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -39,43 +36,7 @@ import java.util.regex.Pattern;
 
 public class GraphPath
 {
-    public static final Function2<GraphPath, ProcessorSupport, CoreInstance> RESOLVE = new Function2<GraphPath, ProcessorSupport, CoreInstance>()
-    {
-        @Override
-        public CoreInstance value(GraphPath path, ProcessorSupport processorSupport)
-        {
-            return path.resolve(processorSupport);
-        }
-    };
-
-    public static final Function<GraphPath, String> GET_DESCRIPTION = new Function<GraphPath, String>()
-    {
-        @Override
-        public String valueOf(GraphPath path)
-        {
-            return path.getDescription();
-        }
-    };
-
-    private static final Pattern VALID_START_NODE_PATH = Pattern.compile("[a-zA-Z0-9_]+(::[a-zA-z0-9_\\$]+)*");
-
-    private static final Procedure2<Edge, StringBuilder> WRITE_EDGE_MESSAGE = new Procedure2<Edge, StringBuilder>()
-    {
-        @Override
-        public void value(Edge edge, StringBuilder message)
-        {
-            edge.writeMessage(message);
-        }
-    };
-
-    private static final Procedure2<Edge, StringBuilder> WRITE_EDGE_PURE_EXPRESSION = new Procedure2<Edge, StringBuilder>()
-    {
-        @Override
-        public void value(Edge edge, StringBuilder expression)
-        {
-            edge.writePureExpression(expression);
-        }
-    };
+    private static final Pattern VALID_START_NODE_PATH = Pattern.compile("\\w++(::\\w[\\w$]*+)*+");
 
     private final String startNodePath;
     private final ImmutableList<Edge> edges;
@@ -83,7 +44,7 @@ public class GraphPath
     private GraphPath(String startNodePath, ListIterable<Edge> edges)
     {
         this.startNodePath = startNodePath;
-        this.edges = (edges == null) ? Lists.immutable.<Edge>empty() : edges.toImmutable();
+        this.edges = (edges == null) ? Lists.immutable.empty() : edges.toImmutable();
     }
 
     public int getNodeCount()
@@ -166,7 +127,7 @@ public class GraphPath
     public void writeDescription(StringBuilder builder)
     {
         builder.append(this.startNodePath);
-        this.edges.forEachWith(WRITE_EDGE_MESSAGE, builder);
+        this.edges.forEachWith(Edge::writeMessage, builder);
     }
 
     public String getPureExpression()
@@ -179,7 +140,7 @@ public class GraphPath
     public void writePureExpression(StringBuilder builder)
     {
         builder.append(this.startNodePath);
-        this.edges.forEachWith(WRITE_EDGE_PURE_EXPRESSION, builder);
+        this.edges.forEachWith(Edge::writePureExpression, builder);
     }
 
     public boolean startsWith(GraphPath other)
@@ -580,15 +541,6 @@ public class GraphPath
 
     public abstract static class Edge
     {
-        public static final Function<Edge, String> GET_PROPERTY = new Function<Edge, String>()
-        {
-            @Override
-            public String valueOf(Edge edge)
-            {
-                return edge.getProperty();
-            }
-        };
-
         protected final String property;
 
         Edge(String property)
@@ -629,7 +581,7 @@ public class GraphPath
 
     private static class ToOnePropertyEdge extends Edge
     {
-        private static final Pattern PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
+        private static final Pattern PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*+");
 
         private ToOnePropertyEdge(String property)
         {
@@ -685,7 +637,7 @@ public class GraphPath
 
     private static class ToManyPropertyAtIndexEdge extends ToManyPropertyEdge
     {
-        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*)\\[([0-9]+)\\]");
+        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*+)\\[([0-9]++)\\]");
 
         private final int index;
 
@@ -740,7 +692,7 @@ public class GraphPath
 
     private static class ToManyPropertyWithNameEdge extends ToManyPropertyEdge
     {
-        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*)\\['(.*)'\\]");
+        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*+)\\['(.*)'\\]");
 
         private final String valueName;
 
@@ -796,7 +748,7 @@ public class GraphPath
 
     private static class ToManyPropertyWithStringKeyEdge extends ToManyPropertyEdge
     {
-        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*)\\[([a-zA-Z_][a-zA-Z0-9_]*)='(.*)'\\]");
+        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*+)\\[([a-zA-Z_][a-zA-Z0-9_]*+)='(.*)'\\]");
 
         private final String keyProperty;
         private final String key;

@@ -26,7 +26,7 @@
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>1.1.2-SNAPSHOT</version>
+    <version>1.18.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -51,12 +51,17 @@
         <module>legend-pure-m2-dsl-diagram</module>
         <module>legend-pure-runtime-java-extension-dsl-diagram</module>
 
+        <module>legend-pure-m2-store-relational</module>
+        <module>legend-pure-runtime-java-extension-store-relational</module>
+
         <module>legend-pure-runtime-java-extension-external-shared</module>
 
         <module>legend-pure-configuration-external</module>
 
         <module>legend-pure-code-compiled-platform</module>
         <module>legend-pure-code-compiled-core</module>
+        <module>legend-pure-code-compiled-core-relational</module>
+
         <module>legend-pure-code-java-compiled-core</module>
 
         <module>legend-pure-maven-compilation-par</module>
@@ -70,6 +75,8 @@
     <properties>
         <sonar.projectKey>legend-pure</sonar.projectKey>
         <sonar.moduleKey>${project.groupId}:${project.artifactId}</sonar.moduleKey>
+        <sonar.organization>finos</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
         <!-- Overridden by sub-modules without Java code -->
         <javadoc.skip>false</javadoc.skip>
@@ -84,12 +91,15 @@
         <antlr.version>4.5.3</antlr.version>
         <commons-lang.version>3.5</commons-lang.version>
         <commons-codec.version>1.15</commons-codec.version>
-        <commons-io.version>2.4</commons-io.version>
+        <commons-io.version>2.7</commons-io.version>
+        <commons-csv.version>1.5</commons-csv.version>
+        <tomcat-dbcp.version>10.0.4</tomcat-dbcp.version>
         <slf4j.version>1.7.25</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
         <jersey.version>2.25.1</jersey.version>
-        <jackson.version>2.10.3</jackson.version>
-        <jetty.version>9.4.33.v20201020</jetty.version>
+        <jackson.version>2.10.5</jackson.version>
+        <jackson.databind.version>2.10.5.1</jackson.databind.version>
+        <jetty.version>9.4.39.v20210325</jetty.version>
         <bouncycastle.version>1.64</bouncycastle.version>
         <eclipsecollections.version>10.2.0</eclipsecollections.version>
         <json-simple.version>1.1.1</json-simple.version>
@@ -97,14 +107,17 @@
         <junit.version>4.13.1</junit.version>
         <jacoco.maven.plugin.version>0.8.5</jacoco.maven.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
-        <dropwizard.version>1.3.27</dropwizard.version>
+        <dropwizard.version>1.3.29</dropwizard.version>
         <dropwizard-swagger.version>1.3.17-1</dropwizard-swagger.version>
         <joda.time.version>2.10.6</joda.time.version>
         <jaxrs.version>2.0.1</jaxrs.version>
         <swagger.annotation.version>1.5.20</swagger.annotation.version>
         <javax.servlet.version>3.1.0</javax.servlet.version>
         <snakeyaml.version>1.26</snakeyaml.version>
+        <guava.version>30.0-jre</guava.version>
+        <h2.version>1.4.197</h2.version>
     </properties>
+
 
     <scm>
         <developerConnection>scm:git:https://github.com/finos/legend-pure</developerConnection>
@@ -253,7 +266,7 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>11</version>
+                                    <version>[11,12)</version>
                                 </requireJavaVersion>
                                 <dependencyConvergence />
                                 <bannedDependencies>
@@ -379,7 +392,17 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-store-relational</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-code-compiled-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-code-compiled-core-relational</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -415,6 +438,11 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-runtime-java-extension-external-shared</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-store-relational</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -460,7 +488,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>24.1.1-jre</version>
+                <version>${guava.version}</version>
             </dependency>
 
             <dependency>
@@ -513,7 +541,22 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang.version}</version>
-                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat</groupId>
+                <artifactId>tomcat-dbcp</artifactId>
+                <version>${tomcat-dbcp.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-csv</artifactId>
+                <version>${commons-csv.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -581,7 +624,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson.databind.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -675,6 +718,17 @@
             </dependency>
             <dependency>
                 <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-logging</artifactId>
+                <version>${dropwizard.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>jetty-util</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard</groupId>
                 <artifactId>dropwizard-jersey</artifactId>
                 <version>${dropwizard.version}</version>
                 <exclusions>
@@ -719,7 +773,47 @@
             <!-- Jetty -->
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlets</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-security</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util-ajax</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-webapp</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-xml</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-continuation</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <!-- Jetty -->
@@ -770,6 +864,14 @@
             </dependency>
             <!-- Class graph -->
 
+            <!-- DB drivers -->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
+            </dependency>
+            <!-- DB drivers -->
+
             <!-- Test Scope -->
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
@@ -788,6 +890,20 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-m2-dsl-diagram</artifactId>
+                <type>test-jar</type>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-dsl-mapping</artifactId>
+                <type>test-jar</type>
+                <version>${project.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-m2-store-relational</artifactId>
                 <type>test-jar</type>
                 <version>${project.version}</version>
                 <scope>test</scope>

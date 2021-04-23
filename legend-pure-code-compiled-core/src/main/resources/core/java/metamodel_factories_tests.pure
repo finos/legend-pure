@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::tests::code::*;
+import meta::java::generation::code::*;
+import meta::java::generation::tests::code::*;
 import meta::java::metamodel::factory::*;
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::sameLiteral():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::sameLiteral():Boolean[1]
 {
    assert(j_string('literal')->isSameLiteral(j_string('literal')));
    assertFalse(j_string('literal1')->isSameLiteral(j_string('literal2')));
    assertFalse(j_string('l')->isSameLiteral(j_char('l')));  
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::equalityOfSameTypes():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::equalityOfSameTypes():Boolean[1]
 {
    let i = j_variable(javaIntBoxed(), 'i');
    let l = j_variable(javaLongBoxed(), 'l');
@@ -43,7 +43,7 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::equalityOfSameTy
    assertCode('b == b',        javaBoolean(), $b->j_eq($b));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::inequalityOfSameTypes():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::inequalityOfSameTypes():Boolean[1]
 {
    let i = j_variable(javaIntBoxed(), 'i');
    let l = j_variable(javaLongBoxed(), 'l');
@@ -63,7 +63,7 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::inequalityOfSame
    assertCode('b != b',        javaBoolean(), $b->j_ne($b));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::equalityOfCompatibleTypes():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::equalityOfCompatibleTypes():Boolean[1]
 {
    let i = j_variable(javaIntBoxed(), 'i');
    let l = j_variable(javaLongBoxed(), 'l');
@@ -180,7 +180,7 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::equalityOfCompat
    assertCode('a == o',     javaBoolean(), $oA->j_eq($o));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::inequalityOfCompatibleTypes():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::inequalityOfCompatibleTypes():Boolean[1]
 {
    let i = j_variable(javaIntBoxed(), 'i');
    let l = j_variable(javaLongBoxed(), 'l');
@@ -297,7 +297,7 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::inequalityOfComp
    assertCode('a != o',     javaBoolean(), $oA->j_ne($o));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::equalityOfIncompatibleTypes():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::equalityOfIncompatibleTypes():Boolean[1]
 {
    let i = j_variable(javaIntBoxed(), 'i');
    let l = j_variable(javaLongBoxed(), 'l');
@@ -330,7 +330,7 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::equalityOfIncomp
    assertCode('(Object) a == b', javaBoolean(), $oA->j_eq($oB));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::inequalityOfIncompatibleTypes():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::inequalityOfIncompatibleTypes():Boolean[1]
 {
    let i = j_variable(javaIntBoxed(), 'i');
    let l = j_variable(javaLongBoxed(), 'l');
@@ -363,7 +363,7 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::inequalityOfInco
    assertCode('(Object) a != b', javaBoolean(), $oA->j_ne($oB));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::j_conditional():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::j_conditional():Boolean[1]
 {
    // compare two nulls
    assertCode('0', javaInt(), j_conditional(j_null()->j_eq(j_null()), j_int(0), j_int(1)));
@@ -376,80 +376,80 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::j_conditional():
    assertCode('null != "literal" ? 0 : 1', javaInt(), j_conditional(j_null()->j_ne(j_string('literal')), j_int(0), j_int(1)));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::notInstanceOf():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::notInstanceOf():Boolean[1]
 {
    assertCode('!("Hello" instanceof String)', javaBoolean(), j_not(j_string('Hello')->j_instanceof(javaString())));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::listOfAtomic():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::listOfAtomic():Boolean[1]
 {
    let list = j_variable(javaString(), 'var')->j_listOf(javaList(javaString()));
    assertCode('java.util.Optional.ofNullable(var).map(java.util.Collections::singletonList).orElseGet(java.util.Collections::emptyList)', javaList(javaString()), $list);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::listOfAtomicCasted():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::listOfAtomicCasted():Boolean[1]
 {
    let list = j_variable(javaString(), 'var')->j_listOf(javaList(javaObject()));
    assertCode('java.util.Optional.ofNullable((Object) var).map(java.util.Collections::singletonList).orElseGet(java.util.Collections::emptyList)', javaList(javaObject()), $list);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::listOfList():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::listOfList():Boolean[1]
 {
    let list = j_variable(javaList(javaString()), 'var')->j_listOf(javaList(javaString()));
    assertCode('var', javaList(javaString()), $list);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::listOfListRequiringCasted():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::listOfListRequiringCasted():Boolean[1]
 {
    let list = j_variable(javaList(javaString()), 'var')->j_listOf(javaList(javaObject()));
    assertCode('var.stream().map(Object.class::cast).collect(java.util.stream.Collectors.toList())', javaList(javaObject()), $list);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::listOfEmptyList():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::listOfEmptyList():Boolean[1]
 {
    let list = j_emptyList(javaList(javaWildcard()))->j_listOf(javaList(javaString()));
    assertCode('java.util.Collections.<String>emptyList()', javaList(javaString()), $list);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::streamOfList():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::streamOfList():Boolean[1]
 {
    let stream = j_variable(javaList(javaString()), 'var')->j_streamOf();
    assertCode('var.stream()', javaStream(javaString()), $stream);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::mapToAtoms():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::mapToAtoms():Boolean[1]
 {
    let x      = j_parameter(javaString(), 'x');
    let stream = j_variable(javaList(javaString()), 'var')->j_streamOf()->js_map(j_lambda($x, $x));
    assertCode('var.stream().map((String x) -> x).filter((String x) -> x != null)', javaStream(javaString()), $stream);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::mapToLists():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::mapToLists():Boolean[1]
 {
    let x      = j_parameter(javaString(), 'x');
    let stream = j_variable(javaList(javaString()), 'var')->j_streamOf()->js_map(j_lambda($x, javaCollections()->j_invoke('singletonList', $x, javaList(javaString()))));
    assertCode('var.stream().map((String x) -> java.util.Collections.singletonList(x)).flatMap(java.util.Collection::stream)', javaStream(javaString()), $stream);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::streamOfAtomic():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::streamOfAtomic():Boolean[1]
 {
    let stream = j_variable(javaString(), 'var')->j_streamOf();
    assertCode('java.util.Optional.ofNullable(var).map(java.util.stream.Stream::of).orElseGet(java.util.stream.Stream::empty)', javaStream(javaString()), $stream);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::resolveStreamToList():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::resolveStreamToList():Boolean[1]
 {
    let resolved = j_variable(javaList(javaString()), 'var')->j_streamOf()->js_resolve(javaList(javaString()));
    assertCode('var.stream().collect(java.util.stream.Collectors.toList())', javaList(javaString()), $resolved);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::resolveStreamToAtomic():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::resolveStreamToAtomic():Boolean[1]
 {
    let resolved = j_variable(javaList(javaString()), 'var')->j_streamOf()->js_resolve(javaString());
    assertCode('var.stream().findFirst().orElse(null)', javaString(), $resolved);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::streamOfResolvedStreamToListIsOptimized():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::streamOfResolvedStreamToListIsOptimized():Boolean[1]
 {
    let x       = j_parameter(javaString(), 'x');
    let id      = j_lambda($x, $x);
@@ -457,7 +457,7 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::streamOfResolved
    assertCode('var.stream().map((String x) -> x).filter((String x) -> x != null).map((String x) -> x).filter((String x) -> x != null).collect(java.util.stream.Collectors.toList())', javaList(javaString()), $complex);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::streamOfResolvedStreamToAtomicIsOptimized():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::streamOfResolvedStreamToAtomicIsOptimized():Boolean[1]
 {
    let x       = j_parameter(javaString(), 'x');
    let id      = j_lambda($x, $x);
@@ -465,22 +465,22 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::streamOfResolved
    assertCode('java.util.Optional.ofNullable(var).map(java.util.stream.Stream::of).orElseGet(java.util.stream.Stream::empty).map((String x) -> x).filter((String x) -> x != null).map((String x) -> x).filter((String x) -> x != null).findFirst().orElse(null)', javaString(), $complex);
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::castEmptyListIsNull():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::castEmptyListIsNull():Boolean[1]
 {
    assertCode('(String) null', javaString(), j_emptyList(javaList(javaWildcard()))->j_cast(javaString()));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::castToExistingTypeIsANoOp():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::castToExistingTypeIsANoOp():Boolean[1]
 {
    assertCode('"Hello"', javaString(), j_string('Hello')->j_cast(javaString()));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::castToDifferentType():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::castToDifferentType():Boolean[1]
 {
    assertCode('(CharSequence) "Hello"', javaCharSequence(), j_string('Hello')->j_cast(javaCharSequence()));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::castUnboxedToBoxed():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::castUnboxedToBoxed():Boolean[1]
 {
    assertCode('4',    javaIntBoxed(),    j_int(4)     ->j_cast(javaIntBoxed()));
    assertCode('4L',   javaLongBoxed(),   j_long(4)    ->j_cast(javaLongBoxed()));
@@ -498,7 +498,7 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::castUnboxedToBox
    assertCode('(Object) new Double(1.5)', javaObject(),      j_double(1.5)->j_cast(javaObject()));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::castBoxedToUnboxedUsesValueMethods():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::castBoxedToUnboxedUsesValueMethods():Boolean[1]
 {
    let n = j_variable(javaNumber(), 'n');
 
@@ -539,14 +539,14 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::castBoxedToUnbox
    assertCode('n.doubleValue()',               javaDouble(), $n->j_cast(javaDouble()));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::doubleCastingRecastsTheOriginal():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::doubleCastingRecastsTheOriginal():Boolean[1]
 {
    assertCode('new Integer(4).intValue()',      javaInt(),          j_int(4)->j_box()->j_cast(javaDouble())->j_cast(javaInt()));
    assertCode('new Integer(4)',                 javaIntBoxed(),     j_int(4)->j_box()->j_cast(javaDouble())->j_cast(javaIntBoxed()));
    assertCode('(java.io.Serializable) "Hello"', javaSerializable(), j_string('Hello')->j_cast(javaCharSequence())->j_cast(javaSerializable()));
 }
 
-function <<test.Test>> meta::java::codeGeneration::tests::code::primitiveCastsPreseveredByBoxingIfDoubleCast():Boolean[1]
+function <<test.Test>> meta::java::generation::tests::code::primitiveCastsPreseveredByBoxingIfDoubleCast():Boolean[1]
 {
    let i = j_variable(javaInt(), 'i');
    
@@ -554,8 +554,8 @@ function <<test.Test>> meta::java::codeGeneration::tests::code::primitiveCastsPr
    assertCode('(Number) new Long((long) i)', javaNumber(), $i->j_cast(javaLong())->j_cast(javaNumber()));
 }
 
-function meta::java::codeGeneration::tests::code::assertCode(expectedCode:String[1], expectedType:meta::java::metamodel::Type[1], code:Code[1]):Boolean[1]
+function meta::java::generation::tests::code::assertCode(expectedCode:String[1], expectedType:meta::java::metamodel::Type[1], code:Code[1]):Boolean[1]
 {
    assertEquals($expectedCode, $code->codeToString());
-   assertEquals($expectedType->meta::java::tostring::typePathToString(true), $code.type->meta::java::tostring::typePathToString(true));
+   assertEquals($expectedType->meta::java::serialization::typePathToString(true), $code.type->meta::java::serialization::typePathToString(true));
 }

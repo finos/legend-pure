@@ -1,0 +1,459 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+###Diagram
+
+Diagram meta::relational::metamodel::RelationalMetaModelDiagram(width=900.42956, height=693.53871)
+{
+    TypeView Operation_9_9_9_9_9_9_9_9_9_9_9_11_11_11_11_11_11_11_11_0_0_0_0_0_$_0(
+        type=meta::relational::metamodel::operation::Operation,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(600.51629, -95.27319),
+        width=76.00000,
+        height=36.00000)
+
+    TypeView DynaFunction_1_1_1_1_1_1_1_1_1_1_1_12_12_12_12_12_12_12_12_1_1_1_1_1_$_1(
+        type=meta::relational::metamodel::DynaFunction,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(588.93734, -17.37845),
+        width=99.00000,
+        height=48.00000)
+
+    TypeView Operation_11_11_11_11_11_11_11_11_11_11_11_9_9_9_9_9_9_9_9_4_4_3_3_3_$_2(
+        type=meta::relational::metamodel::operation::Operation,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(713.12388, 504.52868),
+        width=76.00000,
+        height=36.00000)
+
+    TypeView Schema_0_0_0_0_0_0_6_6_6_6_6_6_6_6_6_6_6_5_5_5_5_5_5_5_5_5_5_4_4_4_$_3(
+        type=meta::relational::metamodel::Schema,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(496.65789, 338.71285),
+        width=104.52632,
+        height=112.43734)
+
+    TypeView Join_6_6_5_5_5_$_4(
+        type=meta::relational::metamodel::join::Join,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(346.08127, 505.87078),
+        width=99.00000,
+        height=80.00000)
+
+    TypeView View_7_7_6_6_6_$_5(
+        type=meta::relational::metamodel::relation::View,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(919.18421, 349.15019),
+        width=83.00000,
+        height=47.00000)
+
+    TypeView Database_10_10_4_4_4_4_2_2_2_2_2_2_2_2_2_2_2_1_1_1_1_1_1_1_1_8_8_7_7_7_$_6(
+        type=meta::relational::metamodel::Database,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(258.82044, 343.34752),
+        width=82.62155,
+        height=124.25313)
+
+    TypeView Relation_10_10_9_9_9_$_7(
+        type=meta::relational::metamodel::relation::Relation,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(1036.93421, 127.00313),
+        width=67.00000,
+        height=36.00000)
+
+    TypeView RelationalOperationElement_8_8_8_8_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_11_11_10_10_10_$_8(
+        type=meta::relational::metamodel::RelationalOperationElement,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(975.25000, -18.75000),
+        width=184.00000,
+        height=86.00000)
+
+    TypeView Filter_9_9_3_3_3_3_7_7_7_7_7_7_7_7_7_7_7_6_6_6_6_6_6_6_6_12_12_11_11_11_$_9(
+        type=meta::relational::metamodel::Filter,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(462.48684, 199.00000),
+        width=99.00000,
+        height=48.00000)
+
+    TypeView Operation_8_8_8_8_8_8_8_8_8_8_8_7_7_7_7_7_7_7_7_13_13_12_12_12_$_10(
+        type=meta::relational::metamodel::operation::Operation,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(639.26629, 204.72682),
+        width=76.00000,
+        height=36.00000)
+
+    TypeView TableAlias_5_5_6_6_6_6_12_12_12_12_12_12_12_12_12_12_12_10_10_10_10_10_10_10_10_3_3_14_14_14_$_11(
+        type=meta::relational::metamodel::TableAlias,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(861.76548, 517.95976),
+        width=136.88471,
+        height=80.30576)
+
+    TypeView NamedRelation_9_9_8_8_8_$_12(
+        type=meta::relational::metamodel::relation::NamedRelation,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(1015.68421, 229.50313),
+        width=108.00000,
+        height=48.00000)
+
+    TypeView Table_1_1_7_7_7_7_3_3_3_3_3_3_3_3_3_3_3_2_2_2_2_2_2_2_2_2_2_2_2_2_$_13(
+        type=meta::relational::metamodel::relation::Table,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(1029.34211, 404.44969),
+        width=83.84210,
+        height=46.70050)
+
+    TypeView Column_14_14_13_13_13_$_14(
+        type=meta::relational::metamodel::Column,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(838.89010, 126.69431),
+        width=131.00000,
+        height=60.30185)
+
+
+
+    PropertyView pview_15(property=meta::relational::metamodel::Database.filters,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(338.28409,362.33750),(423.55921,232.50313),(427.30921,231.25313),(473.55921,231.25313)],
+        label='',
+        source=Database_10_10_4_4_4_4_2_2_2_2_2_2_2_2_2_2_2_1_1_1_1_1_1_1_1_8_8_7_7_7_$_6,
+        target=Filter_9_9_3_3_3_3_7_7_7_7_7_7_7_7_7_7_7_6_6_6_6_6_6_6_6_12_12_11_11_11_$_9,
+        propertyPosition=(236.45162, 226.25697),
+        multiplicityPosition=(260.45162, 247.25697))
+
+    PropertyView pview_16(property=meta::relational::metamodel::Schema.database,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(516.67920,386.97914),(325.65252,387.60066)],
+        label='',
+        source=Schema_0_0_0_0_0_0_6_6_6_6_6_6_6_6_6_6_6_5_5_5_5_5_5_5_5_5_5_4_4_4_$_3,
+        target=Database_10_10_4_4_4_4_2_2_2_2_2_2_2_2_2_2_2_1_1_1_1_1_1_1_1_8_8_7_7_7_$_6,
+        propertyPosition=(164.40677, 398.55312),
+        multiplicityPosition=(164.40677, 377.55312))
+
+    PropertyView pview_17(property=meta::relational::metamodel::Database.schemas,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(339.33673,426.54802),(513.52131,425.92650)],
+        label='',
+        source=Database_10_10_4_4_4_4_2_2_2_2_2_2_2_2_2_2_2_1_1_1_1_1_1_1_1_8_8_7_7_7_$_6,
+        target=Schema_0_0_0_0_0_0_6_6_6_6_6_6_6_6_6_6_6_5_5_5_5_5_5_5_5_5_5_4_4_4_$_3,
+        propertyPosition=(250.62267, 420.99051),
+        multiplicityPosition=(294.62267, 441.99051))
+
+    PropertyView pview_18(property=meta::relational::metamodel::relation::Table.schema,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(1035.18421,413.15019),(598.18421,411.65019)],
+        label='',
+        source=Table_1_1_7_7_7_7_3_3_3_3_3_3_3_3_3_3_3_2_2_2_2_2_2_2_2_2_2_2_2_2_$_13,
+        target=Schema_0_0_0_0_0_0_6_6_6_6_6_6_6_6_6_6_6_5_5_5_5_5_5_5_5_5_5_4_4_4_$_3,
+        propertyPosition=(424.14899, 406.66432),
+        multiplicityPosition=(424.14899, 427.66432))
+
+    PropertyView pview_19(property=meta::relational::metamodel::Schema.tables,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(597.18421,435.65019),(1039.18421,437.15019)],
+        label='',
+        source=Schema_0_0_0_0_0_0_6_6_6_6_6_6_6_6_6_6_6_5_5_5_5_5_5_5_5_5_5_4_4_4_$_3,
+        target=Table_1_1_7_7_7_7_3_3_3_3_3_3_3_3_3_3_3_2_2_2_2_2_2_2_2_2_2_2_2_2_$_13,
+        propertyPosition=(799.30689, 432.12062),
+        multiplicityPosition=(827.30689, 453.12062))
+
+    PropertyView pview_20(property=meta::relational::metamodel::DynaFunction.parameters,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(638.43734,6.62155),(979.87155,9.08208)],
+        label='',
+        source=DynaFunction_1_1_1_1_1_1_1_1_1_1_1_12_12_12_12_12_12_12_12_1_1_1_1_1_$_1,
+        target=RelationalOperationElement_8_8_8_8_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_11_11_10_10_10_$_8,
+        propertyPosition=(716.21478, 20.05261),
+        multiplicityPosition=(773.21478, -0.94739))
+
+    PropertyView pview_21(property=meta::relational::metamodel::Filter.operation,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(511.98684,223.00000),(677.26629,222.72682)],
+        label='',
+        source=Filter_9_9_3_3_3_3_7_7_7_7_7_7_7_7_7_7_7_6_6_6_6_6_6_6_6_12_12_11_11_11_$_9,
+        target=Operation_8_8_8_8_8_8_8_8_8_8_8_7_7_7_7_7_7_7_7_13_13_12_12_12_$_10,
+        propertyPosition=(390.23107, 217.79346),
+        multiplicityPosition=(435.23107, 238.79346))
+
+    PropertyView pview_22(property=meta::relational::metamodel::relation::View.schema,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(923.18421,362.15019),(600.18421,360.65019)],
+        label='',
+        source=View_7_7_6_6_6_$_5,
+        target=Schema_0_0_0_0_0_0_6_6_6_6_6_6_6_6_6_6_6_5_5_5_5_5_5_5_5_5_5_4_4_4_$_3,
+        propertyPosition=(424.14899, 371.65867),
+        multiplicityPosition=(424.14899, 350.65867))
+
+    PropertyView pview_23(property=meta::relational::metamodel::Schema.views,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(592.18421,387.15019),(923.18421,385.15019)],
+        label='',
+        source=Schema_0_0_0_0_0_0_6_6_6_6_6_6_6_6_6_6_6_5_5_5_5_5_5_5_5_5_5_4_4_4_$_3,
+        target=View_7_7_6_6_6_$_5,
+        propertyPosition=(691.14899, 380.17819),
+        multiplicityPosition=(717.14899, 401.17819))
+
+    PropertyView pview_24(property=meta::relational::metamodel::relation::Relation.columns,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(1070.43421,145.00313),(1067.25000,24.25000)],
+        label='',
+        source=Relation_10_10_9_9_9_$_7,
+        target=RelationalOperationElement_8_8_8_8_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_11_11_10_10_10_$_8,
+        propertyPosition=(825.34867, 78.25384),
+        multiplicityPosition=(891.34867, 78.25384))
+
+    PropertyView pview_25(property=meta::relational::metamodel::join::Join.database,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(395.58127,545.87078),(300.13121,405.47409)],
+        label='',
+        source=Join_6_6_5_5_5_$_4,
+        target=Database_10_10_4_4_4_4_2_2_2_2_2_2_2_2_2_2_2_1_1_1_1_1_1_1_1_8_8_7_7_7_$_6,
+        propertyPosition=(164.40677, 461.24160),
+        multiplicityPosition=(164.40677, 482.24160))
+
+    PropertyView pview_26(property=meta::relational::metamodel::join::Join.target,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(425.08127,558.87078),(930.20783,558.11264)],
+        label='',
+        source=Join_6_6_5_5_5_$_4,
+        target=TableAlias_5_5_6_6_6_6_12_12_12_12_12_12_12_12_12_12_12_10_10_10_10_10_10_10_10_3_3_14_14_14_$_11,
+        propertyPosition=(633.73026, 553.21920),
+        multiplicityPosition=(644.73026, 574.21920))
+
+    PropertyView pview_27(property=meta::relational::metamodel::join::Join.operation,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(429.08127,522.87078),(751.12388,522.52868)],
+        label='',
+        source=Join_6_6_5_5_5_$_4,
+        target=Operation_11_11_11_11_11_11_11_11_11_11_11_9_9_9_9_9_9_9_9_4_4_3_3_3_$_2,
+        propertyPosition=(464.08866, 517.57288),
+        multiplicityPosition=(509.08866, 538.57288))
+
+    PropertyView pview_28(property=meta::relational::metamodel::Database.joins,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(300.13121,405.47409),(395.58127,545.87078)],
+        label='',
+        source=Database_10_10_4_4_4_4_2_2_2_2_2_2_2_2_2_2_2_1_1_1_1_1_1_1_1_8_8_7_7_7_$_6,
+        target=Join_6_6_5_5_5_$_4,
+        propertyPosition=(191.35166, 500.87462),
+        multiplicityPosition=(166.35166, 500.87462))
+
+    PropertyView pview_29(property=meta::relational::metamodel::relation::View.primaryKey,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(926.05922,353.75313),(809.03522,180.99616),(849.80921,180.15406)],
+        label='',
+        source=View_7_7_6_6_6_$_5,
+        target=Column_14_14_13_13_13_$_14,
+        propertyPosition=(579.85488, 175.38341),
+        multiplicityPosition=(636.85488, 196.38341))
+
+    PropertyView pview_30(property=meta::relational::metamodel::relation::Table.primaryKey,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(1071.26316,427.79994),(904.39010,156.84524)],
+        label='',
+        source=Table_1_1_7_7_7_7_3_3_3_3_3_3_3_3_3_3_3_2_2_2_2_2_2_2_2_2_2_2_2_2_$_13,
+        target=Column_14_14_13_13_13_$_14,
+        propertyPosition=(663.92395, 198.00000),
+        multiplicityPosition=(745.92395, 198.00000))
+
+   GeneralizationView gview_31(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(638.51629,-77.27319),(638.43734,6.62155)],
+       label='',
+       source=DynaFunction_1_1_1_1_1_1_1_1_1_1_1_12_12_12_12_12_12_12_12_1_1_1_1_1_$_1,
+       target=Operation_9_9_9_9_9_9_9_9_9_9_9_11_11_11_11_11_11_11_11_0_0_0_0_0_$_0)
+
+   GeneralizationView gview_32(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(1069.68421,253.50313),(1071.26316,427.79994)],
+       label='',
+       source=Table_1_1_7_7_7_7_3_3_3_3_3_3_3_3_3_3_3_2_2_2_2_2_2_2_2_2_2_2_2_2_$_13,
+       target=NamedRelation_9_9_8_8_8_$_12)
+
+   GeneralizationView gview_33(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(1069.68421,253.50313),(960.68421,372.65019)],
+       label='',
+       source=View_7_7_6_6_6_$_5,
+       target=NamedRelation_9_9_8_8_8_$_12)
+
+   GeneralizationView gview_34(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(1067.25000,24.25000),(1070.43421,145.00313)],
+       label='',
+       source=Relation_10_10_9_9_9_$_7,
+       target=RelationalOperationElement_8_8_8_8_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_11_11_10_10_10_$_8)
+
+   GeneralizationView gview_35(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(1070.43421,145.00313),(1069.68421,253.50313)],
+       label='',
+       source=NamedRelation_9_9_8_8_8_$_12,
+       target=Relation_10_10_9_9_9_$_7)
+
+   GeneralizationView gview_36(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(1067.25000,24.25000),(904.39010,156.84524)],
+       label='',
+       source=Column_14_14_13_13_13_$_14,
+       target=RelationalOperationElement_8_8_8_8_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_11_11_10_10_10_$_8)
+
+}
+
+

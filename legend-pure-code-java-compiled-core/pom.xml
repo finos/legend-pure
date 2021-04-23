@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
  Copyright 2020 Goldman Sachs
 
@@ -22,13 +23,12 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.1.2-SNAPSHOT</version>
+        <version>1.18.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>legend-pure-code-java-compiled-core</artifactId>
     <packaging>jar</packaging>
-    <version>1.1.2-SNAPSHOT</version>
     <name>Legend Pure - Code - Java Compiled - Core</name>
 
     <build>
@@ -48,6 +48,7 @@
                             <repositories>
                                 <repository>platform</repository>
                                 <repository>core</repository>
+                                <repository>core_relational</repository>
                             </repositories>
                         </configuration>
                     </execution>
@@ -56,12 +57,17 @@
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-platform</artifactId>
-                        <version>1.1.2-SNAPSHOT</version>
+                        <version>${project.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-core</artifactId>
-                        <version>1.1.2-SNAPSHOT</version>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-code-compiled-core-relational</artifactId>
+                        <version>${project.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -110,6 +116,7 @@
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-runtime-java-extension-external-json</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -134,6 +141,16 @@
             <scope>runtime</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m2-store-relational</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-runtime-java-extension-store-relational</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.eclipse.collections</groupId>
@@ -154,8 +171,18 @@
         </dependency>
 
         <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-code-compiled-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-code-compiled-core-relational</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

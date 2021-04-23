@@ -22,13 +22,12 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.1.2-SNAPSHOT</version>
+        <version>1.18.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>legend-pure-maven-compilation-par</artifactId>
     <packaging>maven-plugin</packaging>
-    <version>1.1.2-SNAPSHOT</version>
     <name>Legend Pure - Maven - Plugin PAR</name>
 
     <build>
@@ -87,6 +86,12 @@
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-m2-external-json</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-m2-store-relational</artifactId>
             <scope>runtime</scope>
         </dependency>
 

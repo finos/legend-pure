@@ -23,6 +23,12 @@
     padding: 0;
   }
 
+  &__header__action {
+    svg {
+      color: var(--color-light-grey-400);
+    }
+  }
+
   &__content {
     overflow-y: hidden;
     position: relative;

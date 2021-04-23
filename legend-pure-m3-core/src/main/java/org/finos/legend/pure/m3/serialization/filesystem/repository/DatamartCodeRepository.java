@@ -35,7 +35,7 @@ public final class DatamartCodeRepository extends SVNCodeRepository
     {
         return (this == other) ||
                 (other instanceof ModelCodeRepository) ||
-                (other instanceof CoreCodeRepository) ||
+                CodeRepositoryProviderHelper.isCoreRepository(other) ||
                 (other instanceof SystemCodeRepository) ||
                 (other instanceof PlatformCodeRepository);
     }

@@ -53,6 +53,12 @@ function meta::alloy::runtime::java::typeInfo::addForClassWithAllProperties(info
    $class.qualifiedProperties->fold({q, i| $i->addQualifiedPropertyForClassIfMissing($class, $q)}, $plusNonPrimatives);
 }
 
+function meta::alloy::runtime::java::typeInfo::addForClassWithAllPropertiesViaAssociations(info:TypeInfoSet[1], class:Class<Any>[1]) : TypeInfoSet[1]
+{
+   let basic = $info->addBasicTypeInfoIfMissing($class);
+   $class.propertiesFromAssociations->fold({p,i | $i->addPropertyForClassIfMissing($class, $p)}, $basic);
+}
+
 function meta::alloy::runtime::java::typeInfo::addForGraphFetchTree(info:TypeInfoSet[1], tree: GraphFetchTree[1]): TypeInfoSet[1]
 {
    $info->typeInfoFromTree($tree);

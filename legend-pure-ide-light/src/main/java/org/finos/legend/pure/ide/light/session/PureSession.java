@@ -19,6 +19,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.eclipse.collections.impl.utility.Iterate;
+import org.finos.legend.pure.ide.light.SourceLocationConfiguration;
 import org.finos.legend.pure.ide.light.api.execution.test.CallBack;
 import org.finos.legend.pure.ide.light.helpers.response.IDEResponse;
 import org.finos.legend.pure.m3.SourceMutation;
@@ -27,6 +28,8 @@ import org.finos.legend.pure.m3.execution.test.TestCollection;
 import org.finos.legend.pure.m3.execution.test.TestRunner;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
@@ -43,7 +46,9 @@ import org.json.simple.parser.JSONParser;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -54,13 +59,15 @@ public class PureSession
     private PureRuntime pureRuntime;
     public MutableCodeStorage codeStorage;
     private FunctionExecution functionExecution;
+    private SourceLocationConfiguration sourceLocationConfiguration;
     private final ConcurrentMutableMap<Integer, TestRunnerWrapper> testRunnersById = ConcurrentHashMap.newMap();
     private final AtomicInteger executionCount = new AtomicInteger(0);
 
     public Message message = new Message("");
 
-    public PureSession()
+    public PureSession(SourceLocationConfiguration sourceLocationConfiguration)
     {
+        this.sourceLocationConfiguration = sourceLocationConfiguration;
         this.initialize();
     }
 
@@ -68,23 +75,44 @@ public class PureSession
 
     private FunctionExecution initialize()
     {
+        String rootPath = Optional.ofNullable(sourceLocationConfiguration)
+                .flatMap(s -> Optional.ofNullable(s.welcomeFileDirectory))
+                .orElse(System.getProperty("java.io.tmpdir"));
+
+        String ideFilesLocation = Optional.ofNullable(sourceLocationConfiguration)
+                .flatMap(s -> Optional.ofNullable(s.ideFilesLocation))
+                .orElse("legend-pure-ide-light/src/main/resources/pure_ide");
+
         this.functionExecution = new FunctionExecutionInterpreted(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
+
         try
         {
             MutableList<RepositoryCodeStorage> repos = Lists.mutable
                     .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
-                    .with(new MutableFSCodeStorage(CodeRepository.newCoreCodeRepository(), Paths.get("legend-pure-code-compiled-core/src/main/resources/core")))
-                    .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get("legend-pure-ide-light/src/main/resources/pure_ide")));
+                    .with(this.buildCore(""))
+                    .with(this.buildCore("relational"))
+                    .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
 
-            this.codeStorage = new PureCodeStorage(Paths.get(System.getProperty("java.io.tmpdir")), repos.toArray(new RepositoryCodeStorage[0]));
+            this.codeStorage = new PureCodeStorage(Paths.get(rootPath), repos.toArray(new RepositoryCodeStorage[0]));
             this.pureRuntime = new PureRuntimeBuilder(this.codeStorage).withMessage(this.message).setUseFastCompiler(true).build();
             this.functionExecution.init(this.pureRuntime, this.message);
             this.codeStorage.initialize(this.message);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
-            throw e;
+            throw new RuntimeException(e);
         }
         return this.functionExecution;
+    }
+
+    public MutableFSCodeStorage buildCore(String suffix) throws IOException
+    {
+        String resources = "legend-pure-code-compiled-core" + (suffix.equals("") ? "" : "-" + suffix) + "/src/main/resources";
+        String module = "core" + (suffix.equals("") ? "" : "_" + suffix);
+        return new MutableFSCodeStorage(
+                GenericCodeRepository.build(Files.newInputStream(Paths.get(resources + "/" + module + ".definition.json"))),
+                Paths.get(resources + "/" + module)
+        );
     }
 
     public MutableCodeStorage getCodeStorage()
@@ -141,7 +169,8 @@ public class PureSession
             {
                 func.run(this, (JSONObject) mainObject.get("extraParams"), (JSONArray) mainObject.get("modifiedFiles"), response, outputStream);
             }
-        } catch (Throwable t)
+        }
+        catch (Throwable t)
         {
             //todo: refactor this to not need the ByteArrayOutputStream
             ByteArrayOutputStream pureResponse = new ByteArrayOutputStream();
@@ -150,7 +179,8 @@ public class PureSession
             {
                 throw (Error) t;
             }
-        } finally
+        }
+        finally
         {
             executionCount.decrementAndGet();
         }
@@ -183,15 +213,18 @@ public class PureSession
                     extraParams.put("saveOutcome", "Error");
                     func.run(this, extraParams, new JSONArray(), response, outputStream);
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 outputStream.write(exceptionToJson(this, e, pureResponse).getBytes());
             }
 
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             outputStream.write(exceptionToJson(this, e, pureResponse).getBytes());
-        } finally
+        }
+        finally
         {
             executionCount.decrementAndGet();
         }
@@ -263,7 +296,8 @@ public class PureSession
                     mainObject.put("modifiedFiles", modifiedFiles);
                 }
             }
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             try (OutputStream outputStream = response.getOutputStream())
             {

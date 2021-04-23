@@ -108,27 +108,12 @@ Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::ModelToModelExecu
    pathToMapping : String[1];
    pathToClasses : String[*];
    connection : meta::protocols::pure::vX_X_X::metamodel::runtime::Connection[1];
-   pureModelContextData : meta::protocols::pure::vX_X_X::metamodel::BasePureModelContextData[1];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::GraphFetchM2MExecutionNode extends ExecutionNode
-{
-   trees : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::GraphFetchTree[*];
-   enableConstraints : Boolean[1];
-   store: meta::protocols::pure::vX_X_X::metamodel::store::Store[0..1];
+   pureModelContextData : meta::protocols::pure::vX_X_X::metamodel::PureModelContextData[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::FunctionParametersValidationNode extends ExecutionNode
 {
    functionParameters:meta::protocols::pure::vX_X_X::metamodel::valueSpecification::Variable[*];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::GraphFetchExecutionNode extends ExecutionNode
-{
-   graphFetchTree : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::GraphFetchTree[1];
-   rootExecutionNode : ExecutionNode[1];
-   batchSize : Integer[0..1];
-   globalGraphFetchExecutionNode : meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::GlobalGraphFetchExecutionNode[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::GlobalGraphFetchExecutionNode extends ExecutionNode
@@ -139,14 +124,40 @@ Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::Globa
    localGraphFetchExecutionNode : meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::LocalGraphFetchExecutionNode [1];
    parentIndex : Integer[0..1];
    xStorePropertyMapping : meta::protocols::pure::vX_X_X::metamodel::mapping::xStore::XStorePropertyMapping[0..1];
+   enableConstraints : Boolean[0..1];
+   checked           : Boolean[0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::LocalGraphFetchExecutionNode extends ExecutionNode
 {
    nodeIndex : Integer[1];
+   parentIndex : Integer[0..1];
    graphFetchTree : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::GraphFetchTree[1];
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::StoreStreamReadingExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::ExecutionNode
+{
+   graphFetchTree    : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RootGraphFetchTree[1]; 
+   store             : meta::protocols::pure::vX_X_X::metamodel::store::Store[0..1];
+   connection        : meta::protocols::pure::vX_X_X::metamodel::runtime::Connection[1];
+   enableConstraints : Boolean[1];
+   checked           : Boolean[1];
+}
+
+Class <<typemodifiers.abstract>> meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::LocalGraphFetchExecutionNode
+{
+   children : meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode[*];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryRootGraphFetchExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode
+{
+   batchSize : Integer[0..1];
+   checked : Boolean[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryPropertyGraphFetchExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode
+{
+}
 
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::ErrorExecutionNode extends ExecutionNode
 {
@@ -233,13 +244,10 @@ Class meta::protocols::pure::vX_X_X::metamodel::AlloySDLC extends meta::protocol
    project : String[0..1];
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::BasePureModelContextData extends meta::protocols::pure::vX_X_X::metamodel::PureModelContext
+Class meta::protocols::pure::vX_X_X::metamodel::PureModelContextData extends meta::protocols::pure::vX_X_X::metamodel::PureModelContext
 {
    origin : meta::protocols::pure::vX_X_X::metamodel::PureModelContextPointer[0..1];
-   domain : meta::protocols::pure::vX_X_X::metamodel::domain::Domain[0..1];
-   stores : meta::protocols::pure::vX_X_X::metamodel::store::Store[*];
-   mappings : meta::protocols::pure::vX_X_X::metamodel::mapping::Mapping[*];
-   diagrams : meta::protocols::pure::vX_X_X::metamodel::diagram::Diagram[*];
+   elements : meta::protocols::pure::vX_X_X::metamodel::PackageableElement[*];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::PureModelContextText extends meta::protocols::pure::vX_X_X::metamodel::PureModelContext
@@ -249,7 +257,7 @@ Class meta::protocols::pure::vX_X_X::metamodel::PureModelContextText extends met
 
 Class meta::protocols::pure::vX_X_X::metamodel::PureModelContextComposite extends meta::protocols::pure::vX_X_X::metamodel::PureModelContext
 {
-   data : meta::protocols::pure::vX_X_X::metamodel::BasePureModelContextData[0..1];
+   data : meta::protocols::pure::vX_X_X::metamodel::PureModelContextData[0..1];
    pointer : meta::protocols::pure::vX_X_X::metamodel::PureModelContextPointer[0..1];
 }
 

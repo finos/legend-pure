@@ -16,30 +16,9 @@ package org.finos.legend.pure.m3.serialization.filesystem.repository;
 
 import java.util.regex.Pattern;
 
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate;
-
 public abstract class CodeRepository
 {
-    public static final Function<CodeRepository, String> GET_NAME = new Function<CodeRepository, String>()
-    {
-        @Override
-        public String valueOf(CodeRepository codeRepository)
-        {
-            return codeRepository.getName();
-        }
-    };
-
-    private static final Pattern VALID_REPO_NAME_PATTERN = Pattern.compile("[a-z]+(_[a-z]+)*");
-
-    public final Predicate<CodeRepository> isVisible = new Predicate<CodeRepository>()
-    {
-        @Override
-        public boolean accept(CodeRepository other)
-        {
-            return CodeRepository.this.isVisible(other);
-        }
-    };
+    private static final Pattern VALID_REPO_NAME_PATTERN = Pattern.compile("[a-z]++(_[a-z]++)*+");
 
     private final String name;
     private final Pattern allowedPackagesPattern;
@@ -115,11 +94,6 @@ public abstract class CodeRepository
     public static CodeRepository newPlatformCodeRepository()
     {
         return new PlatformCodeRepository();
-    }
-
-    public static CodeRepository newCoreCodeRepository()
-    {
-        return new CoreCodeRepository();
     }
 
     public static CodeRepository newScratchCodeRepository()

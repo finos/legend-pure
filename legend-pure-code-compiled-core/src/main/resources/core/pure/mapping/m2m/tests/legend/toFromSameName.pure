@@ -20,7 +20,7 @@ import meta::pure::mapping::modelToModel::*;
 import meta::pure::mapping::modelToModel::test::alloy::utils::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='V1_7_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a source class',
    doc.doc='Given: a target class of the same name in a different package',
    doc.doc='When:  a mapping is executed using graphFetch and serialize.',
@@ -42,7 +42,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::canMapBetweenClassesWith
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='V1_7_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a source class',
    doc.doc='Given: a target class of the same name in a different package',
    doc.doc='When:  a mapping is executed using graphFetchChecked and serialize.',

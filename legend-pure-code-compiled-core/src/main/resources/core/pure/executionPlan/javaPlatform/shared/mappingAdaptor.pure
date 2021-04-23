@@ -17,14 +17,14 @@ import meta::alloy::runtime::java::graphFetch::common::*;
 import meta::alloy::runtime::java::naming::*;
 import meta::alloy::runtime::java::platform::*;
 import meta::alloy::runtime::java::typeInfo::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::convention::jackson::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::convention::jackson::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::project::*;
 import meta::java::metamodel::factory::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 import meta::pure::executionPlan::*;
 import meta::pure::graphFetch::execution::*;
 import meta::pure::mapping::modelToModel::*;
@@ -354,6 +354,8 @@ function <<access.private>> meta::alloy::runtime::java::generateMappingAdaptorPr
                        },
                        | []
                     );
+   let implicitMultiplicityCheckRequired = $p->functionReturnType().rawType->toOne()->instanceOf(Class);
+   let propertyMultiplicity              = $p.multiplicity;
 
    let body = $assocCheck->concatenate(      
       if($propertyMappings->isEmpty() && $p.owner->instanceOf(Class) && $setImplementation->isNoMappingPassThru($p),
@@ -386,18 +388,28 @@ function <<access.private>> meta::alloy::runtime::java::generateMappingAdaptorPr
          | javaUnsupportedOperationException()->j_new(j_string('Unimplemented as not requested \'' + $p.name->toOne() +'\''))->j_throw(),
          | 
       if($propertyMappings->size() == 1,
-         {| 
-            let code = $propertyMappings->at(0)->generatePropertyMapping($setImplementation, $tree, $class, $conventions, $extensions, $debug->indent());
-            if($returnType == $code.type,
-               |$code,
-               |
-            if(isJavaList($returnType) && ($returnType->elementTypeOfJavaList() == $code.type->toBoxed()),
-               |$code->j_listOf($returnType),
-               |
-            if(isJavaList($returnType),
-               |$code->j_listOf($returnType),
-               |$code->j_cast($returnType)
-            )))->j_return();
+         {|
+            let code        = $propertyMappings->at(0)->generatePropertyMapping($setImplementation, $tree, $class, $conventions, $extensions, $debug->indent());
+            let updatedCode = if($returnType == $code.type,
+                                 |$code,
+                                 |
+                              if(isJavaList($returnType) && ($returnType->elementTypeOfJavaList() == $code.type->toBoxed()),
+                                 |$code->j_listOf($returnType),
+                                 |
+                              if(isJavaList($returnType),
+                                 |$code->j_listOf($returnType),
+                                 |$code->j_cast($returnType)
+                              )));
+            
+            let codeWithMultiplicityCast = if($implicitMultiplicityCheckRequired,
+                                              |if($propertyMultiplicity->isToOne(),
+                                                  | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('toOne', $updatedCode, $returnType),
+                                                  |
+                                                  if($propertyMultiplicity->isZeroOne(),
+                                                     | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('first', $updatedCode, $returnType),
+                                                     | $updatedCode)),
+                                              |$updatedCode);
+            $codeWithMultiplicityCast->j_return();
          },
          {| // Union
             let mappings            = $propertyMappings->map(propertyMapping| $propertyMapping->generatePropertyMapping($setImplementation, $tree, $class, $conventions, $extensions, $debug->indent()));
@@ -412,16 +424,25 @@ function <<access.private>> meta::alloy::runtime::java::generateMappingAdaptorPr
                   );
                }
             );
-            let returnStatement = javaStream()->j_invoke('of', $declaresAndStreams.second, javaStream($streamType))
-                                     ->js_flatMap(j_identity($streamType))
-                                     ->js_resolve($returnType)->j_return();                                                                                        
+            let mergedResult              = javaStream()->j_invoke('of', $declaresAndStreams.second, javaStream($streamType))
+                                                        ->js_flatMap(j_identity($streamType))
+                                                        ->js_resolve($returnType);
+            let codeWithMultiplicityCast  = if($implicitMultiplicityCheckRequired,
+                                               |if($propertyMultiplicity->isToOne(),
+                                                   | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('toOne', $mergedResult, $returnType),
+                                                   |
+                                                   if($propertyMultiplicity->isZeroOne(),
+                                                      | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('first', $mergedResult, $returnType),
+                                                      | $mergedResult)),
+                                               |$mergedResult);
+            let returnStatement           = $codeWithMultiplicityCast->j_return();
             [$declaresAndStreams.first->concatenate($returnStatement)];
          }
       )))))
    );
 
    let method = ^meta::java::metamodel::Method(
-      annotations = ^meta::java::annotations::override::Override(),
+      annotations = ^meta::java::metamodel::annotations::override::Override(),
       modifiers   = [meta::java::metamodel::Modifier.Public],
       name        = $conventions->getterName($p),
       returnType  = $returnType,
@@ -705,7 +726,8 @@ function <<access.private>> meta::alloy::runtime::java::generateExplodeMapOne(se
    let explosionPropertyVarDeclaration = $explosionPropertyMappings->map(pm|
                                 let property = $pm.property;
                                 let propertyVariable = j_variable(javaList($conventions->pureTypeToJavaType($property)), $property.name->toOne() + '_list');
-                                $propertyVariable->j_declare($pm.transform.expressionSequence->at(0)->evaluateAndDeactivate()->generateJava($conventions, $debug->indent())););
+                                let updatedConventions = $conventions->updateConventionsForExplosion();
+                                $propertyVariable->j_declare($pm.transform.expressionSequence->at(0)->evaluateAndDeactivate()->generateJava($updatedConventions, $debug->indent())););
 
    let lengthVariable = j_variable(javaInt(), 'length');
    let lengthVarDeclaration = $lengthVariable->j_declare(j_variable(javaList($conventions->pureTypeToJavaType($explosionPropertyMappings->at(0).property)), $explosionPropertyMappings->at(0).property.name->toOne() + '_list')->j_invoke('size',[],javaInt()));
@@ -730,4 +752,16 @@ function <<access.private>> meta::alloy::runtime::java::generateExplodeMapOne(se
                                    ->concatenate($errorHandlingCodeBlock)
                                    ->concatenate($indexStreamDeclaration)
                                    ->concatenate($returnStatement);
+}
+
+function meta::alloy::runtime::java::updateConventionsForExplosion(conventions:Conventions[1]):Conventions[1]
+{
+  let libToBeReplaced = $conventions.libraries->filter(l|$l.functionCoders->get('map_T_MANY__Function_1__V_MANY_')->isNotEmpty())->toOne();
+  let funcCodersToBeAdded = [fc2(map_T_MANY__Function_1__V_MANY_,                                    {ctx,collection,func          | $collection->j_streamOf()->js_mapAllowingNullValues($func)}),
+                              fc (map_T_m__Function_1__V_m_,                                          fcAlias(                        map_T_MANY__Function_1__V_MANY_)),
+                              fc (map_T_$0_1$__Function_1__V_$0_1$_,                                  fcAlias(                        map_T_MANY__Function_1__V_MANY_))];
+
+  let updatedLibrary = ^$libToBeReplaced(functionCoders = $libToBeReplaced.functionCoders->putAll($funcCodersToBeAdded->map(fc| pair($fc.pureFunction, $fc.coder))));
+
+  ^$conventions(libraries = $conventions.libraries->filter(c | $c != $libToBeReplaced)->concatenate($updatedLibrary));
 }

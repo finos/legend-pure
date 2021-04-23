@@ -165,6 +165,10 @@ public class M4GraphBuilder extends M4AntlrParserBaseVisitor<MutableList<CoreIns
         {
             return this.repository.newDateCoreInstance(ctx.DATE().getText().substring(1));
         }
+        if (ctx.STRICTTIME() != null)
+        {
+            return this.repository.newStrictTimeCoreInstance(ctx.STRICTTIME().getText().substring(1));
+        }
         if (ctx.BOOLEAN() != null)
         {
             return this.repository.newBooleanCoreInstance(ctx.BOOLEAN().getText());

@@ -152,7 +152,7 @@ public class Pure
         throw new PureExecutionException("Can't find the property '" + propertyName + "' in the class '" + className + "'");
     }
 
-    public static Object alloyTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, boolean useClientVersion, boolean useServerVersion, Bridge bridge)
+    public static Object alloyTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, Bridge bridge)
     {
         String host = System.getProperty("alloy.test.server.host");
         long port = System.getProperty("alloy.test.server.port") == null ? -1 : Long.parseLong(System.getProperty("alloy.test.server.port"));
@@ -160,21 +160,38 @@ public class Pure
         {
             throw new PureExecutionException("The system variable 'alloy.test.server.host' is set to '" + host + "' however 'alloy.test.server.port' has not been set!");
         }
-        if (!useClientVersion)
+        String clientVersion = System.getProperty("alloy.test.clientVersion");
+        String serverVersion = System.getProperty("alloy.test.serverVersion");
+        return host != null ? evaluate(es, alloyTest, bridge, clientVersion, serverVersion, host, port) : evaluate(es, regular, bridge);
+    }
+
+    public static Object legendTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular, Bridge bridge)
+    {
+        String host = System.getProperty("legend.test.server.host");
+        long port = System.getProperty("legend.test.server.port") == null ? -1 : Long.parseLong(System.getProperty("legend.test.server.port"));
+        String clientVersion = System.getProperty("legend.test.clientVersion");
+        String serverVersion = System.getProperty("legend.test.serverVersion");
+        String serializationKind = System.getProperty("legend.test.serializationKind");
+        if (host != null)
         {
-            return host != null ? evaluate(es, alloyTest, bridge, host, port) : Pure.evaluate(es, regular, bridge);
+            if (port == -1)
+            {
+                throw new PureExecutionException("The system variable 'legend.test.server.host' is set to '"+host+"' however 'legend.test.server.port' has not been set!");
+            }
+            if (serializationKind == null || !(serializationKind.equals("text") || serializationKind.equals("json")))
+            {
+                serializationKind="json";
+            }
+            if (clientVersion == null)
+            {
+                throw new PureExecutionException("The system variable 'legend.test.clientVersion' should be set");
+            }
+            if (serverVersion == null)
+            {
+                throw new PureExecutionException("The system variable 'legend.test.serverVersion' should be set");
+            }
         }
-        else if (!useServerVersion)
-        {
-            String version = System.getProperty("alloy.test.version");
-            return host != null ? evaluate(es, alloyTest, bridge, version, host, port) : evaluate(es, regular, bridge);
-        }
-        else
-        {
-            String clientVersion = System.getProperty("alloy.test.clientVersion");
-            String serverVersion = System.getProperty("alloy.test.serverVersion");
-            return host != null ? evaluate(es, alloyTest, bridge, clientVersion, serverVersion, host, port) : evaluate(es, regular, bridge);
-        }
+        return host != null ? evaluate(es, alloyTest, bridge, clientVersion, serverVersion, serializationKind, host, port) : evaluate(es, regular, bridge);
     }
 
     public static <E> E getEnumByName(Enumeration<E> enumeration, final String name)
@@ -1520,7 +1537,12 @@ public class Pure
                     {
                         span.setTag("Exception", String.format("Timeout received before tags could be resolved"));
                     }
-                } catch (Exception e)
+                }
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                }
+                catch (Exception e)
                 {
                     if (tagsCritical)
                     {

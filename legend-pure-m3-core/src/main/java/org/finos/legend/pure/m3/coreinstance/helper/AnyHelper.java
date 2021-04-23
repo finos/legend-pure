@@ -21,6 +21,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -80,6 +81,10 @@ public class AnyHelper
             else if (object instanceof Double)
             {
                 return PrimitiveHelper.FLOAT_TO_COREINSTANCE_FN.value(BigDecimal.valueOf((Double)object), modelRepository);
+            }
+            else if (object instanceof PureStrictTime)
+            {
+                return PrimitiveHelper.STRICTTIME_TO_COREINSTANCE_FN.value((PureStrictTime)object, modelRepository);
             }
             else
             {

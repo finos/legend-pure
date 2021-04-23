@@ -48,7 +48,7 @@ public final class ModelCodeRepository extends SVNCodeRepository
             return true;
         }
 
-        if ((other instanceof PlatformCodeRepository) || (other instanceof SystemCodeRepository) || (other instanceof CoreCodeRepository))
+        if ((other instanceof PlatformCodeRepository) || (other instanceof SystemCodeRepository) || CodeRepositoryProviderHelper.isCoreRepository(other))
         {
             return true;
         }

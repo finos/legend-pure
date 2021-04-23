@@ -24,7 +24,7 @@ import meta::pure::mapping::modelToModel::test::units::dest::*;
 import meta::pure::mapping::modelToModel::test::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0' }
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0' }
 meta::pure::mapping::modelToModel::test::alloy::units::testUnitToUnitIdentityMapping():Any[*]
 {
    let tree = #{HealthProfile {fullName, weight} }#;
@@ -44,7 +44,7 @@ meta::pure::mapping::modelToModel::test::alloy::units::testUnitToUnitIdentityMap
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0' }
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0' }
 meta::pure::mapping::modelToModel::test::alloy::units::testModelToModelMappingOfUnitToUnitTypeAndValue():Any[*]
 {
    let tree = #{DecomposedHealthProfile {fullName, weightUnit, weightValue} }#;
@@ -64,7 +64,7 @@ meta::pure::mapping::modelToModel::test::alloy::units::testModelToModelMappingOf
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0' }
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0' }
 meta::pure::mapping::modelToModel::test::alloy::units::testModelToModelMappingOfUnitTypeAndValueToUnit():Any[*]
 {
    let tree = #{HealthProfile {fullName, weight} }#;
@@ -84,7 +84,7 @@ meta::pure::mapping::modelToModel::test::alloy::units::testModelToModelMappingOf
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='v1_13_0' }
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0' }
 meta::pure::mapping::modelToModel::test::alloy::units::testModelToModelMappingOfUnitToUnitInSameMeasure():Any[*]
 {
    let tree = #{ClassWithPound {weight} }#;
@@ -105,7 +105,7 @@ meta::pure::mapping::modelToModel::test::alloy::units::testModelToModelMappingOf
 
 ###Mapping
 import meta::pure::mapping::modelToModel::test::units::src::*;
-import meta::java::codeGeneration::functions::unit::*;
+import meta::java::generation::functions::unit::*;
 import meta::pure::unit::*;
 import meta::pure::unit::mass::*;
 import meta::pure::mapping::modelToModel::test::units::dest::*;

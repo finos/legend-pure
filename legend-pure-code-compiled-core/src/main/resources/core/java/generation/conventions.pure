@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::functions::date::pure::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::plan::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::code::*;
+import meta::java::generation::functions::date::pure::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::plan::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::factory::*;
 import meta::java::metamodel::project::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 
-Enum meta::java::codeGeneration::convention::ClassPurpose
+Enum meta::java::generation::convention::ClassPurpose
 {
    ENUMERATION,
    MODEL
 }
 
-Class meta::java::codeGeneration::convention::Conventions
+Class meta::java::generation::convention::Conventions
 [
    validBasePackage: !$this.basePackageName->endsWith('.')
 ]
@@ -56,7 +56,7 @@ Class meta::java::codeGeneration::convention::Conventions
    extensions : meta::pure::router::extension::RouterExtension[*];
 }
 
-Class <<access.private>> meta::java::codeGeneration::convention::TypeConversion
+Class <<access.private>> meta::java::generation::convention::TypeConversion
 {
    type           : Type[1];
    oneJavaType    : meta::java::metamodel::Type[1];
@@ -64,7 +64,7 @@ Class <<access.private>> meta::java::codeGeneration::convention::TypeConversion
    literalCoder   : Function<{Any[1]->Code[1]}>[1];
 }
 
-Class meta::java::codeGeneration::convention::ConventionsLibrary
+Class meta::java::generation::convention::ConventionsLibrary
 {
    name               : String[0..1];
    typeConversions    : Map<Type, TypeConversion>[1];
@@ -75,20 +75,20 @@ Class meta::java::codeGeneration::convention::ConventionsLibrary
    fundamentals       : Function<{Conventions[1],DebugContext[1]->Project[1]}>[1];
 }
 
-Class meta::java::codeGeneration::convention::FunctionSignature
+Class meta::java::generation::convention::FunctionSignature
 {
    class  : meta::java::metamodel::Class[1];
    method : meta::java::metamodel::Method[1];
 }
 
-Class meta::java::codeGeneration::convention::ProvidedType
+Class meta::java::generation::convention::ProvidedType
 {
    type           : Type[1];
    providedAs     : meta::java::metamodel::Class[1];
 }
 
 function {doc.doc='Returns any base-level java types and dependencied necessary'}
-meta::java::codeGeneration::convention::fundamentals(conventions: Conventions[1], debug:DebugContext[1]): Project[0..1]
+meta::java::generation::convention::fundamentals(conventions: Conventions[1], debug:DebugContext[1]): Project[0..1]
 {
    let libFundamentals = $conventions.libraries->map(l|$l.fundamentals->eval($conventions, $debug));
 
@@ -98,67 +98,67 @@ meta::java::codeGeneration::convention::fundamentals(conventions: Conventions[1]
    ]);
 }
 
-function meta::java::codeGeneration::convention::usesLibrary(conventions: Conventions[1], name: String[1]): Boolean[1]
+function meta::java::generation::convention::usesLibrary(conventions: Conventions[1], name: String[1]): Boolean[1]
 {
    $conventions.libraries->exists(l | $l.name == $name);
 }
 
-function meta::java::codeGeneration::convention::fieldName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
+function meta::java::generation::convention::fieldName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
 {
    $conventions->identifier($conventions.fieldNameStrategy->eval($property.name->toOne()));
 }
 
-function meta::java::codeGeneration::convention::getterName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
+function meta::java::generation::convention::getterName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
 {
    $conventions->identifier($conventions.getterNameStrategy->eval($property.name->toOne()));
 }
 
-function meta::java::codeGeneration::convention::setterName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
+function meta::java::generation::convention::setterName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
 {
    $conventions->identifier($conventions.setterNameStrategy->eval($property.name->toOne()));
 }
 
-function meta::java::codeGeneration::convention::fieldName(conventions: Conventions[1], propertyName: String[1]): String[1]
+function meta::java::generation::convention::fieldName(conventions: Conventions[1], propertyName: String[1]): String[1]
 {
    $conventions->identifier($conventions.fieldNameStrategy->eval($propertyName));
 }
 
-function meta::java::codeGeneration::convention::getterName(conventions: Conventions[1], propertyName: String[1]): String[1]
+function meta::java::generation::convention::getterName(conventions: Conventions[1], propertyName: String[1]): String[1]
 {
    $conventions->identifier($conventions.getterNameStrategy->eval($propertyName));
 }
 
-function meta::java::codeGeneration::convention::setterName(conventions: Conventions[1], propertyName: String[1]): String[1]
+function meta::java::generation::convention::setterName(conventions: Conventions[1], propertyName: String[1]): String[1]
 {
    $conventions->identifier($conventions.setterNameStrategy->eval($propertyName));
 }
 
-function meta::java::codeGeneration::convention::getProvidedType(conventions: Conventions[1], type: Type[1]): meta::java::metamodel::Class[1]
+function meta::java::generation::convention::getProvidedType(conventions: Conventions[1], type: Type[1]): meta::java::metamodel::Class[1]
 {
    $conventions.providedTypes->filter(pt| $pt.type == $type).providedAs->toOne();
 }
 
-function meta::java::codeGeneration::convention::isProvidedType(conventions: Conventions[1], type: Type[1]): Boolean[1]
+function meta::java::generation::convention::isProvidedType(conventions: Conventions[1], type: Type[1]): Boolean[1]
 {
    $conventions.providedTypes->filter(pt| $pt.type == $type)->isNotEmpty();
 }
 
-function meta::java::codeGeneration::convention::getProvidedVariable(conventions: Conventions[1], name:String[1]): Code[1]
+function meta::java::generation::convention::getProvidedVariable(conventions: Conventions[1], name:String[1]): Code[1]
 {
    $conventions.providedVariables->get($name)->toOne();
 }
 
-function meta::java::codeGeneration::convention::isProvidedVariable(conventions:Conventions[1], name:String[1]): Boolean[1]
+function meta::java::generation::convention::isProvidedVariable(conventions:Conventions[1], name:String[1]): Boolean[1]
 {
    $conventions.providedVariables->keys()->contains($name);
 }
 
-function meta::java::codeGeneration::convention::pureTypeToJavaType(conventions:Conventions[1], p:AbstractProperty<Any>[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::pureTypeToJavaType(conventions:Conventions[1], p:AbstractProperty<Any>[1]): meta::java::metamodel::Type[1]
 {
    $conventions->pureTypeToJavaType($p.genericType, $p.multiplicity);
 }
 
-function meta::java::codeGeneration::convention::pureTypeToJavaType(conventions:Conventions[1], g:GenericType[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::pureTypeToJavaType(conventions:Conventions[1], g:GenericType[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    if($g.rawType == Function,
       {|
@@ -171,7 +171,7 @@ function meta::java::codeGeneration::convention::pureTypeToJavaType(conventions:
    );
 }
 
-function meta::java::codeGeneration::convention::pureTypeToJavaType(conventions:Conventions[1], type:Type[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::pureTypeToJavaType(conventions:Conventions[1], type:Type[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    let t = if($type == Nil,
               | javaList(javaWildcard()),
@@ -210,107 +210,107 @@ function meta::java::codeGeneration::convention::pureTypeToJavaType(conventions:
    )))))))))));
 }
 
-function meta::java::codeGeneration::convention::stringType(     conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->stringType(     PureOne); }
-function meta::java::codeGeneration::convention::booleanType(    conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->booleanType(    PureOne); }
-function meta::java::codeGeneration::convention::integerType(    conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->integerType(    PureOne); }
-function meta::java::codeGeneration::convention::floatType(      conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->floatType(      PureOne); }
-function meta::java::codeGeneration::convention::decimalType(    conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->decimalType(    PureOne); }
-function meta::java::codeGeneration::convention::numberType(     conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->numberType(     PureOne); }
-function meta::java::codeGeneration::convention::strictDateType( conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->strictDateType( PureOne); }
-function meta::java::codeGeneration::convention::dateTimeType(   conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->dateTimeType(   PureOne); }
-function meta::java::codeGeneration::convention::dateType(       conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->dateType(       PureOne); }
+function meta::java::generation::convention::stringType(     conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->stringType(     PureOne); }
+function meta::java::generation::convention::booleanType(    conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->booleanType(    PureOne); }
+function meta::java::generation::convention::integerType(    conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->integerType(    PureOne); }
+function meta::java::generation::convention::floatType(      conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->floatType(      PureOne); }
+function meta::java::generation::convention::decimalType(    conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->decimalType(    PureOne); }
+function meta::java::generation::convention::numberType(     conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->numberType(     PureOne); }
+function meta::java::generation::convention::strictDateType( conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->strictDateType( PureOne); }
+function meta::java::generation::convention::dateTimeType(   conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->dateTimeType(   PureOne); }
+function meta::java::generation::convention::dateType(       conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->dateType(       PureOne); }
 
-function meta::java::codeGeneration::convention::stringType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::stringType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
     javaString()->listIfMulti($mult)
 }
 
-function meta::java::codeGeneration::convention::booleanType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::booleanType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    if($mult == PureOne, |javaBoolean(), | javaBooleanBoxed())->listIfMulti($mult)
 }
 
-function meta::java::codeGeneration::convention::integerType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::integerType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    $conventions->javaType(Integer, $mult);
 }
 
-function meta::java::codeGeneration::convention::floatType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::floatType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    $conventions->javaType(Float, $mult);
 }
 
-function meta::java::codeGeneration::convention::decimalType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::decimalType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    $conventions->javaType(Decimal, $mult);
 }
 
-function meta::java::codeGeneration::convention::numberType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::numberType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    $conventions->javaType(Number, $mult);
 }
 
-function meta::java::codeGeneration::convention::strictDateType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::strictDateType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    $conventions->javaType(StrictDate, $mult);
 }
 
-function meta::java::codeGeneration::convention::dateTimeType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::dateTimeType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    $conventions->javaType(DateTime, $mult);
 }
 
-function meta::java::codeGeneration::convention::dateType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::dateType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    $conventions->javaType(Date, $mult);
 }
 
-function meta::java::codeGeneration::convention::stringLiteral(conventions:Conventions[1], s:String[1]): Code[1]
+function meta::java::generation::convention::stringLiteral(conventions:Conventions[1], s:String[1]): Code[1]
 {
    $conventions->typeConversion(String).literalCoder->eval($s)
 }
 
-function meta::java::codeGeneration::convention::integerLiteral(conventions:Conventions[1], i:Integer[1]): Code[1]
+function meta::java::generation::convention::integerLiteral(conventions:Conventions[1], i:Integer[1]): Code[1]
 {
    $conventions->typeConversion(Integer).literalCoder->eval($i)
 }
 
-function meta::java::codeGeneration::convention::floatLiteral(conventions:Conventions[1], f:Float[1]): Code[1]
+function meta::java::generation::convention::floatLiteral(conventions:Conventions[1], f:Float[1]): Code[1]
 {
    $conventions->typeConversion(Float).literalCoder->eval($f)
 }
 
-function meta::java::codeGeneration::convention::decimalLiteral(conventions:Conventions[1], d:Decimal[1]): Code[1]
+function meta::java::generation::convention::decimalLiteral(conventions:Conventions[1], d:Decimal[1]): Code[1]
 {
    $conventions->typeConversion(Decimal).literalCoder->eval($d)
 }
 
-function meta::java::codeGeneration::convention::numberLiteral(conventions:Conventions[1], n:Number[1]): Code[1]
+function meta::java::generation::convention::numberLiteral(conventions:Conventions[1], n:Number[1]): Code[1]
 {
    $conventions->typeConversion(Number).literalCoder->eval($n)
 }
 
-function meta::java::codeGeneration::convention::booleanLiteral(conventions:Conventions[1], b:Boolean[1]) : Code[1]
+function meta::java::generation::convention::booleanLiteral(conventions:Conventions[1], b:Boolean[1]) : Code[1]
 {
    $conventions->typeConversion(Boolean).literalCoder->eval($b)
 }
 
-function meta::java::codeGeneration::convention::strictDateLiteral(conventions:Conventions[1], sd:StrictDate[1]): Code[1]
+function meta::java::generation::convention::strictDateLiteral(conventions:Conventions[1], sd:StrictDate[1]): Code[1]
 {
    $conventions->typeConversion(StrictDate).literalCoder->eval($sd)
 }
 
-function meta::java::codeGeneration::convention::dateTimeLiteral(conventions:Conventions[1], dt:DateTime[1]): Code[1]
+function meta::java::generation::convention::dateTimeLiteral(conventions:Conventions[1], dt:DateTime[1]): Code[1]
 {
    $conventions->typeConversion(DateTime).literalCoder->eval($dt)
 }
 
-function meta::java::codeGeneration::convention::dateLiteral(conventions:Conventions[1], d:Date[1]): Code[1]
+function meta::java::generation::convention::dateLiteral(conventions:Conventions[1], d:Date[1]): Code[1]
 {
    $conventions->typeConversion(Date).literalCoder->eval($d)
 }
 
-function meta::java::codeGeneration::convention::primitiveLiteral(conventions: Conventions[1], a: Any[1]): Code[1]
+function meta::java::generation::convention::primitiveLiteral(conventions: Conventions[1], a: Any[1]): Code[1]
 {
    $a->match([
       {s:String[1]      | $conventions->stringLiteral($s)},
@@ -329,12 +329,12 @@ function meta::java::codeGeneration::convention::primitiveLiteral(conventions: C
    ])
 }
 
-function meta::java::codeGeneration::convention::identifier(conventions: Conventions[1], name: String[1]):String[1]
+function meta::java::generation::convention::identifier(conventions: Conventions[1], name: String[1]):String[1]
 {
    $conventions.identifierFactory->eval($name);
 }
 
-function meta::java::codeGeneration::convention::className(conventions: Conventions[1], pe:PackageableElement[1]): meta::java::metamodel::Class[1]
+function meta::java::generation::convention::className(conventions: Conventions[1], pe:PackageableElement[1]): meta::java::metamodel::Class[1]
 {
    if($pe->instanceOf(Type) && $conventions->isProvidedType($pe->cast(@Type)),
       | $conventions->getProvidedType($pe->cast(@Type)),
@@ -342,12 +342,12 @@ function meta::java::codeGeneration::convention::className(conventions: Conventi
    );
 }
 
-function meta::java::codeGeneration::convention::implClassName(conventions: Conventions[1], pe:PackageableElement[1]): meta::java::metamodel::Class[1]
+function meta::java::generation::convention::implClassName(conventions: Conventions[1], pe:PackageableElement[1]): meta::java::metamodel::Class[1]
 {
    $conventions->generateClassName($pe, 'internal', '_Impl');
 }
 
-function <<access.private>> meta::java::codeGeneration::convention::generateClassName(conventions:Conventions[1], pe:PackageableElement[1], zone:String[1], suffix:String[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::convention::generateClassName(conventions:Conventions[1], pe:PackageableElement[1], zone:String[1], suffix:String[1]): meta::java::metamodel::Class[1]
 {
    assert(!$pe->instanceOf(Type) || !$conventions->isProvidedType($pe->cast(@Type)), 'Cannot provide implemention for provided types');
    assert($pe != Function, 'Cannot handle function, should use pureTypeToJavaType with generic type');
@@ -357,20 +357,17 @@ function <<access.private>> meta::java::codeGeneration::convention::generateClas
    let javaPkgName = $zoneRoot + $conventions->identifier($package->elementToPath()->replace('::', '.'));
    if($pe->instanceOf(Enumeration),
       | javaEnum(javaPackage($javaPkgName), $pe.name->toUpperFirstCharacter()->toOne() + $suffix),
-      | let className = $pe.name->toUpperFirstCharacter()->toOne();
-        if($pe->instanceOf(Unit),
-           |javaClass(javaPackage($javaPkgName), $className->meta::alloy::runtime::java::convertToJavaCompatibleClassName() + $suffix),
-           |javaClass(javaPackage($javaPkgName), $className + $suffix)
-        );
+      | let className = $pe.name->toOne()->sanitizeIdentifier()->toUpperFirstCharacter()->toOne();
+        javaClass(javaPackage($javaPkgName), $className + $suffix);
    );
 }
 
-function meta::java::codeGeneration::convention::functionSignature(conventions: Conventions[1], cfd:ConcreteFunctionDefinition<Any>[1]): FunctionSignature[1]
+function meta::java::generation::convention::functionSignature(conventions: Conventions[1], cfd:ConcreteFunctionDefinition<Any>[1]): FunctionSignature[1]
 {
    $conventions.functionSignatureFactory->eval($cfd, $conventions);
 }
 
-function meta::java::codeGeneration::convention::codeParseInteger(conventions: Conventions[1], toParse:Code[1]): Code[1]
+function meta::java::generation::convention::codeParseInteger(conventions: Conventions[1], toParse:Code[1]): Code[1]
 {
    let intType = $conventions->integerType()->toBoxed();
    if($intType == javaInt()->toBoxed(),
@@ -382,7 +379,7 @@ function meta::java::codeGeneration::convention::codeParseInteger(conventions: C
    ));
 }
 
-function meta::java::codeGeneration::convention::codeParseDecimal(conventions: Conventions[1], toParse:Code[1]): Code[1]
+function meta::java::generation::convention::codeParseDecimal(conventions: Conventions[1], toParse:Code[1]): Code[1]
 {
    let decimalType = $conventions->decimalType()->toBoxed();
 
@@ -392,7 +389,7 @@ function meta::java::codeGeneration::convention::codeParseDecimal(conventions: C
    );
 }
 
-function meta::java::codeGeneration::convention::codeParseFloat(conventions: Conventions[1], toParse:Code[1]): Code[1]
+function meta::java::generation::convention::codeParseFloat(conventions: Conventions[1], toParse:Code[1]): Code[1]
 {
    let floatType = $conventions->floatType()->toBoxed();
    if($floatType == javaFloat()->toBoxed(),
@@ -404,12 +401,12 @@ function meta::java::codeGeneration::convention::codeParseFloat(conventions: Con
    ));
 }
 
-function meta::java::codeGeneration::convention::codeParseBoolean(conventions: Conventions[1], toParse:Code[1]): Code[1]
+function meta::java::generation::convention::codeParseBoolean(conventions: Conventions[1], toParse:Code[1]): Code[1]
 {
    javaBooleanBoxed()->j_invoke('parseBoolean', $toParse);
 }
 
-function meta::java::codeGeneration::convention::codeType(conventions: Conventions[1], javaType:meta::java::metamodel::Type[1]): Code[1]
+function meta::java::generation::convention::codeType(conventions: Conventions[1], javaType:meta::java::metamodel::Type[1]): Code[1]
 {
    let code = $javaType->match([
       {p:meta::java::metamodel::PrimitiveType[1]     | $p.simpleName},
@@ -427,12 +424,12 @@ function meta::java::codeGeneration::convention::codeType(conventions: Conventio
    j_code($code, $javaType);
 }
 
-function meta::java::codeGeneration::convention::codeClass(conventions:Conventions[1], type:Type[1], purpose:Any[1], debug:DebugContext[1]): meta::java::metamodel::Class[1]
+function meta::java::generation::convention::codeClass(conventions:Conventions[1], type:Type[1], purpose:Any[1], debug:DebugContext[1]): meta::java::metamodel::Class[1]
 {
    $conventions.classCoders->get($purpose)->toOne()->eval($type, $conventions, $debug);
 }
 
-function meta::java::codeGeneration::convention::getFunctionCoder(conventions:Conventions[1], pureFunction:Function<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[0..1]
+function meta::java::generation::convention::getFunctionCoder(conventions:Conventions[1], pureFunction:Function<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[0..1]
 {
    let name = $pureFunction.name->toOne();
    if($conventions->isProhibitedFunction($pureFunction),
@@ -448,12 +445,12 @@ function meta::java::codeGeneration::convention::getFunctionCoder(conventions:Co
    );
 }
 
-function meta::java::codeGeneration::convention::isProhibitedFunction(conventions: Conventions[1], pureFunction:Function<Any>[1]): Boolean[1]
+function meta::java::generation::convention::isProhibitedFunction(conventions: Conventions[1], pureFunction:Function<Any>[1]): Boolean[1]
 {
    $conventions.prohibitedFunctionStrategy->eval($conventions, $pureFunction);
 }
 
-function meta::java::codeGeneration::convention::standardImports(conventions: Conventions[1]): meta::java::metamodel::Importable[*]
+function meta::java::generation::convention::standardImports(conventions: Conventions[1]): meta::java::metamodel::Importable[*]
 {
    let packages = [javaPackage('java.util'), javaPackage('java.util.stream'), javaPackage('java.util.function')]
       ->concatenate($conventions->definedPackages().package)
@@ -463,7 +460,7 @@ function meta::java::codeGeneration::convention::standardImports(conventions: Co
    $packages->concatenate($classes)->cast(@meta::java::metamodel::Importable);
 }
 
-function meta::java::codeGeneration::convention::knownPackages(conventions: Conventions[1]): Function<{meta::java::metamodel::Package[1]->meta::java::codeGeneration::utils::KnownPackage[1]}>[1]
+function meta::java::generation::convention::knownPackages(conventions: Conventions[1]): Function<{meta::java::metamodel::Package[1]->meta::java::generation::utils::KnownPackage[1]}>[1]
 {
    {pkg: meta::java::metamodel::Package[1]|
       let defined = $conventions->definedPackages()->filter(dp| $dp.package == $pkg);
@@ -474,15 +471,15 @@ function meta::java::codeGeneration::convention::knownPackages(conventions: Conv
    }
 }
 
-function <<access.private>> meta::java::codeGeneration::convention::definedPackages(conventions: Conventions[1]): meta::java::codeGeneration::utils::KnownPackage[*]
+function <<access.private>> meta::java::generation::convention::definedPackages(conventions: Conventions[1]): meta::java::generation::utils::KnownPackage[*]
 {
    $conventions.libraries.javaClassesDefined
       ->groupBy(c| $c.package)
       ->keyValues()
-      ->map(kv| ^meta::java::codeGeneration::utils::KnownPackage(package=$kv.first, classNames=$kv.second->map(cs| $cs.values.simpleName)));
+      ->map(kv| ^meta::java::generation::utils::KnownPackage(package=$kv.first, classNames=$kv.second->map(cs| $cs.values.simpleName)));
 }
 
-function meta::java::codeGeneration::convention::standardDataTypeImports(conventions: Conventions[1]): meta::java::metamodel::Importable[*]
+function meta::java::generation::convention::standardDataTypeImports(conventions: Conventions[1]): meta::java::metamodel::Importable[*]
 {
    let javaTypesForPureTypes = [
       $conventions->stringType(ZeroOne),
@@ -502,7 +499,7 @@ function meta::java::codeGeneration::convention::standardDataTypeImports(convent
    ]));
 }
 
-function meta::java::codeGeneration::convention::isImported(conventions: Conventions[1], javaClass: meta::java::metamodel::Class[1]): Boolean[1]
+function meta::java::generation::convention::isImported(conventions: Conventions[1], javaClass: meta::java::metamodel::Class[1]): Boolean[1]
 {
    $conventions.imports->contains($javaClass);
 }
@@ -511,7 +508,7 @@ function meta::java::codeGeneration::convention::isImported(conventions: Convent
 // --- FunctionSignatureFactory factory methods
 // ----------------------------------------------------------------------------------------------------------
 
-function meta::java::codeGeneration::convention::defaultFunctionSignatureFactory(): Function<{ConcreteFunctionDefinition<Any>[1],Conventions[1]->FunctionSignature[1]}>[1]
+function meta::java::generation::convention::defaultFunctionSignatureFactory(): Function<{ConcreteFunctionDefinition<Any>[1],Conventions[1]->FunctionSignature[1]}>[1]
 {
    {cfd:ConcreteFunctionDefinition<Any>[1], conventions:Conventions[1]|
       let funcsClass = ^Class<Any>(package=$cfd.package, name=if($cfd.package->isEmpty(), |'', |$cfd.package->toOne()->elementToPath('_'))+'__Functions');
@@ -532,12 +529,12 @@ function meta::java::codeGeneration::convention::defaultFunctionSignatureFactory
 // --- FunctionCoder helper methods
 // ----------------------------------------------------------------------------------------------------------
 
-function meta::java::codeGeneration::convention::inlineCoder(pattern: String[1], returnType: String[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::java::generation::convention::inlineCoder(pattern: String[1], returnType: String[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    inlineCoder($pattern, javaType($returnType));
 }
 
-function meta::java::codeGeneration::convention::inlineCoder(pattern: String[1], returnType: meta::java::metamodel::Type[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::java::generation::convention::inlineCoder(pattern: String[1], returnType: meta::java::metamodel::Type[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    {f:FunctionExpression[1], c:Conventions[1], debug:DebugContext[1] |
       let params = $f.parametersValues->evaluateAndDeactivate()->map(v|$v->generateJava($c, $debug->indent()));
@@ -546,12 +543,12 @@ function meta::java::codeGeneration::convention::inlineCoder(pattern: String[1],
    };
 }
 
-function meta::java::codeGeneration::convention::inlineCoder(patternFunc: Function<{Conventions[1]->String[1]}>[1], returnType: String[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::java::generation::convention::inlineCoder(patternFunc: Function<{Conventions[1]->String[1]}>[1], returnType: String[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    inlineCoder($patternFunc, javaType($returnType));
 }
 
-function meta::java::codeGeneration::convention::inlineCoder(patternFunc: Function<{Conventions[1]->String[1]}>[1], returnType: meta::java::metamodel::Type[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::java::generation::convention::inlineCoder(patternFunc: Function<{Conventions[1]->String[1]}>[1], returnType: meta::java::metamodel::Type[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    {f:FunctionExpression[1], c:Conventions[1], debug:DebugContext[1] |
       let params  = $f.parametersValues->evaluateAndDeactivate()->map(v|$v->generateJava($c, $debug->indent()));
@@ -561,14 +558,14 @@ function meta::java::codeGeneration::convention::inlineCoder(patternFunc: Functi
    };
 }
 
-function meta::java::codeGeneration::convention::requires(coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1], dependency: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->CodeDependency[1]}>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::java::generation::convention::requires(coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1], dependency: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->CodeDependency[1]}>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    {f:FunctionExpression[1], c:Conventions[1], debug:DebugContext[1] |
       merge([$coder->eval($f, $c, $debug), j_code('', javaType('void'), $dependency->eval($f, $c, $debug))]);
    };
 }
 
-function meta::java::codeGeneration::convention::appendToName(suffix: String[1]):Function<{PackageableElement[1],Conventions[1]->meta::java::metamodel::Class[1]}>[1]
+function meta::java::generation::convention::appendToName(suffix: String[1]):Function<{PackageableElement[1],Conventions[1]->meta::java::metamodel::Class[1]}>[1]
 {
    {pe:PackageableElement[1], c:Conventions[1] |
       let base = $c->className($pe);
@@ -580,7 +577,7 @@ function meta::java::codeGeneration::convention::appendToName(suffix: String[1])
 // --- Factory methods for ConventionsLibrary
 // ----------------------------------------------------------------------------------------------------------
 
-function meta::java::codeGeneration::convention::newConventionsLibrary():ConventionsLibrary[1]
+function meta::java::generation::convention::newConventionsLibrary():ConventionsLibrary[1]
 {
    ^ConventionsLibrary
    (
@@ -590,50 +587,50 @@ function meta::java::codeGeneration::convention::newConventionsLibrary():Convent
    );
 }
 
-function meta::java::codeGeneration::convention::newConventionsLibrary(name:String[1]):ConventionsLibrary[1]
+function meta::java::generation::convention::newConventionsLibrary(name:String[1]):ConventionsLibrary[1]
 {
    let lib = newConventionsLibrary();
    ^$lib(name=$name);
 }
 
-function meta::java::codeGeneration::convention::setFundamentals(library:ConventionsLibrary[1], fundamentals:Function<{Conventions[1],DebugContext[1]->Project[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::setFundamentals(library:ConventionsLibrary[1], fundamentals:Function<{Conventions[1],DebugContext[1]->Project[1]}>[1]): ConventionsLibrary[1]
 {
    ^$library(fundamentals=$fundamentals);
 }
 
-function meta::java::codeGeneration::convention::usesJavaPackage(library:ConventionsLibrary[1], javaPackage:String[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesJavaPackage(library:ConventionsLibrary[1], javaPackage:String[1]): ConventionsLibrary[1]
 {
    $library->usesJavaPackage(javaPackage($javaPackage));
 }
 
-function meta::java::codeGeneration::convention::usesJavaPackage(library:ConventionsLibrary[1], javaPackage:meta::java::metamodel::Package[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesJavaPackage(library:ConventionsLibrary[1], javaPackage:meta::java::metamodel::Package[1]): ConventionsLibrary[1]
 {
    // Ensure package is well known
    knownPackage($javaPackage);
    ^$library(javaPackagesUsed=$library.javaPackagesUsed->concatenate($javaPackage)->removeDuplicates());
 }
 
-function meta::java::codeGeneration::convention::usesJavaClass(library:ConventionsLibrary[1], javaClass:String[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesJavaClass(library:ConventionsLibrary[1], javaClass:String[1]): ConventionsLibrary[1]
 {
    $library->usesJavaClass(javaClass($javaClass));
 }
 
-function meta::java::codeGeneration::convention::usesJavaClass(library:ConventionsLibrary[1], javaClass:meta::java::metamodel::Class[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesJavaClass(library:ConventionsLibrary[1], javaClass:meta::java::metamodel::Class[1]): ConventionsLibrary[1]
 {
    ^$library(javaClassesUsed=$library.javaClassesUsed->concatenate($javaClass)->removeDuplicates());
 }
 
-function meta::java::codeGeneration::convention::definesJavaClass(library:ConventionsLibrary[1], javaClass:String[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::definesJavaClass(library:ConventionsLibrary[1], javaClass:String[1]): ConventionsLibrary[1]
 {
    $library->definesJavaClass(javaClass($javaClass));
 }
 
-function meta::java::codeGeneration::convention::definesJavaClass(library:ConventionsLibrary[1], javaClass:meta::java::metamodel::Class[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::definesJavaClass(library:ConventionsLibrary[1], javaClass:meta::java::metamodel::Class[1]): ConventionsLibrary[1]
 {
    ^$library(javaClassesDefined=$library.javaClassesDefined->concatenate($javaClass)->removeDuplicates());
 }
 
-function meta::java::codeGeneration::convention::usesString(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{String[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesString(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{String[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -646,7 +643,7 @@ function meta::java::codeGeneration::convention::usesString(library:ConventionsL
    ^$library(typeConversions=$library.typeConversions->put(String, $typeCoder));
 }
 
-function meta::java::codeGeneration::convention::usesInteger(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Integer[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesInteger(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Integer[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -659,7 +656,7 @@ function meta::java::codeGeneration::convention::usesInteger(library:Conventions
    ^$library(typeConversions=$library.typeConversions->put(Integer, $typeCoder));
 }
 
-function meta::java::codeGeneration::convention::usesFloat(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Float[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesFloat(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Float[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -672,7 +669,7 @@ function meta::java::codeGeneration::convention::usesFloat(library:ConventionsLi
    ^$library(typeConversions=$library.typeConversions->put(Float, $typeCoder));
 }
 
-function meta::java::codeGeneration::convention::usesDecimal(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Decimal[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesDecimal(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Decimal[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -685,7 +682,7 @@ function meta::java::codeGeneration::convention::usesDecimal(library:Conventions
    ^$library(typeConversions=$library.typeConversions->put(Decimal, $typeCoder));
 }
 
-function meta::java::codeGeneration::convention::usesNumber(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Number[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesNumber(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Number[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -698,7 +695,7 @@ function meta::java::codeGeneration::convention::usesNumber(library:ConventionsL
    ^$library(typeConversions=$library.typeConversions->put(Number, $typeCoder));
 }
 
-function meta::java::codeGeneration::convention::usesBoolean(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Boolean[1]->Code[1]}>[1]):ConventionsLibrary[1]
+function meta::java::generation::convention::usesBoolean(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Boolean[1]->Code[1]}>[1]):ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -711,7 +708,7 @@ function meta::java::codeGeneration::convention::usesBoolean(library:Conventions
    ^$library(typeConversions=$library.typeConversions->put(Boolean, $typeCoder));
 }
 
-function meta::java::codeGeneration::convention::usesStrictDate(library:ConventionsLibrary[1], javaType:meta::java::metamodel::Type[1], literalCoder:Function<{StrictDate[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesStrictDate(library:ConventionsLibrary[1], javaType:meta::java::metamodel::Type[1], literalCoder:Function<{StrictDate[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -724,7 +721,7 @@ function meta::java::codeGeneration::convention::usesStrictDate(library:Conventi
    ^$library(typeConversions=$library.typeConversions->put(StrictDate, $typeCoder));
 }
 
-function meta::java::codeGeneration::convention::usesDateTime(library:ConventionsLibrary[1], javaType:meta::java::metamodel::Type[1], literalCoder:Function<{DateTime[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesDateTime(library:ConventionsLibrary[1], javaType:meta::java::metamodel::Type[1], literalCoder:Function<{DateTime[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -737,7 +734,7 @@ function meta::java::codeGeneration::convention::usesDateTime(library:Convention
    ^$library(typeConversions=$library.typeConversions->put(DateTime, $typeCoder));
 }
 
-function meta::java::codeGeneration::convention::usesDate(library:ConventionsLibrary[1], javaType:meta::java::metamodel::Type[1], literalCoder:Function<{Date[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::usesDate(library:ConventionsLibrary[1], javaType:meta::java::metamodel::Type[1], literalCoder:Function<{Date[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -754,7 +751,7 @@ function meta::java::codeGeneration::convention::usesDate(library:ConventionsLib
 // --- Function Coders
 // ----------------------------------------------------------------------------------------------------------
 
-Class meta::java::codeGeneration::convention::FuncCoderContext
+Class meta::java::generation::convention::FuncCoderContext
 {
    fe          : FunctionExpression[1];
    params      : ValueSpecification[*];
@@ -774,93 +771,93 @@ Class meta::java::codeGeneration::convention::FuncCoderContext
    }:meta::java::metamodel::Type[1];
 }
 
-Class meta::java::codeGeneration::convention::FunctionCoder
+Class meta::java::generation::convention::FunctionCoder
 {
    pureFunction : String[1];
    coder        : Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1];
 }
 
-function meta::java::codeGeneration::convention::fc0(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc0(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc0($pureFunction.name->toOne(), $coder2);
 }
 
-function meta::java::codeGeneration::convention::fc0(pureFunction:String[1], coder2:Function<{FuncCoderContext[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc0(pureFunction:String[1], coder2:Function<{FuncCoderContext[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder2->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::codeGeneration::convention::fc1(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc1(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc1($pureFunction.name->toOne(), $coder2);
 }
 
-function meta::java::codeGeneration::convention::fc1(pureFunction:String[1], coder2:Function<{FuncCoderContext[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc1(pureFunction:String[1], coder2:Function<{FuncCoderContext[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder2->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::codeGeneration::convention::fc2(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc2(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc2($pureFunction.name->toOne(), $coder2);
 }
 
-function meta::java::codeGeneration::convention::fc2(pureFunction:String[1], coder2:Function<{FuncCoderContext[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc2(pureFunction:String[1], coder2:Function<{FuncCoderContext[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder2->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::codeGeneration::convention::fc3(pureFunction:Function<Any>[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc3(pureFunction:Function<Any>[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc3($pureFunction.name->toOne(), $coder3);
 }
 
-function meta::java::codeGeneration::convention::fc3(pureFunction:String[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc3(pureFunction:String[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder3->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::codeGeneration::convention::fc4(pureFunction:Function<Any>[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc4(pureFunction:Function<Any>[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc4($pureFunction.name->toOne(), $coder3);
 }
 
-function meta::java::codeGeneration::convention::fc4(pureFunction:String[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc4(pureFunction:String[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder3->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::codeGeneration::convention::fc5(pureFunction:Function<Any>[1], coder5:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc5(pureFunction:Function<Any>[1], coder5:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc5($pureFunction.name->toOne(), $coder5);
 }
 
-function meta::java::codeGeneration::convention::fc5(pureFunction:String[1], coder5:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc5(pureFunction:String[1], coder5:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder5->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::codeGeneration::convention::fc6(pureFunction:Function<Any>[1], coder6:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc6(pureFunction:Function<Any>[1], coder6:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc6($pureFunction.name->toOne(), $coder6);
 }
 
-function meta::java::codeGeneration::convention::fc6(pureFunction:String[1], coder6:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc6(pureFunction:String[1], coder6:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder6->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::codeGeneration::convention::fc(pureFunction:Function<Any>[1], coder:Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc(pureFunction:Function<Any>[1], coder:Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction.name->toOne(), $coder);
 }
 
-function meta::java::codeGeneration::convention::fc(pureFunction:String[1], coder:Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::java::generation::convention::fc(pureFunction:String[1], coder:Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    ^FunctionCoder(pureFunction=$pureFunction, coder=$coder);
 }
 
-function meta::java::codeGeneration::convention::fcAlias(pureFunction:Function<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::java::generation::convention::fcAlias(pureFunction:Function<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    {fe: FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1] |
       let toEval = $conventions->getFunctionCoder($pureFunction);
@@ -869,7 +866,7 @@ function meta::java::codeGeneration::convention::fcAlias(pureFunction:Function<A
    };
 }
 
-function <<access.private>> meta::java::codeGeneration::convention::adaptCoder(adaptee:FunctionDefinition<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function <<access.private>> meta::java::generation::convention::adaptCoder(adaptee:FunctionDefinition<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    let fType = $adaptee->evaluateAndDeactivate()->functionType();
    assert($fType.returnType.rawType == Code, 'Must return Code');
@@ -916,12 +913,12 @@ function <<access.private>> meta::java::codeGeneration::convention::adaptCoder(a
    };
 }
 
-function meta::java::codeGeneration::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunctions:Function<Any>[*], paramNames:String[*], contextCoder:Function<{FuncCoderContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunctions:Function<Any>[*], paramNames:String[*], contextCoder:Function<{FuncCoderContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    addFunctionCoder($library, $pureFunctions.name, $paramNames, $contextCoder);
 }
 
-function meta::java::codeGeneration::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunctions:String[*], paramNames:String[*], contextCoder:Function<{FuncCoderContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunctions:String[*], paramNames:String[*], contextCoder:Function<{FuncCoderContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let coder = {fe: FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1] |
       let params = $fe.parametersValues->evaluateAndDeactivate();
@@ -958,7 +955,7 @@ function meta::java::codeGeneration::convention::addFunctionCoder(library:Conven
    $pureFunctions->fold({f, l| $l->addFunctionCoder($f, $coder)}, $library);
 }
 
-function meta::java::codeGeneration::convention::addFunctionCoders(library:ConventionsLibrary[1], functionCoders:FunctionCoder[*]): ConventionsLibrary[1]
+function meta::java::generation::convention::addFunctionCoders(library:ConventionsLibrary[1], functionCoders:FunctionCoder[*]): ConventionsLibrary[1]
 {
    let existingNames = $library.functionCoders->keys();
    let newNames      = $functionCoders.pureFunction;
@@ -968,12 +965,12 @@ function meta::java::codeGeneration::convention::addFunctionCoders(library:Conve
    ^$library(functionCoders=$library.functionCoders->putAll($functionCoders->map(fc| pair($fc.pureFunction, $fc.coder))));
 }
 
-function meta::java::codeGeneration::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunction:Function<Any>[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunction:Function<Any>[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    addFunctionCoder($library, $pureFunction.name->toOne(), $coder);
 }
 
-function meta::java::codeGeneration::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunction:String[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::java::generation::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunction:String[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    assert($library.functionCoders->get($pureFunction)->isEmpty(), |'A function is already exists for ' + $pureFunction);
    ^$library(functionCoders=$library.functionCoders->put($pureFunction, $coder));
@@ -983,7 +980,7 @@ function meta::java::codeGeneration::convention::addFunctionCoder(library:Conven
 // --- Factory methods for Conventions
 // ----------------------------------------------------------------------------------------------------------
 
-function meta::java::codeGeneration::convention::newConventions(extensions : meta::pure::router::extension::RouterExtension[*]): Conventions[1]
+function meta::java::generation::convention::newConventions(extensions : meta::pure::router::extension::RouterExtension[*]): Conventions[1]
 {
    let result = ^Conventions
    (
@@ -992,7 +989,7 @@ function meta::java::codeGeneration::convention::newConventions(extensions : met
       setterNameStrategy         = {p:String[1] | 'set' + $p->toUpperFirstCharacter()->toOne()},
       defaultClassPurpose        = ClassPurpose.MODEL,
 
-      identifierFactory          = meta::java::codeGeneration::convention::sanitizeJavaKeywords_String_1__String_1_,
+      identifierFactory          = meta::java::generation::convention::sanitizeJavaKeywords_String_1__String_1_,
       basePackageName            = '_pure',
       functionSignatureFactory   = defaultFunctionSignatureFactory(),
 
@@ -1006,63 +1003,63 @@ function meta::java::codeGeneration::convention::newConventions(extensions : met
       ->assumeImportedPackage('java.lang');
 }
 
-function meta::java::codeGeneration::convention::setBasePackageName(conventions:Conventions[1], name:String[1]): Conventions[1]
+function meta::java::generation::convention::setBasePackageName(conventions:Conventions[1], name:String[1]): Conventions[1]
 {
    assert($name->isValidPackageName(), 'Not a valid base package');
    ^$conventions(basePackageName=$name);
 }
 
-function meta::java::codeGeneration::convention::addProvidedType(conventions:Conventions[1], type:Type[1], providedAs:String[1]): Conventions[1]
+function meta::java::generation::convention::addProvidedType(conventions:Conventions[1], type:Type[1], providedAs:String[1]): Conventions[1]
 {
    $conventions->addProvidedType($type, javaClass($providedAs));
 }
 
-function meta::java::codeGeneration::convention::addProvidedType(conventions:Conventions[1], type:Type[1], providedAs:meta::java::metamodel::Class[1]): Conventions[1]
+function meta::java::generation::convention::addProvidedType(conventions:Conventions[1], type:Type[1], providedAs:meta::java::metamodel::Class[1]): Conventions[1]
 {
    let cleaned = $conventions.providedTypes->filter(pt | $pt.type != $type);
    ^$conventions(providedTypes=$cleaned->add(^ProvidedType(type=$type, providedAs=$providedAs)));
 }
 
-function meta::java::codeGeneration::convention::addProvidedVariables(conventions:Conventions[1], codes:Code[*]): Conventions[1]
+function meta::java::generation::convention::addProvidedVariables(conventions:Conventions[1], codes:Code[*]): Conventions[1]
 {
    assert($codes->forAll(c|$c->isVariable()));
    let namesToCodes = $codes->map(c|pair($c->variableName(), $c));
    ^$conventions(providedVariables=$conventions.providedVariables->putAll($namesToCodes));
 }
 
-function meta::java::codeGeneration::convention::assumeImported(conventions: Conventions[1], javaClass: String[1]): Conventions[1]
+function meta::java::generation::convention::assumeImported(conventions: Conventions[1], javaClass: String[1]): Conventions[1]
 {
    assumeImported($conventions, javaClass($javaClass))
 }
 
-function meta::java::codeGeneration::convention::assumeImported(conventions: Conventions[1], javaClass: meta::java::metamodel::Class[1]): Conventions[1]
+function meta::java::generation::convention::assumeImported(conventions: Conventions[1], javaClass: meta::java::metamodel::Class[1]): Conventions[1]
 {
    ^$conventions(imports=$conventions.imports->concatenate($javaClass))
 }
 
-function meta::java::codeGeneration::convention::assumeImportedPackage(conventions: Conventions[1], pkg: String[1]): Conventions[1]
+function meta::java::generation::convention::assumeImportedPackage(conventions: Conventions[1], pkg: String[1]): Conventions[1]
 {
    let knownPackages = $conventions->knownPackages();
    $knownPackages->eval(javaPackage($pkg)).classNames->fold({className, conv| $conv->assumeImported($pkg+'.'+$className)}, $conventions);
 }
 
-function meta::java::codeGeneration::convention::registerClassCoder(conventions: Conventions[1], purpose: Any[1], coder: Function<{Type[1],Conventions[1],DebugContext[1]->meta::java::metamodel::Class[1]}>[1]): Conventions[1]
+function meta::java::generation::convention::registerClassCoder(conventions: Conventions[1], purpose: Any[1], coder: Function<{Type[1],Conventions[1],DebugContext[1]->meta::java::metamodel::Class[1]}>[1]): Conventions[1]
 {
    ^$conventions(classCoders=$conventions.classCoders->put($purpose, $coder));
 }
 
-function meta::java::codeGeneration::convention::registerFunctionCoder(conventions: Conventions[1], pureFunction: Function<Any>[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): Conventions[1]
+function meta::java::generation::convention::registerFunctionCoder(conventions: Conventions[1], pureFunction: Function<Any>[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): Conventions[1]
 {
    registerFunctionCoder($conventions, $pureFunction.name->toOne(), $coder);
 }
 
-function meta::java::codeGeneration::convention::registerFunctionCoder(conventions: Conventions[1], pureFunction: String[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): Conventions[1]
+function meta::java::generation::convention::registerFunctionCoder(conventions: Conventions[1], pureFunction: String[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): Conventions[1]
 {
    assert($conventions.functionCoders->get($pureFunction)->isEmpty(), |'A function is already registered for ' + $pureFunction);
    ^$conventions(functionCoders=$conventions.functionCoders->put($pureFunction, $coder));
 }
 
-function meta::java::codeGeneration::convention::registerLibrary(conventions: Conventions[1], library: ConventionsLibrary[1]): Conventions[1]
+function meta::java::generation::convention::registerLibrary(conventions: Conventions[1], library: ConventionsLibrary[1]): Conventions[1]
 {
    let stillValidLibraries = $conventions.libraries
       ->filter(
@@ -1080,7 +1077,7 @@ function meta::java::codeGeneration::convention::registerLibrary(conventions: Co
    ^$conventions(libraries=$stillValidLibraries->concatenate($library));
 }
 
-function meta::java::codeGeneration::convention::forClass(conventions:Conventions[1], class:meta::java::metamodel::Class[1]): Conventions[1]
+function meta::java::generation::convention::forClass(conventions:Conventions[1], class:meta::java::metamodel::Class[1]): Conventions[1]
 {
    $class.additionalImports->fold({imp,conv|
       if($imp->endsWith('.*'),
@@ -1091,7 +1088,7 @@ function meta::java::codeGeneration::convention::forClass(conventions:Convention
    }, $conventions);
 }
 
-function meta::java::codeGeneration::convention::defaultProhibitedFunctions(extensions : meta::pure::router::extension::RouterExtension[*]): Function<{Conventions[1],Function<Any>[1]->Boolean[1]}>[1]
+function meta::java::generation::convention::defaultProhibitedFunctions(extensions : meta::pure::router::extension::RouterExtension[*]): Function<{Conventions[1],Function<Any>[1]->Boolean[1]}>[1]
 {
    let functionsBlacklist = [
       // Instances
@@ -1113,6 +1110,7 @@ function meta::java::codeGeneration::convention::defaultProhibitedFunctions(exte
       deactivate_Any_MANY__ValueSpecification_1_,
       evaluateAndDeactivate_T_m__T_m_,
       meta::alloy::test::mayExecuteAlloyTest_Function_1__Function_1__X_k_,
+      meta::legend::test::mayExecuteLegendTest_Function_1__Function_1__X_k_,
 
       // Evaluation
       eval_Function_1__S_n__T_o__U_p__W_q__X_r__Y_s__Z_t__V_m_,
@@ -1225,7 +1223,7 @@ function meta::java::codeGeneration::convention::defaultProhibitedFunctions(exte
 // --- Helpers
 // ----------------------------------------------------------------------------------------------------------
 
-function <<access.private>> meta::java::codeGeneration::convention::listIfMulti(base: meta::java::metamodel::Type[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function <<access.private>> meta::java::generation::convention::listIfMulti(base: meta::java::metamodel::Type[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    if(!$mult->hasUpperBound() || ($mult->getUpperBound() > 1 || $mult->getUpperBound() == -1),
       | javaList($base),
@@ -1233,18 +1231,28 @@ function <<access.private>> meta::java::codeGeneration::convention::listIfMulti(
    );
 }
 
-function <<access.private>> meta::java::codeGeneration::convention::typeConversion(conventions:Conventions[1], type:Type[1]): TypeConversion[1]
+function <<access.private>> meta::java::generation::convention::typeConversion(conventions:Conventions[1], type:Type[1]): TypeConversion[1]
 {
    $conventions.libraries->map(l|$l.typeConversions->get($type))->at(0);
 }
 
-function meta::java::codeGeneration::convention::javaType(conventions:Conventions[1], type:Type[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::java::generation::convention::javaType(conventions:Conventions[1], type:Type[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
 {
    let conversion = $conventions->typeConversion($type);
    if($mult == PureOne, |$conversion.oneJavaType, |$conversion.nonOneJavaType)->listIfMulti($mult);
 }
 
-function <<access.private>> meta::java::codeGeneration::convention::sanitizeJavaKeywords(name: String[1]): String[1]
+function meta::java::generation::convention::sanitizeIdentifier(name: String[1]): String[1]
+{
+   $name->sanitizeJavaKeywords()->replaceIllegalSymbols();
+}
+
+function <<access.private>> meta::java::generation::convention::replaceIllegalSymbols(symbol: String[1]): String[1]
+{
+   $symbol->replace('~', '_Tilde_');
+}
+
+function <<access.private>> meta::java::generation::convention::sanitizeJavaKeywords(name: String[1]): String[1]
 {
    $name
       ->split('.')
@@ -1253,7 +1261,7 @@ function <<access.private>> meta::java::codeGeneration::convention::sanitizeJava
       ->joinStrings('.');
 }
 
-function <<access.private>> meta::java::codeGeneration::convention::startsWithNumber(s: String[1]): Boolean[1]
+function <<access.private>> meta::java::generation::convention::startsWithNumber(s: String[1]): Boolean[1]
 {
    ['0','1','2','3','4','5','6','7','8','9']->contains($s->substring(0, 1))
 }

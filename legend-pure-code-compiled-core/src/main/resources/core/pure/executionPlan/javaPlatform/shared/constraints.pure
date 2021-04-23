@@ -28,14 +28,14 @@ import meta::pure::graphFetch::execution::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::mapping::modelToModel::inMemory::*;
 import meta::pure::graphFetch::executionPlan::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::convention::jackson::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::convention::jackson::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::project::*;
 import meta::java::metamodel::factory::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 
 function meta::alloy::runtime::java::createConstraintCheckingForClass(jClass: meta::java::metamodel::Class[1], class:Class<Any>[1], context:GenerationContext[1], debug:DebugContext[1]) : Project[1]
 {

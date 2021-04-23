@@ -105,7 +105,7 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::executeP
    $resp.entity;
 }
 
-function meta::protocols::pure::vX_X_X::invocation::execution::execute::buildExecutionInput<T|m>(f:FunctionDefinition<{->T[m]}>[1], m:Mapping[1], runtime:Runtime[1],  exeCtx:ExecutionContext[0..1], version:String[1], executionMode:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
+function meta::protocols::pure::vX_X_X::invocation::execution::execute::buildExecutionInput<T|m>(f:FunctionDefinition<{->T[m]}>[1], m:Mapping[1], runtime:Runtime[1],  exeCtx:ExecutionContext[0..1], version:String[1], serializationKind:String[1], executionMode:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
 {
          let transformedContext = if($exeCtx->isNotEmpty(), | $exeCtx->toOne()->transformContext($extensions),| []);
          let execMode = ExecutionMode->extractEnumValue($executionMode);
@@ -146,12 +146,20 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::buildExe
                                           packageableElementPointers = $stores->concatenate($transformedMappings)
                                        )
                          );,
-                        |$mappings->buildBasePureModelFromMapping($extensions).second;
+                        |if ($serializationKind == 'json',
+                            |$mappings->buildBasePureModelFromMapping($extensions).second,
+                            |$mappings->buildPureModelContextTextFromMappingAndQuery($f, $extensions)
+                         );
                      )
          )->alloyToJSON();
 }
 
 function meta::protocols::pure::vX_X_X::invocation::execution::execute::alloyExecute<T|m>(f:FunctionDefinition<{->T[m]}>[1], m:Mapping[1], pureRuntime:Runtime[1], context:ExecutionContext[0..1], host:String[1], port:Integer[1], version:String[1], executionMode:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::pure::mapping::Result<T|m>[1]
+{
+  legendExecute($f, $m, $pureRuntime, $context, $host, $port, $version, 'json', $executionMode, $extensions);
+}
+
+function meta::protocols::pure::vX_X_X::invocation::execution::execute::legendExecute<T|m>(f:FunctionDefinition<{->T[m]}>[1], m:Mapping[1], pureRuntime:Runtime[1], context:ExecutionContext[0..1], host:String[1], port:Integer[1], version:String[1], serializationKind:String[1], executionMode:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::pure::mapping::Result<T|m>[1]
 {
    let transformedContext = if($context->isNotEmpty(), | $context->toOne()->transformContext($extensions),| []);
    let execMode = meta::protocols::pure::vX_X_X::invocation::execution::execute::ExecutionMode->extractEnumValue($executionMode);
@@ -161,7 +169,7 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::alloyExe
    // This choice is made as ExecutionContext information can affect the results computed by the executionPlan endpoint
    // If we have either of the two ExecutionContexts in the conditional - throwing the generated execution plan to the executePlan endpoint does *not* return the same results as hittign execute with function,mapping, and runtime
    // hence we default to old behaviour in the case of AuthContext of VectorBatchQueryContext, otherwise we use the two execution plan endpoints
-   let typeAndresultJSON = if(isOptionSet('ExecPlan') && !($context->isNotEmpty() && $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute1->fold({a,b|$a->eval($context) || $b}, true)),
+   let typeAndresultJSON = if(isOptionSet('ExecPlan') && !($context->isNotEmpty() && $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute1->fold({a,b|$a->eval($context) || $b}, false)),
       | let planGenerated = if(isOptionSet('PlanLocal'),
                                {|
                                   let basicPlan = if($m.name->isEmpty(),
@@ -172,14 +180,14 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::alloyExe
                                   $boundPlan->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformPlan($extensions)->meta::json::toJSON(1000, meta::json::config(false, false, true, true));
                                },
                                {|
-                                  generatePlan($f, $m, $pureRuntime, $context, $host, $port, $version, $executionMode, $extensions);
+                                  generatePlan($f, $m, $pureRuntime, $context, $host, $port, $version, $serializationKind, $executionMode, $extensions);
                                }
                             );
         let resultType = $planGenerated->getPlanReturnType();
         let result = $planGenerated->executePlan($host, $port);
         ^Pair<Any,Any>(first=$resultType,second=$result);,
 
-      |  let alloyExecuteResult = alloyExecuteLambda($f,$m,$pureRuntime, $context, $host, $port, $version, $executionMode, $extensions);
+      |  let alloyExecuteResult = alloyExecuteLambda($f,$m,$pureRuntime, $context, $host, $port, $version, $serializationKind, $executionMode, $extensions);
          let retGenericType = $f.expressionSequence->evaluateAndDeactivate()->last()->toOne().genericType;
          let retType = $retGenericType.rawType->toOne();
          ^Pair<Any,Any>(first=$retType,second=$alloyExecuteResult);
@@ -198,7 +206,8 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::alloyExe
 
 
 
-   let handlers= $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_pre->concatenate([
+   let handlers= $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_pre->concatenate(
+                 $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_pre2->map(f | $f->eval($extensions)))->concatenate([
                pair ( builderType:String[1]|$builderType->isNotEmpty() && $builderType->toOne()=='json',
                       {resultJSON:String[1], result:JSONObject[1], m:Mapping[1], r:Runtime[1], e:ExtendedJSONDeserializationConfig[1], co:ExecutionContext[0..1]|processJsonStreamingResult($result)}),
 
@@ -208,7 +217,8 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::alloyExe
                                                              | $resultClassType->cast(@Class<Any>)); // This case if is we hit the execute end point, in which case the type information is coming from the function
                                             processCSV_M2M($builderType->toOne(), $retType, $result);}
                     )
-            ]->concatenate($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_post));
+            ]->concatenate($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_post)
+             ->concatenate($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).invocation_execution_execute2_post2->map(f | $f->eval($extensions))));
 
    let res = $handlers->filter(h|$h.first->eval($builderType))->first()->toOne().second->eval($resultJSON, $result, $m, $pureRuntime, $extendedJSONDeserializationConfig, $context);
 
@@ -217,15 +227,15 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::alloyExe
    ^Result<T|m>(values=$values, activities=$res.second.values);
 }
 
-function meta::protocols::pure::vX_X_X::invocation::execution::execute::generatePlan<T|m>(f: FunctionDefinition<{->T[m]}>[1], m: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[0..1], host: String[1], port: Integer[1], version: String[1], executionMode: String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
+function meta::protocols::pure::vX_X_X::invocation::execution::execute::generatePlan<T|m>(f: FunctionDefinition<{->T[m]}>[1], m: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[0..1], host: String[1], port: Integer[1], version: String[1], serializationKind:String[1], executionMode: String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
 {
-   let resultJSON = buildExecutionInput($f, $m, $runtime, $exeCtx, $version, $executionMode, $extensions);
+   let resultJSON = buildExecutionInput($f, $m, $runtime, $exeCtx, $version, $serializationKind, $executionMode, $extensions);
    generatePlan($resultJSON, $host, $port);
 }
 
-function meta::protocols::pure::vX_X_X::invocation::execution::execute::alloyExecuteLambda<T|m>(f:FunctionDefinition<{->T[m]}>[1], m:Mapping[1], pureRuntime:Runtime[1], context:ExecutionContext[0..1], host:String[1], port:Integer[1], version:String[1], executionMode:String[1], extensions:meta::pure::router::extension::RouterExtension[*]) : String[1]
+function meta::protocols::pure::vX_X_X::invocation::execution::execute::alloyExecuteLambda<T|m>(f:FunctionDefinition<{->T[m]}>[1], m:Mapping[1], pureRuntime:Runtime[1], context:ExecutionContext[0..1], host:String[1], port:Integer[1], version:String[1], serializationKind:String[1], executionMode:String[1], extensions:meta::pure::router::extension::RouterExtension[*]) : String[1]
 {
-   let payload = buildExecutionInput($f,$m,$pureRuntime,$context,$version,$executionMode, $extensions);
+   let payload = buildExecutionInput($f,$m,$pureRuntime,$context,$version, $serializationKind, $executionMode, $extensions);
 
    let resp = executeHTTPRaw(^URL(host = $host , port=$port, path = '/api/pure/'+$version+'/execution/execute'),
                                  HTTPMethod.POST,

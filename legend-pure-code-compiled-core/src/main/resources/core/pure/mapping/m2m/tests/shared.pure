@@ -33,11 +33,19 @@ Class meta::pure::mapping::modelToModel::test::shared::dest::Person
 {
    firstName : String[1];
    lastName : String[1];
+   alternateName: NameWithLang[0..1];
    addresses : Address[*];
    firm : Firm[0..1];
    description : String[0..1];
    type : String[0..1];
 }
+
+Class meta::pure::mapping::modelToModel::test::shared::dest::NameWithLang
+{
+  lang: String[1];
+  value: String[1];
+}
+
 
 Class meta::pure::mapping::modelToModel::test::shared::dest::PersonWithConstraint
 [
@@ -60,7 +68,7 @@ Class meta::pure::mapping::modelToModel::test::shared::dest::FirmEmployee
 
 Class meta::pure::mapping::modelToModel::test::shared::dest::Address
 {
-   street : String[1];
+   street : String[0..1];
    extension : AddressExtension[0..1];
 }
 
@@ -111,7 +119,7 @@ Class meta::pure::mapping::modelToModel::test::shared::src::_SimplePerson
 {
    fullName : String[1];
    dateOfBirth : StrictDate[0..1];
-   address : Address[1];
+   address : Address[0..1];
 }
 
 Association  meta::pure::mapping::modelToModel::test::shared::src::_Firm_Person
@@ -128,8 +136,20 @@ Association  meta::pure::mapping::modelToModel::test::shared::src::_SimpleFirm_S
 
 Class meta::pure::mapping::modelToModel::test::shared::src::_S_Person
 {
-   fullName : String[1];
-   type     : String[0..1];
+   fullName      : String[1];
+   alternateName : _NameWithLang[0..1];
+   _type         : String[0..1];
+}
+
+Profile meta::pure::mapping::modelToModel::test::shared::src::xmlValueType
+{
+  stereotypes: [attribute, defaultValue];
+}
+
+Class meta::pure::mapping::modelToModel::test::shared::src::_NameWithLang
+{
+  <<xmlValueType.attribute>> _lang: String[1];
+  <<xmlValueType.defaultValue>> value__: String[1];
 }
 
 Class meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA extends _S_Person

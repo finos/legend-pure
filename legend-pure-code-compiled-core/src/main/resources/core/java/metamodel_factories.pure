@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::codeGeneration::code::*;
+import meta::java::generation::code::*;
 import meta::java::metamodel::project::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::factory::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 
 function meta::java::metamodel::factory::javaIllegalArgumentException():      meta::java::metamodel::Class[1] { javaClass('java.lang.IllegalArgumentException'); }
 function meta::java::metamodel::factory::javaIllegalStateException():         meta::java::metamodel::Class[1] { javaClass('java.lang.IllegalStateException'); }
@@ -75,6 +75,8 @@ function meta::java::metamodel::factory::javaDecimalFormatSymbols():   meta::jav
 function meta::java::metamodel::factory::javaResultSet():              meta::java::metamodel::Class[1] { javaClass('java.sql.ResultSet'); }
 function meta::java::metamodel::factory::javaSqlDate():                meta::java::metamodel::Class[1] { javaClass('java.sql.Date'); }
 function meta::java::metamodel::factory::javaSqlTimestamp():                meta::java::metamodel::Class[1] { javaClass('java.sql.Timestamp'); }
+
+function meta::java::metamodel::factory::javaUUID():                   meta::java::metamodel::Class[1] { javaClass('java.util.UUID');}
 
 function meta::java::metamodel::factory::javaCollection(t:meta::java::metamodel::Type[1]) : meta::java::metamodel::Type[1]
 {
@@ -603,7 +605,7 @@ function meta::java::metamodel::factory::implements(class:meta::java::metamodel:
    ^$class(interfaces = $class.interfaces->concatenate($t));
 }
 
-function meta::java::metamodel::factory::usingKnownPackages(class:meta::java::metamodel::Class[1], knownPackages:Function<{meta::java::metamodel::Package[1]->meta::java::codeGeneration::utils::KnownPackage[1]}>[1]):meta::java::metamodel::Class[1]
+function meta::java::metamodel::factory::usingKnownPackages(class:meta::java::metamodel::Class[1], knownPackages:Function<{meta::java::metamodel::Package[1]->meta::java::generation::utils::KnownPackage[1]}>[1]):meta::java::metamodel::Class[1]
 {
    ^meta::java::metamodel::factory::FactoryClass
    (
@@ -628,7 +630,7 @@ function meta::java::metamodel::factory::imports(class:meta::java::metamodel::Cl
 {
    let knownPackages = if($class->instanceOf(meta::java::metamodel::factory::FactoryClass),
                           | $class->cast(@meta::java::metamodel::factory::FactoryClass).knownPackages,
-                          | meta::java::codeGeneration::utils::knownPackage_Package_1__KnownPackage_1_
+                          | meta::java::generation::utils::knownPackage_Package_1__KnownPackage_1_
                        );
 
    let packages = $imports->filter(imp| $imp->instanceOf(meta::java::metamodel::Package))->cast(@meta::java::metamodel::Package);
@@ -869,7 +871,7 @@ function meta::java::metamodel::factory::javaConstructor(modifiers:String[*], pa
 
 Class meta::java::metamodel::factory::FactoryClass extends meta::java::metamodel::Class
 {
-   knownPackages:Function<{meta::java::metamodel::Package[1]->meta::java::codeGeneration::utils::KnownPackage[1]}>[1];
+   knownPackages:Function<{meta::java::metamodel::Package[1]->meta::java::generation::utils::KnownPackage[1]}>[1];
 }
 
 
@@ -878,14 +880,14 @@ Class meta::java::metamodel::factory::FactoryClass extends meta::java::metamodel
 
 
 // TODO Eliminate this
-function meta::java::codeGeneration::code::merge(codes: Code[1..*]):Code[1]
+function meta::java::generation::code::merge(codes: Code[1..*]):Code[1]
 {
    let head = $codes->at(0);
    $codes->tail()->fold({c, a|^$a(requires=$a->dependencies()->concatenate($c->dependencies())->removeDuplicates())}, $head);
 }
 
 // TODO Remove once all streaming is via j_streamOf...js_resolve
-function meta::java::codeGeneration::code::canOptimize(code: Code[1]):Boolean[1]
+function meta::java::generation::code::canOptimize(code: Code[1]):Boolean[1]
 {
    $code->instanceOf(SimpleCode);
 }
@@ -894,7 +896,7 @@ function meta::java::codeGeneration::code::canOptimize(code: Code[1]):Boolean[1]
 
 // --- To dependencies
 
-function meta::java::codeGeneration::code::dependencies(codes: Code[*]):CodeDependency[*]
+function meta::java::generation::code::dependencies(codes: Code[*]):CodeDependency[*]
 {
    $codes->map(code| $code->match([
       c:InfixExpression[1]          | $c.requires->concatenate($c.left->dependencies())->concatenate($c.right->dependencies()),
@@ -933,22 +935,22 @@ function meta::java::codeGeneration::code::dependencies(codes: Code[*]):CodeDepe
 
 // --- Java coding
 
-function meta::java::codeGeneration::code::j_code(code:String[1], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_code(code:String[1], type:meta::java::metamodel::Type[1]):Code[1]
 {
    j_code($code, $type, []);
 }
 
-function meta::java::codeGeneration::code::j_code(code:String[1], type:meta::java::metamodel::Type[1], dependencies:CodeDependency[*]):Code[1]
+function meta::java::generation::code::j_code(code:String[1], type:meta::java::metamodel::Type[1], dependencies:CodeDependency[*]):Code[1]
 {
    ^SimpleCode(code=$code, type=$type, requires=$dependencies);
 }
 
-function meta::java::codeGeneration::code::j_null():Code[1]
+function meta::java::generation::code::j_null():Code[1]
 {
    ^Null(type=javaVoid()); // void to represent bottom (Nil)
 }
 
-function meta::java::codeGeneration::code::j_null(type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_null(type:meta::java::metamodel::Type[1]):Code[1]
 {
    ^Null(type=$type);
 }
@@ -976,65 +978,65 @@ function meta::java::codeGeneration::code::j_null(type:meta::java::metamodel::Ty
 
   This is different than the compiler which will make them: Something->$1, SomethingElse->$2, Another->$3
 */
-function meta::java::codeGeneration::code::anonymousNestedClass(level:Integer[1]):meta::java::metamodel::Class[1]
+function meta::java::generation::code::anonymousNestedClass(level:Integer[1]):meta::java::metamodel::Class[1]
 {
    ^meta::java::metamodel::Class(simpleName='Level'+$level->toString(), package=anonymousPackage());
 }
 
-function <<access.private>> meta::java::codeGeneration::code::anonymousPackage():meta::java::metamodel::Package[1]
+function <<access.private>> meta::java::generation::code::anonymousPackage():meta::java::metamodel::Package[1]
 {
    ^meta::java::metamodel::Package(name='__ANON__');
 }
 
-function meta::java::codeGeneration::code::j_this(type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_this(type:meta::java::metamodel::Type[1]):Code[1]
 {
    ^This(type=$type);
 }
 
-function meta::java::codeGeneration::code::j_variable(param:meta::java::metamodel::Parameter[1]):Code[1]
+function meta::java::generation::code::j_variable(param:meta::java::metamodel::Parameter[1]):Code[1]
 {
    ^Variable(name=$param.name, type=$param.type);
 }
 
-function meta::java::codeGeneration::code::j_variable(type:meta::java::metamodel::Type[1], name:String[1]):Code[1]
+function meta::java::generation::code::j_variable(type:meta::java::metamodel::Type[1], name:String[1]):Code[1]
 {
    ^Variable(name=$name, type=$type);
 }
 
-function meta::java::codeGeneration::code::j_parameter(param:meta::java::metamodel::Parameter[1]):Code[1]
+function meta::java::generation::code::j_parameter(param:meta::java::metamodel::Parameter[1]):Code[1]
 {
    ^Parameter(name=$param.name, type=$param.type);
 }
 
-function meta::java::codeGeneration::code::j_parameter(type:meta::java::metamodel::Type[1], name:String[1]):Code[1]
+function meta::java::generation::code::j_parameter(type:meta::java::metamodel::Type[1], name:String[1]):Code[1]
 {
    ^Parameter(name=$name, type=$type);
 }
 
-function meta::java::codeGeneration::code::j_arrayAccess(array:Code[1], index:Code[1]):Code[1]
+function meta::java::generation::code::j_arrayAccess(array:Code[1], index:Code[1]):Code[1]
 {
    ^ArrayAccess(array=$array, index=$index, type=$array.type->elementTypeOfJavaArray());
 }
 
-function meta::java::codeGeneration::code::j_block(codes:Code[*]):Code[1]
+function meta::java::generation::code::j_block(codes:Code[*]):Code[1]
 {
    let statements = $codes->toStatements();
    let last       = $statements->last()->toOne().type;
    ^Block(statements=$statements, type=if($last->isEmpty(), |javaVoid(), |$last->toOne()));
 }
 
-function meta::java::codeGeneration::code::j_expressionStatement(expression:Code[1]):Code[1]
+function meta::java::generation::code::j_expressionStatement(expression:Code[1]):Code[1]
 {
    assert($expression->isValidExpressionAsStatement(), |'Not a valid expression to use as a statement');
    ^ExpressionStatement(expression=$expression, type=$expression.type);
 }
 
-function meta::java::codeGeneration::code::j_if(test:Code[1], then:Code[1..*]):Code[1]
+function meta::java::generation::code::j_if(test:Code[1], then:Code[1..*]):Code[1]
 {
    j_if($test, $then, []);
 }
 
-function meta::java::codeGeneration::code::j_if(test:Code[1], then:Code[1..*], else:Code[*]):Code[1]
+function meta::java::generation::code::j_if(test:Code[1], then:Code[1..*], else:Code[*]):Code[1]
 {
    let canonicalThen = $then->match([
       c1:Code[1] | $c1->blockIfNot(),
@@ -1049,18 +1051,18 @@ function meta::java::codeGeneration::code::j_if(test:Code[1], then:Code[1..*], e
    ^If(test=$test, then=$canonicalThen, else=$canonicalElse, type=javaVoid());
 }
 
-function meta::java::codeGeneration::code::j_if(testsAndThens:List<Pair<Code,Code>>[1]):Code[1]
+function meta::java::generation::code::j_if(testsAndThens:List<Pair<Code,Code>>[1]):Code[1]
 {
    j_if($testsAndThens, []);
 }
 
-function meta::java::codeGeneration::code::j_if(testsAndThens:List<Pair<Code,Code>>[1], else:Code[0..1]):Code[1]
+function meta::java::generation::code::j_if(testsAndThens:List<Pair<Code,Code>>[1], else:Code[0..1]):Code[1]
 {
    assert($testsAndThens.values->isNotEmpty(), |'No then clauses');
    $testsAndThens.values->reverse()->fold({tt, a| j_if($tt.first, $tt.second, $a)}, $else)->toOne();
 }
 
-function meta::java::codeGeneration::code::j_for(init:Code[0..1], test:Code[0..1], update:Code[0..1], body:Code[1..*]):Code[1]
+function meta::java::generation::code::j_for(init:Code[0..1], test:Code[0..1], update:Code[0..1], body:Code[1..*]):Code[1]
 {
    let canonicalBody = $body->match([
       c1:Code[1] | $c1->blockIfNot(),
@@ -1069,7 +1071,7 @@ function meta::java::codeGeneration::code::j_for(init:Code[0..1], test:Code[0..1
    ^For(init=$init, test=$test, update=$update, body=$canonicalBody, type=javaVoid());
 }
 
-function meta::java::codeGeneration::code::j_for(parameter:Code[1], collection:Code[1], body:Code[1..*]):Code[1]
+function meta::java::generation::code::j_for(parameter:Code[1], collection:Code[1], body:Code[1..*]):Code[1]
 {
    assert($parameter->instanceOf(Parameter), 'Parameter must be properly created (j_parameter)');
    let canonicalBody = $body->match([
@@ -1079,7 +1081,7 @@ function meta::java::codeGeneration::code::j_for(parameter:Code[1], collection:C
    ^ForEach(parameter=$parameter, collection=$collection, body=$canonicalBody, type=javaVoid());
 }
 
-function meta::java::codeGeneration::code::j_while(test:Code[1], then:Code[1..*]):Code[1]
+function meta::java::generation::code::j_while(test:Code[1], then:Code[1..*]):Code[1]
 {
    let canonicalThen = $then->match([
       c1:Code[1] | $c1->blockIfNot(),
@@ -1088,7 +1090,7 @@ function meta::java::codeGeneration::code::j_while(test:Code[1], then:Code[1..*]
    ^While(test=$test, then=$canonicalThen, type=javaVoid());
 }
 
-function meta::java::codeGeneration::code::j_doWhile(do:Code[1..*], while:Code[1]):Code[1]
+function meta::java::generation::code::j_doWhile(do:Code[1..*], while:Code[1]):Code[1]
 {
    let canonicalDo = $do->match([
       c1:Code[1] | $c1->blockIfNot(),
@@ -1097,12 +1099,12 @@ function meta::java::codeGeneration::code::j_doWhile(do:Code[1..*], while:Code[1
    ^DoWhile(do=$canonicalDo, while=$while, type=javaVoid());
 }
 
-function meta::java::codeGeneration::code::j_catch(parameter:meta::java::metamodel::Parameter[1], clause:Code[1..*]):Code[1]
+function meta::java::generation::code::j_catch(parameter:meta::java::metamodel::Parameter[1], clause:Code[1..*]):Code[1]
 {
    j_catch($parameter->j_parameter(), $clause);
 }
 
-function meta::java::codeGeneration::code::j_catch(parameter:Code[1], clause:Code[1..*]):Code[1]
+function meta::java::generation::code::j_catch(parameter:Code[1], clause:Code[1..*]):Code[1]
 {
    assert($parameter->instanceOf(Parameter), 'Parameter must be properly created (j_parameter)');
    let canonicalClause = $clause->match([
@@ -1112,7 +1114,7 @@ function meta::java::codeGeneration::code::j_catch(parameter:Code[1], clause:Cod
    ^Catch(parameter=$parameter->cast(@Parameter), clause=$canonicalClause, type=javaVoid());
 }
 
-function meta::java::codeGeneration::code::j_finally(clause:Code[1..*]):Code[1]
+function meta::java::generation::code::j_finally(clause:Code[1..*]):Code[1]
 {
    let canonicalClause = $clause->match([
       c1:Code[1] | $c1->blockIfNot(),
@@ -1121,7 +1123,7 @@ function meta::java::codeGeneration::code::j_finally(clause:Code[1..*]):Code[1]
    ^Finally(clause=$canonicalClause, type=javaVoid());
 }
 
-function meta::java::codeGeneration::code::j_try(try:Code[1..*], c1:Code[1]):Code[1]
+function meta::java::generation::code::j_try(try:Code[1..*], c1:Code[1]):Code[1]
 {
    if($c1->instanceOf(Catch),
       |j_tryInternal($try, [$c1], []),
@@ -1129,7 +1131,7 @@ function meta::java::codeGeneration::code::j_try(try:Code[1..*], c1:Code[1]):Cod
    );
 }
 
-function meta::java::codeGeneration::code::j_try(try:Code[1..*], c1:Code[1], c2:Code[1]):Code[1] 
+function meta::java::generation::code::j_try(try:Code[1..*], c1:Code[1], c2:Code[1]):Code[1]
 {
    if($c2->instanceOf(Catch),
       |j_tryInternal($try, [$c1, $c2], []),
@@ -1137,7 +1139,7 @@ function meta::java::codeGeneration::code::j_try(try:Code[1..*], c1:Code[1], c2:
    );
 }
 
-function meta::java::codeGeneration::code::j_try(try:Code[1..*], c1:Code[1], c2:Code[1], c3:Code[1]):Code[1]
+function meta::java::generation::code::j_try(try:Code[1..*], c1:Code[1], c2:Code[1], c3:Code[1]):Code[1]
 {
    if($c3->instanceOf(Catch),
       |j_tryInternal($try, [$c1, $c2, $c3], []),
@@ -1145,7 +1147,7 @@ function meta::java::codeGeneration::code::j_try(try:Code[1..*], c1:Code[1], c2:
    );
 }
 
-function meta::java::codeGeneration::code::j_try(try:Code[1..*], c1:Code[1], c2:Code[1], c3:Code[1], c4:Code[1]):Code[1]
+function meta::java::generation::code::j_try(try:Code[1..*], c1:Code[1], c2:Code[1], c3:Code[1], c4:Code[1]):Code[1]
 {
    if($c4->instanceOf(Catch),
       |j_tryInternal($try, [$c1, $c2, $c3, $c4], []),
@@ -1153,7 +1155,7 @@ function meta::java::codeGeneration::code::j_try(try:Code[1..*], c1:Code[1], c2:
    );
 }
 
-function meta::java::codeGeneration::code::j_try(try:Code[1..*], c1:Code[1], c2:Code[1], c3:Code[1], c4:Code[1], c5:Code[1]):Code[1]
+function meta::java::generation::code::j_try(try:Code[1..*], c1:Code[1], c2:Code[1], c3:Code[1], c4:Code[1], c5:Code[1]):Code[1]
 {
    if($c4->instanceOf(Catch),
       |j_tryInternal($try, [$c1, $c2, $c3, $c4, $c5], []),
@@ -1161,12 +1163,12 @@ function meta::java::codeGeneration::code::j_try(try:Code[1..*], c1:Code[1], c2:
    );
 }
 
-function meta::java::codeGeneration::code::j_try(try:Code[1..*], catches:Code[*], finally:Code[0..1]):Code[1]
+function meta::java::generation::code::j_try(try:Code[1..*], catches:Code[*], finally:Code[0..1]):Code[1]
 {
    j_tryInternal($try, $catches, $finally);
 }
 
-function <<access.private>> meta::java::codeGeneration::code::j_tryInternal(try:Code[1..*], catches:Code[*], finally:Code[0..1]):Code[1]
+function <<access.private>> meta::java::generation::code::j_tryInternal(try:Code[1..*], catches:Code[*], finally:Code[0..1]):Code[1]
 {
    assert($catches->forAll(c| $c->instanceOf(Catch)), 'catch clauses must be properly created (j_catch)');
    assert($finally->forAll(f| $f->instanceOf(Finally)), 'finally clause must be properly created (j_finally)');
@@ -1177,22 +1179,22 @@ function <<access.private>> meta::java::codeGeneration::code::j_tryInternal(try:
    ^Try(try=$canonicalTry, catches=$catches->cast(@Catch), finally=$finally->cast(@Finally), type=javaVoid());
 }
 
-function meta::java::codeGeneration::code::j_return():Code[1]
+function meta::java::generation::code::j_return():Code[1]
 {
    ^Return(type=javaVoid());
 }
 
-function meta::java::codeGeneration::code::j_return(expression:Code[1]):Code[1]
+function meta::java::generation::code::j_return(expression:Code[1]):Code[1]
 {
    ^Return(expression=$expression, type=$expression.type);
 }
 
-function meta::java::codeGeneration::code::j_throw(expression:Code[1]):Code[1]
+function meta::java::generation::code::j_throw(expression:Code[1]):Code[1]
 {
    ^Throw(expression=$expression, type=$expression.type);
 }
 
-function meta::java::codeGeneration::code::j_cast(expression:Code[1], castTo:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_cast(expression:Code[1], castTo:meta::java::metamodel::Type[1]):Code[1]
 {
    if($expression.type == $castTo,
      | $expression,
@@ -1310,7 +1312,7 @@ function meta::java::codeGeneration::code::j_cast(expression:Code[1], castTo:met
    )))))))))))))));
 }
 
-function <<access.private>> meta::java::codeGeneration::code::isLambdaReturningCollectionsEmptyList(c:Code[1]):Boolean[1]
+function <<access.private>> meta::java::generation::code::isLambdaReturningCollectionsEmptyList(c:Code[1]):Boolean[1]
 {
    $c->match([
       {l:Lambda[1] |
@@ -1328,94 +1330,94 @@ function <<access.private>> meta::java::codeGeneration::code::isLambdaReturningC
 }
 
 
-function meta::java::codeGeneration::code::j_string(s:String[1]):Code[1]
+function meta::java::generation::code::j_string(s:String[1]):Code[1]
 {
    ^Literal(literal=escapedString($s), type=javaString());
 }
 
-function meta::java::codeGeneration::code::j_char(s:String[1]):Code[1]
+function meta::java::generation::code::j_char(s:String[1]):Code[1]
 {
    assert($s->length() == 1, 'char must be a single character');
    let esc = escapedString($s);
    ^Literal(literal='\''+$esc->substring(1, $esc->length()-1)+'\'', type=javaChar());
 }
 
-function meta::java::codeGeneration::code::j_false():Code[1]
+function meta::java::generation::code::j_false():Code[1]
 {
    j_boolean('false');
 }
 
-function meta::java::codeGeneration::code::j_true():Code[1]
+function meta::java::generation::code::j_true():Code[1]
 {
    j_boolean('true');
 }
 
-function meta::java::codeGeneration::code::j_boolean(b:Boolean[1]):Code[1]
+function meta::java::generation::code::j_boolean(b:Boolean[1]):Code[1]
 {
    j_boolean($b->toString());
 }
 
-function meta::java::codeGeneration::code::j_boolean(literal:String[1]):Code[1]
+function meta::java::generation::code::j_boolean(literal:String[1]):Code[1]
 {
    ^Literal(literal=$literal, type=javaBoolean());
 }
 
-function meta::java::codeGeneration::code::j_short(literal:String[1]):Code[1]
+function meta::java::generation::code::j_short(literal:String[1]):Code[1]
 {
    ^Literal(literal=$literal, type=javaShort());
 }
 
-function meta::java::codeGeneration::code::j_int(i:Integer[1]):Code[1]
+function meta::java::generation::code::j_int(i:Integer[1]):Code[1]
 {
    ^Literal(literal=$i->toString(), type=javaInt());
 }
 
-function meta::java::codeGeneration::code::j_int(literal:String[1]):Code[1]
+function meta::java::generation::code::j_int(literal:String[1]):Code[1]
 {
    ^Literal(literal=$literal, type=javaInt());
 }
 
-function meta::java::codeGeneration::code::j_long(i:Integer[1]):Code[1]
+function meta::java::generation::code::j_long(i:Integer[1]):Code[1]
 {
    ^Literal(literal=$i->toString()+'L', type=javaLong());
 }
 
-function meta::java::codeGeneration::code::j_long(literal:String[1]):Code[1]
+function meta::java::generation::code::j_long(literal:String[1]):Code[1]
 {
    ^Literal(literal=$literal, type=javaLong());
 }
 
-function meta::java::codeGeneration::code::j_float(i:Integer[1]):Code[1]
+function meta::java::generation::code::j_float(i:Integer[1]):Code[1]
 {
    ^Literal(literal=$i->toString()+'.0F', type=javaFloat());
 }
 
-function meta::java::codeGeneration::code::j_float(f:Float[1]):Code[1]
+function meta::java::generation::code::j_float(f:Float[1]):Code[1]
 {
    ^Literal(literal=$f->toString()+'F', type=javaFloat());
 }
 
-function meta::java::codeGeneration::code::j_float(literal:String[1]):Code[1]
+function meta::java::generation::code::j_float(literal:String[1]):Code[1]
 {
    ^Literal(literal=$literal, type=javaFloat());
 }
 
-function meta::java::codeGeneration::code::j_double(i:Integer[1]):Code[1]
+function meta::java::generation::code::j_double(i:Integer[1]):Code[1]
 {
    ^Literal(literal=$i->toString()+'.0', type=javaDouble());
 }
 
-function meta::java::codeGeneration::code::j_double(f:Float[1]):Code[1]
+function meta::java::generation::code::j_double(f:Float[1]):Code[1]
 {
    ^Literal(literal=$f->toString(), type=javaDouble());
 }
 
-function meta::java::codeGeneration::code::j_double(literal:String[1]):Code[1]
+function meta::java::generation::code::j_double(literal:String[1]):Code[1]
 {
    ^Literal(literal=$literal, type=javaDouble());
 }
 
-function meta::java::codeGeneration::code::j_box(expression:Code[1]):Code[1]
+function meta::java::generation::code::j_box(expression:Code[1]):Code[1]
 {
    if($expression.type == javaBoolean(),
       | j_new(javaClass('java.lang.Boolean'), $expression),
@@ -1438,22 +1440,22 @@ function meta::java::codeGeneration::code::j_box(expression:Code[1]):Code[1]
    ))))));
 }
 
-function meta::java::codeGeneration::code::j_assign(variable:Code[1], expression:Code[1]):Code[1]
+function meta::java::generation::code::j_assign(variable:Code[1], expression:Code[1]):Code[1]
 {
    ^InfixExpression(left=$variable, op='=', right=$expression, type=$variable.type);
 }
 
-function meta::java::codeGeneration::code::j_lt(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_lt(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='<', right=$right, type=javaBoolean());
 }
 
-function meta::java::codeGeneration::code::j_le(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_le(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='<=', right=$right, type=javaBoolean());
 }
 
-function meta::java::codeGeneration::code::j_eq(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_eq(left:Code[1], right:Code[1]):Code[1]
 {
    if($left->instanceOf(Null) || $right->instanceOf(Null),
       | ^InfixExpression(left=$left, op='==', right=$right, type=javaBoolean()),
@@ -1470,7 +1472,7 @@ function meta::java::codeGeneration::code::j_eq(left:Code[1], right:Code[1]):Cod
    );
 }
 
-function meta::java::codeGeneration::code::j_ne(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_ne(left:Code[1], right:Code[1]):Code[1]
 {
    if($left->instanceOf(Null) || $right->instanceOf(Null),
       | ^InfixExpression(left=$left, op='!=', right=$right, type=javaBoolean()),
@@ -1487,82 +1489,82 @@ function meta::java::codeGeneration::code::j_ne(left:Code[1], right:Code[1]):Cod
    );
 }
 
-function meta::java::codeGeneration::code::j_ge(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_ge(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='>=', right=$right, type=javaBoolean());
 }
 
-function meta::java::codeGeneration::code::j_gt(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_gt(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='>', right=$right, type=javaBoolean());
 }
 
-function meta::java::codeGeneration::code::j_or(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_or(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='||', right=$right, type=javaBoolean());
 }
 
-function meta::java::codeGeneration::code::j_and(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_and(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='&&', right=$right, type=javaBoolean());
 }
 
-function meta::java::codeGeneration::code::j_not(expression:Code[1]):Code[1]
+function meta::java::generation::code::j_not(expression:Code[1]):Code[1]
 {
    ^PrefixExpression(op='!', expression=$expression, type=javaBoolean());
 }
 
-function meta::java::codeGeneration::code::j_plus(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_plus(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='+', right=$right, type=$left.type);
 }
 
-function meta::java::codeGeneration::code::j_minus(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_minus(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='-', right=$right, type=$left.type);
 }
 
-function meta::java::codeGeneration::code::j_minus(expression:Code[1]):Code[1]
+function meta::java::generation::code::j_minus(expression:Code[1]):Code[1]
 {
    ^PrefixExpression(op='-', expression=$expression, type=$expression.type);
 }
 
-function meta::java::codeGeneration::code::j_multiply(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_multiply(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='*', right=$right, type=$left.type);
 }
 
-function meta::java::codeGeneration::code::j_divide(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_divide(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='/', right=$right, type=$left.type);
 }
 
-function meta::java::codeGeneration::code::j_remainder(left:Code[1], right:Code[1]):Code[1]
+function meta::java::generation::code::j_remainder(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='%', right=$right, type=$left.type);
 }
 
-function meta::java::codeGeneration::code::j_inc(expression:Code[1]):Code[1]
+function meta::java::generation::code::j_inc(expression:Code[1]):Code[1]
 {
    ^PostfixExpression(expression=$expression, op='++', type=$expression.type);
 }
 
-function meta::java::codeGeneration::code::j_dec(expression:Code[1]):Code[1]
+function meta::java::generation::code::j_dec(expression:Code[1]):Code[1]
 {
    ^PostfixExpression(expression=$expression, op='--', type=$expression.type);
 }
 
-function meta::java::codeGeneration::code::j_preInc(expression:Code[1]):Code[1]
+function meta::java::generation::code::j_preInc(expression:Code[1]):Code[1]
 {
    ^PrefixExpression(expression=$expression, op='++', type=$expression.type);
 }
 
-function meta::java::codeGeneration::code::j_preDec(expression:Code[1]):Code[1]
+function meta::java::generation::code::j_preDec(expression:Code[1]):Code[1]
 {
    ^PrefixExpression(expression=$expression, op='--', type=$expression.type);
 }
 
-function meta::java::codeGeneration::code::j_instanceof(expression:Code[1], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_instanceof(expression:Code[1], type:meta::java::metamodel::Type[1]):Code[1]
 {
    let class = $type->match([
       cl:meta::java::metamodel::Class[1]             | $cl,
@@ -1571,7 +1573,7 @@ function meta::java::codeGeneration::code::j_instanceof(expression:Code[1], type
    ^InstanceOf(expression=$expression->j_box(), class=$class, type=javaBoolean());
 }
 
-function meta::java::codeGeneration::code::j_conditional(test:Code[1], then:Code[1], else:Code[1]):Code[1]
+function meta::java::generation::code::j_conditional(test:Code[1], then:Code[1], else:Code[1]):Code[1]
 {
    // TODO common interface inference
    let thenType = if($then->instanceOf(Null) && $then.type == javaVoid(), |$else.type, |$then.type);
@@ -1585,7 +1587,7 @@ function meta::java::codeGeneration::code::j_conditional(test:Code[1], then:Code
    
 }
 
-function meta::java::codeGeneration::code::optimizeEqualityComparison(expr:InfixExpression[1], then:Code[1], else:Code[1], type:meta::java::metamodel::Type[1]): Code[1]
+function meta::java::generation::code::optimizeEqualityComparison(expr:InfixExpression[1], then:Code[1], else:Code[1], type:meta::java::metamodel::Type[1]): Code[1]
 {
    if($expr.left->instanceOf(Null) && $expr.right->instanceOf(Null) && $expr.op == '==',
    | $then,
@@ -1602,53 +1604,53 @@ function meta::java::codeGeneration::code::optimizeEqualityComparison(expr:Infix
    ))))
 }
 
-function meta::java::codeGeneration::code::j_conditional(test:Code[1], then:Code[1], else:Code[1], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_conditional(test:Code[1], then:Code[1], else:Code[1], type:meta::java::metamodel::Type[1]):Code[1]
 {
    ^Conditional(test=$test, then=$then, else=$else, type=$type);
 }
 
-function meta::java::codeGeneration::code::j_declare(variable:Code[1]):Code[1]
+function meta::java::generation::code::j_declare(variable:Code[1]):Code[1]
 {
    j_declare([], $variable, []);
 }
 
-function meta::java::codeGeneration::code::j_declare(variable:Code[1], initializer:Code[1]):Code[1]
+function meta::java::generation::code::j_declare(variable:Code[1], initializer:Code[1]):Code[1]
 {
    j_declare([], $variable, $initializer);
 }
 
-function meta::java::codeGeneration::code::j_declare(modifiers:String[*], variable:Code[1]):Code[1]
+function meta::java::generation::code::j_declare(modifiers:String[*], variable:Code[1]):Code[1]
 {
    j_declare($modifiers, $variable, []);
 }
 
-function meta::java::codeGeneration::code::j_declare(modifiers:String[*], variable:Code[1], initializer:Code[0..1]):Code[1]
+function meta::java::generation::code::j_declare(modifiers:String[*], variable:Code[1], initializer:Code[0..1]):Code[1]
 {
    let v = $variable->cast(@Variable);
    j_declare($modifiers, $v.type, $v.name, $initializer);
 }
 
-function meta::java::codeGeneration::code::j_declare(type:meta::java::metamodel::Type[1], variableName:String[1]):Code[1]
+function meta::java::generation::code::j_declare(type:meta::java::metamodel::Type[1], variableName:String[1]):Code[1]
 {
    j_declare([], $type, $variableName, []);
 }
 
-function meta::java::codeGeneration::code::j_declare(type:meta::java::metamodel::Type[1], variableName:String[1], initializer:Code[1]):Code[1]
+function meta::java::generation::code::j_declare(type:meta::java::metamodel::Type[1], variableName:String[1], initializer:Code[1]):Code[1]
 {
    j_declare([], $type, $variableName, $initializer);
 }
 
-function meta::java::codeGeneration::code::j_declare(modifiers:String[*], type:meta::java::metamodel::Type[1], variableName:String[1]):Code[1]
+function meta::java::generation::code::j_declare(modifiers:String[*], type:meta::java::metamodel::Type[1], variableName:String[1]):Code[1]
 {
    j_declare($modifiers, $type, $variableName, []);
 }
 
-function meta::java::codeGeneration::code::j_declare(modifiers:String[*], type:meta::java::metamodel::Type[1], variableName:String[1], initializer:Code[0..1]):Code[1]
+function meta::java::generation::code::j_declare(modifiers:String[*], type:meta::java::metamodel::Type[1], variableName:String[1], initializer:Code[0..1]):Code[1]
 {
    ^LocalVariableDeclaration(modifiers=$modifiers->javaModifiers(), type=$type, variableName=$variableName, initializer=$initializer);
 }
 
-function meta::java::codeGeneration::code::j_new(type:meta::java::metamodel::Type[1], args:Code[*]):Code[1]
+function meta::java::generation::code::j_new(type:meta::java::metamodel::Type[1], args:Code[*]):Code[1]
 {
    $type->match([
       pt:meta::java::metamodel::ParameterizedType[1] | ^New(type=$pt.rawType, typeArguments=$pt.typeArguments, arguments=$args),
@@ -1656,7 +1658,7 @@ function meta::java::codeGeneration::code::j_new(type:meta::java::metamodel::Typ
    ]);
 }
 
-function meta::java::codeGeneration::code::j_newAnon(type:meta::java::metamodel::Type[1], args:Code[*], methods:Code[*]):Code[1]
+function meta::java::generation::code::j_newAnon(type:meta::java::metamodel::Type[1], args:Code[*], methods:Code[*]):Code[1]
 {
    assert($methods->forAll(m| $m->instanceOf(Method)), 'Methods must be properly created (j_method)');
    $type->match([
@@ -1666,146 +1668,146 @@ function meta::java::codeGeneration::code::j_newAnon(type:meta::java::metamodel:
 }
 
 // TODO modifiers
-function meta::java::codeGeneration::code::j_method(modifiers:String[*], returnType:meta::java::metamodel::Type[1], name:String[1], parameters:Code[*], body:Code[1]):Code[1]
+function meta::java::generation::code::j_method(modifiers:String[*], returnType:meta::java::metamodel::Type[1], name:String[1], parameters:Code[*], body:Code[1]):Code[1]
 {
    assert($parameters->forAll(p| $p->instanceOf(Parameter)), 'Parameters must be properly created (j_parameter)');
    ^Method(modifiers=$modifiers->javaModifiers(), type=$returnType, name=$name, parameters=$parameters->cast(@Parameter), body=$body->blockIfNot());
 }
 
-function meta::java::codeGeneration::code::j_invoke(instance:Code[1], method:meta::java::metamodel::Method[1], args:Code[*]):Code[1]
+function meta::java::generation::code::j_invoke(instance:Code[1], method:meta::java::metamodel::Method[1], args:Code[*]):Code[1]
 {
    j_invoke($instance, [], $method.name, $args, $method.returnType);
 }
 
-function meta::java::codeGeneration::code::j_invoke(instance:Code[1], methodName:String[1], args:Code[*]):Code[1]
+function meta::java::generation::code::j_invoke(instance:Code[1], methodName:String[1], args:Code[*]):Code[1]
 {
    j_invoke($instance, [], $methodName, $args);
 }
 
-function meta::java::codeGeneration::code::j_invoke(instance:Code[1], typeArguments:meta::java::metamodel::Type[*], methodName:String[1], args:Code[*]):Code[1]
+function meta::java::generation::code::j_invoke(instance:Code[1], typeArguments:meta::java::metamodel::Type[*], methodName:String[1], args:Code[*]):Code[1]
 {
    j_invoke($instance, $typeArguments, $methodName, $args, $instance.type->methodReturnType($methodName));
 }
 
-function meta::java::codeGeneration::code::j_invoke(instance:Code[1], methodName:String[1], args:Code[*], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_invoke(instance:Code[1], methodName:String[1], args:Code[*], type:meta::java::metamodel::Type[1]):Code[1]
 {
    j_invoke($instance, [], $methodName, $args, $type);
 }
 
-function meta::java::codeGeneration::code::j_invoke(instance:Code[1], typeArguments:meta::java::metamodel::Type[*], methodName:String[1], args:Code[*], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_invoke(instance:Code[1], typeArguments:meta::java::metamodel::Type[*], methodName:String[1], args:Code[*], type:meta::java::metamodel::Type[1]):Code[1]
 {
    ^MethodCall(instance=$instance, typeArguments=$typeArguments, methodName=$methodName, arguments=$args, type=$type);
 }
 
-function meta::java::codeGeneration::code::j_field(instance:Code[1], field:meta::java::metamodel::Field[1]):Code[1]
+function meta::java::generation::code::j_field(instance:Code[1], field:meta::java::metamodel::Field[1]):Code[1]
 {
    j_field($instance, $field.name, $field.type);
 }
 
-function meta::java::codeGeneration::code::j_field(instance:Code[1], fieldName:String[1]):Code[1]
+function meta::java::generation::code::j_field(instance:Code[1], fieldName:String[1]):Code[1]
 {
    j_field($instance, $fieldName, $instance.type->typeForField($fieldName));
 }
 
-function meta::java::codeGeneration::code::j_field(instance:Code[1], fieldName:String[1], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_field(instance:Code[1], fieldName:String[1], type:meta::java::metamodel::Type[1]):Code[1]
 {
    ^FieldAccess(instance=$instance, fieldName=$fieldName, type=$type);
 }
 
-function meta::java::codeGeneration::code::j_methodReference(instance:Code[1], methodName:String[1], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_methodReference(instance:Code[1], methodName:String[1], type:meta::java::metamodel::Type[1]):Code[1]
 {
    assert($type->instanceOf(meta::java::metamodel::FunctionType));
    ^MethodReference(instance=$instance, methodName=$methodName, type=$type);
 }
 
-function meta::java::codeGeneration::code::j_invoke(class:meta::java::metamodel::Type[1], methodName:String[1], args:Code[*]):Code[1]
+function meta::java::generation::code::j_invoke(class:meta::java::metamodel::Type[1], methodName:String[1], args:Code[*]):Code[1]
 {
    j_invoke($class, [], $methodName, $args);
 }
 
-function meta::java::codeGeneration::code::j_invoke(class:meta::java::metamodel::Type[1], typeArguments:meta::java::metamodel::Type[*], methodName:String[1], args:Code[*]):Code[1]
+function meta::java::generation::code::j_invoke(class:meta::java::metamodel::Type[1], typeArguments:meta::java::metamodel::Type[*], methodName:String[1], args:Code[*]):Code[1]
 {
    j_invoke($class, $typeArguments, $methodName, $args, $class->methodReturnType($methodName));
 }
 
-function meta::java::codeGeneration::code::j_invoke(class:meta::java::metamodel::Type[1], methodName:String[1], args:Code[*], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_invoke(class:meta::java::metamodel::Type[1], methodName:String[1], args:Code[*], type:meta::java::metamodel::Type[1]):Code[1]
 {
    j_invoke($class, [], $methodName, $args, $type);
 }
 
-function meta::java::codeGeneration::code::j_invoke(class:meta::java::metamodel::Type[1], typeArguments:meta::java::metamodel::Type[*], methodName:String[1], args:Code[*], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_invoke(class:meta::java::metamodel::Type[1], typeArguments:meta::java::metamodel::Type[*], methodName:String[1], args:Code[*], type:meta::java::metamodel::Type[1]):Code[1]
 {
    assert($class->instanceOf(meta::java::metamodel::Class) || $class->instanceOf(meta::java::metamodel::Array), |'Cannot use static method on type: ' + $class->typePathToString(true));
    ^StaticMethodCall(class=$class, typeArguments=$typeArguments, methodName=$methodName, arguments=$args, type=$type);
 }
 
-function meta::java::codeGeneration::code::j_field(class:meta::java::metamodel::Type[1], field:meta::java::metamodel::Field[1]):Code[1]
+function meta::java::generation::code::j_field(class:meta::java::metamodel::Type[1], field:meta::java::metamodel::Field[1]):Code[1]
 {
    j_field($class, $field.name, $field.type);
 }
 
-function meta::java::codeGeneration::code::j_field(class:meta::java::metamodel::Type[1], fieldName:String[1]):Code[1]
+function meta::java::generation::code::j_field(class:meta::java::metamodel::Type[1], fieldName:String[1]):Code[1]
 {
    j_field($class, $fieldName, $class->typeForField($fieldName));
 }
 
-function meta::java::codeGeneration::code::j_field(class:meta::java::metamodel::Type[1], fieldName:String[1], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_field(class:meta::java::metamodel::Type[1], fieldName:String[1], type:meta::java::metamodel::Type[1]):Code[1]
 {
    assert($class->instanceOf(meta::java::metamodel::Class) || $class->instanceOf(meta::java::metamodel::Array), |'Cannot use static field on type: ' + $class->typePathToString(true));
    ^StaticFieldAccess(class=$class, fieldName=$fieldName, type=$type);
 }
 
-function meta::java::codeGeneration::code::j_classField(type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_classField(type:meta::java::metamodel::Type[1]):Code[1]
 {
    ^StaticFieldAccess(class=$type, fieldName='class', type=javaClassType());
 }
 
-function meta::java::codeGeneration::code::j_methodReference(class:meta::java::metamodel::Type[1], methodName:String[1]):Code[1]
+function meta::java::generation::code::j_methodReference(class:meta::java::metamodel::Type[1], methodName:String[1]):Code[1]
 {
    let refTo = $class->findMethod($methodName);
    j_methodReference($class, $methodName, $refTo.functionType->toOne());
 }
 
-function meta::java::codeGeneration::code::j_methodReference(class:meta::java::metamodel::Type[1], methodName:String[1], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_methodReference(class:meta::java::metamodel::Type[1], methodName:String[1], type:meta::java::metamodel::Type[1]):Code[1]
 {
    assert($class->instanceOf(meta::java::metamodel::Class) || $class->instanceOf(meta::java::metamodel::Array), |'Cannot use static method on type: ' + $class->typePathToString(true));
    assert($type->instanceOf(meta::java::metamodel::FunctionType));
    ^StaticMethodReference(class=$class, methodName=$methodName, type=$type);
 }
 
-function meta::java::codeGeneration::code::j_lambda(parameters:meta::java::metamodel::Parameter[*], expression:Code[1]):Code[1]
+function meta::java::generation::code::j_lambda(parameters:meta::java::metamodel::Parameter[*], expression:Code[1]):Code[1]
 {
    j_lambda($parameters->map(p| $p->j_parameter()), $expression);
 }
 
-function meta::java::codeGeneration::code::j_lambda(parameters:meta::java::metamodel::Parameter[*], expression:Code[1], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_lambda(parameters:meta::java::metamodel::Parameter[*], expression:Code[1], type:meta::java::metamodel::Type[1]):Code[1]
 {
    j_lambda($parameters->map(p| $p->j_parameter()), $expression, $type);
 }
 
-function meta::java::codeGeneration::code::j_lambda(parameters:Code[*], expression:Code[1]):Code[1]
+function meta::java::generation::code::j_lambda(parameters:Code[*], expression:Code[1]):Code[1]
 {
    j_lambda($parameters, $expression, javaFunctionType($parameters.type, $expression.type));
 }
 
-function meta::java::codeGeneration::code::j_lambda(parameters:Code[*], expression:Code[1], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_lambda(parameters:Code[*], expression:Code[1], type:meta::java::metamodel::Type[1]):Code[1]
 {
    assert($parameters->forAll(p| $p->instanceOf(Parameter)), 'Parameters must be properly created (j_parameter)');
    ^Lambda(parameters=$parameters->cast(@Parameter), expression=$expression, type=$type);
 }
 
-function meta::java::codeGeneration::code::j_identity(type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_identity(type:meta::java::metamodel::Type[1]):Code[1]
 {
    j_identity('x', $type);
 }
 
-function meta::java::codeGeneration::code::j_identity(varName:String[1], type:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_identity(varName:String[1], type:meta::java::metamodel::Type[1]):Code[1]
 {
    let p = j_parameter($type, $varName);
    j_lambda($p, $p);
 }
 
-function meta::java::codeGeneration::code::j_emptyList(listType:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_emptyList(listType:meta::java::metamodel::Type[1]):Code[1]
 {
    if($listType->elementType()->instanceOf(meta::java::metamodel::WildcardType),
       | javaCollections()->j_invoke('emptyList', [], $listType),
@@ -1813,7 +1815,7 @@ function meta::java::codeGeneration::code::j_emptyList(listType:meta::java::meta
    );
 }
 
-function meta::java::codeGeneration::code::j_listOf(of: Code[1], listType:meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::j_listOf(of: Code[1], listType:meta::java::metamodel::Type[1]):Code[1]
 {
    if($of.type == $listType,
       | $of,
@@ -1834,7 +1836,7 @@ function meta::java::codeGeneration::code::j_listOf(of: Code[1], listType:meta::
    ))));
 }
 
-function meta::java::codeGeneration::code::j_streamOf(of: Code[1]):Code[1]
+function meta::java::generation::code::j_streamOf(of: Code[1]):Code[1]
 {
    $of->match([
       {dsr:DeferredStreamResolve[1]| $dsr.stream; },
@@ -1857,7 +1859,7 @@ function meta::java::codeGeneration::code::j_streamOf(of: Code[1]):Code[1]
    ]);
 }
 
-function meta::java::codeGeneration::code::js_map(stream: Code[1], func: Code[1]):Code[1]
+function meta::java::generation::code::js_map(stream: Code[1], func: Code[1]):Code[1]
 {
    let funcType   = $func.type->cast(@meta::java::metamodel::FunctionType);
    let funcReturn = $funcType.returnType;
@@ -1873,7 +1875,24 @@ function meta::java::codeGeneration::code::js_map(stream: Code[1], func: Code[1]
    );
 }
 
-function meta::java::codeGeneration::code::js_flatMap(stream: Code[1], func: Code[1]):Code[1]
+function meta::java::generation::code::js_mapAllowingNullValues(stream: Code[1], func: Code[1]):Code[1]
+{
+   let funcType    = $func.type->cast(@meta::java::metamodel::FunctionType);
+   let funcReturn  = $funcType.returnType;
+   let updatedFunc = if($func->instanceOf(Lambda) && $func->cast(@Lambda).parameters->size() == 1
+                        ,| let orgFunc       = $func->cast(@Lambda);
+                           let newExpression = j_if($orgFunc.parameters->toOne()->j_eq(j_null()), j_null()->j_return(), $orgFunc.expression)->j_block();
+                           ^$orgFunc(expression = $newExpression);
+                        ,| $func);
+   let map         = $stream->prepareStreamForCallWithLambda($updatedFunc)->j_invoke('map', $updatedFunc, javaStream($funcReturn));
+
+   if($funcReturn->isJavaList(),
+      | $map->js_flatMap(j_methodReference(javaClass('java.util.Collection'), 'stream', javaFunctionType($funcReturn, javaStream($funcReturn->elementTypeOfJavaList())))),
+      | $map
+   );
+}
+
+function meta::java::generation::code::js_flatMap(stream: Code[1], func: Code[1]):Code[1]
 {
    let funcType   = $func.type->cast(@meta::java::metamodel::FunctionType);
    let funcReturn = $funcType.returnType;
@@ -1882,94 +1901,94 @@ function meta::java::codeGeneration::code::js_flatMap(stream: Code[1], func: Cod
    $stream->prepareStreamForCallWithLambda($func)->j_invoke('flatMap', $func, javaStream($funcReturn->elementType()));
 }
 
-function meta::java::codeGeneration::code::js_filter(stream:Code[1], func:Code[1]):Code[1]
+function meta::java::generation::code::js_filter(stream:Code[1], func:Code[1]):Code[1]
 {
    let s = $stream->prepareStreamForCallWithLambda($func);
    $s->j_invoke('filter', $func, $s.type);
 }
 
-function meta::java::codeGeneration::code::js_distinct(stream:Code[1]):Code[1]
+function meta::java::generation::code::js_distinct(stream:Code[1]):Code[1]
 {
    assert($stream.type->isJavaStream(), 'Should apply to a stream');
    $stream->j_invoke('distinct', [], $stream.type);
 }
 
-function meta::java::codeGeneration::code::js_skip(stream:Code[1], limit:Code[1]):Code[1]
+function meta::java::generation::code::js_skip(stream:Code[1], limit:Code[1]):Code[1]
 {
    assert($stream.type->isJavaStream(), 'Should apply to a stream');
    $stream->j_invoke('skip', $limit, $stream.type);
 }
 
-function meta::java::codeGeneration::code::js_limit(stream:Code[1], limit:Code[1]):Code[1]
+function meta::java::generation::code::js_limit(stream:Code[1], limit:Code[1]):Code[1]
 {
    assert($stream.type->isJavaStream(), 'Should apply to a stream');
    $stream->j_invoke('limit', $limit, $stream.type);
 }
 
-function meta::java::codeGeneration::code::js_max(stream:Code[1], func:Code[1]):Code[1]
+function meta::java::generation::code::js_max(stream:Code[1], func:Code[1]):Code[1]
 {
    $stream->prepareStreamForCallWithLambda($func)->j_invoke('max', $func, javaOptional($stream.type->elementTypeOfJavaStream()));
 }
 
-function meta::java::codeGeneration::code::js_reduce(stream:Code[1], func:Code[1]):Code[1]
+function meta::java::generation::code::js_reduce(stream:Code[1], func:Code[1]):Code[1]
 {
    $stream->prepareStreamForCallWithLambda($func)->j_invoke('reduce', $func, javaOptional($stream.type->elementTypeOfJavaStream()));
 }
 
-function meta::java::codeGeneration::code::js_reduce(stream:Code[1], identity:Code[1], func:Code[1]):Code[1]
+function meta::java::generation::code::js_reduce(stream:Code[1], identity:Code[1], func:Code[1]):Code[1]
 {
    $stream->prepareStreamForCallWithLambda($func)->j_invoke('reduce', [$identity, $func], $identity.type->toBoxed());
 }
 
-function meta::java::codeGeneration::code::js_findFirst(stream:Code[1]):Code[1]
+function meta::java::generation::code::js_findFirst(stream:Code[1]):Code[1]
 {
    assert($stream.type->isJavaStream(), 'Should apply to a stream');
    $stream->j_invoke('findFirst', [], javaOptional($stream.type->elementTypeOfJavaStream()));
 }
 
-function meta::java::codeGeneration::code::js_count(stream:Code[1]):Code[1]
+function meta::java::generation::code::js_count(stream:Code[1]):Code[1]
 {
    assert($stream.type->isJavaStream(), 'Should apply to a stream');
    $stream->j_invoke('count', [], javaLong());
 }
 
-function meta::java::codeGeneration::code::js_forEach(stream:Code[1], func:Code[1]):Code[1]
+function meta::java::generation::code::js_forEach(stream:Code[1], func:Code[1]):Code[1]
 {
    $stream->prepareStreamForCallWithLambda($func)->j_invoke('forEach', $func, javaVoid());
 }
 
-function meta::java::codeGeneration::code::js_anyMatch(stream:Code[1], func:Code[1]):Code[1]
+function meta::java::generation::code::js_anyMatch(stream:Code[1], func:Code[1]):Code[1]
 {
    $stream->prepareStreamForCallWithLambda($func)->j_invoke('anyMatch', $func, javaBoolean());
 }
 
-function meta::java::codeGeneration::code::js_noneMatch(stream:Code[1], func:Code[1]):Code[1]
+function meta::java::generation::code::js_noneMatch(stream:Code[1], func:Code[1]):Code[1]
 {
    $stream->prepareStreamForCallWithLambda($func)->j_invoke('noneMatch', $func, javaBoolean());
 }
 
-function meta::java::codeGeneration::code::js_allMatch(stream:Code[1], func:Code[1]):Code[1]
+function meta::java::generation::code::js_allMatch(stream:Code[1], func:Code[1]):Code[1]
 {
    $stream->prepareStreamForCallWithLambda($func)->j_invoke('allMatch', $func, javaBoolean());
 }
 
-function meta::java::codeGeneration::code::j_toString(c:Code[1]): Code[1]
+function meta::java::generation::code::j_toString(c:Code[1]): Code[1]
 {
    $c->j_invoke('toString', [], javaString());
 }
 
 
-function meta::java::codeGeneration::code::j_println(s:String[1]): Code[1]
+function meta::java::generation::code::j_println(s:String[1]): Code[1]
 {
    j_println(j_string($s));
 }
 
-function meta::java::codeGeneration::code::j_println(msg:Code[1]): Code[1]
+function meta::java::generation::code::j_println(msg:Code[1]): Code[1]
 {
    javaSystem()->j_field('out', javaPrintStream())->j_invoke('println', $msg, javaVoid());
 }
 
-function <<access.private>> meta::java::codeGeneration::code::prepareStreamForCallWithLambda(stream: Code[1], func: Code[1]):Code[1]
+function <<access.private>> meta::java::generation::code::prepareStreamForCallWithLambda(stream: Code[1], func: Code[1]):Code[1]
 {
    
    assert($stream.type->isJavaStream(), 'Should apply to a stream');
@@ -1979,47 +1998,47 @@ function <<access.private>> meta::java::codeGeneration::code::prepareStreamForCa
        | $stream->j_cast(javaStream($func.type->cast(@meta::java::metamodel::FunctionType).parameterTypes->at(0))););
 }
 
-function meta::java::codeGeneration::code::js_joining(stream: Code[1]):Code[1]
+function meta::java::generation::code::js_joining(stream: Code[1]):Code[1]
 {
    $stream->js_joining(j_string(''));
 }
 
-function meta::java::codeGeneration::code::js_joining(stream: Code[1], delimiter: Code[1]):Code[1]
+function meta::java::generation::code::js_joining(stream: Code[1], delimiter: Code[1]):Code[1]
 {
    assert($stream.type->isJavaStream(), 'Should apply to a stream');
    $stream->j_invoke('collect', j_invoke(javaCollectors(), 'joining', $delimiter, javaCollector()), javaString());
 }
 
-function meta::java::codeGeneration::code::js_resolve(stream: Code[1], type: meta::java::metamodel::Type[1]):Code[1]
+function meta::java::generation::code::js_resolve(stream: Code[1], type: meta::java::metamodel::Type[1]):Code[1]
 {
    assert($stream.type->isJavaStream(), 'Should apply to a stream');
    assert($type->instanceOf(meta::java::metamodel::ParameterizedType) || $type->instanceOf(meta::java::metamodel::Class), |'Not yet handled: ' + $type->typePathToString(true));
    ^DeferredStreamResolve(stream=$stream, type=$type);
 }
 
-function meta::java::codeGeneration::code::jo_orElse(optional: Code[1], else:Code[1]):Code[1]
+function meta::java::generation::code::jo_orElse(optional: Code[1], else:Code[1]):Code[1]
 {
    assert($optional.type->isJavaOptional(), 'Should apply to an Optional');
    $optional->j_invoke('orElse', $else, $optional.type->elementTypeOfJavaOptional());
 }
 
-function meta::java::codeGeneration::code::jo_orElseNull(optional: Code[1]):Code[1]
+function meta::java::generation::code::jo_orElseNull(optional: Code[1]):Code[1]
 {
    assert($optional.type->isJavaOptional(), 'Should apply to an Optional');
    $optional->jo_orElse(j_null($optional.type->elementTypeOfJavaOptional()));
 }
 
-function meta::java::codeGeneration::code::j_sysout():Code[1]
+function meta::java::generation::code::j_sysout():Code[1]
 {
    javaSystem()->j_field('out', javaPrintStream());
 }
 
-function meta::java::codeGeneration::code::j_syserr():Code[1]
+function meta::java::generation::code::j_syserr():Code[1]
 {
    javaSystem()->j_field('out', javaPrintStream());
 }
 
-function meta::java::codeGeneration::code::j_exTryCatch(toTry:Code[1..*]): Code[1] 
+function meta::java::generation::code::j_exTryCatch(toTry:Code[1..*]): Code[1]
 { 
    let ex   = j_parameter(javaException(), 'e');
    let rtEx = j_parameter(javaRuntimeException(), 'e');
@@ -2031,7 +2050,7 @@ function meta::java::codeGeneration::code::j_exTryCatch(toTry:Code[1..*]): Code[
    );
 }
 
-function meta::java::codeGeneration::code::j_ioExTryCatch(toTry:Code[1..*]): Code[1] 
+function meta::java::generation::code::j_ioExTryCatch(toTry:Code[1..*]): Code[1]
 { 
    let ioEx = j_parameter(javaIOException(), 'e');
 
@@ -2055,18 +2074,18 @@ function meta::java::metamodel::factory::nullable(code:Code[1]) : Code[1]
 
 // Utilities
 
-function meta::java::codeGeneration::code::asParameters(parameters:Code[*]):meta::java::metamodel::Parameter[*]
+function meta::java::generation::code::asParameters(parameters:Code[*]):meta::java::metamodel::Parameter[*]
 {
    assert($parameters->forAll(p |$p->instanceOf(Parameter)), 'Parameters must be properly created (j_parameter)');
    $parameters->cast(@meta::java::metamodel::Parameter);
 }
 
-function meta::java::codeGeneration::code::classesUsed(codes: Code[*]):meta::java::metamodel::Class[*]
+function meta::java::generation::code::classesUsed(codes: Code[*]):meta::java::metamodel::Class[*]
 {
    $codes->typesUsed()->typesToClasses();
 }
 
-function meta::java::codeGeneration::code::typesUsed(codes: Code[*]):meta::java::metamodel::Type[*]
+function meta::java::generation::code::typesUsed(codes: Code[*]):meta::java::metamodel::Type[*]
 {
    $codes->map(code| $code->match([
       c:InfixExpression[1]          | $c.type->concatenate($c.left->typesUsed())->concatenate($c.right->typesUsed()),
@@ -2107,7 +2126,7 @@ function meta::java::codeGeneration::code::typesUsed(codes: Code[*]):meta::java:
 
 
 //TODO Still required?
-function meta::java::codeGeneration::code::methodReturnType(from:meta::java::metamodel::Type[1], methodName:String[1]):meta::java::metamodel::Type[1]
+function meta::java::generation::code::methodReturnType(from:meta::java::metamodel::Type[1], methodName:String[1]):meta::java::metamodel::Type[1]
 {
    let types = $from->apiKnowledge().methods->filter(m|$m.name == $methodName).returnType->removeDuplicates();
    assert($types->size() > 0,  |'Type not found for method ' + $methodName + ' from ' + $from->typePathToString(true));
@@ -2116,7 +2135,7 @@ function meta::java::codeGeneration::code::methodReturnType(from:meta::java::met
    $types->toOne();
 }
 
-function <<access.private>> meta::java::codeGeneration::code::findMethod(from:meta::java::metamodel::Type[1], methodName:String[1]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::java::generation::code::findMethod(from:meta::java::metamodel::Type[1], methodName:String[1]):meta::java::metamodel::Method[1]
 {
    let methods = $from->apiKnowledge().methods
       ->filter(m|$m.name == $methodName);
@@ -2126,7 +2145,7 @@ function <<access.private>> meta::java::codeGeneration::code::findMethod(from:me
    $methods->toOne();
 }
 
-function meta::java::codeGeneration::code::typeForField(from:meta::java::metamodel::Type[1], fieldName:String[1]):meta::java::metamodel::Type[1]
+function meta::java::generation::code::typeForField(from:meta::java::metamodel::Type[1], fieldName:String[1]):meta::java::metamodel::Type[1]
 {
    if($from->instanceOf(meta::java::metamodel::Enumeration),
       | $from,
@@ -2140,7 +2159,7 @@ function meta::java::codeGeneration::code::typeForField(from:meta::java::metamod
    );
 }
 
-function meta::java::codeGeneration::code::isStatement(code: Code[1]):Boolean[1]
+function meta::java::generation::code::isStatement(code: Code[1]):Boolean[1]
 {
    $code->match([
       c:SimpleCode[1] | true,   // Since unkmown we rely on caller to ensure it's in the right form
@@ -2149,12 +2168,12 @@ function meta::java::codeGeneration::code::isStatement(code: Code[1]):Boolean[1]
    ]);
 }
 
-Enum meta::java::codeGeneration::code::CastCompatibility
+Enum meta::java::generation::code::CastCompatibility
 {
    Identity, Widening, WideningAndNarrowing, Boxing, BoxingAndWidening, Unboxing, UnboxingAndWidening, Narrowing, UnboxingAndNarrowing, Disallowed, Unknown
 }
 
-function <<access.private>> meta::java::codeGeneration::code::bestCompatibility(c1:CastCompatibility[1], c2:CastCompatibility[1]):CastCompatibility[1]
+function <<access.private>> meta::java::generation::code::bestCompatibility(c1:CastCompatibility[1], c2:CastCompatibility[1]):CastCompatibility[1]
 {
    let compatibilities = CastCompatibility->enumValues();
    let i1 = $compatibilities->indexOf($c1);
@@ -2162,7 +2181,7 @@ function <<access.private>> meta::java::codeGeneration::code::bestCompatibility(
    $compatibilities->at(min($i1, $i2));
 }
 
-function <<access.private>> meta::java::codeGeneration::code::castCompatibility(from:meta::java::metamodel::Type[1], to:meta::java::metamodel::Type[1]):CastCompatibility[1]
+function <<access.private>> meta::java::generation::code::castCompatibility(from:meta::java::metamodel::Type[1], to:meta::java::metamodel::Type[1]):CastCompatibility[1]
 {
    $from->match([
       {fromP:meta::java::metamodel::PrimitiveType[1] |
@@ -2343,12 +2362,12 @@ function <<access.private>> meta::java::codeGeneration::code::castCompatibility(
    ]);
 }
 
-function <<access.private>> meta::java::codeGeneration::code::isClass(c:meta::java::metamodel::Class[1], pkg:String[1], names:String[*]):Boolean[1]
+function <<access.private>> meta::java::generation::code::isClass(c:meta::java::metamodel::Class[1], pkg:String[1], names:String[*]):Boolean[1]
 {
    $c->isInPackage($pkg) && $c.simpleName->in($names);   
 }
 
-function <<access.private>> meta::java::codeGeneration::code::isSubclassOf(c1:meta::java::metamodel::Class[1], c2:meta::java::metamodel::Class[1]):Boolean[1]
+function <<access.private>> meta::java::generation::code::isSubclassOf(c1:meta::java::metamodel::Class[1], c2:meta::java::metamodel::Class[1]):Boolean[1]
 {
    if($c1 == $c2 || $c2 == javaObject(),
       | true,
@@ -2380,12 +2399,12 @@ function <<access.private>> meta::java::codeGeneration::code::isSubclassOf(c1:me
    )))))))));
 }
 
-function <<access.private>> meta::java::codeGeneration::code::blockIfNot(code: Code[1]):Code[1]
+function <<access.private>> meta::java::generation::code::blockIfNot(code: Code[1]):Code[1]
 {
    if($code->instanceOf(Block), |$code, |j_block($code));
 }
 
-function meta::java::codeGeneration::code::toStatements(codes: Code[*]):Code[*]
+function meta::java::generation::code::toStatements(codes: Code[*]):Code[*]
 {
    $codes->fold(
       {c, a|
@@ -2407,7 +2426,7 @@ function meta::java::codeGeneration::code::toStatements(codes: Code[*]):Code[*]
    ).first.values;
 }
 
-function meta::java::codeGeneration::code::isNull(expression:Code[1]):Boolean[1]
+function meta::java::generation::code::isNull(expression:Code[1]):Boolean[1]
 {
    if($expression->instanceOf(Null),
       | true,
@@ -2416,7 +2435,7 @@ function meta::java::codeGeneration::code::isNull(expression:Code[1]):Boolean[1]
 }
 
 
-function meta::java::codeGeneration::code::isSameLiteral(left:Code[1], right:Code[1]):Boolean[1]
+function meta::java::generation::code::isSameLiteral(left:Code[1], right:Code[1]):Boolean[1]
 {
    if($left->instanceOf(Literal) && $right->instanceOf(Literal)
                                  && $left->cast(@Literal).type == $right->cast(@Literal).type
@@ -2427,7 +2446,7 @@ function meta::java::codeGeneration::code::isSameLiteral(left:Code[1], right:Cod
 }
 
 
-function meta::java::codeGeneration::code::isValidExpressionAsStatement(expression:Code[1]):Boolean[1]
+function meta::java::generation::code::isValidExpressionAsStatement(expression:Code[1]):Boolean[1]
 {
    $expression->match([
       pre : PrefixExpression[1]  | $pre.op->in(['++', '--']),
@@ -2440,7 +2459,7 @@ function meta::java::codeGeneration::code::isValidExpressionAsStatement(expressi
    ])
 }
 
-function meta::java::codeGeneration::code::isAssignment(c:Code[1]):Boolean[1]
+function meta::java::generation::code::isAssignment(c:Code[1]):Boolean[1]
 {
    $c->match([
       inf : InfixExpression[1] | $inf.op->in(assignmentOperators()),
@@ -2448,13 +2467,13 @@ function meta::java::codeGeneration::code::isAssignment(c:Code[1]):Boolean[1]
    ])
 }
 
-function meta::java::codeGeneration::code::variableAssigned(c:Code[1]):Code[1]
+function meta::java::generation::code::variableAssigned(c:Code[1]):Code[1]
 {
    assert($c->isAssignment(), 'Not an assignment');
    $c->cast(@InfixExpression).left;
 }
 
-function meta::java::codeGeneration::code::expressionAssigned(c:Code[1]):Code[1]
+function meta::java::generation::code::expressionAssigned(c:Code[1]):Code[1]
 {
    assert($c->isAssignment() || $c->isDeclarationWithAssignment(), 'Does not contain as assigned expression');
    $c->match([
@@ -2463,7 +2482,7 @@ function meta::java::codeGeneration::code::expressionAssigned(c:Code[1]):Code[1]
    ]);
 }
 
-function meta::java::codeGeneration::code::isDeclaration(c:Code[1]):Boolean[1]
+function meta::java::generation::code::isDeclaration(c:Code[1]):Boolean[1]
 {
    $c->match([
       lvd : LocalVariableDeclaration[1] | true,
@@ -2471,7 +2490,7 @@ function meta::java::codeGeneration::code::isDeclaration(c:Code[1]):Boolean[1]
    ]);
 }
 
-function meta::java::codeGeneration::code::isDeclarationWithAssignment(c:Code[1]):Boolean[1]
+function meta::java::generation::code::isDeclarationWithAssignment(c:Code[1]):Boolean[1]
 {
    $c->match([
       lvd : LocalVariableDeclaration[1] | !$lvd.initializer->isEmpty(),
@@ -2479,7 +2498,7 @@ function meta::java::codeGeneration::code::isDeclarationWithAssignment(c:Code[1]
    ]);
 }
 
-function meta::java::codeGeneration::code::isCollectionsEmptyList(c:Code[1]):Boolean[1]
+function meta::java::generation::code::isCollectionsEmptyList(c:Code[1]):Boolean[1]
 {
    $c->match([
       smc:StaticMethodCall[1] | $smc.class == javaCollections() && $smc.methodName == 'emptyList',
@@ -2487,66 +2506,66 @@ function meta::java::codeGeneration::code::isCollectionsEmptyList(c:Code[1]):Boo
    ]);
 }
 
-function meta::java::codeGeneration::code::variableDeclared(c:Code[1]):Code[1]
+function meta::java::generation::code::variableDeclared(c:Code[1]):Code[1]
 {
    assert($c->isDeclaration(), 'Not a declaration');
    j_variable($c.type, $c->cast(@LocalVariableDeclaration).variableName);
 }
 
-function meta::java::codeGeneration::code::isDeprecated(c:Code[1]):Boolean[1]
+function meta::java::generation::code::isDeprecated(c:Code[1]):Boolean[1]
 {
    $c->instanceOf(SimpleCode);
 }
 
-function meta::java::codeGeneration::code::isParameter(c:Code[1]):Boolean[1]
+function meta::java::generation::code::isParameter(c:Code[1]):Boolean[1]
 {
    $c->instanceOf(Parameter);   
 }
 
-function meta::java::codeGeneration::code::parameterName(c:Code[1]):String[1]
+function meta::java::generation::code::parameterName(c:Code[1]):String[1]
 {
    $c->cast(@Parameter).name;   
 }
 
-function meta::java::codeGeneration::code::isVariable(c:Code[1]):Boolean[1]
+function meta::java::generation::code::isVariable(c:Code[1]):Boolean[1]
 {
    $c->instanceOf(Variable);   
 }
 
-function meta::java::codeGeneration::code::variableName(c:Code[1]):String[1]
+function meta::java::generation::code::variableName(c:Code[1]):String[1]
 {
    $c->cast(@Variable).name;   
 }
 
 // Dependencies
-function meta::java::codeGeneration::code::dependsOn(code:Code[1], dependencies:CodeDependency[*]):Code[1]
+function meta::java::generation::code::dependsOn(code:Code[1], dependencies:CodeDependency[*]):Code[1]
 {
    ^$code(requires=$code.requires->concatenate($dependencies)->removeDuplicates());
 }
 
-function meta::java::codeGeneration::code::methodsDependency(class:meta::java::metamodel::Class[1], methodNames:String[*]):CodeDependency[1]
+function meta::java::generation::code::methodsDependency(class:meta::java::metamodel::Class[1], methodNames:String[*]):CodeDependency[1]
 {
    let depClass = ^$class(methods=$class.methods->filter(m| $m.name->in($methodNames)));
 
    newDependency($class->typePathToString(true)+$methodNames->joinStrings('[', '&', ']'), $depClass);
 }
 
-function meta::java::codeGeneration::code::newDependency(name:String[1], classes:meta::java::metamodel::Class[*]):CodeDependency[1]
+function meta::java::generation::code::newDependency(name:String[1], classes:meta::java::metamodel::Class[*]):CodeDependency[1]
 {
    newDependency($name, newProject()->addClasses($classes));
 }
 
-function meta::java::codeGeneration::code::newDependency(name:String[1], project:Project[1]):CodeDependency[1]
+function meta::java::generation::code::newDependency(name:String[1], project:Project[1]):CodeDependency[1]
 {
    newDependency($name, {state| $state->addProjectIfMissing($name, {|$project})});
 }
 
-function meta::java::codeGeneration::code::newDependency(name:String[1], stateUpdater:Function<{CodeDependencyResolutionState[1]->CodeDependencyResolutionState[1]}>[1]):CodeDependency[1]
+function meta::java::generation::code::newDependency(name:String[1], stateUpdater:Function<{CodeDependencyResolutionState[1]->CodeDependencyResolutionState[1]}>[1]):CodeDependency[1]
 {
    ^CodeDependency(name=$name, stateUpdater=$stateUpdater);
 }
 
-function meta::java::codeGeneration::code::addProjectIfMissing(state:CodeDependencyResolutionState[1], name:String[1], projectSupplier:Function<{->Project[1]}>[1]):CodeDependencyResolutionState[1]
+function meta::java::generation::code::addProjectIfMissing(state:CodeDependencyResolutionState[1], name:String[1], projectSupplier:Function<{->Project[1]}>[1]):CodeDependencyResolutionState[1]
 {
    if($state.projectsByDependency->keys()->contains($name),
       | $state,
@@ -2554,32 +2573,32 @@ function meta::java::codeGeneration::code::addProjectIfMissing(state:CodeDepende
    );
 }
 
-function meta::java::codeGeneration::code::addDependencyProject(state:CodeDependencyResolutionState[1], name:String[1], project:Project[1]):CodeDependencyResolutionState[1]
+function meta::java::generation::code::addDependencyProject(state:CodeDependencyResolutionState[1], name:String[1], project:Project[1]):CodeDependencyResolutionState[1]
 {
    ^$state(projectsByDependency=$state.projectsByDependency->put($name, $project));
 }
 
-function meta::java::codeGeneration::code::resolveProjects(dependencies:CodeDependency[*]):CodeDependencyResolutionState[1]
+function meta::java::generation::code::resolveProjects(dependencies:CodeDependency[*]):CodeDependencyResolutionState[1]
 {
    $dependencies->resolveProjects(^CodeDependencyResolutionState(projectsByDependency=^Map<String, Project>()));
 }
 
-function meta::java::codeGeneration::code::resolveProjects(dependencies:CodeDependency[*], state:CodeDependencyResolutionState[1]):CodeDependencyResolutionState[1]
+function meta::java::generation::code::resolveProjects(dependencies:CodeDependency[*], state:CodeDependencyResolutionState[1]):CodeDependencyResolutionState[1]
 {
    $dependencies->fold({d, s| $d.stateUpdater->eval($s)}, $state);
 }
 
-function meta::java::codeGeneration::code::getProjects(state:CodeDependencyResolutionState[1], dependencies:CodeDependency[*]):Project[*]
+function meta::java::generation::code::getProjects(state:CodeDependencyResolutionState[1], dependencies:CodeDependency[*]):Project[*]
 {
    $state.projectsByDependency->keyValues()->filter({kv|$kv.first->in($dependencies.name)}).second;
 }
 
-function meta::java::codeGeneration::code::getProjects(state:CodeDependencyResolutionState[1]):Project[*]
+function meta::java::generation::code::getProjects(state:CodeDependencyResolutionState[1]):Project[*]
 {
    $state.projectsByDependency->keyValues().second;
 }
 
-function meta::java::codeGeneration::code::resolveAndGetProjects(dependencies:CodeDependency[*]):Project[*]
+function meta::java::generation::code::resolveAndGetProjects(dependencies:CodeDependency[*]):Project[*]
 {
    $dependencies->resolveProjects()->getProjects();
 }
@@ -2723,6 +2742,8 @@ function <<access.private>> meta::java::metamodel::project::mergeClass(base: Pro
       {| $base->addClass($srcDirPath, $class)},
       {|
          let existing = $base->getClass($srcDirPath, $classFullName)->toOne();
+         
+         let imports = $existing.additionalImports->concatenate($class.additionalImports)->removeDuplicates();
 
          let superType = if($existing.superType->isEmpty(),
                             {|$class.superType},
@@ -2737,15 +2758,21 @@ function <<access.private>> meta::java::metamodel::project::mergeClass(base: Pro
 
          let interfaces = $existing.interfaces->concatenate($class.interfaces)->map(i|$i->typePathToString(true))->removeDuplicates()->map(i|$i->javaType());
          
-         let newlyDefined = $class.methods->filter({newMethod|
+         let newlyDefinedFields = $class.fields->filter({newField |
+            let existingField = $existing.fields->filter({m | $m.name == $newField.name});
+            assert($existingField->isEmpty() || (($existingField.type == $newField.type) && ($existingField->toOne().value == $newField.value)), | 'Cannot merge field ' + $newField.name + ' in ' + $classFullName);
+            $existingField->isEmpty();
+         });
+         let fields = $existing.fields->concatenate($newlyDefinedFields);
+         
+         let newlyDefinedMethods = $class.methods->filter({newMethod|
             let existingMethod = $existing.methods->filter({m| $m.name == $newMethod.name && $m.parameters.type == $newMethod.parameters.type});
             assert($existingMethod->isEmpty() || $existingMethod->toOne().body == $newMethod.body, | 'Cannot merge implementations of ' + $newMethod->methodSignature() + ' in ' + $classFullName);
             $existingMethod->isEmpty();
          });
-         
-         let methods = $existing.methods->concatenate($newlyDefined);
+         let methods = $existing.methods->concatenate($newlyDefinedMethods);
 
-         $base->replaceClass(^$existing(superType=$superType, interfaces=$interfaces, methods=$methods));
+         $base->replaceClass(^$existing(additionalImports=$imports, superType=$superType, interfaces=$interfaces, fields=$fields, methods=$methods));
       }
    );
 }

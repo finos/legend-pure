@@ -1,0 +1,84 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::external::format::protobuf::generation::*;
+import meta::pure::executionPlan::profiles::*;
+import meta::external::format::protobuf::serialization::*;
+import meta::external::format::protobuf::generation::tests::*;
+
+Class meta::external::format::protobuf::generation::tests::Trade
+{
+   type:String[1];
+   id:Integer[1];
+   npv:Float[1];
+   notionals:Float[*];
+   account : Account[1];
+}
+
+Enum meta::external::format::protobuf::generation::tests::MyEnum
+{
+   a,b
+}
+
+Class meta::external::format::protobuf::generation::tests::Account
+{
+   name : String[1];
+   t : Trade[1];
+   enum : meta::external::format::protobuf::generation::tests::MyEnum[1];
+   aDate:StrictDate[1];
+}
+
+function <<test.Test>> meta::external::format::protobuf::generation::tests::testClassToProtoBuf():Boolean[1]
+{
+   assertEquals('message Trade {\n'+
+                ' string type = 1;\n'+
+                ' int64 id = 2;\n'+
+                ' double npv = 3;\n'+
+                ' repeated double notionals = 4;\n'+
+                ' Account account = 5;\n'+
+                '}\n'+
+                'message Account {\n'+
+                ' string name = 1;\n'+
+                ' Trade t = 2;\n'+
+                ' MyEnum enum = 3;\n'+
+                ' timestamp adate = 4;\n'+
+                '}\n'+
+                'enum MyEnum {\n'+
+                '   a = 0;\n'+
+                '   b = 1;\n'+
+                '}'
+                ,classToMessage(Trade)->map(m|$m->meta::external::format::protobuf::serialization::toString())->joinStrings('\n'));
+}
+
+function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
+{
+   assertEquals('message Trade {\n'+
+                ' string type = 1;\n'+
+                ' int64 id = 2;\n'+
+                ' double npv = 3;\n'+
+                ' repeated double notionals = 4;\n'+
+                ' Account account = 5;\n'+
+                '}\n'+
+                'message Account {\n'+
+                ' string name = 1;\n'+
+                ' Trade t = 2;\n'+
+                ' MyEnum enum = 3;\n'+
+                ' timestamp adate = 4;\n'+
+                '}\n'+
+                'enum MyEnum {\n'+
+                '   a = 0;\n'+
+                '   b = 1;\n'+
+                '}'
+                ,meta::external::format::protobuf::generation::transform(^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::Trade')).content);
+}

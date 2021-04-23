@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::*;
 import meta::java::metamodel::factory::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 
-function meta::java::codeGeneration::utils::typesUsed(method: meta::java::metamodel::Method[*]):meta::java::metamodel::Type[*]
+function meta::java::generation::utils::typesUsed(method: meta::java::metamodel::Method[*]):meta::java::metamodel::Type[*]
 {
    $method.returnType->concatenate($method.parameters.type)->removeDuplicates();
 }
 
-function meta::java::codeGeneration::utils::typesToClasses(types: meta::java::metamodel::Type[*]):meta::java::metamodel::Class[*]
+function meta::java::generation::utils::typesToClasses(types: meta::java::metamodel::Type[*]):meta::java::metamodel::Class[*]
 {
    $types->map(t |$t->typeToClasses())->removeDuplicates();
 }
 
-function meta::java::codeGeneration::utils::typeToClasses(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Class[*]
+function meta::java::generation::utils::typeToClasses(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Class[*]
 {
    $type->match([
       c:meta::java::metamodel::Class[1]             | $c,
@@ -39,18 +39,18 @@ function meta::java::codeGeneration::utils::typeToClasses(type: meta::java::meta
    ])->removeDuplicates();        
 }
 
-function meta::java::codeGeneration::utils::elementTypeOfJavaArray(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
+function meta::java::generation::utils::elementTypeOfJavaArray(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
 {
    assert($type->isJavaArray(), |'Cannot obtain element type as not an array');
    $type->cast(@meta::java::metamodel::Array).rawType;
 }
 
-function meta::java::codeGeneration::utils::isJavaArray(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::utils::isJavaArray(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->instanceOf(meta::java::metamodel::Array);
 }
 
-function meta::java::codeGeneration::utils::isJavaPrimitive(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::utils::isJavaPrimitive(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->match([
       {pt: meta::java::metamodel::PrimitiveType[1] | true },
@@ -58,7 +58,7 @@ function meta::java::codeGeneration::utils::isJavaPrimitive(type: meta::java::me
    ]);
 }
 
-function meta::java::codeGeneration::utils::isJavaList(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::utils::isJavaList(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->match([
       {pt: meta::java::metamodel::ParameterizedType[1] | $pt.rawType->instanceOf(meta::java::metamodel::Class) && $pt.rawType->cast(@meta::java::metamodel::Class).simpleName == 'List' && $pt.rawType->isInPackage('java.util')},
@@ -66,18 +66,18 @@ function meta::java::codeGeneration::utils::isJavaList(type: meta::java::metamod
    ]);
 }
 
-function meta::java::codeGeneration::utils::elementType(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
+function meta::java::generation::utils::elementType(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
 {
    $type->cast(@meta::java::metamodel::ParameterizedType).typeArguments->at(0);
 }
 
-function meta::java::codeGeneration::utils::elementTypeOfJavaList(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
+function meta::java::generation::utils::elementTypeOfJavaList(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
 {
    assert($type->isJavaList(), |'Cannot obtain element type as not a List');
    $type->cast(@meta::java::metamodel::ParameterizedType).typeArguments->at(0);
 }
 
-function meta::java::codeGeneration::utils::isJavaSupplier(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::utils::isJavaSupplier(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->match([
       {pt: meta::java::metamodel::ParameterizedType[1] | $pt.rawType->instanceOf(meta::java::metamodel::Class) && $pt.rawType->cast(@meta::java::metamodel::Class).simpleName == 'Supplier' && $pt.rawType->isInPackage('java.util.function')},
@@ -85,7 +85,7 @@ function meta::java::codeGeneration::utils::isJavaSupplier(type: meta::java::met
    ]);
 }
 
-function meta::java::codeGeneration::utils::isJavaFunction(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::utils::isJavaFunction(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->match([
       {pt: meta::java::metamodel::ParameterizedType[1] | $pt.rawType->instanceOf(meta::java::metamodel::Class) && $pt.rawType->cast(@meta::java::metamodel::Class).simpleName == 'Function' && $pt.rawType->isInPackage('java.util.function')},
@@ -93,25 +93,25 @@ function meta::java::codeGeneration::utils::isJavaFunction(type: meta::java::met
    ]);
 }
 
-function meta::java::codeGeneration::utils::suppliedTypeOfJavaSupplier(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
+function meta::java::generation::utils::suppliedTypeOfJavaSupplier(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
 {
    assert($type->isJavaSupplier(), |'Cannot obtain supplied type as not a Supplier');
    $type->cast(@meta::java::metamodel::ParameterizedType).typeArguments->at(0);
 }
 
-function meta::java::codeGeneration::utils::returnTypeOfJavaFunction(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
+function meta::java::generation::utils::returnTypeOfJavaFunction(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
 {
    assert($type->isJavaFunction(), |'Cannot obtain supplied type as not a Function');
    $type->cast(@meta::java::metamodel::ParameterizedType).typeArguments->at(1);
 }
 
-function meta::java::codeGeneration::utils::inputTypeOfJavaFunction(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
+function meta::java::generation::utils::inputTypeOfJavaFunction(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
 {
    assert($type->isJavaFunction(), |'Cannot obtain supplied type as not a Function');
    $type->cast(@meta::java::metamodel::ParameterizedType).typeArguments->at(0);
 }
 
-function meta::java::codeGeneration::utils::isJavaStream(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::utils::isJavaStream(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->match([
       {pt: meta::java::metamodel::ParameterizedType[1] | $pt.rawType->instanceOf(meta::java::metamodel::Class) && $pt.rawType->cast(@meta::java::metamodel::Class).simpleName == 'Stream' && $pt.rawType->isInPackage('java.util.stream')},
@@ -119,13 +119,13 @@ function meta::java::codeGeneration::utils::isJavaStream(type: meta::java::metam
    ]);
 }
 
-function meta::java::codeGeneration::utils::elementTypeOfJavaStream(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
+function meta::java::generation::utils::elementTypeOfJavaStream(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
 {
    assert($type->isJavaStream(), |'Cannot obtain element type as not a Stream');
    $type->cast(@meta::java::metamodel::ParameterizedType).typeArguments->at(0);
 }
 
-function meta::java::codeGeneration::utils::isJavaOptional(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::utils::isJavaOptional(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->match([
       {pt: meta::java::metamodel::ParameterizedType[1] | $pt.rawType->instanceOf(meta::java::metamodel::Class) && $pt.rawType->cast(@meta::java::metamodel::Class).simpleName == 'Optional' && $pt.rawType->isInPackage('java.util')},
@@ -133,13 +133,13 @@ function meta::java::codeGeneration::utils::isJavaOptional(type: meta::java::met
    ]);
 }
 
-function meta::java::codeGeneration::utils::elementTypeOfJavaOptional(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
+function meta::java::generation::utils::elementTypeOfJavaOptional(type: meta::java::metamodel::Type[1]):meta::java::metamodel::Type[1]
 {
    assert($type->isJavaOptional(), |'Cannot obtain element type as not an Optional');
    $type->cast(@meta::java::metamodel::ParameterizedType).typeArguments->at(0);
 }
 
-function meta::java::codeGeneration::utils::isPrimitiveOrBoxedType(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::utils::isPrimitiveOrBoxedType(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->toOne()->match([
       pt: meta::java::metamodel::PrimitiveType[1] | true,
@@ -148,7 +148,7 @@ function meta::java::codeGeneration::utils::isPrimitiveOrBoxedType(type: meta::j
    ]);
 }
 
-function meta::java::codeGeneration::utils::isPrimitive(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::utils::isPrimitive(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->toOne()->match([
       pt: meta::java::metamodel::PrimitiveType[1] | true,
@@ -156,27 +156,27 @@ function meta::java::codeGeneration::utils::isPrimitive(type: meta::java::metamo
    ]);
 }
 
-function meta::java::codeGeneration::code::isPrimitiveNumber(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::code::isPrimitiveNumber(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->isPrimitive() && ($type == javaInt() || $type == javaLong() || $type == javaShort() || $type == javaByte() || $type == javaFloat() || $type == javaDouble());
 }
 
-function meta::java::codeGeneration::code::isPrimitiveInt(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::code::isPrimitiveInt(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->isPrimitive() && $type == javaInt();
 }
 
-function meta::java::codeGeneration::code::isPrimitiveLong(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::code::isPrimitiveLong(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->isPrimitive() && $type == javaLong();
 }
 
-function meta::java::codeGeneration::utils::isBoxedType(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::utils::isBoxedType(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->instanceOf(meta::java::metamodel::Class) && $type->cast(@meta::java::metamodel::Class)->isBoxedType();
 }
 
-function meta::java::codeGeneration::utils::isBoxedType(class: meta::java::metamodel::Class[1]):Boolean[1]
+function meta::java::generation::utils::isBoxedType(class: meta::java::metamodel::Class[1]):Boolean[1]
 {
    $class.simpleName->in(['Boolean', 'Byte', 'Character', 'Float', 'Integer', 'Long', 'Short', 'Double'])
       && $class.package.name == 'lang'
@@ -185,12 +185,12 @@ function meta::java::codeGeneration::utils::isBoxedType(class: meta::java::metam
       && $class.package.parent.parent->isEmpty();
 }
 
-function meta::java::codeGeneration::utils::isBoxedNumberType(type: meta::java::metamodel::Type[1]):Boolean[1]
+function meta::java::generation::utils::isBoxedNumberType(type: meta::java::metamodel::Type[1]):Boolean[1]
 {
    $type->instanceOf(meta::java::metamodel::Class) && $type->cast(@meta::java::metamodel::Class)->isBoxedNumberType();
 }
 
-function meta::java::codeGeneration::utils::isBoxedNumberType(class: meta::java::metamodel::Class[1]):Boolean[1]
+function meta::java::generation::utils::isBoxedNumberType(class: meta::java::metamodel::Class[1]):Boolean[1]
 {
    $class.simpleName->in(['Byte', 'Float', 'Integer', 'Long', 'Short', 'Double', 'Number'])
       && $class.package.name == 'lang'
@@ -199,7 +199,7 @@ function meta::java::codeGeneration::utils::isBoxedNumberType(class: meta::java:
       && $class.package.parent.parent->isEmpty();
 }
 
-function meta::java::codeGeneration::utils::isInPackage(type: meta::java::metamodel::Type[1], packageName: String[1]):Boolean[1]
+function meta::java::generation::utils::isInPackage(type: meta::java::metamodel::Type[1], packageName: String[1]):Boolean[1]
 {
    let typeName = $type->typePathToString(true);
    let dotPos = $typeName->lastIndexOf('.');
@@ -207,12 +207,12 @@ function meta::java::codeGeneration::utils::isInPackage(type: meta::java::metamo
    $packageName == $pkgName;
 }
 
-function meta::java::codeGeneration::utils::isStatic(method: meta::java::metamodel::Method[1]):Boolean[1]
+function meta::java::generation::utils::isStatic(method: meta::java::metamodel::Method[1]):Boolean[1]
 {
    $method.modifiers->contains(meta::java::metamodel::Modifier.Static);
 }
 
-function meta::java::codeGeneration::utils::escapedString(in: String[1]):String[1]
+function meta::java::generation::utils::escapedString(in: String[1]):String[1]
 {
    '"' +
       $in->replace('\\','\\\\')
@@ -225,12 +225,12 @@ function meta::java::codeGeneration::utils::escapedString(in: String[1]):String[
    '"';
 }
 
-function meta::java::codeGeneration::utils::methodSignature(m: meta::java::metamodel::Method[1]): String[1]
+function meta::java::generation::utils::methodSignature(m: meta::java::metamodel::Method[1]): String[1]
 {
    $m.name+'('+$m.parameters->map(p|$p.type->typePathToString(true))->makeString(',')+')';
 }
 
-function meta::java::codeGeneration::utils::javaKeywords(): String[*]
+function meta::java::generation::utils::javaKeywords(): String[*]
 {
    [
       'abstract'  ,'continue'   ,'for'         ,'new'        ,'switch',
@@ -246,20 +246,20 @@ function meta::java::codeGeneration::utils::javaKeywords(): String[*]
    ];
 }
 
-function <<access.private>> meta::java::codeGeneration::convention::isValidPackageName(name: String[1]): Boolean[1]
+function <<access.private>> meta::java::generation::convention::isValidPackageName(name: String[1]): Boolean[1]
 {
    // TODO Enable once matches is fully available
    $name->split('.')->forAll(nm | /*$nm->matches('[_$a-zA-Z][_$a-zA-Z0-9]*') && */ !$nm->in(javaKeywords()));
 }
 
 
-Class meta::java::codeGeneration::utils::KnownPackage
+Class meta::java::generation::utils::KnownPackage
 {
    package: meta::java::metamodel::Package[1];
    classNames: String[*];
 }
 
-function meta::java::codeGeneration::utils::knownPackage(pkg: meta::java::metamodel::Package[1]): KnownPackage[1]
+function meta::java::generation::utils::knownPackage(pkg: meta::java::metamodel::Package[1]): KnownPackage[1]
 {
    let pkgName = $pkg->packageToString();
 
@@ -293,9 +293,9 @@ function meta::java::codeGeneration::utils::knownPackage(pkg: meta::java::metamo
    )))))))));
 }
 
-function meta::java::codeGeneration::utils::javaLangPackage(): meta::java::codeGeneration::utils::KnownPackage[1]
+function meta::java::generation::utils::javaLangPackage(): meta::java::generation::utils::KnownPackage[1]
 {
-   ^meta::java::codeGeneration::utils::KnownPackage(
+   ^meta::java::generation::utils::KnownPackage(
       package    = javaPackage('java.lang'),
       classNames = [
          'AbstractMethodError',                  'Appendable',                           'ArithmeticException',                  'ArrayIndexOutOfBoundsException',
@@ -328,9 +328,9 @@ function meta::java::codeGeneration::utils::javaLangPackage(): meta::java::codeG
    );
 }
 
-function meta::java::codeGeneration::utils::javaUtilPackage(): meta::java::codeGeneration::utils::KnownPackage[1]
+function meta::java::generation::utils::javaUtilPackage(): meta::java::generation::utils::KnownPackage[1]
 {
-   ^meta::java::codeGeneration::utils::KnownPackage(
+   ^meta::java::generation::utils::KnownPackage(
       package    = javaPackage('java.util'),
       classNames = [
          'AbstractCollection',                   'AbstractList',                         'AbstractMap',                          'AbstractMap.SimpleEntry',
@@ -370,9 +370,9 @@ function meta::java::codeGeneration::utils::javaUtilPackage(): meta::java::codeG
    );
 }
 
-function meta::java::codeGeneration::utils::javaUtilFunctionPackage(): meta::java::codeGeneration::utils::KnownPackage[1]
+function meta::java::generation::utils::javaUtilFunctionPackage(): meta::java::generation::utils::KnownPackage[1]
 {
-   ^meta::java::codeGeneration::utils::KnownPackage(
+   ^meta::java::generation::utils::KnownPackage(
       package    = javaPackage('java.util.function'),
       classNames = [
          'BiConsumer',                           'BiFunction',                           'BinaryOperator',                       'BiPredicate',
@@ -390,9 +390,9 @@ function meta::java::codeGeneration::utils::javaUtilFunctionPackage(): meta::jav
    );
 }
 
-function meta::java::codeGeneration::utils::javaUtilStreamPackage(): meta::java::codeGeneration::utils::KnownPackage[1]
+function meta::java::generation::utils::javaUtilStreamPackage(): meta::java::generation::utils::KnownPackage[1]
 {
-   ^meta::java::codeGeneration::utils::KnownPackage(
+   ^meta::java::generation::utils::KnownPackage(
       package    = javaPackage('java.util.stream'),
       classNames = [
          'BaseStream',                           'Collector',                            'Collector.Characteristics',            'Collectors',
@@ -403,9 +403,9 @@ function meta::java::codeGeneration::utils::javaUtilStreamPackage(): meta::java:
    );
 }
 
-function meta::java::codeGeneration::utils::javaIoPackage(): meta::java::codeGeneration::utils::KnownPackage[1]
+function meta::java::generation::utils::javaIoPackage(): meta::java::generation::utils::KnownPackage[1]
 {
-   ^meta::java::codeGeneration::utils::KnownPackage(
+   ^meta::java::generation::utils::KnownPackage(
       package    = javaPackage('java.io'),
       classNames = [
          'BufferedInputStream',                  'BufferedOutputStream',                 'BufferedReader',                       'BufferedWriter',
@@ -433,9 +433,9 @@ function meta::java::codeGeneration::utils::javaIoPackage(): meta::java::codeGen
    );
 }
 
-function meta::java::codeGeneration::utils::javaNetPackage(): meta::java::codeGeneration::utils::KnownPackage[1]
+function meta::java::generation::utils::javaNetPackage(): meta::java::generation::utils::KnownPackage[1]
 {
-   ^meta::java::codeGeneration::utils::KnownPackage(
+   ^meta::java::generation::utils::KnownPackage(
       package    = javaPackage('java.net'),
       classNames = [
          'Authenticator',                        'Authenticator.RequestorType',          'BindException',                        'CacheRequest',
@@ -459,9 +459,9 @@ function meta::java::codeGeneration::utils::javaNetPackage(): meta::java::codeGe
    );
 }
 
-function meta::java::codeGeneration::utils::javaMathPackage(): meta::java::codeGeneration::utils::KnownPackage[1]
+function meta::java::generation::utils::javaMathPackage(): meta::java::generation::utils::KnownPackage[1]
 {
-   ^meta::java::codeGeneration::utils::KnownPackage(
+   ^meta::java::generation::utils::KnownPackage(
       package    = javaPackage('java.math'),
       classNames = [
          'BigDecimal',                           'BigInteger',                           'MathContext',                          'RoundingMode'
@@ -469,9 +469,9 @@ function meta::java::codeGeneration::utils::javaMathPackage(): meta::java::codeG
    );
 }
 
-function meta::java::codeGeneration::utils::javaTimePackage(): meta::java::codeGeneration::utils::KnownPackage[1]
+function meta::java::generation::utils::javaTimePackage(): meta::java::generation::utils::KnownPackage[1]
 {
-   ^meta::java::codeGeneration::utils::KnownPackage(
+   ^meta::java::generation::utils::KnownPackage(
       package    = javaPackage('java.time'),
       classNames = [
          'Clock',                                'DateTimeException',                    'DayOfWeek',                            'Duration',
@@ -482,7 +482,7 @@ function meta::java::codeGeneration::utils::javaTimePackage(): meta::java::codeG
    );
 }
 
-function meta::java::codeGeneration::utils::apiKnowledge(from:meta::java::metamodel::Type[1]):meta::java::metamodel::Class[1]
+function meta::java::generation::utils::apiKnowledge(from:meta::java::metamodel::Type[1]):meta::java::metamodel::Class[1]
 {
    let inferFrom = $from->match([
       pt:meta::java::metamodel::ParameterizedType[1] | $pt->apiKnowledge(),
@@ -492,7 +492,7 @@ function meta::java::codeGeneration::utils::apiKnowledge(from:meta::java::metamo
    ])->addObjectMethods();
 }
 
-function meta::java::codeGeneration::utils::apiKnowledge(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function meta::java::generation::utils::apiKnowledge(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
 {
    if($in.simpleName->endsWith('Exception'),
       | $in->addMethodIfMissing(javaMethod(javaString(), 'getMessage', [])),
@@ -515,7 +515,7 @@ function meta::java::codeGeneration::utils::apiKnowledge(in:meta::java::metamode
    ))))));
 }
 
-function meta::java::codeGeneration::utils::apiKnowledge(in:meta::java::metamodel::ParameterizedType[1]): meta::java::metamodel::Class[1]
+function meta::java::generation::utils::apiKnowledge(in:meta::java::metamodel::ParameterizedType[1]): meta::java::metamodel::Class[1]
 {
    $in.rawType->match([
       {cl:meta::java::metamodel::Class[1] |
@@ -534,12 +534,12 @@ function meta::java::codeGeneration::utils::apiKnowledge(in:meta::java::metamode
    ])
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::arrayKnowledge(): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::arrayKnowledge(): meta::java::metamodel::Class[1]
 {
    javaClass('java.lang._Array_')->addField(javaField([], javaInt(), 'length'));
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::smartJavaMath(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::smartJavaMath(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
 {
    if($in.simpleName == 'BigDecimal',
       | $in->addMethodIfMissing(javaMethod(javaBigDecimal(),   'add',           [javaParam(javaBigDecimal(), 'x')]))
@@ -563,7 +563,7 @@ function <<access.private>> meta::java::codeGeneration::utils::smartJavaMath(in:
    );
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::smartJavaLang(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::smartJavaLang(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
 {
    if($in.simpleName == 'String',
       | $in->addMethodIfMissing(javaMethod(javaChar(),    'charAt',      [javaParam(javaInt(), 'x')]))
@@ -628,7 +628,7 @@ function <<access.private>> meta::java::codeGeneration::utils::smartJavaLang(in:
    )))))))));
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::addNumberMethods(num:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::addNumberMethods(num:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
 {
    $num->addMethodIfMissing(javaMethod(javaByte(),    'byteValue',   []))
        ->addMethodIfMissing(javaMethod(javaInt(),     'intValue',    []))
@@ -638,7 +638,7 @@ function <<access.private>> meta::java::codeGeneration::utils::addNumberMethods(
        ->addMethodIfMissing(javaMethod(javaDouble(),  'doubleValue', []));
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::smartJavaIO(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::smartJavaIO(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
 {
    if($in.simpleName->endsWith('Reader'),
       | $in->addMethodIfMissing(javaMethod(javaInt(), 'read', []))
@@ -652,7 +652,7 @@ function <<access.private>> meta::java::codeGeneration::utils::smartJavaIO(in:me
    ));
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::smartJavaNet(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::smartJavaNet(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
 {
    if($in.simpleName->endsWith('URL'),
       | $in->addMethodIfMissing(javaMethod(javaInputStream(), 'openStream', [])),
@@ -660,7 +660,7 @@ function <<access.private>> meta::java::codeGeneration::utils::smartJavaNet(in:m
    );
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::smartJavaUtilStream(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::smartJavaUtilStream(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
 {
 
    if($in.simpleName == 'LongStream',
@@ -675,7 +675,7 @@ function <<access.private>> meta::java::codeGeneration::utils::smartJavaUtilStre
  
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::smartJavaUtil(in:meta::java::metamodel::ParameterizedType[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::smartJavaUtil(in:meta::java::metamodel::ParameterizedType[1]): meta::java::metamodel::Class[1]
 {
    let class       = $in.rawType->cast(@meta::java::metamodel::Class);
    let elementType = $in.typeArguments->at(0);
@@ -712,7 +712,7 @@ function <<access.private>> meta::java::codeGeneration::utils::smartJavaUtil(in:
    ))));
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::smartJavaUtilStream(in:meta::java::metamodel::ParameterizedType[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::smartJavaUtilStream(in:meta::java::metamodel::ParameterizedType[1]): meta::java::metamodel::Class[1]
 {
    let class       = $in.rawType->cast(@meta::java::metamodel::Class);
    let elementType = $in.typeArguments->at(0);
@@ -723,7 +723,7 @@ function <<access.private>> meta::java::codeGeneration::utils::smartJavaUtilStre
    );
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::smartJavaUtilFunction(in:meta::java::metamodel::ParameterizedType[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::smartJavaUtilFunction(in:meta::java::metamodel::ParameterizedType[1]): meta::java::metamodel::Class[1]
 {
    let class       = $in.rawType->cast(@meta::java::metamodel::Class);
    let elementType = $in.typeArguments->at(0);
@@ -734,7 +734,7 @@ function <<access.private>> meta::java::codeGeneration::utils::smartJavaUtilFunc
    );
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::addCollectionMethods(col:meta::java::metamodel::Class[1], element:meta::java::metamodel::Type[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::addCollectionMethods(col:meta::java::metamodel::Class[1], element:meta::java::metamodel::Type[1]): meta::java::metamodel::Class[1]
 {
    $col->addMethodIfMissing(javaMethod(javaBoolean(),          'addAll',      javaParam(javaCollection($element), 'x')))
        ->addMethodIfMissing(javaMethod(javaBoolean(),          'contains',    javaParam($element, 'x')))
@@ -743,7 +743,7 @@ function <<access.private>> meta::java::codeGeneration::utils::addCollectionMeth
        ->addMethodIfMissing(javaMethod(javaInt(),              'size',        []));
 }
 
-function <<access.private>> meta::java::codeGeneration::utils::addObjectMethods(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::java::generation::utils::addObjectMethods(in:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
 {
    $in->addMethodIfMissing(javaMethod(javaClass('java.lang.Class'), 'getClass', [])->nonNull())
       ->addMethodIfMissing(javaMethod(javaString(),                 'toString', [])->nonNull())
@@ -751,7 +751,7 @@ function <<access.private>> meta::java::codeGeneration::utils::addObjectMethods(
       ->addMethodIfMissing(javaMethod(javaBoolean(),                'equals', javaParam(javaObject(), 'o')));
 }
 
-function meta::java::codeGeneration::utils::generateIfForCollection(emptyCase:String[1], singletonCase:String[1], nonEmptyCase:String[1]) : String[1]
+function meta::java::generation::utils::generateIfForCollection(emptyCase:String[1], singletonCase:String[1], nonEmptyCase:String[1]) : String[1]
 {
    'if (in.isEmpty())\n'+
    '{\n'+

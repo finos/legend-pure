@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m4.coreinstance.primitive.date;
 
-import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m4.ModelRepository;
 
 import java.util.Calendar;
@@ -22,7 +21,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-public class DateFunctions
+public class DateFunctions extends TimeFunctions
 {
     static final TimeZone GMT_TIME_ZONE = TimeZone.getTimeZone("GMT");
 
@@ -317,42 +316,6 @@ public class DateFunctions
         if (day > getDaysInMonth(year, month))
         {
             throw new IllegalArgumentException("Invalid day: " + year + "-" + month + "-" + day);
-        }
-    }
-
-    static void validateHour(int hour)
-    {
-        if ((hour < 0) || (hour > 23))
-        {
-            throw new IllegalArgumentException("Invalid hour: " + hour);
-        }
-    }
-
-    static void validateMinute(int minute)
-    {
-        if ((minute < 0) || (minute > 59))
-        {
-            throw new IllegalArgumentException("Invalid minute: " + minute);
-        }
-    }
-
-    static void validateSecond(int second)
-    {
-        if ((second < 0) || (second > 59))
-        {
-            throw new IllegalArgumentException("Invalid second: " + second);
-        }
-    }
-
-    static void validateSubsecond(String subsecond)
-    {
-        if (subsecond == null)
-        {
-            throw new IllegalArgumentException("Invalid subsecond value: null");
-        }
-        if (subsecond.isEmpty() || !StringIterate.isNumber(subsecond))
-        {
-            throw new IllegalArgumentException("Invalid subsecond value: \"" + subsecond + "\"");
         }
     }
 }

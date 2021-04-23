@@ -21,7 +21,7 @@ import meta::pure::mapping::modelToModel::test::filter::mapping::*;
 import meta::pure::mapping::modelToModel::test::filter::model::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.Filter>>
-{  serverVersion.start='vX_X_X',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a mapping that specifies filtering',
    doc.doc='Given: data that exercises the filter on the source objects',
    doc.doc='When:  the mapping is executed using graphFetch.',
@@ -42,7 +42,7 @@ meta::pure::mapping::modelToModel::test::alloy::filter::canFilterInAMapping() : 
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.Filter>>
-{  serverVersion.start='vX_X_X',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a mapping that specifies filtering',
    doc.doc='Given: data that exercises the filter on the source objects',
    doc.doc='When:  the mapping is executed using graphFetchChecked.',
@@ -72,7 +72,7 @@ meta::pure::mapping::modelToModel::test::alloy::filter::canFilterInAMappingCheck
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.Filter>>
-{  serverVersion.start='vX_X_X',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a mapping that specifies filtering',
    doc.doc='Given: data that exercises the filter for children of the source objects',
    doc.doc='When:  the mapping is executed using graphFetch.',
@@ -89,6 +89,27 @@ meta::pure::mapping::modelToModel::test::alloy::filter::canFilterInAMappingOnChi
    let json = $result.values->toOne();
 
    let expected= '{"employees"[{"lastName":"A. Only One"}]}';
+   assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.Filter>>
+{  serverVersion.start='v1_19_0',
+   doc.doc='Given: a mapping that specifies filtering at a set level',
+   doc.doc='Given: data that exercises the filter for children of the source objects',
+   doc.doc='When:  the mapping is executed using graphFetch.',
+   doc.doc='Then:  only the filtered child objects are returned'
+}
+meta::pure::mapping::modelToModel::test::alloy::filter::canExecuteFilterAtSetLevel() : Boolean[1]
+{
+   let tree = #{D {id, e {id} }}#;
+   let func = {|D.all()->graphFetch($tree)->serialize($tree)};
+   let mapping = setFilterMapping;
+   let runtime = testJsonRuntime(_D, '[{"id" : 1, "e" : {"id" : 1}}, {"id" : 2, "e" : {"id" : 2}}]');
+   
+   let result = execute($func, $mapping, $runtime, []);
+   let json = $result.values->toOne();
+
+   let expected= '[{"id" : 1, "e" : null}, {"id" : 2, "e" : {"id" : 2}}]';
    assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
 }
 
@@ -125,6 +146,27 @@ Association  meta::pure::mapping::modelToModel::filter::model::src::_Firm_Person
    firm : _Firm[1];
 }
 
+Class meta::pure::mapping::modelToModel::test::filter::model::D
+{
+   id : Integer[1];
+   e  : E[0..1];
+}
+
+Class meta::pure::mapping::modelToModel::test::filter::model::E
+{
+   id : Integer[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::filter::model::_D
+{
+   id : Integer[1];
+   e  : _E[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::filter::model::_E
+{
+   id : Integer[1];
+}
 
 ###Mapping
 import meta::pure::mapping::modelToModel::test::filter::model::*;
@@ -144,4 +186,21 @@ Mapping meta::pure::mapping::modelToModel::test::filter::mapping::filterMapping
       legalName : $src.name,
       employees : $src.employees
    }
+)
+
+Mapping meta::pure::mapping::modelToModel::test::filter::mapping::setFilterMapping
+(
+  D : Pure
+  {
+    ~src _D
+    id: $src.id,
+    e: $src.e
+  }
+
+  E: Pure
+  {
+    ~src _E
+    ~filter $src.id != 1
+    id: $src.id
+  }
 )

@@ -36,7 +36,6 @@ const args = process.argv.slice(2);
 const enableAdvancedMode = args.includes('--advanced');
 
 // settings
-const ENABLE_HMR = true;
 const CONTENT_LINE_LENGTH = 72;
 
 // Makes the script crash on unhandled rejections instead of silently
@@ -48,7 +47,6 @@ const webpackConfig = webpackConfigCreate(undefined, { mode: 'development', enab
 // Type checking
 const compiler = webpack(webpackConfig);
 const tsCheckerHooks = ForkTsCheckerWebpackPlugin.getCompilerHooks(compiler);
-compiler.close(() => { /* Webpack 5 require explicit compiler hook closing */ });
 let typeCheckingStartTime;
 tsCheckerHooks.start.tap('fork-ts-checker-start', () => {
   // this hook is called when type checking is started, so we can reset the time here
@@ -147,5 +145,7 @@ tsCheckerHooks.issues.tap('fork-ts-checker-issues', (issues, compilation) => {
 });
 
 const webpackDevServerConfig = webpackConfig.devServer;
-const server = new WebpackDevServer(compiler, { ...webpackDevServerConfig, hot: ENABLE_HMR });
+const server = new WebpackDevServer(compiler, { ...webpackDevServerConfig });
 server.listen(webpackDevServerConfig.port, webpackDevServerConfig.host);
+
+compiler.close(() => { /* Webpack 5 require explicit compiler hook closing */ });

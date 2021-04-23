@@ -28,14 +28,12 @@ import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.eclipse.collections.impl.test.Verify;
-import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
@@ -50,36 +48,65 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.PureRepositoryJars;
 import org.finos.legend.pure.m3.serialization.runtime.binary.SimplePureRepositoryJarLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.pattern.PurePattern;
 import org.finos.legend.pure.m3.serialization.runtime.pattern.URLPatternLibrary;
-import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.finos.legend.pure.m3.tools.PackageTreeIterable;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.junit.*;
+import org.finos.legend.pure.m4.tools.GraphNodeIterable;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPlatform
 {
-    protected static FunctionExecution functionExecution2;
-    protected static PureRuntime runtime2;
-    protected static ModelRepository repository2;
-    protected static Context context2;
-    protected static ProcessorSupport processorSupport2;
-    protected static GraphLoader loader;
-    protected static MutableList<PureRepositoryJar> jars;
+    private static final MutableList<PureRepositoryJar> jars = Lists.mutable.empty();
 
+    private PureRuntime runtime2;
+    private ModelRepository repository2;
+    private Context context2;
+    private ProcessorSupport processorSupport2;
+    private GraphLoader loader;
+
+    @BeforeClass
     public static void setUp()
     {
         setUpRuntime(getExtra());
-        jars = Lists.mutable.empty();
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         CodeStorage codeStorage = runtime.getCodeStorage();
         RichIterable<String> repoNames = codeStorage.getAllRepoNames();
         if (codeStorage.isFile(PureCodeStorage.WELCOME_FILE_PATH))
         {
-            repoNames = LazyIterate.concatenate(repoNames, Lists.immutable.with((String)null));
+            repoNames = repoNames.toList().with(null);
+        }
+        for (String repoName : repoNames)
+        {
+            outStream.reset();
+            try
+            {
+                BinaryModelRepositorySerializer.serialize(outStream, repoName, runtime);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("Error writing cache for " + repoName, e);
+            }
+            jars.add(PureRepositoryJars.get(outStream));
+        }
+    }
+
+    @Before
+    public void setUpSecondRuntimeAndGraphLoader()
+    {
+        MutableList<PureRepositoryJar> jars = Lists.mutable.empty();
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        CodeStorage codeStorage = runtime.getCodeStorage();
+        RichIterable<String> repoNames = codeStorage.getAllRepoNames();
+        if (codeStorage.isFile(PureCodeStorage.WELCOME_FILE_PATH))
+        {
+            repoNames = repoNames.toList().with(null);
         }
         for (String repoName : repoNames)
         {
@@ -95,20 +122,22 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
             jars.add(PureRepositoryJars.get(outStream));
         }
 
-        runtime2 = new PureRuntimeBuilder(runtime.getCodeStorage())
+        this.runtime2 = new PureRuntimeBuilder(runtime.getCodeStorage())
                 .withRuntimeStatus(getPureRuntimeStatus())
                 .build();
-        functionExecution2 = getFunctionExecution();
-        functionExecution2.init(runtime2, new Message(""));
-        repository2 = runtime2.getModelRepository();
-        context2 = runtime2.getContext();
-        processorSupport2 = runtime2.getProcessorSupport();
+        this.repository2 = this.runtime2.getModelRepository();
+        this.context2 = this.runtime2.getContext();
+        this.processorSupport2 = this.runtime2.getProcessorSupport();
+        IncrementalCompiler compiler = this.runtime2.getIncrementalCompiler();
+        this.loader = buildGraphLoader(this.repository2, this.context2, compiler.getParserLibrary(), compiler.getDslLibrary(), this.runtime2.getSourceRegistry(), this.runtime2.getURLPatternLibrary(), SimplePureRepositoryJarLibrary.newLibrary(jars));
     }
-//    protected abstract GraphLoader buildGraphLoader(ModelRepository repository, Context context, ParserLibrary parserLibrary, InlineDSLLibrary dslLibrary, SourceRegistry sourceRegistry, URLPatternLibrary patternLibrary, PureRepositoryJarLibrary jarLibrary);
+
+    protected abstract GraphLoader buildGraphLoader(ModelRepository repository, Context context, ParserLibrary parserLibrary, InlineDSLLibrary dslLibrary, SourceRegistry sourceRegistry, URLPatternLibrary patternLibrary, PureRepositoryJarLibrary jarLibrary);
 
     @Test
     public void testIsKnownRepository()
     {
+        assertInitialState();
         Assert.assertTrue(this.loader.isKnownRepository("platform"));
         Assert.assertFalse(this.loader.isKnownRepository("not a repo"));
     }
@@ -116,6 +145,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     @Test
     public void testIsKnownFile()
     {
+        assertInitialState();
         Assert.assertTrue(this.loader.isKnownFile("platform/pure/m3.pc"));
         Assert.assertTrue(this.loader.isKnownFile("platform/pure/graph.pc"));
         Assert.assertTrue(this.loader.isKnownFile("platform/pure/milestoning.pc"));
@@ -127,6 +157,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     @Test
     public void testIsKnownInstance()
     {
+        assertInitialState();
         Assert.assertTrue(this.loader.isKnownInstance("meta::pure::metamodel::type::Class"));
         Assert.assertTrue(this.loader.isKnownInstance("meta::pure::metamodel::type::Type"));
         Assert.assertTrue(this.loader.isKnownInstance("meta::pure::metamodel::multiplicity::PureOne"));
@@ -138,65 +169,21 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     @Test
     public void testLoadAll()
     {
+        assertInitialState();
         this.loader.loadAll();
-
-        // Compare top level elements
-        Verify.assertSetsEqual(this.repository.getTopLevels().collect(CoreInstance.GET_NAME).toSet(), this.repository2.getTopLevels().collect(CoreInstance.GET_NAME).toSet());
-
-        // Compare packaged elements by path
-        //Set<String> fromExtra = Sets.mutable.with("meta::pure::functions::io", "meta::pure::functions::hash", "meta::pure::functions::date");
-        Verify.assertSetsEqual(getAllPackagedElementPaths(this.repository), getAllPackagedElementPaths(this.repository2));
-
-        // Compare functionsByName
-        MutableMap<String, SetIterable<String>> functionsByNameBefore = Maps.mutable.empty();
-        for (String functionName : this.context.getAllFunctionNames())
-        {
-            SetIterable<CoreInstance> functions = this.context.getFunctionsForName(functionName);
-            SetIterable<String> res = functions.select(s->!"/system/extra.pure".equals(s.getSourceInformation().getSourceId())).collect(PackageableElement.GET_USER_PATH, UnifiedSet.<String>newSet(functions.size()));
-            if (!res.isEmpty())
-            {
-                functionsByNameBefore.put(functionName, res);
-            }
-        }
-        MutableMap<String, SetIterable<String>> functionsByNameAfter = Maps.mutable.empty();
-        for (String functionName : this.context2.getAllFunctionNames())
-        {
-            SetIterable<CoreInstance> functions = this.context2.getFunctionsForName(functionName);
-            Verify.assertAllSatisfy(functions, new Predicate<CoreInstance>()
-            {
-                @Override
-                public boolean accept(CoreInstance function)
-                {
-                    return Instance.instanceOf(function, M3Paths.Function, TestGraphLoader.this.processorSupport2);
-                }
-            });
-            functionsByNameAfter.put(functionName, functions.collect(PackageableElement.GET_USER_PATH, UnifiedSet.<String>newSet(functions.size())));
-        }
-        System.out.println(functionsByNameBefore);
-        Verify.assertMapsEqual(functionsByNameBefore, functionsByNameAfter);
-
-        // Compare sources
-        SourceRegistry sourceRegistry1 = this.runtime.getSourceRegistry();
-        SourceRegistry sourceRegistry2 = this.runtime2.getSourceRegistry();
-        Verify.assertSetsEqual(sourceRegistry1.getSources().select(s->!s.isInMemory()).collect(Source::getId).toSet(), sourceRegistry2.getSourceIds().toSet());
-        Verify.assertSetsEqual(sourceRegistry1.getSources().select(s->!s.isInMemory()).collect(Source::getId).toSet(), this.loader.getLoadedFiles().collect(PureRepositoryJarTools.BINARY_PATH_TO_PURE_PATH, Sets.mutable.<String>empty()));
-        for (String sourceId : sourceRegistry1.getSources().select(s->!s.isInMemory()).collect(Source::getId))
-        {
-            assertSourcesEqual(sourceId);
-        }
-
-        // Compare pattern library
-        assertURLPatternLibrariesEqual(this.runtime.getURLPatternLibrary(), this.runtime2.getURLPatternLibrary());
+        assertAllOfRuntimeLoaded();
     }
 
     @Test
     public void testLoadM3()
     {
-        MutableSet<String> alreadyLoaded = this.loader.getLoadedFiles().collect(PureRepositoryJarTools.BINARY_PATH_TO_PURE_PATH, Sets.mutable.<String>empty());
+        assertInitialState();
+
+        MutableSet<String> alreadyLoaded = this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty());
         String m3SourceId = "/platform/pure/m3.pure";
         this.loader.loadFile(m3SourceId);
 
-        Verify.assertSetsEqual(Sets.mutable.with(m3SourceId).union(alreadyLoaded), this.loader.getLoadedFiles().collect(PureRepositoryJarTools.BINARY_PATH_TO_PURE_PATH, Sets.mutable.<String>empty()));
+        Verify.assertSetsEqual(Sets.mutable.with(m3SourceId).union(alreadyLoaded), this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty()));
         Verify.assertSetsEqual(Sets.mutable.with(m3SourceId).union(alreadyLoaded), this.runtime2.getSourceRegistry().getSourceIds().toSet());
         assertSourcesEqual(m3SourceId);
 
@@ -209,7 +196,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
             }
         }
 
-        for (CoreInstance instance : this.runtime.getSourceById(m3SourceId).getNewInstances())
+        for (CoreInstance instance : runtime.getSourceById(m3SourceId).getNewInstances())
         {
             String path = PackageableElement.getUserPathForPackageableElement(instance);
             if (M3Paths.Root.equals(path))
@@ -219,17 +206,19 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
             Assert.assertNotNull(path, this.runtime2.getCoreInstance(path));
         }
 
-        Verify.assertSetsEqual(this.repository.getTopLevels().collect(CoreInstance.GET_NAME).toSet(), this.repository2.getTopLevels().collect(CoreInstance.GET_NAME).toSet());
+        Verify.assertSetsEqual(repository.getTopLevels().collect(CoreInstance.GET_NAME).toSet(), this.repository2.getTopLevels().collect(CoreInstance.GET_NAME).toSet());
     }
 
     @Test
     public void testLoadCollection()
     {
+        assertInitialState();
+
         String m3SourceId = "/platform/pure/m3.pure";
         String collectionSourceId = "/platform/pure/collection.pure";
 
         this.loader.loadFile(collectionSourceId);
-        MutableSet<String> loadedFiles = this.loader.getLoadedFiles().collect(PureRepositoryJarTools.BINARY_PATH_TO_PURE_PATH, Sets.mutable.<String>empty());
+        MutableSet<String> loadedFiles = this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty());
 
         Verify.assertContains(collectionSourceId, loadedFiles);
         assertSourcesEqual(collectionSourceId);
@@ -237,18 +226,77 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         Verify.assertContains(m3SourceId, loadedFiles);
         assertSourcesEqual(m3SourceId);
 
-        Verify.assertSetsEqual(this.repository.getTopLevels().collect(CoreInstance.GET_NAME).toSet(), this.repository2.getTopLevels().collect(CoreInstance.GET_NAME).toSet());
+        Verify.assertSetsEqual(repository.getTopLevels().collect(CoreInstance.GET_NAME).toSet(), this.repository2.getTopLevels().collect(CoreInstance.GET_NAME).toSet());
     }
 
     @Test
-    public void testFunctionsByNameCache()
+    public void testLoadRepository()
     {
+        assertInitialState();
+        this.loader.loadRepository("platform");
+        assertAllOfRuntimeLoaded();
+    }
 
+    @Test
+    public void testLoadRepositories()
+    {
+        assertInitialState();
+        this.loader.loadRepositories(Lists.immutable.with("platform"));
+        assertAllOfRuntimeLoaded();
+    }
+
+    private void assertInitialState()
+    {
+        Assert.assertEquals(Sets.immutable.empty(), this.loader.getLoadedFiles());
+        Assert.assertTrue(this.repository2.getTopLevels().isEmpty());
+    }
+
+    private void assertAllOfRuntimeLoaded()
+    {
+        // Compare top level elements
+        Verify.assertSetsEqual(repository.getTopLevels().collect(CoreInstance::getName).toSet(), this.repository2.getTopLevels().collect(CoreInstance::getName).toSet());
+
+        // Compare packaged elements by path
+        //Set<String> fromExtra = Sets.mutable.with("meta::pure::functions::io", "meta::pure::functions::hash", "meta::pure::functions::date");
+        Verify.assertSetsEqual(getAllPackagedElementPaths(repository), getAllPackagedElementPaths(this.repository2));
+
+        // Compare functionsByName
+        MutableMap<String, SetIterable<String>> functionsByNameBefore = Maps.mutable.empty();
+        for (String functionName : context.getAllFunctionNames())
+        {
+            SetIterable<CoreInstance> functions = context.getFunctionsForName(functionName);
+            SetIterable<String> res = functions.collectIf(s -> !"/system/extra.pure".equals(s.getSourceInformation().getSourceId()), PackageableElement::getUserPathForPackageableElement, UnifiedSet.newSet(functions.size()));
+            if (!res.isEmpty())
+            {
+                functionsByNameBefore.put(functionName, res);
+            }
+        }
+        MutableMap<String, SetIterable<String>> functionsByNameAfter = Maps.mutable.empty();
+        for (String functionName : this.context2.getAllFunctionNames())
+        {
+            SetIterable<CoreInstance> functions = this.context2.getFunctionsForName(functionName);
+            Verify.assertAllSatisfy(functions, (Predicate<CoreInstance>) function -> Instance.instanceOf(function, M3Paths.Function, this.processorSupport2));
+            functionsByNameAfter.put(functionName, functions.collect(PackageableElement::getUserPathForPackageableElement, UnifiedSet.newSet(functions.size())));
+        }
+        Verify.assertMapsEqual(functionsByNameBefore, functionsByNameAfter);
+
+        // Compare sources
+        SourceRegistry sourceRegistry1 = runtime.getSourceRegistry();
+        SourceRegistry sourceRegistry2 = this.runtime2.getSourceRegistry();
+        Verify.assertSetsEqual(sourceRegistry1.getSources().select(s -> !s.isInMemory()).collect(Source::getId).toSet(), sourceRegistry2.getSourceIds().toSet());
+        Verify.assertSetsEqual(sourceRegistry1.getSources().select(s -> !s.isInMemory()).collect(Source::getId).toSet(), this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty()));
+        for (String sourceId : sourceRegistry1.getSources().select(s -> !s.isInMemory()).collect(Source::getId))
+        {
+            assertSourcesEqual(sourceId);
+        }
+
+        // Compare pattern library
+        assertURLPatternLibrariesEqual(runtime.getURLPatternLibrary(), this.runtime2.getURLPatternLibrary());
     }
 
     private void assertSourcesEqual(String sourceId)
     {
-        Source source1 = this.runtime.getSourceById(sourceId);
+        Source source1 = runtime.getSourceById(sourceId);
         Source source2 = this.runtime2.getSourceById(sourceId);
         String message = "Mismatch for " + sourceId;
         Assert.assertEquals(message, source1.getContent(), source2.getContent());
@@ -263,9 +311,9 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         ListIterable<PurePattern> patterns1 = library1.getPatterns();
         ListIterable<PurePattern> patterns2 = library2.getPatterns();
 
-        Verify.assertSetsEqual(patterns1.collect(PurePattern.GET_SRC_PATTERN, Sets.mutable.<String>empty()), patterns2.collect(PurePattern.GET_SRC_PATTERN, Sets.mutable.<String>empty()));
-        Verify.assertSetsEqual(patterns1.collect(PurePattern.GET_REAL_PATTERN, Sets.mutable.<String>empty()), patterns2.collect(PurePattern.GET_REAL_PATTERN, Sets.mutable.<String>empty()));
-        Verify.assertSetsEqual(patterns1.collect(Functions.chain(PurePattern.GET_FUNCTION, PackageableElement.GET_USER_PATH), Sets.mutable.<String>empty()), patterns2.collect(Functions.chain(PurePattern.GET_FUNCTION, PackageableElement.GET_USER_PATH), Sets.mutable.<String>empty()));
+        Verify.assertSetsEqual(patterns1.collect(PurePattern::getSrcPattern, Sets.mutable.empty()), patterns2.collect(PurePattern::getSrcPattern, Sets.mutable.empty()));
+        Verify.assertSetsEqual(patterns1.collect(PurePattern.GET_REAL_PATTERN, Sets.mutable.empty()), patterns2.collect(PurePattern.GET_REAL_PATTERN, Sets.mutable.empty()));
+        Verify.assertSetsEqual(patterns1.collect(Functions.chain(PurePattern::getFunction, PackageableElement::getUserPathForPackageableElement), Sets.mutable.empty()), patterns2.collect(Functions.chain(PurePattern::getFunction, PackageableElement::getUserPathForPackageableElement), Sets.mutable.empty()));
     }
 
     private MutableMap<String, ListIterable<String>> getElementsByParser(Source source)
@@ -274,7 +322,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         ListMultimap<Parser, CoreInstance> elementsByParser = source.getElementsByParser();
         for (Parser parser : elementsByParser.keysView())
         {
-            result.put(parser.getName(), elementsByParser.get(parser).collect(PackageableElement.GET_USER_PATH));
+            result.put(parser.getName(), elementsByParser.get(parser).collect(PackageableElement::getUserPathForPackageableElement));
         }
         return result;
     }

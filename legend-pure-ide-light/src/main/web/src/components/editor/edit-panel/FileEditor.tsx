@@ -18,8 +18,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { editor as monacoEditorAPI, KeyCode } from 'monaco-editor';
 import { useEditorStore } from 'Stores/EditorStore';
-import { disposeEditor, baseTextEditorSettings, disableEditorHotKeys, moveToPosition, setErrorMarkers } from 'Utilities/TextEditorUtil';
-import { TAB_SIZE, EDITOR_THEME, EDITOR_LANGUAGE } from 'Stores/EditorConfig';
+import { disposeEditor, disableEditorHotKeys, moveToPosition, setErrorMarkers } from 'Utilities/TextEditorUtil';
+import { TAB_SIZE, EDITOR_THEME, EDITOR_LANGUAGE, MONOSPACE_FONT_FAMILY } from 'Stores/EditorConfig';
 import ReactResizeDetector from 'react-resize-detector';
 import { useApplicationStore } from 'Stores/ApplicationStore';
 import type { FileEditorState } from 'Stores/EditorState';
@@ -35,13 +35,27 @@ export const FileEditor = observer((props: {
   const applicationStore = useApplicationStore();
   const content = editorState.file.content;
   const textInput = useRef<HTMLDivElement>(null);
-  const handleResize = (width: number, height: number): void => editor?.layout({ height, width });
+  const handleResize = (width: number | undefined, height: number | undefined): void => editor?.layout({ height: height ?? 0, width: width ?? 0 });
 
   useEffect(() => {
     if (!editor && textInput.current) {
       const element = textInput.current;
       const editor = monacoEditorAPI.create(element, {
-        ...baseTextEditorSettings,
+        contextmenu: false,
+        copyWithSyntaxHighlighting: false,
+        // NOTE: These following font options are needed (and CSS font-size option `.monaco-editor * { font-size: ... }` as well)
+        // in order to make the editor appear properly on multiple platform, the ligatures option is needed for Mac to display properly
+        // otherwise the cursor position relatively to text would be off
+        // Another potential cause for this misaligment is that the fonts are being lazy-loaded and made available after `monaco-editor`
+        // calculated the font-width, for this, we can use `remeasureFonts`, but our case here, `fontLigatures: true` seems
+        // to do the trick
+        // See https://github.com/microsoft/monaco-editor/issues/392
+        fontSize: 14,
+        // Enforce a fixed font-family to make cross platform display consistent (i.e. Mac defaults to use `Menlo` which is bigger than
+        // `Consolas` on Windows, etc.)
+        fontFamily: MONOSPACE_FONT_FAMILY,
+        fontLigatures: true,
+        fixedOverflowWidgets: true, // make sure hover or widget near boundary are not truncated
         language: EDITOR_LANGUAGE.PURE,
         theme: EDITOR_THEME.NATIVE,
       });

@@ -83,7 +83,7 @@ export const NotificationSnackbar = observer(() => {
             key="close"
             onClick={handleClose}
             tabIndex={-1}
-            title={'Dismiss'}
+            title="Dismiss"
           ><FaTimes /></button>
         ]}
       />

@@ -20,11 +20,11 @@ import meta::alloy::runtime::java::*;
 import meta::pure::executionPlan::*;
 import meta::alloy::service::metamodel::*;
 import meta::json::*;
-import meta::ide::*;
+import meta::pure::ide::*;
 import meta::pure::mapping::*;
 import meta::pure::metamodel::serialization::grammar::*;
 
-function meta::ide::execute(func:String[0..1], param:List<Any>[*], query:String[0..1], block:String[0..1], format:String[0..1], processingFunc:String[0..1], processingParam:List<Any>[*], outFunc:String[0..1], outParam:List<Any>[*]):String[*]
+function meta::pure::ide::execute(func:String[0..1], param:List<Any>[*], query:String[0..1], block:String[0..1], format:String[0..1], processingFunc:String[0..1], processingParam:List<Any>[*], outFunc:String[0..1], outParam:List<Any>[*]):String[*]
 {
    assert($outFunc->isEmpty() || $format->isEmpty(), | 'Cannot specify both parameter \'outFunc\' and parameter \'format\'');
    assert($format->isEmpty() || $format->in(supportedFormats()), | 'Unsupported output format ' + $format->toOne() + ' the supported formats are ' + supportedFormats()->makeString());
@@ -37,7 +37,7 @@ function meta::ide::execute(func:String[0..1], param:List<Any>[*], query:String[
 }
 
 
-function meta::ide::executeFunction(func:Function<Any>[1], param:List<Any>[*], format:String[0..1], outFunc:String[0..1], outParam:List<Any>[*]):String[*]
+function meta::pure::ide::executeFunction(func:Function<Any>[1], param:List<Any>[*], format:String[0..1], outFunc:String[0..1], outParam:List<Any>[*]):String[*]
 {
    let outputFormat = if($format->isEmpty() && $outFunc->isEmpty(), | 'json', | $format);
    if ($outputFormat == 'raw',
@@ -50,13 +50,13 @@ function meta::ide::executeFunction(func:Function<Any>[1], param:List<Any>[*], f
 }
 
 function {service.contentType='application/json'}
-meta::ide::executeFunction_JSON(func:Function<Any>[1], params:List<Any>[*]):String[*]
+meta::pure::ide::executeFunction_JSON(func:Function<Any>[1], params:List<Any>[*]):String[*]
 {
    $func->evaluate($params)->meta::json::toJSONStringStream([], config(true, true, false, false));
 }
 
 function {service.contentType='text/html;charset=UTF-8'}
-meta::ide::executeFunction_RAW(func:Function<Any>[1], params:List<Any>[*]):String[*]
+meta::pure::ide::executeFunction_RAW(func:Function<Any>[1], params:List<Any>[*]):String[*]
 {
    let funcReturnType = $func->functionReturnType();
    let ok = if (isConcrete($funcReturnType), | assert(String->subTypeOf($funcReturnType.rawType->toOne()), | 'Return type must be consistent with String, got: ' + $funcReturnType.rawType->toOne()->elementToPath()); , | true);
@@ -70,7 +70,7 @@ meta::ide::executeFunction_RAW(func:Function<Any>[1], params:List<Any>[*]):Strin
    $res->cast(@String);
 }
 
-function meta::ide::executeFunction(func:String[1], param:List<Any>[*], format:String[0..1], outFunc:String[0..1], outParam:List<Any>[*]):String[*]
+function meta::pure::ide::executeFunction(func:String[1], param:List<Any>[*], format:String[0..1], outFunc:String[0..1], outParam:List<Any>[*]):String[*]
 {
    let funcDef = $func->pathToElement()->cast(@Function<Any>);
    let functionType = $funcDef->functionType();
@@ -79,25 +79,25 @@ function meta::ide::executeFunction(func:String[1], param:List<Any>[*], format:S
    executeFunction($funcDef, $param, $format, $outFunc, $outParam);
 }
 
-function meta::ide::executeCodeBlock(block:String[1], format:String[0..1], processingFunc:String[0..1], processingParam:List<Any>[*], outFunc:String[0..1], outParam:List<Any>[*]):String[*]
+function meta::pure::ide::executeCodeBlock(block:String[1], format:String[0..1], processingFunc:String[0..1], processingParam:List<Any>[*], outFunc:String[0..1], outParam:List<Any>[*]):String[*]
 {
-   if ($processingFunc->isEmpty(), | executeFunction(meta::ide::compileAndExecuteCodeBlock_String_1__Any_MANY_, ^List<Any>(values=$block), $format, $outFunc, $outParam);
+   if ($processingFunc->isEmpty(), | executeFunction(meta::pure::ide::compileAndExecuteCodeBlock_String_1__Any_MANY_, ^List<Any>(values=$block), $format, $outFunc, $outParam);
                           , | let funcDef = $processingFunc->toOne()->pathToElement()->cast(@Function<Any>);
-                              executeFunction(meta::ide::compileAndExecuteAndProcessCodeBlock_String_1__Function_1__List_MANY__Any_MANY_, [^List<Any>(values=$block),^List<Any>(values=$funcDef),^List<Any>(values=$processingParam)], $format, $outFunc, $outParam);
+                              executeFunction(meta::pure::ide::compileAndExecuteAndProcessCodeBlock_String_1__Function_1__List_MANY__Any_MANY_, [^List<Any>(values=$block),^List<Any>(values=$funcDef),^List<Any>(values=$processingParam)], $format, $outFunc, $outParam);
        )
 }
 
-function <<access.private>> meta::ide::compileAndExecuteAndProcessCodeBlock(block:String[1], func:Function<Any>[1], funcParams:List<Any>[*]):Any[*]
+function <<access.private>> meta::pure::ide::compileAndExecuteAndProcessCodeBlock(block:String[1], func:Function<Any>[1], funcParams:List<Any>[*]):Any[*]
 {
    $func->evaluate([^List<Any>(values=compileAndExecuteCodeBlock($block))]->concatenate($funcParams));
 }
 
-function meta::ide::supportedFormats():String[*]
+function meta::pure::ide::supportedFormats():String[*]
 {
    ['json','csv', 'raw', 'pre', 'xlsx']
 }
 
-function <<access.private>> meta::ide::compileAndExecuteCodeBlock(block:String[1]):Any[*]
+function <<access.private>> meta::pure::ide::compileAndExecuteCodeBlock(block:String[1]):Any[*]
 {
    let prefix = '{|';
    let vs = compileValueSpecification($prefix + $block + '}');
@@ -107,17 +107,17 @@ function <<access.private>> meta::ide::compileAndExecuteCodeBlock(block:String[1
 }
 
 
-function {service.contentType='application/json'} meta::ide::display_ide(path:String[1]):String[1]
+function {service.contentType='application/json'} meta::pure::ide::display_ide(path:String[1]):String[1]
 {
     $path->pathToElement()->display_ide();
 }
 
-function <<access.private>> meta::ide::buildKey(e:PackageableElement[1]):String[1]
+function <<access.private>> meta::pure::ide::buildKey(e:PackageableElement[1]):String[1]
 {
    $e->elementToPath()->replace('::','');
 }
 
-function <<access.private>> meta::ide::display_ide(elem:Any[1]):String[1]
+function <<access.private>> meta::pure::ide::display_ide(elem:Any[1]):String[1]
 {
    $elem->match
    (
@@ -177,7 +177,7 @@ function <<access.private>> meta::ide::display_ide(elem:Any[1]):String[1]
 
 }
 
-function meta::ide::getChildPackageableElements(package:String[1]):String[*]
+function meta::pure::ide::getChildPackageableElements(package:String[1]):String[*]
 {
    $package->pathToElement()->cast(@Package).children->map(x|$x->match([
       p:Package[1] | $p->elementToPath()->getChildPackageableElements(),
@@ -185,7 +185,7 @@ function meta::ide::getChildPackageableElements(package:String[1]):String[*]
    ]));
 }
 
-function <<access.private>> meta::ide::getName(pe:PackageableElement[1]):String[1]
+function <<access.private>> meta::pure::ide::getName(pe:PackageableElement[1]):String[1]
 {
    let name =$pe->match([f:FunctionDefinition<Any>[1] | $f.functionName,
                          nf:NativeFunction<Any>[1]    | $nf.functionName,
@@ -193,7 +193,7 @@ function <<access.private>> meta::ide::getName(pe:PackageableElement[1]):String[
    if($name->isEmpty(),|'',|$name->toOne());
 }
 
-function meta::ide::display_ide_attr(element:PackageableElement[1]):String[1]
+function meta::pure::ide::display_ide_attr(element:PackageableElement[1]):String[1]
 {
    let notPublic = !(!$element->hasStereotype('private', meta::pure::profiles::access) && !$element->hasStereotype('protected', meta::pure::profiles::access));
    let s = $element->sourceInformation()->toOne();
@@ -210,16 +210,16 @@ function meta::ide::display_ide_attr(element:PackageableElement[1]):String[1]
    '}';
 }
 
-function <<access.private>> meta::ide::display_ide_attr_pack(element:Package[1]):String[1]
+function <<access.private>> meta::pure::ide::display_ide_attr_pack(element:Package[1]):String[1]
 {
    let path = $element->elementToPath();
    '{"pureId":"' + $path + '",'+
    '"pureType":"Package",'+
-   '"deprecated":'+meta::ide::tacticalDeprecated($element)->toString()+
+   '"deprecated":'+meta::pure::ide::tacticalDeprecated($element)->toString()+
    '}';
 }
 
-function <<access.private>> meta::ide::tacticalDeprecated(element:Package[1]):Boolean[1]
+function <<access.private>> meta::pure::ide::tacticalDeprecated(element:Package[1]):Boolean[1]
 {
    let model =  'model'->forgivingPathToElement();
    let domain = 'model::domain'->forgivingPathToElement();

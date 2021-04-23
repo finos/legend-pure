@@ -14,10 +14,15 @@
 
 package org.finos.legend.pure.ide.light;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.dropwizard.Configuration;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 
+@JsonIgnoreProperties(
+        ignoreUnknown = true
+)
 public class ServerConfiguration extends Configuration
 {
     public SwaggerBundleConfiguration swagger;
+    public SourceLocationConfiguration sourceLocationConfiguration;
 }

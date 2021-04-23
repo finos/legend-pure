@@ -13,19 +13,19 @@
 // limitations under the License.
 
 ###Pure
-import meta::ide::findusages::*;
+import meta::pure::ide::findusages::*;
 
-function meta::ide::findusages::findUsagesForMultiplePaths(paths:String[1]):Pair<String,List<SourceInformation>>[*]
+function meta::pure::ide::findusages::findUsagesForMultiplePaths(paths:String[1]):Pair<String,List<SourceInformation>>[*]
 {
    $paths->split(',')->map(path|$path->pair($path->findUsagesForPath()->list()));
 }
 
-function meta::ide::findusages::findUsagesForPath(path:String[1]):SourceInformation[*]
+function meta::pure::ide::findusages::findUsagesForPath(path:String[1]):SourceInformation[*]
 {
-   $path->pathToElement()->meta::ide::findusages::findUsages();
+   $path->pathToElement()->meta::pure::ide::findusages::findUsages();
 }
 
-function meta::ide::findusages::findUsagesForProperty(ownerPath:String[1], propertyName:String[1]):SourceInformation[*]
+function meta::pure::ide::findusages::findUsagesForProperty(ownerPath:String[1], propertyName:String[1]):SourceInformation[*]
 {
    $ownerPath->pathToElement()->match([
       c:Class<Any>[1] | $c->findClassProperty($propertyName)->findUsages(),
@@ -33,7 +33,7 @@ function meta::ide::findusages::findUsagesForProperty(ownerPath:String[1], prope
    ]);
 }
 
-function meta::ide::findusages::findUsages(element:PackageableElement[1]):SourceInformation[*]
+function meta::pure::ide::findusages::findUsages(element:PackageableElement[1]):SourceInformation[*]
 {
    $element->match([
       f:Function<Any>[1] | $f.applications->evaluateAndDeactivate()->concatenate($f.referenceUsages.owner->evaluateAndDeactivate())->add($element),
@@ -41,7 +41,7 @@ function meta::ide::findusages::findUsages(element:PackageableElement[1]):Source
    ])->map(e | $e->sourceInformation())->removeDuplicates()->sortBy(s | $s.source + $s.line->toString());
 }
 
-function meta::ide::findusages::findClassProperty(class:Class<Any>[1], propertyName:String[1]):AbstractProperty<Any>[1]
+function meta::pure::ide::findusages::findClassProperty(class:Class<Any>[1], propertyName:String[1]):AbstractProperty<Any>[1]
 {
    let property = $class.properties->concatenate($class.propertiesFromAssociations)->get($propertyName);
    if
@@ -52,7 +52,7 @@ function meta::ide::findusages::findClassProperty(class:Class<Any>[1], propertyN
    )->toOne();
 }
 
-function meta::ide::findusages::findUsagesForEnum(ownerPath:String[1], enumName:String[1]):SourceInformation[*]
+function meta::pure::ide::findusages::findUsagesForEnum(ownerPath:String[1], enumName:String[1]):SourceInformation[*]
 {
    $ownerPath->pathToElement().referenceUsages.owner
              ->map(x | $x->match([

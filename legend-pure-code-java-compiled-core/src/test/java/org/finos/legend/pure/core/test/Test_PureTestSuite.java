@@ -34,8 +34,8 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CoreCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.VersionControlledClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.JavaCompilerState;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
@@ -182,12 +182,12 @@ public class Test_PureTestSuite extends TestSuite
 
     public static CompiledExecutionSupport getClassLoaderExecutionSupport()
     {
-        MutableList<CodeRepository> codeRepos = Lists.mutable.of(CoreCodeRepository.newPlatformCodeRepository(), CodeRepository.newCoreCodeRepository());
+        MutableList<CodeRepository> codeRepos = Lists.mutable.of(CodeRepository.newPlatformCodeRepository()).withAll(CodeRepositoryProviderHelper.findCodeRepositories());
         return new CompiledExecutionSupport(
                 new JavaCompilerState(null, Test_PureTestSuite.class.getClassLoader()),
                 new CompiledProcessorSupport(Test_PureTestSuite.class.getClassLoader(), new MetadataLazy(Test_PureTestSuite.class.getClassLoader()), Sets.mutable.empty()),
                 null,
-                new PureCodeStorage(null, new VersionControlledClassLoaderCodeStorage(Test_PureTestSuite.class.getClassLoader(), codeRepos, null)),
+                new PureCodeStorage(null, new ClassLoaderCodeStorage(Test_PureTestSuite.class.getClassLoader(), codeRepos)),
                 null,
                 null,
                 new ConsoleCompiled(),

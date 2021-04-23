@@ -51,7 +51,7 @@ $resizer-width: calc(#{$resizer-side-width}* 2 + #{$resizer-body-width});
 
 .reflex-container > .reflex-element {
   position: relative;
-  overflow: auto;
+  overflow: hidden;
   height: 100%;
   width: 100%;
 }

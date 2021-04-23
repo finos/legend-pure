@@ -4,6 +4,7 @@ import M4Fragment;
 
 STRING : String;
 DATE : Date;
+STRICTTIME : StrictTime;
 SELF : 'self';
 COMMA: ',';
 BRACKET_OPEN: '[';

@@ -34,11 +34,7 @@ import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.eclipse.collections.impl.utility.StringIterate;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CoreCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.ScratchCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.*;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
@@ -81,7 +77,7 @@ public class PureCodeStorage implements MutableCodeStorage
         this.root = root;
         this.codeStorages = Lists.immutable.with(codeStorages);
         this.codeStorageByName = indexCodeStoragesByName(codeStorages).toImmutable();
-        this.repositoriesByName = this.codeStorages.asLazy().flatCollect(RepositoryCodeStorage.GET_REPOSITORIES).groupByUniqueKey(CodeRepository.GET_NAME, UnifiedMap.<String, CodeRepository>newMap(this.codeStorageByName.size())).toImmutable();
+        this.repositoriesByName = this.codeStorages.asLazy().flatCollect(RepositoryCodeStorage.GET_REPOSITORIES).groupByUniqueKey(CodeRepository::getName, UnifiedMap.newMap(this.codeStorageByName.size())).toImmutable();
     }
 
     @Override
@@ -503,7 +499,6 @@ public class PureCodeStorage implements MutableCodeStorage
     public RichIterable<String> getUserFiles()
     {
         MutableList<String> userFiles = Lists.mutable.empty();
-        System.out.println(this.codeStorages.collect(e -> e.getRepositories().collect(d->d.getName())));
         for (RepositoryCodeStorage codeStorage : this.codeStorages)
         {
             userFiles.addAllIterable(codeStorage.getUserFiles());
@@ -928,7 +923,7 @@ public class PureCodeStorage implements MutableCodeStorage
             {
                 svnCodeRepositories.add((SVNCodeRepository)repository);
             }
-            else if (repository instanceof PlatformCodeRepository || repository instanceof CoreCodeRepository)
+            else if (repository instanceof PlatformCodeRepository || repository instanceof GenericCodeRepository)
             {
                 codeStorages.add(new ClassLoaderCodeStorage(repository));
             }
@@ -1039,9 +1034,9 @@ public class PureCodeStorage implements MutableCodeStorage
 
 
 
-    public static RichIterable<CodeRepository> getVisibleRepositories(RichIterable<CodeRepository> codeRepositories,CodeRepository repository)
+    public static RichIterable<CodeRepository> getVisibleRepositories(RichIterable<CodeRepository> codeRepositories, CodeRepository repository)
     {
-        return codeRepositories.select(repository.isVisible);
+        return codeRepositories.select(repository::isVisible);
     }
 
     public static SetIterable<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, Iterable<String> repositoryNames)

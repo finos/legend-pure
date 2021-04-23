@@ -182,7 +182,7 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
 
 function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::findValidPaths(p:PackageableElement[*], extensions:meta::pure::router::extension::RouterExtension[*]):String[*]
 {
-   let validForTests = ['meta::java::codeGeneration::tests', 'meta::pure::tests', 'apps::pure', 'apps::global']->concatenate($extensions.validTestPackages);
+   let validForTests = ['meta::java::generation::tests', 'meta::pure::tests', 'apps::pure', 'apps::global']->concatenate($extensions.validTestPackages);
    $validForTests->concatenate($p->map(op|$op->findValidPathsFromPackage()))->removeDuplicates();
 }
 
@@ -197,44 +197,33 @@ function  meta::protocols::pure::vX_X_X::transformation::fromPureGraph::findType
    $p.class->concatenate($srcClass)
       ->concatenate($srcClass.constraints->map(c|$c.functionDefinition.expressionSequence->evaluateAndDeactivate()->map(e|$e->scan())))
       ->concatenate($srcClass.constraints->map(c|$c.messageFunction.expressionSequence->evaluateAndDeactivate()->map(e|$e->scan())))
-      ->concatenate($p.propertyMappings->cast(@PurePropertyMapping).transform.expressionSequence->evaluateAndDeactivate()->map(e|$e->scan()));
+      ->concatenate($p.propertyMappings->filter(x | $x->instanceOf(PurePropertyMapping))->cast(@PurePropertyMapping).transform.expressionSequence->evaluateAndDeactivate()->map(e|$e->scan()));
 }
 
-function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildDomain(found:AllTypes[1], associations:Association[*], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::domain::Domain[1]
+function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildDomain(found:AllTypes[1], associations:Association[*], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::PackageableElement[*]
 {
    buildDomain($found, $associations, {p:Profile[1]|!$p->elementToPath()->startsWith('meta')}, $extensions)
 }
 
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildDomain(found:AllTypes[1], associations:Association[*], profileFilter:Function<{Profile[1]->Boolean[1]}>[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::domain::Domain[1]
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildDomain(found:AllTypes[1], associations:Association[*], profileFilter:Function<{Profile[1]->Boolean[1]}>[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::PackageableElement[*]
 {
-   let profiles = $found.classes->map(c|$c.stereotypes.profile->concatenate($c.taggedValues.tag.profile)->concatenate(
-                                        $c.properties->map(p|$p.stereotypes.profile->concatenate($p.taggedValues.tag.profile)))->concatenate(
-                                        $c.qualifiedProperties->map(p|$p.stereotypes.profile->concatenate($p.taggedValues.tag.profile)))
-                                 )
+   let profiles = $found.classes->map(c | $c.stereotypes.profile->concatenate($c.taggedValues.tag.profile)
+                                                                ->concatenate($c.properties->map(p|$p.stereotypes.profile->concatenate($p.taggedValues.tag.profile)))
+                                                                ->concatenate($c.qualifiedProperties->map(p|$p.stereotypes.profile->concatenate($p.taggedValues.tag.profile))))
                   ->concatenate($found.enumerations->cast(@AnnotatedElement)->map(e|$e.stereotypes.profile->concatenate($e.taggedValues.tag.profile)))
-                  ->concatenate(
-                      $associations->map(a|$a.stereotypes.profile->concatenate($a.taggedValues.tag.profile)->concatenate(
-                                           $a.properties->map(p|$p.stereotypes.profile->concatenate($p.taggedValues.tag.profile)))->concatenate(
-                                           $a.qualifiedProperties->map(p|$p.stereotypes.profile->concatenate($p.taggedValues.tag.profile)))
-                                    )
-                  )->removeDuplicates()->filter($profileFilter);
-
-   ^meta::protocols::pure::vX_X_X::metamodel::domain::Domain
-   (
-      classes = $found.classes->map(c|$c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformClass($extensions)),
-      associations = $associations->map(c|$c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformAssociation($extensions)),
-      enums = $found.enumerations->map(e|$e->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformEnum()),
-      profiles = $profiles->map(p|^meta::protocols::pure::vX_X_X::metamodel::domain::Profile
-                                  (
-                                     _type = 'profile',
-                                     name = $p.name->toOne(),
-                                     package = if($p.package->isEmpty(),|[],|$p.package->toOne()->elementToPath()),
-                                     stereotypes=$p.p_stereotypes->map(s|$s.value),
-                                     tags=$p.p_tags->map(t|$t.value)
-                                  )
-                            ),
-      measures = $found.measures->map(m|$m->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMeasure($extensions))
-   );
+                  ->concatenate($associations->map(a|$a.stereotypes.profile->concatenate($a.taggedValues.tag.profile)
+                                                                           ->concatenate($a.properties->map(p|$p.stereotypes.profile->concatenate($p.taggedValues.tag.profile)))
+                                                                           ->concatenate($a.qualifiedProperties->map(p|$p.stereotypes.profile->concatenate($p.taggedValues.tag.profile)))
+                                                  )
+                               )
+                  ->removeDuplicates()
+                  ->filter($profileFilter);
+   $found.classes->map(c | $c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformClass($extensions))
+     ->concatenate($associations->map(c | $c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformAssociation($extensions)))
+     ->concatenate($found.enumerations->map(e | $e->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformEnum()))
+     ->concatenate($profiles->map(p |$p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformProfile($extensions)
+                                   ))
+     ->concatenate($found.measures->map(m|$m->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMeasure($extensions)));
 }
 
 function  meta::protocols::pure::vX_X_X::transformation::fromPureGraph::findAllTypesFromMapping(m:Mapping[1], extensions:meta::pure::router::extension::RouterExtension[*]):AllTypes[1]
@@ -276,7 +265,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::findAllTy
    $ps->map(p|$p->getAllPackageElements(true))->removeDuplicates()->filter(c|$c->instanceOf(Type))->cast(@Type)->findAllTypes($ps->findValidPaths($extensions));
 }
 
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromMapping(gm:Mapping[*], toOrigin:Function<{Mapping[1], Protocol[1]->meta::protocols::pure::vX_X_X::metamodel::PureModelContextPointer[0..1]}>[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::pure::functions::collection::Pair<meta::pure::functions::collection::List<Store>, meta::protocols::pure::vX_X_X::metamodel::BasePureModelContextData>[1]
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromMapping(gm:Mapping[*], toOrigin:Function<{Mapping[1], Protocol[1]->meta::protocols::pure::vX_X_X::metamodel::PureModelContextPointer[0..1]}>[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::pure::functions::collection::Pair<meta::pure::functions::collection::List<Store>, meta::protocols::pure::vX_X_X::metamodel::PureModelContextData>[1]
 {
    let allMappings = $gm->map(x | $x->findAllMappingIncludes())->removeDuplicates();
 
@@ -286,7 +275,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBase
    let associationStores = $allMappings->map(m|$m.associationMappings).stores;
 
    let storesFromInclude = $allMappings->map(m|let i = $m.includes.storeSubstitutions; $i->map(k|[$k.original, $k.substitute]););
-  
+
    let stores = $classMappingStores
                 ->concatenate($associationStores)
                 ->concatenate($storesFromInclude)
@@ -315,38 +304,56 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBase
    // Result ----------------
    let protocol = ^Protocol(name='pure', version='vX_X_X');
    pair(list($stores),
-        ^meta::protocols::pure::vX_X_X::metamodel::BasePureModelContextData
+        ^meta::protocols::pure::vX_X_X::metamodel::PureModelContextData
         (
            _type = 'data',
            serializer = $protocol,
            origin = $toOrigin->eval($gm, $protocol),
-           domain = buildDomain($found, $associations, $extensions),
-           mappings = $allMappings->map(m|$m->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::transformMapping($extensions)),
-           stores = $stores->map(store|$store->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::transformStore($extensions))
+           elements = buildDomain($found, $associations, $extensions)
+                        ->concatenate($allMappings->map(m|$m->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::transformMapping($extensions)))
+                        ->concatenate($stores->map(store|$store->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::transformStore($extensions)))
         )
    );
 }
 
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromPackage(ps:Package[*], baseVersion:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::BasePureModelContextData[1]
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromPackage(ps:Package[*], baseVersion:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::PureModelContextData[1]
 {
    let found = findAllTypesFromPackage($ps, $extensions);
    let associations = $found.classes->findAllAssociations();
    let protocol = ^Protocol(name='pure', version='vX_X_X');
-   ^meta::protocols::pure::vX_X_X::metamodel::BasePureModelContextData
+   ^meta::protocols::pure::vX_X_X::metamodel::PureModelContextData
    (
       _type = 'data',
       serializer = $protocol,
       origin = buildPureModelContextPointer($ps->map(p|^meta::protocols::pure::vX_X_X::metamodel::PackageableElementPointer(type=meta::protocols::pure::vX_X_X::metamodel::PackageableElementType.PACKAGE, path=$p->elementToPath())), $baseVersion, $protocol),
-      domain = buildDomain($found, $associations, $extensions)
+      elements = buildDomain($found, $associations, $extensions)
    );
 }
 
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromMapping(gm:Mapping[*], extensions:meta::pure::router::extension::RouterExtension[*]):meta::pure::functions::collection::Pair<meta::pure::functions::collection::List<Store>, meta::protocols::pure::vX_X_X::metamodel::BasePureModelContextData>[1]
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromStore(store:meta::pure::store::Store[1], baseVersion:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::PureModelContextData[1]
+{
+   let stores = $store->map(s|$s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::transformStore($extensions));
+   let protocol = ^Protocol(name='pure', version='vX_X_X');
+   ^meta::protocols::pure::vX_X_X::metamodel::PureModelContextData
+   (
+      _type = 'data',
+      serializer = $protocol,
+      origin = buildPureModelContextPointer(^meta::protocols::pure::vX_X_X::metamodel::PackageableElementPointer(type=meta::protocols::pure::vX_X_X::metamodel::PackageableElementType.STORE, path=$store->elementToPath()), $baseVersion, $protocol),
+      elements = $stores
+   );
+}
+
+
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromMapping(gm:Mapping[*], extensions:meta::pure::router::extension::RouterExtension[*]):meta::pure::functions::collection::Pair<meta::pure::functions::collection::List<Store>, meta::protocols::pure::vX_X_X::metamodel::PureModelContextData>[1]
 {
    let toOrigin = {m:Mapping[1], p:Protocol[1] | buildPureModelContextPointer(^meta::protocols::pure::vX_X_X::metamodel::PackageableElementPointer(type=meta::protocols::pure::vX_X_X::metamodel::PackageableElementType.MAPPING, path=$m->elementToPath()), '-1', $p)};
    buildBasePureModelFromMapping($gm, $toOrigin, $extensions);
 }
 
+
+//----------------------
+// Access using Strings
+//----------------------
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromMappingStr(mappingStr:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
 {
    let gm = $mappingStr->pathToElement()->cast(@Mapping);
@@ -360,5 +367,8 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBase
    buildBasePureModelFromPackage($gm, '-1', $extensions)->toJsonBeta(^JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=true));
 }
 
-
-
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromStoreStr(packageStr:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
+{
+   let gm = $packageStr->pathToElement()->cast(@Store);
+   buildBasePureModelFromStore($gm, '-1', $extensions)->toJsonBeta(^JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=true));
+}

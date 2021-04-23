@@ -82,13 +82,13 @@ export const AuxiliaryPanel = observer(() => {
             className="auxiliary-panel__header__action"
             onClick={toggleExpandAuxPanel}
             tabIndex={-1}
-            title={'Toggle expand/collapse'}
+            title="Toggle Expand/Collapse"
           >{editorStore.isAuxPanelMaximized ? <GoChevronDown /> : <GoChevronUp />}</button>
           <button
             className="auxiliary-panel__header__action"
             onClick={closePanel}
             tabIndex={-1}
-            title={'Close'}
+            title="Close"
           ><GoX /></button>
         </div>
       </div>

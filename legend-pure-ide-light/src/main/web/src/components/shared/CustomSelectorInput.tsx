@@ -110,7 +110,8 @@ export interface SelectOption {
   __isNew__?: boolean;
 }
 
-interface CustomSelectorInputProps extends Props<SelectOption> {
+interface CustomSelectorInputProps extends Props<SelectOption, true> {
+  className?: string;
   allowCreating?: boolean;
   disabled?: boolean;
   darkMode?: boolean;

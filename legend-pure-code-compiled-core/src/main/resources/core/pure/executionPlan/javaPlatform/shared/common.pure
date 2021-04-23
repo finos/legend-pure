@@ -30,12 +30,12 @@ import meta::pure::mapping::modelToModel::inMemory::*;
 import meta::pure::graphFetch::executionPlan::*;
 import meta::java::metamodel::project::*;
 import meta::java::metamodel::factory::*;
-import meta::java::tostring::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::convention::jackson::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::serialization::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::convention::jackson::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::utils::*;
 
 
 // ----------------------------------------------------------------------------------------------------------
@@ -45,6 +45,11 @@ import meta::java::codeGeneration::utils::*;
 function meta::alloy::runtime::java::platform::iExecutionNodeContextParam(conventions: Conventions[1]):Code[1]
 {
    j_parameter($conventions->className(IExecutionNodeContext), 'context');
+}
+
+function meta::alloy::runtime::java::platform::iStoreStreamReadingExecutionNodeContextParam(conventions: Conventions[1]):Code[1]
+{
+   j_parameter($conventions->className(IStoreStreamReadingExecutionNodeContext), 'context');
 }
 
 function meta::alloy::runtime::java::platform::graphFetchM2MContextParam(conventions: Conventions[1]): Code[1]
@@ -110,7 +115,7 @@ function meta::alloy::runtime::java::generateInterfacesAndEnums(conventions:Conv
    let units = if($unitInfos->isEmpty(),
                   | [],
                   {|
-                     let iface = $conventions->meta::java::codeGeneration::functions::unit::unitInterface();
+                     let iface = $conventions->meta::java::generation::functions::unit::unitInterface();
                      $unitInfos->map(uti | $uti->generateInterfaceForUnit($iface, $conventions, $debug->indent()))->concatenate($iface);
                   }
                );
@@ -153,6 +158,7 @@ function meta::alloy::runtime::java::createGeneratedMilestonedPropertiesForClass
 
    let milestonedClass = $milestonedProperties->fold(
       {mp, project|
+         let returnType     = $conventions->pureTypeToJavaType($mp);
          let srcMp          = $mp->meta::pure::milestoning::getSourceMilestonedProperty($set);
          let childSetImpl   = $set.parent.rootClassMappingByClass($mp->functionReturnType().rawType->cast(@Class<Any>)->toOne());
          let mapperClass    = $conventions->mapperClassName($childSetImpl->toOne(), $extensions);
@@ -166,12 +172,20 @@ function meta::alloy::runtime::java::createGeneratedMilestonedPropertiesForClass
                                                                                       ),
                                        $conventions->pureTypeToJavaType($mp)
                                       )->j_return();
+         
+         let propertyMultiplicity     = $mp.multiplicity;
+         let bodyWithMultiplicityCast = if($propertyMultiplicity->isToOne(),
+                                           | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('toOne', $body, $returnType),
+                                           |
+                                           if($propertyMultiplicity->isZeroOne(),
+                                              | $conventions->className(meta::pure::executionPlan::engine::Library)->j_invoke('first', $body, $returnType),
+                                              | $body));
 
          let newProject = newProject()->addClass($class->addMethod(
-            javaMethod('public', $conventions->pureTypeToJavaType($mp), $conventions->getterName($mp), $params->cast(@meta::java::metamodel::Parameter), $body->codeToString($conventions))
+            javaMethod('public', $returnType, $conventions->getterName($mp), $params->cast(@meta::java::metamodel::Parameter), $bodyWithMultiplicityCast->codeToString($conventions))
          ));
 
-         mergeProjects($project->concatenate($newProject)->concatenate($body->dependencies()->resolveAndGetProjects())->toOneMany());
+         mergeProjects($project->concatenate($newProject)->concatenate($bodyWithMultiplicityCast->dependencies()->resolveAndGetProjects())->toOneMany());
       },
       newProject()
    );
@@ -188,6 +202,14 @@ function meta::alloy::runtime::java::createAlloyStoreObjectReferenceMethodsForCl
    let newProject = newProject()->addClass($class->implements($iface)->addMethod(
       javaMethod('public', javaString(), $methodName, [], $body->codeToString($class))
    ));
+}
+
+function meta::alloy::runtime::java::referencedObjectReference(conventions:Conventions[1]):String[1]
+{
+   let methodName = $conventions->className(IReferencedObject).methods->toOne().name;
+   let identifier = $methodName->substring(3, 4)->toLower()+$methodName->substring(4);
+   assert($methodName == $conventions->getterName($identifier), 'Getter name assumptions violated');
+   $identifier;
 }
 
 function meta::alloy::runtime::java::generateInterfaceForClass(typeInfo: ClassTypeInfo[1], conventions: Conventions[1], debug: DebugContext[1]): meta::java::metamodel::Class[1]
@@ -214,7 +236,7 @@ function meta::alloy::runtime::java::generateInterfaceForClass(typeInfo: ClassTy
       $withPropertyGetters
    );
    
-   let dataRecordClass   = JsonDataRecord->concatenate($conventions.extensions.plan_javaRuntime_common_generateInterfaceForClass);
+   let dataRecordClass   = [JsonDataRecord, XmlDataRecord]->concatenate($conventions.extensions.plan_javaRuntime_common_generateInterfaceForClass);
    let iReferencedObject = $conventions->className(IReferencedObject);
    if($typeInfo.class->in($dataRecordClass),
       |$withQualifiedPropertyGetters,

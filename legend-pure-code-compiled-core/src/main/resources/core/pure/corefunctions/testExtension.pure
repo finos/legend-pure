@@ -409,6 +409,15 @@ function meta::pure::functions::asserts::assertSize(collection:Any[*], size:Inte
     assertEq($size, $collection->size(), $message);
 }
 
+//--------------------------------------
+// assert semantically same json strings
+//--------------------------------------
+
+function meta::pure::functions::asserts::assertJsonStringsEqual(expected:String[1], actual:String[1]):Boolean[1]
+{
+    assert(equalJsonStrings($expected,$actual), | 'JSON strings don\'t represent semantically same object \n expected: ' + $expected + '\n actual: ' + $actual);
+}
+
 //------------
 // fail
 //------------
@@ -582,4 +591,3 @@ function {doc.doc = 'Return whether the given element is some kind of testing el
 {
     $element.stereotypes->exists(st | $st.profile == test);
 }
-

@@ -15,27 +15,27 @@
 import meta::java::metamodel::project::*;
 import meta::pure::graphFetch::execution::*;
 import meta::java::metamodel::factory::*;
-import meta::java::codeGeneration::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::utils::*;
-import meta::java::tostring::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::expression::*;
+import meta::java::generation::*;
+import meta::java::generation::code::*;
+import meta::java::generation::utils::*;
+import meta::java::serialization::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::expression::*;
 import meta::pure::runtime::*;
 import meta::pure::executionPlan::*;
 
-function meta::java::codeGeneration::expression::generateJavaMethodBody(vses:ValueSpecification[*], conventions: Conventions[1]):Code[1]
+function meta::java::generation::expression::generateJavaMethodBody(vses:ValueSpecification[*], conventions: Conventions[1]):Code[1]
 {
    generateJavaMethodBody($vses, $conventions, noDebug());
 }
 
-function meta::java::codeGeneration::expression::generateJavaMethodBody(vses:ValueSpecification[*], conventions: Conventions[1], debug: DebugContext[1]):Code[1]
+function meta::java::generation::expression::generateJavaMethodBody(vses:ValueSpecification[*], conventions: Conventions[1], debug: DebugContext[1]):Code[1]
 {
    assert($vses->isNotEmpty(), 'Method body must have at least one expression');
    $vses->statementsForBlock($conventions, $debug)->j_block();
 }
 
-function <<access.private>> meta::java::codeGeneration::expression::statementsForBlock(vses:ValueSpecification[*], conventions: Conventions[1], debug: DebugContext[1]):Code[*]
+function <<access.private>> meta::java::generation::expression::statementsForBlock(vses:ValueSpecification[*], conventions: Conventions[1], debug: DebugContext[1]):Code[*]
 {
    $vses->toIndexed()
       ->map(z| print(if($debug.debug,|$debug.space+'statementsForBlock - processing expression '+$z.first->toString()+'\n',|''));
@@ -59,12 +59,12 @@ function <<access.private>> meta::java::codeGeneration::expression::statementsFo
       ->toStatements();
 }
 
-function meta::java::codeGeneration::expression::generateJava(vs:ValueSpecification[1], conventions: Conventions[1]):Code[1]
+function meta::java::generation::expression::generateJava(vs:ValueSpecification[1], conventions: Conventions[1]):Code[1]
 {
    generateJava($vs, $conventions, noDebug());
 }
 
-function meta::java::codeGeneration::expression::generateJava(vs:ValueSpecification[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
+function meta::java::generation::expression::generateJava(vs:ValueSpecification[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
 {
    let expr = $vs->generateJavaInternal($conventions, $debug);
    
@@ -74,7 +74,7 @@ function meta::java::codeGeneration::expression::generateJava(vs:ValueSpecificat
    );
 }
 
-function meta::java::codeGeneration::expression::generateJavaInternal(vs:ValueSpecification[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
+function meta::java::generation::expression::generateJavaInternal(vs:ValueSpecification[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
 {
    let result = $vs->match([
       {f:FunctionExpression[1]                  | $f->processFunctionExpression($conventions, $debug)},
@@ -86,7 +86,7 @@ function meta::java::codeGeneration::expression::generateJavaInternal(vs:ValueSp
    $result;
 }
 
-function meta::java::codeGeneration::expression::processHackedUnit(v: ValueSpecification[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
+function meta::java::generation::expression::processHackedUnit(v: ValueSpecification[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
 {
    let gtrt    = $v->type()->toOne();
    let rawType = $conventions->pureTypeToJavaType($gtrt, PureOne);
@@ -94,13 +94,13 @@ function meta::java::codeGeneration::expression::processHackedUnit(v: ValueSpeci
    j_code($conventions->codeType($rawType)->codeToString($conventions), $rawType)->debugAndReturn($debug);
 }
 
-function meta::java::codeGeneration::expression::getUnitConversionFunctionVariableName(func:FunctionDefinition<Any>[1], conventions: Conventions[1], debug:DebugContext[1]): String[1]
+function meta::java::generation::expression::getUnitConversionFunctionVariableName(func:FunctionDefinition<Any>[1], conventions: Conventions[1], debug:DebugContext[1]): String[1]
 {
    let v = $func.classifierGenericType.typeArguments.rawType->cast(@FunctionType).parameters->toOne();
    let varName  = if($v.name == 'this', |$v.name, |$conventions->identifier($v.name));
 }
 
-function <<access.private>> meta::java::codeGeneration::expression::processVariableExpression(v: VariableExpression[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
+function <<access.private>> meta::java::generation::expression::processVariableExpression(v: VariableExpression[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
 {
    print(if($debug.debug,|$debug.space+'VariableExpression: \''+($v.name)+'\'\n',|''));
    let varName = if($v.name == 'this', |$v.name, |$conventions->identifier($v.name));
@@ -114,7 +114,7 @@ function <<access.private>> meta::java::codeGeneration::expression::processVaria
    );
 }
 
-function <<access.private>> meta::java::codeGeneration::expression::processVariableExpressionAsParameter(v: VariableExpression[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
+function <<access.private>> meta::java::generation::expression::processVariableExpressionAsParameter(v: VariableExpression[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
 {
    print(if($debug.debug,|$debug.space+'processVariableExpressionAsParameter: \''+($v.name)+'\'\n',|''));
    let c        = $v.genericType.rawType->toOne();   
@@ -123,13 +123,13 @@ function <<access.private>> meta::java::codeGeneration::expression::processVaria
    j_parameter($javaType, $varName);
 }
 
-function meta::java::codeGeneration::expression::processLambda(l:LambdaFunction<Any>[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
+function meta::java::generation::expression::processLambda(l:LambdaFunction<Any>[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
 {
     let parameters = $l.classifierGenericType.typeArguments.rawType->cast(@FunctionType).parameters->map(p|$p->processVariableExpressionAsParameter($conventions, $debug->indent()));
     let expression = $l.expressionSequence->evaluateAndDeactivate()->statementsForBlock($conventions->addProvidedVariables($parameters), $debug)->j_block();
     j_lambda($parameters, $expression, javaFunctionType($parameters.type, $expression.type));
 }
-function <<access.private>> meta::java::codeGeneration::expression::processInstanceValue(i: InstanceValue[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
+function <<access.private>> meta::java::generation::expression::processInstanceValue(i: InstanceValue[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
 {
    print(if($debug.debug,|$debug.space+'InstanceValue: '+$i.values->size()->toString()+' values\n',|''));
    let values = $i.values->map({v|
@@ -192,7 +192,7 @@ function <<access.private>> meta::java::codeGeneration::expression::processInsta
    $result->debugAndReturn($debug);
 }
 
-function <<access.private>> meta::java::codeGeneration::expression::processFunctionExpression(fe: FunctionExpression[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
+function <<access.private>> meta::java::generation::expression::processFunctionExpression(fe: FunctionExpression[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
 {
    let collect = '.collect('+$conventions->codeType(javaType('java.util.stream.Collectors'))->codeToString($conventions)+'.toList())';           
 
@@ -235,7 +235,7 @@ function <<access.private>> meta::java::codeGeneration::expression::processFunct
    $optimized->debugAndReturn($debug);
 }
 
-function <<access.private>> meta::java::codeGeneration::expression::processConcreteFunctionExpression(fe: FunctionExpression[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
+function <<access.private>> meta::java::generation::expression::processConcreteFunctionExpression(fe: FunctionExpression[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
 {
    print(if($debug.debug,|$debug.space+'processConcreteFunctionExpression '+$fe.func->elementToPath()+'\n',|''));
          
@@ -275,7 +275,7 @@ function <<access.private>> meta::java::codeGeneration::expression::processConcr
    j_invoke($signature.class, $signature.method.name, $castArgs, $signature.method.returnType)->dependsOn($dependency);
 }
 
-function <<access.private>> meta::java::codeGeneration::expression::debugAndReturn(c:Code[1], debug:DebugContext[1]):Code[1]
+function <<access.private>> meta::java::generation::expression::debugAndReturn(c:Code[1], debug:DebugContext[1]):Code[1]
 {
    print(if($debug.debug,
             |$debug.space+'>> ('+ $c.type->typePathToString(true) + ')  '+ $c->codeToString() + ' [' + $c->dependencies().name->makeString(', ') + ']' + if($c->isDeprecated(), |' :-(', |'') + '\n',

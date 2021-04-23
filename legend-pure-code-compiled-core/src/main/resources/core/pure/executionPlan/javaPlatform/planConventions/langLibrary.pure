@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::codeGeneration::code::*;
+import meta::java::generation::code::*;
 import meta::java::metamodel::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::functions::lang::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::functions::lang::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::factory::*;
 import meta::java::metamodel::project::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 import meta::pure::executionPlan::engine::*;
 
-function meta::java::codeGeneration::functions::lang::register(conventions: Conventions[1]): Conventions[1]
+function meta::java::generation::functions::lang::register(conventions: Conventions[1]): Conventions[1]
 {
    let library  = $conventions->className(Library);
 
@@ -45,15 +45,15 @@ function meta::java::codeGeneration::functions::lang::register(conventions: Conv
          fc2(cast_Any_m__T_1__T_m_,                            castCoder_FuncCoderContext_1__Code_1__Code_1__Code_1_),
          fc3(if_Boolean_1__Function_1__Function_1__T_m_,       ifCoder_FuncCoderContext_1__Code_1__Code_1__Code_1__Code_1_),
          fc2(letFunction_String_1__T_m__T_m_,                  letCoder_FuncCoderContext_1__Code_1__Code_1__Code_1_),
-         fc(new_Class_1__String_1__KeyExpression_MANY__T_1_,   processNew_FunctionExpression_1__Conventions_1__DebugContext_1__Code_1_)
+         fc(new_Class_1__String_1__KeyExpression_MANY__T_1_,   processNew_FunctionExpression_1__Conventions_1__DebugContext_1__Code_1_),
 
-
+         fc2(orElse_T_$0_1$__T_1__T_1_,                        {ctx,maybe,dflt                | if($maybe->isCollectionsEmptyList(), |$dflt, |j_conditional($maybe->j_box()->j_ne(j_null()), $maybe, $dflt))})
       ]);
 
    $conventions->registerLibrary($lib);
 }
 
-function meta::java::codeGeneration::functions::lang::castCoder(ctx:FuncCoderContext[1], collection:Code[1], exmpl:Code[1]) : Code[1]
+function meta::java::generation::functions::lang::castCoder(ctx:FuncCoderContext[1], collection:Code[1], exmpl:Code[1]) : Code[1]
 {
    let isHackedUnit = $ctx.params->at(1)->type()->instanceOf(Unit);
 
@@ -69,7 +69,7 @@ function meta::java::codeGeneration::functions::lang::castCoder(ctx:FuncCoderCon
    $collection->j_cast($castTo);
 }
 
-function meta::java::codeGeneration::functions::lang::matchPredicates(ctx:FuncCoderContext[1], object:Code[1]) : Code[1]
+function meta::java::generation::functions::lang::matchPredicates(ctx:FuncCoderContext[1], object:Code[1]) : Code[1]
 {
    assert($ctx.params->at(1)->instanceOf(InstanceValue), 'Only inline lambdas currently supported');
    let x          = j_parameter(javaObject(), 'x');
@@ -98,7 +98,7 @@ function meta::java::codeGeneration::functions::lang::matchPredicates(ctx:FuncCo
 
 }
 
-function meta::java::codeGeneration::functions::lang::adaptLambdas(ctx:FuncCoderContext[1], object:Code[1]) : Code[1]
+function meta::java::generation::functions::lang::adaptLambdas(ctx:FuncCoderContext[1], object:Code[1]) : Code[1]
 {
    assert($ctx.params->at(1)->instanceOf(InstanceValue), 'Only inline lambdas currently supported');
 
@@ -136,7 +136,7 @@ function meta::java::codeGeneration::functions::lang::adaptLambdas(ctx:FuncCoder
 
 }
 
-function meta::java::codeGeneration::functions::lang::ifCoder(ctx:FuncCoderContext[1], condition:Code[1], then:Code[1], else:Code[1]) : Code[1]
+function meta::java::generation::functions::lang::ifCoder(ctx:FuncCoderContext[1], condition:Code[1], then:Code[1], else:Code[1]) : Code[1]
 {
    let returnType = $ctx.returnType();
    let supplier   = javaSupplier($returnType); 
@@ -148,14 +148,14 @@ function meta::java::codeGeneration::functions::lang::ifCoder(ctx:FuncCoderConte
    );
 }
 
-function meta::java::codeGeneration::functions::lang::letCoder(ctx:FuncCoderContext[1], name:Code[1], expression:Code[1]) : Code[1]
+function meta::java::generation::functions::lang::letCoder(ctx:FuncCoderContext[1], name:Code[1], expression:Code[1]) : Code[1]
 {
    let varName = $ctx.params->at(0)->cast(@InstanceValue).values->at(0)->cast(@String); 
 
    j_variable($ctx.returnType(), $ctx.conventions->identifier($varName))->j_declare($expression);
 }
 
-function meta::java::codeGeneration::functions::lang::processNew(fe: FunctionExpression[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
+function meta::java::generation::functions::lang::processNew(fe: FunctionExpression[1], conventions: Conventions[1], debug: meta::pure::tools::DebugContext[1]):Code[1]
 {
    print(if($debug.debug,|$debug.space+'processNew: \n',|''));
    let args = $fe.parametersValues->evaluateAndDeactivate();
@@ -169,7 +169,8 @@ function meta::java::codeGeneration::functions::lang::processNew(fe: FunctionExp
                                 pair($s,$e););
          
    let typeInfo = meta::alloy::runtime::java::typeInfo::newTypeInfoSet()
-                     ->meta::alloy::runtime::java::typeInfo::addForClassWithAllProperties($cls);   
+                     ->meta::alloy::runtime::java::typeInfo::addForClassWithAllProperties($cls)
+                     ->meta::alloy::runtime::java::typeInfo::addForClassWithAllPropertiesViaAssociations($cls);   
     
    let props = $typeInfo->meta::alloy::runtime::java::typeInfo::allProperties($cls);
    

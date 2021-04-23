@@ -52,6 +52,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.string.*;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.tools.Profile;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.tracing.TraceSpan;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.legend.MayExecuteAlloyTest;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.legend.MayExecuteLegendTest;
 
 public class NativeFunctionProcessor
 {
@@ -330,6 +332,7 @@ public class NativeFunctionProcessor
         registerNative(map, new IsValidFunctionDescriptor());
         registerNative(map, new InstanceOf());
         registerNative(map, new MayExecuteAlloyTest());
+        registerNative(map, new MayExecuteLegendTest());
         registerNative(map, new NewAssociation());
         registerNative(map, new NewEnumeration());
         registerNative(map, new NewLambdaFunction());

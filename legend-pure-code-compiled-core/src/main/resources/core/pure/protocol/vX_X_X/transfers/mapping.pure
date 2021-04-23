@@ -20,12 +20,7 @@ import meta::flatten::metamodel::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::modelToModel::*;
 import meta::pure::mapping::xStore::*;
 import meta::pure::mapping::modelToModel::*;
-import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::relational::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::*;
-import meta::protocols::pure::vX_X_X::metamodel::store::relational::element::*;
-import meta::protocols::pure::vX_X_X::metamodel::store::relational::mapping::*;
-import meta::relational::metamodel::relation::*;
-import meta::relational::mapping::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::csv::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::*;
 import meta::pure::mapping::*;
@@ -60,19 +55,20 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::t
       name = $class.name->toOne(),
       package = if($class.package->isEmpty(),|[],|$class.package->toOne()->elementToPath()),
       superTypes = $class.generalizations->map(g | $g.general.rawType->toOne()->elementToPath()),
-      properties = $properties->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformProperty()),
+      properties = $properties->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformProperty($extensions)),
       qualifiedProperties = $qualifiedProperties->map(q|$q->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformQualifiedProperty($extensions)),
       stereotypes = $class.stereotypes->map(s|$s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformStereotype()),
       taggedValues = $class.taggedValues->map(t|$t->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformTaggedValue()),
       setImplementation = $class.setImplementation->map(s|$s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::transformSetImplementation($mapping, $extensions)),
       rootClass = $class.class->map(c|$c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformClass($extensions)),
-      localProperties = $class.localProperties->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformProperty())
+      localProperties = $class.localProperties->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformProperty($extensions))
    );
 }
 
 function <<access.public>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::transformSetImplementation(si:SetImplementation[1], mapping:Mapping[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::mapping::ClassMapping[1]
 {
-   $si->match($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).transfers_mapping_transformSetImplementation->map(f|$f->eval($mapping))->concatenate([
+   $si->match($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).transfers_mapping_transformSetImplementation->map(f|$f->eval($mapping))->concatenate(
+              $extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).transfers_mapping_transformSetImplementation2->map(f|$f->eval($mapping, $extensions)))->concatenate([
       o:OperationSetImplementation[1]| $o->transformOperationSetImplementation($mapping),
       p:PureInstanceSetImplementation[1]| $p->transformPureInstanceSetImplementation($mapping, $extensions)
       ])->toOneMany()
@@ -116,7 +112,7 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
    );
 }
 
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::relational::transformOperationSetImplementation(r:OperationSetImplementation[1], mapping:Mapping[1]):meta::protocols::pure::vX_X_X::metamodel::mapping::OperationClassMapping[1]
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::transformOperationSetImplementation(r:OperationSetImplementation[1], mapping:Mapping[1]):meta::protocols::pure::vX_X_X::metamodel::mapping::OperationClassMapping[1]
 {
    let unionType = if ($r.operation.name->startsWith('special_union'),
        | meta::protocols::pure::vX_X_X::metamodel::mapping::MappingOperation.ROUTER_UNION,
@@ -179,7 +175,15 @@ function <<access.public>> meta::protocols::pure::vX_X_X::transformation::fromPu
                                                source = $p.sourceSetImplementationId,
                                                target = $p.targetSetImplementationId,
                                                enumMappingId = $p.transformer->cast(@EnumerationMapping<Any>).name,
-                                               transform = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformLambda($p.transform, $extensions)
+                                               transform = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformLambda($p.transform, $extensions),
+                                               localMappingProperty = if ($p.localMappingProperty->isNotEmpty() && $p.localMappingProperty->toOne(),
+                                                                          | ^meta::protocols::pure::vX_X_X::metamodel::mapping::LocalMappingPropertyInfo
+                                                                            (
+                                                                               type = $p.localMappingPropertyType->toOne()->elementToPath(),
+                                                                               multiplicity = $p.localMappingPropertyMultiplicity->toOne()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()
+                                                                            ),
+                                                                          | []
+                                                                      )
                                              ),
                a:meta::pure::mapping::aggregationAware::AggregationAwarePropertyMapping[1]| ^meta::protocols::pure::vX_X_X::metamodel::mapping::modelToModel::AggregationAwarePropertyMapping
                                                       (
@@ -198,7 +202,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::
       ^meta::protocols::pure::vX_X_X::metamodel::mapping::xStore::XStorePropertyMapping
        (
           _type = 'xStorePropertyMapping',
-          property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->at(0).rawType->toOne()->elementToPath(), property=$pm.property.name->toOne()),
+          property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->filter(l| $l->isNotEmpty())->at(0).rawType->toOne()->elementToPath(), property=$pm.property.name->toOne()),
           source = $p.sourceSetImplementationId,
           target = $p.targetSetImplementationId,
           crossExpression = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformLambda($p.crossExpression, $extensions)

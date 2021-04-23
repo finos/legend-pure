@@ -40,14 +40,14 @@ import java.util.regex.Pattern;
  */
 public class FunctionDescriptor
 {
-    private static final Pattern DESCRIPTOR_MAIN = Pattern.compile("^\\s*([^(\\s]+)\\s*\\(([^)]*)\\)\\s*:\\s*(.*)\\s*$");
-    private static final Pattern PARAMETER_DELIMITER = Pattern.compile("\\s*,\\s*");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM = Pattern.compile("^\\s*([\\~\\w]+)\\s*\\[\\s*(\\d+)\\s*\\]\\s*$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_MANY = Pattern.compile("^\\s*([\\~\\w]+)\\s*\\[\\s*(\\*)\\s*\\]\\s*$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_NUM = Pattern.compile("^\\s*([\\~\\w]+)\\s*\\[\\s*(\\d+)\\s*\\.\\.\\s*(\\d+)\\]\\s*$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_MANY = Pattern.compile("^\\s*([\\~\\w]+)\\s*\\[\\s*(\\d+)\\s*\\.\\.\\s*(\\*)\\]\\s*$");
-    private static final Pattern TYPE_WITH_MULTIPLICITY_PARAMETER = Pattern.compile("^\\s*([\\~\\w]+)\\s*\\[\\s*([a-zA-Z]\\w*)\\s*\\]\\s*$");
-    private static final Pattern FULL_MATCH = Pattern.compile("([\\w\\d_$]+[:]{2})*[\\w\\d_$]+\\((\\w+\\[\\s*([*]|([a-zA-Z]\\w*)|(\\d+(\\s*[.]{2}\\s*(\\d+|[*]))?))\\s*\\]\\s*(?!,\\s*\\)),?\\s*)*\\):\\w+\\[\\s*([*]|([a-zA-Z]\\w*)|(\\d+(\\s*[.]{2}\\s*(\\d+|[*]))?))\\s*\\]");
+    private static final Pattern DESCRIPTOR_MAIN = Pattern.compile("^\\s*+([^(\\s]++)\\s*+\\(\\s*+([^)]*+)\\s*+\\)\\s*+:\\s*+(.*\\S)\\s*+$");
+    private static final Pattern PARAMETER_DELIMITER = Pattern.compile("\\s*+,\\s*+");
+    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+(\\d++)\\s*+\\]\\s*+$");
+    private static final Pattern TYPE_WITH_MULTIPLICITY_MANY = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+(\\*)\\s*+\\]\\s*+$");
+    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_NUM = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+(\\d++)\\s*+\\.\\.\\s*+(\\d++)\\]\\s*+$");
+    private static final Pattern TYPE_WITH_MULTIPLICITY_NUM_TO_MANY = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+(\\d++)\\s*+\\.\\.\\s*+(\\*)\\]\\s*+$");
+    private static final Pattern TYPE_WITH_MULTIPLICITY_PARAMETER = Pattern.compile("^\\s*+([~\\w]++)\\s*+\\[\\s*+([a-zA-Z]\\w*+)\\s*+\\]\\s*+$");
+    private static final Pattern FULL_MATCH = Pattern.compile("^\\s*+([\\w\\d_$]++::)*+[\\w\\d_$]++\\s*+\\(\\s*+(\\w++\\s*+\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+(?!,\\s*+\\)),?+\\s*+)*+\\s*+\\)\\s*+:\\s*+\\w++\\s*+\\[\\s*+(\\*|([a-zA-Z]\\w*+)|(\\d++(\\s*+\\.\\.\\s*+(\\d++|\\*))?+))\\s*+\\]\\s*+$");
 
     /**
      * Return whether string is possibly a function descriptor.  This
@@ -69,7 +69,8 @@ public class FunctionDescriptor
     /**
      * Function to validate whether some input string matches function descriptor
      * format. This validation is stricter and more accurate than {@see isPossiblyFunctionDescriptor}
-     * however might not be fully exhaustive for various edge cases
+     * however might not be fully exhaustive for various edge cases.
+     *
      * @param functionDescriptorCandidate string which we want to validate
      * @return whether input is valid function descriptor
      */

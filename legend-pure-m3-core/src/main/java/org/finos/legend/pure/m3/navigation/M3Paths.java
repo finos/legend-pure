@@ -47,6 +47,7 @@ public class M3Paths
     public static final String Date = ModelRepository.DATE_TYPE_NAME;
     public static final String DateTime = ModelRepository.DATETIME_TYPE_NAME;
     public static final String Decimal = ModelRepository.DECIMAL_TYPE_NAME;
+    public static final String DefaultValue = "meta::pure::metamodel::function::property::DefaultValue";
     public static final String elementOverride = "meta::pure::metamodel::type::ElementOverride" ;
     public static final String ElementWithConstraints = "meta::pure::metamodel::extension::ElementWithConstraints";
     public static final String ElementWithStereotypes = "meta::pure::metamodel::extension::ElementWithStereotypes";
@@ -107,6 +108,7 @@ public class M3Paths
     public static final String SourceInformation = "meta::pure::functions::meta::SourceInformation";
     public static final String Stereotype = "meta::pure::metamodel::extension::Stereotype";
     public static final String StrictDate = ModelRepository.STRICT_DATE_TYPE_NAME;
+    public static final String StrictTime = ModelRepository.STRICT_TIME_TYPE_NAME;
     public static final String String = ModelRepository.STRING_TYPE_NAME;
     public static final String Tag = "meta::pure::metamodel::extension::Tag";
     public static final String TaggedValue = "meta::pure::metamodel::extension::TaggedValue";

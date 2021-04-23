@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::functions::lang::*;
-import meta::java::tostring::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::expression::*;
-import meta::java::codeGeneration::functions::math::*;
-import meta::java::codeGeneration::utils::*;
+import meta::java::generation::code::*;
+import meta::java::generation::functions::lang::*;
+import meta::java::serialization::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::expression::*;
+import meta::java::generation::functions::math::*;
+import meta::java::generation::utils::*;
 import meta::java::metamodel::factory::*;
 import meta::java::metamodel::project::*;
 import meta::pure::executionPlan::engine::*;
 
-function meta::java::codeGeneration::functions::math::register(conventions: Conventions[1]): Conventions[1]
+function meta::java::generation::functions::math::register(conventions: Conventions[1]): Conventions[1]
 {
    let library  = $conventions->className(Library);
 
@@ -106,12 +106,12 @@ function meta::java::codeGeneration::functions::math::register(conventions: Conv
    $conventions->registerLibrary($lib);
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::math::reduceFT(type:meta::java::metamodel::Type[1]): meta::java::metamodel::Type[1]
+function <<access.private>> meta::java::generation::functions::math::reduceFT(type:meta::java::metamodel::Type[1]): meta::java::metamodel::Type[1]
 {
    javaFunctionType([$type, $type], $type);
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::math::maybeReduce(ctx:FuncCoderContext[1], collection:Code[1], zero:Code[1], accumulator:Code[1]) : Code[1]
+function <<access.private>> meta::java::generation::functions::math::maybeReduce(ctx:FuncCoderContext[1], collection:Code[1], zero:Code[1], accumulator:Code[1]) : Code[1]
 {
    if($collection.type->isJavaList(),
       | $collection->j_streamOf()->js_reduce($zero, $accumulator),
@@ -119,7 +119,7 @@ function <<access.private>> meta::java::codeGeneration::functions::math::maybeRe
    );
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::math::codeCompare(ctx:FuncCoderContext[1], left:Code[1], right:Code[1], apply:Function<{Code[1],Code[1]->Code[1]}>[1], library:meta::java::metamodel::Class[1]) : Code[1]
+function <<access.private>> meta::java::generation::functions::math::codeCompare(ctx:FuncCoderContext[1], left:Code[1], right:Code[1], apply:Function<{Code[1],Code[1]->Code[1]}>[1], library:meta::java::metamodel::Class[1]) : Code[1]
 {
    if(($left.type == javaLong() || $left.type == javaLongBoxed()) && ($right.type == javaLong() || $right.type == javaLongBoxed()),
       | $apply->eval($left, $right),
@@ -130,7 +130,7 @@ function <<access.private>> meta::java::codeGeneration::functions::math::codeCom
    ));
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::math::byTypes(typeSpecs:Pair<Pair<meta::java::metamodel::Class,meta::java::metamodel::Class>,Code>[*], default:Code[1]): Code[1]
+function <<access.private>> meta::java::generation::functions::math::byTypes(typeSpecs:Pair<Pair<meta::java::metamodel::Class,meta::java::metamodel::Class>,Code>[*], default:Code[1]): Code[1]
 {
    let left   = j_parameter(javaNumber(), 'left');
    let right  = j_parameter(javaNumber(), 'right');
@@ -146,37 +146,37 @@ function <<access.private>> meta::java::codeGeneration::functions::math::byTypes
    );
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::math::valueAsDouble(of:Code[1]) : Code[1]
+function <<access.private>> meta::java::generation::functions::math::valueAsDouble(of:Code[1]) : Code[1]
 {
    j_conditional($of->j_instanceof(javaLongBoxed()), longValue($of), doubleValue($of), javaDouble());
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::math::longValue(of:Code[1]) : Code[1]
+function <<access.private>> meta::java::generation::functions::math::longValue(of:Code[1]) : Code[1]
 {
    $of->j_invoke('longValue', []);
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::math::doubleValue(of:Code[1]) : Code[1]
+function <<access.private>> meta::java::generation::functions::math::doubleValue(of:Code[1]) : Code[1]
 {
    $of->j_invoke('doubleValue', []);
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::math::bigDecimal(of:Code[1]) : Code[1]
+function <<access.private>> meta::java::generation::functions::math::bigDecimal(of:Code[1]) : Code[1]
 {
    $of->j_cast(javaBigDecimal());
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::math::bigDecimalZero() : Code[1]
+function <<access.private>> meta::java::generation::functions::math::bigDecimalZero() : Code[1]
 {
    javaBigDecimal()->j_field('ZERO', javaBigDecimal());
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::math::bigDecimalOne() : Code[1]
+function <<access.private>> meta::java::generation::functions::math::bigDecimalOne() : Code[1]
 {
    javaBigDecimal()->j_field('ONE', javaBigDecimal());
 }
 
-function <<access.private>> meta::java::codeGeneration::functions::math::bigDecimalValue(of:Code[1]) : Code[1]
+function <<access.private>> meta::java::generation::functions::math::bigDecimalValue(of:Code[1]) : Code[1]
 {
    javaBigDecimal()->j_invoke('valueOf', $of);
 }

@@ -20,6 +20,8 @@ fragment Decimal: ((Digit)* '.' (Digit)+ | (Digit)+) ( ('e' | 'E') ('+' | '-')? 
 ;
 fragment Date: '%' ('-')? (Digit)+ ('-'(Digit)+ ('-'(Digit)+ ('T' DateTime TimeZone?)?)?)?
 ;
+fragment StrictTime: '%' DateTime
+;
 fragment ValidString: (Letter | Digit | '_' ) (Letter | Digit | '_' | '$')*
 ;
 fragment FileName: '?[' (Letter | Digit | '_' | '.' | '/')+

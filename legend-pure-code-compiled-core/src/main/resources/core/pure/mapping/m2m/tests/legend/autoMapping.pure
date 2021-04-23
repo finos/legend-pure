@@ -23,7 +23,7 @@ import meta::pure::mapping::modelToModel::test::alloy::simple::automap::dest::*;
 import meta::pure::runtime::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='V1_7_0',
+{  serverVersion.start='v1_19_0',
    doc.doc='Given: a simple graph using an association',
    doc.doc='When:  a mapping is executed using graphFetch and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized demonstrating the translated graph.'

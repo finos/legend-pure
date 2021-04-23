@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { flowResult, makeAutoObservable, observable } from 'mobx';
+import { action, flowResult, makeAutoObservable, observable } from 'mobx';
 import type { TestExecutionResult, TestInfo } from 'Models/Execution';
 import type { TestResult } from 'Models/Test';
 import { deserializeTestRunnerCheckResult, TestFailureResult, TestResultStatus, TestRunnerCheckResult } from 'Models/Test';
@@ -76,7 +76,10 @@ export class TestResultInfo {
   results = new Map<string, TestResult>();
 
   constructor(allTestIds: Set<string>) {
-    makeAutoObservable(this);
+    makeAutoObservable(this, {
+      setTime: action,
+      addResult: action,
+    });
     this.total = allTestIds.size;
     this._startTime = Date.now();
     this.notRunTests = new Set(allTestIds);
@@ -123,12 +126,22 @@ export class TestRunnerState {
     makeAutoObservable(this, {
       treeData: observable.ref,
       testResultInfo: observable.ref,
+      setSelectedTestId: action,
+      setTestResultInfo: action,
+      setTreeData: action,
+      refreshTree: action,
+      setSelectedNode: action,
+      collapseTree: action,
+      expandTree: action,
+      buildTreeDataByLayer: action,
+      pullTestRunnerResult: action,
     });
     this.editorStore = editorStore;
     this.testExecutionResult = testExecutionResult;
   }
 
   getTreeData(): TreeData<TestTreeNode> { return guaranteeNonNullable(this.treeData, 'Test tree data has not been initialized') }
+
   setSelectedTestId(val: string | undefined): void { this.selectedTestId = val }
   setTestResultInfo(val: TestResultInfo | undefined): void { this.testResultInfo = val }
   setTreeData(data: TreeData<TestTreeNode>): void { this.treeData = data }
@@ -185,7 +198,7 @@ export class TestRunnerState {
   async buildTreeDataByLayer(tests: TestInfo[]): Promise<void> {
     const treeData = this.getTreeData();
     const childLevelTests: TestInfo[] = [];
-    await Promise.all<TestInfo[]>(tests.map(test => new Promise((resolve, reject) => setTimeout(() => {
+    await Promise.all<void>(tests.map(test => new Promise((resolve, reject) => setTimeout(() => {
       const id = test.li_attr.id;
       const node = {
         id: id,

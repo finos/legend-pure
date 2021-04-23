@@ -14,14 +14,14 @@
 
 import meta::pure::executionPlan::engine::*;
 import meta::pure::graphFetch::execution::*;
-import meta::java::codeGeneration::code::*;
-import meta::java::codeGeneration::convention::*;
-import meta::java::codeGeneration::convention::jackson::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::generation::convention::jackson::*;
 import meta::java::metamodel::factory::*;
 import meta::java::metamodel::project::*;
-import meta::java::tostring::*;
+import meta::java::serialization::*;
 
-function meta::java::codeGeneration::convention::jackson::addJacksonSupport(conventions:Conventions[1]):Conventions[1]
+function meta::java::generation::convention::jackson::addJacksonSupport(conventions:Conventions[1]):Conventions[1]
 {
    // For now ensure conventions agree with expected types here.  If in future we need to support other choices
    // we would extend conventions here to be adaptive.
@@ -42,7 +42,7 @@ function meta::java::codeGeneration::convention::jackson::addJacksonSupport(conv
    $conventions->registerLibrary($lib);
 }
 
-function meta::java::codeGeneration::convention::jackson::jacksonParserGetter(conventions:Conventions[1], parser:String[1], type:Type[1]): String[1]
+function meta::java::generation::convention::jackson::jacksonParserGetter(conventions:Conventions[1], parser:String[1], type:Type[1]): String[1]
 {
    let pureDate = $conventions->className(PureDate);
 
@@ -83,7 +83,7 @@ function meta::java::codeGeneration::convention::jackson::jacksonParserGetter(co
    )))))))))));
 }
 
-function meta::java::codeGeneration::convention::jackson::jsonNodeGetter(conventions:Conventions[1], node:Code[1], type:Type[1]): Code[1]
+function meta::java::generation::convention::jackson::jsonNodeGetter(conventions:Conventions[1], node:Code[1], type:Type[1]): Code[1]
 {
    let pureDate = $conventions->className(PureDate);
 
@@ -125,7 +125,7 @@ function meta::java::codeGeneration::convention::jackson::jsonNodeGetter(convent
 }
 
 
-function meta::java::codeGeneration::convention::jackson::jacksonXmlParserGetter(conventions:Conventions[1], parser:String[1], type:Type[1]): String[1]
+function meta::java::generation::convention::jackson::jacksonXmlParserGetter(conventions:Conventions[1], parser:String[1], type:Type[1]): String[1]
 {
    let pureDate = $conventions->className(PureDate);
 
@@ -166,7 +166,49 @@ function meta::java::codeGeneration::convention::jackson::jacksonXmlParserGetter
    )))))))))));
 }
 
-function meta::java::codeGeneration::convention::jackson::jacksonGeneratorWrite(conventions:Conventions[1], generator:Code[1], data:Code[1], type:Type[1], config: AlloySerializationConfig[0..1]): Code[1]
+function meta::java::generation::convention::jackson::jacksonXmlParserGetter(conventions:Conventions[1], parser:Code[1], type:Type[1]): Code[1]
+{
+  let pureDate = $conventions->className(PureDate);
+  let text     = $parser->j_invoke('getText', [], javaString());
+
+  if($type == String,
+    | $text,
+    |
+  if($type == Boolean,
+    | javaBooleanBoxed()->j_invoke('valueOf', $text, javaBoolean()),
+    |
+  if($type == Integer,
+    | javaLongBoxed()->j_invoke('valueOf', $text, javaLong()),
+    |
+  if($type == Float,
+    | javaDoubleBoxed()->j_invoke('valueOf', $text, javaDouble()),
+    |
+  if($type == Decimal,
+    | j_new(javaBigDecimal(), $text),
+    |
+  if($type == Number,
+    | j_new(javaBigDecimal(), $text),
+    |
+  if($type == StrictDate,
+    | $pureDate->j_invoke('parsePureDate', $text, $pureDate),
+    |
+  if($type == DateTime,
+    | $pureDate->j_invoke('parsePureDate', $text, $pureDate),
+    |
+  if($type == Date,
+    | $pureDate->j_invoke('parsePureDate', $text, $pureDate),
+    |
+  if($type->instanceOf(Enumeration),
+    | $conventions->pureTypeToJavaType($type, PureOne)->j_invoke('valueOf', $text),
+    |
+  if($type->instanceOf(Unit) || $type->instanceOf(Measure),
+    | $conventions->pureTypeToJavaType($type, PureOne)->j_invoke('valueOf', $text),
+    | fail('Unsupported type: ' + $type.name->toOne());
+      j_null();
+   )))))))))));
+}
+
+function meta::java::generation::convention::jackson::jacksonGeneratorWrite(conventions:Conventions[1], generator:Code[1], data:Code[1], type:Type[1], config: AlloySerializationConfig[0..1]): Code[1]
 {
    if($type == String,
       | $generator->j_invoke('writeString', $data, javaVoid()),
@@ -211,7 +253,7 @@ function meta::java::codeGeneration::convention::jackson::jacksonGeneratorWrite(
    ))))))))))));
 }
 
-function meta::java::codeGeneration::convention::jackson::fullyQualifiedEnumName(generator:Code[1], data:Code[1], type:Type[1]): Code[1]
+function meta::java::generation::convention::jackson::fullyQualifiedEnumName(generator:Code[1], data:Code[1], type:Type[1]): Code[1]
 {
    $generator->j_invoke('writeString', j_string('')
                 ->j_invoke('concat', j_string($type->elementToPath()), javaString())
@@ -219,7 +261,7 @@ function meta::java::codeGeneration::convention::jackson::fullyQualifiedEnumName
                 ->j_invoke('concat', [$data->j_invoke('name', [], javaString())], javaString()))
 }
 
-function meta::java::codeGeneration::convention::jackson::jacksonTokenTypesFor(conventions:Conventions[1], type:Type[1]): String[*]
+function meta::java::generation::convention::jackson::jacksonTokenTypesFor(conventions:Conventions[1], type:Type[1]): String[*]
 {
    if($type == String, 
       | $conventions->tokenType('VALUE_STRING'), 
@@ -255,7 +297,7 @@ function meta::java::codeGeneration::convention::jackson::jacksonTokenTypesFor(c
    ))))))))));
 }
 
-function meta::java::codeGeneration::convention::jackson::jsonNodeTypesFor(conventions:Conventions[1], type:Type[1]): Code[*]
+function meta::java::generation::convention::jackson::jsonNodeTypesFor(conventions:Conventions[1], type:Type[1]): Code[*]
 {
    if($type == String, 
       | $conventions->nodeType('STRING'), 
@@ -290,7 +332,7 @@ function meta::java::codeGeneration::convention::jackson::jsonNodeTypesFor(conve
 
 
 
-function meta::java::codeGeneration::convention::jackson::jsonGenerator(): meta::java::metamodel::Class[1]
+function meta::java::generation::convention::jackson::jsonGenerator(): meta::java::metamodel::Class[1]
 {
    javaClass('com.fasterxml.jackson.core.JsonGenerator')
       ->addMethod(javaMethod(javaVoid(), 'writeStartArray',  []))
@@ -303,20 +345,20 @@ function meta::java::codeGeneration::convention::jackson::jsonGenerator(): meta:
       ->addMethod(javaMethod(javaVoid(), 'writeNumber',      javaParam(javaLong(), 'x')));
 }
 
-function meta::java::codeGeneration::convention::jackson::jsonFactory():   meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.core.JsonFactory'); }
-function meta::java::codeGeneration::convention::jackson::jsonParser():    meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.core.JsonParser'); }
-function meta::java::codeGeneration::convention::jackson::jsonToken():     meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.core.JsonToken'); }
-function meta::java::codeGeneration::convention::jackson::objectMapper():  meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.databind.ObjectMapper'); }
-function meta::java::codeGeneration::convention::jackson::jsonNode():      meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.databind.JsonNode'); }
-function meta::java::codeGeneration::convention::jackson::jsonNodeType():  meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.databind.node.JsonNodeType'); }
+function meta::java::generation::convention::jackson::jsonFactory():   meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.core.JsonFactory'); }
+function meta::java::generation::convention::jackson::jsonParser():    meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.core.JsonParser'); }
+function meta::java::generation::convention::jackson::jsonToken():     meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.core.JsonToken'); }
+function meta::java::generation::convention::jackson::objectMapper():  meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.databind.ObjectMapper'); }
+function meta::java::generation::convention::jackson::jsonNode():      meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.databind.JsonNode'); }
+function meta::java::generation::convention::jackson::jsonNodeType():  meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.databind.node.JsonNodeType'); }
 
-function <<access.private>> meta::java::codeGeneration::convention::jackson::tokenType(conventions:Conventions[1], name:String[1]): String[1]
+function <<access.private>> meta::java::generation::convention::jackson::tokenType(conventions:Conventions[1], name:String[1]): String[1]
 {
    let tokenClass = javaClass('com.fasterxml.jackson.core.JsonToken');
    $conventions->codeType($tokenClass)->codeToString($conventions)+'.'+$name;
 }
 
-function <<access.private>> meta::java::codeGeneration::convention::jackson::nodeType(conventions:Conventions[1], name:String[1]): Code[1]
+function <<access.private>> meta::java::generation::convention::jackson::nodeType(conventions:Conventions[1], name:String[1]): Code[1]
 {
    jsonNodeType()->j_invoke('valueOf', j_string($name), jsonNodeType());   
 }
