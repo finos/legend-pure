@@ -14,7 +14,8 @@
  limitations under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -268,7 +269,7 @@
                                 <requireJavaVersion>
                                     <version>[11,12)</version>
                                 </requireJavaVersion>
-                                <dependencyConvergence />
+                                <dependencyConvergence/>
                                 <bannedDependencies>
                                     <excludes>
                                         <exclude>log4j</exclude>
@@ -327,6 +328,17 @@
                         <exclude>org/finos/legend/pure/m3/coreinstance/**/*</exclude>
                         <exclude>org/finos/legend/pure/generated/**/*</exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- Used to copy test results into test reports module -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <useSystemClassLoader>true</useSystemClassLoader>
+                    <useManifestOnlyJar>false</useManifestOnlyJar>
+                    <reportsDirectory>${project.parent.basedir}/legend-pure-test-reports/surefire-reports-aggregate
+                    </reportsDirectory>
                 </configuration>
             </plugin>
         </plugins>

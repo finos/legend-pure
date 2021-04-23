@@ -57,13 +57,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-Xmx1g -Xms1g -XX:MaxPermSize=1024m</argLine>
-                    <workingDirectory>${project.parent.basedir}</workingDirectory>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <executions>
