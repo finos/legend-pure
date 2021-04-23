@@ -337,7 +337,7 @@ function <<access.private>> meta::relational::graphFetch::executionPlan::createP
 
 function <<access.private>> meta::relational::graphFetch::executionPlan::buildSQLExecutionNode(query: SelectSQLQuery[1], dbConnection: DatabaseConnection[1], extensions:RouterExtension[*]):SQLExecutionNode[1]
 {
-   let sql = $query->sqlQueryToString($dbConnection.type, $dbConnection.timeZone, $extensions);
+   let sql = $query->sqlQueryToString($dbConnection.type, $dbConnection.timeZone, $dbConnection.quoteIdentifiers, $extensions);
    
    ^SQLExecutionNode
     (

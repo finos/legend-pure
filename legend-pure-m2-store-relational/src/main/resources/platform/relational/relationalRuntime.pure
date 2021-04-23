@@ -30,6 +30,9 @@ Class meta::relational::runtime::DatabaseConnection extends Connection
    {doc.doc = 'Defaults to UTC'}
    timeZone : String[0..1];
 
+   {doc.doc = 'Defaults to false'}
+   quoteIdentifiers : Boolean[0..1];
+
    sqlQueryPostProcessors: Function<{SelectSQLQuery[1]->Result<SelectSQLQuery|1>[1]}>[*];
 
    sqlQueryPostProcessorsConnectionAware: Function<{SelectSQLQuery[1],DatabaseConnection[1]->Result<SelectSQLQuery|1>[1]}>[*];

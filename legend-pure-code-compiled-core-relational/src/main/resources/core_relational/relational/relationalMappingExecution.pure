@@ -157,7 +157,7 @@ function <<access.private>> meta::relational::mapping::getRelationalTypeFromRela
 
 function meta::relational::mapping::generateSQLExecutionNode(query:SQLQuery[1], connection:DatabaseConnection[1], extensions:RouterExtension[*]):ExecutionNode[1]
 {
-   let sql = sqlQueryToString($query, $connection.type, $connection.timeZone, $extensions);
+   let sql = sqlQueryToString($query, $connection.type, $connection.timeZone, $connection.quoteIdentifiers, $extensions);
 
    ^SQLExecutionNode
    (
@@ -248,7 +248,7 @@ function meta::relational::mapping::execution(store: Database[1], f:FunctionExpr
 
    let sqlQueryToStringStart = now();
    let sql = if($relationalExecutionContext.insertDriverTablePkInTempTable->isEmpty(),
-                |sqlQueryToStringPretty($postProcessorResult.query, $connection.type, $connection.timeZone, $extensions),
+                |sqlQueryToStringPretty($postProcessorResult.query, $connection.type, $connection.timeZone, $connection.quoteIdentifiers, $extensions),
                 |meta::relational::functions::toDDL::buildInsertSQLQueryResultIntoTable
                                                     (
                                                        $relationalExecutionContext.insertDriverTablePkInTempTable->toOne(),
@@ -541,7 +541,8 @@ function meta::relational::mapping::processProperty(o:Any[1], property:Property<
 
            let sqlQueryToStringStart = now();
            let targetImplSqlQueryPair = generatePropertySql($setImplementation, $property, JoinType.INNER, $keyInformation.pk, $mapping, $keyInformation.static.runtime, $db, $keyInformation.static.exeCtx, $extensions);
-           let sql = sqlQueryToStringPretty($targetImplSqlQueryPair.second, $keyInformation.sourceConnection->cast(@DatabaseConnection).type, $keyInformation.sourceConnection->cast(@DatabaseConnection).timeZone, $extensions);
+           let sourceConnection = $keyInformation.sourceConnection->cast(@DatabaseConnection);
+           let sql = sqlQueryToStringPretty($targetImplSqlQueryPair.second, $sourceConnection.type, $sourceConnection.timeZone, $sourceConnection.quoteIdentifiers, $extensions);
            let sqlQueryToStringDurationMilliseconds = ($sqlQueryToStringStart->dateDiff(now(),DurationUnit.MILLISECONDS));
 
            let executed = executeInDb($sql, $keyInformation.sourceConnection->cast(@DatabaseConnection));
