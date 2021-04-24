@@ -200,7 +200,7 @@ function <<test.Test>> meta::relational::tests::tds::tabletds::testSimpleDistinc
    assertSize($result.values.rows, 2);
 }
 
-function <<test.Test>> 
+function <<test.Test,test.ExcludeAlloy>> 
 {
   doc.doc='Make sure that buildPureModelContextTextFromMapping includes dummyDb in model code for current protocol version'
 }
