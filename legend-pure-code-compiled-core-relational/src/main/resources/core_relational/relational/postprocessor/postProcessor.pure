@@ -216,7 +216,7 @@ function meta::relational::postProcessor::fixTables(relationalOperationElement:R
    $relationalOperationElement->match([
                     u:Union[1] | ^$u(queries = $u.queries->map(q|$q->fixTables($oldToNewPairs))->cast(@SelectSQLQuery)),
                     s:SelectSQLQuery[1] | let newS = ^$s(
-                                                         data=$s.data->toOne()->replaceTablesInJoin($oldToNewPairs)->cast(@RootJoinTreeNode),
+                                                         data=$s.data->map(x | $x->replaceTablesInJoin($oldToNewPairs)->cast(@RootJoinTreeNode)),
                                                          columns = $s.columns->map(c|$c->match([a:Alias[1] | $a.relationalElement->match([
                                                                                                                    s:SelectSQLQuery[1]|^$a(relationalElement = $s->fixTables($oldToNewPairs)),
                                                                                                                    r:RelationalOperationElement[1]|$a
