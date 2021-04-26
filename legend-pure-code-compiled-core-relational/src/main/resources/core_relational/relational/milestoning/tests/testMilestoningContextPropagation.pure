@@ -450,3 +450,10 @@ function <<test.Test>> meta::relational::tests::milestoning::contextpropagation:
    assertEquals(['ProductName2,STOCK DESC-V3', 'ProductName3,TDSNull'],$tds.rows->map(r|$r.values->makeString(',')));
    assertSameSQL('select "root".name as "name", "productclassificationtable_0".type_description as "description" from ProductTable as "root" left outer join ProductClassificationTable as "productclassificationtable_0" on ("root".type = "productclassificationtable_0".type and "productclassificationtable_0".from_z <= \'2015-10-16\' and "productclassificationtable_0".thru_z > \'2015-10-16\') where "root".from_z <= \'2015-10-16\' and "root".thru_z > \'2015-10-16\'', $result);
 }
+
+function <<test.Test>> meta::relational::tests::milestoning::contextpropagation::testDatePropagationWithInheritance():Boolean[1]
+{
+   let businessDate = %2015-8-14;
+   let result = execute(|OrderWithProductWithConstraints.all($businessDate)->project([o|$o.getClassificationDescription($businessDate)],['classificationDescription']), milestoningmap, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
+   assertSameSQL('select "ordertable_1".aggCol as "classificationDescription" from OrderTable as "root" left outer join (select "ordertable_2".id as id, group_concat("productclassificationtable_0".type_description ) as aggCol from OrderTable as "ordertable_2" left outer join ProductTable as "producttable_0" on ("ordertable_2".prodFk = "producttable_0".id and "producttable_0".from_z <= \'2015-08-14\' and "producttable_0".thru_z > \'2015-08-14\') left outer join (select "productclassificationtable_0".type as type, "productclassificationtable_0".type_description as type_description from ProductClassificationTable as "productclassificationtable_0" where "productclassificationtable_0".from_z <= \'2015-08-14\' and "productclassificationtable_0".thru_z > \'2015-08-14\') as "productclassificationtable_0" on ("producttable_0".type = "productclassificationtable_0".type) group by "ordertable_2".id) as "ordertable_1" on ("root".id = "ordertable_1".id)',$result);
+}
