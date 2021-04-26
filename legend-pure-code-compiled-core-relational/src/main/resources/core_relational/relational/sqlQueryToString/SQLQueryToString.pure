@@ -451,7 +451,9 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
                if($dbType == DatabaseType.Postgres,
                   |'%s offset %s'->format([$format.separator, $s.fromRow->toOne()->getValueForTake()]) + if ($size == -1, | '', | ' limit %s'->format($size)),
-                  |
+                  | if ($dbType == DatabaseType.Presto, 
+                     | processLimitForPresto($format, $s.fromRow, $size), 
+                     |
                      // queries where specifying query with "limit 100,1000" would return 1100 rows.
                      // However when a order by column is specified, the expected number of rows is returned (i.e. 900 rows).
                      // Given that a slice without an order is largely meaningless, we'll simply report an error (rather than trying to simulate something)
@@ -461,9 +463,18 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
                      assert($dbType != DatabaseType.SybaseIQ || $s.orderBy->isNotEmpty(), | $dbType->makeString() + ' requires an order by column for meaningful limit/offset');
 
                      '%s limit %s,%s'->format([$format.separator, $s.fromRow->toOne()->getValueForTake(), $size]);
-                  );
+                  ));
             )
       );
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::processLimitForPresto(format:Format[1], fromRow:Literal[0..1], size:Any[1]):String[1]
+{
+   if ($fromRow->isNotEmpty(), 
+       | if ($size == -1,
+            | '%s offset %s'->format([$format.separator, $fromRow->toOne()->getValueForTake()]),
+            | '%s offset %s rows fetch next %s rows only'->format([$format.separator, $fromRow->toOne()->getValueForTake(), $size])),
+       | '%s limit %s'->format($size));
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processTopForDB2(s:SelectSQLQuery[1], dbType:DatabaseType[1],format:Format[1]):String[1]
