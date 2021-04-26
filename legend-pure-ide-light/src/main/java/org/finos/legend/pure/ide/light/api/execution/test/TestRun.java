@@ -203,8 +203,8 @@ public class TestRun implements SimpleFunction
 
         Predicate<CoreInstance> funcExecPredicate = TestCollection.getFilterPredicateForExecutionPlatformClass(session.getFunctionExecution().getClass(), processorSupport);
         Predicate<? super CoreInstance> predicate = (filterPredicate == null) ? funcExecPredicate : Predicates.and(funcExecPredicate, filterPredicate);
-        //  predicate = Predicates.and(predicate, TestCollection.getFilterPredicateForAlloyExclusion(processorSupport));
-        predicate = Predicates.and(predicate, singleTestFilter, pathFilter);
+        Predicate<? super CoreInstance> alloyTextModeExclusionPredicate = TestCollection.getFilterPredicateForAlloyTextModeExclusion(processorSupport);
+        predicate = Predicates.and(predicate, singleTestFilter, pathFilter, alloyTextModeExclusionPredicate);
         return TestCollection.collectTests(pkg, processorSupport, predicate);
     }
 }

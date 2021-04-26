@@ -22,7 +22,7 @@ public class AbstractPureTestWithCoreCompiledPlatform extends AbstractPureTestWi
     public static Pair<String, String> extra = Tuples.pair("/system/extra.pure",
             "Profile meta::pure::profiles::test\n" +
                     "{\n" +
-                    "    stereotypes : [Test, BeforePackage, AfterPackage, ToFix, ExcludeAlloy, ExcludeLazy, AlloyOnly];\n" +
+                    "    stereotypes : [Test, BeforePackage, AfterPackage, ToFix, ExcludeAlloy, ExcludeLazy, AlloyOnly, ExcludeAlloyTextMode];\n" +
                     "    tags: [excludePlatform, sensitiveToStereotype];\n" +
                     "}" +
                     "Profile meta::pure::profiles::typemodifiers\n" +
