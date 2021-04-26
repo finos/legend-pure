@@ -187,71 +187,36 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::generate
 
 function meta::protocols::pure::vX_X_X::invocation::execution::execute::decodeAndParseAlloyObjectReference(ref : String[1]):meta::protocols::pure::vX_X_X::metamodel::objectReference::AlloyObjectReference[1]
 {
-   assert($ref->substring(0, 4) == 'ASOR', | 'Reference should start with "ASOR"');
-   let decodedRef = $ref->substring(5)->decodeBase64();
-   let version = $decodedRef->substring(0, 3)->parseInteger();
-
-   if($version == 1,
-      | parseAlloyObjectReferenceV1($decodedRef->substring(4)),
-      | fail('Version v1 only supported!'); parseAlloyObjectReferenceV1($ref);
-   );
-}
-
-
-function meta::protocols::pure::vX_X_X::invocation::execution::execute::parseAlloyObjectReferenceV1(ref : String[1]):meta::protocols::pure::vX_X_X::metamodel::objectReference::AlloyObjectReference[1]
-{
-   let lengthStringSize = $ref->substring(0, 3)->parseInteger();
-
-   let typeStart = 4 + $lengthStringSize + 1;
-   let typeStringLength = $ref->substring(4, 4 + $lengthStringSize)->parseInteger();
-   let typeEnd = $typeStart + $typeStringLength;
-   let type = $ref->substring($typeStart, $typeEnd);
-
+   let parsedObjectRef = meta::alloy::objectReference::decodeAndParseAlloyObjectReference($ref);
+   let type            = $parsedObjectRef->get('type')->cast(@String)->toOne();
+   
    if($type->toLower() == 'relational',
-      |parseAlloyRelationalStoreObjectReferenceV1($ref->substring($typeEnd+1), $lengthStringSize),
-      |fail('Not Supported Yet!!'); parseAlloyRelationalStoreObjectReferenceV1('', 0););
+      | meta::protocols::pure::vX_X_X::invocation::execution::execute::getAlloyRelationalStoreObjectReference($parsedObjectRef),
+      | fail('Not Supported Yet!!'); 
+        ^meta::protocols::pure::vX_X_X::metamodel::objectReference::AlloyObjectReference
+         (
+            type = meta::protocols::pure::vX_X_X::metamodel::objectReference::AlloyObjectReferenceType.Relational,
+            pathToMapping = '',
+            setId = ''
+         ););
 }
 
-function meta::protocols::pure::vX_X_X::invocation::execution::execute::parseAlloyRelationalStoreObjectReferenceV1(ref : String[1], lengthStringSize:Integer[1]):meta::protocols::pure::vX_X_X::metamodel::objectReference::AlloyRelationalStoreObjectReference[1]
+function meta::protocols::pure::vX_X_X::invocation::execution::execute::getAlloyRelationalStoreObjectReference(parsedObjectRef : Map<String, Any>[1]):meta::protocols::pure::vX_X_X::metamodel::objectReference::AlloyRelationalStoreObjectReference[1]
 {
-   let mappingStart = $lengthStringSize + 1;
-   let mappingStringLength = $ref->substring(0, $mappingStart - 1)->parseInteger();
-   let mappingEnd = $mappingStart + $mappingStringLength;
-   let mapping = $ref->substring($mappingStart, $mappingEnd);
-
-   let allSetsStart = $mappingEnd + 1 + $lengthStringSize + 1;
-   let allSetsStringLength = $ref->substring($mappingEnd + 1, $allSetsStart - 1)->parseInteger();
-   let allSetsEnd = $allSetsStart + $allSetsStringLength;
-   let allSets = $ref->substring($allSetsStart, $allSetsEnd);
-
-   let setStart = $allSetsEnd + 1 + $lengthStringSize + 1;
-   let setStringLength = $ref->substring($allSetsEnd + 1, $setStart - 1)->parseInteger();
-   let setEnd = $setStart + $setStringLength;
-   let set = $ref->substring($setStart, $setEnd);
-
-   let dbConnStart = $setEnd + 1 + $lengthStringSize + 1;
-   let dbConnStringLength = $ref->substring($setEnd + 1, $dbConnStart - 1)->parseInteger();
-   let dbConnEnd = $dbConnStart + $dbConnStringLength;
-   let dbConn = $ref->substring($dbConnStart, $dbConnEnd);
-
-   let pkMapStart = $dbConnEnd + 1 + $lengthStringSize + 1;
-   let pkMapStringLength = $ref->substring($dbConnEnd + 1, $pkMapStart - 1)->parseInteger();
-   let pkMapEnd = $pkMapStart + $pkMapStringLength;
-   let pkMap = $ref->substring($pkMapStart, $pkMapEnd);
-
-   let databaseConnection = $dbConn->parseJSON()->cast(@JSONObject)->map(o | ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection(_type = $o->getValue('_type')->cast(@JSONString).value->toOne(),
-                                                                                                                                                                          element = $o->getValue('element')->cast(@JSONString).value->toOne(),
-                                                                                                                                                                          type = $o->getValue('type')->cast(@JSONString).value->toOne()
-                                                                                                                                                                        ));
+   let databaseConnection = $parsedObjectRef->get('databaseConnection')->cast(@String)->toOne()
+                                            ->meta::json::parseJSON()->cast(@JSONObject)
+                                            ->map(o | ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection(_type = $o->getValue('_type')->cast(@JSONString).value->toOne(),
+                                                                                                                                                   element = $o->getValue('element')->cast(@JSONString).value->toOne(),
+                                                                                                                                                   type = $o->getValue('type')->cast(@JSONString).value->toOne()));
    ^meta::protocols::pure::vX_X_X::metamodel::objectReference::AlloyRelationalStoreObjectReference
-    (
-       type = meta::protocols::pure::vX_X_X::metamodel::objectReference::AlloyObjectReferenceType.Relational,
-       pathToMapping = $mapping,
-       operationResolvedSetsId = $allSets->split(';'),
-       setId = $set,
-       databaseConnection = $databaseConnection,
-       pkMap = $pkMap->fromJSON(Map)->cast(@Map<String, Any>)
-    );
+   (
+      type = meta::protocols::pure::vX_X_X::metamodel::objectReference::AlloyObjectReferenceType.Relational,
+      pathToMapping = $parsedObjectRef->get('pathToMapping')->cast(@String)->toOne(),
+      operationResolvedSetsId = $parsedObjectRef->get('operationResolvedSetsId')->cast(@List<String>).values,
+      setId = $parsedObjectRef->get('setId')->cast(@String)->toOne(),
+      databaseConnection = $databaseConnection,
+      pkMap = $parsedObjectRef->get('pkMap')->cast(@Map<String, Any>)->toOne()
+   );
 }
 
 function meta::protocols::pure::vX_X_X::invocation::execution::execute::getAlloyObjectReferenceAsMap(ref : String[1]):Map<String, Any>[1]

@@ -303,7 +303,11 @@ function <<access.private>> meta::pure::router::extension::relationalExtension(t
             ],
       java_graphFetch_graphFetchCommon_generateCodeForLocalGraphFetchNode = {path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] | {rel: meta::relational::graphFetch::executionPlan::RelationalGraphFetchExecutionNode[1] | $rel->meta::alloy::runtime::java::graphFetch::relational::generateRelationalStoreGraphFetchProject($path, $context, $extensions, $debug)}},
       java_graphFetch_graphFetchCommon_updateImplementationClassWithStoreSpecificFieldsAndMethods= {x:meta::java::metamodel::Class[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] | {rel: meta::relational::graphFetch::executionPlan::RelationalGraphFetchExecutionNode[1] | $x->meta::alloy::runtime::java::graphFetch::relational::enrichForRelationalGraphExecution($rel, $context, $extensions, $debug)}},
-
+      java_parseObjectReference_getParseObjectReferenceImplClass = {storeType:String[1], args:Any[*], path:String[1], context:GenerationContext[1], debug:DebugContext[1] | 
+                                                                                                       if($storeType == meta::relational::postProcessor::getObjectReferenceStoreType(),
+                                                                                                          |  let pkOrder = $args->cast(@String);
+                                                                                                             meta::alloy::runtime::java::getRelationalObjectReferenceParserHelperClass($pkOrder, $path, $context, $debug);,
+                                                                                                          | [])},
       plan_javaRuntime_main_prepare1 =
             {path:String[1], contextFromChildren:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] |
                [
