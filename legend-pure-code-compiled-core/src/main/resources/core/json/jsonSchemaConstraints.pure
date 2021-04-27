@@ -129,7 +129,8 @@ function <<access.private>> meta::json::schema::constraint::toJSONSchemaFromValu
                                        pair('meta::pure::functions::collection::isDistinct_T_MANY__Boolean_1_', meta::json::schema::constraint::buildDistinct_SimpleFunctionExpression_1__JSONSchemaConfigInternal_1__SchemaConstraint_1_ ),
                                        pair('meta::json::schema::discriminateOneOf_Any_1__Any_1__Type_MANY__DiscriminatorMapping_MANY__Boolean_1_',meta::json::schema::constraint::buildSubTypeDiscriminator_SimpleFunctionExpression_1__JSONSchemaConfigInternal_1__SchemaConstraint_1_),
                                        pair('meta::pure::functions::string::isUUID_String_$0_1$__Boolean_1_',meta::json::schema::constraint::buildUUID_SimpleFunctionExpression_1__JSONSchemaConfigInternal_1__SchemaConstraint_1_),
-                                       pair('meta::pure::functions::collection::or_Boolean_$1_MANY$__Boolean_1_', meta::json::schema::constraint::buildOr_SimpleFunctionExpression_1__JSONSchemaConfigInternal_1__SchemaConstraint_1_)
+                                       pair('meta::pure::functions::collection::or_Boolean_$1_MANY$__Boolean_1_', meta::json::schema::constraint::buildOr_SimpleFunctionExpression_1__JSONSchemaConfigInternal_1__SchemaConstraint_1_),
+                                       pair('meta::pure::functions::math::rem_Number_1__Number_1__Number_1_', meta::json::schema::constraint::builtMultipleOf_SimpleFunctionExpression_1__JSONSchemaConfigInternal_1__SchemaConstraint_1_)
 
 
    ]);
@@ -214,13 +215,25 @@ function <<access.private>> meta::json::schema::constraint::buildAnd( fn:SimpleF
 
 function <<access.private>> meta::json::schema::constraint::buildEqual( fn:SimpleFunctionExpression[1],config:JSONSchemaConfigInternal[1] ) : SchemaConstraint[1]
 {
-
- let value = $fn.parametersValues->at(1)->match([i:InstanceValue[1]| let value = $i.values->toOne()->makeString();
+  
+   if( $fn.parametersValues->at(0)->instanceOf(SimpleFunctionExpression) && !$fn.parametersValues->at(0)->cast(@SimpleFunctionExpression).func->instanceOf(Property) ,
+      | $fn.parametersValues->at(0)->toJSONSchemaFromValueSpecification_internal([],$config)->toOne();,
+      |let value = $fn.parametersValues->at(1)->match([i:InstanceValue[1]| let value = $i.values->toOne()->makeString();
                                                                      ^SchemaConstraint(constraint= ^JSONObject(keyValuePairs= [newJSONKeyValue( 'enum',^JSONArray(values= ^JSONString( value= $value )))]) );,
                                                    a:Any[1] | ^SchemaConstraint(generationMessage=addError([],'only direct assignment supported e.g. $this.value == 1235' ) ) ]);
-
+  );
 
 }
+
+function <<access.private>> meta::json::schema::constraint::builtMultipleOf( fn:SimpleFunctionExpression[1],config:JSONSchemaConfigInternal[1] ) : SchemaConstraint[1]
+{
+
+ let value = $fn.parametersValues->at(1)->match([i:InstanceValue[1]| let value = $i.values->toOne();
+                                                                     ^SchemaConstraint(constraint= ^JSONObject(keyValuePairs= [newJSONKeyValue( 'multipleOf',^JSONNumber( value= $value->cast(@Number) ))]) );,
+                                                   a:Any[1] | ^SchemaConstraint(generationMessage=addError([],'Use rem in the following format to specify a multiple rem(value,multiple)==0' ) ) ]);
+
+}
+
 
 
 function <<access.private>> meta::json::schema::constraint::buildOr( fn:SimpleFunctionExpression[1],config:JSONSchemaConfigInternal[1] ) : SchemaConstraint[1]

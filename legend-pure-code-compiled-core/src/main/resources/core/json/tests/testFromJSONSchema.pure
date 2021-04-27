@@ -50,7 +50,6 @@ function <<test.Test>> meta::json::schema::fromSchema::tests::testFromJSONSchema
     let expectedPropertyObject   = meta::json::schema::fromSchema::tests::PropertyTestObject->toSerializer()->parseJSON();
     let actualPropertyObject = $generated->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::PropertyTestObject')->toSerializer()->parseJSON();
    
-    
    
     let actualSuperType = $generated->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::SuperType')->toSerializer()->parseJSON();
     let expectedSuperType = meta::json::schema::fromSchema::tests::SuperType->toSerializer()->parseJSON();
@@ -111,7 +110,12 @@ function <<test.Test>> meta::json::schema::fromSchema::tests::dereferenceTest():
    assertEquals('/l.0/ch.ild.json',meta::json::schema::fromSchema::refToFullPath('../../ch.ild','/l.0/l1/l2/par.ent.json'));
    assertEquals('/l0/l1/l2/child.json',meta::json::schema::fromSchema::refToFullPath('../../../l1/l2/child','/l0/l1/l2/l3/parent.json'));
    assertEquals('/a/1/2/child.json',meta::json::schema::fromSchema::refToFullPath('../../1/2/child.json','/a/a/b/parent.json'));
-                      
+   assertEquals('/l1/definitions/child.json',meta::json::schema::fromSchema::refToFullPath('/./child.json','/l1/definitions/parent.json'));
+   assertEquals('/a/definitions/2/child.json',meta::json::schema::fromSchema::refToFullPath('../../definitions/2/child.json','/a/a/b/parent.json'));
+   assertEquals('/l1/l2/child.json',meta::json::schema::fromSchema::refToFullPath('#/definitions/l1::l2::child','/a/b/parent.json'));
+   assertEquals('/a/b/child.json',meta::json::schema::fromSchema::refToFullPath('#/definitions/child','/a/b/parent.json'));
+   assertEquals('/a/l1a/child.json',meta::json::schema::fromSchema::refToFullPath('../l1a/parent2.json/definitions/child','/a/b/parent.json'));
+                 
 }
 
 
@@ -119,7 +123,6 @@ function <<test.Test>> meta::json::schema::fromSchema::tests::openAPITest():Bool
 {
  let schema=   '{\n' +
             '  "type": "object",\n' +
-            '  "title": "SimpleObject With a superType that doenst have oneOf",\n' +
             '  "description": "A simple description",\n' +
             '  "allOf": [\n' +
                 '    {\n' +
@@ -178,7 +181,6 @@ function <<access.private>> meta::json::schema::fromSchema::tests::propertyTests
 
  ' {\n' +
                 '       "$schema": "http://json-schema.org/draft-07/schema#",\n' +
-                '       "title": "PropertyTestObject",\n' +
                 '       "type": "object",\n' +
                  '          "readOnly": true\n' +
 
@@ -351,7 +353,12 @@ function <<access.private>> meta::json::schema::fromSchema::tests::propertyTests
                   +     '    }, '+
                  '    "objectType": {\n' +
                         '      "type": "object"\n' +
+                  +     '    }, '+
+                 '    "constant": {\n' +
+                   '            "type": "string",\n' +
+                        '      "const": "my constant"\n' +
                   +     '    } '+
+
 
 
                 '      },\n' +
@@ -394,7 +401,6 @@ function <<access.private>> meta::json::schema::fromSchema::tests::simpleObject(
    '{\n' +
             '  "$schema": "http://json-schema.org/draft-07/schema#",\n' +
             '  "type": "object",\n' +
-            '  "title": "SimpleObject With a superType that doenst have oneOf",\n' +
             '  "description": "A simple description",\n' +
             '  "allOf": [\n' +
                 '    {\n' +
@@ -434,7 +440,6 @@ function <<access.private>> meta::json::schema::fromSchema::tests::classWithInte
    '{\n' +
             '  "$schema": "http://json-schema.org/draft-07/schema#",\n' +
             '  "type": "object",\n' +
-            '  "title": "SimpleObject With a superType that doenst have oneOf",\n' +
             '  "description": "A simple description",\n' +
             '  "javaInterfaces": [\n' +
             '    "org.example.myInterface"\n' +
@@ -453,7 +458,6 @@ function <<access.private>> meta::json::schema::fromSchema::tests::anyOf():Strin
    '{\n' +
             '  "$schema": "http://json-schema.org/draft-07/schema#",\n' +
             '  "type": "object",\n' +
-            '  "title": "SimpleObject With a superType that doenst have oneOf",\n' +
             '  "description": "A simple description",\n' +
             '  "properties": {\n' +
                 '        "simpleString": {\n' +
@@ -472,7 +476,6 @@ function  <<access.private>>   meta::json::schema::fromSchema::tests::superType(
 
 '{\n' +
             '  "$schema": "http://json-schema.org/draft-07/schema#",\n' +
-            '  "title": "SuperType",\n' +
             '  "description": "a Super Type Object",\n' +
             '  "type": "object"\n' +
             '}\n';
@@ -484,7 +487,6 @@ function <<access.private>>  meta::json::schema::fromSchema::tests::complexFragm
    
    '{\n' +
                 '  "$schema": "http://json-schema.org/draft-07/schema#",\n' +
-                '  "title": "complexFragment",\n' +
                 '  "description": "complex Fragment",\n' +
                 '  "writeOnly": true,\n' +
 
@@ -744,10 +746,9 @@ function <<test.Test>>  meta::json::schema::fromSchema::tests::discriminatorTest
    
 
    assertSize($generated,7);
-   let generatedPet =  $generated->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::shared::Pet')->toSerializer()->parseJSON();
-   let expectedPet = meta::json::schema::fromSchema::tests::shared::Pet->toSerializer()->parseJSON();
-      assert(jsonEquivalent($generatedPet,$expectedPet));
-   
+
+   meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::fromSchema::tests::shared::Pet,$generated);
+
    //use grammar assertion  since  simple function references  don't serialize the same in memory and compiled 
    let generatedCat =  $generated->filter(g|$g->elementToPath()=='meta::json::schema::fromSchema::tests::Cat')->printTransformToString();
    let expectedCat = meta::json::schema::fromSchema::tests::Cat->printTransformToString();
@@ -782,11 +783,11 @@ function  meta::json::schema::fromSchema::tests::printschemas(expected:JSONEleme
 
 
 
-Class {meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='bigCat'} meta::json::schema::fromSchema::tests::BigCat extends meta::json::schema::fromSchema::tests::Cat
+Class {meta::json::schema::JSONSchemaGeneration.title='Big Cat', meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='bigCat'} meta::json::schema::fromSchema::tests::BigCat extends meta::json::schema::fromSchema::tests::Cat
 {
   harRoar : Boolean[0..1];
 }
-Class {meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='Feline'} meta::json::schema::fromSchema::tests::Cat extends meta::json::schema::fromSchema::tests::shared::Pet
+Class {meta::json::schema::JSONSchemaGeneration.title='Cat',meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='Feline'} meta::json::schema::fromSchema::tests::Cat extends meta::json::schema::fromSchema::tests::shared::Pet
 [
   friend_inLine : $this.friend->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if({|$this.friend->meta::pure::functions::multiplicity::toOne()->meta::json::schema::fromSchema::tests::friends()}, {|true})
 ]
@@ -795,7 +796,7 @@ Class {meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='Feline'
   hasMeow : Boolean[0..1];
 }
 
-Class {meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='woof',meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='Canine'} meta::json::schema::fromSchema::tests::Dog extends meta::json::schema::fromSchema::tests::shared::Pet
+Class {meta::json::schema::JSONSchemaGeneration.title='Dog',meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='woof',meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='Canine'} meta::json::schema::fromSchema::tests::Dog extends meta::json::schema::fromSchema::tests::shared::Pet
 [
   bestFriend_inLine : $this.bestFriend->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if({|$this.bestFriend->toOne()->meta::json::schema::fromSchema::tests::friendsNoMap()}, {|true}),
   siblings_inLine : $this.siblings->meta::pure::functions::collection::isDistinct(),
@@ -810,7 +811,7 @@ Class {meta::json::schema::JSONSchemaOpenAPIExtension.discriminatorName='woof',m
   friends : meta::json::schema::fromSchema::tests::shared::Pet[*];
 }
 
-Class meta::json::schema::fromSchema::tests::shared::Pet
+Class {meta::json::schema::JSONSchemaGeneration.title='Pet'}  meta::json::schema::fromSchema::tests::shared::Pet
 [
   petType_inLine : $this.petType->meta::pure::functions::collection::in(['Feline', 'Canine,', 'woof'])
 ]
@@ -833,7 +834,8 @@ function meta::json::schema::fromSchema::tests::anyAnimal(value: meta::pure::met
 
 
 Class <<meta::json::schema::JSONSchemaGeneration.readOnly>> meta::json::schema::fromSchema::tests::PropertyTestObject
-[
+[ 
+  constant_inLine : $this.constant->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if({|($this.constant->meta::pure::functions::multiplicity::toOne()) == ('my constant')}, {|true}),
   anyOfConstraint_inLine : $this.anyOfConstraint->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if({|[$this.anyOfConstraint->meta::pure::functions::multiplicity::toOne()->meta::pure::functions::meta::instanceOf(String)->meta::pure::functions::boolean::and($this.anyOfConstraint->meta::pure::functions::string::makeString()->meta::pure::functions::string::matches('^[a-z]*$')->meta::pure::functions::boolean::and($this.anyOfConstraint->meta::pure::functions::string::makeString()->meta::pure::functions::string::isNoLongerThan(32))), meta::pure::functions::boolean::and(($this.anyOfConstraint->meta::pure::functions::multiplicity::toOne()->meta::pure::functions::lang::cast(@Number)) <= (5), $this.anyOfConstraint->meta::pure::functions::multiplicity::toOne()->meta::pure::functions::meta::instanceOf(Float)), $this.anyOfConstraint->meta::pure::functions::multiplicity::toOne()->meta::pure::functions::meta::instanceOf(String)->meta::pure::functions::boolean::and($this.anyOfConstraint->meta::pure::functions::string::makeString()->meta::pure::functions::string::matches('^[a-z]*$')->meta::pure::functions::boolean::and($this.anyOfConstraint->meta::pure::functions::string::makeString()->meta::pure::functions::string::isNoLongerThan(256)))]->meta::pure::functions::collection::or()}, {|true}),
   arrayWithFeaturesOutsideOfItems_inLine : $this.arrayWithFeaturesOutsideOfItems->meta::pure::functions::collection::forAll({value|$value->meta::pure::functions::string::isUUID()}),
   minMaxNumber_inLine : $this.minMaxNumber->meta::pure::functions::collection::isNotEmpty()->meta::pure::functions::lang::if({|meta::pure::functions::boolean::and(($this.minMaxNumber->meta::pure::functions::multiplicity::toOne()->meta::pure::functions::lang::cast(@Number)) <= (150), ($this.minMaxNumber->meta::pure::functions::multiplicity::toOne()->meta::pure::functions::lang::cast(@Number)) >= (18))}, {|true}),
@@ -847,6 +849,7 @@ Class <<meta::json::schema::JSONSchemaGeneration.readOnly>> meta::json::schema::
 ]
 {
   dateTime : DateTime[0..1];
+  constant : String[0..1];
   <<meta::json::schema::JSONSchemaTypeExtension.byte>> byte : String[0..1];
   <<meta::json::schema::JSONSchemaTypeExtension.double>> double : Float[0..1];
   {meta::pure::profiles::doc.doc='any of'} anyOfConstraint : meta::pure::metamodel::type::Any[0..1];
@@ -913,3 +916,22 @@ Enum <<meta::json::schema::JSONSchemaGeneration.readOnly>> {JSONSchemaJavaExtens
 }
 
 
+function  meta::json::schema::fromSchema::tests::testfromJSONSchema(type:PackageableElement[1],generatedElements:PackageableElement[*]):Boolean[1]
+{
+   meta::json::schema::fromSchema::tests::testfromJSONSchema($type,$generatedElements,false);   
+}
+
+function  meta::json::schema::fromSchema::tests::testfromJSONSchema(type:PackageableElement[1],generatedElements:PackageableElement[*],debug:Boolean[1]):Boolean[1]
+{
+    if($debug,
+       |'Expected'->println();
+        $type->toSerializer()->parseJSON()->toPrettyJSONString()->println();
+       'Actual'->println();
+       $generatedElements->filter(p|$p->elementToPath()==$type->elementToPath())->toOne()->toSerializer()->parseJSON()->toPrettyJSONString()->println();
+       false;,
+      |
+       assert(jsonEquivalent($type->toSerializer()->parseJSON(),$generatedElements->filter(p|$p->elementToPath()==$type->elementToPath())->toOne()->toSerializer()->parseJSON()));
+);
+   
+
+}

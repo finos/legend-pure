@@ -1450,7 +1450,6 @@ function <<test.Test>>  meta::json::schema::generation::tests::toJSONSchemaWithC
         '  ]\n' +
         '}';
 
-   $jsonSchema->at(0).content->meta::json::parseJSON()->toPrettyJSONString()->println();
    assertEquals($expectedjson->meta::json::parseJSON()->toCompactJSONString(),$jsonSchema->at(0).content->meta::json::parseJSON()->toCompactJSONString());
 
 }
@@ -1630,3 +1629,67 @@ function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchem
 
 }
 
+ function <<test.Test>> meta::json::schema::generation::tests::testOpenAPIYAML():Boolean[1]
+{
+
+
+     let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::subtypeAnimal_Animal_1__Boolean_1_,
+                                                                                           meta::json::schema::tests::Animal,
+                                                                                           meta::json::schema::tests::Cat,
+                                                                                           meta::json::schema::tests::Dog],
+                                                         useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true,schemaSpecification=JSONSchemaSpecification.OPEN_API_V3_0_3_YAML ));
+
+
+   let expectedSubTypeAnimal= 'discriminator: \n' +
+                              '  propertyName: "type"\n' +
+                              '  mapping: \n' +
+                              '    CAT: "Cat.yaml"\n' +
+                              '    dog: "Dog.yaml"\n' +
+                              '    DOG: "Dog.yaml"\n' +
+                              'oneOf: \n' +
+                              '  - $ref: "Dog.yaml"\n' +
+                              '  - $ref: "Fish.yaml"\n' +
+                              '  - $ref: "Cat.yaml"\n' +
+                              'title: "meta::json::schema::tests::subtypeAnimal"';
+
+
+   let expectedAnimal ='title: "meta::json::schema::tests::Animal"\n' +
+                     'description: "The Animal Class"\n' +
+                     'allOf: \n' +
+                     '  - $ref: "Being.yaml"\n' +
+                     'type: "object"\n' +
+                     'properties: \n' +
+                     '  name: \n' +
+                     '    type: "string"\n' +
+                     '  age: \n' +
+                     '    type: "integer"\n' +
+                     '  type: \n' +
+                     '    $ref: "AnimalType.yaml"\n' +
+                     '  aliases: \n' +
+                     '    type: "array"\n' +
+                     '    items: \n' +
+                     '      type: "string"\n' +
+                     '  extra: \n' +
+                     '    type: "array"\n' +
+                     '    items: \n' +
+                     '      $ref: "OtherInfo.yaml"\n' +
+                     '    minItems: 4\n' +
+                     '    maxItems: 4\n' +
+                     'discriminator: \n' +
+                     '  propertyName: "type"\n' +
+                     '  mapping: \n' +
+                     '    CAT: "Cat.yaml"\n' +
+                     '    cat: "Cat.yaml"\n' +
+                     '    DOG: "Dog.yaml"\n' +
+                     'required: \n' +
+                     '  - "name"\n' +
+                     '  - "age"\n' +
+                     '  - "type"\n' +
+                     '  - "extra"' ;
+
+  let actualsubTypeAnimal =  $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/subtypeAnimal.yaml').content->toOne();
+  let actualAnimal = $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/Animal.yaml').content->toOne();
+   
+  assertEquals($expectedSubTypeAnimal,$actualsubTypeAnimal);
+  assertEquals($expectedAnimal,$actualAnimal);
+}
