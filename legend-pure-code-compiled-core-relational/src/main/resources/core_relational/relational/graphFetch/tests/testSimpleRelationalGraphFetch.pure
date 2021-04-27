@@ -15,6 +15,7 @@
 import meta::relational::tests::model::simple::*;
 import meta::pure::executionPlan::profiles::*;
 import meta::pure::graphFetch::execution::*;
+import meta::pure::alloy::connections::*;
 
 function <<test.BeforePackage>> meta::relational::graphFetch::tests::simple::setup(): Boolean[1]
 {
@@ -467,6 +468,31 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::rel
       '[{"date":"2003-07-19","floatAsDecimal":1.1,"double":2.2,"varchar":"Something","numeric":1.23456,"tinyInt":1,"integer":3,"float":1.1,"bit":true,"smallInt":2,"char":"c","numericAsFloat":1.23456,"decimal":1.234,"bigInt":1000,"timestamp":"2003-07-19T00:00:00.000000000","decimalAsFloat":1.234},'+
       '{"date":null,"floatAsDecimal":null,"double":null,"varchar":null,"numeric":null,"tinyInt":null,"integer":null,"float":null,"bit":null,"smallInt":null,"char":null,"numericAsFloat":null,"decimal":null,"bigInt":null,"timestamp":null,"decimalAsFloat":null},'+
       '{"date":null,"floatAsDecimal":null,"double":null,"varchar":null,"numeric":null,"tinyInt":2,"integer":null,"float":null,"bit":false,"smallInt":null,"char":null,"numericAsFloat":null,"decimal":null,"bigInt":null,"timestamp":null,"decimalAsFloat":null}]',
+      $result
+   );
+}
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::simple::testGraphFetchWithTableMapperPostProcessor():Boolean[1]
+{
+   let query = {|Firm.all()->graphFetch(#{Firm{legalName,employees{firstName}}}#)->serialize(#{Firm{legalName,employees{firstName}}}#)};
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+
+   let runtime = ^meta::pure::runtime::Runtime
+                 (
+                    connections = ^RelationalDatabaseConnection
+                    (
+                       element = meta::relational::tests::db,
+                       type = meta::relational::runtime::DatabaseType.H2,
+                       datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification(),
+                       authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::TestDatabaseAuthenticationStrategy(),
+                       postProcessors = ^MapperPostProcessor(mappers = ^TableNameMapper(schema = ^SchemaNameMapper(from = 'default', to = 'default'), from = 'personTable' , to = 'differentPersonTable'))
+                    )
+                 );
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"legalName":"Firm X","employees":[]},{"legalName":"Firm A","employees":[]},{"legalName":"Firm B","employees":[]},{"legalName":"Firm C","employees":[]}]',
       $result
    );
 }
