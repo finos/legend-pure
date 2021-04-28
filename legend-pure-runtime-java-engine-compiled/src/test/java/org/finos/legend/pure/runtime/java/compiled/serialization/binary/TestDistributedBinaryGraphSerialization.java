@@ -14,15 +14,16 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
-import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.multimap.Multimap;
+import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialized;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,8 +33,7 @@ import java.io.IOException;
 public class TestDistributedBinaryGraphSerialization extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp()
-    {
+    public static void setUp() {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -41,7 +41,7 @@ public class TestDistributedBinaryGraphSerialization extends AbstractPureTestWit
     public void testSerializationAndDeserialization() throws IOException
     {
         // Get serialized
-        Serialized serialized = GraphSerializer.serializeAll(runtime.getCoreInstance("::"), processorSupport);
+        Serialized serialized = GraphSerializer.serializeAll(this.runtime.getCoreInstance("::"), this.processorSupport);
 
         // Serialize
         MutableMap<String, byte[]> fileBytes = Maps.mutable.empty();
@@ -50,7 +50,7 @@ public class TestDistributedBinaryGraphSerialization extends AbstractPureTestWit
         // Deserialize
         DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromInMemoryByteArrays(fileBytes);
 
-        Multimap<String, Obj> objsByClassifier = serialized.getObjects().groupBy(Obj::getClassifier);
+        MutableMultimap<String, Obj> objsByClassifier = serialized.getObjects().groupBy(Obj.GET_CLASSIFIER);
 
         // Validate classifiers
         Verify.assertSetsEqual(objsByClassifier.keysView().toSet(), deserializer.getClassifiers().toSet());
@@ -63,7 +63,7 @@ public class TestDistributedBinaryGraphSerialization extends AbstractPureTestWit
         for (String classifierId : objsByClassifier.keysView())
         {
             MutableSet<Obj> instances = objsByClassifier.get(classifierId).toSet();
-            MutableSet<String> instanceIds = instances.collect(Obj::getIdentifier);
+            MutableSet<String> instanceIds = instances.collect(Obj.GET_IDENTIFIER);
             Verify.assertSetsEqual(classifierId, instanceIds, deserializer.getClassifierInstanceIds(classifierId).toSet());
             Verify.assertSetsEqual(classifierId, instances, deserializer.getInstances(classifierId, instanceIds).toSet());
         }

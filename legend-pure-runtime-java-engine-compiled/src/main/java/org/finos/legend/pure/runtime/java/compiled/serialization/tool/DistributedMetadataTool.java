@@ -25,17 +25,14 @@ import org.finos.legend.pure.runtime.java.compiled.serialization.model.PropertyV
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValueVisitor;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
-import java.util.zip.ZipFile;
+import java.nio.file.Paths;
 
-public class DistributedMetadataTool implements Closeable
+public class DistributedMetadataTool
 {
-    private final ZipFile zipFile;
     private final DistributedBinaryGraphDeserializer deserializer;
     private final BufferedReader in;
     private final PrintStream out;
@@ -43,26 +40,14 @@ public class DistributedMetadataTool implements Closeable
     private String prefix = "";
 
 
-    public static void main(String[] args) throws IOException
+    public static void main(String[] args)
     {
-        String zipPath = args[0];
-        try (DistributedMetadataTool tool = new DistributedMetadataTool(zipPath))
-        {
-            tool.repl();
-        }
+        new DistributedMetadataTool(args[0]).repl();
     }
 
     private DistributedMetadataTool(String zipPath)
     {
-        try
-        {
-            this.zipFile = new ZipFile(new File(zipPath));
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Could not open zip file at: " + zipPath, e);
-        }
-        this.deserializer = DistributedBinaryGraphDeserializer.fromZip(this.zipFile);
+        this.deserializer = DistributedBinaryGraphDeserializer.fromZip(Paths.get(zipPath));
         this.in = new BufferedReader(new InputStreamReader(System.in));
         this.out = System.out;
     }
@@ -146,12 +131,6 @@ public class DistributedMetadataTool implements Closeable
         {
             throw new UncheckedIOException(e);
         }
-    }
-
-    @Override
-    public void close() throws IOException
-    {
-        this.zipFile.close();
     }
 
     private class ObjPrinter implements PropertyValueVisitor, RValueVisitor

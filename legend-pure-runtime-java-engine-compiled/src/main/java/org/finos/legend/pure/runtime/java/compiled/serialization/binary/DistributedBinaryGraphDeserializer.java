@@ -15,38 +15,67 @@
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.list.primitive.ByteList;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.impl.block.factory.Functions0;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.Maps;
+import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
+import java.util.Comparator;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class DistributedBinaryGraphDeserializer
 {
-    private static SourceCoordinateMapProvider sourceCoordinateMapProvider = (instanceCount, classifier) -> Maps.mutable.withInitialCapacity(instanceCount);
+    private static final Comparator<SourceCoordinates> OFFSET_COMPARATOR = new Comparator<SourceCoordinates>()
+    {
+        @Override
+        public int compare(SourceCoordinates sourceCoordinates1, SourceCoordinates sourceCoordinates2)
+        {
+            return Long.compare(sourceCoordinates1.offset, sourceCoordinates2.offset);
+        }
+    };
 
     private final FileReader fileReader;
     private final LazyStringIndex stringIndex;
     private final ImmutableMap<String, ClassifierIndex> classifierIndexes;
 
+    public static void setSourceCoordinateMapProvider(SourceCoordinateMapProvider sourceCoordinateMapProvider) {
+        DistributedBinaryGraphDeserializer.sourceCoordinateMapProvider = sourceCoordinateMapProvider;
+    }
+
+    private static SourceCoordinateMapProvider sourceCoordinateMapProvider = new DefaultSourceCoordinateMapImpl();
+
     private DistributedBinaryGraphDeserializer(FileReader fileReader)
     {
         this.fileReader = fileReader;
         this.stringIndex = LazyStringIndex.fromFileReader(fileReader);
-        RichIterable<String> classifierIds = this.stringIndex.getClassifierIds();
-        this.classifierIndexes = classifierIds.toMap(id -> id, ClassifierIndex::new, Maps.mutable.withInitialCapacity(classifierIds.size())).toImmutable();
+        this.classifierIndexes = buildClassifierIndexMap(this.stringIndex.getClassifierIds());
+    }
+
+    private ImmutableMap<String, ClassifierIndex> buildClassifierIndexMap(RichIterable<String> classifierIds)
+    {
+        MutableMap<String, ClassifierIndex> map = UnifiedMap.newMap(classifierIds.size());
+        for (String classifierId : classifierIds)
+        {
+            map.put(classifierId, new ClassifierIndex(classifierId));
+        }
+        return map.toImmutable();
     }
 
     public boolean hasClassifier(String classifierId)
@@ -66,7 +95,7 @@ public class DistributedBinaryGraphDeserializer
 
     public RichIterable<String> getClassifierInstanceIds(String classifierId)
     {
-        return hasClassifier(classifierId) ? getClassifierIndex(classifierId).getInstanceIds() : Lists.immutable.empty();
+        return hasClassifier(classifierId) ? getClassifierIndex(classifierId).getInstanceIds() : Lists.immutable.<String>empty();
     }
 
     public Obj getInstance(String classifierId, String instanceId) throws IOException
@@ -101,7 +130,7 @@ public class DistributedBinaryGraphDeserializer
             {
                 throw new RuntimeException("Unknown instance: classifier='" + classifierId + "', id='" + instanceId + "'");
             }
-            sourceCoordinatesByFile.getIfAbsentPut(sourceCoordinates.getFilePath(), Lists.mutable::empty).add(sourceCoordinates);
+            sourceCoordinatesByFile.getIfAbsentPut(sourceCoordinates.getFilePath(), Functions0.<SourceCoordinates>newFastList()).add(sourceCoordinates);
             size++;
         }
         if (size == 0)
@@ -109,20 +138,20 @@ public class DistributedBinaryGraphDeserializer
             return Lists.immutable.empty();
         }
 
-        MutableList<Obj> objs = Lists.mutable.withInitialCapacity(size);
-        sourceCoordinatesByFile.forEachKeyValue((filePath, fileSourceCoordinates) ->
+        MutableList<Obj> objs = FastList.newList(size);
+        for (MutableList<SourceCoordinates> fileSourceCoordinates : sourceCoordinatesByFile.valuesView())
         {
-            fileSourceCoordinates.sortThis(SourceCoordinates::compareByOffset);
-            try (Reader reader = this.fileReader.getReader(filePath))
+            fileSourceCoordinates.sortThis(OFFSET_COMPARATOR);
+            int offset = 0;
+            try (Reader reader = this.fileReader.getReader(fileSourceCoordinates.get(0).getFilePath()))
             {
-                int offset = 0;
                 for (SourceCoordinates sourceCoordinates : fileSourceCoordinates)
                 {
                     objs.add(sourceCoordinates.getObj(reader, offset, this.stringIndex, classifierIndex));
                     offset = sourceCoordinates.getOffsetAfterReading();
                 }
             }
-        });
+        }
         return objs;
     }
 
@@ -131,72 +160,58 @@ public class DistributedBinaryGraphDeserializer
         return this.classifierIndexes.get(classifierId);
     }
 
-    private MapIterable<String, SourceCoordinates> readInstanceIndex(String classifier)
+    private MapIterable<String, SourceCoordinates> readInstanceIndex(Reader reader, String classifier)
     {
-        String indexFilePath = DistributedBinaryGraphSerializer.getMetadataIndexFilePath(classifier);
-        try (Reader reader = this.fileReader.getReader(indexFilePath))
+        int instanceCount = reader.readInt();
+        MutableMap<String, SourceCoordinates> index = sourceCoordinateMapProvider.getMap(instanceCount, classifier);
+
+        int instancePartition = reader.readInt();
+        int offset = reader.readInt();
+        String filePath = DistributedBinaryGraphSerializer.getMetadataBinFilePath(Integer.toString(instancePartition));
+
+        int instancesRead = 0;
+        while (instancesRead < instanceCount)
         {
-            int instanceCount = reader.readInt();
-            MutableMap<String, SourceCoordinates> index = sourceCoordinateMapProvider.getMap(instanceCount, classifier);
-
-            int instancePartition = reader.readInt();
-            int offset = reader.readInt();
-            String filePath = DistributedBinaryGraphSerializer.getMetadataBinFilePath(Integer.toString(instancePartition));
-
-            int instancesRead = 0;
-            while (instancesRead < instanceCount)
+            int partitionInstanceCount = reader.readInt();
+            for (int i = 0; i < partitionInstanceCount; i++)
             {
-                int partitionInstanceCount = reader.readInt();
-                for (int i = 0; i < partitionInstanceCount; i++)
-                {
-                    String identifier = this.stringIndex.getString(reader.readInt());
-                    int length = reader.readInt();
-                    index.put(identifier, new SourceCoordinates(identifier, filePath, offset, length));
-                    offset += length;
-                }
-                instancesRead += partitionInstanceCount;
-                instancePartition++;
-                offset = 0;
-                filePath = DistributedBinaryGraphSerializer.getMetadataBinFilePath(Integer.toString(instancePartition));
+                String identifier = this.stringIndex.getString(reader.readInt());
+                int length = reader.readInt();
+                index.put(identifier, new SourceCoordinates(identifier, filePath, offset, length));
+                offset += length;
             }
-
-            return index;
+            instancesRead += partitionInstanceCount;
+            instancePartition++;
+            offset = 0;
+            filePath = DistributedBinaryGraphSerializer.getMetadataBinFilePath(Integer.toString(instancePartition));
         }
-    }
 
-    public static void setSourceCoordinateMapProvider(SourceCoordinateMapProvider provider)
-    {
-        sourceCoordinateMapProvider = provider;
+        return index;
     }
 
     public static DistributedBinaryGraphDeserializer fromClassLoader(ClassLoader classLoader)
     {
-        return fromFileReader(FileReaders.fromClassLoader(classLoader));
+        return new DistributedBinaryGraphDeserializer(new ClassLoaderFileReader(classLoader));
     }
 
     public static DistributedBinaryGraphDeserializer fromDirectory(Path directory)
     {
-        return fromFileReader(FileReaders.fromDirectory(directory));
+        return new DistributedBinaryGraphDeserializer(new FileSystemFileReader(directory));
     }
 
-    public static DistributedBinaryGraphDeserializer fromInMemoryByteArrays(Map<String, byte[]> fileBytes)
+    public static DistributedBinaryGraphDeserializer fromInMemoryByteArrays(MapIterable<String, byte[]> fileBytes)
     {
-        return fromFileReader(FileReaders.fromInMemoryByteArrays(fileBytes));
+        return new DistributedBinaryGraphDeserializer(new InMemoryByteArrayFileReader(fileBytes));
     }
 
-    public static DistributedBinaryGraphDeserializer fromInMemoryByteLists(Map<String, ? extends ByteList> fileBytes)
+    public static DistributedBinaryGraphDeserializer fromInMemoryByteLists(MapIterable<String, ? extends ByteList> fileBytes)
     {
-        return fromFileReader(FileReaders.fromInMemoryByteLists(fileBytes));
+        return new DistributedBinaryGraphDeserializer(new InMemoryByteListFileReader(fileBytes));
     }
 
-    public static DistributedBinaryGraphDeserializer fromZip(ZipFile zipFile)
+    public static DistributedBinaryGraphDeserializer fromZip(Path zipPath)
     {
-        return fromFileReader(FileReaders.fromZipFile(zipFile));
-    }
-
-    public static DistributedBinaryGraphDeserializer fromFileReader(FileReader fileReader)
-    {
-        return new DistributedBinaryGraphDeserializer(fileReader);
+        return new DistributedBinaryGraphDeserializer(new ZipFileReader(zipPath));
     }
 
     private class ClassifierIndex
@@ -231,19 +246,20 @@ public class DistributedBinaryGraphDeserializer
 
         private MapIterable<String, SourceCoordinates> getInstanceIndex()
         {
-            MapIterable<String, SourceCoordinates> localIndex = this.index;
-            if (localIndex == null)
+            if (this.index == null)
             {
                 synchronized (this)
                 {
-                    localIndex = this.index;
-                    if (localIndex == null)
+                    if (this.index == null)
                     {
-                        this.index = localIndex = readInstanceIndex(this.classifierId);
+                        try (Reader reader = DistributedBinaryGraphDeserializer.this.fileReader.getReader(DistributedBinaryGraphSerializer.getMetadataIndexFilePath(this.classifierId)))
+                        {
+                            this.index = readInstanceIndex(reader, this.classifierId);
+                        }
                     }
                 }
             }
-            return localIndex;
+            return this.index;
         }
     }
 
@@ -267,22 +283,20 @@ public class DistributedBinaryGraphDeserializer
             return this.filePath;
         }
 
-        private Obj getObj(FileReader fileReader, StringIndex stringIndex, ClassifierIndex classifierIndex)
+        private Obj getObj(FileReader fileReader, StringIndex stringIndex, ClassifierIndex classifierIndex) throws IOException
         {
             return getObj(getBytes(fileReader), stringIndex, classifierIndex);
         }
 
-        private Obj getObj(Reader reader, long currentOffset, StringIndex stringIndex, ClassifierIndex classifierIndex)
+        private Obj getObj(Reader reader, long currentOffset, StringIndex stringIndex, ClassifierIndex classifierIndex) throws IOException
         {
             return getObj(getBytes(reader, currentOffset), stringIndex, classifierIndex);
         }
 
         private Obj getObj(byte[] bytes, StringIndex stringIndex, ClassifierIndex classifierIndex)
         {
-            try (Reader reader = BinaryReaders.newBinaryReader(bytes))
-            {
-                return getDeserializer(stringIndex, classifierIndex).deserialize(reader);
-            }
+            Reader reader = BinaryReaders.newBinaryReader(bytes);
+            return getDeserializer(stringIndex, classifierIndex).deserialize(reader);
         }
 
         private BinaryObjDeserializer getDeserializer(StringIndex stringIndex, ClassifierIndex classifierIndex)
@@ -290,7 +304,7 @@ public class DistributedBinaryGraphDeserializer
             return new BinaryObjDeserializerWithStringIndexAndImplicitIdentifiers(stringIndex, this.identifier, classifierIndex.getClassifierId());
         }
 
-        private byte[] getBytes(FileReader fileReader)
+        private byte[] getBytes(FileReader fileReader) throws IOException
         {
             try (Reader reader = fileReader.getReader(this.filePath))
             {
@@ -299,7 +313,7 @@ public class DistributedBinaryGraphDeserializer
             }
         }
 
-        private byte[] getBytes(Reader reader, long currentOffset)
+        private byte[] getBytes(Reader reader, long currentOffset) throws IOException
         {
             if (this.offset < currentOffset)
             {
@@ -313,10 +327,130 @@ public class DistributedBinaryGraphDeserializer
         {
             return this.offset + this.length;
         }
+    }
 
-        private static int compareByOffset(SourceCoordinates one, SourceCoordinates another)
+    private static class ClassLoaderFileReader implements FileReader
+    {
+        private final ClassLoader classLoader;
+
+        private ClassLoaderFileReader(ClassLoader classLoader)
         {
-            return Integer.compare(one.offset, another.offset);
+            this.classLoader = classLoader;
+        }
+
+        @Override
+        public Reader getReader(String path)
+        {
+            InputStream stream = this.classLoader.getResourceAsStream(path);
+            if (stream == null)
+            {
+                throw new RuntimeException("Cannot find file '" + path + "' in the class path");
+            }
+            return BinaryReaders.newBinaryReader(stream);
+        }
+    }
+
+    private static class FileSystemFileReader implements FileReader
+    {
+        private final Path root;
+
+        private FileSystemFileReader(Path root)
+        {
+            this.root = root;
+        }
+
+        @Override
+        public Reader getReader(String path)
+        {
+            Path fullPath = this.root.resolve(path);
+            try
+            {
+                return BinaryReaders.newBinaryReader(new BufferedInputStream(Files.newInputStream(fullPath)));
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("Error accessing file '" + path + "'", e);
+            }
+        }
+    }
+
+    private static class InMemoryByteArrayFileReader implements FileReader
+    {
+        private final MapIterable<String, byte[]> bytesByPath;
+
+        private InMemoryByteArrayFileReader(MapIterable<String, byte[]> bytesByPath)
+        {
+            this.bytesByPath = bytesByPath;
+        }
+
+        @Override
+        public Reader getReader(String path)
+        {
+            byte[] bytes = this.bytesByPath.get(path);
+            if (bytes == null)
+            {
+                throw new RuntimeException("Cannot find file '" + path + "'");
+            }
+            return BinaryReaders.newBinaryReader(bytes);
+        }
+    }
+
+    private static class InMemoryByteListFileReader implements FileReader
+    {
+        private final MapIterable<String, ? extends ByteList> bytesByPath;
+
+        private InMemoryByteListFileReader(MapIterable<String, ? extends ByteList> bytesByPath)
+        {
+            this.bytesByPath = bytesByPath;
+        }
+
+        @Override
+        public Reader getReader(String path)
+        {
+            ByteList bytes = this.bytesByPath.get(path);
+            if (bytes == null)
+            {
+                throw new RuntimeException("Cannot find file '" + path + "'");
+            }
+            return BinaryReaders.newBinaryReader(bytes);
+        }
+    }
+
+    private static class ZipFileReader implements FileReader
+    {
+        private final ZipFile zipFile;
+
+        private ZipFileReader(Path zipPath)
+        {
+            try
+            {
+                this.zipFile = new ZipFile(zipPath.toFile());
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("Unable to open " + zipPath.toString(), e);
+            }
+        }
+
+        @Override
+        public Reader getReader(String path)
+        {
+            try
+            {
+                ZipEntry entry = this.zipFile.getEntry(path);
+                return BinaryReaders.newBinaryReader(new BufferedInputStream(zipFile.getInputStream(entry)));
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("Error accessing file '" + path + "'", e);
+            }
+        }
+    }
+
+    private static class DefaultSourceCoordinateMapImpl implements SourceCoordinateMapProvider {
+        @Override
+        public MutableMap<String, SourceCoordinates> getMap(int instanceCount, String classifier) {
+            return UnifiedMap.newMap(instanceCount);
         }
     }
 }

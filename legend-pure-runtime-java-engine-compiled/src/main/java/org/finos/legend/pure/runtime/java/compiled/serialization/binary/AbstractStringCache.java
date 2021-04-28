@@ -14,10 +14,12 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
+import org.eclipse.collections.api.block.procedure.primitive.ObjectIntProcedure;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
 import org.eclipse.collections.api.map.primitive.ObjectIntMap;
-import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.map.mutable.primitive.ObjectIntHashMap;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
@@ -68,29 +70,43 @@ abstract class AbstractStringCache implements StringCache
         return sequentialIdIndexToArray(this.otherStrings, this.classifierIds.size());
     }
 
-    private static String[] sequentialIdIndexToArray(ObjectIntMap<String> stringIds, int idOffset)
+    private static String[] sequentialIdIndexToArray(ObjectIntMap<String> stringIds, final int idOffset)
     {
-        String[] strings = new String[stringIds.size()];
-        stringIds.forEachKeyValue((string, id) -> strings[id - idOffset] = string);
+        final String[] strings = new String[stringIds.size()];
+        stringIds.forEachKeyValue(new ObjectIntProcedure<String>()
+        {
+            @Override
+            public void value(String string, int id)
+            {
+                strings[id - idOffset] = string;
+            }
+        });
         return strings;
     }
 
     protected static ObjectIntMap<String> listToIndexIdMap(ListIterable<String> strings, int idOffset)
     {
-        MutableObjectIntMap<String> index = ObjectIntMaps.mutable.ofInitialCapacity(strings.size());
-        strings.forEachWithIndex((string, id) -> index.put(string, id + idOffset));
+        MutableObjectIntMap<String> index = new ObjectIntHashMap<>(strings.size());
+        int i = idOffset;
+        for (String string : strings)
+        {
+            index.put(string, i++);
+        }
         return index;
     }
 
     protected static void collectStrings(StringCollector collector, Serialized serialized)
     {
         PropertyValueCollectorVisitor propertyValueVisitor = new PropertyValueCollectorVisitor(collector);
-        serialized.getObjects().forEach(obj -> collectStringsFromObj(collector, propertyValueVisitor, obj));
-        serialized.getPackageLinks().forEach(link ->
+        for (Obj obj : serialized.getObjects())
+        {
+            collectStringsFromObj(collector, propertyValueVisitor, obj);
+        }
+        for (Pair<Obj, Obj> link : serialized.getPackageLinks())
         {
             collectStringsFromObj(collector, propertyValueVisitor, link.getOne());
             collectStringsFromObj(collector, propertyValueVisitor, link.getTwo());
-        });
+        }
     }
 
     protected static void collectStringsFromObj(StringCollector collector, PropertyValueCollectorVisitor propertyValueVisitor, Obj obj)
@@ -104,7 +120,7 @@ abstract class AbstractStringCache implements StringCache
         ListIterable<PropertyValue> propertyValues = obj.getPropertyValues();
         if (propertyValues != null)
         {
-            propertyValues.forEachWith(PropertyValue::visit, propertyValueVisitor);
+            propertyValues.forEachWith(PropertyValue.VISIT_PROCEDURE, propertyValueVisitor);
         }
     }
 
@@ -135,7 +151,7 @@ abstract class AbstractStringCache implements StringCache
             ListIterable<RValue> values = many.getValues();
             if (values != null)
             {
-                values.forEachWith(RValue::visit, this.rValueVisitor);
+                values.forEachWith(RValue.VISIT_PROCEDURE, this.rValueVisitor);
             }
             return null;
         }

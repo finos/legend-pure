@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
-import java.util.Objects;
+import org.eclipse.collections.impl.block.factory.Comparators;
 
 public class PropertyValueOne implements PropertyValue
 {
@@ -52,7 +52,7 @@ public class PropertyValueOne implements PropertyValue
         }
 
         PropertyValueOne that = (PropertyValueOne)other;
-        return this.property.equals(that.property) && Objects.equals(this.value, that.value);
+        return this.property.equals(that.property) && Comparators.nullSafeEquals(this.value, that.value);
     }
 
     @Override

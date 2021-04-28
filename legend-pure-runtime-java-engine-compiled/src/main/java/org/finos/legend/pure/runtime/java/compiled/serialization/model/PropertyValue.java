@@ -14,8 +14,39 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
+import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.block.function.Function2;
+import org.eclipse.collections.api.block.procedure.Procedure2;
+
 public interface PropertyValue
 {
+    Function<PropertyValue, String> GET_PROPERY = new Function<PropertyValue, String>()
+    {
+        @Override
+        public String valueOf(PropertyValue propertyValue)
+        {
+            return propertyValue.getProperty();
+        }
+    };
+
+    Function2<PropertyValue, PropertyValueVisitor, Object> VISIT = new Function2<PropertyValue, PropertyValueVisitor, Object>()
+    {
+        @Override
+        public Object value(PropertyValue propertyValue, PropertyValueVisitor visitor)
+        {
+            return propertyValue.visit(visitor);
+        }
+    };
+
+    Procedure2<PropertyValue, PropertyValueVisitor> VISIT_PROCEDURE = new Procedure2<PropertyValue, PropertyValueVisitor>()
+    {
+        @Override
+        public void value(PropertyValue propertyValue, PropertyValueVisitor visitor)
+        {
+            propertyValue.visit(visitor);
+        }
+    };
+
     String getProperty();
     Object visit(PropertyValueVisitor visitor);
 }

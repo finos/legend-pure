@@ -17,9 +17,6 @@ package org.finos.legend.pure.m3.serialization.runtime;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
@@ -27,7 +24,11 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Multimaps;
+import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.GenericTypeTraceability;
@@ -267,11 +268,11 @@ public class GraphLoader
         ListIterable<SourceDeserializationResult> results;
         if (shouldParallelize(fileCount, DESERIALIZE_FILES_THRESHOLD))
         {
-            results = ForkJoinTools.collect(this.forkJoinPool, Lists.mutable.<byte[]>withInitialCapacity(fileCount).withAll(fileBytes.valuesView()), deserialize, DESERIALIZE_FILES_THRESHOLD);
+            results = ForkJoinTools.collect(this.forkJoinPool, FastList.<byte[]>newList(fileCount).withAll(fileBytes.valuesView()), deserialize, DESERIALIZE_FILES_THRESHOLD);
         }
         else
         {
-            results = fileBytes.valuesView().collect(deserialize, Lists.mutable.withInitialCapacity(fileCount));
+            results = fileBytes.valuesView().collect(deserialize, FastList.newList(fileCount));
         }
         return results;
     }
@@ -282,7 +283,7 @@ public class GraphLoader
         initializeNodes(nodes, message);
         resolveReferences(nodes, message);
 
-        ListIterable<CoreInstance> instances = nodes.collect(DeserializationNode::getInstance);
+        ListIterable<CoreInstance> instances = nodes.collect(DeserializationNode.GET_INSTANCE);
         populateBackReferences(instances, message);
         updateContext(instances, message);
         updateSourceRegistry(results, nodes, message);
@@ -337,7 +338,7 @@ public class GraphLoader
                 unresolvedCount = resolutionResult.getUnresolved();
                 if (newlyResolvedCount > 0)
                 {
-                    ForkJoinTools.forEach(this.forkJoinPool, nodes, DeserializationNode::populateResolvedProperties, RESOLVE_REFERENCES_THRESHOLD);
+                    ForkJoinTools.forEach(this.forkJoinPool, nodes, DeserializationNode.POPULATE_RESOLVED_PROPERTIES, RESOLVE_REFERENCES_THRESHOLD);
                 }
             }
             else
@@ -363,7 +364,7 @@ public class GraphLoader
                 StringBuilder errorMessage = new StringBuilder("Failed to resolve nodes after ");
                 errorMessage.append(passCount);
                 errorMessage.append(" passes; ");
-                MutableList<Reference> unresolved = Lists.mutable.withInitialCapacity(unresolvedCount);
+                MutableList<Reference> unresolved = FastList.newList(unresolvedCount);
                 for (DeserializationNode node : nodes)
                 {
                     node.collectUnresolvedReferences(unresolved);
@@ -422,7 +423,7 @@ public class GraphLoader
             message.setMessage("    Populating reverse references (" + instances.size() + " instances)...");
         }
 
-        MapIterable<CoreInstance, ? extends ListIterable<Processor>> processorsByType = getProcessorsByType();
+        MapIterable<CoreInstance, RichIterable<Processor>> processorsByType = getProcessorsByType();
 
         CoreInstance annotatedElementClass = getByUserPath(M3Paths.AnnotatedElement);
         CoreInstance associationClass = getByUserPath(M3Paths.Association);
@@ -442,23 +443,22 @@ public class GraphLoader
         }
     }
 
-    private MapIterable<CoreInstance, ? extends ListIterable<Processor>> getProcessorsByType()
+    private MapIterable<CoreInstance, RichIterable<Processor>> getProcessorsByType()
     {
-        MutableMap<CoreInstance, MutableList<Processor>> processorsByType = Maps.mutable.empty();
+        MutableListMultimap<CoreInstance, Processor> processorsByType = Multimaps.mutable.list.empty();
         RichIterable<Processor> processors = LazyIterate.concatenate(
-                this.parserLibrary.getParsers().asLazy().flatCollect(Parser::getProcessors),
-                this.inlineDSLLibrary.getInlineDSLs().asLazy().flatCollect(InlineDSL::getProcessors))
-                .selectInstancesOf(Processor.class);
+                this.parserLibrary.getParsers().asLazy().flatCollect(Parser.GET_PROCESSORS),
+                this.inlineDSLLibrary.getInlineDSLs().asLazy().flatCollect(InlineDSL.GET_PROCESSORS)).selectInstancesOf(Processor.class);
         for (Processor processor : processors)
         {
             CoreInstance type = getByUserPath(processor.getClassName());
             // Type may not be loaded yet, and that is ok.
             if (type != null)
             {
-                processorsByType.getIfAbsentPut(type, Lists.mutable::empty).add(processor);
+                processorsByType.put(type, processor);
             }
         }
-        return processorsByType;
+        return processorsByType.toMap();
     }
 
     private void updateContext(ListIterable<CoreInstance> instances, Message message)
@@ -467,11 +467,15 @@ public class GraphLoader
         {
             message.setMessage("    Updating context ...");
         }
-        Procedure<CoreInstance> updateContextForInstance = instance ->
+        Procedure<CoreInstance> updateContextForInstance = new Procedure<CoreInstance>()
         {
-            this.context.update(instance);
-            this.context.registerInstanceByClassifier(instance);
-            this.context.registerFunctionByName(instance);
+            @Override
+            public void value(CoreInstance instance)
+            {
+                GraphLoader.this.context.update(instance);
+                GraphLoader.this.context.registerInstanceByClassifier(instance);
+                GraphLoader.this.context.registerFunctionByName(instance);
+            }
         };
         if (shouldParallelize(instances.size(), UPDATE_CONTEXT_THRESHOLD))
         {
@@ -622,7 +626,7 @@ public class GraphLoader
         private final ModelRepository repository;
         private final Context context;
         private final ProcessorSupport processorSupport;
-        private final MapIterable<CoreInstance, ? extends ListIterable<Processor>> processorsByType;
+        private final MapIterable<CoreInstance, RichIterable<Processor>> processorsByType;
         private final CoreInstance annotatedElementClass;
         private final CoreInstance associationClass;
         private final CoreInstance functionDefinitionClass;
@@ -630,7 +634,7 @@ public class GraphLoader
         private final CoreInstance newPropertyRouteNodeFunctionDefinition;
         private final CoreInstance typeClass;
 
-        private BackReferencePopulator(ModelRepository repository, Context context, ProcessorSupport processorSupport, MapIterable<CoreInstance, ? extends ListIterable<Processor>> processorsByType, CoreInstance annotatedElementClass, CoreInstance associationClass, CoreInstance functionDefinitionClass, CoreInstance functionExpressionClass, CoreInstance newPropertyRouteNodeFunctionDefinition, CoreInstance typeClass)
+        private BackReferencePopulator(ModelRepository repository, Context context, ProcessorSupport processorSupport, MapIterable<CoreInstance, RichIterable<Processor>> processorsByType, CoreInstance annotatedElementClass, CoreInstance associationClass, CoreInstance functionDefinitionClass, CoreInstance functionExpressionClass, CoreInstance newPropertyRouteNodeFunctionDefinition, CoreInstance typeClass)
         {
             this.repository = repository;
             this.context = context;
@@ -696,7 +700,7 @@ public class GraphLoader
                 {
                     for (CoreInstance type : genlsList.asReversed())
                     {
-                        ListIterable<Processor> processors = this.processorsByType.get(type);
+                        RichIterable<Processor> processors = this.processorsByType.get(type);
                         if (processors != null)
                         {
                             for (Processor processor : processors)
@@ -730,7 +734,7 @@ public class GraphLoader
 
     public static MutableList<PureRepositoryJar> findJars(MutableList<String> repoNames, ClassLoader classLoader, Message message)
     {
-        MutableList<PureRepositoryJar> jars = Lists.mutable.withInitialCapacity(repoNames.size());
+        MutableList<PureRepositoryJar> jars = FastList.newList(repoNames.size());
         for (String repoName : repoNames)
         {
             String resourceName = "pure-" + repoName + ".par";

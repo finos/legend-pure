@@ -14,7 +14,28 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
+import org.eclipse.collections.api.block.function.Function2;
+import org.eclipse.collections.api.block.procedure.Procedure2;
+
 public interface RValue
 {
+    Function2<RValue, RValueVisitor, Object> VISIT = new Function2<RValue, RValueVisitor, Object>()
+    {
+        @Override
+        public Object value(RValue value, RValueVisitor visitor)
+        {
+            return value.visit(visitor);
+        }
+    };
+
+    Procedure2<RValue, RValueVisitor> VISIT_PROCEDURE = new Procedure2<RValue, RValueVisitor>()
+    {
+        @Override
+        public void value(RValue value, RValueVisitor visitor)
+        {
+            value.visit(visitor);
+        }
+    };
+
     Object visit(RValueVisitor visitor);
 }

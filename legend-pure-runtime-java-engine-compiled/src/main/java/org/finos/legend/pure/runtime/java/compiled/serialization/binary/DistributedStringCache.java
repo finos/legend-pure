@@ -14,13 +14,16 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.ObjectIntMap;
 import org.eclipse.collections.api.multimap.set.MutableSetMultimap;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.block.factory.Predicates;
 import org.eclipse.collections.impl.factory.Multimaps;
+import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.Writer;
@@ -43,32 +46,39 @@ class DistributedStringCache extends AbstractStringCache
 
     public void write(FileWriter fileWriter)
     {
-        // Write classifier strings
         try (Writer writer = fileWriter.getWriter(CLASSIFIER_ID_INDEX_FILE_PATH))
         {
             writer.writeStringArray(getClassifierStringArray());
         }
 
-        // Write other strings index
         String[] otherStrings = getOtherStringsArray();
         int otherStringsCount = otherStrings.length;
         try (Writer writer = fileWriter.getWriter(OTHER_STRING_INDEX_METADATA_FILE_PATH))
         {
             writer.writeInt(otherStringsCount);
         }
-
-        // Write other strings partitions
-        for (int partitionStart = 0; partitionStart < otherStringsCount; partitionStart += PARTITION_SIZE)
+        int partitionStart = 0;
+        int partitionEnd = Math.min(partitionStart + PARTITION_SIZE, otherStringsCount);
+        Writer writer = fileWriter.getWriter(getOtherStringIndexPartitionFilePath(partitionStart));
+        try
         {
-            try (Writer writer = fileWriter.getWriter(getOtherStringIndexPartitionFilePath(partitionStart)))
+            writer.writeInt(partitionEnd - partitionStart);
+            for (int i = 0; i < otherStringsCount; i++)
             {
-                int partitionEnd = Math.min(partitionStart + PARTITION_SIZE, otherStringsCount);
-                writer.writeInt(partitionEnd - partitionStart);
-                for (int i = partitionStart; i < partitionEnd; i++)
+                if (i == partitionEnd)
                 {
-                    writer.writeString(otherStrings[i]);
+                    writer.close();
+                    partitionStart = partitionEnd;
+                    partitionEnd = Math.min(partitionEnd + PARTITION_SIZE, otherStringsCount);
+                    writer = fileWriter.getWriter(getOtherStringIndexPartitionFilePath(partitionStart));
+                    writer.writeInt(partitionEnd - partitionStart);
                 }
+                writer.writeString(otherStrings[i]);
             }
+        }
+        finally
+        {
+            writer.close();
         }
     }
 
@@ -99,20 +109,21 @@ class DistributedStringCache extends AbstractStringCache
 
     static DistributedStringCache fromStringCollector(DistributedStringCollector collector)
     {
-        MutableSet<String> allStrings = Sets.mutable.ofInitialCapacity(collector.classifierIds.size() + collector.identifiers.size() + collector.otherStrings.size());
+        MutableSet<String> allStrings = UnifiedSet.newSet(collector.classifierIds.size() + collector.identifiers.size() + collector.otherStrings.size());
+        Predicate<Object> inAllStrings = Predicates.in(allStrings);
 
-        MutableList<String> classifierIdList = Lists.mutable.withAll(collector.classifierIds).sortThis();
+        MutableList<String> classifierIdList = FastList.<String>newList(collector.classifierIds.size()).withAll(collector.classifierIds).sortThis();
         allStrings.addAll(classifierIdList);
 
-        MutableList<String> otherStringList = Lists.mutable.ofInitialCapacity(collector.identifiers.size() + collector.otherStrings.size());
+        MutableList<String> otherStringList = FastList.newList(collector.identifiers.size() + collector.otherStrings.size());
         for (String classifierId : classifierIdList)
         {
             MutableSet<String> classifierIdentifierSet = collector.identifiers.get(classifierId);
-            MutableList<String> classifierIdentifierList = classifierIdentifierSet.reject(allStrings::contains, Lists.mutable.ofInitialCapacity(classifierIdentifierSet.size())).sortThis();
+            MutableList<String> classifierIdentifierList = classifierIdentifierSet.reject(inAllStrings, FastList.<String>newList(classifierIdentifierSet.size())).sortThis();
             allStrings.addAll(classifierIdentifierList);
             otherStringList.addAll(classifierIdentifierList);
         }
-        otherStringList.addAll(collector.otherStrings.reject(allStrings::contains, Lists.mutable.ofInitialCapacity(collector.otherStrings.size())).sortThis());
+        otherStringList.addAll(collector.otherStrings.reject(inAllStrings, FastList.<String>newList(collector.otherStrings.size())).sortThis());
 
         return new DistributedStringCache(listToIndexIdMap(classifierIdList, 0), listToIndexIdMap(otherStringList, classifierIdList.size()));
     }
