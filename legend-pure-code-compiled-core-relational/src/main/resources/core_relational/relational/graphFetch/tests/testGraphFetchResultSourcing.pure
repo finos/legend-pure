@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::relational::graphFetch::tests::resultSourcing::*;
-import meta::csv::*;
-import meta::pure::mapping::*;
-import meta::pure::mapping::modelToModel::test::alloy::constraints::*;
-import meta::pure::graphFetch::execution::*;
-import meta::alloy::service::metamodel::*;
 import meta::pure::runtime::*;
+import meta::csv::*;
+import meta::pure::graphFetch::execution::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::executionPlan::profiles::*;
 import meta::relational::runtime::*;
+import meta::relational::graphFetch::tests::resultSourcing::*;
 
 Class meta::relational::graphFetch::tests::resultSourcing::_Firm
 {
@@ -56,7 +53,7 @@ function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly
       let jsonConnection = ^JsonModelConnection(
       element=^ModelStore(),
       class=meta::relational::graphFetch::tests::resultSourcing::_Firm,
-      url='data:application/json,{"name":"Goldman Sachs","employees":[{"firstName":"Gunjan","lastName":"Shah"}]}'
+      url='data:application/json,{"name":"Firm X","employees":[{"firstName":"Gunjan","lastName":"Shah"}]}'
    );
 
    let result = meta::pure::router::execute({|
@@ -64,10 +61,10 @@ function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly
       meta::relational::tests::model::simple::Person.all()->filter(y|$y.firm.legalName == $x->toOne().name)->project([col(y|$y.firstName,'firstName')])->sort(['firstName']);
    }, mappingWithoutFilters, ^Runtime(connections = [$jsonConnection, createDbAndGetConnection()]),meta::pure::router::extension::defaultRelationalExtensions());
    let expectedValue = 'firstName\n'+
-                        'Analisa\n'+
+                        'Anthony\n'+
                         'John\n'+
                         'John\n'+
-                        'Pierre\n';
+                        'Peter\n';
    assertSameElements($expectedValue,$result.values->toCSV());
 }
 
@@ -76,7 +73,7 @@ function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly
       let jsonConnection = ^JsonModelConnection(
       element=^ModelStore(),
       class=meta::relational::graphFetch::tests::resultSourcing::_Firm,
-      url='data:application/json,[{"name":"FirmX","employees":[{"firstName":"Gunjan","lastName":"Shah"}]},{"name":"Apple","employees":[{"firstName":"Tim","lastName":"Cook"}]}]'
+      url='data:application/json,[{"name":"Firm A","employees":[{"firstName":"Gunjan","lastName":"Shah"}]},{"name":"Apple","employees":[{"firstName":"Tim","lastName":"Cook"}]}]'
    );
 
    let result = meta::pure::router::execute({|
@@ -93,7 +90,7 @@ function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly
       let jsonConnection = ^JsonModelConnection(
       element=^ModelStore(),
       class=meta::relational::graphFetch::tests::resultSourcing::_Firm,
-      url='data:application/json,[{"name":"FirmX","employees":[{"firstName":"Gunjan","lastName":"Shah"}]},{"name":"${firmName}","employees":[{"Tim":"Ursa","lastName":"Cook"}]}]'
+      url='data:application/json,[{"name":"Firm A","employees":[{"firstName":"Gunjan","lastName":"Shah"}]},{"name":"${firmName}","employees":[{"Tim":"Ursa","lastName":"Cook"}]}]'
    );
 
    let result = meta::pure::router::execute({|
@@ -144,7 +141,7 @@ Mapping meta::relational::graphFetch::tests::resultSourcing::mappingWithFilters
    meta::relational::graphFetch::tests::resultSourcing::Firm:Pure
    {
       ~src meta::relational::graphFetch::tests::resultSourcing::_Firm
-       ~filter $src.name->startsWith('A')
+       ~filter $src.name->startsWith('F')
          name: $src.name
      }
 )
