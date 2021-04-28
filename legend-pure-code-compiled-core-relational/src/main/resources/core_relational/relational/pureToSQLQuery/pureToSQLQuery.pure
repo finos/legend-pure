@@ -3830,10 +3830,12 @@ function meta::relational::functions::pureToSqlQuery::processIn(valueArg:ValueSp
 
 }
 
-function meta::relational::functions::pureToSqlQuery::extractPkValuesFromRelationalObjectReferences(objectRef:String[*], pkOrder:String[*]):String[*]
+function meta::relational::functions::pureToSqlQuery::extractPkValuesFromRelationalObjectReferences(objectRefs:String[*], pkOrder:String[*]):String[*]
 {
-   $objectRef->map(o | let pkMap = $o->meta::json::parseJSON()->cast(@meta::json::JSONObject)->meta::json::getValue('pkMap')->toOne()->meta::json::fromJSON(Map)->cast(@Map<String, Any>)->toOne();
-                       $pkOrder->map(pk | $pkMap->get($pk)->toOne()->toString())->joinStrings(',');)
+   $objectRefs->map(o | let pkMap = if($o->startsWith('ASOR'),
+                                             | $o->decodeAndParseAlloyObjectReference()->get('pkMap'),
+                                             | $o->meta::json::parseJSON()->cast(@meta::json::JSONObject)->meta::json::getValue('pkMap')->toOne()->meta::json::fromJSON(Map))->cast(@Map<String, Any>)->toOne();
+                        $pkOrder->map(pk | $pkMap->get($pk)->toOne()->toString())->joinStrings(','););
 }
 
 function meta::relational::functions::pureToSqlQuery::processObjectReferenceIn(f:FunctionExpression[1], currentPropertyMapping:PropertyMapping[*], operation:SelectWithCursor[1], vars:Map<VariableExpression, ValueSpecification>[1], state:State[1], joinType:JoinType[1], nodeId:String[1], aggFromMap:List<ColumnGroup>[1], context:DebugContext[1], extensions:RouterExtension[*]):RelationalOperationElement[1]
