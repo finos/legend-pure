@@ -14,11 +14,11 @@
 
 package org.finos.legend.pure.m3.tools.forkjoin;
 
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.list.ListIterable;
 
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class ForkJoinTools
 {
@@ -27,22 +27,22 @@ public class ForkJoinTools
         // Utility class
     }
 
-    public static <T> void forEach(ForkJoinPool forkJoinPool, ListIterable<T> list, Procedure<? super T> procedure, int start, int end, int threshold)
+    public static <T> void forEach(ForkJoinPool forkJoinPool, ListIterable<T> list, Consumer<? super T> procedure, int start, int end, int threshold)
     {
         forkJoinPool.invoke(RecursiveProcedure.newRecursiveProcedure(list, procedure, start, end, threshold));
     }
 
-    public static <T> void forEach(ForkJoinPool forkJoinPool, ListIterable<T> list, Procedure<? super T> procedure, int threshold)
+    public static <T> void forEach(ForkJoinPool forkJoinPool, ListIterable<T> list, Consumer<? super T> procedure, int threshold)
     {
         forkJoinPool.invoke(RecursiveProcedure.newRecursiveProcedure(list, procedure, threshold));
     }
 
-    public static <T> void forEach(ForkJoinPool forkJoinPool, T[] array, Procedure<? super T> procedure, int start, int end, int threshold)
+    public static <T> void forEach(ForkJoinPool forkJoinPool, T[] array, Consumer<? super T> procedure, int start, int end, int threshold)
     {
         forkJoinPool.invoke(RecursiveProcedure.newRecursiveProcedure(array, procedure, start, end, threshold));
     }
 
-    public static <T> void forEach(ForkJoinPool forkJoinPool, T[] list, Procedure<? super T> procedure, int threshold)
+    public static <T> void forEach(ForkJoinPool forkJoinPool, T[] list, Consumer<? super T> procedure, int threshold)
     {
         forkJoinPool.invoke(RecursiveProcedure.newRecursiveProcedure(list, procedure, threshold));
     }

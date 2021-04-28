@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization;
 
-import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
@@ -24,7 +23,10 @@ import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphDeserializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialized;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.IOException;
 
@@ -34,49 +36,43 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     private Metadata metadataLazy;
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
     @Before
     public void setUpLazyMetaData() throws IOException
     {
-        Serialized serialized = GraphSerializer.serializeAll(this.runtime.getCoreInstance("::"), this.processorSupport);
+        Serialized serialized = GraphSerializer.serializeAll(runtime.getCoreInstance("::"), processorSupport);
         MutableMap<String, byte[]> fileBytes = Maps.mutable.empty();
         DistributedBinaryGraphSerializer.serialize(serialized, fileBytes);
         DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromInMemoryByteArrays(fileBytes);
-        metadataLazy = new MetadataLazy(getClass().getClassLoader(), deserializer);
+        this.metadataLazy = new MetadataLazy(getClass().getClassLoader(), deserializer);
     }
 
     @Test
-    public void testLazyMetaDataClassifierPrimitiveType() throws IOException
+    public void testLazyMetaDataClassifierPrimitiveType()
     {
-        final CoreInstance expected = metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::PrimitiveType");
-        boolean primitiveClassiferSetForAllPrimitiveTypes = metadataLazy.getMetadata("meta::pure::metamodel::type::PrimitiveType").allSatisfy(new Predicate<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance ci)
-            {
-                return ci.getClassifier() == expected;
-            }
-        });
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::PrimitiveType");
+        boolean primitiveClassiferSetForAllPrimitiveTypes = this.metadataLazy.getMetadata("meta::pure::metamodel::type::PrimitiveType").allSatisfy(ci -> ci.getClassifier() == expected);
         Assert.assertTrue(primitiveClassiferSetForAllPrimitiveTypes);
     }
 
     @Test
-    public void testLazyMetaDataClassifierForClasses() throws IOException
+    public void testLazyMetaDataClassifierForClasses()
     {
-        final CoreInstance expected = metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Class");
-        CoreInstance ci = metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::function::property::Property");
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Class");
+        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::function::property::Property");
         CoreInstance classifier = ci.getClassifier();
         Assert.assertEquals(expected, classifier);
     }
 
     @Test
-    public void testLazyMetaDataClassifierForEnums() throws IOException
+    public void testLazyMetaDataClassifierForEnums()
     {
-        final CoreInstance expected = metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Enumeration");
-        CoreInstance ci = metadataLazy.getMetadata("meta::pure::metamodel::type::Enumeration","Root::meta::pure::metamodel::function::property::AggregationKind");
+        CoreInstance expected = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Class", "Root::meta::pure::metamodel::type::Enumeration");
+        CoreInstance ci = this.metadataLazy.getMetadata("meta::pure::metamodel::type::Enumeration", "Root::meta::pure::metamodel::function::property::AggregationKind");
         CoreInstance classifier = ci.getClassifier();
         Assert.assertEquals(expected, classifier);
     }

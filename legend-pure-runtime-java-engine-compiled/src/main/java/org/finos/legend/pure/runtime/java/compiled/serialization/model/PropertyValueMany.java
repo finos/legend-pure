@@ -15,7 +15,8 @@
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.block.factory.Comparators;
+
+import java.util.Objects;
 
 public class PropertyValueMany implements PropertyValue
 {
@@ -52,8 +53,8 @@ public class PropertyValueMany implements PropertyValue
             return false;
         }
 
-        PropertyValueMany that = (PropertyValueMany)other;
-        return this.property.equals(that.property) && Comparators.nullSafeEquals(this.values, that.values);
+        PropertyValueMany that = (PropertyValueMany) other;
+        return this.property.equals(that.property) && Objects.equals(this.values, that.values);
     }
 
     @Override
