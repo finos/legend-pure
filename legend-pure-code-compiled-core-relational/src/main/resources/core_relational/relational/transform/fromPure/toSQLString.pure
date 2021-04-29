@@ -35,7 +35,7 @@ function meta::relational::functions::sqlstring::toSQLStringPretty(f:FunctionDef
 function meta::relational::functions::sqlstring::toSQLStringPretty(f:FunctionDefinition<{->Any[*]}>[1], mapping:Mapping[1], runtime:Runtime[1], extensions:RouterExtension[*]):String[1]
 {
    let databaseConnection = $runtime.connections->toOne()->cast(@DatabaseConnection);
-   toSQL($f, $mapping, $runtime, $extensions).toSQLString($databaseConnection.type, $databaseConnection.timeZone, ^Format(newLine='\n', indent='\t'));
+   toSQL($f, $mapping, $runtime, $extensions).toSQLString($databaseConnection.type, $databaseConnection.timeZone, $databaseConnection.quoteIdentifiers, ^Format(newLine='\n', indent='\t'));
 }
 
 function meta::relational::functions::sqlstring::toSQL(f:FunctionDefinition<{->Any[*]}>[1], mapping:Mapping[1], runtime:Runtime[1], extensions:RouterExtension[*]):SQLResult[1]
@@ -77,9 +77,14 @@ function meta::relational::functions::sqlstring::toNonExecutableSQLString(f:Func
 
 function meta::relational::functions::sqlstring::toSQLString(f:FunctionDefinition<{->Any[*]}>[1], mapping:Mapping[1], databaseType:DatabaseType[1], dbTimeZone:String[0..1], sqlQueryPostProcessors: Function<{SelectSQLQuery[1]->Result<SelectSQLQuery|1>[1]}>[*], format:Format[1], extensions:RouterExtension[*], debug:DebugContext[1]):String[1]
 {
+   toSQLString($f, $mapping, $databaseType, $dbTimeZone, [], $sqlQueryPostProcessors, $format, $extensions, $debug);
+}
+
+function meta::relational::functions::sqlstring::toSQLString(f:FunctionDefinition<{->Any[*]}>[1], mapping:Mapping[1], databaseType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifier:Boolean[0..1], sqlQueryPostProcessors: Function<{SelectSQLQuery[1]->Result<SelectSQLQuery|1>[1]}>[*], format:Format[1], extensions:RouterExtension[*], debug:DebugContext[1]):String[1]
+{
    let routed = $f->routeFunction($mapping, ^Runtime(connections=[^Connection(element='Mock')]), $extensions, $debug);
    let sqlResult = toSQL($routed.functions.expressionSequence->evaluateAndDeactivate()->cast(@ClusteredValueSpecification), $f->openVariableValues(), $mapping, $databaseType, $dbTimeZone, $sqlQueryPostProcessors, $extensions, $debug, ^SQLResult(shouldWarn=false, extensions=$extensions));
-   $sqlResult.toSQLString($databaseType, $dbTimeZone, $format);
+   $sqlResult.toSQLString($databaseType, $dbTimeZone, $quoteIdentifier, $format);
 }
 
 function <<access.private>> meta::relational::functions::sqlstring::toSQL(f:FunctionDefinition<{->Any[*]}>[1], mapping:Mapping[1], databaseType:DatabaseType[1], dbTimeZone:String[0..1], sqlQueryPostProcessors: Function<{SelectSQLQuery[1]->Result<SelectSQLQuery|1>[1]}>[*], extensions:RouterExtension[*], debug:DebugContext[1]):SQLResult[1]
@@ -133,9 +138,9 @@ Class meta::relational::functions::sqlstring::SQLResult
    sqlQueries: SQLQuery[*];
    extensions: RouterExtension[*];
 
-   toSQLString(databaseType:DatabaseType[1], dbTimeZone:String[0..1], format:Format[1])
+   toSQLString(databaseType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1], format:Format[1])
    {
-      let sqlStrings = $this.sqlQueries->map(s | $s->sqlQueryToString($databaseType, $dbTimeZone, $format, $this.extensions));
+      let sqlStrings = $this.sqlQueries->map(s | $s->sqlQueryToString($databaseType, $dbTimeZone, $quoteIdentifiers, $format, $this.extensions));
       let sql = $sqlStrings->joinStrings('\n');
 
       if ($this.shouldWarn, | $sql + '\nWarning: Results only shown for first relational query. Other SQL statements could not be computed because they require results from the execution of the previous expression.' , | $sql);

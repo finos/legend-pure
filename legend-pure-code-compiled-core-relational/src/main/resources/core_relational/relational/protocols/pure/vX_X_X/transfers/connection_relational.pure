@@ -42,6 +42,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
             _type = 'RelationalDatabaseConnection',
             type = $type,
             timeZone = $test.timeZone,
+            quoteIdentifiers = $test.quoteIdentifiers,
             element = $element,
             datasourceSpecification = ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::LocalH2DatasourceSpecification(
               _type = 'h2Local',
@@ -55,11 +56,12 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
          ),
       relational:meta::pure::alloy::connections::RelationalDatabaseConnection[1] |
          let processors = transformPostProcessors($relational.postProcessors, $extensions);
-         relational($type, $element, $relational.timeZone, $processors, $relational.datasourceSpecification, $relational.authenticationStrategy, $extensions);,
+         relational($type, $element, $relational.timeZone, $relational.quoteIdentifiers, $processors, $relational.datasourceSpecification, $relational.authenticationStrategy, $extensions);,
       dbCon:meta::relational::runtime::DatabaseConnection[1]|
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection(
                   _type = $_type,
                   timeZone = $dbCon.timeZone,
+                  quoteIdentifiers = $dbCon.quoteIdentifiers,
                   element = $element,
                   postProcessorWithParameter = $postProcessorsWithParams,
                   type = $type)
@@ -100,7 +102,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
                 )
 }
 
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connection::relational(type:String[1], element:String[1], timeZone:String[0..1],
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connection::relational(type:String[1], element:String[1], timeZone:String[0..1], quoteIdentifiers:Boolean[0..1],
                                                                                               processors:meta::protocols::pure::vX_X_X::metamodel::store::relational::postProcessor::PostProcessor[*],
                                                                                               spec:meta::pure::alloy::connections::alloy::specification::DatasourceSpecification[1],
                                                                                               auth:meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy[1],
@@ -109,6 +111,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
    ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::RelationalDatabaseConnection(
       _type = 'RelationalDatabaseConnection',
       timeZone = $timeZone,
+      quoteIdentifiers = $quoteIdentifiers,
       element = $element,
       type = $type,
       datasourceSpecification = $spec->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connection::transformDatasourceSpecification($extensions),
