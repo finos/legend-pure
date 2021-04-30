@@ -16,7 +16,7 @@ function <<test.Test>> meta::relational::tests::aggregationAware::testRewriteAsN
    let result = execute($query, $mapping, $runtime, defaultRelationalExtensions());
    
    assertEquals(' | [SCT_Main Class Wholesales].all();', $result.activities->filter(s|$s->instanceOf(meta::pure::mapping::aggregationAware::AggregationAwareActivity))->at(0)->cast(@meta::pure::mapping::aggregationAware::AggregationAwareActivity).rewrittenQuery);
-   assertSameSQL('select "root".id as "pk_0", "root".sales_date as "pk_1", "root".is_cancelled_flag as "pk_2", "root".product_id as "pk_3", "root".revenue as "pk_4", "root".emp_id as "pk_5", case when "root".is_cancelled_flag = \'Y\' then \'true\' else \'false\' end as "isCancelled" from base_view.SalesTable as "root"', $result);
+   assertSameSQL('select "root".id as "pk_0", "root".sales_date as "pk_1", "root".is_cancelled_flag as "pk_2", "root".product_id as "pk_3", "root".revenue as "pk_4", "root".emp_id as "pk_5", case when "root".is_cancelled_flag = \'Y\' then \'true\' else \'false\' end as "isCancelled", "root".discount as "discount" from base_view.SalesTable as "root"', $result);
 }
 
 function <<test.Test>> meta::relational::tests::aggregationAware::testRewriteAsNOP::nonGroupBy::testRewriteFilter():Boolean[1]
