@@ -148,7 +148,7 @@ Mapping meta::relational::tests::aggregationAware::mapping::simpleMapping
    }
 )
 
-Mapping meta::relational::tests::aggregationAware::mapping::mappingWithMonthCannotbeAggregated
+Mapping meta::relational::tests::aggregationAware::mapping::mappingWithMonthCannotBeAggregated
 (
    include meta::relational::tests::aggregationAware::mapping::baseMapping
    

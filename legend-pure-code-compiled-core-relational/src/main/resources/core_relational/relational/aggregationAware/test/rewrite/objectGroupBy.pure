@@ -7,7 +7,7 @@ import meta::relational::tests::aggregationAware::domain::*;
 import meta::relational::tests::aggregationAware::*;
 
 
-function <<test.Test>> meta::relational::tests::aggregationAware::testRewrite::objectGroupBy::testRewriteCanAggrgeateGroupByOnLiteralWithSumAgg():Boolean[1]
+function <<test.Test>> meta::relational::tests::aggregationAware::testRewrite::objectGroupBy::testRewriteCanAggregateGroupByOnLiteralWithSumAgg():Boolean[1]
 {
    let query = {|
       Wholesales.all()->groupBy(
@@ -16,12 +16,30 @@ function <<test.Test>> meta::relational::tests::aggregationAware::testRewrite::o
          ['Name', 'Total Price Sum']
       )
    };
-   let mapping = mappingWithMonthCannotbeAggregated;
+   let mapping = mappingWithMonthCannotBeAggregated;
    let runtime = runtime();
    
    let result = execute($query, $mapping, $runtime, defaultRelationalExtensions());
    
    assertSameSQL('select 1 as "Name", sum("root".revenue) as "Total Price Sum" from user_view_agg.SalesTable_Day as "root" group by "Name"', $result);
+}
+
+function <<test.Test>> meta::relational::tests::aggregationAware::testRewrite::objectGroupBy::testRewriteCanAggregateGroupByOnLiteralWithMultipleAgg():Boolean[1]
+{
+   let query = {|
+      Wholesales.all()->groupBy(
+         [x|1],
+         [agg(x|$x.revenue.price, y|$y->sum()),
+         agg(x|$x.revenue.price, y|$y->max())],
+         ['Name', 'Total Price Sum', 'Total Price Max']
+      )
+   };
+   let mapping = mappingWithMonthCannotBeAggregated;
+   let runtime = runtime();
+
+   let result = execute($query, $mapping, $runtime, defaultRelationalExtensions());
+
+   assertSameSQL('select 1 as "Name", sum("root".revenue) as "Total Price Sum", max("root".revenue) as "Total Price Max" from user_view_agg.SalesTable_Day as "root" group by "Name"', $result);
 }
 
 function <<test.Test>> meta::relational::tests::aggregationAware::testRewrite::objectGroupBy::testRewriteSwitchToSalesTable():Boolean[1]
