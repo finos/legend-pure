@@ -14,24 +14,20 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.processor;
 
-import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecificationCoreInstanceWrapper;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.GenericTypeTraceability;
+import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.DefaultValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
 
-public class PropertyProcessor extends Processor<Property>
+public class PropertyProcessor extends Processor<Property<?,?>>
 {
     @Override
     public String getClassName()
@@ -40,7 +36,7 @@ public class PropertyProcessor extends Processor<Property>
     }
 
     @Override
-    public void process(Property property, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
+    public void process(Property<?, ?> property, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
         DefaultValue defaultValue = property._defaultValue();
         if (defaultValue != null)
@@ -54,7 +50,7 @@ public class PropertyProcessor extends Processor<Property>
     }
 
     @Override
-    public void populateReferenceUsages(Property property, ModelRepository repository, ProcessorSupport processorSupport)
+    public void populateReferenceUsages(Property<?, ?> property, ModelRepository repository, ProcessorSupport processorSupport)
     {
         GenericTypeTraceability.addTraceForProperty(property, repository, processorSupport);
     }
