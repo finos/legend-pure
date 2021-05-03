@@ -15,8 +15,8 @@
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.function.Function0;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
@@ -25,16 +25,8 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.multimap.set.MutableSetMultimap;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.block.factory.Procedures;
-import org.eclipse.collections.impl.block.function.checked.CheckedFunction;
-import org.eclipse.collections.impl.block.function.checked.CheckedFunction0;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
@@ -56,15 +48,6 @@ import java.lang.reflect.Constructor;
 
 public class MetadataLazy implements Metadata
 {
-    private static final Function0<ConcurrentMutableMap<String, CoreInstance>> NEW_CLASSIFIER_INSTANCE_CACHE = new Function0<ConcurrentMutableMap<String, CoreInstance>>()
-    {
-        @Override
-        public ConcurrentMutableMap<String, CoreInstance> value()
-        {
-            return ConcurrentHashMap.newMap();
-        }
-    };
-
     private static final PropertyValueVisitor VALUES_VISITOR = new PropertyValueVisitor()
     {
         @Override
@@ -77,24 +60,6 @@ public class MetadataLazy implements Metadata
         public Object accept(PropertyValueOne one)
         {
             return one.getValue();
-        }
-    };
-
-    private final Function<String, Class<?>> loadClass = new CheckedFunction<String, Class<?>>()
-    {
-        @Override
-        public Class<?> safeValueOf(String className) throws ClassNotFoundException
-        {
-            return MetadataLazy.this.classLoader.loadClass(JavaPackageAndImportBuilder.buildPackageFromSystemPath(className) + '.' + className);
-        }
-    };
-
-    private final Function<RValue, Object> valueToObject = new Function<RValue, Object>()
-    {
-        @Override
-        public Object valueOf(RValue value)
-        {
-            return valueToObject(value);
         }
     };
 
@@ -116,16 +81,6 @@ public class MetadataLazy implements Metadata
         public Object accept(EnumRef enumRef)
         {
             return getEnum(enumRef.getEnumerationId(), enumRef.getEnumName());
-        }
-    };
-
-    private final Function<String, MapIterable<String, CoreInstance>> indexEnumerationValues = new Function<String, MapIterable<String, CoreInstance>>()
-    {
-        @Override
-        public MapIterable<String, CoreInstance> valueOf(String enumerationId)
-        {
-            MapIterable<String, CoreInstance> enums = getMetadata(enumerationId);
-            return (enums == null) ? null : enums.groupByUniqueKey(CoreInstance.GET_NAME, UnifiedMap.<String, CoreInstance>newMap(enums.size()));
         }
     };
 
@@ -191,12 +146,18 @@ public class MetadataLazy implements Metadata
     @Override
     public CoreInstance getEnum(String enumerationName, String enumName)
     {
-        MapIterable<String, CoreInstance> enumerationCache = this.enumCache.getIfAbsentPutWithKey(enumerationName, this.indexEnumerationValues);
+        MapIterable<String, CoreInstance> enumerationCache = this.enumCache.getIfAbsentPutWithKey(enumerationName, this::indexEnumerationValues);
         if (enumerationCache == null)
         {
             throw new RuntimeException("Cannot find enum '" + enumName + "' in enumeration '" + enumerationName + "': unknown enumeration");
         }
         return enumerationCache.get(enumName);
+    }
+
+    private MapIterable<String, CoreInstance> indexEnumerationValues(String enumerationId)
+    {
+        MapIterable<String, CoreInstance> enums = getMetadata(enumerationId);
+        return (enums == null) ? null : enums.groupByUniqueKey(CoreInstance::getName, Maps.mutable.withInitialCapacity(enums.size()));
     }
 
     public Object valueToObject(RValue value)
@@ -216,8 +177,8 @@ public class MetadataLazy implements Metadata
             return Lists.mutable.with(valueToObject(values.get(0)));
         }
 
-        final MutableSetMultimap<String, ObjRef> objRefsByClassifier = Multimaps.mutable.set.empty();
-        values.forEach(Procedures.bind(RValue.VISIT_PROCEDURE, new RValueVisitor()
+        MutableSetMultimap<String, ObjRef> objRefsByClassifier = Multimaps.mutable.set.empty();
+        values.forEachWith(RValue::visit, new RValueVisitor()
         {
             @Override
             public Object accept(Primitive primitive)
@@ -237,18 +198,18 @@ public class MetadataLazy implements Metadata
             {
                 return null;
             }
-        }));
+        });
         if (objRefsByClassifier.isEmpty())
         {
-            return values.collect(this.valueToObject);
+            return values.collect(this::valueToObject);
         }
 
-        final MutableMap<ObjRef, CoreInstance> objectByRef = UnifiedMap.newMap(objRefsByClassifier.size());
+        MutableMap<ObjRef, CoreInstance> objectByRef = Maps.mutable.withInitialCapacity(objRefsByClassifier.size());
         for (Pair<String, RichIterable<ObjRef>> pair : objRefsByClassifier.keyMultiValuePairsView())
         {
-            final String classifier = pair.getOne();
+            String classifier = pair.getOne();
             RichIterable<ObjRef> objRefs = pair.getTwo();
-            MutableList<String> idsToDeserialize = FastList.newList(objRefs.size());
+            MutableList<String> idsToDeserialize = Lists.mutable.withInitialCapacity(objRefs.size());
             ConcurrentMutableMap<String, CoreInstance> classifierCache = getClassifierInstanceCache(classifier);
             for (ObjRef objRef : objRefs)
             {
@@ -267,16 +228,9 @@ public class MetadataLazy implements Metadata
             {
                 try
                 {
-                    for (final Obj obj : this.deserializer.getInstances(classifier, idsToDeserialize))
+                    for (Obj obj : this.deserializer.getInstances(classifier, idsToDeserialize))
                     {
-                        CoreInstance cachedInstance = classifierCache.getIfAbsentPut(obj.getIdentifier(), new Function0<CoreInstance>()
-                        {
-                            @Override
-                            public CoreInstance value()
-                            {
-                                return newInstance(classifier, obj);
-                            }
-                        });
+                        CoreInstance cachedInstance = classifierCache.getIfAbsentPut(obj.getIdentifier(), () -> newInstance(classifier, obj));
                         objectByRef.put(new ObjRef(obj.getClassifier(), obj.getIdentifier()), cachedInstance);
                     }
                 }
@@ -286,7 +240,7 @@ public class MetadataLazy implements Metadata
                 }
             }
         }
-        return values.collect(Functions.bind(RValue.VISIT, new RValueVisitor()
+        return values.collectWith(RValue::visit, new RValueVisitor()
         {
             @Override
             public Object accept(Primitive primitive)
@@ -305,12 +259,12 @@ public class MetadataLazy implements Metadata
             {
                 return getEnum(enumRef.getEnumerationId(), enumRef.getEnumName());
             }
-        }));
+        });
     }
 
     public ImmutableMap<String, Object> buildMap(Obj instance)
     {
-        return instance.getPropertyValues().toMap(PropertyValue.GET_PROPERY, Functions.bind(PropertyValue.VISIT, VALUES_VISITOR)).toImmutable();
+        return instance.getPropertyValues().toMap(PropertyValue::getProperty, pv -> pv.visit(VALUES_VISITOR)).toImmutable();
     }
 
     private void loadAllClassifierInstances(String classifier)
@@ -320,7 +274,7 @@ public class MetadataLazy implements Metadata
         int notLoadedCount = instanceIds.size() - classifierCache.size();
         if (notLoadedCount > 0)
         {
-            MutableList<String> instanceIdsToLoad = instanceIds.reject(Predicates.in(classifierCache.keySet()), FastList.<String>newList(notLoadedCount));
+            MutableList<String> instanceIdsToLoad = instanceIds.reject(classifierCache::containsKey, Lists.mutable.withInitialCapacity(notLoadedCount));
             ListIterable<Obj> objs;
             try
             {
@@ -330,89 +284,95 @@ public class MetadataLazy implements Metadata
             {
                 throw new RuntimeException("Error loading all instances for classifier: " + classifier, e);
             }
-            for (Obj obj : objs)
-            {
-                toJavaObject(obj);
-            }
+            objs.forEach(obj -> classifierCache.getIfAbsentPut(obj.getIdentifier(), () -> newInstance(classifier, obj)));
         }
     }
 
-    private CoreInstance toJavaObject(final String classifier, final String id)
+    private CoreInstance toJavaObject(String classifier, String id)
     {
-        return toJavaObject(classifier, id, new CheckedFunction0<CoreInstance>()
-        {
-            @Override
-            public CoreInstance safeValue() throws Exception
-            {
-                return newInstance(classifier, MetadataLazy.this.deserializer.getInstance(classifier, id));
-            }
-        });
-    }
-
-    private CoreInstance toJavaObject(final Obj obj)
-    {
-        final String classifier = obj.getClassifier();
-        String id = obj.getIdentifier();
-        return toJavaObject(classifier, id, new Function0<CoreInstance>()
-        {
-            @Override
-            public CoreInstance value()
-            {
-                return newInstance(classifier, obj);
-            }
-        });
-    }
-
-    private CoreInstance toJavaObject(String classifier, String id, Function0<CoreInstance> builder)
-    {
-        return getClassifierInstanceCache(classifier).getIfAbsentPut(id, builder);
+        return getClassifierInstanceCache(classifier).getIfAbsentPut(id, () -> newInstance(classifier, id));
     }
 
     private ConcurrentMutableMap<String, CoreInstance> getClassifierInstanceCache(String classifier)
     {
-        return this.instanceCache.getIfAbsentPut(classifier, NEW_CLASSIFIER_INSTANCE_CACHE);
+        return this.instanceCache.getIfAbsentPut(classifier, ConcurrentHashMap::newMap);
     }
 
-    private Constructor<? extends CoreInstance> getConstructor(final String _class)
+    private CoreInstance newInstance(String classifier, String id)
     {
-        return this.constructors.getIfAbsentPut(_class, new CheckedFunction0<Constructor<? extends CoreInstance>>()
+        Obj obj;
+        try
         {
-            @Override
-            public Constructor<? extends CoreInstance> safeValue() throws Exception
-            {
-                return ((Class<? extends CoreInstance>)MetadataLazy.this.classLoader.loadClass(JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromUserPath(_class))).getConstructor(Obj.class, MetadataLazy.class);
-            }
-        });
+            obj = this.deserializer.getInstance(classifier, id);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Error loading instance '" + id + "' with classifier '" + classifier + "'", e);
+        }
+        return newInstance(classifier, obj);
     }
 
     private CoreInstance newInstance(String classifier, Obj obj)
     {
+        Constructor<? extends CoreInstance> constructor = getConstructor(classifier, obj);
         try
         {
-            if (obj instanceof Enum)
-            {
-                if (this.enumConstructor == null)
-                {
-                    synchronized (this)
-                    {
-                        if (this.enumConstructor == null)
-                        {
-                            Constructor<? extends CoreInstance> constructor = (Constructor<? extends CoreInstance>)this.classLoader.loadClass(JavaPackageAndImportBuilder.rootPackage() + '.' + EnumProcessor.ENUM_LAZY_CLASS_NAME).getDeclaredConstructor(Obj.class, MetadataLazy.class);
-                            constructor.setAccessible(true);
-                            this.enumConstructor = constructor;
-                        }
-                    }
-                }
-                return this.enumConstructor.newInstance(obj, this);
-            }
-            else
-            {
-                return getConstructor(classifier).newInstance(obj, this);
-            }
+            return constructor.newInstance(obj, this);
         }
         catch (ReflectiveOperationException e)
         {
             throw new RuntimeException("Error instantiating " + obj, e);
+        }
+    }
+
+    private Constructor<? extends CoreInstance> getConstructor(String classifier, Obj obj)
+    {
+        if (obj instanceof Enum)
+        {
+            Constructor<? extends CoreInstance> constructor = this.enumConstructor;
+            if (constructor == null)
+            {
+                synchronized (this)
+                {
+                    constructor = this.enumConstructor;
+                    if (constructor == null)
+                    {
+                        this.enumConstructor = constructor = getLazyImplEnumConstructor();
+                    }
+                }
+            }
+            return constructor;
+        }
+        return this.constructors.getIfAbsentPutWithKey(classifier, this::getLazyImplClassConstructor);
+    }
+
+    private Constructor<? extends CoreInstance> getLazyImplClassConstructor(String classifier)
+    {
+        String lazyImplClassName = JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromUserPath(classifier);
+        try
+        {
+            Class<? extends CoreInstance> cls = (Class<? extends CoreInstance>) this.classLoader.loadClass(lazyImplClassName);
+            return cls.getConstructor(Obj.class, MetadataLazy.class);
+        }
+        catch (ReflectiveOperationException e)
+        {
+            throw new RuntimeException("Error getting constructor for " + classifier, e);
+        }
+    }
+
+    private Constructor<? extends CoreInstance> getLazyImplEnumConstructor()
+    {
+        String lazyImplEnumName = JavaPackageAndImportBuilder.rootPackage() + '.' + EnumProcessor.ENUM_LAZY_CLASS_NAME;
+        try
+        {
+            Class<? extends CoreInstance> cls = (Class<? extends CoreInstance>) this.classLoader.loadClass(lazyImplEnumName);
+            Constructor<? extends CoreInstance> constructor = cls.getDeclaredConstructor(Obj.class, MetadataLazy.class);
+            constructor.setAccessible(true);
+            return constructor;
+        }
+        catch (ReflectiveOperationException e)
+        {
+            throw new RuntimeException("Error getting constructor for " + lazyImplEnumName);
         }
     }
 }

@@ -14,33 +14,15 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.block.factory.Comparators;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+
+import java.util.Objects;
 
 public class Obj
 {
-    public static final Function<Obj, String> GET_CLASSIFIER = new Function<Obj, String>()
-    {
-        @Override
-        public String valueOf(Obj object)
-        {
-            return object.getClassifier();
-        }
-    };
-
-    public static final Function<Obj, String> GET_IDENTIFIER = new Function<Obj, String>()
-    {
-        @Override
-        public String valueOf(Obj object)
-        {
-            return object.getIdentifier();
-        }
-    };
-
     private final SourceInformation sourceInformation;
     private final String identifier;
     private final String classifier;
@@ -53,7 +35,7 @@ public class Obj
         this.identifier = identifier;
         this.classifier = classifier;
         this.name = name;
-        this.properties = (propertiesList == null) ? Lists.mutable.<PropertyValue>empty() : propertiesList;
+        this.properties = (propertiesList == null) ? Lists.mutable.empty() : propertiesList;
     }
 
     public Obj(SourceInformation sourceInformation, String identifier, String classifier, String name)
@@ -108,7 +90,7 @@ public class Obj
         return this.identifier.equals(that.identifier) &&
                 this.classifier.equals(that.classifier) &&
                 this.name.equals(that.name) &&
-                Comparators.nullSafeEquals(this.sourceInformation, that.sourceInformation) &&
+                Objects.equals(this.sourceInformation, that.sourceInformation) &&
                 this.properties.equals(that.properties);
     }
 
