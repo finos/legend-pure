@@ -47,7 +47,7 @@ Class meta::pure::alloy::connections::alloy::specification::SnowflakeDatasourceS
     region:String[1];
     warehouseName:String[1];
     databaseName:String[1];
-    role:String[1];
+    role:String[0..1];
 
     proxyHost:String[0..1];
     proxyPort:String[0..1];
