@@ -43,12 +43,14 @@ function meta::json::schema::fromSchema::JSONSchemaToPure(schemas:SchemaInput[*]
    
    let processed = $schemas->map(s|$s->processSchema(false));  
    let subSchemas = $processed->map(s|$s->extractSubSchemas()); 
-   let allSchemas = $processed->concatenate($subSchemas);
+   let allSchemas = $processed->concatenate($subSchemas)->filter(s|$s.schemaType!=SchemaType.collection);
    let processedWithSuperType = $allSchemas->JSONSchemaSuperTypes();
-   let extendedProfile =    $processedWithSuperType.extendedTags->distinct()->createProfile($schemas.pathPrefix->at(0)->makeString());
+   let prefix = if($schemas.pathPrefix->first()->isEmpty(),| 'generated',|$schemas.pathPrefix->at(0));
+   
+   let extendedProfile =    $processedWithSuperType.extendedTags->distinct()->createProfile($prefix);
    let pathSchemas = $processedWithSuperType->map(s | pair($s.fileName->refToFullPath([]),$s);)->newMap();
    $pathSchemas->values()->map(s | let parsedFileName =  $s.fileName->refToFullPath([]);
-                                 if( JSONSchemaIsObject($s.parsedSchema),
+                                          if( JSONSchemaIsObject($s.parsedSchema),
                                                |JSONSchemaToClass($parsedFileName,$s,$pathSchemas,$s.pathPrefix,$extendedProfile),
                                                | if(JSONSchemaIsEnum($s.parsedSchema),
                                                     |JSONSchemaToEnum($parsedFileName,$s.parsedSchema,$s.pathPrefix,$extendedProfile),
@@ -110,11 +112,17 @@ function <<access.private>> meta::json::schema::fromSchema::extractSubSchemas(sc
 function <<access.private>> meta::json::schema::fromSchema::extractEmbeddedSchema(rootSchema:JSONObject[1]):JSONObject[0..1]
 {   
       let definitions = $rootSchema.keyValuePairs->getValueForKey('definitions')->cast(@JSONObject);
+
       if($definitions->size()== 1,
            | $definitions->toOne(),
-           |[]);          
-    
-}
+           | let components = $rootSchema.keyValuePairs->getValueForKey('components')->cast(@JSONObject);
+             if($components->isNotEmpty(),
+                |let schemas = $components.keyValuePairs->getValueForKey('schemas')->cast(@JSONObject);
+                 if($schemas->isNotEmpty(),
+                    |$schemas->toOne(),
+                    |[]);,|[]););
+               
+       }
 
 
 function <<access.private>> meta::json::schema::fromSchema::processSchema(schema:SchemaInput[1],embedded:Boolean[1]):ProcessedSchema[1]
@@ -143,12 +151,17 @@ function <<access.private>> meta::json::schema::fromSchema::processSchema(fileNa
                              
                           ,
                               |$parsedSchema); 
+   
+      let embeddedSchemas = $updatedSchema->extractEmbeddedSchema();
+
    let schemaType = if( JSONSchemaIsObject($updatedSchema),
                           |SchemaType.object,
                           |  if( JSONSchemaIsEnum($updatedSchema),
                                | SchemaType.enum,
-                               |SchemaType.fragment
-                               )
+                               | if($embeddedSchemas->isNotEmpty(),
+                                    |SchemaType.collection,
+                                    |SchemaType.fragment
+                               ));
                         ); 
 
    
@@ -174,6 +187,7 @@ function <<access.private>> meta::json::schema::fromSchema::processSchema(fileNa
    let properties = $updatedSchema.keyValuePairs->getValueForKey('properties');
 
    let extendedTags = $updatedSchema->getExtendedTags('')->distinct();
+   
 
    ^ProcessedSchema(fileName=$fileName,
                      pathPrefix=if($embedded,|[],|$prefix),
@@ -183,7 +197,7 @@ function <<access.private>> meta::json::schema::fromSchema::processSchema(fileNa
                      processedFileName = $fileName->refToFullPath([]),
                      subTypes = $subTypes,
                      extendedTags = $extendedTags,
-                     embeddedSchemas =$updatedSchema->extractEmbeddedSchema()
+                     embeddedSchemas =$embeddedSchemas
                         );  
 
 }
@@ -234,7 +248,7 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaIsObject(s
 {
    
    let type = $schema->typeValues();
-    $type->isNotEmpty() && ( $type->contains('object')) &&  !$schema.keyValuePairs.key.value->containsAny(['anyOf','oneOf']) 
+    $type->isNotEmpty() && ( $type->contains('object')) &&  !$schema.keyValuePairs.key.value->containsAny(['anyOf','oneOf'])
    
    
    ;
@@ -277,6 +291,7 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaIsEnum(sch
    let type = $schema.keyValuePairs->getValueForKey('enum');
    $type->isNotEmpty();
 }
+
 
 function <<access.private>> meta::json::schema::fromSchema::getDescription(schema:JSONObject[1]):String[0..1]
 {
@@ -418,7 +433,7 @@ function  <<access.private>> meta::json::schema::fromSchema::fragmentToFunction(
                     |$ft.parameters->at(0)
                   );
 
-   let updatedFT = ^$ft(parameters=^$ftparam(multiplicity=$multiplicity,genericType=$type));
+   let updatedFT = ^$ft(parameters=^$ftparam(multiplicity=$multiplicity,genericType=$type)); 
   let expressionSequence = $functionSchema->fragmentToValueSpecifcation([],$fileName,$pathPrefix,$property,[],[],$property,$pathSchemas)->toOneMany()->cast(@SimpleFunctionExpression)->wrapWithIF($ftparam,false,false)->evaluateAndDeactivate();
   if($expressionSequence->isEmpty(),|fail('Unable to import schema, please check that it is correctly specified:\n'+ $fileName +'\n'+ $functionSchema->toOne()->toPrettyJSONString() ),|[]);
 
@@ -1127,8 +1142,8 @@ function <<access.private>> meta::json::schema::fromSchema::refToFileName(ref:St
 
 function meta::json::schema::fromSchema::refToFullPath(ref:String[1],parentPath:String[0..1]):String[1]
 {    
-
-     let schemaRef = 'definitions';
+      
+     let schemaRef = if($ref->contains('components/schemas'),|'components/schemas',| 'definitions');
    
      let isRoot = $ref->startsWith('#');
      let hasPath = $ref->contains('::');
@@ -1257,5 +1272,6 @@ Enum meta::json::schema::fromSchema::SchemaType
 {
    enum,
    object,
-   fragment
+   fragment,
+   collection
 }
