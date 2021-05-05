@@ -62,7 +62,10 @@ function meta::relational::mapping::postProcessQuery(exeCtx:ExecutionContext[1],
                                       |$newQuery
                                    );
 
-   $extensions->map(e|$e.moduleExtension('relational')->cast(@RelationalExtension).relational_execution_postProcessors)->fold({pp, result | $pp->eval($result, $runtime, [], [], $store, $exeCtx)}, ^PostProcessorResult(query = $newQueryAfterDb2Processing));
+   let resultAfterDb2Processing = ^PostProcessorResult(query = $newQueryAfterDb2Processing);
+   let resultAfterUserPostProcessing = $resultAfterDb2Processing->userPostProcessors($runtime,[],[],$store,$exeCtx);
+
+   $extensions->map(e|$e.moduleExtension('relational')->cast(@RelationalExtension).relational_execution_postProcessors)->fold({pp, result | $pp->eval($result, $runtime, [], [], $store, $exeCtx)}, $resultAfterUserPostProcessing);
 }
 
 //Helper Functions
