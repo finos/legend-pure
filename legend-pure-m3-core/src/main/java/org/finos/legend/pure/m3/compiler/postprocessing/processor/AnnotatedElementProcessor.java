@@ -31,7 +31,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class AnnotatedElementProcessor implements MatchRunner<AnnotatedElement>
+public class AnnotatedElementProcessor implements MatchRunner<CoreInstance>
 {
     @Override
     public String getClassName()
@@ -40,7 +40,7 @@ public class AnnotatedElementProcessor implements MatchRunner<AnnotatedElement>
     }
 
     @Override
-    public void run(AnnotatedElement instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(CoreInstance instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
         noteModelElementForAnnotations(instance, state.getProcessorSupport());
     }
