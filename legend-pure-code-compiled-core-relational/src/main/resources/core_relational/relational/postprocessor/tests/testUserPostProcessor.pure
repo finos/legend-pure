@@ -1,0 +1,78 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::mapping::*;
+import meta::relational::metamodel::execute::*;
+import meta::csv::*;
+import meta::pure::runtime::*;
+import meta::relational::functions::asserts::*;
+import meta::relational::mapping::*;
+import meta::relational::metamodel::*;
+import meta::relational::metamodel::relation::*;
+import meta::relational::postProcessor::*;
+import meta::relational::runtime::*;
+import meta::relational::tests::*;
+import meta::relational::tests::model::simple::*;
+
+import meta::relational::tests::postProcessor::userpostProcessor::*;
+
+Class meta::relational::tests::postProcessor::userpostProcessor::TestPostProcessorParameter extends PostProcessorParameter
+{
+   oldTable : Table[1];
+   newTable : Table[1];
+}
+
+function <<test.BeforePackage>> meta::relational::tests::postProcessor::userpostProcessor::setUp():Any[*]
+{
+   let connection = ^TestDatabaseConnection(element = db, type=DatabaseType.H2);
+   
+   meta::relational::functions::toDDL::dropAndCreateTableInDb(db, 'differentPersonTable', $connection);
+   executeInDb('insert into differentPersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (1, \'Peter1\', \'Smith\',23, 1,1,2);', $connection);
+}
+
+function meta::relational::tests::postProcessor::userpostProcessor::testPostProcessor(sql:SQLQuery[1],m:Mapping[0..1], runtime:Runtime[1],store:Database[0..1],exeCtx:ExecutionContext[1],params:PostProcessorParameter[*]):PostProcessorResult[1]
+{
+   let param = $params->cast(@TestPostProcessorParameter)->toOne();
+   let oldToNewSchemaPair = pair($param.oldTable, $param.newTable);
+   let updatedQuery = replaceTables($sql->cast(@SelectSQLQuery), $oldToNewSchemaPair).values;
+   
+   ^PostProcessorResult(query = $updatedQuery, resultPostProcessor = []);
+}
+
+function meta::relational::tests::postProcessor::userpostProcessor::testPostProcessorFunction():PostProcessor[1]
+{
+   ^PostProcessor(sqlQueryPostProcessorForExecution = meta::relational::tests::postProcessor::userpostProcessor::testPostProcessor_SQLQuery_1__Mapping_$0_1$__Runtime_1__Database_$0_1$__ExecutionContext_1__PostProcessorParameter_MANY__PostProcessorResult_1_);
+}
+
+function <<test.Test>> meta::relational::tests::postProcessor::userpostProcessor::testUserPostProcessorExecution():Boolean[1]
+{
+   let oldTable = db.schema('default')->toOne().table('personTable')->toOne();
+   let newTable = db.schema('default')->toOne().table('differentPersonTable')->toOne();
+   let postProcessorParameter = ^TestPostProcessorParameter(oldTable = $oldTable, newTable = $newTable);
+
+   let runtime = ^meta::pure::runtime::Runtime
+   (
+      connections = ^TestDatabaseConnection(
+                        element = db,
+                        type=DatabaseType.H2,
+                        queryPostProcessorsWithParameter = ^PostProcessorWithParameter(parameters = $postProcessorParameter, postProcessor = meta::relational::tests::postProcessor::userpostProcessor::testPostProcessorFunction__PostProcessor_1_)
+                    )
+   );
+
+   let result = execute(|Person.all(), simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+   let expectedResults = 'Peter1';
+   
+   assertEquals($expectedResults, $result.values.firstName);
+   assertSameSQL('select "root".ID as "pk_0", "root".FIRSTNAME as "firstName", "root".AGE as "age", "root".LASTNAME as "lastName" from differentPersonTable as "root"', $result);
+}
