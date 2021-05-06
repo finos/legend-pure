@@ -160,12 +160,12 @@ function meta::pure::mapping::aggregationAware::potentiallyRewriteObjectGroupBy(
                    | let aggSpecGroupByFunctionPaths = $aggSpec.aggregateSpecification.groupByFunctions->map(g | $g.groupByFn.expressionSequence->evaluateAndDeactivate()->toOne()->generateProjectPath(newMap(pair('this', ^ProjectPath(thisLevel=$c->elementToPath()))), ^Map<String, List<Any>>()));
                      let functions = $params->at(1)->cast(@InstanceValue).values->evaluateAndDeactivate()->cast(@meta::pure::metamodel::function::Function<Any>);
                      let aggs = $params->at(2)->match([
-                        i: InstanceValue[1] | $i.values->match([
+                        i: InstanceValue[1] | $i.values->map(x | $x->match([
                                                                a:meta::pure::functions::collection::AggregateValue<Any,Any,Any>[1]| pair($a.mapFn->cast(@meta::pure::metamodel::function::FunctionDefinition<Any>), $a.aggregateFn->cast(@meta::pure::metamodel::function::FunctionDefinition<Any>));,
 
                                                                v: Any[*]| $v->evaluateAndDeactivate()->map(agg | pair($agg->cast(@SimpleFunctionExpression).parametersValues->at(0)->evaluateAndDeactivate()->cast(@InstanceValue).values->at(0)->cast(@meta::pure::metamodel::function::FunctionDefinition<Any>),
                                                                                                  $agg->cast(@SimpleFunctionExpression).parametersValues->at(1)->evaluateAndDeactivate()->cast(@InstanceValue).values->at(0)->cast(@meta::pure::metamodel::function::FunctionDefinition<Any>)))
-                                                               ]),
+                                                               ])),
                         s: SimpleFunctionExpression[1] | pair($s.parametersValues->at(0)->evaluateAndDeactivate()->cast(@InstanceValue).values->at(0)->cast(@meta::pure::metamodel::function::FunctionDefinition<Any>),
                                                               $s.parametersValues->at(1)->evaluateAndDeactivate()->cast(@InstanceValue).values->at(0)->cast(@meta::pure::metamodel::function::FunctionDefinition<Any>))
                      ]);

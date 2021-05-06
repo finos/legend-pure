@@ -60,6 +60,7 @@ Class meta::relational::functions::sqlQueryToString::DbConfig
 {
    dbType:DatabaseType[1];
    dbTimeZone:String[0..1];
+   quoteIdentifiers:Boolean[1];
    dynaFuncDispatch:meta::pure::metamodel::function::Function<{DynaFunction[1], GenerationState[1]->DynaFunctionToSql[1]}>[1];
    dbReservedIdentifiers : String[*];
    literalProcessors:Map<Type,LiteralProcessor>[1];
@@ -67,35 +68,40 @@ Class meta::relational::functions::sqlQueryToString::DbConfig
 
 function meta::relational::functions::sqlQueryToString::sqlQueryToString(sqlQuery:SQLQuery[1], dbType:DatabaseType[1], extensions:RouterExtension[*]):String[1]
 {
-   sqlQueryToString($sqlQuery, $dbType, [], $extensions);
+   sqlQueryToString($sqlQuery, $dbType, [], [], $extensions);
 }
 
-function meta::relational::functions::sqlQueryToString::sqlQueryToString(sqlQuery:SQLQuery[1], dbType:DatabaseType[1], dbTimeZone:String[0..1], extensions:RouterExtension[*]):String[1]
+function meta::relational::functions::sqlQueryToString::sqlQueryToString(sqlQuery:SQLQuery[1], dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1], extensions:RouterExtension[*]):String[1]
 {
-   sqlQueryToString($sqlQuery, $dbType, $dbTimeZone, ^Format(newLine='', indent=''), $extensions);
+   sqlQueryToString($sqlQuery, $dbType, $dbTimeZone, $quoteIdentifiers, ^Format(newLine='', indent=''), $extensions);
 }
 
-function meta::relational::functions::sqlQueryToString::sqlQueryToStringPretty(sqlQuery:SQLQuery[1], dbType:DatabaseType[1], dbTimeZone:String[0..1], extensions:RouterExtension[*]):String[1]
+function meta::relational::functions::sqlQueryToString::sqlQueryToStringPretty(sqlQuery:SQLQuery[1], dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1], extensions:RouterExtension[*]):String[1]
 {
-   sqlQueryToString($sqlQuery, $dbType, $dbTimeZone, ^Format(newLine='\n', indent='\t'), $extensions);
+   sqlQueryToString($sqlQuery, $dbType, $dbTimeZone, $quoteIdentifiers, ^Format(newLine='\n', indent='\t'), $extensions);
 }
 
-
-function meta::relational::functions::sqlQueryToString::sqlQueryToString(sqlQuery:SQLQuery[1], dbType:DatabaseType[1], dbTimeZone:String[0..1], format:Format[1], extensions:RouterExtension[*]):String[1]
+function meta::relational::functions::sqlQueryToString::sqlQueryToString(sqlQuery:SQLQuery[1], dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1], format:Format[1], extensions:RouterExtension[*]):String[1]
 {
-   processOperation($sqlQuery, createDbConfig($dbType, $dbTimeZone), $format, ^Config(), $extensions);
+   processOperation($sqlQuery, createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers), $format, ^Config(), $extensions);
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1]):DbConfig[1]
 {
-   createDbConfig($dbType, $dbTimeZone, getDynaFunctionMappings($dbType), getLiteralProcessors($dbType, $dbTimeZone));
+   createDbConfig($dbType, $dbTimeZone, []);
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1], dynaFuncDispatch:meta::pure::metamodel::function::Function<{DynaFunction[1], GenerationState[1]->DynaFunctionToSql[1]}>[1], literalProcessors:Map<Type,LiteralProcessor>[1]):DbConfig[1]
+function <<access.private>> meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1]):DbConfig[1]
+{
+   createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers, getDynaFunctionMappings($dbType), getLiteralProcessors($dbType, $dbTimeZone));
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1], dynaFuncDispatch:meta::pure::metamodel::function::Function<{DynaFunction[1], GenerationState[1]->DynaFunctionToSql[1]}>[1], literalProcessors:Map<Type,LiteralProcessor>[1]):DbConfig[1]
 {
    ^DbConfig(
       dbType = $dbType,
       dbTimeZone = $dbTimeZone,
+      quoteIdentifiers = if($quoteIdentifiers->isEmpty(), |false, |$quoteIdentifiers->toOne()),
       dynaFuncDispatch  = $dynaFuncDispatch,
       dbReservedIdentifiers = dbReservedWords($dbType),
       literalProcessors = $literalProcessors
@@ -112,9 +118,9 @@ function meta::relational::functions::sqlQueryToString::processOperation(relatio
    processOperation($relationalOperationElement, createDbConfig($dbType, []), ^Format(newLine='', indent=''), ^Config(), $extensions);
 }
 
-function meta::relational::functions::sqlQueryToString::processOperation(relationalOperationElement:RelationalOperationElement[1], dbType:DatabaseType[1], dbTimeZone:String[0..1], extensions:RouterExtension[*]):String[1]
+function meta::relational::functions::sqlQueryToString::processOperation(relationalOperationElement:RelationalOperationElement[1], dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1], extensions:RouterExtension[*]):String[1]
 {
-   processOperation($relationalOperationElement, createDbConfig($dbType, $dbTimeZone), ^Format(newLine='', indent=''), ^Config(), $extensions);
+   processOperation($relationalOperationElement, createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers), ^Format(newLine='', indent=''), ^Config(), $extensions);
 }
 
 function meta::relational::functions::sqlQueryToString::processOperation(relationalOperationElement:RelationalOperationElement[1], dbType:DatabaseType[1], config:Config[1], extensions:RouterExtension[*]):String[1]
@@ -298,9 +304,9 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    $literal.value->processLiteralValue($dbConfig);
 }
 
-function  meta::relational::functions::sqlQueryToString::processLiteralDefaultForPlanService(a:Any[1], dbType:DatabaseType[1], dbTimeZone : String[0..1]): String[1]
+function  meta::relational::functions::sqlQueryToString::processLiteralDefaultForPlanService(a:Any[1], dbType:DatabaseType[1], dbTimeZone : String[0..1], quoteIdentifiers:Boolean[0..1]): String[1]
 {
-   let dbConfig = createDbConfig($dbType, $dbTimeZone);
+   let dbConfig = createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers);
    let type = if($a->instanceOf(List),
                  |
                  if($a->cast(@List<Any>).values->isNotEmpty(),
@@ -325,9 +331,9 @@ function meta::relational::functions::sqlQueryToString::processLiteralListForPla
    ->joinStrings(if($type->subTypeOf(Number),|',',|'\',\''));
 }
 
-function meta::relational::functions::sqlQueryToString::processLiteralValue(a:Any[1], dbTimeZone:String[0..1], dbType:DatabaseType[1]) : String[1]
+function meta::relational::functions::sqlQueryToString::processLiteralValue(a:Any[1], dbTimeZone:String[0..1], dbType:DatabaseType[1], quoteIdentifiers:Boolean[0..1]) : String[1]
 {
-   let dbConfig = createDbConfig($dbType, $dbTimeZone);
+   let dbConfig = createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers);
    processLiteralValue($a, $dbConfig);
 }
 
@@ -451,7 +457,9 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
                if($dbType == DatabaseType.Postgres,
                   |'%s offset %s'->format([$format.separator, $s.fromRow->toOne()->getValueForTake()]) + if ($size == -1, | '', | ' limit %s'->format($size)),
-                  |
+                  | if ($dbType == DatabaseType.Presto, 
+                     | processLimitForPresto($format, $s.fromRow, $size), 
+                     |
                      // queries where specifying query with "limit 100,1000" would return 1100 rows.
                      // However when a order by column is specified, the expected number of rows is returned (i.e. 900 rows).
                      // Given that a slice without an order is largely meaningless, we'll simply report an error (rather than trying to simulate something)
@@ -461,9 +469,18 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
                      assert($dbType != DatabaseType.SybaseIQ || $s.orderBy->isNotEmpty(), | $dbType->makeString() + ' requires an order by column for meaningful limit/offset');
 
                      '%s limit %s,%s'->format([$format.separator, $s.fromRow->toOne()->getValueForTake(), $size]);
-                  );
+                  ));
             )
       );
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::processLimitForPresto(format:Format[1], fromRow:Literal[0..1], size:Any[1]):String[1]
+{
+   if ($fromRow->isNotEmpty(), 
+       | if ($size == -1,
+            | '%s offset %s'->format([$format.separator, $fromRow->toOne()->getValueForTake()]),
+            | '%s offset %s rows fetch next %s rows only'->format([$format.separator, $fromRow->toOne()->getValueForTake(), $size])),
+       | '%s limit %s'->format($size));
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processTopForDB2(s:SelectSQLQuery[1], dbType:DatabaseType[1],format:Format[1]):String[1]
@@ -713,9 +730,9 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 function <<access.private>> meta::relational::functions::sqlQueryToString::tableToString(table:Table[1], dbConfig : DbConfig[1]):String[1]
 {
    let schemaName = if ($dbConfig.dbType == DatabaseType.Presto,
-    | $table.schema.name->replace('$', '.'),
-    | $table.schema.name
-   );
+                        | $table.schema.name->replace('$', '.'),
+                        | $table.schema.name
+                     );
    if($schemaName == 'default', | $table.name->processIdentifier($dbConfig), | $schemaName->processIdentifier($dbConfig) + '.' + $table.name->processIdentifier($dbConfig));
 }
 
@@ -1293,9 +1310,9 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
       forDynafunction('second',                [ choice($allTypes,                 $allStates,            ^ToSql(format='second(%s)'))]),
       forDynafunction('sin',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='sin(%s)'))]),
       forDynafunction('size',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='count(%s)', transform={p:String[*]|if($p->isEmpty(),|'*',|$p)}))]),
-      forDynafunction('sqlFalse',              [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|processLiteralValue(false, [], $dbType)}))]),
+      forDynafunction('sqlFalse',              [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|processLiteralValue(false, [], $dbType, [])}))]),
       forDynafunction('sqlNull',               [ choice($allTypes,                 $allStates,            ^ToSql(format='null'))]),
-      forDynafunction('sqlTrue',               [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|processLiteralValue(true, [], $dbType)}))]),
+      forDynafunction('sqlTrue',               [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|processLiteralValue(true, [], $dbType, [])}))]),
       forDynafunction('sqrt',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='sqrt(%s)'))]),
       forDynafunction('startsWith',            [ choice($allTypes,                 $allStates,            ^ToSql(format=likePattern('%s%%'), transform={p:String[2]|$p->transformLikeParams($dbType)}))]),
       forDynafunction('sub',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='%s-%s'))]),
@@ -1956,7 +1973,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 function <<access.private>> meta::relational::functions::sqlQueryToString::processIdentifier(originalIdentifier:String[1], dbConfig : DbConfig[1]):String[1]
 {
    let processedIdentifier = $originalIdentifier->map(identifier|
-                                 if($identifier->startsWith('"'),
+                                 if($dbConfig.quoteIdentifiers || $identifier->startsWith('"'),
                                     | '"%s"'->format($identifier->replace('"', '')),
                                     | $identifier
                                     )

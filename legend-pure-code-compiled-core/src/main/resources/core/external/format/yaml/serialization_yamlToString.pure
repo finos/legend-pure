@@ -1,0 +1,48 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::external::format::yaml::*;
+
+function meta::external::format::yaml::toYAMLString(json:YAMLElement[1]):String[1]
+{
+   $json->toYAMLString('',[]);
+}
+
+
+function <<access.private>> meta::external::format::yaml::toYAMLString(json:YAMLElement[1], offset:String[1],parentElement:YAMLElement[0..1]):String[1]
+{
+   let tab ='  ';
+    let arrayChild = $parentElement->isNotEmpty() && $parentElement->toOne()->instanceOf(YAMLArray);
+    let indent = $offset+$tab;
+    $json->match([
+                  b:YAMLBoolean[1] | $b.value->toString(),
+                  s:YAMLString[1] | $s.value->toString()->stringToYAML(),
+                  n:YAMLNumber[1] | $n.value->toString(),
+                  n:YAMLNull[1] | 'null',
+                  a:YAMLArray[1] | '\n'+$a.values->map(v |if(!$v->instanceOf(YAMLObject),|$offset + '- ',|'')+ $v->toYAMLString($offset,$a))->joinStrings( '\n' ),
+                  o:YAMLObject[1] | let init = $o.keyValuePairs->first();
+                                    if($init->isNotEmpty(),
+                                       |let firstElement = if($arrayChild,|$offset+'- ',|$offset) + $init->toOne().key.value->toString() + ': ' +  $init->toOne().value->toYAMLString($indent,$o);
+                                         $firstElement->concatenate(
+                                       $o.keyValuePairs->tail()->map(kv |if($arrayChild,|$offset+'  ',|$offset) + $kv.key.value->toString() + ': ' + $kv.value->toYAMLString($indent,$o)))
+                                                               ->joinStrings(if($arrayChild || $parentElement->isEmpty()  ,|'',|'\n'),'\n' ,'' );,
+                                       |'');
+   ]);
+}
+
+function <<access.private>> meta::external::format::yaml::stringToYAML(string:String[1]):String[1]
+{
+
+   '"' + $string->replace('"','\"') + '"'
+}

@@ -307,7 +307,7 @@ function meta::relational::testDataGeneration::generateTestDataStartingFromRoot(
                                 | ^$rootSelect_PreMilestoning(filteringOperation = $rootSelect_PreMilestoning.filteringOperation->concatenate($milestoningFilter)->meta::relational::functions::pureToSqlQuery::andFilters($extensions))
                              );
 
-            let rootSql = postProcessQuery($exeCtx, $rootSelect, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $extensions);
+            let rootSql = postProcessQuery($exeCtx, $rootSelect, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $dbConnection.quoteIdentifiers, $extensions);
 
             let nodeResult = executeInDb($rootSql, $dbConnection);
             let childResults = $tree->generateTestDataStartingFromNode($nodeResult, $runtime, $exeCtx, $dbConnection, $relationColumnMap, $config, $extensions);
@@ -345,7 +345,7 @@ function meta::relational::testDataGeneration::generateTestDataForNestedViewTree
                              | ^$rootSelect_PreMilestoning(filteringOperation = $rootSelect_PreMilestoning.filteringOperation->concatenate($milestoningFilter)->meta::relational::functions::pureToSqlQuery::andFilters($extensions))
                           );
 
-         let rootSql = postProcessQuery($exeCtx, $rootSelect, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $extensions);
+         let rootSql = postProcessQuery($exeCtx, $rootSelect, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $dbConnection.quoteIdentifiers, $extensions);
 
          let nodeResult = executeInDb($rootSql, $dbConnection);
          let childResults = $relationTree.nestedViewTree.children->at(0)->generateTestDataStartingFromNode($nodeResult, $runtime, $exeCtx, $dbConnection, $relationColumnMap, $config, $extensions);
@@ -386,7 +386,7 @@ function meta::relational::testDataGeneration::generateTestDataForNestedViewTree
    let pure2SqlState = meta::relational::functions::pureToSqlQuery::defaultState(^Mapping(), ^Map<String, List<Any>>());
    let viewQuery = meta::relational::functions::pureToSqlQuery::processRelationalMappingSpecification($relationTree.view, [], '', true, -1, true, [], $pure2SqlState, noDebug(), $extensions);
    let viewQueryReprocessed = $viewQuery.select->meta::relational::postProcessor::fixTables($oldToNew)->cast(@SelectSQLQuery);
-   let viewSql = postProcessQuery($exeCtx, $viewQueryReprocessed, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $extensions);
+   let viewSql = postProcessQuery($exeCtx, $viewQueryReprocessed, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $dbConnection.quoteIdentifiers, $extensions);
    let viewResult = executeInDb($viewSql, $dbConnection);
 
    $tableResults->size()->range()->map({id |
@@ -449,7 +449,7 @@ function meta::relational::testDataGeneration::generateTestDataStartingFromNode(
                               | ^$childSQL_PreMilestoning(filteringOperation = $childSQL_PreMilestoning.filteringOperation->concatenate($milestoningFilter)->meta::relational::functions::pureToSqlQuery::andFilters($extensions))
                            );
                                               
-            let childSQLQueryProcessed = postProcessQuery($exeCtx, $childSQL, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $extensions);
+            let childSQLQueryProcessed = postProcessQuery($exeCtx, $childSQL, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $dbConnection.quoteIdentifiers, $extensions);
             let childResult = executeInDb($childSQLQueryProcessed, $dbConnection);
             dropTempTable($tempName, $dbConnection);
             let subChildResults = $child->generateTestDataStartingFromNode($childResult, $runtime, $exeCtx, $dbConnection, $relationColumnMap, $config, $extensions);
@@ -482,7 +482,7 @@ function <<access.protected>> meta::relational::testDataGeneration::getRowIdenti
                           | ^$childSQL_PreMilestoning(filteringOperation = $childSQL_PreMilestoning.filteringOperation->concatenate($milestoningFilter)->meta::relational::functions::pureToSqlQuery::andFilters($extensions))
                        );
 
-        let childSQLQueryProcessed = postProcessQuery($exeCtx, $childSQL, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $extensions);
+        let childSQLQueryProcessed = postProcessQuery($exeCtx, $childSQL, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $dbConnection.quoteIdentifiers, $extensions);
         let childResult = executeInDb($childSQLQueryProcessed, $dbConnection);
 
         let sampleCode =  '  meta::relational::testDataGeneration::createTableRowIdentifiers('+$table.schema.database->elementToPath()+', \''+$table.schema.name->toOne()+'\', \''+$table.name+'\', '+
@@ -529,7 +529,7 @@ function <<access.protected>> meta::relational::testDataGeneration::getRowIdenti
          )
       )
    );
-   let childSQLQueryProcessed = postProcessQuery($exeCtx, $childSQL, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $extensions);
+   let childSQLQueryProcessed = postProcessQuery($exeCtx, $childSQL, $runtime, ^Database(name='default'), $extensions).query->sqlQueryToStringPretty($dbConnection.type, $dbConnection.timeZone, $dbConnection.quoteIdentifiers, $extensions);
    let childResult = executeInDb($childSQLQueryProcessed, $dbConnection);
    dropTempTable($tempName, $dbConnection);
 
@@ -653,13 +653,24 @@ function <<access.private>> meta::relational::testDataGeneration::convertValuesT
 
 function <<access.private>> meta::relational::testDataGeneration::createTempTableStatement() : meta::pure::metamodel::function::Function<{String[1], Column[*], DatabaseType[1]->String[1]}>[1]
 {
-  {ttName:String[1], cols: Column[*], dbType: DatabaseType[1]|
+   {ttName:String[1], cols: Column[*], dbType: DatabaseType[1]|
+      let colsAsString = $cols->map({c |
+         let sqlType    = meta::relational::metamodel::datatype::dataTypeToSqlText($c.type);
+         let nullSuffix = if ([DatabaseType.Sybase, DatabaseType.SybaseIQ]->contains($dbType) && $c.type->instanceOf(meta::relational::metamodel::datatype::Bit),
+                              | ' NULL',
+                              | ''
+                          );
+         if($dbType == DatabaseType.H2, | $c.name, | '"' + $c.name + '"') + ' ' + $sqlType + $nullSuffix;
+      })->joinStrings('(', ',', ')');
 
-        let colsAsString = '('+$cols->map(c| if($dbType == DatabaseType.H2, | $c.name, | '"' + $c.name + '"') + ' ' + meta::relational::metamodel::datatype::dataTypeToSqlText($c.type))->joinStrings(',')+')';
-        if($dbType == DatabaseType.H2,| 'Create LOCAL TEMPORARY TABLE '+$ttName+$colsAsString+';';
-                                     ,| if([DatabaseType.Sybase, DatabaseType.SybaseIQ]->contains($dbType),| 'Declare LOCAL TEMPORARY TABLE '+$ttName+$colsAsString+' on commit preserve rows;'
-                                                                                                          ,| assert(false, | 'Temporary table creation for db type: '+$dbType->toString()+' is not supported');'';));
-  }
+      if ($dbType == DatabaseType.H2,
+          | 'Create LOCAL TEMPORARY TABLE ' + $ttName + $colsAsString + ';',
+          | if ([DatabaseType.Sybase, DatabaseType.SybaseIQ]->contains($dbType),
+                | 'Declare LOCAL TEMPORARY TABLE ' + $ttName + $colsAsString + ' on commit preserve rows;',
+                | assert(false, | 'Temporary table creation for db type: '+$dbType->toString()+' is not supported');'';
+            )
+      );
+   }
 }
 
 function <<access.private>> meta::relational::testDataGeneration::insertIntoTempTableStatement() : meta::pure::metamodel::function::Function<{String[1], String[*], Row[1..*], DatabaseType[1]->String[1]}>[1]

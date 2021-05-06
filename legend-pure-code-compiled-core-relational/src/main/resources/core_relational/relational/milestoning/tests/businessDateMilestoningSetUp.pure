@@ -408,7 +408,12 @@ Mapping meta::relational::tests::milestoning::milestoningmap
    meta::relational::tests::milestoning::OrderWithConstraint : Relational{
       orderDate : [db]OrderTable.orderDate,
       product : [db]@Order_Product
-   }     
+   }
+
+   meta::relational::tests::milestoning::OrderWithProductWithConstraints : Relational{
+      orderDate : [db]OrderTable.orderDate,
+      product : [db]@Order_Product
+   }
    
    meta::relational::tests::milestoning::OrderDescription : Relational{
       description : [db]OrderDescriptionTable.description      

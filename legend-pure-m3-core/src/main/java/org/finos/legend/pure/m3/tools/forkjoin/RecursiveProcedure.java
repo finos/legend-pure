@@ -14,23 +14,23 @@
 
 package org.finos.legend.pure.m3.tools.forkjoin;
 
-import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.list.mutable.FastList;
 
 import java.util.RandomAccess;
 import java.util.concurrent.RecursiveAction;
+import java.util.function.Consumer;
 
 public class RecursiveProcedure<T> extends RecursiveAction
 {
     private final ListIterable<T> list;
-    private final Procedure<? super T> procedure;
+    private final Consumer<? super T> procedure;
     private final int start;
     private final int end;
     private final int threshold;
 
-    private RecursiveProcedure(ListIterable<T> list, Procedure<? super T> procedure, int start, int end, int threshold)
+    private RecursiveProcedure(ListIterable<T> list, Consumer<? super T> procedure, int start, int end, int threshold)
     {
         this.list = list;
         this.procedure = procedure;
@@ -47,7 +47,7 @@ public class RecursiveProcedure<T> extends RecursiveAction
         {
             for (int i = this.start; i < this.end; i++)
             {
-                this.procedure.value(this.list.get(i));
+                this.procedure.accept(this.list.get(i));
             }
         }
         else
@@ -57,7 +57,7 @@ public class RecursiveProcedure<T> extends RecursiveAction
         }
     }
 
-    public static <T> RecursiveProcedure<T> newRecursiveProcedure(ListIterable<T> list, Procedure<? super T> procedure, int start, int end, int threshold)
+    public static <T> RecursiveProcedure<T> newRecursiveProcedure(ListIterable<T> list, Consumer<? super T> procedure, int start, int end, int threshold)
     {
         if (list == null)
         {
@@ -90,17 +90,17 @@ public class RecursiveProcedure<T> extends RecursiveAction
         return new RecursiveProcedure<>(list, procedure, start, Math.min(end, list.size()), threshold);
     }
 
-    public static <T> RecursiveProcedure<T> newRecursiveProcedure(ListIterable<T> list, Procedure<? super T> procedure, int threshold)
+    public static <T> RecursiveProcedure<T> newRecursiveProcedure(ListIterable<T> list, Consumer<? super T> procedure, int threshold)
     {
         return newRecursiveProcedure(list, procedure, 0, list.size(), threshold);
     }
 
-    public static <T> RecursiveProcedure<T> newRecursiveProcedure(T[] array, Procedure<? super T> procedure, int start, int end, int threshold)
+    public static <T> RecursiveProcedure<T> newRecursiveProcedure(T[] array, Consumer<? super T> procedure, int start, int end, int threshold)
     {
         return newRecursiveProcedure(ArrayAdapter.adapt(array), procedure, start, end, threshold);
     }
 
-    public static <T> RecursiveProcedure<T> newRecursiveProcedure(T[] array, Procedure<? super T> procedure, int threshold)
+    public static <T> RecursiveProcedure<T> newRecursiveProcedure(T[] array, Consumer<? super T> procedure, int threshold)
     {
         return newRecursiveProcedure(array, procedure, 0, array.length, threshold);
     }

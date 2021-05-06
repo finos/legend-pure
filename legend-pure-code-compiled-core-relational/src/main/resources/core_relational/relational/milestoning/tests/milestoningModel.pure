@@ -202,6 +202,12 @@ Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::OrderW
    orderDate : Date[0..1];
 }
 
+Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::OrderWithProductWithConstraints
+{
+   orderDate : Date[0..1];
+   product : ProductWithConstraint1[1];
+   getClassificationDescription(date: Date[1]){$this.product($date).classification.description->joinStrings()}:String[1];
+}
 
 Class <<temporal.bitemporal>> meta::relational::tests::milestoning::BiTemporalProduct{
    id : Integer[1];

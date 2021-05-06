@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.tools.forkjoin;
 
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.list.mutable.FastList;
@@ -22,6 +21,7 @@ import org.eclipse.collections.impl.list.mutable.FastList;
 import java.util.RandomAccess;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.RecursiveTask;
+import java.util.function.Function;
 
 public class RecursiveFunction<T, V> extends RecursiveTask<ListIterable<V>>
 {
@@ -56,7 +56,7 @@ public class RecursiveFunction<T, V> extends RecursiveTask<ListIterable<V>>
         {
             for (int i = rangeStart; i < rangeEnd; i++)
             {
-                this.result[i - this.start] = this.function.valueOf(this.list.get(i));
+                this.result[i - this.start] = this.function.apply(this.list.get(i));
             }
         }
         else

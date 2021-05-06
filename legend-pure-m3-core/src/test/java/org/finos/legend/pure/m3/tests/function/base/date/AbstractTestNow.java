@@ -23,25 +23,38 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.Instant;
+
 public abstract class AbstractTestNow extends AbstractPureTestWithCoreCompiled
 {
     @Test
     public void testNow()
     {
         compileTestSource("function test::nowWrapper():DateTime[1] { meta::pure::functions::date::now() }");
-        CoreInstance result = execute("test::nowWrapper():DateTime[1]");
-        long expected = System.currentTimeMillis();
         long tolerance = 100;
+        long before = System.currentTimeMillis();
+        CoreInstance result = execute("test::nowWrapper():DateTime[1]");
+        long after = System.currentTimeMillis();
+        for (int i = 0; ((after - before) > tolerance) && (i < 10); i++)
+        {
+            before = System.currentTimeMillis();
+            result = execute("test::nowWrapper():DateTime[1]");
+            after = System.currentTimeMillis();
+        }
+        if ((after - before) > tolerance)
+        {
+            throw new RuntimeException("Could not get valid test, total duration (" + (after - before) + "ms) was greater than tolerance (" + tolerance + "ms)");
+        }
 
-        CoreInstance date = Instance.getValueForMetaPropertyToOneResolved(result, M3Properties.values, this.processorSupport);
+        CoreInstance date = Instance.getValueForMetaPropertyToOneResolved(result, M3Properties.values, processorSupport);
         PureDate pureDate = PrimitiveUtilities.getDateValue(date);
 
         // Check that the date has millisecond precision
         Assert.assertTrue(pureDate.hasSubsecond());
         Assert.assertEquals(3, pureDate.getSubsecond().length());
 
+        // Compare with before and after epoch millis
         long actual = pureDate.getCalendar().getTimeInMillis();
-        long difference = Math.abs(expected - actual);
-        Assert.assertTrue("Expected millisecond difference to be less than" + tolerance + ", got: " + difference, difference < tolerance);
+        Assert.assertTrue("Expected actual (" + pureDate + ") to be between " + Instant.ofEpochMilli(before) + " and " + Instant.ofEpochMilli(after), (before <= actual) && (actual <= after));
     }
 }

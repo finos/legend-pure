@@ -26,7 +26,7 @@
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>1.18.5-SNAPSHOT</version>
+    <version>1.20.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -327,6 +327,17 @@
                         <exclude>org/finos/legend/pure/m3/coreinstance/**/*</exclude>
                         <exclude>org/finos/legend/pure/generated/**/*</exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- Used to copy test results into test reports module -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <useSystemClassLoader>true</useSystemClassLoader>
+                    <useManifestOnlyJar>false</useManifestOnlyJar>
+                    <reportsDirectory>${project.parent.basedir}/legend-pure-test-reports/surefire-reports-aggregate
+                    </reportsDirectory>
                 </configuration>
             </plugin>
         </plugins>

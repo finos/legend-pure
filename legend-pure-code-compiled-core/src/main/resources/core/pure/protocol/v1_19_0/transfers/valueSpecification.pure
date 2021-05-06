@@ -106,7 +106,7 @@ function meta::protocols::pure::v1_19_0::transformation::fromPureGraph::valueSpe
                                                                            |^meta::protocols::pure::v1_19_0::metamodel::valueSpecification::application::AppliedFunction
                                                                                   (
                                                                                       _type = 'func',
-                                                                                     function = $fe.func->elementToPath()->toOne(),
+                                                                                     function = $fe.func.functionName->toOne(),
                                                                                      parameters = $fe.parametersValues->evaluateAndDeactivate()->map(pm|$pm->meta::protocols::pure::v1_19_0::transformation::fromPureGraph::valueSpecification::transformValueSpecification($inScope, $open,false,$useAppliedFunction, $extensions))
                                                                                   )
                                                                             ,|if ($fe.func->instanceOf(FunctionDefinition) && (!$package->isWithinPackage(meta) || $package->meta::alloy::isMetaAlloyTestDependency()),

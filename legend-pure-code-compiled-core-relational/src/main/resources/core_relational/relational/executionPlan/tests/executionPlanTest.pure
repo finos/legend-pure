@@ -1463,3 +1463,63 @@ function <<test.Test>> meta::pure::executionPlan::tests::classPathsInfluencedByP
    assertEquals('_pure.plan.root.n1.n1', $withoutPlanIdPackage);
    assertEquals('_pure.plan_abc.plan.root.n1.n1', $withPlanIdPackage);
 }
+
+function <<test.Test>> meta::pure::executionPlan::tests::testQuoteIdentifiersFlag():Boolean[1]
+{
+   let runtime = ^Runtime(connections = ^TestDatabaseConnection(element = meta::relational::tests::db,
+                                                                type = DatabaseType.H2,
+                                                                quoteIdentifiers = true
+                                                             ));
+   let result = executionPlan({|Product.all()->filter(p|$p.name == 'bla')}, simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('Relational\n'+
+                '(\n'+
+                '  type = Class[impls=(meta::relational::tests::model::simple::Product | simpleRelationalMapping.meta_relational_tests_model_simple_Product)]\n'+
+                '  resultSizeRange = *\n'+
+                '  resultColumns = [("pk_0", INT), ("name", VARCHAR(200))]\n'+
+                '  sql = select "root"."ID" as "pk_0", "root"."NAME" as "name" from "productSchema"."productTable" as "root" where "root"."NAME" = \'bla\'\n'+
+                '  connection = TestDatabaseConnection(type = "H2")\n'+
+                ')\n', $result->planToString(meta::pure::router::extension::defaultRelationalExtensions()));
+}
+
+function <<test.Test>> meta::pure::executionPlan::tests::testQuoteIdentifiersFlagInOrderByClause():Boolean[1]
+{
+   let runtime = ^Runtime(connections = ^TestDatabaseConnection(element = meta::relational::tests::db,
+                                                                type = DatabaseType.H2,
+                                                                quoteIdentifiers = true
+                                                             ));
+   let result = executionPlan({|Product.all()->project(p|$p.name, 'name')->sort('name')}, simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('Relational\n'+
+                '(\n'+
+                '  type = TDS[(name, String, VARCHAR(200), "")]\n'+
+                '  resultColumns = [("name", VARCHAR(200))]\n'+
+                '  sql = select "root"."NAME" as "name" from "productSchema"."productTable" as "root" order by "name"\n'+
+                '  connection = TestDatabaseConnection(type = "H2")\n'+
+                ')\n', $result->planToString(meta::pure::router::extension::defaultRelationalExtensions()));
+}
+
+function <<test.Test>> meta::pure::executionPlan::tests::testQuoteIdentifiersFlagInGroupBy():Boolean[1]
+{
+   let runtime = ^Runtime(connections = ^TestDatabaseConnection(element = meta::relational::tests::db,
+                                                                type = DatabaseType.H2,
+                                                                quoteIdentifiers = true
+                                                             ));
+   let result = executionPlan({|Product.all()->project([#/Product/name!prodName#])->groupBy('prodName', agg('cnt', x|$x, y| $y->count()))}, simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('Relational\n'+
+                '(\n'+
+                '  type = TDS[(prodName, String, VARCHAR(200), ""), (cnt, Integer, INT, "")]\n'+
+                '  resultColumns = [("prodName", VARCHAR(200)), ("cnt", "")]\n'+
+                '  sql = select "root"."NAME" as "prodName", count(*) as "cnt" from "productSchema"."productTable" as "root" group by "prodName"\n'+
+                '  connection = TestDatabaseConnection(type = "H2")\n'+
+                ')\n', $result->planToString(meta::pure::router::extension::defaultRelationalExtensions()));
+}
+
+function <<test.Test>> meta::pure::executionPlan::tests::testQuoteIdentifiersFlagWithGraphFetch():Boolean[1]
+{
+   let runtime = ^Runtime(connections = ^TestDatabaseConnection(element = meta::relational::tests::db,
+                                                                type = DatabaseType.H2,
+                                                                quoteIdentifiers = true
+                                                             ));
+   let graph = #{Product{name}}#;
+   let result = executionPlan({|Product.all()->graphFetch($graph)->serialize($graph)}, simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('PureExp(type=Stringexpression=[NodeIndex:0]->serialize(meta::relational::tests::model::simple::Product{name})(GlobalGraphFetch(type=PartialClass[impls=[(meta::relational::tests::model::simple::Product|simpleRelationalMapping.meta_relational_tests_model_simple_Product)],propertiesWithParameters=[name]]resultSizeRange=*store=meta::relational::tests::dblocalGraphFetchExecutionNode=RelationalGraphFetch(type=PartialClass[impls=[(meta::relational::tests::model::simple::Product|simpleRelationalMapping.meta_relational_tests_model_simple_Product)],propertiesWithParameters=[name]]nodeIndex=0relationalNode=SQL(type=meta::pure::metamodel::type::AnyresultColumns=[("pk_0",INT),("name",VARCHAR(200))]sql=select"root"."ID"as"pk_0","root"."NAME"as"name"from"productSchema"."productTable"as"root"connection=TestDatabaseConnection(type="H2"))children=[])children=[])))', $result->planToStringWithoutFormatting(meta::pure::router::extension::defaultRelationalExtensions()));
+}

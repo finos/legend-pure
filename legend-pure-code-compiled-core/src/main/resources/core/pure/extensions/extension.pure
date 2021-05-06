@@ -96,6 +96,8 @@ Class meta::pure::router::extension::RouterExtension
    java_graphFetch_inMemory_generatePropertyMapping1 : Function<{Nil[1]->FunctionDefinition<Any>[1]}>[*];
    java_graphFetch_inMemory_generatePropertyMapping2 : Function<{Nil[1]->ValueTransformer<Any>[1]}>[*];
    
+   java_parseObjectReference_getParseObjectReferenceImplClass : Function<{String[1], Any[*], String[1], GenerationContext[1], DebugContext[1]->meta::java::metamodel::Class[0..1]}>[0..1];
+   
    plan_javaRuntime_main_prepare1 : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GenerationContext[1]}>[*]}>[0..1];
    plan_javaRuntime_main_prepare2 : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GenerationContext[1]}>[*]}>[0..1];
    plan_javaRuntime_main_generatePlatformCode1 : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GeneratedCode[1]}>[*]}>[0..1];
@@ -109,7 +111,7 @@ Class meta::pure::router::extension::RouterExtension
    plan_javaRuntime_mappingAdaptor_generatePropertyMapping2 : Function<{Nil[1]->ValueTransformer<Any>[1]}>[*];
    
    plan_javaRuntime_enginePlatformDependencies_conventions : Function<{Conventions[1]->Conventions[1]}>[0..1];
-  
+     
    mapping_sourceClass : Function<{Nil[1] -> Class<Any>[1]}>[*];
    mapping_extractRelationalPropertyMappingFromEmbedded : Function<{AbstractProperty<Any>[1], SetImplementation[*], Mapping[1] -> String[*]}>[0..1];
 

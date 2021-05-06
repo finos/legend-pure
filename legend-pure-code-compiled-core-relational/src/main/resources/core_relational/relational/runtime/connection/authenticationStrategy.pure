@@ -21,6 +21,13 @@ Class meta::pure::alloy::connections::alloy::authentication::DelegatedKerberosAu
    serverPrincipal: String[0..1];
 }
 
+Class meta::pure::alloy::connections::alloy::authentication::SnowflakePublicAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
+{
+    privateKeyVaultReference:String[1];
+    passPhraseVaultReference:String[1];
+    publicUserName:String[1];
+}
+
 Class meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
 {
 }

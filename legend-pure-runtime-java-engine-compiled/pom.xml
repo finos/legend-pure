@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.18.5-SNAPSHOT</version>
+        <version>1.20.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>    </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -87,14 +87,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-Xmx4g -Xms4g -XX:MaxPermSize=1024m</argLine>
-                    <useManifestOnlyJar>false</useManifestOnlyJar>
-                    <workingDirectory>${project.parent.basedir}</workingDirectory>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
