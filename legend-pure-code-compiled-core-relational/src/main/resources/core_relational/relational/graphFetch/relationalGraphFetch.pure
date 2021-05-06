@@ -468,7 +468,8 @@ function meta::relational::graphFetch::executionPlan::generateNonPrimitiveProper
       rebuildSelectWithCursor('pk_'+$targetPrimaryKeys->indexOf($pk)->toString(), [], $newQuery, true);
    });
 
-   let newQueryMerged = $targetPks->concatenate($properties)->concatenate($res->cast(@SelectWithCursor))->map(c|$c.select)->cast(@SelectSQLQuery)->mergeSQLQueryData('_gftmp', $pureToSqlState, $debug, $extensions);
+   let pksAndProperties = $targetPks->concatenate($properties).select->mergeSQLQueryData('_gftmp', ^$pureToSqlState(shouldIsolate=true), $debug, $extensions);
+   let newQueryMerged = $pksAndProperties->concatenate($res->cast(@SelectWithCursor).select)->mergeSQLQueryData('_gftmp', $pureToSqlState, $debug, $extensions);
    let newQueryMergedWithMilestoneFilters = if($res.milestoningContext->isNotEmpty(), 
                                                | let milestoningStrategy = $res.milestoningContext.currentMilestoningStrategy->toOne();
                                                  let tableFilter = $milestoningStrategy->getAllMilestonedTableFilter($newQueryMerged, $res.milestoningContext->toOne(), $pureToSqlState.inScopeVars, $extensions);
@@ -502,7 +503,8 @@ function <<access.private>> meta::relational::graphFetch::executionPlan::generat
    let joinOpProcessed = processFunctionExpression($xStorePropertyMapping.crossExpression.expressionSequence->evaluateAndDeactivate()->toOne()->cast(@FunctionExpression), [], $base, ^Map<VariableExpression, ValueSpecification>(), ^$pureToSqlState(inScopeVars = $pureToSqlState.inScopeVars->put('this', list(^PlanVarPlaceHolder(name = 'cross_src$', type = $propTree->typeFromGraphFetchTree(), multiplicity = PureOne)))),  JoinType.LEFT_OUTER, '_gftce', ^List<ColumnGroup>(), $debug, $extensions).element->cast(@SelectWithCursor)->toOne();
    let joinOpQuery     = rebuildSelectWithCursor('cross_join_op$', [], $joinOpProcessed, true);
 
-   let mergedQuery  = $joinOpQuery->concatenate($targetWithFilter)->concatenate($pkQuries)->concatenate($propertyQueries)->map(c|$c.select)->cast(@SelectSQLQuery)->mergeSQLQueryData('_gftcm', $pureToSqlState, $debug, $extensions);
+   let pksAndProperties = $pkQuries->concatenate($propertyQueries).select->mergeSQLQueryData('_gftcm', ^$pureToSqlState(shouldIsolate=true), $debug, $extensions);
+   let mergedQuery  = $joinOpQuery->concatenate($targetWithFilter).select->concatenate($pksAndProperties)->mergeSQLQueryData('_gftcm', $pureToSqlState, $debug, $extensions);
    let mergedSelect = ^$mergedQuery(distinct = true)->pushFilters($extensions);
 
    let tempSelectSQL = ^SelectSQLQuery(data = ^RootJoinTreeNode(alias = ^TableAlias(name = 'root', relationalElement = ^VarSetPlaceHolder(varName = crossTempTableName($parentIndex)))));

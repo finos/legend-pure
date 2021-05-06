@@ -347,3 +347,67 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::rel
       $result
    );
 }
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::milestoning::testInnerJoinIsolationAtRoot(): Boolean[1]
+{
+   let query = {|
+      let bd = %2015-10-16;
+
+      Product.all($bd)->graphFetch(#{
+         Product {
+            id,
+            cancelProductActivityCreatedBy
+         }
+      }#)
+      ->serialize(#{
+         Product {
+            id,
+            cancelProductActivityCreatedBy
+         }
+      }#);
+   };
+   let mapping = meta::relational::tests::milestoning::propagationMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"cancelProductActivityCreatedBy":null,"id":2},{"cancelProductActivityCreatedBy":null,"id":3}]',
+      $result
+   );
+}
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::milestoning::testInnerJoinIsolationAtChild(): Boolean[1]
+{
+   let query = {|
+      let bd = %2015-10-16;
+
+      Order.all()->graphFetch(#{
+         Order {
+            id,
+            'product': product($bd) {
+               id,
+               cancelProductActivityCreatedBy
+            }
+         }
+      }#)
+      ->serialize(#{
+         Order {
+            id,
+            'product': product($bd) {
+               id,
+               cancelProductActivityCreatedBy
+            }
+         }
+      }#);
+   };
+   let mapping = meta::relational::tests::milestoning::propagationMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"product":[],"id":1},{"product":[{"cancelProductActivityCreatedBy":null,"id":2}],"id":2}]',
+      $result
+   );
+}

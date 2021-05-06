@@ -116,7 +116,7 @@ Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::Produc
    newActivity : NewActivityInfo[0..1];
    cancelActivity : NewActivityInfo[0..1];
    cancelProductActivity : NewProductActivityInfo[0..1];
-   cancelProductActivityCreatedBy : String[1];
+   cancelProductActivityCreatedBy : String[0..1];
    stockProductName : String[0..1];
    classificationType : ProductClassificationType[0..1];
    isBrexitClassificationTypeExchange : Boolean[0..1];

@@ -3102,7 +3102,13 @@ function meta::relational::functions::pureToSqlQuery::processRelationalMappingSp
 
    let filterQuery = if ($innerJoinFilterExists, | $groupByQuery, | $groupByQuery->applyTypeFilter($viewSpecification, $nodeId, $state, $context, $extensions));
 
-   let merged = $pks->concatenate($properties)->concatenate($filterQuery)->map(c|$c.select)->cast(@SelectSQLQuery)->mergeSQLQueryData($nodeId, $state, $context, $extensions);
+   // TODO: Ideally, should try to isolate pk & property queries in all cases. Restrict to graphFetch flow for now
+   let pksAndProperties = if ($state.graphFetchFlow == true,
+                              | $pks->concatenate($properties).select->mergeSQLQueryData($nodeId, ^$state(shouldIsolate=true), $context, $extensions),
+                              | $pks->concatenate($properties).select
+                          );
+
+   let merged = $pksAndProperties->concatenate($filterQuery.select)->mergeSQLQueryData($nodeId, $state, $context, $extensions);
    let fks = if ($viewSpecification->getDistinct() == true && !$viewSpecification->instanceOf(View),
                      | collectAdditionalJoinColumnsForSource($viewSpecification, $state.mapping,  $merged.data->toOne(), $merged.columns->cast(@Alias)),
                      | if ($state.importDataFlowAddFks == true,
