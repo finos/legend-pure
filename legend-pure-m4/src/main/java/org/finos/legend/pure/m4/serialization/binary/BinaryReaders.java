@@ -19,11 +19,17 @@ import org.finos.legend.pure.m4.serialization.Reader;
 
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 
 public class BinaryReaders
 {
     private BinaryReaders()
     {
+    }
+
+    public static Reader newBinaryReader(ReadableByteChannel byteChannel)
+    {
+        return new ReadableByteChannelReader(byteChannel);
     }
 
     public static Reader newBinaryReader(InputStream stream)
