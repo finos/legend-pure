@@ -37,14 +37,16 @@ public class DistributedBinaryGraphDeserializer
 {
     private static SourceCoordinateMapProvider sourceCoordinateMapProvider = (instanceCount, classifier) -> Maps.mutable.withInitialCapacity(instanceCount);
 
+    private final String metadataName;
     private final FileReader fileReader;
     private final LazyStringIndex stringIndex;
     private final ImmutableMap<String, ClassifierIndex> classifierIndexes;
 
-    private DistributedBinaryGraphDeserializer(FileReader fileReader)
+    private DistributedBinaryGraphDeserializer(String metadataName, FileReader fileReader)
     {
+        this.metadataName = metadataName;
         this.fileReader = fileReader;
-        this.stringIndex = LazyStringIndex.fromFileReader(fileReader);
+        this.stringIndex = LazyStringIndex.fromFileReader(this.metadataName, fileReader);
         RichIterable<String> classifierIds = this.stringIndex.getClassifierIds();
         this.classifierIndexes = classifierIds.toMap(id -> id, ClassifierIndex::new, Maps.mutable.withInitialCapacity(classifierIds.size())).toImmutable();
     }
@@ -133,7 +135,7 @@ public class DistributedBinaryGraphDeserializer
 
     private MapIterable<String, SourceCoordinates> readInstanceIndex(String classifier)
     {
-        String indexFilePath = DistributedBinaryGraphSerializer.getMetadataIndexFilePath(classifier);
+        String indexFilePath = DistributedMetadataFiles.getMetadataClassifierIndexFilePath(this.metadataName, classifier);
         try (Reader reader = this.fileReader.getReader(indexFilePath))
         {
             int instanceCount = reader.readInt();
@@ -141,7 +143,7 @@ public class DistributedBinaryGraphDeserializer
 
             int instancePartition = reader.readInt();
             int offset = reader.readInt();
-            String filePath = DistributedBinaryGraphSerializer.getMetadataBinFilePath(Integer.toString(instancePartition));
+            String filePath = DistributedMetadataFiles.getMetadataPartitionBinFilePath(this.metadataName, instancePartition);
 
             int instancesRead = 0;
             while (instancesRead < instanceCount)
@@ -157,7 +159,7 @@ public class DistributedBinaryGraphDeserializer
                 instancesRead += partitionInstanceCount;
                 instancePartition++;
                 offset = 0;
-                filePath = DistributedBinaryGraphSerializer.getMetadataBinFilePath(Integer.toString(instancePartition));
+                filePath = DistributedMetadataFiles.getMetadataPartitionBinFilePath(this.metadataName, instancePartition);
             }
 
             return index;
@@ -171,32 +173,62 @@ public class DistributedBinaryGraphDeserializer
 
     public static DistributedBinaryGraphDeserializer fromClassLoader(ClassLoader classLoader)
     {
-        return fromFileReader(FileReaders.fromClassLoader(classLoader));
+        return fromClassLoader(null, classLoader);
+    }
+
+    public static DistributedBinaryGraphDeserializer fromClassLoader(String metadataName, ClassLoader classLoader)
+    {
+        return fromFileReader(metadataName, FileReaders.fromClassLoader(classLoader));
     }
 
     public static DistributedBinaryGraphDeserializer fromDirectory(Path directory)
     {
-        return fromFileReader(FileReaders.fromDirectory(directory));
+        return fromDirectory(null, directory);
+    }
+
+    public static DistributedBinaryGraphDeserializer fromDirectory(String metadataName, Path directory)
+    {
+        return fromFileReader(metadataName, FileReaders.fromDirectory(directory));
     }
 
     public static DistributedBinaryGraphDeserializer fromInMemoryByteArrays(Map<String, byte[]> fileBytes)
     {
-        return fromFileReader(FileReaders.fromInMemoryByteArrays(fileBytes));
+        return fromInMemoryByteArrays(null, fileBytes);
+    }
+
+    public static DistributedBinaryGraphDeserializer fromInMemoryByteArrays(String metadataName, Map<String, byte[]> fileBytes)
+    {
+        return fromFileReader(metadataName, FileReaders.fromInMemoryByteArrays(fileBytes));
     }
 
     public static DistributedBinaryGraphDeserializer fromInMemoryByteLists(Map<String, ? extends ByteList> fileBytes)
     {
-        return fromFileReader(FileReaders.fromInMemoryByteLists(fileBytes));
+        return fromInMemoryByteLists(null, fileBytes);
+    }
+
+    public static DistributedBinaryGraphDeserializer fromInMemoryByteLists(String metadataName, Map<String, ? extends ByteList> fileBytes)
+    {
+        return fromFileReader(metadataName, FileReaders.fromInMemoryByteLists(fileBytes));
     }
 
     public static DistributedBinaryGraphDeserializer fromZip(ZipFile zipFile)
     {
-        return fromFileReader(FileReaders.fromZipFile(zipFile));
+        return fromZip(null, zipFile);
+    }
+
+    public static DistributedBinaryGraphDeserializer fromZip(String metadataName, ZipFile zipFile)
+    {
+        return fromFileReader(metadataName, FileReaders.fromZipFile(zipFile));
     }
 
     public static DistributedBinaryGraphDeserializer fromFileReader(FileReader fileReader)
     {
-        return new DistributedBinaryGraphDeserializer(fileReader);
+        return fromFileReader(null, fileReader);
+    }
+
+    public static DistributedBinaryGraphDeserializer fromFileReader(String metadataName, FileReader fileReader)
+    {
+        return new DistributedBinaryGraphDeserializer(metadataName, fileReader);
     }
 
     private class ClassifierIndex

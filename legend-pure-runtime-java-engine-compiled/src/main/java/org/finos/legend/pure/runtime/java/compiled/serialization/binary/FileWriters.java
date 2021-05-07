@@ -52,7 +52,7 @@ public class FileWriters
         return new MapFileWriter<>(fileBytes, baos -> ByteLists.mutable.with(baos.toByteArray()));
     }
 
-    public static FileWriter newJarOutputStream(JarOutputStream stream)
+    public static FileWriter fromJarOutputStream(JarOutputStream stream)
     {
         return new JarEntryFileWriter(stream);
     }

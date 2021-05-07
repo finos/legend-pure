@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.zip.ZipEntry;
@@ -102,7 +103,7 @@ public class FileReaders
             Path fullPath = this.root.resolve(path);
             try
             {
-                return BinaryReaders.newBinaryReader(new BufferedInputStream(Files.newInputStream(fullPath)));
+                return BinaryReaders.newBinaryReader(Files.newByteChannel(fullPath, Collections.emptySet()));
             }
             catch (IOException e)
             {
