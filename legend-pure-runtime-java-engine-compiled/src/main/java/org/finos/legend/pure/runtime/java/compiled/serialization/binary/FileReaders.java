@@ -15,15 +15,20 @@
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.eclipse.collections.api.list.primitive.ByteList;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
@@ -70,6 +75,7 @@ public class FileReaders
     private static class ClassLoaderFileReader implements FileReader
     {
         private final ClassLoader classLoader;
+        private final ConcurrentMutableMap<String, URL> urlCache = ConcurrentHashMap.newMap();
 
         private ClassLoaderFileReader(ClassLoader classLoader)
         {
@@ -79,12 +85,55 @@ public class FileReaders
         @Override
         public Reader getReader(String path)
         {
-            InputStream stream = this.classLoader.getResourceAsStream(path);
-            if (stream == null)
+            URL url = findResourceURL(path);
+
+            // Optimized handling for files
+            if ("file".equalsIgnoreCase(url.getProtocol()))
             {
-                throw new RuntimeException("Cannot find file '" + path + "' in the class path");
+                try
+                {
+                    Path filePath = Paths.get(url.toURI());
+                    SeekableByteChannel byteChannel = Files.newByteChannel(filePath, Collections.emptySet());
+                    return BinaryReaders.newBinaryReader(byteChannel);
+                }
+                catch (Exception ignore)
+                {
+                    // ignore failure here and fall back to the general case
+                }
+            }
+
+            // Fall back to general case
+            InputStream stream;
+            try
+            {
+                stream = url.openStream();
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("Error accessing resource file '" + path + "'", e);
             }
             return BinaryReaders.newBinaryReader(stream);
+        }
+
+        private URL findResourceURL(String path)
+        {
+            // Check the cache
+            URL url = this.urlCache.get(path);
+            if (url != null)
+            {
+                // Return if found
+                return url;
+            }
+
+            // Look up in ClassLoader
+            url = this.classLoader.getResource(path);
+            if (url != null)
+            {
+                // Cache and return if found
+                return this.urlCache.getIfAbsentPut(path, url);
+            }
+
+            throw new RuntimeException("Cannot find resource file '" + path + "'");
         }
     }
 
