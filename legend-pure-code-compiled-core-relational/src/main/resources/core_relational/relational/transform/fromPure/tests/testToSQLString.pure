@@ -178,6 +178,17 @@ function <<test.Test>> meta::relational::tests::functions::sqlstring::testToSQLS
    assertEquals('select "root".ID as "id", "root".settlementDateTime as "settlementDateTime" from tradeTable as "root" where ("root".settlementDateTime is not null and "root".settlementDateTime > date(current date) - 14 DAYS)', $s3);
    
 }
+
+function <<test.Test>> meta::relational::tests::functions::sqlstring::testToSQLStringWithAdjust():Boolean[1]
+{
+   let s1 = toSQLString(|Trade.all()->filter(t|$t.settlementDateTime > today()->adjust(10000000, DurationUnit.MICROSECONDS))->project([t| $t.id, t| $t.settlementDateTime] ,['id', 'settlementDateTime']), 
+         meta::relational::tests::simpleRelationalMapping, 
+         meta::relational::runtime::DatabaseType.MemSQL, meta::pure::router::extension::defaultRelationalExtensions());
+   
+   assertEquals('select `root`.ID as `id`, `root`.settlementDateTime as `settlementDateTime` from tradeTable as `root` where (`root`.settlementDateTime is not null and `root`.settlementDateTime > adddate(curdate(), INTERVAL 10000000 MICROSECOND))', $s1);
+ 
+}
+
 function <<test.Test>> meta::relational::tests::functions::sqlstring::testToSQLStringWithAbs():Boolean[1]
 {
    let s = toSQLString(|Trade.all()->project([t| abs($t.quantity), a| abs(-2)] ,['absoluteQuantity', 'positiveTwo']), meta::relational::tests::simpleRelationalMapping, meta::relational::runtime::DatabaseType.H2, meta::pure::router::extension::defaultRelationalExtensions());
