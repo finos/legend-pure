@@ -195,6 +195,26 @@ Class meta::json::schema::tests::PrimitiveTypeDomain
 
 }
 
+Class
+
+meta::json::schema::tests::ClassWithUnspportedConstraint
+[
+  c: $this.p1-> unsupportedFunction() || not($this.p1 + $this.p2 < 10) ,
+  c2: $this.p2-> unsupportedFunction() 
+
+]
+{
+   p1:Integer[1];
+   p2:Integer[1];
+
+}
+
+function meta::json::schema::tests::unsupportedFunction(value:Integer[1]):Boolean[1]
+{
+   ($value/10)==2;
+}
+
+
 function <<access.private>>  meta::json::schema::tests::matchString():String[1]
 {
  'abcd';
@@ -1692,4 +1712,55 @@ function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchem
    
   assertEquals($expectedSubTypeAnimal,$actualsubTypeAnimal);
   assertEquals($expectedAnimal,$actualAnimal);
+}
+
+
+ function <<test.Test>> meta::json::schema::generation::tests::testUnsupportedConstraint():Boolean[1]
+{
+
+
+     let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::ClassWithUnspportedConstraint,meta::json::schema::tests::unsupportedFunction_Integer_1__Boolean_1_],
+                                                         useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true ));
+
+
+   let expectedClassSchema= '{' +
+                              '  "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+                              '  "title": "meta::json::schema::tests::ClassWithUnspportedConstraint",' +
+                              '  "type": "object",' +
+                              '  "properties":   {' +
+                              '    "p1":     {' +
+                              '      "anyOf": [' +
+                              '        {' +
+                              '          "$ref": "unsupportedFunction.json"' +
+                              '        }' +
+                              '      ]' +
+                              '    },' +
+                              '    "p2":     {' +
+                              '      "$ref": "unsupportedFunction.json"' +
+                              '    }' +
+                              '  },' +
+                              '  "required": [' +
+                              '"p1",' +
+                              '"p2"' +
+                              '  ]' +
+                              '}';
+
+    let expectedfn = '{' +
+                     '  "title": "meta::json::schema::tests::unsupportedFunction",' +
+                     '  "$schema": "http:\/\/json-schema.org\/draft-07\/schema#"' +
+                     '}';
+
+
+   let class = $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/ClassWithUnspportedConstraint.json');
+   let fn = $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/unsupportedFunction.json');
+
+   assertSameElements($class.message.message,['Property meta::json::schema::tests::ClassWithUnspportedConstraint.p1 references an unsupported schema and likely did not generate correctly',
+                                               'Property meta::json::schema::tests::ClassWithUnspportedConstraint.p2 references an unsupported schema and likely did not generate correctly']);
+   
+   assertSameElements($fn.message.message,['Unsupported function found : $value / 10 at meta::json::schema::tests::unsupportedFunction_Integer_1__Boolean_1_']);
+   
+   
+  assertEquals($expectedClassSchema->meta::json::parseJSON()->toCompactJSONString(),$class.content->toOne()->meta::json::parseJSON()->toCompactJSONString());
+  assertEquals($expectedfn->meta::json::parseJSON()->toCompactJSONString(),$fn.content->toOne()->meta::json::parseJSON()->toCompactJSONString());
+
 }
