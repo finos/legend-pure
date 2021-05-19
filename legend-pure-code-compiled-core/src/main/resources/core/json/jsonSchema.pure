@@ -676,21 +676,27 @@ function meta::json::schema::allGeneralizations( class:Class<Any>[1] ) : Class<A
 
 function meta::json::schema::allReferencedElements( class:Class<Any>[1] ) : PackageableElement[*]
 {
-   $class->allReferencedElements([],[],true)
+   $class->allReferencedElements([],defaultInternalConfig(),true)
          ->filter( element |   $element != $class )
 }
 
-function <<access.private>> meta::json::schema::allReferencedElements( element:PackageableElement[1],bag:PackageableElement[*],config:JSONSchemaConfigInternal[0..1],includeSubTypes:Boolean[1] )  : PackageableElement[*]
+function   <<access.private>> meta::json::schema::allReferencedElements( class:Class<Any>[1],config:JSONSchemaConfigInternal[1] ) : PackageableElement[*]
+{
+   $class->allReferencedElements([],$config,true)
+         ->filter( element |   $element != $class )
+}
+
+function <<access.private>> meta::json::schema::allReferencedElements( element:PackageableElement[1],bag:PackageableElement[*],config:JSONSchemaConfigInternal[1],includeSubTypes:Boolean[1] )  : PackageableElement[*]
 {
 
    $element->match([class:Class<Any>[1]|
                      if(meta::pure::functions::collection::contains($bag,$class) || $class->instanceOf(MappingClass),
                         | [],
                         |
-                           let generalizations                  = $class->allGeneralizations();
-                           let specializations                  = if($includeSubTypes,|$class.specializations->map( spec | $spec.specific)->filter( oclass | !$oclass->instanceOf(MappingClass) )->cast(@Class<Any>),|[]);
+                           let generalizations                  = $class->allGeneralizations(); 
+                           let specializations                  = if($includeSubTypes,|$class.specializations->map( spec | $spec.specific)->filter( oclass | !$oclass->instanceOf(MappingClass) )->cast(@Class<Any>),|[]); 
                            let specializationPropertyElements   = $specializations->map( oclass | $oclass->allReferencedElements( $bag->concatenate($class)->concatenate( $generalizations),$config,$includeSubTypes ) );
-                           let constraints = $class.constraints->map(c |$c.functionDefinition.expressionSequence->evaluateAndDeactivate()->at(0)->meta::json::schema::allFunctionElements([],$config))->removeDuplicates();
+                           let constraints = if($config.useConstraints,|$class.constraints->map(c |$c.functionDefinition.expressionSequence->evaluateAndDeactivate()->at(0)->meta::json::schema::allFunctionElements([],$config))->removeDuplicates(),|[]);
                            let allReferencedElements =
                             meta::pure::functions::collection::removeDuplicates(
                                $generalizations->concatenate($specializations)
@@ -994,7 +1000,7 @@ function meta::json::schema::definitions( class:Class<Any>[1], root:Class<Any>[0
 function  <<access.private>> meta::json::schema::definitions( class:Class<Any>[1], root:Class<Any>[0..1], config:JSONSchemaConfigInternal[1] ) : JSONKeyValue[0..1]
 {
    let updatedConfig = ^$config(rootLevel=false);
-   let values = $class->allReferencedElements()->sortBy(e|$e->elementToPath())->map( p | newJSONKeyValue( $p->elementToPath(), $p->match([t:Type[1]|$t->toJSONSchema($root,$updatedConfig).schema,
+   let values = $class->allReferencedElements($config)->sortBy(e|$e->elementToPath())->map( p | newJSONKeyValue( $p->elementToPath(), $p->match([t:Type[1]|$t->toJSONSchema($root,$updatedConfig).schema,
                                                                                                                                            f:FunctionDefinition<Any>[1] | $f->toJSONSchemaFromFunctionDefinition($updatedConfig).constraint->toOne()]))) ;
 
   if( $values->isEmpty(),

@@ -1764,3 +1764,30 @@ function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchem
   assertEquals($expectedfn->meta::json::parseJSON()->toCompactJSONString(),$fn.content->toOne()->meta::json::parseJSON()->toCompactJSONString());
 
 }
+
+
+function <<test.Test>> meta::json::schema::generation::tests::testExcludeConstraintsFromDefinitions():Boolean[1]
+{
+
+ let actualSchema =   toJSONSchema('meta::json::schema::tests::ClassWithUnspportedConstraint');
+ let expectedSchema = '{' +
+                        '  "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+                        '  "title": "meta::json::schema::tests::ClassWithUnspportedConstraint",' +
+                        '  "type": "object",' +
+                        '  "properties":   {' +
+                        '    "p1":     {' +
+                        '      "type": "integer"' +
+                        '    },' +
+                        '    "p2":     {' +
+                        '      "type": "integer"' +
+                        '    }' +
+                        '  },' +
+                        '  "required": [' +
+                        '"p1",' +
+                        '"p2"' +
+                        '  ]' +
+                        '}';
+  assertEquals($expectedSchema->meta::json::parseJSON()->toCompactJSONString(),$actualSchema->meta::json::parseJSON()->toCompactJSONString());
+
+}
+
