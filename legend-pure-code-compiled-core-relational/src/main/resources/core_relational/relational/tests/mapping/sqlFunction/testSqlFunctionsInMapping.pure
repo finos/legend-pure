@@ -697,6 +697,16 @@ function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteg
 
 }
 
+function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteger::testToSQLStringConvertVarchar128InSnowflake():Boolean[1]
+{
+
+   let s = toSQLString(|SqlFunctionDemo.all()->project([s | $s.convertVarchar128], ['convertVarchar128']),
+                                                testMapping,
+                                                meta::relational::runtime::DatabaseType.Snowflake, meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('select to_char("root".int1) as "convertVarchar128" from dataTable as "root"', $s);
+
+}
+
 function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteger::testToSQLStringConvertVarchar128InPrestoSQL():Boolean[1]
 {
    let s = toSQLString(|SqlFunctionDemo.all()->project([s | $s.convertVarchar128], ['convertVarchar128']),
