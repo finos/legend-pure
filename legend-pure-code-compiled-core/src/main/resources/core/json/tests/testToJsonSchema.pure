@@ -1766,7 +1766,7 @@ function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchem
 }
 
 
-function <<test.Test>> meta::json::schema::generation::tests::testExcludeConstraintsFromDefinitions():Boolean[1]
+function <<test.Test, test.ExcludeAlloy>> meta::json::schema::generation::tests::testExcludeConstraintsFromDefinitions():Boolean[1]
 {
 
  let actualSchema =   toJSONSchema('meta::json::schema::tests::ClassWithUnspportedConstraint');
