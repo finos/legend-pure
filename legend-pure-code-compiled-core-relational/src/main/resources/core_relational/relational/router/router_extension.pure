@@ -275,11 +275,16 @@ function <<access.private>> meta::pure::router::extension::relationalExtension(t
                               ^$r(
                                  datasourceSpecification = $r.datasourceSpecification->match([
                                     l:meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification[1] |
-                                       ^$l(testDataSetupSqls = if ($l.testDataSetupCsv->isEmpty() || !$r.element->instanceOf(meta::relational::metamodel::Database),
-                                                 | [];,
-                                                 | if ($l.testDataSetupSqls->isEmpty(),
-                                                       | $l.testDataSetupCsv->toOne()->meta::alloy::service::execution::setUpDataSQLs($r.element->cast(@meta::relational::metamodel::Database)),
-                                                       | $l.testDataSetupSqls))),
+                                       ^$l
+                                       (
+                                            testDataSetupSqls =
+                                                $l.testDataSetupSqls->concatenate(
+                                                    if ($l.testDataSetupCsv->isEmpty() || !$r.element->instanceOf(meta::relational::metamodel::Database),
+                                                        | [];,
+                                                        | $l.testDataSetupCsv->toOne()->meta::alloy::service::execution::setUpDataSQLs($r.element->cast(@meta::relational::metamodel::Database))
+                                                    )
+                                                 )
+                                       ),
                                     d:meta::pure::alloy::connections::alloy::specification::DatasourceSpecification[1] | $d
                                  ])
                               )
