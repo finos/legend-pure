@@ -1,0 +1,102 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::alloy::runtime::java::*;
+import meta::external::shared::*;
+import meta::external::shared::executionPlan::*;
+import meta::external::shared::functions::*;
+import meta::external::shared::runtime::*;
+import meta::pure::executionPlan::*;
+import meta::pure::graphFetch::*;
+import meta::pure::mapping::*;
+import meta::pure::router::extension::*;
+import meta::pure::runtime::*;
+
+function meta::external::shared::routerExtensions(type:String[1], externalFormatExtensions:ExternalFormatExtension[*]) : RouterExtension[*]
+{
+   let shared = ^RouterExtension(
+      type = $type,
+      serializerExtension      = meta::external::shared::serializerExtensionName_String_1__String_1_,
+      routing_extraShouldStop  = serializeFunctions(),
+      routing_extraIsSerialize = isSerialize_FunctionExpression_1__Boolean_1_,
+      executionPlan_generation_isConnectionForClass = 
+         {class:Class<Any>[1] |
+            {u:UrlConnection[1] | $u.class == $class}
+         },
+      executionPlan_generation_nodeFromConnection = 
+         {tree:RootGraphFetchTree<Any>[0..1], enableConstraints:Boolean[1], checked:Boolean[1] |
+            {u:UrlConnection[1] | 
+               let formatExtension = $externalFormatExtensions->getExtension($u.contentType);
+               let deserializeNode = $formatExtension.generateDeserializeNode->eval($u, $tree);
+               generateDataQualityNode($deserializeNode, $enableConstraints, $checked);
+            }
+         },
+      executionPlan_generation_nodeFromFunctionExpression =
+         {fe:FunctionExpression[1], children:ExecutionNode[*] |
+            if($fe->isSerialize(),
+               {|
+                  let contentTypeArg  = $fe.parametersValues->at(2);
+                  assert($contentTypeArg->instanceOf(InstanceValue), 'Only literal contentType is supported');
+                  let contentType     = $contentTypeArg->cast(@InstanceValue).values->cast(@String)->toOne();
+                  let formatExtension = $externalFormatExtensions->getExtension($contentType);
+                  $formatExtension.generateSerializeNode->eval($fe, $children);
+               },
+               | []
+            );
+         },
+      executionPlan_print_planNodeToString =
+         {space:String[1], extensions:RouterExtension[*] |
+            printPlanNodeToString($space, $extensions)
+               ->concatenate($externalFormatExtensions.printPlanNodeToString->map(x|$x->eval($space, $extensions)));
+         },
+      plan_javaRuntime_main_prepare2 = 
+         {path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] |
+            planPrepareDataQuality($path, $context, $extensions, $debug)
+               ->concatenate($externalFormatExtensions.planJavaPrepare->map(x|$x->eval($path, $context, $extensions, $debug)));
+         },
+      plan_javaRuntime_main_generatePlatformCode1 = 
+         {path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] |
+            $externalFormatExtensions.planJavaGenerate->map(x|$x->eval($path, $context, $extensions, $debug));
+         }
+   );
+
+   let perFormat = $externalFormatExtensions->map(formatExt| ^RouterExtension(type=$type+':'+$formatExt.contentType, serializerExtension=$formatExt.serializerExtension));
+
+   $shared->concatenate($perFormat);
+}
+
+function <<access.private>> meta::external::shared::serializerExtensionName(version:String[1]): String[1]
+{
+   'meta::protocols::pure::' + $version + '::external::shared::serializerExtension_String_1__SerializerExtension_1_'
+}
+
+function <<access.private>> meta::external::shared::getExtension(externalFormatExtensions:ExternalFormatExtension[*], contentType:String[1]): ExternalFormatExtension[1]
+{
+   let formatExtension = $externalFormatExtensions->filter(ext| $ext.contentType == $contentType);
+   assert($formatExtension->size() == 1, | 'Expected to find 1 extension for ' + $contentType + ', found ' + $formatExtension->size()->toString());
+   $formatExtension->toOne();
+}
+
+Class meta::external::shared::ExternalFormatExtension
+{
+   contentType               : String[1];
+   generateSerializeNode     : Function<{FunctionExpression[1], ExecutionNode[*] -> ExecutionNode[1]}>[1];  
+   generateDeserializeNode   : Function<{UrlConnection[1], RootGraphFetchTree<Any>[0..1] -> ExecutionNode[1]}>[1];  
+   printPlanNodeToString     : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[1];
+   
+   planJavaPrepare           : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GenerationContext[1]}>[*]}>[1];
+   planJavaGenerate          : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GeneratedCode[1]}>[*]}>[1];
+
+   serializerExtension       : Function<{String[1]->String[1]}>[1];
+}

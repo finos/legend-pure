@@ -1,0 +1,68 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::protocols::pure::vX_X_X::metamodel::executionPlan::*;
+import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::shared::*;
+import meta::pure::mapping::*;
+import meta::pure::router::extension::*;
+
+function meta::protocols::pure::vX_X_X::external::shared::serializerExtension(type:String[1]): meta::pure::router::extension::SerializerExtension[1]
+{
+   ^meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X(
+      transfers_store_transformConnection = {urlConnection:meta::external::shared::runtime::UrlConnection[1]| $urlConnection->transformUrlConnection()},
+      transfers_executionPlan_transformNode = 
+         {mapping:Mapping[1], extensions:RouterExtension[*] |
+            [
+               d:meta::external::shared::executionPlan::DataQualityExecutionNode[1] | transformDataQualityNode($d, $mapping, $extensions)
+            ]
+         }   
+   );
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::external::shared::runtime::UrlConnection extends meta::protocols::pure::vX_X_X::metamodel::runtime::Connection
+{
+   class       : String[1];
+   contentType : String[1];
+   schema      : String[0..1];
+   url         : String[1];
+}
+
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::shared::transformUrlConnection(urlConnection:meta::external::shared::runtime::UrlConnection[1]): meta::protocols::pure::vX_X_X::metamodel::external::shared::runtime::UrlConnection[1]
+{
+   ^meta::protocols::pure::vX_X_X::metamodel::external::shared::runtime::UrlConnection(
+      element     = 'ModelStore',
+      _type       = 'UrlConnection',
+      class       = $urlConnection.class->elementToPath(),
+      schema      = $urlConnection.schema->map(s| $s->elementToPath()),
+      contentType = $urlConnection.contentType,
+      url         = $urlConnection.url
+   );
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::external::shared::executionPlan::DataQualityExecutionNode extends ExecutionNode
+{
+   enableConstraints : Boolean[1];
+   checked           : Boolean[1];
+}
+
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::shared::transformDataQualityNode(node:meta::external::shared::executionPlan::DataQualityExecutionNode[1], mapping:meta::pure::mapping::Mapping[1], extensions:RouterExtension[*]): ExecutionNode[1]
+{
+   ^meta::protocols::pure::vX_X_X::metamodel::external::shared::executionPlan::DataQualityExecutionNode(
+      _type             = 'dataQuality',
+      resultType        = $node.resultType->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformResultType($mapping, $extensions),
+      resultSizeRange   = $node.resultSizeRange->map(s| $s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()),
+      enableConstraints = $node.enableConstraints,
+      checked           = $node.checked
+   );
+}
