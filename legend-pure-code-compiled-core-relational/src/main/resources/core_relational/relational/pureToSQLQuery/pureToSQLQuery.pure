@@ -4111,7 +4111,7 @@ function <<access.private>> meta::relational::functions::pureToSqlQuery::process
 {
 
      let mainTable = $f.parametersValues->at(0)->cast(@FunctionExpression)->getTableFromParameter();
-     let mainTableAliasTDS = ^TableAlias(name = 'root', relationalElement = $mainTable);
+     let mainTableAliasTDS = ^TableAlias(name = 'root', relationalElement = $mainTable->processRelation([], $nodeId, false, 0, false, [], $state, $context, $extensions));
      let joinTreeNode = ^RootJoinTreeNode(alias=$mainTableAliasTDS);
      ^SelectWithCursor(
       select = ^TdsSelectSqlQuery(
@@ -4128,13 +4128,14 @@ function <<access.private>> meta::relational::functions::pureToSqlQuery::process
    );
  }
 
-function <<access.private>> meta::relational::functions::pureToSqlQuery::getTableFromParameter(f:FunctionExpression[1]): Table[1]
+function <<access.private>> meta::relational::functions::pureToSqlQuery::getTableFromParameter(f:FunctionExpression[1]): NamedRelation[1]
 {
 
    let database = $f.parametersValues->at(0)->cast(@InstanceValue).values->toOne()->cast(@Database);
    let schemaName = $f.parametersValues->at(1)->cast(@InstanceValue).values->toOne()->cast(@String);
-   let tableName = $f.parametersValues->at(2)->cast(@InstanceValue).values->toOne()->cast(@String);
-   $database.schema($schemaName)->toOne().table($tableName)->toOne();
+   let relName = $f.parametersValues->at(2)->cast(@InstanceValue).values->toOne()->cast(@String);
+   let schema = $database.schema($schemaName)->toOne();
+   if($f.func == meta::relational::functions::database::viewReference_Database_1__String_1__String_1__View_1_, |$schema.view($relName), |$schema.table($relName))->toOne();
 
  }
 
@@ -6981,6 +6982,7 @@ function meta::relational::functions::pureToSqlQuery::getSupportedFunctions():Ma
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::tds::projectWithColumnSubset_T_MANY__Function_MANY__String_MANY__String_MANY__TabularDataSet_1_, second = meta::relational::functions::pureToSqlQuery::processProjectWithColumnSubsetFunctions_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::tds::projectWithColumnSubset_T_MANY__Function_MANY__String_MANY__String_MANY__TabularDataSet_1_, second = meta::relational::functions::pureToSqlQuery::processProjectWithColumnSubsetFunctions_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::tds::tableToTDS_Table_1__TableTDS_1_, second = meta::relational::functions::pureToSqlQuery::processTableToTDS_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
+        ^PureFunctionToRelationalFunctionPair(first=meta::pure::tds::viewToTDS_View_1__TableTDS_1_, second = meta::relational::functions::pureToSqlQuery::processTableToTDS_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::tds::olapGroupBy_TabularDataSet_1__SortInformation_$0_1$__OlapOperation_1__String_1__TabularDataSet_1_, second = meta::relational::functions::pureToSqlQuery::processTdsWindowColWithoutWindow_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::tds::olapGroupBy_TabularDataSet_1__OlapOperation_1__String_1__TabularDataSet_1_, second = meta::relational::functions::pureToSqlQuery::processTdsWindowColWithoutWindowAndSort_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::tds::olapGroupBy_TabularDataSet_1__String_MANY__OlapOperation_1__String_1__TabularDataSet_1_, second = meta::relational::functions::pureToSqlQuery::processTdsWindowColWithoutSort_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
