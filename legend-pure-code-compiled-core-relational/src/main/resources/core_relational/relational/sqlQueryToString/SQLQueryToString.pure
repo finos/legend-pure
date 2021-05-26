@@ -1207,6 +1207,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
       forDynafunction('mod',                   [ choice($aSybase,                  $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='mod(%s,%s)')),
+                                                 choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='mod(%s,%s)'))]),
