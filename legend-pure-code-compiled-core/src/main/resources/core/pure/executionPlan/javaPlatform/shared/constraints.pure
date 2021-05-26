@@ -62,12 +62,7 @@ function meta::alloy::runtime::java::createConstraintCheckingForClass(jClass: me
          );
          let processDefects   = '.stream().map(d -> '+$conventions->codeType($conventions->className(DataQualityBasicDefectClass))->codeToString($conventions)+'.prefixPath(d, '+$pathNode+')).collect('+$conventions->codeType(javaClass('java.util.stream.Collectors'))->codeToString($conventions)+'.toList())';
 
-         if($p.multiplicity->isToOne(),
-            {|
-               '    result.addAll((('+$conventions->codeType($constrainedClass)->codeToString($conventions)+') '+$getterCall+').allConstraints(context)'+$processDefects+');\n'
-            },
-            |
-         if($p.multiplicity->isZeroOne(),
+         if($p.multiplicity->hasToOneUpperBound(), // Properties with multiplicity [1] might not be set if not accessed in the fetch tree
             {|
                '    if ('+$getterCall+' != null)\n' +
                '    {\n' +
@@ -75,13 +70,16 @@ function meta::alloy::runtime::java::createConstraintCheckingForClass(jClass: me
                '    }\n'
             },
             {|
-               '    for (int i =0; i < '+$getterCall+'.size(); i++)\n' +
+               '    if ('+$getterCall+' != null)\n' +
                '    {\n' +
-               '        final int index = i;\n' +
-               '        result.addAll((('+$conventions->codeType($constrainedClass)->codeToString($conventions)+') '+$getterCall+'.get(i)).allConstraints(context)'+$processDefects+');\n' +
+               '        for (int i =0; i < '+$getterCall+'.size(); i++)\n' +
+               '        {\n' +
+               '            final int index = i;\n' +
+               '            result.addAll((('+$conventions->codeType($constrainedClass)->codeToString($conventions)+') '+$getterCall+'.get(i)).allConstraints(context)'+$processDefects+');\n' +
+               '        }\n' +
                '    }\n'
             }
-         ));
+         );
       });
 
 
