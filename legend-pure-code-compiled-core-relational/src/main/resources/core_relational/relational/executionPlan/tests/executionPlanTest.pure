@@ -1353,6 +1353,26 @@ function <<test.Test>> meta::pure::executionPlan::tests::relationalTDSTypeForCol
    assertEquals($expected, $planWithQuotes->planToString(meta::pure::router::extension::defaultRelationalExtensions()));
 }
 
+function <<test.Test>> meta::pure::executionPlan::tests::testViewToTDS():Boolean[1]
+{
+  let query = {|viewToTDS(meta::relational::functions::database::viewReference(meta::relational::tests::db,'default','FirstNameAddress'))};
+
+  let mapping = meta::relational::tests::tds::tabletds::EmptyMapping;
+  let runtime = meta::relational::tests::testRuntime();
+
+  let expected =
+      'Relational\n' +
+      '(\n' +
+      '  type = TDS[(firstName, String, VARCHAR(200), ""), (address, String, VARCHAR(200), "")]\n' +
+      '  resultColumns = [("firstName", VARCHAR(200)), ("address", VARCHAR(200))]\n' +
+      '  sql = select "root".firstName as "firstName", "root".address as "address" from (select distinct "root".FIRSTNAME as firstName, "addresstable_0".NAME as address from personTable as "root" left outer join addressTable as "addresstable_0" on ("addresstable_0".ID = "root".ADDRESSID)) as "root"\n' +
+      '  connection = TestDatabaseConnection(type = "H2")\n' +
+      ')\n';
+
+  let plan = executionPlan($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+  assertEquals($expected, $plan->planToString(meta::pure::router::extension::defaultRelationalExtensions()));
+}
+
 function <<test.Test>> meta::pure::executionPlan::tests::testSupportStreamFlagSimple():Boolean[1]
 {
    let plan = executionPlan({id:Integer[1], name:String[*]|Person.all()->filter(p|$p.name->in($name) || $p.age == $id)->project(col(p|$p.firstName, 'firstName'))}, simpleRelationalMapping, meta::relational::tests::testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());

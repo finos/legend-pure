@@ -16,7 +16,7 @@ import meta::pure::mapping::*;
 
 Class meta::relational::mapping::TableTDS extends TabularDataSetImplementation
 {
-  table:meta::relational::metamodel::relation::Table[1];
+  table:meta::relational::metamodel::relation::NamedRelation[1];
 }
 
 function meta::pure::tds::tableToTDS(table:meta::relational::metamodel::relation::Table[1]):meta::relational::mapping::TableTDS[1]
@@ -26,6 +26,16 @@ function meta::pure::tds::tableToTDS(table:meta::relational::metamodel::relation
       table = $table,
       columns = $table.columns->cast(@meta::relational::metamodel::Column)->map(column|let columnIndex = $table.columns->indexOf($column);
                                                                                             $column->tableColumnToTdsColumn($columnIndex);)
+            );
+}
+
+function meta::pure::tds::viewToTDS(view:meta::relational::metamodel::relation::View[1]):meta::relational::mapping::TableTDS[1]
+{
+   ^meta::relational::mapping::TableTDS(
+      store = $view.schema.database,
+      table = $view,
+      columns = $view.columns->cast(@meta::relational::metamodel::Column)->map(column|let columnIndex = $view.columns->indexOf($column);
+                                                                                           $column->tableColumnToTdsColumn($columnIndex);)
             );
 }
 
