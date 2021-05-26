@@ -16,7 +16,7 @@ package org.finos.legend.pure.m4.serialization.binary;
 
 import org.eclipse.collections.api.collection.primitive.MutableByteCollection;
 
-class ByteCollectionBinaryWriter extends AbstractSimpleBinaryWriter
+class ByteCollectionBinaryWriter extends AbstractBinaryWriter
 {
     private final MutableByteCollection byteCollection;
 

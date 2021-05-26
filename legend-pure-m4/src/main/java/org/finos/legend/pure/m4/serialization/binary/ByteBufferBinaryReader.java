@@ -36,7 +36,7 @@ class ByteBufferBinaryReader extends AbstractBinaryReader
         }
         catch (BufferUnderflowException e)
         {
-            throw new UnexpectedEndException(Byte.BYTES, 0L);
+            throw new UnexpectedEndException(1L, 0L);
         }
     }
 
@@ -81,7 +81,7 @@ class ByteBufferBinaryReader extends AbstractBinaryReader
         }
         catch (BufferUnderflowException e)
         {
-            throw new UnexpectedEndException(Short.BYTES, this.buffer.remaining());
+            throw new UnexpectedEndException(2L, this.buffer.remaining());
         }
     }
 
@@ -94,7 +94,7 @@ class ByteBufferBinaryReader extends AbstractBinaryReader
         }
         catch (BufferUnderflowException e)
         {
-            throw new UnexpectedEndException(Integer.BYTES, this.buffer.remaining());
+            throw new UnexpectedEndException(4L, this.buffer.remaining());
         }
     }
 
@@ -107,7 +107,7 @@ class ByteBufferBinaryReader extends AbstractBinaryReader
         }
         catch (BufferUnderflowException e)
         {
-            throw new UnexpectedEndException(Long.BYTES, this.buffer.remaining());
+            throw new UnexpectedEndException(8L, this.buffer.remaining());
         }
     }
 
@@ -120,7 +120,7 @@ class ByteBufferBinaryReader extends AbstractBinaryReader
         }
         catch (BufferUnderflowException e)
         {
-            throw new UnexpectedEndException(Float.BYTES, this.buffer.remaining());
+            throw new UnexpectedEndException(4L, this.buffer.remaining());
         }
     }
 
@@ -133,7 +133,7 @@ class ByteBufferBinaryReader extends AbstractBinaryReader
         }
         catch (BufferUnderflowException e)
         {
-            throw new UnexpectedEndException(Double.BYTES, this.buffer.remaining());
+            throw new UnexpectedEndException(8L, this.buffer.remaining());
         }
     }
 

@@ -18,17 +18,11 @@ import org.eclipse.collections.api.collection.primitive.MutableByteCollection;
 import org.finos.legend.pure.m4.serialization.Writer;
 
 import java.io.OutputStream;
-import java.nio.channels.WritableByteChannel;
 
 public class BinaryWriters
 {
     private BinaryWriters()
     {
-    }
-
-    public static Writer newBinaryWriter(WritableByteChannel byteChannel)
-    {
-        return new WritableByteChannelWriter(byteChannel);
     }
 
     public static Writer newBinaryWriter(OutputStream stream)

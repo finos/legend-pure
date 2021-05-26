@@ -18,8 +18,6 @@ import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 
 public class TestDistributedStringCaching extends TestStringCaching<DistributedStringCache>
 {
-    private static final String METADATA_NAME = "platform";
-
     @Override
     protected DistributedStringCache buildCache()
     {
@@ -29,12 +27,12 @@ public class TestDistributedStringCaching extends TestStringCaching<DistributedS
     @Override
     protected void serialize(DistributedStringCache cache, FileWriter fileWriter)
     {
-        cache.write(METADATA_NAME, fileWriter);
+        cache.write(fileWriter);
     }
 
     @Override
     protected StringIndex buildIndex(FileReader fileReader)
     {
-        return LazyStringIndex.fromFileReader(METADATA_NAME, fileReader);
+        return LazyStringIndex.fromFileReader(fileReader);
     }
 }

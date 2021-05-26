@@ -64,13 +64,13 @@ public abstract class AbstractBinaryReader extends AbstractBinaryReaderWriter im
     @Override
     public synchronized void skipBoolean()
     {
-        skipBytes(Byte.BYTES);
+        skipBytes(1L);
     }
 
     @Override
     public synchronized void skipShort()
     {
-        skipBytes(Short.BYTES);
+        skipBytes(2L);
     }
 
     @Override
@@ -91,13 +91,13 @@ public abstract class AbstractBinaryReader extends AbstractBinaryReaderWriter im
     @Override
     public synchronized void skipShortArray()
     {
-        skipArray(Short.BYTES);
+        skipArray(2L);
     }
 
     @Override
     public synchronized void skipInt()
     {
-        skipBytes(Integer.BYTES);
+        skipBytes(4L);
     }
 
     @Override
@@ -118,13 +118,13 @@ public abstract class AbstractBinaryReader extends AbstractBinaryReaderWriter im
     @Override
     public synchronized void skipIntArray()
     {
-        skipArray(Integer.BYTES);
+        skipArray(4L);
     }
 
     @Override
     public synchronized void skipLong()
     {
-        skipBytes(Long.BYTES);
+        skipBytes(8L);
     }
 
     @Override
@@ -145,13 +145,13 @@ public abstract class AbstractBinaryReader extends AbstractBinaryReaderWriter im
     @Override
     public synchronized void skipLongArray()
     {
-        skipArray(Long.BYTES);
+        skipArray(8L);
     }
 
     @Override
     public synchronized void skipFloat()
     {
-        skipBytes(Float.BYTES);
+        skipBytes(4L);
     }
 
     @Override
@@ -172,13 +172,13 @@ public abstract class AbstractBinaryReader extends AbstractBinaryReaderWriter im
     @Override
     public synchronized void skipFloatArray()
     {
-        skipArray(Float.BYTES);
+        skipArray(4L);
     }
 
     @Override
     public synchronized void skipDouble()
     {
-        skipBytes(Double.BYTES);
+        skipBytes(8L);
     }
 
     @Override
@@ -199,7 +199,7 @@ public abstract class AbstractBinaryReader extends AbstractBinaryReaderWriter im
     @Override
     public synchronized void skipDoubleArray()
     {
-        skipArray(Double.BYTES);
+        skipArray(8L);
     }
 
     @Override
@@ -245,7 +245,7 @@ public abstract class AbstractBinaryReader extends AbstractBinaryReaderWriter im
     protected void skipArray(long elementSizeInBytes)
     {
         // Read length
-        long length = readInt();
+        long length = (long)readInt();
 
         // Skip elements
         skipBytes(elementSizeInBytes * length);

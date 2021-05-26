@@ -17,7 +17,7 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 import org.eclipse.collections.api.list.primitive.ByteList;
 import org.eclipse.collections.impl.factory.primitive.ByteLists;
 import org.finos.legend.pure.m4.serialization.Writer;
-import org.finos.legend.pure.m4.serialization.binary.AbstractSimpleBinaryWriter;
+import org.finos.legend.pure.m4.serialization.binary.AbstractBinaryWriter;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 
 import java.io.BufferedOutputStream;
@@ -52,7 +52,7 @@ public class FileWriters
         return new MapFileWriter<>(fileBytes, baos -> ByteLists.mutable.with(baos.toByteArray()));
     }
 
-    public static FileWriter fromJarOutputStream(JarOutputStream stream)
+    public static FileWriter newJarOutputStream(JarOutputStream stream)
     {
         return new JarEntryFileWriter(stream);
     }
@@ -96,7 +96,7 @@ public class FileWriters
         @Override
         public Writer getWriter(String path)
         {
-            return new AbstractSimpleBinaryWriter()
+            return new AbstractBinaryWriter()
             {
                 private final ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
@@ -150,7 +150,7 @@ public class FileWriters
             {
                 throw new RuntimeException("Error getting writer for " + path, e);
             }
-            return new AbstractSimpleBinaryWriter()
+            return new AbstractBinaryWriter()
             {
                 @Override
                 public synchronized void close()

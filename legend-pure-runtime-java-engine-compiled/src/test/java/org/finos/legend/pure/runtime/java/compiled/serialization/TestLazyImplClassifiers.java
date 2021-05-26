@@ -22,10 +22,13 @@ import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataLazy;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphDeserializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
+import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialized;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.io.IOException;
 
 
 public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
@@ -39,10 +42,11 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     }
 
     @Before
-    public void setUpLazyMetaData()
+    public void setUpLazyMetaData() throws IOException
     {
+        Serialized serialized = GraphSerializer.serializeAll(runtime.getCoreInstance("::"), processorSupport);
         MutableMap<String, byte[]> fileBytes = Maps.mutable.empty();
-        DistributedBinaryGraphSerializer.newSerializer(runtime).serializeToInMemoryByteArrays(fileBytes);
+        DistributedBinaryGraphSerializer.serialize(serialized, fileBytes);
         DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromInMemoryByteArrays(fileBytes);
         this.metadataLazy = new MetadataLazy(getClass().getClassLoader(), deserializer);
     }

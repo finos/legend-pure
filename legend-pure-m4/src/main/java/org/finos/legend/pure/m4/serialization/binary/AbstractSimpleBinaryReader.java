@@ -38,35 +38,35 @@ public abstract class AbstractSimpleBinaryReader extends AbstractBinaryReader
     @Override
     public synchronized short readShort()
     {
-        readNBytes(Short.BYTES, this.eightBytes, 0);
+        readNBytes(2, this.eightBytes, 0);
         return this.eightByteBuffer.getShort(0);
     }
 
     @Override
     public synchronized int readInt()
     {
-        readNBytes(Integer.BYTES, this.eightBytes, 0);
+        readNBytes(4, this.eightBytes, 0);
         return this.eightByteBuffer.getInt(0);
     }
 
     @Override
     public synchronized long readLong()
     {
-        readNBytes(Long.BYTES, this.eightBytes, 0);
+        readNBytes(8, this.eightBytes, 0);
         return this.eightByteBuffer.getLong(0);
     }
 
     @Override
     public synchronized float readFloat()
     {
-        readNBytes(Float.BYTES, this.eightBytes, 0);
+        readNBytes(4, this.eightBytes, 0);
         return this.eightByteBuffer.getFloat(0);
     }
 
     @Override
     public synchronized double readDouble()
     {
-        readNBytes(Double.BYTES, this.eightBytes, 0);
+        readNBytes(8, this.eightBytes, 0);
         return this.eightByteBuffer.getDouble(0);
     }
 

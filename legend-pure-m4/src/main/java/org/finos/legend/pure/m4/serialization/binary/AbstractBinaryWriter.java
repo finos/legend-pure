@@ -16,19 +16,43 @@ package org.finos.legend.pure.m4.serialization.binary;
 
 import org.finos.legend.pure.m4.serialization.Writer;
 
+import java.nio.ByteBuffer;
+
 public abstract class AbstractBinaryWriter extends AbstractBinaryReaderWriter implements Writer
 {
+    private final byte[] eightBytes = new byte[8];
+    private final ByteBuffer eightByteBuffer = ByteBuffer.wrap(this.eightBytes);
+
+    @Override
+    public synchronized void writeByte(byte b)
+    {
+        write(b);
+    }
+
+    @Override
+    public synchronized void writeBytes(byte[] bytes)
+    {
+        write(bytes, 0, bytes.length);
+    }
+
     @Override
     public synchronized void writeByteArray(byte[] bytes)
     {
         writeInt(bytes.length);
-        writeBytes(bytes);
+        write(bytes, 0, bytes.length);
     }
 
     @Override
     public synchronized void writeBoolean(boolean b)
     {
-        writeByte(b ? TRUE_BYTE : FALSE_BYTE);
+        write(b ? TRUE_BYTE : FALSE_BYTE);
+    }
+
+    @Override
+    public synchronized void writeShort(short s)
+    {
+        this.eightByteBuffer.putShort(0, s);
+        write(this.eightBytes, 0, 2);
     }
 
     @Override
@@ -43,6 +67,13 @@ public abstract class AbstractBinaryWriter extends AbstractBinaryReaderWriter im
     }
 
     @Override
+    public synchronized void writeInt(int i)
+    {
+        this.eightByteBuffer.putInt(0, i);
+        write(this.eightBytes, 0, 4);
+    }
+
+    @Override
     public synchronized void writeIntArray(int[] ints)
     {
         int length = ints.length;
@@ -51,6 +82,13 @@ public abstract class AbstractBinaryWriter extends AbstractBinaryReaderWriter im
         {
             writeInt(ints[i]);
         }
+    }
+
+    @Override
+    public synchronized void writeLong(long l)
+    {
+        this.eightByteBuffer.putLong(0, l);
+        write(this.eightBytes, 0, 8);
     }
 
     @Override
@@ -65,6 +103,13 @@ public abstract class AbstractBinaryWriter extends AbstractBinaryReaderWriter im
     }
 
     @Override
+    public synchronized void writeFloat(float f)
+    {
+        this.eightByteBuffer.putFloat(0, f);
+        write(this.eightBytes, 0, 4);
+    }
+
+    @Override
     public synchronized void writeFloatArray(float[] floats)
     {
         int length = floats.length;
@@ -73,6 +118,13 @@ public abstract class AbstractBinaryWriter extends AbstractBinaryReaderWriter im
         {
             writeFloat(floats[i]);
         }
+    }
+
+    @Override
+    public synchronized void writeDouble(double d)
+    {
+        this.eightByteBuffer.putDouble(0, d);
+        write(this.eightBytes, 0, 8);
     }
 
     @Override
@@ -102,4 +154,8 @@ public abstract class AbstractBinaryWriter extends AbstractBinaryReaderWriter im
             writeString(strings[i]);
         }
     }
+
+    protected abstract void write(byte b);
+
+    protected abstract void write(byte[] bytes, int offset, int length);
 }

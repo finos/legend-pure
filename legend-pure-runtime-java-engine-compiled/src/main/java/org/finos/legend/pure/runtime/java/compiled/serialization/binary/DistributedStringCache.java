@@ -30,6 +30,9 @@ import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialize
 
 class DistributedStringCache extends AbstractStringCache
 {
+    static final String CLASSIFIER_ID_INDEX_FILE_PATH = DistributedBinaryGraphSerializer.getMetadataIndexFilePath("strings", "classifiers");
+    static final String OTHER_STRING_INDEX_METADATA_FILE_PATH = DistributedBinaryGraphSerializer.getMetadataIndexFilePath("strings", "other");
+
     private static final int PARTITION_SIZE = 32 * 1024; // must be a power of 2
     private static final int PARTITION_MASK = PARTITION_SIZE - 1;
 
@@ -38,10 +41,10 @@ class DistributedStringCache extends AbstractStringCache
         super(classifierIds, otherStrings);
     }
 
-    public void write(String metadataName, FileWriter fileWriter)
+    public void write(FileWriter fileWriter)
     {
         // Write classifier strings
-        try (Writer writer = fileWriter.getWriter(DistributedMetadataFiles.getClassifierIdStringsIndexFilePath(metadataName)))
+        try (Writer writer = fileWriter.getWriter(CLASSIFIER_ID_INDEX_FILE_PATH))
         {
             writer.writeStringArray(getClassifierStringArray());
         }
@@ -49,7 +52,7 @@ class DistributedStringCache extends AbstractStringCache
         // Write other strings index
         String[] otherStrings = getOtherStringsArray();
         int otherStringsCount = otherStrings.length;
-        try (Writer writer = fileWriter.getWriter(DistributedMetadataFiles.getOtherStringsIndexFilePath(metadataName)))
+        try (Writer writer = fileWriter.getWriter(OTHER_STRING_INDEX_METADATA_FILE_PATH))
         {
             writer.writeInt(otherStringsCount);
         }
@@ -57,7 +60,7 @@ class DistributedStringCache extends AbstractStringCache
         // Write other strings partitions
         for (int partitionStart = 0; partitionStart < otherStringsCount; partitionStart += PARTITION_SIZE)
         {
-            try (Writer writer = fileWriter.getWriter(DistributedMetadataFiles.getOtherStringsIndexPartitionFilePath(metadataName, partitionStart)))
+            try (Writer writer = fileWriter.getWriter(getOtherStringIndexPartitionFilePath(partitionStart)))
             {
                 int partitionEnd = Math.min(partitionStart + PARTITION_SIZE, otherStringsCount);
                 writer.writeInt(partitionEnd - partitionStart);
@@ -117,6 +120,11 @@ class DistributedStringCache extends AbstractStringCache
     static int getStartOfPartition(int index)
     {
         return index - (index & PARTITION_MASK);
+    }
+
+    static String getOtherStringIndexPartitionFilePath(int partitionStart)
+    {
+        return DistributedBinaryGraphSerializer.getMetadataIndexFilePath("strings", "other-" + partitionStart);
     }
 
     private static class DistributedStringCollector implements StringCollector
