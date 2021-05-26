@@ -14,12 +14,17 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.multimap.Multimap;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.test.Verify;
+import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialized;
@@ -28,8 +33,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.function.Function;
 
-public class TestDistributedBinaryGraphSerialization extends AbstractPureTestWithCoreCompiled
+public abstract class TestDistributedBinaryGraphSerialization extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
     public static void setUp()
@@ -38,38 +44,95 @@ public class TestDistributedBinaryGraphSerialization extends AbstractPureTestWit
     }
 
     @Test
-    public void testSerializationAndDeserialization() throws IOException
+    public void testFromSerialized() throws IOException
     {
-        // Get serialized
-        Serialized serialized = GraphSerializer.serializeAll(runtime.getCoreInstance("::"), processorSupport);
+        testFromSerialized(null);
+    }
 
+    @Test
+    public void testFromSerializedWithMetadataName() throws IOException
+    {
+        testFromSerialized("with_serialized");
+    }
+
+    private void testFromSerialized(String metadataName) throws IOException
+    {
+        Serialized serialized = getSerialized();
+        testSerialization(serialized.getObjects(), metadataName, m -> DistributedBinaryGraphSerializer.newSerializer(m, serialized));
+    }
+
+    private Serialized getSerialized()
+    {
+        return GraphSerializer.serializeAll(repository.getTopLevels(), processorSupport);
+    }
+
+    @Test
+    public void testFromRuntime() throws IOException
+    {
+        testFromRuntime(null);
+    }
+
+    @Test
+    public void testFromRuntimeWithMetadataName() throws IOException
+    {
+        testFromRuntime("withRuntime");
+    }
+
+    @Test
+    public void testFromRuntimeComparedToSerialized() throws IOException
+    {
+        Serialized serialized = getSerialized();
+        testSerialization(serialized.getObjects(), null, m -> DistributedBinaryGraphSerializer.newSerializer(m, runtime));
+    }
+
+    @Test
+    public void testFromSerializedComparedToRuntime() throws IOException
+    {
+        Serialized serialized = getSerialized();
+        testSerialization(getExpectedObjsFromRuntime(), null, m -> DistributedBinaryGraphSerializer.newSerializer(m, serialized));
+    }
+
+    private void testFromRuntime(String metadataName) throws IOException
+    {
+        ListIterable<Obj> expectedObjs = getExpectedObjsFromRuntime();
+        testSerialization(expectedObjs, metadataName, m -> DistributedBinaryGraphSerializer.newSerializer(m, runtime));
+    }
+
+    private ListIterable<Obj> getExpectedObjsFromRuntime()
+    {
+        MutableSet<CoreInstance> ignoredClassifiers = PrimitiveUtilities.getPrimitiveTypes(repository).toSet();
+        ArrayAdapter.adapt(M3Paths.EnumStub, M3Paths.ImportStub, M3Paths.PropertyStub, M3Paths.RouteNodePropertyStub).collect(processorSupport::package_getByUserPath, ignoredClassifiers);
+        GraphSerializer.ClassifierCaches classifierCaches = new GraphSerializer.ClassifierCaches(processorSupport);
+        return GraphNodeIterable.fromModelRepository(repository)
+                .reject(i -> ignoredClassifiers.contains(i.getClassifier()))
+                .collect(i -> GraphSerializer.buildObjWithProperties(i, classifierCaches, processorSupport), Lists.mutable.empty());
+    }
+
+    private void testSerialization(ListIterable<Obj> expectedObjs, String metadataName, Function<String, DistributedBinaryGraphSerializer> serializerFn) throws IOException
+    {
         // Serialize
-        MutableMap<String, byte[]> fileBytes = Maps.mutable.empty();
-        DistributedBinaryGraphSerializer.serialize(serialized, fileBytes);
+        DistributedBinaryGraphSerializer serializer = serializerFn.apply(metadataName);
+        serializer.serialize(getFileWriter());
 
         // Deserialize
-        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromInMemoryByteArrays(fileBytes);
-
-        Multimap<String, Obj> objsByClassifier = serialized.getObjects().groupBy(Obj::getClassifier);
+        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromFileReader(metadataName, getFileReader());
 
         // Validate classifiers
-        Verify.assertSetsEqual(objsByClassifier.keysView().toSet(), deserializer.getClassifiers().toSet());
-        for (String classifierId : objsByClassifier.keysView())
-        {
-            Assert.assertTrue(classifierId, deserializer.hasClassifier(classifierId));
-        }
+        ListMultimap<String, Obj> objsByClassifier = expectedObjs.groupBy(Obj::getClassifier);
+        Assert.assertEquals(objsByClassifier.keysView().toSortedList().makeString("\n"), deserializer.getClassifiers().toSortedList().makeString("\n"));
+        Assert.assertEquals(Lists.fixedSize.empty(), objsByClassifier.keysView().reject(deserializer::hasClassifier, Lists.mutable.empty()));
 
         // Validate instances by classifier
         for (String classifierId : objsByClassifier.keysView())
         {
-            MutableSet<Obj> instances = objsByClassifier.get(classifierId).toSet();
-            MutableSet<String> instanceIds = instances.collect(Obj::getIdentifier);
-            Verify.assertSetsEqual(classifierId, instanceIds, deserializer.getClassifierInstanceIds(classifierId).toSet());
-            Verify.assertSetsEqual(classifierId, instances, deserializer.getInstances(classifierId, instanceIds).toSet());
+            MutableList<Obj> instances = objsByClassifier.get(classifierId).toSortedListBy(Obj::getIdentifier);
+            MutableList<String> instanceIds = instances.collect(Obj::getIdentifier);
+            Assert.assertEquals(classifierId, instanceIds.makeString("\n"), deserializer.getClassifierInstanceIds(classifierId).toSortedList().makeString("\n"));
+            Assert.assertEquals(classifierId, instances, deserializer.getInstances(classifierId, instanceIds).toSortedListBy(Obj::getIdentifier));
         }
 
         // Validate all individual objs
-        for (Obj obj : serialized.getObjects())
+        for (Obj obj : expectedObjs)
         {
             String classifierId = obj.getClassifier();
             String identifier = obj.getIdentifier();
@@ -77,4 +140,8 @@ public class TestDistributedBinaryGraphSerialization extends AbstractPureTestWit
             Assert.assertEquals(obj, deserializer.getInstance(classifierId, identifier));
         }
     }
+
+    protected abstract FileWriter getFileWriter() throws IOException;
+
+    protected abstract FileReader getFileReader() throws IOException;
 }
