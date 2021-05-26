@@ -234,7 +234,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::acceptP
       }
     ]);
 
-    pair($pgi.nameCode->j_invoke('equalsIgnoreCase', $fieldname, javaBoolean()), $assign->concatenate(j_println(j_string('added: ')->j_plus($pgi.variable)))->j_block());
+    pair($pgi.nameCode->j_invoke('equalsIgnoreCase', $fieldname, javaBoolean()), $assign->j_block());
   });
 
   let skip = $cgi.jThis->j_invoke('skip', [], javaVoid());

@@ -68,7 +68,7 @@ function meta::relational::mapping::postProcessQuery(exeCtx:ExecutionContext[1],
 //Helper Functions
 function meta::relational::postProcessor::postprocess(s: SelectSQLQuery[1], f:meta::pure::metamodel::function::Function<{RelationalOperationElement[1]->RelationalOperationElement[1]}>[1]):Result<SelectSQLQuery|1>[1]
 {
-   ^Result<SelectSQLQuery|1>(values=$s->transform($f)->cast(@SelectSQLQuery));
+   ^Result<SelectSQLQuery|1>(values=$s->transformNonCached($f)->cast(@SelectSQLQuery));
 }
 
 function meta::relational::postProcessor::transform(r:RelationalTreeNode[1], f:meta::pure::metamodel::function::Function<Any>[1], transformed: Map<RelationalOperationElement, RelationalOperationElement>[1]):Pair<RelationalTreeNode, Map<RelationalOperationElement, RelationalOperationElement>>[1]
@@ -101,7 +101,6 @@ function meta::relational::postProcessor::transform(r:RelationalTreeNode[1], f:m
                                          pair(^$r(alias=$transformedAlias.first->cast(@TableAlias), childrenData=$transformedChildren.first.values), $transformedChildren.second);
      ]);
 }
-
 
 function meta::relational::postProcessor::transform(r:RelationalOperationElement[1], f:meta::pure::metamodel::function::Function<Any>[1], transformed: Map<RelationalOperationElement, RelationalOperationElement>[1]):Pair<RelationalOperationElement, Map<RelationalOperationElement, RelationalOperationElement>>[1]
 {
@@ -205,6 +204,70 @@ function meta::relational::postProcessor::transform(r:RelationalOperationElement
    transform($r, $f, ^Map<RelationalOperationElement, RelationalOperationElement>()).first;
 }
 
+function meta::relational::postProcessor::transformNonCached(r:RelationalTreeNode[1], parentAlias:TableAlias[0..1], f:meta::pure::metamodel::function::Function<Any>[1]):RelationalTreeNode[1]
+{
+     $r->match([
+                 j:JoinTreeNode[1] |  
+                    let join = $j.join;
+                    let transformedAlias = $j.alias->transformNonCached($f)->cast(@TableAlias);
+                    let joinTarget = if($j.join.target->isNotEmpty(),
+                                        |if($j.join.target == $j.alias,
+                                            |$transformedAlias,
+                                            |$parentAlias),
+                                        |[]);
+                    ^$j
+                    (
+                       join = ^$join(operation=$join.operation->transformNonCached($f)->cast(@Operation), aliases = [pair($parentAlias->toOne(), $transformedAlias), pair($transformedAlias, $parentAlias->toOne())], target = $joinTarget),
+                       alias = $transformedAlias,
+                       childrenData = $j.childrenData->cast(@JoinTreeNode)->map(x | $x->transformNonCached($transformedAlias, $f))
+                    );,
+                 r:RelationalTreeNode[1] |
+                    let transformedAlias = $r.alias->transformNonCached($f)->cast(@TableAlias);
+                    ^$r
+                    (
+                       alias = $transformedAlias,
+                       childrenData = $r.childrenData->cast(@RelationalTreeNode)->map(x | $x->transformNonCached($transformedAlias, $f))
+                    );
+     ]);
+}
+
+function meta::relational::postProcessor::transformNonCached(r:RelationalOperationElement[1], f:meta::pure::metamodel::function::Function<Any>[1]):RelationalOperationElement[1]
+{
+   let tR = $f->cast(@meta::pure::metamodel::function::Function<{RelationalOperationElement[1]->RelationalOperationElement[1]}>)->eval($r);
+   let toReturn = $tR->match([
+                      s:SelectSQLQuery[1] | 
+                                            let newS = ^$s( data= if($s.data->isEmpty(), | [], |$s.data->toOne()->transformNonCached([], $f)->cast(@RootJoinTreeNode)),
+                                                            columns=$s.columns->map(c|$c->transformNonCached($f)),
+                                                            filteringOperation=$s.filteringOperation->map(c|$c->transformNonCached($f))
+                                                          );
+                                            let newSWithLeftSideModified = if(!$newS.leftSideOfFilter->isEmpty(),| ^$newS(leftSideOfFilter=$s.leftSideOfFilter->toOne()->meta::relational::functions::pureToSqlQuery::findOneNode($s.data->toOne(), $newS.data->toOne())),|$newS);
+                                            $newSWithLeftSideModified;,
+ 
+                      v:ViewSelectSQLQuery[1] | ^$v(selectSQLQuery=$v.selectSQLQuery->transformNonCached($f)->cast(@SelectSQLQuery)),
+ 
+                      u:Union[1] | ^$u(queries=$u.queries->map(q|$q->transformNonCached($f)->cast(@SelectSQLQuery))),
+ 
+                      a:Alias[1] | ^$a(relationalElement=$a.relationalElement->transformNonCached($f)),
+ 
+                      u:UnaryOperation[1] | ^$u(nested=transformNonCached($u.nested, $f)),
+ 
+                      b:BinaryOperation[1] | ^$b(left= transformNonCached($b.left, $f), right=transformNonCached($b.right, $f)),
+ 
+                      va:VariableArityOperation[1] | ^$va(args=$va.args->map(a|$a->transformNonCached($f))),
+ 
+                      d:DynaFunction[1] | ^$d(parameters=$d.parameters->map(p|$p->transformNonCached($f))),
+ 
+                      j:JoinStrings[1] | 
+                        ^$j(
+                           strings = $j.strings->map(s|$s->transformNonCached($f)),
+                           prefix = $j.prefix->map(s|$s->transformNonCached($f)),
+                           separator = $j.separator->map(s|$s->transformNonCached($f)),
+                           suffix = $j.suffix->map(s|$s->transformNonCached($f))
+                        ),
+ 
+                      rel:RelationalOperationElement[1] | $rel
+                    ]);
+}
 
 function meta::relational::postProcessor::replaceTables(selectSQLQuery:SelectSQLQuery[1], oldToNewPairs:Pair<Table,Table>[*]):Result<SelectSQLQuery|1>[1]
 {

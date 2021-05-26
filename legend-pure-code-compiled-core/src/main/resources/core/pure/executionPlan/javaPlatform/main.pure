@@ -167,7 +167,7 @@ function meta::alloy::runtime::java::projectToImplementation(project:Project[1])
            (
              package = $cl.package->packageToString(),
              name    = $cl.simpleName,
-             source  = $cl->meta::java::serialization::classToString()
+             source  = $cl->meta::java::metamodel::factory::inferImports()->meta::java::serialization::classToString()
           )
        })
     );
@@ -274,6 +274,10 @@ function meta::alloy::runtime::java::generatedCode(project:Project[1], entryPoin
    );
 }
 
+function meta::alloy::runtime::java::addNodeInfo(context:GenerationContext[1], nodeInfo:NodeInfo[1]): GenerationContext[1]
+{
+   ^$context(nodeInfos=$context.nodeInfos->concatenate($nodeInfo));   
+}
 
 function meta::alloy::runtime::java::nodeInfosForPath(context:GenerationContext[1], path:String[1]): NodeInfo[*]
 {
@@ -283,4 +287,14 @@ function meta::alloy::runtime::java::nodeInfosForPath(context:GenerationContext[
 function meta::alloy::runtime::java::childNodeInfosForPath(context:GenerationContext[1], path:String[1]): NodeInfo[*]
 {
    $context.nodeInfos->filter(ni| $ni.path->contains('.') && $ni.path->substring(0, $ni.path->lastIndexOf('.')) == $path);
+}
+
+function meta::alloy::runtime::java::setTypeInfos(context:GenerationContext[1], typeInfos:TypeInfoSet[1]): GenerationContext[1]
+{
+   ^$context(typeInfos=$typeInfos);   
+}
+
+function meta::alloy::runtime::java::setConventions(context:GenerationContext[1], conventions:Conventions[1]): GenerationContext[1]
+{
+   ^$context(conventions=$conventions);   
 }

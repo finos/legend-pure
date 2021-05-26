@@ -40,7 +40,7 @@ Class meta::json::schema::constraint::SchemaConstraint
 function meta::json::schema::constraint::constraintHasType( constrantObject:JSONElement[0..1]) : Boolean[1]
 {
  let res = if($constrantObject->isNotEmpty(),
-             |  $constrantObject->match([a:JSONArray[1]|$a.values->map( v |$v-> constraintHasType())->toOneMany()->or(),
+             |  $constrantObject->match([a:JSONArray[1]|if($a.values->isEmpty(),|false,| $a.values->map( v |$v-> constraintHasType())->toOneMany()->or());,
                                          o:JSONObject[1]| $o.keyValuePairs->map( p|if($p.value->instanceOf(JSONObject) || $p.value->instanceOf(JSONArray),
                                                                                         |$p.value-> constraintHasType(),
                                                                                         | $p.key.value =='type' || $p.key.value=='$ref' ;
@@ -86,25 +86,24 @@ function meta::json::schema::constraint::createType(type:Any[1] ) : JSONKeyValue
 function  meta::json::schema::constraint::toJSONSchemaFromValueSpecification( fn:ValueSpecification[1],config:JSONSchemaConfigInternal[1] ) : SchemaConstraint[0..1]
 {
 
-
   let property = $fn->cast(@SimpleFunctionExpression).parametersValues->at(0)->meta::json::schema::constraint::getSchemaProperty();
   let type = if($config.rootElement->isNotEmpty() && $config.rootElement->toOne()->instanceOf(Function) && $config.rootElement->cast(@Function<Any>)->toOne()->evaluateAndDeactivate()->functionType().parameters->isNotEmpty(),
                   | $config.rootElement->cast(@Function<Any>)->toOne()->evaluateAndDeactivate()->functionType().parameters->at(0).genericType.rawType->toOne()->createType();,
                  |[]);
-  let schemaConstraint = toJSONSchemaFromValueSpecification_internal($fn,$property,$config)->toOne();
+  let schemaConstraint = toJSONSchemaFromValueSpecification_internal($fn,$property,$config);
   let constraint= $schemaConstraint.constraint;
-   let updatedConstraint = $constraint->toOne();
-   let updatedConstraintType = if($type->isNotEmpty(),
+  if($constraint->isNotEmpty(),
+      |  let rootConstraint = $schemaConstraint->toOne();
+          let updatedConstraint = $constraint->toOne();
+         let updatedConstraintType = if($type->isNotEmpty(),
                                   |^$updatedConstraint(keyValuePairs+=$type);,
                                    |$updatedConstraint
                                   );
-   let result = if($property->isNotEmpty(),
-                    |^$schemaConstraint(property=$property,constraint=$updatedConstraintType),
-                    | ^$schemaConstraint(constraint=$updatedConstraintType)
-                  );
-  //let cleanup = $result->cleanUpConstraint();
-
-
+            let result = if($property->isNotEmpty(),
+                    |^$rootConstraint(property=$property,constraint=$updatedConstraintType),
+                    | ^$rootConstraint(constraint=$updatedConstraintType)
+                  );,
+     |$schemaConstraint);   
 
 }
 
@@ -145,11 +144,11 @@ function <<access.private>> meta::json::schema::constraint::toJSONSchemaFromValu
                                                                                         |^SchemaConstraint(constraint=newJSONObject($f.func->cast(@FunctionDefinition<Any>)-> meta::json::schema::newJsonRef($config.rootElement,$config.useDefinitions,$config.rootElement,$config )));,
                                                                                         |$f.func->cast(@FunctionDefinition<Any>)->toJSONSchemaFromFunctionDefinition($config)
                                                                                         ),
-                                                                                   | ^SchemaConstraint(generationMessage=addWarning([], 'Unsupported constraint function found : '+$f->meta::pure::metamodel::serialization::grammar::printValueSpecification(' ')));
+                                                                                   | ^SchemaConstraint(generationMessage=addWarning([], 'Unsupported function found : '+$f->buldValueSpecMessage($config)));
                                                                                  )
                                                                         ;);
                                                                      );,
-                               a:Any[1] |  ^SchemaConstraint(generationMessage=addWarning([], 'Unsupported constraint function found : '+$a->meta::pure::metamodel::serialization::grammar::printValueSpecification(' ')));])->toOne();
+                               a:ValueSpecification[1] |  ^SchemaConstraint(generationMessage=addWarning([], 'Unsupported function found : '+$a->buldValueSpecMessage($config)));])->toOne();
 
 
 
@@ -158,6 +157,18 @@ let result = if($rootProperty->isNotEmpty(),
                     |$constraint);
  }
 
+function <<access.private>> meta::json::schema::constraint::buldValueSpecMessage(valueSpec:ValueSpecification[1] ,config:JSONSchemaConfigInternal[1])  : String[1]
+{
+  let prop = if($config.rootElement->isNotEmpty(),
+                  |' at ' + $config.rootElement->toOne()->match([ c:Class<Any>[1]|$c->elementToPath(),
+                                                                 f:ConcreteFunctionDefinition<Any>[1]| $f->elementToPath();,
+                                                                 a:Any[1] |''        ]);
+               
+                  ,
+                     |'');
+   
+   $valueSpec->meta::pure::metamodel::serialization::grammar::printValueSpecification(' ') + $prop;
+}
 
 function <<access.private>> meta::json::schema::constraint::buildSubTypeDiscriminator( fn:SimpleFunctionExpression[1],config:JSONSchemaConfigInternal[1] ) : SchemaConstraint[1]
 {

@@ -76,18 +76,26 @@ Class meta::java::metamodel::Member
 }
 
 Class meta::java::metamodel::Field extends meta::java::metamodel::AnnotatedElement, Member
+[
+   $this.value->isEmpty() || $this.valueCode->isEmpty()
+]
 {
    name : String[1];
    type : meta::java::metamodel::Type[1];
    value: String[0..1];
+   valueCode: Code[0..1];
 }
 
 Class meta::java::metamodel::Method extends meta::java::metamodel::AnnotatedElement, Member, GenericDeclaration
+[
+   $this.body->isEmpty() || $this.bodyCode->isEmpty()
+]
 {
    name : String[1];
    parameters : meta::java::metamodel::Parameter[*];
    returnType : meta::java::metamodel::Type[1];
    body : String[0..1]; // String for now ... will model expressions later
+   bodyCode: Code[0..1];
    
    nullResultPossible : Boolean[0..1];
    functionType : meta::java::metamodel::FunctionType[0..1];
@@ -100,9 +108,13 @@ Class meta::java::metamodel::Parameter extends meta::java::metamodel::AnnotatedE
 }
 
 Class meta::java::metamodel::Constructor extends meta::java::metamodel::AnnotatedElement, Member, GenericDeclaration
+[
+   $this.body->isEmpty() || $this.bodyCode->isEmpty()
+]
 {
    parameters : meta::java::metamodel::Parameter[*];
    body : String[0..1]; // String for now ... will model expressions later
+   bodyCode: Code[0..1];
 }
 
 Class meta::java::metamodel::TypeVariable extends meta::java::metamodel::Type
@@ -573,6 +585,19 @@ Class <<access.private>> meta::java::generation::code::MethodCall extends Code
    typeArguments  : meta::java::metamodel::Type[*];
    methodName     : String[1];
    arguments      : Code[*];
+}
+
+Class <<access.private>> meta::java::generation::code::ConstructorCall extends Statement
+{
+   arguments      : Code[*];
+}
+
+Class <<access.private>> meta::java::generation::code::ThisConstructorCall extends ConstructorCall
+{  
+}
+
+Class <<access.private>> meta::java::generation::code::SuperConstructorCall extends ConstructorCall
+{
 }
 
 Class <<access.private>> meta::java::generation::code::FieldAccess extends Code

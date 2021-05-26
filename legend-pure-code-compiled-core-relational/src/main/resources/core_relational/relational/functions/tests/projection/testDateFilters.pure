@@ -47,6 +47,14 @@ function <<test.Test>> meta::relational::tests::projection::filter::dates::adjus
    assertSameElements([%2014-12-01,%2014-12-01,%2014-12-01], $result.values.rows.values);
 }
 
+function <<test.Test>> meta::relational::tests::projection::filter::dates::adjust::testAdjustWithMicroseconds():Boolean[1]
+{              
+   let result = execute(|Trade.all()->filter(d | ($d.settlementDateTime > %2014-12-04T15:22:23->adjust(123456, DurationUnit.MICROSECONDS)) && ($d.settlementDateTime < %2014-12-04T15:22:23->adjust(123457, DurationUnit.MICROSECONDS)))->project(x | $x.settlementDateTime, 'settlementDateTime'), simpleRelationalMapping, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('select "root".settlementDateTime as "settlementDateTime" from tradeTable as "root" where (("root".settlementDateTime is not null and "root".settlementDateTime > dateadd(MICROSECOND, 123456, \'2014-12-04 15:22:23\')) and ("root".settlementDateTime is not null and "root".settlementDateTime < dateadd(MICROSECOND, 123457, \'2014-12-04 15:22:23\')))', $result->sqlRemoveFormatting());
+   assertSize($result.values.rows, 1);
+   assertSameElements([%2014-12-04T15:22:23.123456789], $result.values.rows.values);
+}
+
 function <<test.Test>> meta::relational::tests::projection::filter::dates::firstDay::testFirstDayOfWeek():Boolean[1]
 {              
    let result = execute(|Trade.all()->filter(d | $d.date->firstDayOfWeek() == %2017-09-18)->project(x | $x.date, 'date'), simpleRelationalMapping, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());

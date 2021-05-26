@@ -48,6 +48,8 @@ function meta::java::metamodel::factory::javaSerializable():          meta::java
 
 function meta::java::metamodel::factory::javaURL():  meta::java::metamodel::Class[1] { javaClass('java.net.URL'); }
 
+function meta::java::metamodel::factory::javaTemporal():  meta::java::metamodel::Class[1] { javaClass('java.time.temporal.Temporal'); }
+
 function meta::java::metamodel::factory::javaNoSuchElementException(): meta::java::metamodel::Class[1] { javaClass('java.util.NoSuchElementException'); }
 function meta::java::metamodel::factory::javaArrays():                 meta::java::metamodel::Class[1] { javaClass('java.util.Arrays'); }
 function meta::java::metamodel::factory::javaCollections():            meta::java::metamodel::Class[1] { javaClass('java.util.Collections'); }
@@ -311,6 +313,16 @@ function meta::java::metamodel::factory::javaInt() : meta::java::metamodel::Prim
 function meta::java::metamodel::factory::javaLong() : meta::java::metamodel::PrimitiveType[1]
 {
    ^meta::java::metamodel::PrimitiveType(simpleName = 'long');
+}
+
+function meta::java::metamodel::factory::javaLongMax() : Code[1]
+{
+    javaLongBoxed()->j_field('MAX_VALUE', javaLong());
+}
+
+function meta::java::metamodel::factory::javaLongMin() : Code[1]
+{
+    javaLongBoxed()->j_field('MIN_VALUE', javaLong());
 }
 
 function meta::java::metamodel::factory::javaFloat() : meta::java::metamodel::PrimitiveType[1]
@@ -677,6 +689,11 @@ function meta::java::metamodel::factory::addField(class:meta::java::metamodel::C
    ^$class(fields = $class.fields->concatenate($field));
 }
 
+function meta::java::metamodel::factory::addField(class:meta::java::metamodel::Class[1], builder:Function<{meta::java::metamodel::Class[1]->meta::java::metamodel::Field[1]}>[1]):meta::java::metamodel::Class[1]
+{
+   ^$class(fields = $class.fields->concatenate($builder->eval($class)));
+}
+
 function meta::java::metamodel::factory::addFields(class:meta::java::metamodel::Class[1], fields:meta::java::metamodel::Field[*]):meta::java::metamodel::Class[1]
 {
    ^$class(fields = $class.fields->concatenate($fields));
@@ -685,6 +702,11 @@ function meta::java::metamodel::factory::addFields(class:meta::java::metamodel::
 function meta::java::metamodel::factory::addConstructor(class:meta::java::metamodel::Class[1], constructor:meta::java::metamodel::Constructor[1]):meta::java::metamodel::Class[1]
 {
    ^$class(constructors = $class.constructors->concatenate($constructor));
+}
+
+function meta::java::metamodel::factory::addConstructor(class:meta::java::metamodel::Class[1], builder:Function<{meta::java::metamodel::Class[1]->meta::java::metamodel::Constructor[1]}>[1]):meta::java::metamodel::Class[1]
+{
+   ^$class(constructors = $builder->eval($class));
 }
 
 // TODO This is only needed by API knowledge so we can eliminate this if we change that to a decision instead of data structure creation (and make it more efficient)
@@ -704,9 +726,19 @@ function meta::java::metamodel::factory::addMethod(class:meta::java::metamodel::
    ^$class(methods = $class.methods->concatenate($method->addFunctionType($class)));
 }
 
+function meta::java::metamodel::factory::addMethod(class:meta::java::metamodel::Class[1], builder:Function<{meta::java::metamodel::Class[1]->meta::java::metamodel::Method[1]}>[1]):meta::java::metamodel::Class[1]
+{
+   $class->addMethod($builder->eval($class));
+}
+
 function meta::java::metamodel::factory::addMethods(class:meta::java::metamodel::Class[1], methods:meta::java::metamodel::Method[*]):meta::java::metamodel::Class[1]
 {
    $methods->fold({m, c|$c->addMethod($m)}, $class);
+}
+
+function meta::java::metamodel::factory::addMethods(class:meta::java::metamodel::Class[1], builder:Function<{meta::java::metamodel::Class[1]->meta::java::metamodel::Method[*]}>[1]):meta::java::metamodel::Class[1]
+{
+   $class->addMethods($builder->eval($class));
 }
 
 function <<access.private>> meta::java::metamodel::factory::addFunctionType(method:meta::java::metamodel::Method[1], onClass:meta::java::metamodel::Class[1]): meta::java::metamodel::Method[1]
@@ -777,6 +809,17 @@ function meta::java::metamodel::factory::javaMethod(modifiers:String[*], returnT
    )
 }
 
+function meta::java::metamodel::factory::javaMethod(modifiers:String[*], returnType:meta::java::metamodel::Type[1], name:String[1], parameters:Any[*], bodyCode:Code[*]) : meta::java::metamodel::Method[1]
+{
+   ^meta::java::metamodel::Method(
+      name           = $name,
+      modifiers      = $modifiers->javaModifiers(),
+      returnType     = $returnType,
+      parameters     = $parameters->cannonicalParameters(),
+      bodyCode       = if($bodyCode->size() == 1, |$bodyCode->toOne(), |j_block($bodyCode))
+   )
+}
+
 function meta::java::metamodel::factory::javaMethod(modifiers:String[*], typeParameters:meta::java::metamodel::TypeVariable[1..*], returnType:meta::java::metamodel::Type[1], name:String[1], parameters:Any[*], body:String[1]) : meta::java::metamodel::Method[1]
 {
    ^meta::java::metamodel::Method(
@@ -786,6 +829,18 @@ function meta::java::metamodel::factory::javaMethod(modifiers:String[*], typePar
       returnType     = $returnType,
       parameters     = $parameters->cannonicalParameters(),
       body           = $body
+   )
+}
+
+function meta::java::metamodel::factory::javaMethod(modifiers:String[*], typeParameters:meta::java::metamodel::TypeVariable[1..*], returnType:meta::java::metamodel::Type[1], name:String[1], parameters:Any[*], bodyCode:Code[*]) : meta::java::metamodel::Method[1]
+{
+   ^meta::java::metamodel::Method(
+      name           = $name,
+      modifiers      = $modifiers->javaModifiers(),
+      typeParameters = $typeParameters,
+      returnType     = $returnType,
+      parameters     = $parameters->cannonicalParameters(),
+      bodyCode       = if($bodyCode->size() == 1, |$bodyCode->toOne(), |j_block($bodyCode))
    )
 }
 
@@ -852,6 +907,12 @@ function meta::java::metamodel::factory::javaField(modifiers:String[*], type:met
    ^$uninited(value=$initialiser);
 }
 
+function meta::java::metamodel::factory::javaField(modifiers:String[*], type:meta::java::metamodel::Type[1], name:String[1], initialiser:Code[1]): meta::java::metamodel::Field[1]
+{
+   let uninited = javaField($modifiers, $type, $name);
+   ^$uninited(valueCode=$initialiser);
+}
+
 function meta::java::metamodel::factory::javaConstructor(modifiers:String[*], parameters:Any[*]): meta::java::metamodel::Constructor[1]
 {
    ^meta::java::metamodel::Constructor(
@@ -869,14 +930,78 @@ function meta::java::metamodel::factory::javaConstructor(modifiers:String[*], pa
    );
 }
 
+function meta::java::metamodel::factory::javaConstructor(modifiers:String[*], parameters:Any[*], bodyCode:Code[*]): meta::java::metamodel::Constructor[1]
+{
+   ^meta::java::metamodel::Constructor(
+      modifiers  = $modifiers->javaModifiers(),
+      parameters = $parameters->cannonicalParameters(),
+      bodyCode   = if($bodyCode->size() == 1, |$bodyCode->toOne(), |j_block($bodyCode))
+   );
+}
+
 Class meta::java::metamodel::factory::FactoryClass extends meta::java::metamodel::Class
 {
    knownPackages:Function<{meta::java::metamodel::Package[1]->meta::java::generation::utils::KnownPackage[1]}>[1];
 }
 
 
+function meta::java::metamodel::factory::inferImports(class:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+{
+   let allCodes  = $class.fields.valueCode->concatenate($class.constructors.bodyCode)->concatenate($class.methods.bodyCode);
+   let canInfer  = $class.additionalImports->isEmpty() && !$allCodes->containsSimpleCode();
+   let withAdded = if($canInfer,
+                      | $allCodes
+                           ->classesUsed()
+                           ->concatenate($class.interfaces)
+                           ->concatenate($class.superType)
+                           ->concatenate($class.fields.type)
+                           ->concatenate($class.methods.returnType)
+                           ->concatenate($class.methods.parameters.type)
+                           ->typesToClasses()
+                           ->fold({i, c| $c->imports($i)}, $class),
+                      | $class;
+                   );
+   ^$withAdded(additionalImports=$withAdded.additionalImports->map(c| javaClass($c))->filter(c| $c.package != $class.package)->map(c| $c->typePathToString(true)->sort()));
+}
 
-
+function meta::java::generation::code::containsSimpleCode(codes:Code[*]): Boolean[1]
+{
+   $codes->exists(code| $code->match([
+      c:InfixExpression[1]          | $c.left->containsSimpleCode() || $c.right->containsSimpleCode(),
+      c:PrefixExpression[1]         | $c.expression->containsSimpleCode(),
+      c:PostfixExpression[1]        | $c.expression->containsSimpleCode(),
+      c:Conditional[1]              | $c.test->containsSimpleCode() || $c.then->containsSimpleCode() || $c.else->containsSimpleCode(),
+      c:InstanceOf[1]               | $c.expression->containsSimpleCode(),
+      c:ArrayAccess[1]              | $c.array->containsSimpleCode() || $c.index->containsSimpleCode(),
+      c:CastProxy[1]                | $c.expression->containsSimpleCode() || $c.proxy->containsSimpleCode(),
+      c:Cast[1]                     | $c.expression->containsSimpleCode(),
+      c:LocalVariableDeclaration[1] | $c.initializer->containsSimpleCode(),
+      c:ConstructorCall[1]          | $c.arguments->containsSimpleCode(),
+      c:MethodCall[1]               | $c.instance->containsSimpleCode() || $c.arguments->containsSimpleCode(),
+      c:FieldAccess[1]              | $c.instance->containsSimpleCode(),
+      c:MethodReference[1]          | $c.instance->containsSimpleCode(),
+      c:Block[1]                    | $c.statements->containsSimpleCode(),
+      c:ExpressionStatement[1]      | $c.expression->containsSimpleCode(),
+      c:If[1]                       | $c.test->containsSimpleCode() || $c.then->containsSimpleCode() || $c.else->containsSimpleCode(),
+      c:For[1]                      | $c.init->containsSimpleCode() || $c.test->containsSimpleCode() || $c.update->containsSimpleCode(),
+      c:ForEach[1]                  | $c.parameter->containsSimpleCode() || $c.collection->containsSimpleCode() || $c.body->containsSimpleCode(),
+      c:While[1]                    | $c.test->containsSimpleCode() || $c.then->containsSimpleCode(),
+      c:DoWhile[1]                  | $c.do->containsSimpleCode() || $c.while->containsSimpleCode(),
+      c:Try[1]                      | $c.try->containsSimpleCode() || $c.catches->containsSimpleCode() || $c.finally->containsSimpleCode(),
+      c:Catch[1]                    | $c.clause->containsSimpleCode(),
+      c:Finally[1]                  | $c.clause->containsSimpleCode(),
+      c:Return[1]                   | $c.expression->containsSimpleCode(),
+      c:Throw[1]                    | $c.expression->containsSimpleCode(),
+      c:NewAnonymous[1]             | $c.arguments->containsSimpleCode() || $c.methods->containsSimpleCode(),
+      c:New[1]                      | $c.arguments->containsSimpleCode(),
+      c:Method[1]                   | $c.parameters->containsSimpleCode() || $c.body->containsSimpleCode(),
+      c:StaticMethodCall[1]         | $c.arguments->containsSimpleCode(),
+      c:DeferredStreamResolve[1]    | $c.stream->containsSimpleCode(),
+      c:Lambda[1]                   | $c.expression->containsSimpleCode(),
+      //c:SimpleCode[1]               | true,
+      c:Code[1]                     | $c->instanceOf(SimpleCode)
+   ]));
+}
 
 
 // TODO Eliminate this
@@ -908,6 +1033,7 @@ function meta::java::generation::code::dependencies(codes: Code[*]):CodeDependen
       c:CastProxy[1]                | $c.requires->concatenate($c.expression->concatenate($c.proxy)->dependencies()),
       c:Cast[1]                     | $c.requires->concatenate($c.expression->dependencies()),
       c:LocalVariableDeclaration[1] | $c.requires->concatenate($c.initializer->dependencies()),
+      c:ConstructorCall[1]          | $c.requires->concatenate($c.arguments->map(a| $a->dependencies())),
       c:MethodCall[1]               | $c.requires->concatenate($c.instance->dependencies())->concatenate($c.arguments->map(a| $a->dependencies())),
       c:FieldAccess[1]              | $c.requires->concatenate($c.instance->dependencies()),
       c:MethodReference[1]          | $c.requires->concatenate($c.instance->dependencies()),
@@ -1021,7 +1147,7 @@ function meta::java::generation::code::j_arrayAccess(array:Code[1], index:Code[1
 function meta::java::generation::code::j_block(codes:Code[*]):Code[1]
 {
    let statements = $codes->toStatements();
-   let last       = $statements->last()->toOne().type;
+   let last       = $statements->last().type;
    ^Block(statements=$statements, type=if($last->isEmpty(), |javaVoid(), |$last->toOne()));
 }
 
@@ -1192,6 +1318,11 @@ function meta::java::generation::code::j_return(expression:Code[1]):Code[1]
 function meta::java::generation::code::j_throw(expression:Code[1]):Code[1]
 {
    ^Throw(expression=$expression, type=$expression.type);
+}
+
+function meta::java::generation::code::j_castWithoutChecks(expression:Code[1], castTo:meta::java::metamodel::Type[1]):Code[1]
+{
+   ^Cast(expression=$expression, type=$castTo);
 }
 
 function meta::java::generation::code::j_cast(expression:Code[1], castTo:meta::java::metamodel::Type[1]):Code[1]
@@ -1674,6 +1805,16 @@ function meta::java::generation::code::j_method(modifiers:String[*], returnType:
    ^Method(modifiers=$modifiers->javaModifiers(), type=$returnType, name=$name, parameters=$parameters->cast(@Parameter), body=$body->blockIfNot());
 }
 
+function meta::java::generation::code::j_thisInvoke(ofType:meta::java::metamodel::Type[1], args:Code[*]):Code[1]
+{
+   ^ThisConstructorCall(arguments=$args, type=$ofType);
+}
+
+function meta::java::generation::code::j_superInvoke(ofType:meta::java::metamodel::Type[1], args:Code[*]):Code[1]
+{
+   ^SuperConstructorCall(arguments=$args, type=$ofType);
+}
+
 function meta::java::generation::code::j_invoke(instance:Code[1], method:meta::java::metamodel::Method[1], args:Code[*]):Code[1]
 {
    j_invoke($instance, [], $method.name, $args, $method.returnType);
@@ -2097,6 +2238,7 @@ function meta::java::generation::code::typesUsed(codes: Code[*]):meta::java::met
       c:CastProxy[1]                | $c.type->concatenate($c.expression->concatenate($c.proxy)->typesUsed()),
       c:Cast[1]                     | $c.type->concatenate($c.expression->typesUsed()),
       c:LocalVariableDeclaration[1] | $c.type->concatenate($c.initializer->typesUsed()),
+      c:ConstructorCall[1]          | $c.type->concatenate($c.arguments->map(a| $a->typesUsed())),
       c:MethodCall[1]               | $c.type->concatenate($c.typeArguments)->concatenate($c.instance->typesUsed())->concatenate($c.arguments->map(a| $a->typesUsed())),
       c:FieldAccess[1]              | $c.type->concatenate($c.instance->typesUsed()),
       c:MethodReference[1]          | $c.type->concatenate($c.instance->typesUsed()),
@@ -2756,18 +2898,18 @@ function <<access.private>> meta::java::metamodel::project::mergeClass(base: Pro
                             }
                          ));
 
-         let interfaces = $existing.interfaces->concatenate($class.interfaces)->map(i|$i->typePathToString(true))->removeDuplicates()->map(i|$i->javaType());
+         let interfaces = $existing.interfaces->concatenate($class.interfaces)->removeDuplicates();
          
          let newlyDefinedFields = $class.fields->filter({newField |
             let existingField = $existing.fields->filter({m | $m.name == $newField.name});
-            assert($existingField->isEmpty() || (($existingField.type == $newField.type) && ($existingField->toOne().value == $newField.value)), | 'Cannot merge field ' + $newField.name + ' in ' + $classFullName);
+            assert($existingField->isEmpty() || (($existingField.type == $newField.type) && ($existingField.value == $newField.value) && ($existingField.valueCode == $newField.valueCode)), | 'Cannot merge field ' + $newField.name + ' in ' + $classFullName);
             $existingField->isEmpty();
          });
          let fields = $existing.fields->concatenate($newlyDefinedFields);
          
          let newlyDefinedMethods = $class.methods->filter({newMethod|
             let existingMethod = $existing.methods->filter({m| $m.name == $newMethod.name && $m.parameters.type == $newMethod.parameters.type});
-            assert($existingMethod->isEmpty() || $existingMethod->toOne().body == $newMethod.body, | 'Cannot merge implementations of ' + $newMethod->methodSignature() + ' in ' + $classFullName);
+            assert($existingMethod->isEmpty() || ($existingMethod.body == $newMethod.body && $existingMethod.bodyCode == $newMethod.bodyCode), | 'Cannot merge implementations of ' + $newMethod->methodSignature() + ' in ' + $classFullName);
             $existingMethod->isEmpty();
          });
          let methods = $existing.methods->concatenate($newlyDefinedMethods);

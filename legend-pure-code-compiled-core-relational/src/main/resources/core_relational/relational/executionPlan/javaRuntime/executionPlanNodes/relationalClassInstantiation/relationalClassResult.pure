@@ -132,15 +132,13 @@ function <<access.private>> meta::alloy::runtime::java::generateRelationalMappin
 
    let classWithDBConnection = 
       $classWithSetId
-      ->addField(javaField(['private'], javaString(), $conventions->fieldName(databaseConnectionPropertyName())))
-      ->addMethod(javaMethod(['public'], javaString(), $conventions->getterName(databaseConnectionPropertyName()), [], 'return this.' + $conventions->fieldName(databaseConnectionPropertyName()) + ';')->addAnnotation(^meta::java::metamodel::annotations::json::JsonIgnore()))
-      ->addMethod(javaMethod(['public'], javaVoid(), $conventions->setterName(databaseConnectionPropertyName()), [javaParam(javaString(), 'databaseConnection')], 'this.' + $conventions->fieldName(databaseConnectionPropertyName()) + ' = databaseConnection;'));
+      ->addField(javaField(['public', 'static'], javaString(), $conventions->fieldName(databaseConnectionPropertyName())));
 
    let classWithReference = 
       $classWithDBConnection
       ->addObjectMapperField($conventions)
       ->addField(javaField(['private'], javaString(), $conventions->fieldName($conventions->storeObjectReferenceIdentifier())))
-      ->addMethod(relationalReferenceIdentifierGetterMethodForImplementation($sets, $conventions)->addAnnotation(^meta::java::metamodel::annotations::json::JsonProperty(value = $conventions->fieldName($conventions->storeObjectReferenceIdentifier()))));
+      ->addMethod(relationalReferenceIdentifierGetterMethodForImplementation($sets, $classWithDBConnection, $conventions)->addAnnotation(^meta::java::metamodel::annotations::json::JsonProperty(value = $conventions->fieldName($conventions->storeObjectReferenceIdentifier()))));
 
    let classWithKeys = $sets->fold({set, cl |
       let setIdx = $sets->indexOf($set);
@@ -246,7 +244,7 @@ function <<access.private>> meta::alloy::runtime::java::createRelationalObjectQu
          ['public'], javaObject(), 'getObjectFromResultSet', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'), javaParam(javaString(), 'databaseTimeZone'), javaParam(javaString(), 'databaseConnection')],
          'if (this.propertyIndices == null)\n'+
          '{\n'+
-         '    this.doSetup(resultSet, databaseTimeZone);\n'+    
+         '    this.doSetup(resultSet, databaseTimeZone, databaseConnection);\n'+    
          '}\n'+
          if($sets->size() == 1,
             | 
@@ -284,10 +282,11 @@ function <<access.private>> meta::alloy::runtime::java::createRelationalObjectQu
    )
    ->addMethod(
       javaMethod(
-         ['private'], javaVoid(), 'doSetup', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'), javaParam(javaString(), 'databaseTimeZone')],
+         ['private'], javaVoid(), 'doSetup', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'), javaParam(javaString(), 'databaseTimeZone'), javaParam(javaString(), 'databaseConnection')],
          'try\n'+
          '{\n'+
          '    this.calendar = new GregorianCalendar(TimeZone.getTimeZone(databaseTimeZone));\n'+
+         '    ' + $conventions->baseImplementationName($sets, $resultClass, $path)->typePathToString(true) + '.' + $conventions->fieldName(databaseConnectionPropertyName()) + ' = databaseConnection;\n'+
          '    ResultSetMetaData resultSetMetaData = resultSet.getMetaData();\n'+
          '    int columnCount = resultSetMetaData.getColumnCount();\n'+
          '    this.columnTypes = new ArrayList<>();\n'+
@@ -431,7 +430,6 @@ function <<access.private>> meta::alloy::runtime::java::objectCreation(implClass
    };
 
    'final ' + $implClass->typePathToString(true) + ' object = new ' + $implClass->typePathToString(true) + '();\n' +
-   'object.' + $conventions->setterName(databaseConnectionPropertyName()) + '(databaseConnection);\n' +
    'object.' + $conventions->setterName(setIdPropertyName()) + '("' + $set.id + '");\n' +
    'int pkColIndex;\n' +
    $currentSetPks->size()->range()->map({pkIdx | 
@@ -1007,7 +1005,7 @@ function meta::alloy::runtime::java::encodeHexMethod():meta::java::metamodel::Me
    )
 }
 
-function meta::alloy::runtime::java::relationalReferenceIdentifierGetterMethodForImplementation(sets: RelationalInstanceSetImplementation[*], conventions: Conventions[1]):meta::java::metamodel::Method[1]
+function meta::alloy::runtime::java::relationalReferenceIdentifierGetterMethodForImplementation(sets: RelationalInstanceSetImplementation[*], implClass: meta::java::metamodel::Class[1], conventions: Conventions[1]):meta::java::metamodel::Method[1]
 {
    let referenceIdentifier = $conventions->fieldName($conventions->storeObjectReferenceIdentifier());
    javaMethod(
@@ -1030,7 +1028,7 @@ function meta::alloy::runtime::java::relationalReferenceIdentifierGetterMethodFo
       '        referenceBuilder.append(":");\n'+
       '        referenceBuilder.append(setId);\n'+
       '        referenceBuilder.append(":");\n\n'+
-      '        String databaseConnectionString = this.' + $conventions->getterName(databaseConnectionPropertyName()) + '();\n'+
+      '        String databaseConnectionString = ' + $implClass->typePathToString(true) + '.' + $conventions->fieldName(databaseConnectionPropertyName()) + ';\n'+
       '        referenceBuilder.append(String.format("%010d", databaseConnectionString.length()));\n'+
       '        referenceBuilder.append(":");\n'+
       '        referenceBuilder.append(databaseConnectionString);\n'+
@@ -1054,7 +1052,7 @@ function meta::alloy::runtime::java::relationalReferenceIdentifierGetterMethodFo
       '    catch (Exception e)\n'+
       '    {\n'+
       '       throw new RuntimeException(e);\n'+
-      '    }'+
+      '    }\n'+
       '}\n\n'+
       'return this.' + $referenceIdentifier + ';'
    );

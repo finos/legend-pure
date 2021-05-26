@@ -38,6 +38,11 @@
                 <configuration>
                     <sourceDirectory>${project.basedir}/src/main/resources</sourceDirectory>
                     <purePlatformVersion>${project.version}</purePlatformVersion>
+                    <repositories>
+                        <repository>platform</repository>
+                        <repository>core</repository>
+                        <repository>core_relational</repository>
+                    </repositories>
                     <extraRepositories>
                         <extraRepository>${project.basedir}/src/main/resources/core_relational.definition.json</extraRepository>
                     </extraRepositories>
