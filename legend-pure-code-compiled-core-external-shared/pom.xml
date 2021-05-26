@@ -22,13 +22,13 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.22.1-SNAPSHOT</version>
+        <version>1.21.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>legend-pure-code-compiled-core-relational</artifactId>
+    <artifactId>legend-pure-code-compiled-core-external-shared</artifactId>
     <packaging>jar</packaging>
-    <name>Legend Pure - Code - PAR - Core - Relational</name>
+    <name>Legend Pure - Code - PAR - Core - External - Shared</name>
 
     <build>
         <plugins>
@@ -41,10 +41,10 @@
                     <repositories>
                         <repository>platform</repository>
                         <repository>core</repository>
-                        <repository>core_relational</repository>
+                        <repository>core_external_shared</repository>
                     </repositories>
                     <extraRepositories>
-                        <extraRepository>${project.basedir}/src/main/resources/core_relational.definition.json</extraRepository>
+                        <extraRepository>${project.basedir}/src/main/resources/core_external_shared.definition.json</extraRepository>
                     </extraRepositories>
                 </configuration>
                 <executions>
@@ -72,29 +72,25 @@
     </build>
 
     <dependencies>
+        <!-- PURE -->
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-m3-core</artifactId>
         </dependency>
+        <!-- PURE -->
 
-<!--        <dependency>-->
-<!--            <groupId>org.eclipse.collections</groupId>-->
-<!--            <artifactId>eclipse-collections-api</artifactId>-->
-<!--        </dependency>-->
-
+        <!-- TEST -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-m3-core</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-m3-dsl-path</artifactId>
@@ -115,19 +111,6 @@
             <artifactId>legend-pure-m2-dsl-diagram</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m2-store-relational</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m2-external-json</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
@@ -138,5 +121,6 @@
             <artifactId>eclipse-collections-testutils</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- TEST -->
     </dependencies>
 </project>

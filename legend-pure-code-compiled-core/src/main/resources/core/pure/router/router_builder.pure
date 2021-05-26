@@ -224,10 +224,11 @@ function meta::pure::router::builder::build(v:ValueSpecification[1], l:List<Perm
 
 function meta::pure::graphFetch::execution::isSerialize(fe:FunctionExpression[1], extensions:meta::pure::router::extension::RouterExtension[*]):Boolean[1]
 {
-   $fe.func == serialize_T_MANY__RootGraphFetchTree_1__String_1_ ||
+   $fe.func == serialize_T_MANY__RootGraphFetchTree_1__String_1_ || 
    $fe.func == serialize_Checked_MANY__RootGraphFetchTree_1__String_1_ ||
    $fe.func == serialize_T_MANY__RootGraphFetchTree_1__AlloySerializationConfig_1__String_1_ ||
-   $fe.func == serialize_Checked_MANY__RootGraphFetchTree_1__AlloySerializationConfig_1__String_1_;
+   $fe.func == serialize_Checked_MANY__RootGraphFetchTree_1__AlloySerializationConfig_1__String_1_ ||
+   $extensions.routing_extraIsSerialize->exists(f|$f->eval($fe));
 }
 
 

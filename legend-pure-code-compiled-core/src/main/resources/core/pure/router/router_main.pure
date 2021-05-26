@@ -100,12 +100,17 @@ Class meta::pure::router::store::platform::PlatformStore extends meta::pure::sto
 
 function meta::pure::router::store::platform::planExecution(sq:meta::pure::mapping::StoreQuery[1], ext:RoutedValueSpecification[0..1], m:Mapping[0..1], runtime:Runtime[0..1], exeCtx:ExecutionContext[1], extensions : RouterExtension[*], debug:DebugContext[1]):ExecutionNode[1]
 {
-   ^PureExpressionPlatformExecutionNode
-   (
-      expression = $sq.fe,
-      resultType = ^ResultType(type=$sq.fe.genericType.rawType->toOne()),
-      executionNodes = $sq.fe->recurse()->map(c|$c->plan($runtime, $sq.inScopeVars, $sq.advancedRouting, $exeCtx, $extensions, $debug))
-   );
+   let children = $sq.fe->recurse()->map(c|$c->plan($runtime, $sq.inScopeVars, $sq.advancedRouting, $exeCtx, $extensions, $debug));
+   let dflt     = {fe:FunctionExpression[1], ch:ExecutionNode[*]|
+      ^PureExpressionPlatformExecutionNode
+      (
+         expression = $fe,
+         resultType = ^ResultType(type=$fe.genericType.rawType->toOne()),
+         executionNodes = $children
+      )
+   };
+   
+   meta::pure::executionPlan::nodeFromFunctionExpression($sq.fe, $children, $extensions, $dflt);
 }
 
 function meta::pure::router::permute(var:PermutationSet[*]):List<PermutationSet>[*]

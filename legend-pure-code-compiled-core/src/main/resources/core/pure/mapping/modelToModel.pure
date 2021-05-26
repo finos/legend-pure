@@ -177,7 +177,8 @@ function meta::pure::mapping::modelToModel::planExecution(sq:meta::pure::mapping
 
 function meta::pure::mapping::modelToModel::supports(f:FunctionExpression[1]):Boolean[1]
 {   
-   !($f->isSerialize() || $f->isLetFunction())
+   $f.func == meta::json::toJSON_T_MANY__LambdaFunction_MANY__String_1_
+      || ($f.func->isWithinPackage(meta::pure) && !($f->isSerialize() || $f->isLetFunction()));
 }
 
 function meta::pure::mapping::modelToModel::plan::modelToModelPlanNodeToString(c:ModelToModelExecutionNode[1], space:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
@@ -270,11 +271,11 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planRootG
 
    let connection = if ($sq.store->instanceOf(ModelStore),
                         | let sourceClass = $rootTree.sets->toOne()->cast(@PureInstanceSetImplementation).srcClass->toOne(); 
-                          $runtime.connections->filter(c|$c.element->instanceOf(ModelStore) && $c->match([
+                          $runtime.connections->filter(c|$c.element->instanceOf(ModelStore) && $c->match($extensions.executionPlan_generation_isConnectionForClass->map(x|$x->eval($sourceClass))->concatenate([
                              j : JsonModelConnection[1] | $j.class == $sourceClass,
                              x : XmlModelConnection[1]  | $x.class ==  $sourceClass,
                              m : ModelConnection[1]     | true
-                          ]));,
+                          ])->toOneMany()));,
                         | $runtime->connectionByElement($store)
                     )->toOne();
    
@@ -284,6 +285,22 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planRootG
    ]);
    let sourceTreeExtended = if($enableConstraints, | $sourceTree->ensureConstraintsRequirements(), | $sourceTree);
    
+   let defaultGenerateExecutionNode = {c:Connection[1]|
+      ^StoreStreamReadingExecutionNode
+      (
+         resultType        = ^PartialClassResultType
+         (
+            type = $sourceTreeExtended->typeFromGraphFetchTree(),
+            propertiesWithParameters = $sourceTreeExtended.subTrees->cast(@PropertyGraphFetchTree)->map(x | $x->map(x | ^PropertyWithParameters(property = $x.property, parameters = $x.parameters)))
+         ),
+         graphFetchTree    = $sourceTreeExtended,
+         store             = $store,
+         connection        = $connection,
+         enableConstraints = $enableConstraints,
+         checked           = $checked
+      )
+   };
+   
    ^InMemoryRootGraphFetchExecutionNode
    (
       resultType        = $rootTree->resultTypeFromGraphFetchTree(),
@@ -292,19 +309,7 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planRootG
       batchSize         = $batchSize,
       checked           = $checked,
       children          = $rootTree->generateInMemoryChildGraphNodes($rootTree->nodePathName(), $orderedPaths, $debug),
-      executionNodes    = ^StoreStreamReadingExecutionNode
-                          (
-                             resultType        = ^PartialClassResultType
-                                                 (
-                                                    type = $sourceTreeExtended->typeFromGraphFetchTree(),
-                                                    propertiesWithParameters = $sourceTreeExtended.subTrees->cast(@PropertyGraphFetchTree)->map(x | $x->map(x | ^PropertyWithParameters(property = $x.property, parameters = $x.parameters)))
-                                                 ),
-                             graphFetchTree    = $sourceTreeExtended,
-                             store             = $store,
-                             connection        = $connection,
-                             enableConstraints = $enableConstraints,
-                             checked           = $checked
-                          )
+      executionNodes    = $connection->meta::pure::executionPlan::nodeFromConnection($sourceTreeExtended, $enableConstraints, $checked, $extensions, $defaultGenerateExecutionNode)
    );
 }
 
