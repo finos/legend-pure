@@ -908,7 +908,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::mapTo
       pair(DurationUnit.HOURS->toString(), 'HOUR'),
       pair(DurationUnit.MINUTES->toString(), 'MINUTE'),
       pair(DurationUnit.SECONDS->toString(), 'SECOND'),
-      pair(DurationUnit.MILLISECONDS->toString(), 'MILLISECOND')
+      pair(DurationUnit.MILLISECONDS->toString(), 'MILLISECOND'),
+      pair(DurationUnit.MICROSECONDS->toString(), 'MICROSECOND')
    ]->filter(p | $p.first == $unit).second->toOne();
 }
 
