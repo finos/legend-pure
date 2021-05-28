@@ -138,15 +138,16 @@ function meta::json::schema::generation::generateJsonSchemaFromPure(config:JSONS
 function <<access.protected>> meta::json::schema::generateJsonSchemaFromPure_internal(config:JSONSchemaConfig[1], element: Type[1]) : JSONSchemaOutput[*]
 {
    let internalConfig = $config->externalToInternalConfig();
-   let content = $element->toJSONSchema([],$internalConfig)->jsonSchemaString($internalConfig);
-   let types = ^JSONSchemaOutput(content=$content,fileName=$element->elementName($internalConfig,true,true,[]), format=$internalConfig.fileType);
+   let schemaResult = $element->toJSONSchema([],$internalConfig);
+   let content = $schemaResult.schema->jsonSchemaString($internalConfig);
+   let types = ^JSONSchemaOutput(content=$content,fileName=$element->elementName($internalConfig,true,true,[]), format=$internalConfig.fileType,message=$schemaResult.message);
 $types;
 }
 
 function <<access.protected>> meta::json::schema::schemaCollectionOutput(elements:PackageableElement[*],config:JSONSchemaConfigInternal[1]) : JSONSchemaOutput[*]
 {
-
-   let types = ^JSONSchemaOutput(content= $elements->meta::json::schema::schemaCollection($config)->jsonSchemaString($config),fileName='model', format=$config.fileType);
+   let schemaResult =  $elements->meta::json::schema::schemaCollection($config);
+   let types = ^JSONSchemaOutput(content= $schemaResult.schema->jsonSchemaString($config),fileName='model', format=$config.fileType,message=$schemaResult.message);
 
 }
 
@@ -159,7 +160,7 @@ function <<access.protected>> meta::json::schema::generateFunctionSchema(config:
                               |newJSONKeyStringValue('type','object'),
                               |[]);
 
-   let schema = $functionDef.constraint->toOne()->cast(@JSONObject);
+   let schema = if($functionDef.constraint->isNotEmpty(),|$functionDef.constraint->toOne()->cast(@JSONObject),|^JSONObject());
 
    let elementTags = $element->elementTags($config);
 
@@ -167,7 +168,7 @@ function <<access.protected>> meta::json::schema::generateFunctionSchema(config:
 
   let updatedSchema = ^$schema(keyValuePairs+=$header);
 
-  ^JSONSchemaOutput(content= $updatedSchema->jsonSchemaString($config),fileName=$element->elementName($config,true,true,[]), format=$config.fileType);
+  ^JSONSchemaOutput(content= $updatedSchema->jsonSchemaString($config),fileName=$element->elementName($config,true,true,[]), format=$config.fileType, message=$functionDef.generationMessage);
 
 }
 
@@ -216,7 +217,7 @@ meta::json::schema::toJSONSchema( typeAsString:String[1] ) : String[1]
 function meta::json::schema::generation::toJSONSchema( type:Type[1],config:JSONSchemaConfig[1] ) : JSONObject[1] {
 
    let internalConfig = $config->meta::json::schema::externalToInternalConfig();
-   $type->toJSONSchema( $type, $internalConfig);
+   $type->toJSONSchema( $type, $internalConfig).schema;
 }
 
 
@@ -264,7 +265,7 @@ function <<access.protected>> meta::json::schema::externalToInternalConfig(confi
   }
 
 function meta::json::schema::toJSONSchema( type:Type[1] ) : JSONObject[1] {
-   $type->toJSONSchema( $type, defaultInternalConfig());
+   $type->toJSONSchema( $type, defaultInternalConfig()).schema;
 }
 
 
@@ -292,24 +293,18 @@ if($value->isNotEmpty(),|  newJSONKeyValue($JSONTagName,$value->toOne()),|[]);
 
 
 
-function <<access.protected>> meta::json::schema::toJSONSchema( type:Type[1], root:Type[0..1], config:JSONSchemaConfigInternal[1] ) : JSONObject[1]
+function <<access.protected>> meta::json::schema::toJSONSchema( type:Type[1], root:Type[0..1], config:JSONSchemaConfigInternal[1] ) : JsonSchemaGenerationResult[1]
 {
    let javaType = $type->javaTypeReference();
    let javaInterfaces = $type->javaInterfaceReference();
 
    let schemaType = if($type->instanceOf(Class),|newJSONKeyStringValue( 'type', 'object'),|[]);
    let initialKeys =  $type -> schema($config.schemaSpecification)->concatenate(  $type -> title());
-  newJSONObject(
-        [ $initialKeys
-        ]
-         ->concatenate($type -> elementTags($config))
-         ->concatenate($javaType)
-         ->concatenate($javaInterfaces)
-         -> concatenate(
-                          if( $type->isEnum(),
+
+    let propertyKeys = if( $type->isEnum(),
                              |   let default = $type->value4Tag('defaultValue',JSONSchemaGeneration);
                                  let defaultTag = $default->first()->toJSONRepresentation('default',[]);
-                                $type->cast(@Enumeration<Any>)->enum()->concatenate($defaultTag)->concatenate( newJSONKeyStringValue( 'type', 'string')->addNullType($type,$config));,
+                                ^JsonSchemaKeyValueMessage(key=$type->cast(@Enumeration<Any>)->enum()->concatenate($defaultTag)->concatenate( newJSONKeyStringValue( 'type', 'string')->addNullType($type,$config)));,
                              |
                                let class = $type->cast(@Class<Any>);
                                let constraints = if($config.useConstraints ,| $class.constraints->map(c|$c->meta::json::schema::constraint::toJSONSchemaFromConstraint(^$config(rootElement=$class))),|[]);
@@ -318,20 +313,38 @@ function <<access.protected>> meta::json::schema::toJSONSchema( type:Type[1], ro
 
                                let rootClass = $root->cast(@Class<Any>);
                                let required = $class->required();
-                               let properties = properties( $class,$rootClass,$constraints,$constraintsNoRef,$config);
+                               let properties = properties( $class,$rootClass,$constraints,$constraintsNoRef,$config); 
                                let res = $class->allOfGeneralizations($config)
                                               ->concatenate( $schemaType)
-                                               ->concatenate(if($properties.value->cast(@JSONObject).keyValuePairs->isEmpty(),|[],|$properties) )
+                                               ->concatenate(if($properties.key.value->cast(@JSONObject).keyValuePairs->isEmpty(),|[],|$properties.key) )
                                               ->concatenate(if($type->hasStereotype('noAdditionalProperties',JSONSchemaGeneration),
                                                                   |additionalProperties(false),
                                                                   |[] )
                                                              )->concatenate($class->addDiscriminator($config));
                                let newRes = if ($required->isEmpty(), | $res, | $res->concatenate($required));
-                               if ($config.includeAllRelatedTypes && $config.rootLevel , | $newRes->concatenate($class->definitions($rootClass,$config)), | $newRes);
-                           )
-                     )
+                               ^JsonSchemaKeyValueMessage(key =if ($config.includeAllRelatedTypes && $config.rootLevel , 
+                                                                 | $newRes->concatenate($class->definitions($rootClass,$config)), 
+                                                                 | $newRes),
+                                                      message=$constraints.generationMessage->concatenate($properties.message));
+                           );
 
-    );
+
+
+
+
+   
+   let schema =  newJSONObject(
+        [ $initialKeys
+        ]
+         ->concatenate($type -> elementTags($config))
+         ->concatenate($javaType)
+         ->concatenate($javaInterfaces)
+         -> concatenate($propertyKeys.key)
+                     );
+
+    
+
+^JsonSchemaGenerationResult(schema = $schema, message = $propertyKeys.message );
 }
 
 
@@ -663,21 +676,27 @@ function meta::json::schema::allGeneralizations( class:Class<Any>[1] ) : Class<A
 
 function meta::json::schema::allReferencedElements( class:Class<Any>[1] ) : PackageableElement[*]
 {
-   $class->allReferencedElements([],[],true)
+   $class->allReferencedElements([],defaultInternalConfig(),true)
          ->filter( element |   $element != $class )
 }
 
-function <<access.private>> meta::json::schema::allReferencedElements( element:PackageableElement[1],bag:PackageableElement[*],config:JSONSchemaConfigInternal[0..1],includeSubTypes:Boolean[1] )  : PackageableElement[*]
+function   <<access.private>> meta::json::schema::allReferencedElements( class:Class<Any>[1],config:JSONSchemaConfigInternal[1] ) : PackageableElement[*]
+{
+   $class->allReferencedElements([],$config,true)
+         ->filter( element |   $element != $class )
+}
+
+function <<access.private>> meta::json::schema::allReferencedElements( element:PackageableElement[1],bag:PackageableElement[*],config:JSONSchemaConfigInternal[1],includeSubTypes:Boolean[1] )  : PackageableElement[*]
 {
 
    $element->match([class:Class<Any>[1]|
                      if(meta::pure::functions::collection::contains($bag,$class) || $class->instanceOf(MappingClass),
                         | [],
                         |
-                           let generalizations                  = $class->allGeneralizations();
-                           let specializations                  = if($includeSubTypes,|$class.specializations->map( spec | $spec.specific)->filter( oclass | !$oclass->instanceOf(MappingClass) )->cast(@Class<Any>),|[]);
+                           let generalizations                  = $class->allGeneralizations(); 
+                           let specializations                  = if($includeSubTypes,|$class.specializations->map( spec | $spec.specific)->filter( oclass | !$oclass->instanceOf(MappingClass) )->cast(@Class<Any>),|[]); 
                            let specializationPropertyElements   = $specializations->map( oclass | $oclass->allReferencedElements( $bag->concatenate($class)->concatenate( $generalizations),$config,$includeSubTypes ) );
-                           let constraints = $class.constraints->map(c |$c.functionDefinition.expressionSequence->evaluateAndDeactivate()->at(0)->meta::json::schema::allFunctionElements([],$config))->removeDuplicates();
+                           let constraints = if($config.useConstraints,|$class.constraints->map(c |$c.functionDefinition.expressionSequence->evaluateAndDeactivate()->at(0)->meta::json::schema::allFunctionElements([],$config))->removeDuplicates(),|[]);
                            let allReferencedElements =
                             meta::pure::functions::collection::removeDuplicates(
                                $generalizations->concatenate($specializations)
@@ -924,15 +943,15 @@ function <<access.private>> meta::json::schema::propertyTypeValue( property:Prop
 
 function meta::json::schema::properties( class:Class<Any>[1] ) : JSONKeyValue[1]
 {
-   $class->properties([],[],[],defaultInternalConfig());
+   $class->properties([],[],[],defaultInternalConfig()).key->toOne();
 }
 
 function meta::json::schema::properties( class:Class<Any>[1], root:Class<Any>[0..1]) : JSONKeyValue[1]
 {
-   $class->properties([],[],[],defaultInternalConfig());
+   $class->properties([],[],[],defaultInternalConfig()).key->toOne();
 
 }
-function <<access.private>> meta::json::schema::properties( class:Class<Any>[1], root:Class<Any>[0..1],constraint:SchemaConstraint[*],constraintNoRef:SchemaConstraint[*], config:JSONSchemaConfigInternal[1]) : JSONKeyValue[1]
+function <<access.private>> meta::json::schema::properties( class:Class<Any>[1], root:Class<Any>[0..1],constraint:SchemaConstraint[*],constraintNoRef:SchemaConstraint[*], config:JSONSchemaConfigInternal[1]) : JsonSchemaKeyValueMessage[1]
 {
     let properties = $class.properties;
     let values = $properties->map( p | let propertyConstraint = $constraint->filter(c| $c.property.name==$p.name).constraint;
@@ -941,13 +960,16 @@ function <<access.private>> meta::json::schema::properties( class:Class<Any>[1],
                                        let constraintHasType =if($propertyConstraintNoRef->isNotEmpty(),
                                                                        |$propertyConstraintNoRef->map(c|$c->constraintHasType())->toOneMany()->or() ,
                                                                        | false);
-                                        if($p->shouldCreateArrayProperty(),
-                                         | $p->createArrayProperty($root,$constraintHasType, $propertyConstraint,$constraintHasRef,$config),
-                                         | $p->createProperty($root,$constraintHasType, $propertyConstraint,$constraintHasRef,$config)
-                                      );
-  );
- newJSONKeyValue( 'properties', newJSONObject( $values ) );
-
+                                      ^JsonSchemaKeyValueMessage(key= if($p->shouldCreateArrayProperty(),
+                                                                         | $p->createArrayProperty($root,$constraintHasType, $propertyConstraint,$constraintHasRef,$config),
+                                                                          | $p->createProperty($root,$constraintHasType, $propertyConstraint,$constraintHasRef,$config)
+                                                                      ),
+                                                              message = if($constraintNoRef->filter(c| $c.property.name==$p.name).generationMessage->isNotEmpty(),
+                                                                                       |[]->addError('Property ' +$class->elementToPath()+'.'+ $p.name->toOne() + ' references an unsupported schema and likely did not generate correctly' ),
+                                                                                       |[])
+                                                                    ););
+ let key = newJSONKeyValue( 'properties', newJSONObject( $values.key ) );
+^JsonSchemaKeyValueMessage(key= $key, message = $values.message);
 
 }
 
@@ -978,7 +1000,7 @@ function meta::json::schema::definitions( class:Class<Any>[1], root:Class<Any>[0
 function  <<access.private>> meta::json::schema::definitions( class:Class<Any>[1], root:Class<Any>[0..1], config:JSONSchemaConfigInternal[1] ) : JSONKeyValue[0..1]
 {
    let updatedConfig = ^$config(rootLevel=false);
-   let values = $class->allReferencedElements()->sortBy(e|$e->elementToPath())->map( p | newJSONKeyValue( $p->elementToPath(), $p->match([t:Type[1]|$t->toJSONSchema($root,$updatedConfig),
+   let values = $class->allReferencedElements($config)->sortBy(e|$e->elementToPath())->map( p | newJSONKeyValue( $p->elementToPath(), $p->match([t:Type[1]|$t->toJSONSchema($root,$updatedConfig).schema,
                                                                                                                                            f:FunctionDefinition<Any>[1] | $f->toJSONSchemaFromFunctionDefinition($updatedConfig).constraint->toOne()]))) ;
 
   if( $values->isEmpty(),
@@ -1083,19 +1105,27 @@ function meta::json::schema::mapSchema(value:String[1],class:Type[1]):Discrimina
 
 }
 
-function <<access.private>> meta::json::schema::schemaCollection(elements:PackageableElement[*],config:JSONSchemaConfigInternal[1]):JSONObject[1]
+function <<access.private>> meta::json::schema::schemaCollection(elements:PackageableElement[*],config:JSONSchemaConfigInternal[1]):JsonSchemaGenerationResult[1]
 {
     let updatedConfig =  ^$config(useDefinitions=false,includeAllRelatedTypes=false);
     let updatedElements = $elements->map(e|$e->allReferencedElements([],$updatedConfig,false));
 
 
-   let values = $updatedElements->distinct()->sortBy(e|$e->elementToPath())->map( p | newJSONKeyValue( $p->elementName($updatedConfig,true,false,[]), $p->toOne()->match([ t:Type[1]| $t->toJSONSchema([],$updatedConfig),
-                                                                                                                                                                           f:FunctionDefinition<Any>[1] | $f->toJSONSchemaFromFunctionDefinition($updatedConfig).constraint])->cast(@JSONElement)->toOne()));
-    let collection =  if($config->isOpenAPI(),
-                        | newJSONKeyValue('components',newJSONObject(newJSONKeyValue('schemas',newJSONObject($values)))),
-                        | newJSONKeyValue('definitions',newJSONObject($values)));
+   let generatedSchemas = $updatedElements->distinct()->sortBy(e|$e->elementToPath())->map( p | let keyName=$p->elementName($updatedConfig,true,false,[]);
+                                                                                                let generated =  $p->toOne()->match([ t:Type[1]|   let schema= $t->toJSONSchema([],$updatedConfig);
+                                                                                                                                                    ^JsonSchemaKeyValueMessage(key=newJSONKeyValue($keyName,$schema.schema),message=$schema.message);  ,
+                                                                                                                                      f:FunctionDefinition<Any>[1] | let schema = $f->toJSONSchemaFromFunctionDefinition($updatedConfig);   
+                                                                                                                                                                     let resolvedSchema = if($schema.constraint->isNotEmpty(),|$schema.constraint->toOne(),|^JSONObject());
+                                                                                                                                                                     ^JsonSchemaKeyValueMessage(key=newJSONKeyValue($keyName,$resolvedSchema),message=$schema.generationMessage);  
 
-   newJSONObject($collection);
+                                    
+                                                                                                                                                   ])->cast(@JsonSchemaKeyValueMessage)->toOne();  );
+                                                                                           
+    let collection =  if($config->isOpenAPI(),
+                        | newJSONKeyValue('components',newJSONObject(newJSONKeyValue('schemas',newJSONObject($generatedSchemas.key)))),
+                        | newJSONKeyValue('definitions',newJSONObject($generatedSchemas.key)));
+
+   ^JsonSchemaGenerationResult(schema = newJSONObject($collection), message =$generatedSchemas.message);
 }
 
 
@@ -1108,5 +1138,11 @@ Class meta::json::schema::DiscriminatorMapping
 Class meta::json::schema::JsonSchemaGenerationResult
 {
  schema:JSONObject[1];
+ message:GenerationMessage[*];
+}
+
+Class <<access.private>> meta::json::schema::JsonSchemaKeyValueMessage
+{
+ key:JSONKeyValue[*];
  message:GenerationMessage[*];
 }

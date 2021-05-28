@@ -908,7 +908,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::mapTo
       pair(DurationUnit.HOURS->toString(), 'HOUR'),
       pair(DurationUnit.MINUTES->toString(), 'MINUTE'),
       pair(DurationUnit.SECONDS->toString(), 'SECOND'),
-      pair(DurationUnit.MILLISECONDS->toString(), 'MILLISECOND')
+      pair(DurationUnit.MILLISECONDS->toString(), 'MILLISECOND'),
+      pair(DurationUnit.MICROSECONDS->toString(), 'MICROSECOND')
    ]->filter(p | $p.first == $unit).second->toOne();
 }
 
@@ -1051,6 +1052,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='cast(%s as VARCHAR(128))')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='cast(%s as VARCHAR(128))')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='convert(%s, VARCHAR(128))')),
+                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='to_char(%s)')),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='convert(%s, CHAR)'))]),
       forDynafunction('cos',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='cos(%s)'))]),
       forDynafunction('count',                 [ choice($allTypes,                 $allStates,            ^ToSql(format='count(%s)', transform={p:String[*]|if($p->isEmpty(),|'*',|$p)}))]),
@@ -1207,6 +1209,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
       forDynafunction('mod',                   [ choice($aSybase,                  $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='mod(%s,%s)')),
+                                                 choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='mod(%s,%s)'))]),

@@ -24,18 +24,20 @@ import meta::relational::metamodel::relation::*;
 
 function meta::relational::postProcessor::filterPushDown::pushFiltersDownToJoins(selectSQLQuery:SelectSQLQuery[1], extensions:RouterExtension[*]):Result<SelectSQLQuery|1>[1]
 {
+   let transformFunction = {r: RelationalOperationElement[1] |
+                              $r->match([
+                                 s: SelectSQLQuery[1] | if($s.data->isNotEmpty(),
+                                                           | let newS = ^$s(data = $s.data->toOne()->pushFiltersDownToJoins(list($s.filteringOperation->getFilteringPairs()), $extensions)->cast(@RootJoinTreeNode));
+                                                           if($s.leftSideOfFilter->isNotEmpty(),
+                                                              |^$newS(leftSideOfFilter=$s.leftSideOfFilter->toOne()->meta::relational::functions::pureToSqlQuery::findOneNode($s.data->toOne(), $newS.data->toOne())),
+                                                              | $newS);,
+                                                           | $s),
+                                 rel: RelationalOperationElement[1] | $rel;
+                              ]);
+                           };
+   
    ^Result<SelectSQLQuery|1>(
-      values = $selectSQLQuery->transform({r: RelationalOperationElement[1] |
-                                             $r->match([
-                                                s: SelectSQLQuery[1] | if($s.data->isNotEmpty(),
-                                                                          | let newS = ^$s(data = $s.data->toOne()->pushFiltersDownToJoins(list($s.filteringOperation->getFilteringPairs()), $extensions)->cast(@RootJoinTreeNode));
-                                                                            if($s.leftSideOfFilter->isNotEmpty(),
-                                                                               |^$newS(leftSideOfFilter=$s.leftSideOfFilter->toOne()->meta::relational::functions::pureToSqlQuery::findOneNode($s.data->toOne(), $newS.data->toOne())),
-                                                                               | $newS);,
-                                                                          | $s),
-                                                rel: RelationalOperationElement[1] | $rel;
-                                             ]);
-                                          })->cast(@SelectSQLQuery)
+      values = $selectSQLQuery->transformNonCached($transformFunction)->cast(@SelectSQLQuery)
    );
 }
 
@@ -54,8 +56,9 @@ function <<access.private>> meta::relational::postProcessor::filterPushDown::add
 {
    let candidatePairs = $filteringPairs->filter(p | $p.first == $left && !($left.alias.name == $joinTableAlias.name && $left.alias.relationalElement->buildUniqueName(true, $extensions) == $joinTableAlias.relationalElement->buildUniqueName(true, $extensions)));
    let tranformFunc = {rel: RelationalOperationElement[1] | if($rel == $left, | $right, | $rel)};
-   $candidatePairs->fold({element, aggregate | pair( newAndOrDynaFunctionRelaxedBrackets('and', [$aggregate.first, $element.second->transform($tranformFunc)]),
-                                                     list($aggregate.second.values->add(pair($right, $element.second->transform($tranformFunc)))))}, pair($operation, list([]->cast(@Pair<TableAliasColumn, RelationalOperationElement>))));
+   $candidatePairs->fold({element, aggregate | let transformedElement = $element.second->transformNonCached($tranformFunc);
+                                               pair( newAndOrDynaFunctionRelaxedBrackets('and', [$aggregate.first, $transformedElement]),
+                                                     list($aggregate.second.values->add(pair($right, $transformedElement))));}, pair($operation, list([]->cast(@Pair<TableAliasColumn, RelationalOperationElement>))));
 }
 
 function <<access.private>> meta::relational::postProcessor::filterPushDown::tryAddingFiltersToJoinOperation(operation:RelationalOperationElement[1], filteringPairs: List<Pair<TableAliasColumn, RelationalOperationElement>>[1], joinTableAlias: TableAlias[1], extensions:RouterExtension[*]):Pair<RelationalOperationElement, List<Pair<TableAliasColumn, RelationalOperationElement>>>[1]
@@ -70,9 +73,9 @@ function <<access.private>> meta::relational::postProcessor::filterPushDown::try
            | pair($operation, list([])));,
 
       | if(($operation->instanceOf(DynaFunction) && $operation->cast(@DynaFunction).name == 'and'),
-           | $operation->match([ dynaOp : DynaFunction[1] | let res = $dynaOp.parameters->map(param | $param->tryAddingFiltersToJoinOperation($filteringPairs, $joinTableAlias, $extensions));
-                                                            pair(^$dynaOp(parameters=$res.first), list($res.second.values));
-                              ]),
+           | let dynaOp = $operation->cast(@DynaFunction);
+             let res = $dynaOp.parameters->map(param | $param->tryAddingFiltersToJoinOperation($filteringPairs, $joinTableAlias, $extensions));
+             pair(^$dynaOp(parameters=$res.first), list($res.second.values));,
            | pair($operation, list([]))
           )
       )

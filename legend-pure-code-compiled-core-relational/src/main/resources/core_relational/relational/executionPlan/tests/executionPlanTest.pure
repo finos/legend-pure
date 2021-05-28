@@ -1353,6 +1353,26 @@ function <<test.Test>> meta::pure::executionPlan::tests::relationalTDSTypeForCol
    assertEquals($expected, $planWithQuotes->planToString(meta::pure::router::extension::defaultRelationalExtensions()));
 }
 
+function <<test.Test>> meta::pure::executionPlan::tests::testViewToTDS():Boolean[1]
+{
+  let query = {|viewToTDS(meta::relational::functions::database::viewReference(meta::relational::tests::db,'default','FirstNameAddress'))};
+
+  let mapping = meta::relational::tests::tds::tabletds::EmptyMapping;
+  let runtime = meta::relational::tests::testRuntime();
+
+  let expected =
+      'Relational\n' +
+      '(\n' +
+      '  type = TDS[(firstName, String, VARCHAR(200), ""), (address, String, VARCHAR(200), "")]\n' +
+      '  resultColumns = [("firstName", VARCHAR(200)), ("address", VARCHAR(200))]\n' +
+      '  sql = select "root".firstName as "firstName", "root".address as "address" from (select distinct "root".FIRSTNAME as firstName, "addresstable_0".NAME as address from personTable as "root" left outer join addressTable as "addresstable_0" on ("addresstable_0".ID = "root".ADDRESSID)) as "root"\n' +
+      '  connection = TestDatabaseConnection(type = "H2")\n' +
+      ')\n';
+
+  let plan = executionPlan($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+  assertEquals($expected, $plan->planToString(meta::pure::router::extension::defaultRelationalExtensions()));
+}
+
 function <<test.Test>> meta::pure::executionPlan::tests::testSupportStreamFlagSimple():Boolean[1]
 {
    let plan = executionPlan({id:Integer[1], name:String[*]|Person.all()->filter(p|$p.name->in($name) || $p.age == $id)->project(col(p|$p.firstName, 'firstName'))}, simpleRelationalMapping, meta::relational::tests::testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
@@ -1522,4 +1542,21 @@ function <<test.Test>> meta::pure::executionPlan::tests::testQuoteIdentifiersFla
    let graph = #{Product{name}}#;
    let result = executionPlan({|Product.all()->graphFetch($graph)->serialize($graph)}, simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
    assertEquals('PureExp(type=Stringexpression=[NodeIndex:0]->serialize(meta::relational::tests::model::simple::Product{name})(GlobalGraphFetch(type=PartialClass[impls=[(meta::relational::tests::model::simple::Product|simpleRelationalMapping.meta_relational_tests_model_simple_Product)],propertiesWithParameters=[name]]resultSizeRange=*store=meta::relational::tests::dblocalGraphFetchExecutionNode=RelationalGraphFetch(type=PartialClass[impls=[(meta::relational::tests::model::simple::Product|simpleRelationalMapping.meta_relational_tests_model_simple_Product)],propertiesWithParameters=[name]]nodeIndex=0relationalNode=SQL(type=meta::pure::metamodel::type::AnyresultColumns=[("pk_0",INT),("name",VARCHAR(200))]sql=select"root"."ID"as"pk_0","root"."NAME"as"name"from"productSchema"."productTable"as"root"connection=TestDatabaseConnection(type="H2"))children=[])children=[])))', $result->planToStringWithoutFormatting(meta::pure::router::extension::defaultRelationalExtensions()));
+}
+
+function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanWithLocalH2ConnectionWithSQL():Boolean[1]
+{
+  let conn = ^meta::pure::alloy::connections::RelationalDatabaseConnection
+                    (
+                       element = db,
+                       type = meta::relational::runtime::DatabaseType.H2,
+                       datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification(testDataSetupSqls=['a','b']),
+                       authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::TestDatabaseAuthenticationStrategy()
+                    );
+
+  let runtime = ^Runtime(connections = $conn);
+  let plan = executionPlan({|Product.all()->filter(p|$p.name == 'ok')}, simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+  assertEquals(['a','b'], $plan.rootExecutionNode.executionNodes->cast(@meta::relational::mapping::SQLExecutionNode).connection->cast(@meta::pure::alloy::connections::RelationalDatabaseConnection).datasourceSpecification->cast(@meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification).testDataSetupSqls);
+  let transformedPlan = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformPlan($plan, meta::pure::router::extension::defaultRelationalExtensions()); 
+  assertEquals(['a','b'], $transformedPlan.rootExecutionNode.executionNodes->cast(@meta::protocols::pure::vX_X_X::metamodel::executionPlan::SQLExecutionNode).connection->cast(@meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::RelationalDatabaseConnection).datasourceSpecification->cast(@meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::LocalH2DatasourceSpecification).testDataSetupSqls);
 }

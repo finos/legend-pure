@@ -28,8 +28,7 @@ import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::*;
 function <<test.Test>> meta::relational::tests::tds::tabletds::testProjectStringColumn():Boolean[1]
 {
    let result = execute(
-      |
-      tableToTDS(tableReference(meta::relational::tests::db,'default','personTable'))
+      | tableToTDS(tableReference(meta::relational::tests::db,'default','personTable'))
            ->project([col(r:TDSRow[1]|$r.getString('FIRSTNAME'), 'first_name'), col(r:TDSRow[1]|$r.getString('FIRSTNAME'), 'name_again')]),
       meta::relational::tests::tds::tabletds::EmptyMapping, 
       testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
@@ -40,6 +39,23 @@ function <<test.Test>> meta::relational::tests::tds::tabletds::testProjectString
       $result.values.rows->map(r|$r.values->makeString('|'))->makeString(',')); 
    
    assertEquals('select "root".FIRSTNAME as "first_name", "root".FIRSTNAME as "name_again" from personTable as "root"',
+      $result->sqlRemoveFormatting());  
+}
+
+function <<test.Test,test.ExcludeAlloy>> meta::relational::tests::tds::tabletds::testView():Boolean[1]
+{
+   let result = execute(
+      | viewToTDS(viewReference(meta::relational::tests::db,'default','FirstNameAddress'))
+           ->project([col(r:TDSRow[1]|$r.getString('firstName'), 'first_name'), col(r:TDSRow[1]|$r.getString('firstName'), 'name_again')]),
+      meta::relational::tests::tds::tabletds::EmptyMapping, 
+      testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
+   
+   assertSize($result.values.columns, 2);  
+   
+   assertEquals('Oliver|Oliver,Fabrice|Fabrice,David|David,Peter|Peter,John|John,Anthony|Anthony',
+      $result.values.rows->map(r|$r.values->makeString('|'))->makeString(',')); 
+   
+   assertEquals('select "root".firstName as "first_name", "root".firstName as "name_again" from (select distinct "root".FIRSTNAME as firstName, "addresstable_0".NAME as address from personTable as "root" left outer join addressTable as "addresstable_0" on ("addresstable_0".ID = "root".ADDRESSID)) as "root"',
       $result->sqlRemoveFormatting());  
 }
 

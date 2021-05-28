@@ -178,14 +178,14 @@ function meta::java::serialization::bodyToString(j:meta::java::metamodel::Class[
                        $f.type->typePathToString($canonicalNames)+
                        ' '+
                        $f.name+
-                       if(!$f.value->isEmpty(), | ' = ' + $f.value->toOne(), | '')+
+                       if($f.value->isNotEmpty() || $f.valueCode->isNotEmpty(), |' = ' + $canonicalNames->codeAsString($f.value, $f.valueCode, $tab), |'')+
                        ';'
                     )->joinStrings('\n\n')+if($j.fields->isEmpty(),|'',|'\n\n')+
    $j.constructors->map(c|$tab+$c->modifiersToString()+
                              $j.simpleName+
                              '('+
                              $c.parameters->map(p|$p->annotationToString('', false)+$p.type->typePathToString($canonicalNames)+' '+$p.name)->joinStrings(',')+
-                             ') {\n'+if($c.body->isEmpty(),|'',|$tab+$tab+$c.body->toOne()->replace('\n','\n'+$tab+$tab)+'\n')+$tab+'}'
+                             ') {\n'+$canonicalNames->codeAsMethodBody($c.body, $c.bodyCode, $tab)+$tab+'}'
 
                           )->joinStrings('\n\n')+if($j.constructors->isEmpty(),|'',|'\n\n')+
    $j.methods->map(m|$m->javaDocToString($tab)+$m->annotationToString($tab, true)+$tab+
@@ -197,11 +197,35 @@ function meta::java::serialization::bodyToString(j:meta::java::metamodel::Class[
                         '('+
                         $m.parameters->map(p|$p->annotationToString($tab, false)+$p.type->typePathToString($canonicalNames)+' '+$p.name)->joinStrings(', ')+
                         ')'+
-                        if($m.body->isEmpty(),
+                        if($m.body->isEmpty() && $m.bodyCode->isEmpty(),
                               |';',
-                              |' {\n'+$tab+$tab+$m.body->toOne()->replace('\n','\n'+$tab+$tab)+'\n'+$tab+'}'
-                        )
-                      )->joinStrings('\n\n')
+                              |' {\n'+$canonicalNames->codeAsMethodBody($m.body, $m.bodyCode, $tab)+$tab+'}'
+                       )
+                      )->joinStrings('\n\n');
+}
+
+function meta::java::serialization::codeAsString(canonicalNames:Boolean[1], s:String[0..1], c:Code[0..1], tab:String[1]):String[1]
+{
+   if($s->isNotEmpty(),
+      | $s->toOne()->replace('\n','\n'+$tab),
+      |
+   if($c->isNotEmpty(),
+      | $c->toOne()->codeToString()->replace('\n','\n'+$tab),
+      | ''
+   ));
+}
+
+function meta::java::serialization::codeAsMethodBody(canonicalNames:Boolean[1], s:String[0..1], c:Code[0..1], tab:String[1]):String[1]
+{
+   let addWhitespace = {x:String[1]| $tab+$tab+$x->replace('\n','\n'+$tab+$tab)+'\n'};
+
+   if($s->isNotEmpty(),
+      | $addWhitespace->eval($s->toOne()),
+      |
+   if($c->isNotEmpty(),
+      | $addWhitespace->eval($c->toOne()->codeToStringAsMethodBody(javaClass('dummy'))),
+      | ''
+   ));
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -296,14 +320,14 @@ function meta::java::serialization::bodyToString(j:meta::java::metamodel::Class[
                        $f.type->typePathToString($j)+
                        ' '+
                        $f.name+
-                       if(!$f.value->isEmpty(), | ' = ' + $f.value->toOne(), | '')+
+                       if($f.value->isNotEmpty() || $f.valueCode->isNotEmpty(), |' = ' + $j->codeAsString($f.value, $f.valueCode, $tab), |'')+
                        ';'
                     )->joinStrings('\n\n')+if($j.fields->isEmpty(),|'',|'\n\n')+
    $j.constructors->map(c|$tab+$c->modifiersToString()+
                              $j.simpleName+
                              '('+
                              $c.parameters->map(p|$p->annotationToString('', false)+$p.type->typePathToString($j)+' '+$p.name)->joinStrings(',')+
-                             ') {\n'+if($c.body->isEmpty(),|'',|$tab+$tab+$c.body->toOne()->replace('\n','\n'+$tab+$tab)+'\n')+$tab+'}'
+                             ') {\n'+$j->codeAsMethodBody($c.body, $c.bodyCode, $tab)+$tab+'}'
 
                           )->joinStrings('\n\n')+if($j.constructors->isEmpty(),|'',|'\n\n')+
    $j.methods->map(m|$m->javaDocToString($tab)+$m->annotationToString($tab, true)+$tab+
@@ -315,11 +339,35 @@ function meta::java::serialization::bodyToString(j:meta::java::metamodel::Class[
                         '('+
                         $m.parameters->map(p|$p->annotationToString($tab, false)+$p.type->typePathToString($j)+' '+$p.name)->joinStrings(', ')+
                         ')'+
-                        if($m.body->isEmpty(),
+                        if($m.body->isEmpty() && $m.bodyCode->isEmpty(),
                               |';',
-                              |' {\n'+$tab+$tab+$m.body->toOne()->replace('\n','\n'+$tab+$tab)+'\n'+$tab+'}'
+                              |' {\n'+$j->codeAsMethodBody($m.body, $m.bodyCode, $tab)+$tab+'}'
                         )
                       )->joinStrings('\n\n')
+}
+
+function meta::java::serialization::codeAsString(j:meta::java::metamodel::Class[1], s:String[0..1], c:Code[0..1], tab:String[1]):String[1]
+{
+   if($s->isNotEmpty(),
+      | $s->toOne()->replace('\n','\n'+$tab),
+      |
+   if($c->isNotEmpty(),
+      | $c->toOne()->codeToString($j)->replace('\n','\n'+$tab),
+      | ''
+   ));
+}
+
+function meta::java::serialization::codeAsMethodBody(j:meta::java::metamodel::Class[1], s:String[0..1], c:Code[0..1], tab:String[1]):String[1]
+{
+   let addWhitespace = {x:String[1]| $tab+$tab+$x->replace('\n','\n'+$tab+$tab)+'\n'};
+
+   if($s->isNotEmpty(),
+      | $addWhitespace->eval($s->toOne()),
+      |
+   if($c->isNotEmpty(),
+      | $addWhitespace->eval($c->toOne()->codeToStringAsMethodBody($j)),
+      | ''
+   ));
 }
 
 // --- To strings
@@ -419,9 +467,11 @@ function <<access.private>> meta::java::generation::code::codeToString(code: Cod
       c:Return[1]                   | 'return' + $c.expression->map(e| ' '+$e->codeToString($ctx))->joinStrings('')+';',
       c:Throw[1]                    | 'throw ' + $c.expression->codeToString($ctx)+';',
       c:New[1]                      | $c->newToString($ctx),
-      c:meta::java::generation::code::Method[1]                   | $c.modifiers->modifiersToString()+$c.type->typeToString($ctx)+' '+$c.name+$c.parameters->asParameters($ctx)+'\n'+$c.body->codeToString($ctx),
+      c:meta::java::generation::code::Method[1] | $c.modifiers->modifiersToString()+$c.type->typeToString($ctx)+' '+$c.name+$c.parameters->asParameters($ctx)+'\n'+$c.body->codeToString($ctx),
       c:CastProxy[1]                | $c.proxy->codeToString($ctx),
       c:Cast[1]                     | '('+$c.type->typeToString($ctx)+') '+$c.expression->maybeParentheses($c, $ctx),
+      c:ThisConstructorCall[1]      | 'this('+$c.arguments->map(a| $a->codeToString($ctx))->joinStrings(', ')+');',
+      c:SuperConstructorCall[1]     | 'super('+$c.arguments->map(a| $a->codeToString($ctx))->joinStrings(', ')+');',
       c:MethodCall[1]               | $c.instance->maybeInstanceParentheses($ctx)+'.'+$c.typeArguments->typeArgumentsToString($ctx)+$c.methodName+'('+$c.arguments->map(a| $a->codeToString($ctx))->joinStrings(', ')+')',
       c:FieldAccess[1]              | $c.instance->maybeInstanceParentheses($ctx)+'.'+$c.fieldName,
       c:MethodReference[1]          | $c.instance->maybeInstanceParentheses($ctx)+'::'+$c.methodName,

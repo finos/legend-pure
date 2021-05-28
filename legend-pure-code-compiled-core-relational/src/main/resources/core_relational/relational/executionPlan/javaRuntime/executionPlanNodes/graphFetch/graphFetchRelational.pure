@@ -398,6 +398,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                            })
                         )->concatenate(
                            [
+                              $node->graphImplClass($path, $context)->j_field(databaseConnectionPropertyName(), javaString())->j_assign($cParam),
                               $propertyGettersField->j_assign(j_new(javaArrayList(javaList(javaSupplier(javaObject()))), [])),
                               $propertyIndexVar->j_declare(),
                               $propertyGetterVar->j_declare(j_null())
@@ -977,7 +978,6 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
 
    [
       j_declare(['final'], $object, j_new($implClass, [])),
-      $object->j_invoke($conventions->setterName(databaseConnectionPropertyName()), [$connectionParam], javaVoid()),
       $object->j_invoke($conventions->setterName(setIdPropertyName()), [j_string($set.id)], javaVoid()),
       $pkColIndex->j_declare(),
       $propertyIndex->j_declare()
@@ -1022,10 +1022,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
 
 function meta::alloy::runtime::java::graphFetch::relational::enrichForRelationalGraphExecution(cl: meta::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], context: GenerationContext[1], extensions: meta::pure::router::extension::RouterExtension[*], debug: DebugContext[1]):Project[1]
 {
-   let qualifiersProject = $cl->updateImplementationClassWithQualifiedProperties($node->typeFromStoreLocalNode(), $context);
-   let primaryKeyProject = $cl->updateImplementationClassWithPrimaryKeys($node, $context);
-   let additionalProject = $cl->updateImplementationClassWithSetConnectionAndReference($node, $context);
-   mergeProjects([$qualifiersProject, $primaryKeyProject, $additionalProject]);
+   let qualifiersProject  = $cl->updateImplementationClassWithQualifiedProperties($node->typeFromStoreLocalNode(), $context);
+   let constraintsProject = $cl->createConstraintCheckingForClass($node->typeFromStoreLocalNode(), $context, $debug->indent());
+   let primaryKeyProject  = $cl->updateImplementationClassWithPrimaryKeys($node, $context);
+   let additionalProject  = $cl->updateImplementationClassWithSetConnectionAndReference($node, $context);
+   mergeProjects([$qualifiersProject, $constraintsProject, $primaryKeyProject, $additionalProject]);
 }
 
 function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::updateImplementationClassWithQualifiedProperties(implClass: meta::java::metamodel::Class[1], nodeType: Class<Any>[1], context: GenerationContext[1]): Project[1]
@@ -1155,15 +1156,13 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
          ->addObjectMapperField($conventions)
          ->addFields([
             javaField(['private'], javaString(), $setIdField),
-            javaField(['private'], javaString(), $connectionField),
+            javaField(['public', 'static'], javaString(), $connectionField),
             javaField(['private'], javaString(), $referenceField)
          ])
          ->addMethods([
             javaMethod(['public'], javaString(), $conventions->getterName($setIdProp), [], 'return this.' + $setIdField + ';'),
             javaMethod(['public'], javaVoid(), $conventions->setterName($setIdProp), [javaParam(javaString(), 'setId')], 'this.' + $setIdField + ' = setId;'),
-            javaMethod(['public'], javaString(), $conventions->getterName($connectionProp), [], 'return this.' + $connectionField + ';'),
-            javaMethod(['public'], javaVoid(), $conventions->setterName($connectionProp), [javaParam(javaString(), 'databaseConnection')], 'this.' + $connectionField + ' = databaseConnection;'),
-            relationalReferenceIdentifierGetterMethodForImplementation($node.resultType->cast(@ClassResultType).setImplementations->cast(@RelationalInstanceSetImplementation), $conventions),
+            relationalReferenceIdentifierGetterMethodForImplementation($node.resultType->cast(@ClassResultType).setImplementations->cast(@RelationalInstanceSetImplementation), $implClass, $conventions),
             javaMethod(['public'], javaVoid(), $conventions->setterName($referenceProp), [javaParam(javaString(), 'reference')], 'this.' + $referenceField + ' = reference;')
          ]);
 

@@ -26,7 +26,7 @@
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>1.21.1-SNAPSHOT</version>
+    <version>1.23.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -61,6 +61,8 @@
         <module>legend-pure-code-compiled-platform</module>
         <module>legend-pure-code-compiled-core</module>
         <module>legend-pure-code-compiled-core-relational</module>
+        <module>legend-pure-code-compiled-core-external-shared</module>
+        <module>legend-pure-code-compiled-core-external-format-xml</module>
 
         <module>legend-pure-code-java-compiled-core</module>
 
@@ -414,6 +416,16 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-code-compiled-core-relational</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-code-compiled-core-external-shared</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-code-compiled-core-external-format-xml</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
