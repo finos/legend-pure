@@ -22,7 +22,10 @@ Mapping meta::relational::tests::aggregationAware::mapping::baseMapping
          productId: prod_id,
          productName: prod_name
       ),
-      productLine: [aggregationAwareStore]@Product_To_ProLine
+      productLine: [aggregationAwareStore]@Product_To_ProLine,
+      productDescription (
+        description: [aggregationAwareStore]@Product_To_Description | base_view.ProductDescription.prod_description
+      )
    }
    
    ProductLine : Relational {
