@@ -263,11 +263,15 @@ function <<access.private>> meta::alloy::runtime::java::typeInfo::addConstraint(
    let messageProperties = $constraint.messageFunction->map(f| $f.expressionSequence->at(0)->evaluateAndDeactivate()->scanProperties());
    let allPaths          = $funcProperties->concatenate($messageProperties).result;
    let missingProperties = $allPaths.values.property->removeDuplicates()->filter(p |!$typeInfos->containsProperty($p));
-   let withConstraint    = if($missingProperties->isEmpty(),
-                              | $typeInfos->forClass($class)->addSupportedConstraint($constraint),
-                              | $typeInfos->forClass($class)->addAlwaysDefectConstraint($constraint, 'properties unavailable ' + $missingProperties.name->map(n| '\''+$n+'\'')->joinStrings(', ') + ' (check your mappings)')
-                           );
-   $typeInfos->addOrReplace($withConstraint);
+
+   let newTypeInfos = $missingProperties->fold(
+                           {prop, infos | if($prop->instanceOf(QualifiedProperty), 
+                                             | $infos->addQualifiedPropertyForTypeIfMissing($prop->cast(@QualifiedProperty<Any>)), 
+                                             | $infos->addPropertyForTypeIfMissing($prop->cast(@Property<Nil,Any|*>)))}
+                           , $typeInfos);
+   
+   let withConstraint    = $newTypeInfos->forClass($class)->addSupportedConstraint($constraint);
+   $newTypeInfos->addOrReplace($withConstraint);
 }
 
 function <<access.private>> meta::alloy::runtime::java::typeInfo::addSupportedConstraint(classInfo:ClassTypeInfo[1], constraint:Constraint[1]): ClassTypeInfo[1]
@@ -308,6 +312,7 @@ function <<access.private>> meta::alloy::runtime::java::typeInfo::typeInfoFromIn
 
 function <<access.private>> meta::alloy::runtime::java::typeInfo::addPropertyForTypeIfMissing(info:TypeInfoSet[1], property:Property<Nil,Any|*>[1]): TypeInfoSet[1]
 {
+    
    $property.owner->match([
       {c: Class<Any>[1] |
          $info->addPropertyForClassIfMissing($c, $property);
@@ -324,13 +329,14 @@ function <<access.private>> meta::alloy::runtime::java::typeInfo::addPropertyFor
 }
 
 function <<access.private>> meta::alloy::runtime::java::typeInfo::addPropertyForClassIfMissing(info:TypeInfoSet[1], class:Class<Any>[1], property:Property<Nil,Any|*>[1]): TypeInfoSet[1]
-{
+{   
    let enriched = $info->addBasicTypeInfoIfMissing($class);
-   let ti       = $enriched->addBasicTypeInfoIfMissing($class)->forClass($class);
+   let ti       = $enriched->forClass($class);
+   let enriched2 = if($property->functionReturnType().rawType->toOne()->instanceOf(Class), | $enriched->addBasicTypeInfoIfMissing($property->functionReturnType().rawType->toOne()->cast(@Class<Any>)), | $enriched);
 
-   if($ti.properties->exists(p| elementsEquals()->eval($p, $property)), 
-      | $enriched, 
-      | $enriched->addOrReplace(^$ti(properties=$ti.properties->concatenate($property)));
+   if($ti.properties->exists(p| $p.name == $property.name), 
+      | $enriched2, 
+      | $enriched2->addOrReplace(^$ti(properties=$ti.properties->concatenate($property)));
    );
 }
 
