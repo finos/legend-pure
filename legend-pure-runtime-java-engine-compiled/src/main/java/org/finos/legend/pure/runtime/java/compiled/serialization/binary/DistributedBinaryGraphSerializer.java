@@ -332,6 +332,11 @@ public abstract class DistributedBinaryGraphSerializer
         newSerializer(serialized).serializeToDirectory(directory);
     }
 
+    public static void serialize(Serialized serialized, Map<String, byte[]> fileBytes)
+    {
+        newSerializer(serialized).serializeToInMemoryByteArrays(fileBytes);
+    }
+
     private static ListIterable<ObjSerialization> serializeClassifierObjs(BinaryObjSerializer serializer, ListIterable<? extends Obj> classifierObjs)
     {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
