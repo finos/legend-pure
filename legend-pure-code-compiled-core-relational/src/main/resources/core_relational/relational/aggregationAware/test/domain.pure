@@ -38,6 +38,12 @@ Class meta::relational::tests::aggregationAware::domain::Product
 {
    productId: Integer[1];
    productName: String[1];
+   productDescription: ProductDescription[0..1];
+}
+
+Class <<temporal.businesstemporal>> meta::relational::tests::aggregationAware::domain::ProductDescription
+{
+   description: String[1];
 }
 
 Class meta::relational::tests::aggregationAware::domain::ProductLine

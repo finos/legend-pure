@@ -33,6 +33,14 @@ Database meta::relational::tests::aggregationAware::store::aggregationAwareStore
          prod_name varchar(200),
          prod_line_id bigint
       )
+
+      Table ProductDescription (
+         milestoning(business(BUS_FROM=from_z, BUS_THRU=thru_z))
+         from_z TIMESTAMP PRIMARY KEY,
+         thru_z TIMESTAMP,
+         prod_id bigint PRIMARY KEY,
+         prod_description varchar(200)
+      )
       
       Table Employee (
          emp_id bigint PRIMARY KEY,
@@ -124,6 +132,7 @@ Database meta::relational::tests::aggregationAware::store::aggregationAwareStore
    Join Sales_Qtr_To_Product(user_view_agg.SalesTable_Qtr.product_id = base_view.Product.prod_id)
    
    Join Product_To_ProLine(base_view.Product.prod_line_id = base_view.ProductLine.prod_line_id)
+   Join Product_To_Description(base_view.Product.prod_id = base_view.ProductDescription.prod_id)
    
    Join Sales_Product_Month_To_Calendar (user_view_multi_agg.SalesTable_Product_Month.sales_date = base_view.Calendar.dt_date)
    Join Sales_Product_Month_To_Product (user_view_multi_agg.SalesTable_Product_Month.product_id = base_view.Product.prod_id)
@@ -166,6 +175,7 @@ function <<test.BeforePackage>> meta::relational::tests::aggregationAware::setUp
       createTableStatement(aggregationAwareStore, 'base_view', 'Calendar'),
       createTableStatement(aggregationAwareStore, 'base_view', 'Product'),
       createTableStatement(aggregationAwareStore, 'base_view', 'ProductLine'),
+      createTableStatement(aggregationAwareStore, 'base_view', 'ProductDescription'),
       createTableStatement(aggregationAwareStore, 'base_view', 'Employee'),
       createTableStatement(aggregationAwareStore, 'user_view_agg', 'SalesTable_User'),
       createTableStatement(aggregationAwareStore, 'user_view_agg', 'SalesTable_Day'),

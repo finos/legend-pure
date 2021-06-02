@@ -576,9 +576,11 @@ function <<access.private>> meta::relational::milestoning::resolveMilestoningDat
                                                                                             let dateRoe = $resolvedVar->match([d:Date[1]|^Literal(value=$d),
                                                                                                                                p:PlanVarPlaceHolder[1]|^Literal(value=^VarPlaceHolder(name=$p.name,type = $p.type));]);
                                                                                             ^DateWrapper(date=$dateRoe);,
-                                                                 i: InstanceValue[1] | if($i.values->at(0)->instanceOf(Date),
-                                                                                          |^DateWrapper(date=^Literal(value=$i.values->at(0)->cast(@Date)));,
-                                                                                          | resolveMilestoningDateParams($temporalStrategy, $i.values->cast(@ValueSpecification), $currentMilestoningContext, $state, $vars, $context, $extensions)),
+                                                                 i: InstanceValue[1] | $i.values->at(0)->match([
+                                                                                          d: Date[1]               | ^DateWrapper(date=^Literal(value=$d));,
+                                                                                          p: PlanVarPlaceHolder[1] | ^DateWrapper(date=^Literal(value=^VarPlaceHolder(name=$p.name,type=$p.type))),
+                                                                                          a: Any[*]                | resolveMilestoningDateParams($temporalStrategy, $i.values->cast(@ValueSpecification), $currentMilestoningContext, $state, $vars, $context, $extensions)
+                                                                                       ]),
                                                                  f: FunctionExpression[1] | let singleTemporalStrategy = $dp.first;
                                                                                             let isThisMilestonedGeneratedDateProperty = $f->isThisMilestonedGeneratedDateProperty($singleTemporalStrategy);
                                                                                             if($isThisMilestonedGeneratedDateProperty && $currentMilestoningContext->isNotEmpty(),| let tp = TemporalMilestoningContext.properties->filter(p|$p.name->toOne() == $f.func.name)->toOne();
