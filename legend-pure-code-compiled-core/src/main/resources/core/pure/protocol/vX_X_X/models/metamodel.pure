@@ -295,26 +295,14 @@ Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::MulRawV
    multiplicity : meta::protocols::pure::vX_X_X::metamodel::domain::Multiplicity[1];
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::ClassValue extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RawValue
-{
-   fullPath : String[1];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::HackedClassValue extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RawValue
-{
-   fullPath : String[1];
-}
-
 Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::KeyExpression extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RawValue
 {
    add : Boolean[0..1];
    key: meta::protocols::pure::vX_X_X::metamodel::valueSpecification::ValueSpecification[1];
    expression: meta::protocols::pure::vX_X_X::metamodel::valueSpecification::ValueSpecification[1];
 }
-
-Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::EnumerationValue extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RawValue
+Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::HackedClassValue extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::PackageableElementPtr
 {
-   fullPath : String[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::EnumValue extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RawValue
@@ -379,7 +367,7 @@ Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::Databas
    fullPath : String[1];
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::MappingInstance extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RawValue
+Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::PackageableElementPtr extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RawValue
 {
    fullPath : String[1];
 }
