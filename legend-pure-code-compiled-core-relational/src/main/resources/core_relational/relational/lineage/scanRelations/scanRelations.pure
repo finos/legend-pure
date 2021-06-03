@@ -568,7 +568,15 @@ function <<access.private>> meta::pure::lineage::scanRelations::processJoinFromT
                                                           ),
                                       |$nonNullPairs);
    let updatedAliases           = $updatedNonNullPairs.second.alias->removeDuplicatesBy(ta | $ta.name + '@' + $ta.relation->getRelationName());
-   
+
+   if($updatedAliases->size() == 0,
+      |if($debug.debug, | print($debug.space + 'Expect this case to arise when join does not reference any columns. Example join operation - true, false, 1 = 1\n');, |[]);
+       let sourceRelation = $sourceOperation->extractSourceRelation($relationIndentifiers);
+       let orgJoin        = $j.join;
+       let targetAlias    = ^TableAlias(name = $targetRelation.name, relationalElement=$targetRelation);
+       let sourceAlias    = ^TableAlias(name = $sourceRelation.name, relationalElement=$sourceRelation);
+       ^$orgJoin(aliases = [pair($sourceAlias, $targetAlias), pair($targetAlias, $sourceAlias)]);,
+      |
    if($updatedAliases->size() == 1,
       |if($debug.debug, | print($debug.space + 'Neglecting this child since only 1 relation found. Expect the join between this relation and a union relation. Part of union relation considered in this iteraton has null assigned to join column\n');, |[]);
        [];,
@@ -614,7 +622,7 @@ function <<access.private>> meta::pure::lineage::scanRelations::processJoinFromT
       ^$orgJoin(name      = $updatedOperation->buildUniqueName(false, $extensions),
                 aliases   = [pair($updatedAliases->at(0), $updatedAliases->at(1)), pair($updatedAliases->at(1), $updatedAliases->at(0))],
                 operation = $updatedOperation->reprocessTableAliasColumns($updatedNonNullPairs)->cast(@Operation));
-   );
+   ));
 }
 
 function <<access.private>> meta::pure::lineage::scanRelations::isNull(d:DynaFunction[1], extensions:RouterExtension[*]):Boolean[1]
@@ -656,4 +664,18 @@ function <<access.private>> meta::pure::lineage::scanRelations::extractSourceCol
        let sourceOperation = $rootTree->concatenate($childTrees)->filter(tree | $tree.alias.name == $reqTableAliasColumn.alias.name).alias->toOne();
        $reqTableAliasColumn->toOne()->extractSourceColumn($sourceOperation, $relationIdentifiers);
    );
+}
+
+function <<access.private>> meta::pure::lineage::scanRelations::extractSourceRelation(sourceOperation:RelationalOperationElement[1], relationIdentifiers:String[*]):NamedRelation[1]
+{
+   $sourceOperation->match([
+                              v:ViewSelectSQLQuery[1]| $v.view,
+                              t:Table[1]             | $t,
+                              v:View[1]              | $v,
+                              ta:TableAlias[1]       | $ta.relation->extractSourceRelation($relationIdentifiers);,
+                              s:SelectSQLQuery[1]    | let sourceRelations = $s.data->concatenate($s.data.children)->map(t | $t.alias.relation->toOne()->extractSourceRelation($relationIdentifiers));
+                                                       $sourceRelations->filter(r | getRelationName($r)->in($relationIdentifiers))->at(0);,
+                              u:Union[1]             | let sourceRelations = $u.queries->map(query | $query->extractSourceRelation($relationIdentifiers));
+                                                       $sourceRelations->filter(r | getRelationName($r)->in($relationIdentifiers))->at(0);
+                           ]);
 }
