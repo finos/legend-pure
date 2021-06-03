@@ -313,7 +313,7 @@ function <<access.private>> meta::alloy::runtime::java::generateStandardConstrai
          ],
          j_catch($ex,
             [
-               $messageVar->j_declare(j_string('Unable to evaluate constraint ['+$name+']: ')->j_plus($ex->j_invoke('getMessage', []))),
+               $messageVar->j_declare(j_string('Unable to evaluate constraint ['+$name+']: ')->j_plus(j_conditional(j_eq($ex->j_invoke('getMessage', []), j_null()), j_string('data not available - check your mappings')  , $ex->j_invoke('getMessage', [])))),
                $returnDefect                  
             ]
          )

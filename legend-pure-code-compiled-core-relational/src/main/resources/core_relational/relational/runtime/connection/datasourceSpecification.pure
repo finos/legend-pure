@@ -57,4 +57,5 @@ Class meta::pure::alloy::connections::alloy::specification::SnowflakeDatasourceS
     organization:String[0..1];
     cloudType:String[0..1];
 
+    quotedIdentifiersIgnoreCase:Boolean[0..1];
 }

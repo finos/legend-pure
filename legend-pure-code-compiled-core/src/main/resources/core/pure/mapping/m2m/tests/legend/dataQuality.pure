@@ -207,7 +207,7 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::unmappedConstraintP
    '    {'+
    '      "id"               : "MoreThanOne",'+
    '      "externalId"       : "TEST",'+
-   '      "message"          : "Unable to evaluate constraint [MoreThanOne]: properties unavailable \'number\' (check your mappings)",'+
+   '      "message"          : "Unable to evaluate constraint [MoreThanOne]: No mapping for property \'i\'",'+
    '      "enforcementLevel" : "Warn",'+
    '      "ruleType"         : "ClassConstraint",'+
    '      "ruleDefinerPath"  : "meta::pure::mapping::modelToModel::test::dataQuality::graphFetch::dest::WithConstraintsViaQualifier",' +
@@ -220,8 +220,8 @@ meta::pure::mapping::modelToModel::test::alloy::dataQuality::unmappedConstraintP
    '    "value":{},'+
    '    "source":{"number":1, "record":"{\\"int\\":3}"}'+
    '  }'+
-   '}';
-   
+   '}'; 
+
    assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
 }
 

@@ -580,7 +580,7 @@ public class TestCollection
 
     public static Predicate<? super CoreInstance> getFilterPredicateForAlloyTextModeExclusion(final ProcessorSupport processorSupport)
     {
-        return (Predicate<? super CoreInstance>)(System.getProperty("legend.test.serializationKind").equals("text") &&
+        return (Predicate<? super CoreInstance>)("text".equals(System.getProperty("legend.test.serializationKind")) &&
                 (System.getProperty("alloy.test.server.host") != null || System.getProperty("legend.test.server.host") != null) ? new Predicate<CoreInstance>()
         {
             @Override

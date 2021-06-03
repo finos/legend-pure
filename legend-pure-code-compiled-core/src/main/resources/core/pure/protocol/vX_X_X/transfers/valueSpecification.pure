@@ -316,9 +316,9 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
                         multiplicity = $m->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()
                      ),
                   c:Class<Any>[1]|
-                     ^meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::ClassValue
+                     ^meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::PackageableElementPtr
                      (
-                        _type = 'class',
+                        _type = 'packageableElementPtr',
                         fullPath = $c->at(0)->elementToPath()
                      ),
                   l:LambdaFunction<Any>[1]|
@@ -338,9 +338,9 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
                         value = $e->id()
                      ),
                   e:Enumeration<Any>[1]|
-                     ^meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::EnumerationValue
+                     ^meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::PackageableElementPtr
                      (
-                        _type = 'enum',
+                        _type = 'packageableElementPtr',
                         fullPath = $e->elementToPath()
                      ),
                   u:Unit[1]|
@@ -421,11 +421,11 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
                         second = $pair.second->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformAny($inScope, $open, PureOne, $extensions)
                      );,
                  m:meta::pure::mapping::Mapping[1]|
-                 ^meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::MappingInstance
-                  (
-                     _type = 'mappingInstance',
-                     fullPath = $m->elementToPath()->toOne()
-                   ),
+                     ^meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::PackageableElementPtr
+                     (
+                        _type = 'packageableElementPtr',
+                        fullPath = $m->elementToPath()->toOne()
+                     ),
                  r:meta::pure::runtime::Runtime[1]|
                      ^meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RuntimeInstance
                      (
@@ -501,11 +501,11 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpec
    );
 }
 
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformNewClass(v:ValueSpecification[1]):meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::ClassValue[1]
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformNewClass(v:ValueSpecification[1]):meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::PackageableElementPtr[1]
 {
-   ^meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::ClassValue
+   ^meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::PackageableElementPtr
    (
-      _type = 'class',
+      _type = 'packageableElementPtr',
       fullPath = $v.genericType.typeArguments->at(0).rawType->toOne()->elementToPath()
    );
 }

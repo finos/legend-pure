@@ -236,6 +236,44 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappe
 }
 
 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
+{ serverVersion.start='vX_X_X' }
+meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappedRequiredComplextTypeFieldCanFail():Boolean[1]
+{
+   let result = execute(|F.all()->graphFetchChecked(#{F { i }}#)->serialize(#{F { i }}#),
+                        meta::pure::mapping::modelToModel::test::alloy::constraints::n2fExpectedNotMapped,
+                         ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(),
+                                class=_Num,
+                             url='data:application/json,{"n":20}'
+                             )
+                         ),
+                        []
+                );
+
+   assert(jsonEquivalent('{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"0","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::constraints::F","message":"Unable to evaluate constraint [0]: data not available - check your mappings"}],"source":{"defects":[],"source":{"number":1,"record":"{\\"n\\":20}"},"value":{"n":20}},"value":{"i":20}}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
+{ serverVersion.start='vX_X_X' }
+meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappedRequiredComplextTypeFieldCanSucceed():Boolean[1]
+{
+   let result = execute(|F.all()->graphFetchChecked(#{F { i }}#)->serialize(#{F { i }}#),
+                        meta::pure::mapping::modelToModel::test::alloy::constraints::n2fExpectedNotMapped,
+                         ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(),
+                                class=_Num,
+                             url='data:application/json,{"n":5}'
+                             )
+                         ),
+                        []
+                );
+
+   assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"n\\":5}"},"value":{"n":5}},"value":{"i":5}}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+
+
 Class meta::pure::mapping::modelToModel::test::alloy::constraints::TaxonomyValue
 {
    id : String[1];
@@ -391,6 +429,11 @@ Class meta::pure::mapping::modelToModel::test::alloy::constraints::D
    i: Integer[1];
 }
 
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::Blah2
+{
+  i:Integer[1];
+}
+
 Class meta::pure::mapping::modelToModel::test::alloy::constraints::E
 [
    $this.i < 10 || $this.expected == 'Hello'
@@ -398,6 +441,15 @@ Class meta::pure::mapping::modelToModel::test::alloy::constraints::E
 {
    expected: String[1];
    i: Integer[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::F
+[
+   $this.i < 10 || $this.c.b == true
+]
+{
+   c : _C[0..1];
+   i : Integer[1];
 }
 
 Class meta::pure::mapping::modelToModel::test::alloy::constraints::_Num
@@ -439,6 +491,16 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::constraints::n2dMaybeNot
 Mapping meta::pure::mapping::modelToModel::test::alloy::constraints::n2eExpectedNotMapped
 (
    meta::pure::mapping::modelToModel::test::alloy::constraints::E : Pure
+   {
+      ~src meta::pure::mapping::modelToModel::test::alloy::constraints::_Num
+      i: $src.n
+   }
+)
+
+###Mapping
+Mapping meta::pure::mapping::modelToModel::test::alloy::constraints::n2fExpectedNotMapped
+(
+   meta::pure::mapping::modelToModel::test::alloy::constraints::F : Pure
    {
       ~src meta::pure::mapping::modelToModel::test::alloy::constraints::_Num
       i: $src.n
