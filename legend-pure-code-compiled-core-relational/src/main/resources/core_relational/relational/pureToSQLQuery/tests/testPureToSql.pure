@@ -262,3 +262,28 @@ function <<test.Test>> meta::relational::tests::functions::pureToSqlQuery::simpl
 
    assertEquals('select dateadd(MONTH, 1, current_timestamp())', $sql_string);
 }
+
+function <<test.Test>> meta::relational::tests::functions::pureToSqlQuery::addDriverTablePkForProject() : Boolean[1]
+{
+   let runtime = meta::relational::tests::testRuntime();
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let debugContext = noDebug();
+   let extensions = meta::pure::router::extension::defaultRelationalExtensions();
+   let context = ^RelationalExecutionContext(enableConstraints=false, addDriverTablePkForProject=true);
+
+   let x = {|Firm.all()->project(c | $c.legalName, 'legalName')}->evaluateAndDeactivate();
+
+   let routed = $x->routeFunction($mapping, $runtime, $context, $extensions, $debugContext);
+   let routedFunction = $routed.functions->evaluateAndDeactivate();
+   let clusters = $routedFunction.expressionSequence->evaluateAndDeactivate()->cast(@ClusteredValueSpecification);
+   let fe = $clusters.val->toOne()->cast(@FunctionExpression);
+
+   let tdsSelectSqlQuery = $fe->toSQLQuery($mapping, ^Map<String,List<Any>>(), $context, $debugContext, $extensions)->cast(@TdsSelectSqlQuery);
+
+   assertEquals(2, $tdsSelectSqlQuery.paths->size());
+   assertEquals($tdsSelectSqlQuery.columns->size(), $tdsSelectSqlQuery.paths->size());
+   let pathNames = $tdsSelectSqlQuery.paths.first->map(p| '"'+$p+'"');
+   let columnNames = $tdsSelectSqlQuery.columns->cast(@Alias).name;
+   assert($columnNames->contains('"ID"'));
+   assert($columnNames->fold({c, r | $r && $pathNames->contains($c)}, true));
+}
