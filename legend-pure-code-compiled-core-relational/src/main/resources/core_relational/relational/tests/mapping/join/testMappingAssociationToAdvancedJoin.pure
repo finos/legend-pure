@@ -299,3 +299,9 @@ function <<test.ToFix>> meta::relational::tests::mapping::join::testRelationalOp
    assertEquals(['Firm X', 'Firm X', 'Firm X', 'Firm X', 'Firm A', 'Firm B'], $result.values);
    assertSameSQL('select trim("firmpersonbridgetable_1".LEGALNAME) from personTable as "root" left outer join (select "firmpersonbridgetable_0".PERSON_ID as PERSON_ID, "firmtable_0".LEGALNAME as LEGALNAME from firmPersonBridgeTable as "firmpersonbridgetable_0" inner join firmTable as "firmtable_0" on ("firmtable_0".ID = "firmpersonbridgetable_0".FIRM_ID)) as "firmpersonbridgetable_0" on ("root".ID = "firmpersonbridgetable_0".PERSON_ID) left outer join (select "firmpersonbridgetable_1".PERSON_ID as PERSON_ID, "firmtable_1".LEGALNAME as LEGALNAME from firmPersonBridgeTable as "firmpersonbridgetable_1" inner join firmTable as "firmtable_1" on ("firmtable_1".ID = "firmpersonbridgetable_1".FIRM_ID)) as "firmpersonbridgetable_1" on ("root".ID = "firmpersonbridgetable_1".PERSON_ID)', $result->sqlRemoveFormatting(0));
 }
+
+function <<test.Test, test.ToFix>> meta::relational::tests::mapping::join::testIsNotEmptyCheckWithoutRowExplosion():Boolean[1]
+{
+   let result = execute(|Firm.all()->filter(x | $x.employees->isNotEmpty()), advancedRelationalMapping4, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions(), debug());
+   assertEquals(['Firm X'], $result.values.legalName);
+}
