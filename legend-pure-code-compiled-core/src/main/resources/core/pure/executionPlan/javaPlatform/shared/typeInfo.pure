@@ -126,7 +126,7 @@ function meta::alloy::runtime::java::typeInfo::containsProperty(info:TypeInfoSet
                                                p:Property<Nil,Any|*>[1]    | $c.properties->contains($p),
                                                q:QualifiedProperty<Any>[1] | $c.qualifiedProperties->contains($q)
                                             ]) ,
-           a: Any[*]           | true; // If we don't have Type info the property is coming from a newed object which will support all properties
+           a: Any[*]           | false;
         ]);
 }
 
@@ -266,8 +266,8 @@ function <<access.private>> meta::alloy::runtime::java::typeInfo::addConstraint(
 
    let newTypeInfos = $missingProperties->fold(
                            {prop, infos | if($prop->instanceOf(QualifiedProperty), 
-                                             | $infos->addQualifiedPropertyForTypeIfMissing($prop->cast(@QualifiedProperty<Any>)), 
-                                             | $infos->addPropertyForTypeIfMissing($prop->cast(@Property<Nil,Any|*>)))}
+                                             | $infos->addQualifiedPropertyForTypeIfMissing($prop->cast(@QualifiedProperty<Any>), true), 
+                                             | $infos->addPropertyForTypeIfMissing($prop->cast(@Property<Nil,Any|*>), true))}
                            , $typeInfos);
    
    let withConstraint    = $newTypeInfos->forClass($class)->addSupportedConstraint($constraint);
@@ -312,10 +312,15 @@ function <<access.private>> meta::alloy::runtime::java::typeInfo::typeInfoFromIn
 
 function <<access.private>> meta::alloy::runtime::java::typeInfo::addPropertyForTypeIfMissing(info:TypeInfoSet[1], property:Property<Nil,Any|*>[1]): TypeInfoSet[1]
 {
+  addPropertyForTypeIfMissing($info, $property, false);
+}
+
+function <<access.private>> meta::alloy::runtime::java::typeInfo::addPropertyForTypeIfMissing(info:TypeInfoSet[1], property:Property<Nil,Any|*>[1], isFromConstraint:Boolean[1]): TypeInfoSet[1]
+{
     
    $property.owner->match([
       {c: Class<Any>[1] |
-         $info->addPropertyForClassIfMissing($c, $property);
+         $info->addPropertyForClassIfMissing($c, $property, $isFromConstraint);
       },
       {a: Association[1] |
          let p1 = $a.properties->at(0);
@@ -323,16 +328,21 @@ function <<access.private>> meta::alloy::runtime::java::typeInfo::addPropertyFor
          let p2 = $a.properties->at(1);
          let c2 = $a.properties->at(0).genericType.rawType->cast(@Class<Any>)->toOne();
          
-         $info->addPropertyForClassIfMissing($c1, $p1)->addPropertyForClassIfMissing($c2, $p2);
+         $info->addPropertyForClassIfMissing($c1, $p1)->addPropertyForClassIfMissing($c2, $p2, $isFromConstraint);
       }
    ]);
 }
 
 function <<access.private>> meta::alloy::runtime::java::typeInfo::addPropertyForClassIfMissing(info:TypeInfoSet[1], class:Class<Any>[1], property:Property<Nil,Any|*>[1]): TypeInfoSet[1]
+{
+  addPropertyForClassIfMissing($info, $class, $property, false);  
+}
+
+function <<access.private>> meta::alloy::runtime::java::typeInfo::addPropertyForClassIfMissing(info:TypeInfoSet[1], class:Class<Any>[1], property:Property<Nil,Any|*>[1], isFromConstraint:Boolean[1]): TypeInfoSet[1]
 {   
-   let enriched = $info->addBasicTypeInfoIfMissing($class);
+   let enriched = $info->addBasicTypeInfoIfMissing($class, $isFromConstraint);
    let ti       = $enriched->forClass($class);
-   let enriched2 = if($property->functionReturnType().rawType->toOne()->instanceOf(Class), | $enriched->addBasicTypeInfoIfMissing($property->functionReturnType().rawType->toOne()->cast(@Class<Any>)), | $enriched);
+   let enriched2 = if($property->functionReturnType().rawType->toOne()->instanceOf(Class), | $enriched->addBasicTypeInfoIfMissing($property->functionReturnType().rawType->toOne()->cast(@Class<Any>), $isFromConstraint), | $enriched);
 
    if($ti.properties->exists(p| $p.name == $property.name), 
       | $enriched2, 
@@ -342,26 +352,36 @@ function <<access.private>> meta::alloy::runtime::java::typeInfo::addPropertyFor
 
 function <<access.private>> meta::alloy::runtime::java::typeInfo::addQualifiedPropertyForTypeIfMissing(info:TypeInfoSet[1], qualifiedProperty:QualifiedProperty<Any>[1]): TypeInfoSet[1]
 {
+  addQualifiedPropertyForTypeIfMissing($info, $qualifiedProperty, false);  
+}
+
+function <<access.private>> meta::alloy::runtime::java::typeInfo::addQualifiedPropertyForTypeIfMissing(info:TypeInfoSet[1], qualifiedProperty:QualifiedProperty<Any>[1], isFromConstraint:Boolean[1]): TypeInfoSet[1]
+{
    let owningClass = $qualifiedProperty->functionType().parameters->evaluateAndDeactivate()->at(0).genericType.rawType->toOne()->cast(@Class<Any>);
-   $info->addQualifiedPropertyForClassIfMissing($owningClass, $qualifiedProperty);
+   $info->addQualifiedPropertyForClassIfMissing($owningClass, $qualifiedProperty, $isFromConstraint);
 }
 
 function <<access.private>> meta::alloy::runtime::java::typeInfo::addQualifiedPropertyForClassIfMissing(info:TypeInfoSet[1], class:Class<Any>[1], qualifiedProperty:QualifiedProperty<Any>[1]): TypeInfoSet[1]
 {
-   let enriched = $info->addBasicTypeInfoIfMissing($class);
+  addQualifiedPropertyForClassIfMissing($info, $class, $qualifiedProperty, false);
+}
+
+function <<access.private>> meta::alloy::runtime::java::typeInfo::addQualifiedPropertyForClassIfMissing(info:TypeInfoSet[1], class:Class<Any>[1], qualifiedProperty:QualifiedProperty<Any>[1], isFromConstraint:Boolean[1]): TypeInfoSet[1]
+{
+   let enriched = $info->addBasicTypeInfoIfMissing($class, $isFromConstraint);
    let ti       = $enriched->forClass($class);
    if($qualifiedProperty->printFunctionSignature()->in($ti.qualifiedProperties->map(q| $q->printFunctionSignature())),
       | $enriched,
       {|
          let withQualifier  = $enriched->addOrReplace(^$ti(qualifiedProperties=$ti.qualifiedProperties->concatenate($qualifiedProperty)));
-         let withParameters = $qualifiedProperty->functionType().parameters->evaluateAndDeactivate()->tail()->fold({p, agg | $agg->addBasicTypeInfoIfMissing($p.genericType.rawType->toOne())}, $withQualifier);
+         let withParameters = $qualifiedProperty->functionType().parameters->evaluateAndDeactivate()->tail()->fold({p, agg | $agg->addBasicTypeInfoIfMissing($p.genericType.rawType->toOne(), $isFromConstraint)}, $withQualifier);
 
          let paths = $qualifiedProperty.expressionSequence->map(es| $es->evaluateAndDeactivate()->scanProperties().result);
          $paths.values.property->removeDuplicates()->fold(
             {prop, info|
                $prop->match([
-                  p :Property<Nil,Any|*>[1]    | $info->addPropertyForTypeIfMissing($p),
-                  qp:QualifiedProperty<Any>[1] | $info->addQualifiedPropertyForTypeIfMissing($qp)
+                  p :Property<Nil,Any|*>[1]    | $info->addPropertyForTypeIfMissing($p, $isFromConstraint),
+                  qp:QualifiedProperty<Any>[1] | $info->addQualifiedPropertyForTypeIfMissing($qp, $isFromConstraint)
                ]);
             },
             $withParameters
@@ -379,11 +399,21 @@ function <<access.private>> meta::alloy::runtime::java::typeInfo::addOrReplace(i
 
 function<<access.private>> meta::alloy::runtime::java::typeInfo::addBasicTypeInfoIfMissing(info:TypeInfoSet[1], type:Type[1]):TypeInfoSet[1]
 {
+  addBasicTypeInfoIfMissing($info, $type, false);
+}
+
+function<<access.private>> meta::alloy::runtime::java::typeInfo::addBasicTypeInfoIfMissing(info:TypeInfoSet[1], type:Type[1], isFromConstraint:Boolean[1]):TypeInfoSet[1]
+{
    
-   addBasicTypeInfoIfMissing($info,[],$type);
+   addBasicTypeInfoIfMissing($info,[],$type, $isFromConstraint);
+}
+
+function <<access.private>> meta::alloy::runtime::java::typeInfo::addBasicTypeInfoIfMissing(info:TypeInfoSet[1], seenClasses:Class<Any>[*], type:Type[1]): TypeInfoSet[1]
+{
+  addBasicTypeInfoIfMissing($info, $seenClasses, $type, false);
 }
    
-function <<access.private>> meta::alloy::runtime::java::typeInfo::addBasicTypeInfoIfMissing(info:TypeInfoSet[1], seenClasses:Class<Any>[*], type:Type[1]): TypeInfoSet[1]
+function <<access.private>> meta::alloy::runtime::java::typeInfo::addBasicTypeInfoIfMissing(info:TypeInfoSet[1], seenClasses:Class<Any>[*], type:Type[1], isFromConstraint:Boolean[1]): TypeInfoSet[1]
 {
    if($info.typeInfos.type->contains($type),
       {| 
@@ -392,7 +422,7 @@ function <<access.private>> meta::alloy::runtime::java::typeInfo::addBasicTypeIn
       {| 
          $type->match([
             e : Enumeration<Any>[1] | $info->addEnumerationTypeInfo($e),
-            c : Class<Any>[1]       | $info->addBasicClassTypeInfo($c, $seenClasses),
+            c : Class<Any>[1]       | $info->addBasicClassTypeInfo($c, $seenClasses, $isFromConstraint),
             u : Unit[1]             | $info->addUnitTypeInfo($u),
             a : Any[1]              | $info
          ])
@@ -407,6 +437,11 @@ function <<access.private>> meta::alloy::runtime::java::typeInfo::addEnumeration
 }
 
 function <<access.private>> meta::alloy::runtime::java::typeInfo::addBasicClassTypeInfo(info:TypeInfoSet[1], class:Class<Any>[1], seenClasses:Class<Any>[*]): TypeInfoSet[1]
+{
+  addBasicClassTypeInfo($info, $class, $seenClasses, false);
+}
+
+function <<access.private>> meta::alloy::runtime::java::typeInfo::addBasicClassTypeInfo(info:TypeInfoSet[1], class:Class<Any>[1], seenClasses:Class<Any>[*], isFromConstraint:Boolean[1]): TypeInfoSet[1]
 {
    let supertypes = $class->getGeneralizations();
 
@@ -423,7 +458,8 @@ function <<access.private>> meta::alloy::runtime::java::typeInfo::addBasicClassT
    let classInfo = ^ClassTypeInfo(
       type       = $class, 
       supertypes = $supertypes,
-      properties = $byDefaultProperties
+      properties = $byDefaultProperties,
+      isFromConstraint = $isFromConstraint
    );
 
    $withSupertypes->addOrReplace($classInfo);

@@ -272,7 +272,23 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappe
    assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"n\\":5}"},"value":{"n":5}},"value":{"i":5}}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
+{ serverVersion.start='vX_X_X' }
+meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappedRequiredComplextTypeViaQualifiedPropertyCanCompile():Boolean[1]
+{
+  let result = execute(|meta::pure::mapping::modelToModel::test::alloy::constraints::Loan.all()->graphFetchChecked(#{meta::pure::mapping::modelToModel::test::alloy::constraints::Loan {id}}#)->serialize(#{meta::pure::mapping::modelToModel::test::alloy::constraints::Loan {id}}#),
+                      meta::pure::mapping::modelToModel::test::alloy::constraints::LoanMapping,
+                      ^Runtime(connections = ^JsonModelConnection(
+                        element = ^ModelStore(),
+                        class = meta::pure::mapping::modelToModel::test::alloy::constraints::From,
+                        url='data:application/json,{"id":20}'
+                      )),
+                      []
+  );
 
+  assert(jsonEquivalent('{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"0","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::constraints::Loan","message":"Constraint :[0] violated in the Class Loan"}],"source":{"defects":[],"source":{"number":1,"record":"{\\"id\\":20}"},"value":{"id":20}},"value":{"id":20}}'->parseJSON(),
+                        $result.values->toOne()->parseJSON()));
+}
 
 Class meta::pure::mapping::modelToModel::test::alloy::constraints::TaxonomyValue
 {
@@ -457,6 +473,37 @@ Class meta::pure::mapping::modelToModel::test::alloy::constraints::_Num
    n: Integer[1];
 }
 
+
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::Loan
+[
+  $this.collateral(today()).collateralAddress.country.countryName == 'US6'
+]
+{
+  id:Integer[1];
+  collateral : meta::pure::mapping::modelToModel::test::alloy::constraints::Collateral[*];
+}
+
+Class <<temporal.businesstemporal>> meta::pure::mapping::modelToModel::test::alloy::constraints::Collateral
+{
+  collateralAddress : meta::pure::mapping::modelToModel::test::alloy::constraints::Address[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::Address
+{
+  county : String[1];
+  country : meta::pure::mapping::modelToModel::test::alloy::constraints::Country[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::Country
+{
+  countryName : String[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::From
+{
+  id:Integer[1];
+} 
+
 ###Mapping
 Mapping meta::pure::mapping::modelToModel::test::alloy::constraints::isEqualTest
 (
@@ -565,3 +612,12 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::constraints::m2mconstrai
 )
 
 
+###Mapping
+Mapping meta::pure::mapping::modelToModel::test::alloy::constraints::LoanMapping
+(
+  meta::pure::mapping::modelToModel::test::alloy::constraints::Loan : Pure
+  {
+    ~src meta::pure::mapping::modelToModel::test::alloy::constraints::From
+    id : $src.id
+  }
+)
