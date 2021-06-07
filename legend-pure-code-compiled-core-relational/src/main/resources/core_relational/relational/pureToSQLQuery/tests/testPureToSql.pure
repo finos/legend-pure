@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import meta::pure::router::printer::*;
+import meta::pure::router::clustering::*;
+import meta::relational::runtime::*;
 import meta::relational::metamodel::operation::*;
 import meta::relational::metamodel::join::*;
 import meta::relational::metamodel::relation::*;
