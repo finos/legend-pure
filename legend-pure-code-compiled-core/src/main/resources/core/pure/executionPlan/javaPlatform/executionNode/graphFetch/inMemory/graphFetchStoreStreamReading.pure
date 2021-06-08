@@ -102,14 +102,14 @@ function meta::alloy::runtime::java::graphFetch::storeStreamReading::generateCod
       {
          json: JsonModelConnection[1] | 
             $conventions->jsonReaderClass($path, $pureClass)
-               ->j_new($storeStreamReadingContext->j_invoke('createUrl', j_string($json.url->transformUrl()))->j_invoke('openStream', []))
+               ->j_new($storeStreamReadingContext->j_invoke('createUrl', j_string($json.url))->j_invoke('openStream', []))
                ->j_return()
                ->j_ioExTryCatch()
       },
       {
          xml: XmlModelConnection[1] | 
             $conventions->xmlReaderClass($path, $pureClass)
-               ->j_new($storeStreamReadingContext->j_invoke('createUrl', j_string($xml.url->transformUrl()))->j_invoke('openStream', []))
+               ->j_new($storeStreamReadingContext->j_invoke('createUrl', j_string($xml.url))->j_invoke('openStream', []))
                ->j_return()
                ->j_ioExTryCatch()
       },
@@ -196,9 +196,4 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::storeStreamR
       $classWithFields->createQualifiedPropertiesForClass($context.typeInfos->allQualifiedProperties($class), $context, $debug->indent()),
       $classWithFields->imports($conventions->className(IReferencedObject))->createAlloyStoreObjectReferenceMethodsForClass($context, $debug->indent())
    ]->concatenate(if($createConstraintChecking, | $classWithFields->imports($conventions->checkedClass())->createConstraintCheckingForClass($class, $context, $debug->indent()), | []))->toOneMany());
-}
-
-function <<access.private>> meta::alloy::runtime::java::graphFetch::storeStreamReading::transformUrl(url: String[1]):String[1]
-{
-   $url->replace('+', '%2B')
 }
