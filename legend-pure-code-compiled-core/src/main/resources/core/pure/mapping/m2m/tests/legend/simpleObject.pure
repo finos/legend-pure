@@ -381,33 +381,6 @@ meta::pure::mapping::modelToModel::test::alloy::simple::unmappedOptionalProperti
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
 {  serverVersion.start='v1_19_0',
-   doc.doc='Given: a mapping that does not map optional properties',
-   doc.doc='When:  the mapping is executed using graphFetch and serialize.',
-   doc.doc='Then:  the result has empty values for the unmapped properties.'
-}
-meta::pure::mapping::modelToModel::test::alloy::simple::testPlusInUrl() : Boolean[1]
-{
-   let tree = #{SomeOptionalData {s1} }#;
-
-   let result = execute(
-      |SomeOptionalData.all()->graphFetch($tree)->serialize($tree),
-      sparseDataMapping2,
-      ^Runtime(connections = ^JsonModelConnection(
-                                element=^ModelStore(),
-                                class=_AString,
-                                url='data:application/json,{"s":"Hello+World"}'
-                             )
-      ),
-      []
-   );
-
-   let expected = '{"s1":"Hello+World"}';
-   println($result.values->toOne()->println());
-   assert(jsonEquivalent($expected->parseJSON(), $result.values->toOne()->parseJSON()));
-}
-
-function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
-{  serverVersion.start='v1_19_0',
    doc.doc='Given: a source object containing an enumeration',
    doc.doc='Given: a mapping that maps a String to the name of the enumeration and use',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
