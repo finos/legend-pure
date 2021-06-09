@@ -45,6 +45,7 @@ import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValueVis
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.Objects;
 
 public class MetadataLazy implements Metadata
 {
@@ -92,17 +93,20 @@ public class MetadataLazy implements Metadata
 
     private volatile Constructor<? extends CoreInstance> enumConstructor = null; //NOSONAR we actually want to protect the pointer
 
+    @Deprecated
     public MetadataLazy(ClassLoader classLoader, DistributedBinaryGraphDeserializer deserializer)
     {
         this.classLoader = (classLoader == null) ? MetadataLazy.class.getClassLoader() : classLoader;
         this.deserializer = (deserializer == null) ? DistributedBinaryGraphDeserializer.fromClassLoader(this.classLoader) : deserializer;
     }
 
+    @Deprecated
     public MetadataLazy(ClassLoader classLoader)
     {
         this(classLoader, null);
     }
 
+    @Deprecated
     public MetadataLazy()
     {
         this(null, null);
@@ -374,5 +378,26 @@ public class MetadataLazy implements Metadata
         {
             throw new RuntimeException("Error getting constructor for " + lazyImplEnumName);
         }
+    }
+
+    public static MetadataLazy newMetadata(ClassLoader classLoader, DistributedBinaryGraphDeserializer deserializer)
+    {
+        Objects.requireNonNull(classLoader, "class loader may not be null");
+        Objects.requireNonNull(deserializer, "deserializer may not be null");
+        return new MetadataLazy(classLoader, deserializer);
+    }
+
+    public static MetadataLazy fromClassLoader(ClassLoader classLoader)
+    {
+        Objects.requireNonNull(classLoader, "class loader may not be null");
+        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromClassLoader(classLoader);
+        return new MetadataLazy(classLoader, deserializer);
+    }
+
+    public static MetadataLazy fromClassLoader(ClassLoader classLoader, String metadataName)
+    {
+        Objects.requireNonNull(classLoader, "class loader may not be null");
+        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromClassLoader(metadataName, classLoader);
+        return new MetadataLazy(classLoader, deserializer);
     }
 }
