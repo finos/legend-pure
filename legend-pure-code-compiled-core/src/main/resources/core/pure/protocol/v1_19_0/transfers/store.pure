@@ -41,6 +41,7 @@ function meta::protocols::pure::v1_19_0::transformation::fromPureGraph::runtime:
          model:meta::pure::mapping::modelToModel::ModelConnection[1]     | $model->meta::protocols::pure::v1_19_0::transformation::fromPureGraph::connection::transformModelConnection(),
          j:meta::pure::mapping::modelToModel::JsonModelConnection[1]     | $j->meta::protocols::pure::v1_19_0::transformation::fromPureGraph::connection::transformJsonModelConnection(),
          x:meta::pure::mapping::modelToModel::XmlModelConnection[1]      | $x->meta::protocols::pure::v1_19_0::transformation::fromPureGraph::connection::transformXmlModelConnection(),
+         c:meta::pure::mapping::modelToModel::ModelChainConnection[1]    | $c->meta::protocols::pure::v1_19_0::transformation::fromPureGraph::connection::transformChainConnection(),
          
          other: meta::pure::runtime::Connection[1]                       | let failureClass = $other->class()->toString();
                                                                            fail('' + $failureClass + ' Connection type not supported Yet!');
@@ -75,4 +76,13 @@ function meta::protocols::pure::v1_19_0::transformation::fromPureGraph::connecti
       class   = $xmlModelConnection.class->elementToPath(),
       url     = $xmlModelConnection.url
    );
+}
+
+function meta::protocols::pure::v1_19_0::transformation::fromPureGraph::connection::transformChainConnection(modelChainConnection: meta::pure::mapping::modelToModel::ModelChainConnection[1]):meta::protocols::pure::v1_19_0::metamodel::mapping::modelToModel::ModelChainConnection[1]
+{
+   ^meta::protocols::pure::v1_19_0::metamodel::mapping::modelToModel::ModelChainConnection(
+      element  = 'ModelStore',
+      _type    = 'ModelChainConnection',
+      mappings = $modelChainConnection.mappings->map(m | $m->elementToPath())
+   )
 }
