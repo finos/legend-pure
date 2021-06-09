@@ -136,7 +136,14 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
       t:meta::pure::alloy::connections::alloy::authentication::TestDatabaseAuthenticationStrategy[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::TestDatabaseAuthenticationStrategy(
             _type = 'test'
-         )
+         ),
+      s:meta::pure::alloy::connections::alloy::authentication::SnowflakePublicAuthenticationStrategy[1] |
+        ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::SnowflakePublicAuthenticationStrategy(
+            _type = 'snowflakePublic',
+            privateKeyVaultReference = $s.privateKeyVaultReference,
+            passPhraseVaultReference = $s.passPhraseVaultReference,
+            publicUserName = $s.publicUserName
+        )
    ])->toOneMany())
 }
 
@@ -162,7 +169,15 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
              _type = 'h2Local',
              testDataSetupCsv = $l.testDataSetupCsv,
              testDataSetupSqls = $l.testDataSetupSqls
-         )
+         ),
+      s:meta::pure::alloy::connections::alloy::specification::SnowflakeDatasourceSpecification[1] |
+        ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::SnowflakeDatasourceSpecification(
+            _type = 'snowflake',
+            accountName = $s.accountName,
+            region = $s.region,
+            warehouseName = $s.warehouseName,
+            databaseName = $s.databaseName
+        )
    ])->toOneMany())
 }
 

@@ -37,6 +37,13 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
 {
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::SnowflakePublicAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
+{
+    privateKeyVaultReference : String[1];
+    passPhraseVaultReference : String[1];
+    publicUserName : String[1];
+}
+
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::LocalH2DatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
 {
     testDataSetupCsv:String[0..1];
@@ -56,6 +63,15 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
    port: Integer[1];
    databaseName: String[1];
 }
+
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::SnowflakeDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
+{
+    accountName : String[1];
+    region : String[1];
+    warehouseName : String[1];
+    databaseName : String[1];
+}
+
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::TestDatabaseConnection extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection
 {
