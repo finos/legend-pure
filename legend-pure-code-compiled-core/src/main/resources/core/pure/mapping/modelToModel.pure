@@ -272,9 +272,10 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planRootG
    let connection = if ($sq.store->instanceOf(ModelStore),
                         | let sourceClass = $rootTree.sets->toOne()->cast(@PureInstanceSetImplementation).srcClass->toOne(); 
                           $runtime.connections->filter(c|$c.element->instanceOf(ModelStore) && $c->match($extensions.executionPlan_generation_isConnectionForClass->map(x|$x->eval($sourceClass))->concatenate([
-                             j : JsonModelConnection[1] | $j.class == $sourceClass,
-                             x : XmlModelConnection[1]  | $x.class ==  $sourceClass,
-                             m : ModelConnection[1]     | true
+                             j : JsonModelConnection[1]  | $j.class == $sourceClass,
+                             x : XmlModelConnection[1]   | $x.class ==  $sourceClass,
+                             m : ModelConnection[1]      | true,
+                             m : ModelChainConnection[1] | true
                           ])->toOneMany()));,
                         | $runtime->connectionByElement($store)
                     )->toOne();
@@ -284,6 +285,10 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planRootG
       c : Connection[1]         | calculateSourceTree($rootTree, $mapping, $extensions)
    ]);
    let sourceTreeExtended = if($enableConstraints, | $sourceTree->ensureConstraintsRequirements(), | $sourceTree);
+   
+   let chainConnectionNodeGeneration = {mcc: ModelChainConnection[1] |
+      $fe->planModelChainConnectionGraphFetchExecution($mcc, $sourceTreeExtended, $mapping, $runtime, $exeCtx, $enableConstraints, $checked, $extensions, $debug)
+   };
    
    let defaultGenerateExecutionNode = {c:Connection[1]|
       ^StoreStreamReadingExecutionNode
@@ -309,8 +314,40 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planRootG
       batchSize         = $batchSize,
       checked           = $checked,
       children          = $rootTree->generateInMemoryChildGraphNodes($rootTree->nodePathName(), $orderedPaths, $debug),
-      executionNodes    = $connection->meta::pure::executionPlan::nodeFromConnection($sourceTreeExtended, $enableConstraints, $checked, $extensions, $defaultGenerateExecutionNode)
+      executionNodes    = $connection->meta::pure::executionPlan::nodeFromConnection($sourceTreeExtended, $enableConstraints, $checked, $extensions, $chainConnectionNodeGeneration->concatenate($defaultGenerateExecutionNode))
    );
+}
+
+function <<access.private>> meta::pure::mapping::modelToModel::graphFetch::executionPlan::planModelChainConnectionGraphFetchExecution(fe: FunctionExpression[1], mcc: ModelChainConnection[1], sourceTreeExtended: RootGraphFetchTree<Any>[1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], enableConstraints: Boolean[1], checked: Boolean[1], extensions: RouterExtension[*], debug: DebugContext[1]): ExecutionNode[1]
+{
+   let functionParams    = $fe.parametersValues->evaluateAndDeactivate();
+   let leftExpr          = $functionParams->at(0)->byPassRouterInfo()->cast(@FunctionExpression);
+   let extraParams       = if($functionParams->size() >= 2, | $functionParams->drop(2), | []);
+
+   let processedLeftExpr = $leftExpr->meta::pure::mapping::modelToModel::chain::allReprocess([], $mapping, $extensions, $debug);
+   let genericType       = $processedLeftExpr.res.genericType;
+   let sourceTreeType    = ^GenericType(rawType = RootGraphFetchTree, typeArguments = [$genericType]);
+   let newGraphFetchExpr = ^$fe
+                           (
+                              genericType      = if($checked, | ^GenericType(rawType = Checked, typeArguments = [$genericType]), | $genericType),
+                              parametersValues = [
+                                 $processedLeftExpr.res,
+                                 ^InstanceValue(values = $sourceTreeExtended, multiplicity = PureOne, genericType = $sourceTreeType)
+                              ]->concatenate($extraParams)
+                           );
+   let newFunction       = ^LambdaFunction<{->Any[*]}>(expressionSequence = $newGraphFetchExpr);
+
+
+   let nonMCCs    = $runtime.connections->filter(x | !$x->instanceOf(ModelChainConnection));
+   let newRuntime = ^$runtime
+                    (
+                       connections = if ($mcc.mappings->size() >= 2,
+                                         | ^$mcc(mappings = $mcc.mappings->tail())->concatenate($nonMCCs),
+                                         | $nonMCCs
+                                      )
+                    );
+
+   meta::pure::executionPlan::executionPlan($newFunction, $mcc.mappings->at(0), $newRuntime, $exeCtx, $extensions, $debug).rootExecutionNode;
 }
 
 function <<access.private>> meta::pure::mapping::modelToModel::graphFetch::executionPlan::generateInMemoryChildGraphNodes(tree: RoutedGraphFetchTree[1], parentPath: String[1], orderedPaths: String[*], debug: DebugContext[1]): InMemoryGraphFetchExecutionNode[*]

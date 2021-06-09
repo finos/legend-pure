@@ -182,10 +182,3 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
                s: meta::relational::postProcessor::SchemaNameMapper[1]| ^meta::protocols::pure::vX_X_X::metamodel::store::relational::SchemaNameMapper(_type='schemaMapper',in =$s.in, out = $s.out )
             ]->concatenate($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).moduleSerializerExtension('relational')->cast(@meta::protocols::pure::vX_X_X::extension::RelationalModuleSerializerExtension).transfers_connection_transformPostProcessorParameters)->toOneMany()));
 }
-
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connection::transformModelChainConnection(modelChainConnection: meta::pure::mapping::modelToModel::ModelChainConnection[1]):meta::protocols::pure::vX_X_X::metamodel::mapping::modelToModel::ModelChainConnection[1]
-{
-   ^meta::protocols::pure::vX_X_X::metamodel::mapping::modelToModel::ModelChainConnection(element = 'ModelStore',
-                                                                                          _type = 'ModelChainConnection',
-                                                                                          mappings = $modelChainConnection.mappings->map(m| $m->elementToPath()))
-}
