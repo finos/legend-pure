@@ -14,11 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.compiled.execution;
 
-import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListener;
-import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionListeners;
-import org.finos.legend.pure.runtime.java.shared.listeners.IdentifableExecutionEndListner;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
@@ -36,6 +34,9 @@ import org.finos.legend.pure.runtime.java.compiled.metadata.FunctionCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataHolder;
+import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionEndListener;
+import org.finos.legend.pure.runtime.java.shared.listeners.ExecutionListeners;
+import org.finos.legend.pure.runtime.java.shared.listeners.IdentifableExecutionEndListner;
 
 public class CompiledExecutionSupport implements ExecutionSupport
 {
@@ -82,25 +83,10 @@ public class CompiledExecutionSupport implements ExecutionSupport
         this.processorSupport = processorSupport;
         this.metadataAccessor = new MetadataHolder(processorSupport.getMetadata());
         this.extraSupportedTypes = extraSupportedTypes;
-
-        if (options == null)
-        {
-            this.options = new RuntimeOptions()
-            {
-                @Override
-                public boolean isOptionSet(String name)
-                {
-                    return false;
-                }
-            };
-        }
-        else
-        {
-            this.options = options;
-        }
+        this.options = (options == null) ? name -> false : options;
     }
 
-    public MutableSet<String> getExtraSupportedTypes()
+    public SetIterable<String> getExtraSupportedTypes()
     {
         return this.extraSupportedTypes;
     }

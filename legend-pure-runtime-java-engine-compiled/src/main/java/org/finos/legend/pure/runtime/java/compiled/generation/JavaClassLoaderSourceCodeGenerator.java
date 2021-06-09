@@ -15,13 +15,12 @@
 package org.finos.legend.pure.runtime.java.compiled.generation;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.block.function.checked.CheckedFunction;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
@@ -71,7 +70,7 @@ public class JavaClassLoaderSourceCodeGenerator
             runtime.loadAndCompileCore();
             runtime.loadAndCompileSystem();
         }
-        System.out.println(String.format("Finished Pure initialization (%.6fs)", (System.nanoTime() - start) / 1_000_000_000.0));
+        System.out.format("Finished Pure initialization (%.6fs)%n", (System.nanoTime() - start) / 1_000_000_000.0);
 
         JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(runtime.getProcessorSupport(), runtime.getCodeStorage(), true, filePath, false, extensions, name, JavaPackageAndImportBuilder.externalizablePackage());
         javaSourceCodeGenerator.generateCode();
