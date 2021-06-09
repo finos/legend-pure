@@ -176,7 +176,8 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
             accountName = $s.accountName,
             region = $s.region,
             warehouseName = $s.warehouseName,
-            databaseName = $s.databaseName
+            databaseName = $s.databaseName,
+            quotedIdentifiersIgnoreCase = $s.quotedIdentifiersIgnoreCase
         )
    ])->toOneMany())
 }
