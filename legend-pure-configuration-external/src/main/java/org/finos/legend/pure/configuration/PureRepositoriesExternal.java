@@ -67,7 +67,7 @@ public class PureRepositoriesExternal
         SetIterable<String> missingDependencies = codeRepo.getDependencies().reject(REPOSITORIES_BY_NAME::containsKey);
         if (missingDependencies.notEmpty())
         {
-            StringBuilder builder = new StringBuilder("The ").append((missingDependencies.size() == 1) ? "dependency" : "dependencies");
+            StringBuilder builder = new StringBuilder("The ").append((missingDependencies.size() == 1) ? "dependency" : "dependencies").append(" ");
             missingDependencies.appendString(builder, "'", "', '", "'");
             builder.append(" required by the Code Repository '").append(codeRepo.getName()).append("' can't be found!");
             throw new RuntimeException(builder.toString());
