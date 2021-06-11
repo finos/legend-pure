@@ -51,6 +51,7 @@ function meta::java::generation::functions::string::register(conventions: Conven
          fc (lessThanEqual_String_1__String_$0_1$__Boolean_1_,                   fcAlias(                       lessThanEqual_String_$0_1$__String_$0_1$__Boolean_1_)),
 
          fc2(indexOf_String_1__String_1__Integer_1_,                             {ctx,s,toFind                | $s->j_invoke('indexOf', [$toFind])}),
+         fc3(indexOf_String_1__String_1__Integer_1__Integer_1_,                  {ctx,s,toFind,fromIndex      | $s->j_invoke('indexOf', [$toFind, $fromIndex->j_cast(javaInt())])}),
          fc1(length_String_1__Integer_1_,                                        {ctx,s                       | $s->j_invoke('length', [])}),
 
          fc1(joinStrings_String_MANY__String_1_,                                 {ctx,strs                    | $strs->j_streamOf()->js_joining()}),
