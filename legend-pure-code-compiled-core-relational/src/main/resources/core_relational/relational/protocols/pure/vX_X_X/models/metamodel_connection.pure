@@ -70,6 +70,7 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
     region : String[1];
     warehouseName : String[1];
     databaseName : String[1];
+    cloudType : String[0..1];
     quotedIdentifiersIgnoreCase : Boolean[0..1];
 }
 

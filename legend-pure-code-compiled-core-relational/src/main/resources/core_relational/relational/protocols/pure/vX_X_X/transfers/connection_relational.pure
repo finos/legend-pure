@@ -177,6 +177,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
             region = $s.region,
             warehouseName = $s.warehouseName,
             databaseName = $s.databaseName,
+            cloudType = $s.cloudType,
             quotedIdentifiersIgnoreCase = $s.quotedIdentifiersIgnoreCase
         )
    ])->toOneMany())
