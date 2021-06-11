@@ -60,6 +60,9 @@ public class TestCodeStorageTools
         Assert.assertFalse(CodeStorageTools.isValidPath("not a valid path"));
         Assert.assertFalse(CodeStorageTools.isValidPath("/not a valid path/even though it/almost looks like one"));
         Assert.assertFalse(CodeStorageTools.isValidPath("/path/with/special/$#/chars"));
+        Assert.assertFalse(CodeStorageTools.isValidPath("/path/with/an/empty//element"));
+        Assert.assertFalse(CodeStorageTools.isValidPath("//"));
+        Assert.assertFalse(CodeStorageTools.isValidPath("//another/path/with/an/empty/element"));
     }
 
     @Test
