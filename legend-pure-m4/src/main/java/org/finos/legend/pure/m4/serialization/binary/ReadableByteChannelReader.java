@@ -141,7 +141,7 @@ class ReadableByteChannelReader extends AbstractBinaryReader
 
     private void fillBuffer(ByteBuffer buffer)
     {
-        int start = buffer.position();
+        long start = buffer.position();
         int read;
         while (buffer.hasRemaining())
         {
