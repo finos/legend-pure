@@ -91,7 +91,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::creat
    createDbConfig($dbType, $dbTimeZone, []);
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1]):DbConfig[1]
+function meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1]):DbConfig[1]
 {
    createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers, getDynaFunctionMappings($dbType), getLiteralProcessors($dbType, $dbTimeZone));
 }
@@ -316,19 +316,19 @@ function  meta::relational::functions::sqlQueryToString::processLiteralDefaultFo
    let processor = getLiteralProcessorForType($dbConfig.literalProcessors, $type);
    if(!$a->type()==String,
       | if($a->type()==List,
-           | $a->cast(@List<Any>)->processLiteralListForPlanService($type, $dbConfig, $dbType, $dbTimeZone)->joinStrings('\',\''),
-           | $processor.transformValue($a)),
-      |$processor.format->format($a));
+           | $a->cast(@List<Any>)->processLiteralListForPlanService($type, $dbConfig, $dbType, $dbTimeZone)->joinStrings(','),
+           | $processor.formatValue($a)),
+      |$processor.formatValue($a)->replace('\'\'', '\''));
 }
 
 function meta::relational::functions::sqlQueryToString::processLiteralListForPlanService(a:List<Any>[*], type:Type[1], dbConfig : DbConfig[1], dbType:DatabaseType[1], dbTimeZone : String[0..1]): String[1]
 {
 
    $a.values->map(v|$v->match([
-                     s:String[1]| $s, //using literal processor results in double quotes
-                     a:Any[1]| getLiteralProcessorForType($dbConfig.literalProcessors, $type).transformValue($a)
+                     s:String[1]| getLiteralProcessorForType($dbConfig.literalProcessors, $type).formatValue($s)->replace('\'\'', '\''),
+                     a:Any[1]| getLiteralProcessorForType($dbConfig.literalProcessors, $type).formatValue($a)
                   ]))
-   ->joinStrings(if($type->subTypeOf(Number),|',',|'\',\''));
+   ->joinStrings(',');
 }
 
 function meta::relational::functions::sqlQueryToString::processLiteralValue(a:Any[1], dbTimeZone:String[0..1], dbType:DatabaseType[1], quoteIdentifiers:Boolean[0..1]) : String[1]
@@ -359,27 +359,47 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::conve
    'null'
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::convertPlaceHolderToSQLString(v:VarPlaceHolder[1], processors:Map<Type, LiteralProcessor>[1], dbTimeZone:String[0..1]):String[1]
+function <<access.private>> meta::relational::functions::sqlQueryToString::getPrefixAndSuffixForType(type:Type[1], processors:Map<Type, LiteralProcessor>[1]):Pair<String, String>[1]
 {
-   let vType = if ($v.propertyPath->isNotEmpty(), | $v.propertyPath->last().genericType.rawType->toOne(), | $v.type);
-   let lp = $processors->get($vType)->toOne();
-   let value = processPlaceHolder($v, $dbTimeZone);
-  if($vType==String,| $lp.formatValue($value),|$lp.format->format($value));
+   let lp           = $processors->get($type)->toOne();
+   
+   let lpFormat     = if($type == String,
+                         | '\@@' + $lp.format + '\@@',
+                         | $lp.format);
+   let prefixSuffix = $lpFormat->split('%');
+   let prefix       = if($prefixSuffix->size() == 1, | '', |$prefixSuffix->at(0));
+   let suffix       = if($prefixSuffix->size() == 1, | $prefixSuffix->at(0), |$prefixSuffix->at(1))->substring(1);
+   
+   ^Pair<String, String>(first = $prefix, second = $suffix);
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::processPlaceHolder(v:VarPlaceHolder[1], dbTimeZone:String[0..1]): String[1]
+function meta::relational::functions::sqlQueryToString::convertPlaceHolderToSQLString(v:VarPlaceHolder[1], processors:Map<Type, LiteralProcessor>[1], dbTimeZone:String[0..1]):String[1]
 {
-   let noPropertyPath = $v.propertyPath->isEmpty();
-   let resolvedPlaceHolder = $v.name+if($noPropertyPath,|'',|'[\"')+$v.propertyPath->map(p|$p.name)->joinStrings('.')+if($noPropertyPath,|'',|'\"]');
+   let vType        = if ($v.propertyPath->isNotEmpty(), | $v.propertyPath->last().genericType.rawType->toOne(), | $v.type);
+   
+   let prefixSuffix = getPrefixAndSuffixForType($vType, $processors);
+   let prefix       = $prefixSuffix.first;
+   let suffix       = $prefixSuffix.second;
+   let value        = processPlaceHolder($v, $prefix, $suffix, $dbTimeZone);
+   
+   if($vType == String,
+      | $value->replace('\'', '\'\'')->replace('\@@','\''),
+      | $value);
+}
 
-   let isPossibleDateTimeType = [Date, DateTime]->contains($v.type);
-   let possiblyApplyDateTzFunction =  if($isPossibleDateTimeType,| processDatePlaceHolder($resolvedPlaceHolder, $dbTimeZone),| $resolvedPlaceHolder);
+function <<access.private>> meta::relational::functions::sqlQueryToString::processPlaceHolder(v:VarPlaceHolder[1], prefix:String[1], suffix:String[1], dbTimeZone:String[0..1]): String[1]
+{
+   let noPropertyPath              = $v.propertyPath->isEmpty();
+   let resolvedPlaceHolder         = $v.name+if($noPropertyPath,|'',|'[\"')+$v.propertyPath->map(p|$p.name)->joinStrings('.')+if($noPropertyPath,|'',|'\"]');
+
+   let isPossibleDateTimeType      = [Date, DateTime]->contains($v.type);
+   let possiblyApplyDateTzFunction = if($isPossibleDateTimeType,| processDatePlaceHolder($resolvedPlaceHolder, $dbTimeZone),| $resolvedPlaceHolder);
 
    if($v->isCollectionPlaceHolder(),
       |if($resolvedPlaceHolder == $possiblyApplyDateTzFunction,
-         |'${renderCollection('+$possiblyApplyDateTzFunction+' '+ $v.type->collectionPlaceHolderSeperator() +')}',
-         |'${renderCollectionWithTz('+ $resolvedPlaceHolder + ' "['+$dbTimeZone->toOne()+']" '+ $v.type->collectionPlaceHolderSeperator() +')}'),
-      |'${'+$possiblyApplyDateTzFunction+'}');
+         |'${renderCollection('+$possiblyApplyDateTzFunction + ' \",\" \"' + $prefix + '\" \"'+ $suffix + '\" ' + collectionPlaceHolderDefaultValue() +')}',
+         |'${renderCollectionWithTz('+ $resolvedPlaceHolder + ' "['+$dbTimeZone->toOne()+']" '+ '\",\" \"' + $prefix + '\" \"'+ $suffix + '\" ' + collectionPlaceHolderDefaultValue() +')}'),
+      |$prefix + '${'+$possiblyApplyDateTzFunction+'}' + $suffix);
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::isCollectionPlaceHolder(v:VarPlaceHolder[1]):Boolean[1]
@@ -396,6 +416,11 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::colle
           |'"\',\'"'
           )
    );
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::collectionPlaceHolderDefaultValue():String[1]
+{
+   '\"' + convertSQLNullToSQLString(^SQLNull()) +'\"';
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processDatePlaceHolder(dateParameter:String[1], dbTimeZone:String[0..1]): String[1]
@@ -421,7 +446,7 @@ function  meta::relational::functions::sqlQueryToString::getValueForTake(l:Liter
 {
    $l.value->match([
       i:Integer[1]| $i->toString(),
-      v:VarPlaceHolder[1] |$v->processPlaceHolder([])
+      v:VarPlaceHolder[1] |$v->processPlaceHolder('', '', [])
    ]);
 }
 
