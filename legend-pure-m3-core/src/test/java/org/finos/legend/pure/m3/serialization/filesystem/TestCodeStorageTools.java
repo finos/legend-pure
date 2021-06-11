@@ -63,6 +63,8 @@ public class TestCodeStorageTools
         Assert.assertFalse(CodeStorageTools.isValidPath("/path/with/an/empty//element"));
         Assert.assertFalse(CodeStorageTools.isValidPath("//"));
         Assert.assertFalse(CodeStorageTools.isValidPath("//another/path/with/an/empty/element"));
+        Assert.assertFalse(CodeStorageTools.isValidPath("/path/with/empty/file/extension."));
+        Assert.assertFalse(CodeStorageTools.isValidPath("empty_file_extension."));
     }
 
     @Test
