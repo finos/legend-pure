@@ -302,6 +302,29 @@ Class
 
 }
 
+Class
+{doc.doc = 'Class With Function Reference'}
+  meta::json::schema::tests::AssociatedClass
+
+
+{
+  simple:String[0..1];
+
+
+}
+
+Association  meta::json::schema::tests::associations::associationsingle
+   {
+   associatedClassSingle:   meta::json::schema::tests::AssociatedClass[1];
+   otherInfoSingle:   meta::json::schema::tests::OtherInfo[0..1];
+}
+
+Association  meta::json::schema::tests::associations::associationsarray
+   {
+   associatedClassarray:   meta::json::schema::tests::AssociatedClass[1];
+   otherInfoArray:   meta::json::schema::tests::OtherInfo[2..6];
+}
+
 Class  meta::json::schema::tests::parent::parentClass
 {
    childClass:meta::json::schema::tests::parent::level1::childClass[1];
@@ -1766,10 +1789,9 @@ function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchem
 }
 
 
-function <<test.Test, test.ExcludeAlloy>> meta::json::schema::generation::tests::testExcludeConstraintsFromDefinitions():Boolean[1]
+function <<test.Test,test.ExcludeAlloy>> meta::json::schema::generation::tests::testExcludeConstraintsFromDefinitions():Boolean[1]
 {
-
- let actualSchema =   toJSONSchema('meta::json::schema::tests::ClassWithUnspportedConstraint');
+ let actualSchema =  meta::json::schema::generation::toJSONSchema(^JSONSchemaConfig(class='meta::json::schema::tests::ClassWithUnspportedConstraint'))->at(0).content;
  let expectedSchema = '{' +
                         '  "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
                         '  "title": "meta::json::schema::tests::ClassWithUnspportedConstraint",' +
@@ -1791,3 +1813,38 @@ function <<test.Test, test.ExcludeAlloy>> meta::json::schema::generation::tests:
 
 }
 
+
+
+function <<test.Test>>  meta::json::schema::generation::tests::testAssociation():Boolean[1]
+{
+    let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::associations,meta::json::schema::tests::AssociatedClass],
+                                                    includeAllRelatedTypes = false  ));
+    assertSize($jsonSchema,1);
+    let expectedjson=  '{' +
+'     "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+'     "title": "meta::json::schema::tests::AssociatedClass",' +
+'     "description": "Class With Function Reference",' +
+'     "type": "object",' +
+'     "properties":   {' +
+'       "simple":     {' +
+'         "type": "string"' +
+'       },' +
+'       "otherInfoSingle":     {' +
+'         "$ref": "OtherInfo.json"' +
+'       },' +
+'       "otherInfoArray":     {' +
+'         "type": "array",' +
+'         "items":       {' +
+'           "$ref": "OtherInfo.json"' +
+'         },' +
+'         "minItems": 2,' +
+'         "maxItems": 6' +
+'       }' +
+'     },' +
+'     "required": [' +
+'   "otherInfoArray"' +
+'     ]' +
+'   }' ;
+
+    assertEquals($expectedjson->meta::json::parseJSON()->toCompactJSONString(),$jsonSchema.content->toOne()->meta::json::parseJSON()->toCompactJSONString());
+}
