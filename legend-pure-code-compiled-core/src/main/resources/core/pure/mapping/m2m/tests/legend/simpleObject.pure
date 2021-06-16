@@ -53,7 +53,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObje
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='VX_X_X',
+{  serverVersion.start='v1_20_0',
    doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch with subType and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
@@ -79,7 +79,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObje
 
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='VX_X_X',
+{  serverVersion.start='v1_20_0',
    doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch with Subtype and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
@@ -104,7 +104,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObje
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
-{  serverVersion.start='VX_X_X',
+{  serverVersion.start='v1_20_0',
    doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch with Subtype and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'

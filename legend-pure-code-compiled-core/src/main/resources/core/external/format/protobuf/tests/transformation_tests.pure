@@ -61,7 +61,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                 ,classToMessage(Trade)->map(m|$m->meta::external::format::protobuf::serialization::toString())->joinStrings('\n'));
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
 {
    assertEquals('message Trade {\n'+
                 ' string type = 1;\n'+
