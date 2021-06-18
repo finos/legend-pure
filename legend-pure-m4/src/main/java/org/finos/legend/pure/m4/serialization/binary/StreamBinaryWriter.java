@@ -17,7 +17,7 @@ package org.finos.legend.pure.m4.serialization.binary;
 import java.io.IOException;
 import java.io.OutputStream;
 
-class StreamBinaryWriter extends AbstractBinaryWriter
+class StreamBinaryWriter extends AbstractSimpleBinaryWriter
 {
     private final OutputStream stream;
 

@@ -37,6 +37,7 @@ Database meta::relational::tests::mapping::join::model::store::db
     Join Firm_Person(firmTable.ID = personTable.FIRMID and firmTable.FLAG is null and personTable.FLAG is not null)
     Join Firm_Person2((firmTable.ID = personTable.FIRMID) and (firmTable.FLAG is null) and (personTable.FLAG is not null))
     Join Firm_Person3(((firmTable.ID = personTable.FIRMID) and (firmTable.FLAG is null)) and (personTable.FLAG is not null))
+    Join Firm_Person4((firmTable.ID = personTable.FIRMID) and ((personTable.FIRSTNAME = 'Peter') or (personTable.FIRSTNAME = 'John')))
     Join Person_MiddleTable(personTable.ID = MiddleTable.ID)
     Join MiddleTable_PersonExtension(MiddleTable.LINKID = personExtensionTable.ID and MiddleTable.LINKID <> 999999999 and personExtensionTable.ID != -99999999)
     Join Person_PersonExtension(personTable.ID = personExtensionTable.PERSON_ID)
@@ -235,6 +236,28 @@ Mapping meta::relational::tests::mapping::join::model::mapping::advancedRelation
                                     inDate : [db]@TypeTableTableB | default.TypeTableB.IN_Z,
                                     outDate : [db]@TypeTableTableB | default.TypeTableB.OUT_Z
                                  }
+)
+
+###Mapping
+import meta::relational::tests::model::simple::*;
+import meta::relational::tests::mapping::join::model::store::*;
+import meta::relational::tests::mapping::join::model::domain::*;
+
+Mapping meta::relational::tests::mapping::join::model::mapping::advancedRelationalMapping4
+(
+   Person : Relational {
+      scope([db]default.personTable)
+      (
+         firstName : FIRSTNAME,
+         lastName : LASTNAME
+      ),
+      firm : [db]@Firm_Person4
+   }
+
+   Firm : Relational {
+      legalName : [db]firmTable.LEGALNAME,
+      employees : [db]@Firm_Person4
+   }
 )
 
 ###Mapping

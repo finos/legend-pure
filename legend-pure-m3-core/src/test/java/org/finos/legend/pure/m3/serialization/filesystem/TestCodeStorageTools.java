@@ -54,12 +54,21 @@ public class TestCodeStorageTools
         Assert.assertTrue(CodeStorageTools.isValidPath("/nonexistent/but/still/valid.html"));
         Assert.assertTrue(CodeStorageTools.isValidPath("/nonexistent/but/still/valid.js"));
         Assert.assertTrue(CodeStorageTools.isValidPath("/nonexistent/but/still/valid.json"));
+        Assert.assertTrue(CodeStorageTools.isValidPath("/Valid/path/Including/_somE_/capITAL/LETTERS_and_UNDERscoreS.txt"));
+        Assert.assertTrue(CodeStorageTools.isValidPath("/v4l1d/p4th/1nclud1ng/numb3rs.num"));
 
         Assert.assertFalse(CodeStorageTools.isValidPath(null));
         Assert.assertFalse(CodeStorageTools.isValidPath(""));
         Assert.assertFalse(CodeStorageTools.isValidPath("not a valid path"));
         Assert.assertFalse(CodeStorageTools.isValidPath("/not a valid path/even though it/almost looks like one"));
         Assert.assertFalse(CodeStorageTools.isValidPath("/path/with/special/$#/chars"));
+        Assert.assertFalse(CodeStorageTools.isValidPath("/path/with/an/empty//element"));
+        Assert.assertFalse(CodeStorageTools.isValidPath("//"));
+        Assert.assertFalse(CodeStorageTools.isValidPath("//another/path/with/an/empty/element"));
+        Assert.assertFalse(CodeStorageTools.isValidPath("/path/with/empty/file/extension."));
+        Assert.assertFalse(CodeStorageTools.isValidPath("empty_file_extension."));
+        Assert.assertFalse(CodeStorageTools.isValidPath("/invalid/file/extension.-abc"));
+        Assert.assertFalse(CodeStorageTools.isValidPath("/missing/file/name/.pure"));
     }
 
     @Test

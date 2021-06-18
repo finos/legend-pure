@@ -4986,6 +4986,8 @@ function meta::relational::functions::pureToSqlQuery::processProject(ids:String[
          let olapCols = $newColumnsWithPossiblePKs->filter(c|$c->instanceOf(WindowColumn));
          let nonOlap = $newColumnsWithPossiblePKs->filter(c|!$c->instanceOf(WindowColumn));
 
+         let possiblePKs = $possiblePKsWithUpdatedData.first.values->cast(@Alias).relationalElement->cast(@TableAliasColumn).column->map(c| pair($c.name, ^PathInformation(type = $c.type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType(), relationalType = $c.type)));
+
          ^$operation(
                      select = ^TdsSelectSqlQuery(
                         distinct = $merge.distinct,
@@ -4996,7 +4998,7 @@ function meta::relational::functions::pureToSqlQuery::processProject(ids:String[
                         extraFilteringOperation = $merge.extraFilteringOperation,
                         groupBy = $merge.groupBy,
                         orderBy = $merge.orderBy,
-                        paths = $ids->zip($pathInformation)->concatenate($windowColPaths)
+                        paths = $ids->zip($pathInformation)->concatenate($windowColPaths)->concatenate($possiblePKs)
                      ),
                      currentTreeNode = if($operation.currentTreeNode->isEmpty(), | $operation.currentTreeNode, | $operation.currentTreeNode->toOne()->findOneNode($operation.select.data->toOne(), $possiblePKsWithUpdatedData.second->toOne())),
                      positionBeforeLastApplyJoinTreeNode = if($operation.positionBeforeLastApplyJoinTreeNode->isEmpty(), | $operation.positionBeforeLastApplyJoinTreeNode, | $operation.positionBeforeLastApplyJoinTreeNode->toOne()->findOneNode($operation.select.data->toOne(), $possiblePKsWithUpdatedData.second->toOne()))
@@ -6993,6 +6995,7 @@ function meta::relational::functions::pureToSqlQuery::getSupportedFunctions():Ma
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::tds::tdsRows_TabularDataSet_1__TDSRow_MANY_, second = meta::relational::functions::pureToSqlQuery::processNoOp_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__T_MANY_, second=meta::relational::functions::pureToSqlQuery::processNoOp_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__Integer_1__T_MANY_, second=meta::relational::functions::pureToSqlQuery::processNoOp_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
+        ^PureFunctionToRelationalFunctionPair(first=meta::pure::graphFetch::execution::graphFetchChecked_T_MANY__RootGraphFetchTree_1__Checked_MANY_, second=meta::relational::functions::pureToSqlQuery::processNoOp_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::functions::collection::objectReferenceIn_Any_1__String_MANY__Boolean_1_, second=meta::relational::functions::pureToSqlQuery::processObjectReferenceIn_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::functions::string::matches_String_1__String_1__Boolean_1_,second=meta::relational::functions::pureToSqlQuery::processDynaFunction_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::functions::string::isAlphaNumeric_String_1__Boolean_1_,second=meta::relational::functions::pureToSqlQuery::processDynaFunction_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_)

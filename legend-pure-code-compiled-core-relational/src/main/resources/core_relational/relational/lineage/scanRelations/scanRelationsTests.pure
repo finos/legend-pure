@@ -974,3 +974,20 @@ function <<meta::pure::profiles::test.Test>> meta::pure::lineage::scanRelations:
 
    assertEquals($expectedTree, $relationTree-> relationTreeAsString());
 }
+
+function <<meta::pure::profiles::test.Test>> meta::pure::lineage::scanRelations::test::testTableToTdsWithCrossJoin():Boolean[1]
+{
+   let query   = {|tableToTDS(tableReference(meta::relational::tests::db,'default','personTable'))
+                     ->join(tableToTDS(tableReference(meta::relational::tests::db,'default','firmTable'))->project([col(r:TDSRow[1]|$r.getString('ID'), 'firmID'), col(r:TDSRow[1]|$r.getString('CEOID'), 'ceoID')]), JoinType.INNER, {a,b| true})};
+
+   let mapping = meta::relational::tests::tds::tabletds::EmptyMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let relationTree = meta::pure::lineage::scanRelations::scanRelations($query, $mapping, $runtime, defaultRelationalExtensions());
+
+   let expectedTree = 'root\n'+
+                      '  ------> (t) personTable [ADDRESSID, AGE, FIRMID, FIRSTNAME, ID, LASTNAME, MANAGERID]\n' +
+                      '    ------> (t) firmTable(tdsJoin) [CEOID, ID]\n';
+
+   assertEquals($expectedTree, $relationTree-> relationTreeAsString());
+}

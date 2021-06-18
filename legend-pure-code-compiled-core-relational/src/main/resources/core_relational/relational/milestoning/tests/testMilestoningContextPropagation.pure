@@ -451,7 +451,7 @@ function <<test.Test>> meta::relational::tests::milestoning::contextpropagation:
    assertSameSQL('select "root".name as "name", "productclassificationtable_0".type_description as "description" from ProductTable as "root" left outer join ProductClassificationTable as "productclassificationtable_0" on ("root".type = "productclassificationtable_0".type and "productclassificationtable_0".from_z <= \'2015-10-16\' and "productclassificationtable_0".thru_z > \'2015-10-16\') where "root".from_z <= \'2015-10-16\' and "root".thru_z > \'2015-10-16\'', $result);
 }
 
-function <<test.Test>> meta::relational::tests::milestoning::contextpropagation::testDatePropagationWithInheritance():Boolean[1]
+function <<test.Test, test.ExcludeAlloy>> meta::relational::tests::milestoning::contextpropagation::testDatePropagationWithInheritance():Boolean[1]
 {
    let businessDate = %2015-8-14;
    let result = execute(|OrderWithProductWithConstraints.all($businessDate)->project([o|$o.getClassificationDescription($businessDate)],['classificationDescription']), milestoningmap, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());

@@ -18,12 +18,14 @@ import org.finos.legend.pure.m4.serialization.Reader;
 
 class LazyStringIndex extends AbstractStringIndex
 {
+    private final String metadataName;
     private final FileReader fileReader;
     private final String[] otherStrings;
 
-    private LazyStringIndex(String[] classifierStrings, FileReader fileReader, int otherStringCount)
+    private LazyStringIndex(String[] classifierStrings, String metadataName, FileReader fileReader, int otherStringCount)
     {
         super(classifierStrings);
+        this.metadataName = metadataName;
         this.fileReader = fileReader;
         this.otherStrings = new String[otherStringCount];
     }
@@ -43,7 +45,7 @@ class LazyStringIndex extends AbstractStringIndex
     private void loadPartition(int index)
     {
         int partitionStart = DistributedStringCache.getStartOfPartition(index);
-        String filePath = DistributedStringCache.getOtherStringIndexPartitionFilePath(partitionStart);
+        String filePath = DistributedMetadataFiles.getOtherStringsIndexPartitionFilePath(this.metadataName, partitionStart);
         String[] partition;
         try (Reader reader = this.fileReader.getReader(filePath))
         {
@@ -58,24 +60,24 @@ class LazyStringIndex extends AbstractStringIndex
         }
     }
 
-    static LazyStringIndex fromFileReader(FileReader fileReader)
+    static LazyStringIndex fromFileReader(String metadataName, FileReader fileReader)
     {
-        String[] classifierIds = readClassifierIds(fileReader);
-        int otherStringCount = readOtherStringCount(fileReader);
-        return new LazyStringIndex(classifierIds, fileReader, otherStringCount);
+        String[] classifierIds = readClassifierIds(metadataName, fileReader);
+        int otherStringCount = readOtherStringCount(metadataName, fileReader);
+        return new LazyStringIndex(classifierIds, metadataName, fileReader, otherStringCount);
     }
 
-    private static String[] readClassifierIds(FileReader fileReader)
+    private static String[] readClassifierIds(String metadataName, FileReader fileReader)
     {
-        try (Reader reader = fileReader.getReader(DistributedStringCache.CLASSIFIER_ID_INDEX_FILE_PATH))
+        try (Reader reader = fileReader.getReader(DistributedMetadataFiles.getClassifierIdStringsIndexFilePath(metadataName)))
         {
             return readClassifierIds(reader);
         }
     }
 
-    private static int readOtherStringCount(FileReader fileReader)
+    private static int readOtherStringCount(String metadataName, FileReader fileReader)
     {
-        try (Reader reader = fileReader.getReader(DistributedStringCache.OTHER_STRING_INDEX_METADATA_FILE_PATH))
+        try (Reader reader = fileReader.getReader(DistributedMetadataFiles.getOtherStringsIndexFilePath(metadataName)))
         {
             return reader.readInt();
         }

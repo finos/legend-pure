@@ -91,6 +91,10 @@ meta::java::generation::tests::functions::string::testPositional() : Boolean[1]
    javaExpressionTests(alloyConventions([]))
       ->addTest('IndexOf in String', {|'Hello, World'->indexOf('W')}, '(long) "Hello, World".indexOf("W")', javaLong())
          ->assert('%s == 7L')
+      ->addTest('IndexOf with fromIndex-1 in String', {|'Hello, World'->indexOf('o', 1)}, '(long) "Hello, World".indexOf("o", (int) 1L)', javaLong())
+         ->assert('%s == 4L')
+      ->addTest('IndexOf with fromIndex-2 in String', {|'Hello, World'->indexOf('o', 5)}, '(long) "Hello, World".indexOf("o", (int) 5L)', javaLong())
+         ->assert('%s == 8L')
       ->addTest('String Length', {|'Hello, World'->length()}, '(long) "Hello, World".length()', javaLong())
          ->assert('%s == 12L')
       ->runTests();

@@ -281,8 +281,7 @@ function meta::protocols::pure::vX_X_X::extension::getRelationalExtension():meta
       ]},
       transfers_store_transformConnection2 = {extensions:meta::pure::router::extension::RouterExtension[*] | 
       [
-         db:meta::relational::runtime::DatabaseConnection[1]             | $db->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connection::transformDatabaseConnection($extensions),
-         chain:meta::pure::mapping::modelToModel::ModelChainConnection[1]|$chain->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connection::transformModelChainConnection()
+         db:meta::relational::runtime::DatabaseConnection[1] | $db->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connection::transformDatabaseConnection($extensions)
       ]},
       scan_buildPureModelAsText_getAllElementsFromMapping = {stores : meta::pure::store::Store[*] |
                         $stores->map(s|$s->concatenate($s->match([d:meta::relational::metamodel::Database[1]|$d.joins->map(j|$j.operation->meta::relational::functions::pureToSqlQuery::extractStore()),a:Any[1]|[]])))      

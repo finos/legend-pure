@@ -103,6 +103,7 @@ Class meta::alloy::runtime::java::typeInfo::ClassTypeInfo extends TypeInfo
    supertypes          : Class<Any>[*];
    qualifiedProperties : QualifiedProperty<Any>[*];
    constraints         : ConstraintInfo[*];
+   isFromConstraint    : Boolean[1];
    
    class() { $this.type->cast(@Class<Any>) }: Class<Any>[1];
 }
@@ -201,10 +202,9 @@ function meta::alloy::runtime::java::prepare(node:ExecutionNode[1], path:String[
 
 function <<access.private>> meta::alloy::runtime::java::fillNewFunctionProhibitedList(context:GenerationContext[1]):GenerationContext[1]
 {
-   let cls = $context.typeInfos.typeInfos->filter(t|$t->instanceOf(ClassTypeInfo))->cast(@ClassTypeInfo)->map(c|$c.class());
+   let cls = $context.typeInfos.typeInfos->filter(t|$t->instanceOf(ClassTypeInfo))->cast(@ClassTypeInfo)->filter(c| !$c.isFromConstraint);
    let oldConventions = $context.conventions; 
-  
-   ^$context(conventions = ^$oldConventions(newFunctionProhibitedList = $cls));
+   ^$context(conventions = ^$oldConventions(newFunctionProhibitedList = $cls->map(c|$c.class())));
 }
 
 function <<access.private>> meta::alloy::runtime::java::prepareChildNodes(nodes:ExecutionNode[*], childNo:Integer[1], parentPath:String[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]

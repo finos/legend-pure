@@ -136,7 +136,14 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
       t:meta::pure::alloy::connections::alloy::authentication::TestDatabaseAuthenticationStrategy[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::TestDatabaseAuthenticationStrategy(
             _type = 'test'
-         )
+         ),
+      s:meta::pure::alloy::connections::alloy::authentication::SnowflakePublicAuthenticationStrategy[1] |
+        ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::SnowflakePublicAuthenticationStrategy(
+            _type = 'snowflakePublic',
+            privateKeyVaultReference = $s.privateKeyVaultReference,
+            passPhraseVaultReference = $s.passPhraseVaultReference,
+            publicUserName = $s.publicUserName
+        )
    ])->toOneMany())
 }
 
@@ -162,7 +169,17 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
              _type = 'h2Local',
              testDataSetupCsv = $l.testDataSetupCsv,
              testDataSetupSqls = $l.testDataSetupSqls
-         )
+         ),
+      s:meta::pure::alloy::connections::alloy::specification::SnowflakeDatasourceSpecification[1] |
+        ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::SnowflakeDatasourceSpecification(
+            _type = 'snowflake',
+            accountName = $s.accountName,
+            region = $s.region,
+            warehouseName = $s.warehouseName,
+            databaseName = $s.databaseName,
+            cloudType = $s.cloudType,
+            quotedIdentifiersIgnoreCase = $s.quotedIdentifiersIgnoreCase
+        )
    ])->toOneMany())
 }
 
@@ -181,11 +198,4 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
                t: meta::relational::postProcessor::TableNameMapper[1]| ^meta::protocols::pure::vX_X_X::metamodel::store::relational::TableNameMapper(_type='tableMapper',in =$t.in, out = $t.out, schemaMapperIn = $t.schemaNameMapper.in, schemaMapperOut = $t.schemaNameMapper.out),
                s: meta::relational::postProcessor::SchemaNameMapper[1]| ^meta::protocols::pure::vX_X_X::metamodel::store::relational::SchemaNameMapper(_type='schemaMapper',in =$s.in, out = $s.out )
             ]->concatenate($extensions.serializerExtension('vX_X_X')->cast(@meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X).moduleSerializerExtension('relational')->cast(@meta::protocols::pure::vX_X_X::extension::RelationalModuleSerializerExtension).transfers_connection_transformPostProcessorParameters)->toOneMany()));
-}
-
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connection::transformModelChainConnection(modelChainConnection: meta::pure::mapping::modelToModel::ModelChainConnection[1]):meta::protocols::pure::vX_X_X::metamodel::mapping::modelToModel::ModelChainConnection[1]
-{
-   ^meta::protocols::pure::vX_X_X::metamodel::mapping::modelToModel::ModelChainConnection(element = 'ModelStore',
-                                                                                          _type = 'ModelChainConnection',
-                                                                                          mappings = $modelChainConnection.mappings->map(m| $m->elementToPath()))
 }
