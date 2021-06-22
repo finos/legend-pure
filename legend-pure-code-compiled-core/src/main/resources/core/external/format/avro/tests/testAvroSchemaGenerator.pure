@@ -339,55 +339,55 @@ function <<test.Test>> meta::external::format::avro::generation::tests::decimalT
 }
 
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_simpleToOneStringProperty(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_simpleToOneStringProperty(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=A->elementToPath()))->at(0)->at(0).content;
    assertEquals('{"type":"record","name":"A","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"a","type":"string"}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_simpleToOneDifferentDateTypeProperty(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_simpleToOneDifferentDateTypeProperty(): Boolean[1]
 {
    let schema = transform( ^AvroConfig(class=G->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"G","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"g1","type":{"type":"int","logicalType":"date"}},{"name":"g2","type":{"type":"long","logicalType":"timestamp-micros"}},{"name":"g3","type":{"type":"long","logicalType":"timestamp-micros"}}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_dateTypePropertyWithTimestampLogicalType(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_dateTypePropertyWithTimestampLogicalType(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=G->elementToPath(),timestampLogicalType='timestamp-millis'))->at(0).content;
    assertEquals('{"type":"record","name":"G","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"g1","type":{"type":"int","logicalType":"date"}},{"name":"g2","type":{"type":"long","logicalType":"timestamp-millis"}},{"name":"g3","type":{"type":"long","logicalType":"timestamp-millis"}}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_simpleZeroOneIntegerProperty(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_simpleZeroOneIntegerProperty(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=B->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"B","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"b","type":["null","long"],"default":null}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'}  meta::external::format::avro::generation::tests::transform_simpleZeroManyFloatProperty(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'}  meta::external::format::avro::generation::tests::transform_simpleZeroManyFloatProperty(): Boolean[1]
 {
    let schema = transform( ^AvroConfig(class=C->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"C","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"c","type":{"type":"array","items":"double"}}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_simpleToOneEnumerationProperty(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_simpleToOneEnumerationProperty(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=D->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"D","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"d","type":{"type":"enum","name":"MyEnum","namespace":"meta.external.format.avro.generation.tests","symbols":["V1","V2"]}}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_includePropertiesFromSuperTypes(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_includePropertiesFromSuperTypes(): Boolean[1]
 {
    let schema = transform( ^AvroConfig(class=E->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"E","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"e","type":["null",{"type":"long","logicalType":"timestamp-micros"}],"default":null},{"name":"ee","type":"string"}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_excludePropertiesFromSuperTypes(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_excludePropertiesFromSuperTypes(): Boolean[1]
 {
    let schema = transform( ^AvroConfig(class=E->elementToPath(),includeSuperTypes=false))->at(0).content;
    assertEquals('{"type":"record","name":"E","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"e","type":["null",{"type":"long","logicalType":"timestamp-micros"}],"default":null}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_notIncludeNamepsace(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_notIncludeNamepsace(): Boolean[1]
 {
    let schema = transform( ^AvroConfig(class=A->elementToPath(),includeNamespace=false))->at(0).content;
    assertEquals('{"type":"record","name":"A","fields":[{"name":"a","type":"string"}]}', $schema);
@@ -405,13 +405,13 @@ function <<test.Test, test.ExcludeAlloy>> {serverVersion.start='v1_11_0'} meta::
    assertEquals('{"type":"record","name":"S","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"s","type":"string"}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_includeGeneratedMilestoning(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_includeGeneratedMilestoning(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=M->elementToPath(),includeGeneratedMilestoning=true))->at(0).content;
    assertEquals('{"type":"record","name":"M","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"m","type":"boolean"},{"name":"businessDate","type":{"type":"long","logicalType":"timestamp-micros"}}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_excludeGeneratedMilestoning(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_excludeGeneratedMilestoning(): Boolean[1]
 {
    let schema = transform( ^AvroConfig(class=M->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"M","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"m","type":"boolean"}]}', $schema);
@@ -431,49 +431,49 @@ function <<test.Test, test.ExcludeAlloy>> {serverVersion.start='v1_11_0'} meta::
                 '{"type":"record","name":"Z","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"z","type":["null","boolean"],"default":null},{"name":"w","type":["double","long"]}]}]', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_ignoredProperties(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_ignoredProperties(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=I->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"I","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"included","type":["null","string"],"default":null}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_avroTypeSpecified(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_avroTypeSpecified(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=J->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"J","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"j1","type":["null","float"],"default":null},{"name":"j2","type":["null","int"],"default":null}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_defaultValues(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_defaultValues(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=K->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"K","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"k1","type":"double","default":1.2},{"name":"k2","type":"long","default":5},{"name":"k3","type":"boolean","default":false},{"name":"k4","type":"string","default":""}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_defaultArray(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_defaultArray(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=P->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"P","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"p","type":{"type":"array","items":"double"},"default":[0.0,1.0]}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_defaultEmptyArray(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_defaultEmptyArray(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=L->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"L","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"l","type":{"type":"array","items":"double"},"default":[]}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_properties(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_properties(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=Q->elementToPath(),propertyProfile=meta::external::format::avro::generation::tests::AvroProperty))->at(0).content;
    assertEquals('{"type":"record","name":"Q","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"q","type":"string","p1":1},{"name":"r","type":{"type":"record","name":"R","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"r","type":"string"},{"name":"enum","type":{"type":"enum","name":"EnumWithAvroTags","namespace":"meta.external.format.avro.generation.tests","symbols":["V1","V2"],"p3":[]}}],"p1":3.14,"p2":{"k1":"v1","k2":2}}}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_namespaceOverride(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_namespaceOverride(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=D->elementToPath(),namespaceOverride=[pair('meta.external.format.avro.generation.tests','o.v.e.r.r.i.d.e')]->newMap()))->at(0).content;
    assertEquals('{"type":"record","name":"D","namespace":"o.v.e.r.r.i.d.e","fields":[{"name":"d","type":{"type":"enum","name":"MyEnum","namespace":"o.v.e.r.r.i.d.e","symbols":["V1","V2"]}}]}', $schema);
 }
 
-function <<test.Test>> {serverVersion.start='vX_X_X'} meta::external::format::avro::generation::tests::transform_decimalType(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_decimalType(): Boolean[1]
 {
    let schema = transform( ^AvroConfig(class=Dec->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"Dec","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"dec","type":["null","string"],"default":null}]}', $schema);

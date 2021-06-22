@@ -72,7 +72,7 @@ meta::java::generation::tests::functions::boolean::testBooleanInQualities() : Bo
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X' }
+{  meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0' }
 meta::java::generation::tests::functions::boolean::pureTests() : Boolean[1]
 {
    javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
