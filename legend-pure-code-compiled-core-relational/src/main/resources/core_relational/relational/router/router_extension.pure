@@ -201,10 +201,18 @@ function <<access.private>> meta::pure::router::extension::relationalExtension(t
                                 {mapping:Mapping[1], runtime: Runtime[1], parametersValues:Pair<VariableExpression, Any>[*], extensions:meta::pure::router::extension::RouterExtension[*] |
                                    [
                                         r:RelationalInstantiationExecutionNode[1] | let sql = $parametersValues->fold({a,b| let paramName = $a.first->evaluateAndDeactivate().name;
-                                                                                                            let paramType = $a.first->evaluateAndDeactivate().genericType.rawType->toOne();
-                                                                                                            let sizeProcessedSql = $b->replace($paramName->buildVariableCollectionSizeString(), if($a.second->instanceOf(List), |$a.second->cast(@List<Any>).values->size()->toString(), |$a.second->size()->toString();));
-                                                                                                            let connection = $r.executionNodes->at(0)->cast(@SQLExecutionNode).connection;
-                                                                                                            $sizeProcessedSql->replace($paramName->buildVariableTemplateString($a.second, $paramType, $runtime, $extensions), $a.second->processLiteralDefaultForPlanService($connection.type, $connection.timeZone, $connection.quoteIdentifiers));}
+                                                                                                            let paramType             = $a.first->evaluateAndDeactivate().genericType.rawType->toOne();
+                                                                                                            let sizeProcessedSql      = $b->replace($paramName->buildVariableCollectionSizeString(), if($a.second->instanceOf(List), |$a.second->cast(@List<Any>).values->size()->toString(), |$a.second->size()->toString();));
+                                                                                                            let connection            = $r.executionNodes->at(0)->cast(@SQLExecutionNode).connection;
+                                                                                                            
+                                                                                                            let freemarkerTemplate    = $paramName->buildVariableTemplateString($a.second, $paramType, $runtime, $extensions);
+                                                                                                            let freemarkerValue       = $a.second->processLiteralDefaultForPlanService($connection.type, $connection.timeZone, $connection.quoteIdentifiers);
+                                                                                                            
+                                                                                                            //Need to remove quotes to allow execution of freemarkerConditional node and cases like strtsWith where we remove quotes in sqlQueryToString
+                                                                                                            let removeQuotePadding    = ($freemarkerTemplate->startsWith('\'') && $freemarkerTemplate->endsWith('\'')) && ($freemarkerValue->startsWith('\'') && $freemarkerValue->endsWith('\''));
+                                                                                                            let processedTemplate     = if($removeQuotePadding, | $freemarkerTemplate->substring(1, $freemarkerTemplate->length()-1), |$freemarkerTemplate);
+                                                                                                            let processedValue        = if($removeQuotePadding, | $freemarkerValue->substring(1, $freemarkerValue->length()-1), |$freemarkerValue);
+                                                                                                            $sizeProcessedSql->replace($processedTemplate, $processedValue);}
                                                                                                       , $r.executionNodes->at(0)->cast(@SQLExecutionNode).sqlQuery);
 
                                                                                    let pathInfoPairs = if ($r.resultType->instanceOf(TDSResultType),
@@ -254,15 +262,9 @@ function <<access.private>> meta::pure::router::extension::relationalExtension(t
                               {
                                  name:String[1], parameterVal: Any[1], type: Type[1] |
                                        d:DatabaseConnection[1]|
-                                             if($d.timeZone->isNotEmpty() && $d.timeZone!='GMT' && $parameterVal->instanceOf(List) && $parameterVal->cast(@List<Any>).values->type()->subTypeOf(Date),
-                                                |'${renderCollectionWithTz('+ $name + ' "['+$d.timeZone->toOne()+']" '+'"\',\'"' +')}',
-                                                |if($parameterVal->instanceOf(List),
-                                                   |let separator = if($type == String, | '\"\',\'\"',| if($type->subTypeOf(Date),|'"\',\'"',|'\',\'')) ;
-                                                   '${renderCollection('+$name+ ' '+ $separator+')}';,
-                                                   |'${'+$name+'}'
-                                                   );
-
-                                             )
+                                             let dbConfig         = createDbConfig($d.type, $d.timeZone, $d.quoteIdentifiers);
+                                             let varMultiplicity  = if($parameterVal->instanceOf(List), |ZeroMany, |PureOne);
+                                             convertPlaceHolderToSQLString(^meta::relational::functions::pureToSqlQuery::VarPlaceHolder(name = $name, type=$type, multiplicity=$varMultiplicity), $dbConfig.literalProcessors, $d.timeZone);
                               },
       executionPlan_generation_updateConnection =
                      [
