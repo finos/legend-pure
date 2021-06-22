@@ -151,7 +151,7 @@ function <<access.private>> meta::relational::graphFetch::executionPlan::planGra
    let primitiveQuery     = generatePrimitivePropertyQuery($parentSets, $currentTree, $parentTree, $mapping, $inScopeVars, $mc, $debug, $extensions);
    let resultColumnnName  = '"node_' + $currentIdxString + '_result"';
    let namedColumnQuery   = ^$primitiveQuery(columns = ^Alias(name = $resultColumnnName, relationalElement = $primitiveQuery.columns->toOne()));
-   let changedDriverQuery = $namedColumnQuery->changeDriverToTempWithPkProjection(tempTableName($parentIdx), $extensions);
+   let changedDriverQuery = $namedColumnQuery->changeDriverToTempWithPkProjection(tempTableName($parentIdx), $parentSets, $extensions);
    let shouldManageAgg    = $currentTree.property->instanceOf(QualifiedProperty) && $currentTree.property->containsAggregationFunctionInFunction(defaultState($mapping, $inScopeVars).supportedFunctions);
    let managedAggQuery    = if ($shouldManageAgg,
                                 | ^$changedDriverQuery
@@ -207,7 +207,7 @@ function <<access.private>> meta::relational::graphFetch::executionPlan::planGra
 
    /* Generate Sql Query */
    let nonPrimitiveQuery   = generateNonPrimitivePropertyQuery($parentSets, $currentTree, $parentTree, $mapping, $inScopeVars, $mc, $simplePrimitiveProperties, $debug, $extensions);
-   let changedDriverQuery  = $nonPrimitiveQuery->changeDriverToTempWithPkProjection(tempTableName($parentIdx), $extensions);
+   let changedDriverQuery  = $nonPrimitiveQuery->changeDriverToTempWithPkProjection(tempTableName($parentIdx), $parentSets, $extensions);
    let pkFilteredQuery     = ^$changedDriverQuery
                              (
                                 filteringOperation = andFilters($changedDriverQuery.filteringOperation->concatenate($changedDriverQuery.columns->cast(@Alias)->filter(x | $x.name->startsWith('"pk_'))->map(x | ^DynaFunction(name = 'isNotNull', parameters =  $x.relationalElement))->orFilters($extensions)), $extensions)
@@ -458,10 +458,7 @@ function meta::relational::graphFetch::executionPlan::generateNonPrimitiveProper
       rebuildSelectWithCursor($pm.property.name->toOne(), [], $newQuery, true);
    });
 
-   let targetPrimaryKeys = $targetSetImplementation->match([
-      r:RootRelationalInstanceSetImplementation[1]     | $r.resolvePrimaryKey();,
-      e:EmbeddedRelationalInstanceSetImplementation[1] | $e.setMappingOwner.resolvePrimaryKey()
-   ]);
+   let targetPrimaryKeys = $targetSetImplementation->resolvePrimaryKey();
 
    let targetPks = $targetPrimaryKeys->map({pk |
       let newQuery = $pk->processColumnsInRelationalOperationElements($pureToSqlState, $res->cast(@SelectWithCursor), '_gftmp', ^List<ColumnGroup>(), false, $debug, $extensions);
@@ -549,13 +546,16 @@ function <<access.private>> meta::relational::graphFetch::executionPlan::pushFil
       ->pushExtraFilteringOperation($extensions)
 }
 
-function <<access.private>> meta::relational::graphFetch::executionPlan::changeDriverToTempWithPkProjection(select: SelectSQLQuery[1], var: String[1], extensions:RouterExtension[*]):SelectSQLQuery[1]
+function <<access.private>> meta::relational::graphFetch::executionPlan::changeDriverToTempWithPkProjection(select: SelectSQLQuery[1], var: String[1], parentSets: RelationalInstanceSetImplementation[*], extensions:RouterExtension[*]):SelectSQLQuery[1]
 {
+   assert($parentSets->size() == 1, | 'Unions are not supported yet in graph fetch flow!');
+
    let selectData    = $select.data->toOne();
    let mainAlias     = $selectData.alias;
-   let mainRelation  = $mainAlias.relationalElement->cast(@NamedRelation);
-   let primaryKeys   = $mainRelation->match([t : Table[1] | $t.primaryKey, v : View[1] | $v.primaryKey]);
-   let tempSelectSQL = ^SelectSQLQuery(data = ^RootJoinTreeNode(alias = ^TableAlias(name = 'root', relationalElement = ^VarSetPlaceHolder(varName = $var))));
+   let mainRelation  = $parentSets->toOne()->resolveMainRelation()->cast(@NamedRelation);
+   let primaryKeys   = $parentSets->toOne()->resolvePrimaryKey()->cast(@TableAliasColumn).column;
+   let tempTableEl   = ^VarSetPlaceHolder(varName = $var);
+   let tempSelectSQL = ^SelectSQLQuery(data = ^RootJoinTreeNode(alias = ^TableAlias(name = 'root', relationalElement = $tempTableEl)));
    let tempAlias     = ^TableAlias(name = 'driverTemp', relationalElement = $tempSelectSQL);
    
    let joinOperation = $primaryKeys->map({pk |
@@ -563,7 +563,7 @@ function <<access.private>> meta::relational::graphFetch::executionPlan::changeD
       (
          name = 'equal',
          parameters = [
-            ^TableAliasColumn(alias = $tempAlias, column = ^$pk(name = 'pk_' + $primaryKeys->indexOf($pk)->toString())),
+            ^TableAliasColumn(alias = $tempAlias, column = ^$pk(name = 'pk_' + $primaryKeys->indexOf($pk)->toString(), owner = $tempTableEl)),
             ^TableAliasColumn(alias = $mainAlias, column = $pk)
          ]
       )
@@ -571,7 +571,7 @@ function <<access.private>> meta::relational::graphFetch::executionPlan::changeD
 
    ^$select
    (
-      columns = $primaryKeys->map(pk | ^Alias(name = '"parent_key_gen_' + $primaryKeys->indexOf($pk)->toString() + '"', relationalElement = ^TableAliasColumn(alias = $tempAlias, column = ^$pk(name = 'pk_' + $primaryKeys->indexOf($pk)->toString()))))
+      columns = $primaryKeys->map(pk | ^Alias(name = '"parent_key_gen_' + $primaryKeys->indexOf($pk)->toString() + '"', relationalElement = ^TableAliasColumn(alias = $tempAlias, column = ^$pk(name = 'pk_' + $primaryKeys->indexOf($pk)->toString(), owner = $tempTableEl))))
                    ->concatenate($select.columns),
       data = ^RootJoinTreeNode
              (
