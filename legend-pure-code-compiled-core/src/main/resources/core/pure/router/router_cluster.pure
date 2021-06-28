@@ -427,7 +427,7 @@ function meta::pure::router::clustering::cluster(v:ValueSpecification[1], mappin
                                                           );,
                                                          |^$i(values = $values);
                                                     );
-                                          print(if($debug.debug,|$i->asString()->debug($debug.space+'~> '),|''));
+                                          print(if($debug.debug,|$res->asString()->debug($debug.space+'~> '),|''));
                                           ^ClusterResponse(cluster=$res,letFunctions = $letFunctions, executableSetOperations=$executables);
                                   );,
                r:FunctionRoutedValueSpecification[1]|let clusterResponse = $r.value->cluster($mapping, $openVariables, $exeCtx,$depth+1,^$debug(space = $debug.space+'  '), $analyticsDecision, $extensions);

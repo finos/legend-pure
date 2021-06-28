@@ -58,7 +58,9 @@ function meta::pure::router::builder::build(v:ValueSpecification[1], l:List<Perm
     $v->match([
                f:FunctionExpression[1]| if($f->isSerialize($extensions),
                                                  | // Not routing tree part in serialize function call
-                                                   if ($f.parametersValues->size() > 2 , | ^$f(parametersValues = [$f.parametersValues->evaluateAndDeactivate()->at(0)->build($l, $last, $mapping, $exeCtx, $extensions, $debug), $f.parametersValues->evaluateAndDeactivate()->at(1), $f.parametersValues->evaluateAndDeactivate()->at(2)]), | ^$f(parametersValues = [$f.parametersValues->evaluateAndDeactivate()->at(0)->build($l, $last, $mapping, $exeCtx, $extensions, $debug), $f.parametersValues->evaluateAndDeactivate()->at(1)])),
+                                                   if ($f.parametersValues->size() > 2 , 
+                                                       | ^$f(parametersValues = [$f.parametersValues->evaluateAndDeactivate()->at(0)->build($l, $last, $mapping, $exeCtx, $extensions, $debug), $f.parametersValues->evaluateAndDeactivate()->at(1), $f.parametersValues->evaluateAndDeactivate()->at(2)]), 
+                                                       | ^$f(parametersValues = [$f.parametersValues->evaluateAndDeactivate()->at(0)->build($l, $last, $mapping, $exeCtx, $extensions, $debug), $f.parametersValues->evaluateAndDeactivate()->at(1)])),
                                                  | let params = $f.parametersValues->evaluateAndDeactivate()->map(v|$v->build($l, $last, $mapping, $exeCtx, $extensions, $debug));
 
                                                    $f.func->match([q:QualifiedProperty<Any>[1] | let sequence = $q.expressionSequence->evaluateAndDeactivate()->map(ex|$ex->build($l, $last, $mapping, $exeCtx, $extensions, $debug));
