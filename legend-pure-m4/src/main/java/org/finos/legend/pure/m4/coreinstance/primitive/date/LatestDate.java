@@ -18,8 +18,8 @@ import java.util.GregorianCalendar;
 
 public class LatestDate implements PureDate
 {
-    private static String latestDateConstant = "%latest";
-    public static LatestDate instance = new LatestDate();
+    private static final String latestDateConstant = "%latest";
+    public static final LatestDate instance = new LatestDate();
 
     private LatestDate()
     {
@@ -226,5 +226,10 @@ public class LatestDate implements PureDate
     public static boolean isLatestDate(PureDate date)
     {
         return date == instance;
+    }
+
+    public static boolean isLatestDateString(String string)
+    {
+        return latestDateConstant.equals(string);
     }
 }

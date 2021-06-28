@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
@@ -43,7 +43,7 @@ abstract class AbstractBinaryObjDeserializer implements BinaryObjDeserializer
         String identifier = readIdentifier(reader);
         String classifier = readClassifier(reader);
         String name = readName(reader);
-        MutableList<PropertyValue> propertiesList = readPropertyValues(reader);
+        ListIterable<PropertyValue> propertiesList = readPropertyValues(reader);
         return isEnum ? new Enum(sourceInformation, identifier, classifier, name, propertiesList) : new Obj(sourceInformation, identifier, classifier, name, propertiesList);
     }
 
@@ -80,38 +80,76 @@ abstract class AbstractBinaryObjDeserializer implements BinaryObjDeserializer
         return readString(reader);
     }
 
-    protected MutableList<PropertyValue> readPropertyValues(Reader reader)
+    protected ListIterable<PropertyValue> readPropertyValues(Reader reader)
     {
         int propertiesSize = reader.readInt();
-        MutableList<PropertyValue> propertiesList = FastList.newList(propertiesSize);
-        for (int i = 0; i < propertiesSize; i++)
+        switch (propertiesSize)
         {
-            propertiesList.add(readPropertyValue(reader));
+            case 0:
+            {
+                return Lists.immutable.empty();
+            }
+            case 1:
+            {
+                PropertyValue value = readPropertyValue(reader);
+                return Lists.immutable.with(value);
+            }
+            case 2:
+            {
+                PropertyValue value1 = readPropertyValue(reader);
+                PropertyValue value2 = readPropertyValue(reader);
+                return Lists.immutable.with(value1, value2);
+            }
+            default:
+            {
+                MutableList<PropertyValue> propertiesList = Lists.mutable.withInitialCapacity(propertiesSize);
+                for (int i = 0; i < propertiesSize; i++)
+                {
+                    PropertyValue value = readPropertyValue(reader);
+                    propertiesList.add(value);
+                }
+                return propertiesList;
+            }
         }
-        return propertiesList;
     }
 
     protected PropertyValue readPropertyValue(Reader reader)
     {
         boolean isMany = reader.readBoolean();
         String propertyName = readString(reader);
-        if (isMany)
+        return isMany ? new PropertyValueMany(propertyName, readManyRValues(reader)) : new PropertyValueOne(propertyName, readRValue(reader));
+    }
+
+    private ListIterable<RValue> readManyRValues(Reader reader)
+    {
+        int valueCount = reader.readInt();
+        switch (valueCount)
         {
-            int valueCount = reader.readInt();
-            if (valueCount == 0)
+            case 0:
             {
-                return new PropertyValueMany(propertyName, Lists.immutable.<RValue>empty());
+                return Lists.immutable.empty();
             }
-            MutableList<RValue> valuesList = FastList.newList(valueCount);
-            for (int i = 0; i < valueCount; i++)
+            case 1:
             {
-                valuesList.add(readRValue(reader));
+                RValue value = readRValue(reader);
+                return Lists.immutable.with(value);
             }
-            return new PropertyValueMany(propertyName, valuesList);
-        }
-        else
-        {
-            return new PropertyValueOne(propertyName, readRValue(reader));
+            case 2:
+            {
+                RValue value1 = readRValue(reader);
+                RValue value2 = readRValue(reader);
+                return Lists.immutable.with(value1, value2);
+            }
+            default:
+            {
+                MutableList<RValue> valuesList = Lists.mutable.withInitialCapacity(valueCount);
+                for (int i = 0; i < valueCount; i++)
+                {
+                    RValue value = readRValue(reader);
+                    valuesList.add(value);
+                }
+                return valuesList;
+            }
         }
     }
 
@@ -147,7 +185,7 @@ abstract class AbstractBinaryObjDeserializer implements BinaryObjDeserializer
             case BinaryGraphSerializationTypes.PRIMITIVE_DATE:
             {
                 String dateString = readString(reader);
-                return new Primitive(dateString.equals(LatestDate.instance.toString()) ? LatestDate.instance: DateFunctions.parsePureDate(dateString));
+                return new Primitive(LatestDate.isLatestDateString(dateString) ? LatestDate.instance : DateFunctions.parsePureDate(dateString));
             }
             case BinaryGraphSerializationTypes.PRIMITIVE_DECIMAL:
             {
