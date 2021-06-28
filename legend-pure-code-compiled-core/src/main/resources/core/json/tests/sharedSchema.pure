@@ -95,7 +95,7 @@ Enum <<meta::json::schema::JSONSchemaTypeExtension.null>> meta::json::schema::te
 }
 
 
-function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::typeInclusionForConstraintFunctions():Boolean[1]
+function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0'}  meta::json::schema::tests::roundTrip::typeInclusionForConstraintFunctions():Boolean[1]
 {
      let generatedJSON = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::ClassWithFunctionReferences,meta::json::schema::tests::functionWithStringType_String_$0_1$__Boolean_1_],
                                                          useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true ));
@@ -145,7 +145,7 @@ function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.sta
 
 
 
-function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testCustomProfile():Boolean[1]
+function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0'}  meta::json::schema::tests::roundTrip::testCustomProfile():Boolean[1]
 {
    
   let generatedJSONFromClassOpenAPI = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::ClassWithCustomProfiles,meta::json::schema::tests::profile],
@@ -237,7 +237,7 @@ function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.sta
    
 }
 
-function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testforceFunctionToObject():Boolean[1]
+function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0'}  meta::json::schema::tests::roundTrip::testforceFunctionToObject():Boolean[1]
 {
    
      let generatedJSONFromElement = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::functionForcedToObject_Any_$0_1$__Boolean_1_],
@@ -264,7 +264,7 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
    testfromJSONSchema(meta::json::schema::tests::functionForcedToObject_Any_$0_1$__Boolean_1_,$generatedElementFromJSON);
 }
 
-function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testinLineFunctions():Boolean[1]
+function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0'}  meta::json::schema::tests::roundTrip::testinLineFunctions():Boolean[1]
 {
      let generatedJSONFromElement = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[ meta::json::schema::tests::ClassWithInLineFunctions],
                                                           useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true ));  
@@ -334,7 +334,7 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
 
 
 
-function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testComplexPaths():Boolean[1]
+function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0'}  meta::json::schema::tests::roundTrip::testComplexPaths():Boolean[1]
 {
     let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::parent::parentClass,
                                                                                           meta::json::schema::tests::parent2::level1::level2::childClass2,
@@ -393,7 +393,7 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
 
 }
 
-function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testNullableEnum():Boolean[1]
+function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0'}  meta::json::schema::tests::roundTrip::testNullableEnum():Boolean[1]
 
 {
        let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::NullableEnum]));
@@ -437,7 +437,7 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
 
 }
 
-function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testSchemaCollection():Boolean[1]
+function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0'}  meta::json::schema::tests::roundTrip::testSchemaCollection():Boolean[1]
 {
      let collectWithNoRelatedTypes = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[ meta::json::schema::tests::SimpleClass,meta::json::schema::tests::ClassWithFunctionReferences],
                                                           useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true,createSchemaCollection=true ));
@@ -636,7 +636,7 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
 
 
 
-function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}  meta::json::schema::tests::roundTrip::testDefinitions():Boolean[1]
+function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0'}  meta::json::schema::tests::roundTrip::testDefinitions():Boolean[1]
 {
    let generatedJSONSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::parent::parent::levela::parentClass2]));
 

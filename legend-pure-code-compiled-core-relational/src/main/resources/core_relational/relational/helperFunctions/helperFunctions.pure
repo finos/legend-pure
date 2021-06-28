@@ -290,6 +290,14 @@ function meta::relational::mapping::resolveMainTable(rsi: RelationalInstanceSetI
    ])
 }
 
+function meta::relational::mapping::resolveMainRelation(rsi: RelationalInstanceSetImplementation[1]):Relation[1]
+{
+   $rsi->match([
+      ersi: EmbeddedRelationalInstanceSetImplementation[1] | $ersi.setMappingOwner.mainRelation(),
+      rrsi: RootRelationalInstanceSetImplementation[1]     | $rrsi.mainRelation()
+   ])
+}
+
 function meta::relational::mapping::resolvePrimaryKeysNames(rsi: RelationalInstanceSetImplementation[1], pkMap:Map<String, Any>[1], setIdx:String[1], transformToPlatformNames:Boolean[1], extensions:RouterExtension[*]):Map<String, Any>[1]
 {
    let pks = $rsi->resolvePrimaryKey();

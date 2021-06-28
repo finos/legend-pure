@@ -164,7 +164,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::testIsDistinctConst
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{ serverVersion.start='vX_X_X' }
+{ serverVersion.start='v1_20_0' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnOptionalFieldCanSucceed():Boolean[1]
 {
    let result = execute(|D.all()->graphFetchChecked(#{D { maybe, i }}#)->serialize(#{D { maybe, i }}#),
@@ -182,7 +182,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnOptiona
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{ serverVersion.start='vX_X_X' }
+{ serverVersion.start='v1_20_0' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnOptionalFieldCanFail():Boolean[1]
 {
    let result = execute(|D.all()->graphFetchChecked(#{D { maybe, i }}#)->serialize(#{D { maybe, i }}#),
@@ -200,7 +200,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnOptiona
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{ serverVersion.start='vX_X_X' }
+{ serverVersion.start='v1_20_0' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappedRequiredFieldCanSucceed():Boolean[1]
 {
    let result = execute(|E.all()->graphFetchChecked(#{E { i }}#)->serialize(#{E { i }}#),
@@ -218,7 +218,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappe
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{ serverVersion.start='vX_X_X' }
+{ serverVersion.start='v1_20_0' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappedRequiredFieldCanFail():Boolean[1]
 {
    let result = execute(|E.all()->graphFetchChecked(#{E { i }}#)->serialize(#{E { i }}#),
@@ -237,7 +237,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappe
 
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{ serverVersion.start='vX_X_X' }
+{ serverVersion.start='v1_20_0' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappedRequiredComplextTypeFieldCanFail():Boolean[1]
 {
    let result = execute(|F.all()->graphFetchChecked(#{F { i }}#)->serialize(#{F { i }}#),
@@ -255,7 +255,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappe
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{ serverVersion.start='vX_X_X' }
+{ serverVersion.start='v1_20_0' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappedRequiredComplextTypeFieldCanSucceed():Boolean[1]
 {
    let result = execute(|F.all()->graphFetchChecked(#{F { i }}#)->serialize(#{F { i }}#),
@@ -273,7 +273,7 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappe
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{ serverVersion.start='vX_X_X' }
+{ serverVersion.start='v1_20_0' }
 meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappedRequiredComplextTypeViaQualifiedPropertyCanCompile():Boolean[1]
 {
   let result = execute(|meta::pure::mapping::modelToModel::test::alloy::constraints::Loan.all()->graphFetchChecked(#{meta::pure::mapping::modelToModel::test::alloy::constraints::Loan {id}}#)->serialize(#{meta::pure::mapping::modelToModel::test::alloy::constraints::Loan {id}}#),

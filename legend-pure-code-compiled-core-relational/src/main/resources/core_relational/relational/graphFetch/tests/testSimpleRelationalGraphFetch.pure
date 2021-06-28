@@ -328,7 +328,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::rel
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='vX_X_X'} meta::relational::graphFetch::tests::simple::testRelationalGraphFetchWithAlloySerializationConfig(): Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_20_0'} meta::relational::graphFetch::tests::simple::testRelationalGraphFetchWithAlloySerializationConfig(): Boolean[1]
 {
    let tree = #{
       Person {
@@ -493,6 +493,235 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::rel
 
    assertJsonStringsEqual(
       '[{"legalName":"Firm X","employees":[]},{"legalName":"Firm A","employees":[]},{"legalName":"Firm B","employees":[]},{"legalName":"Firm C","employees":[]}]',
+      $result
+   );
+}
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::simple::testGraphFetchWithViewRootFlat(): Boolean[1]
+{
+   let tree = #{
+      OrderPnl {
+         pnl,
+         supportContactName
+      }
+   }#;
+   let query = {|OrderPnl.all()->graphFetch($tree)->serialize($tree)};
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"pnl":100.0,"supportContactName":"Peter Smith"},' +
+      '{"pnl":200.0,"supportContactName":"John Johnson"},' +
+      '{"pnl":150.0,"supportContactName":"John Johnson"}]',
+      $result
+   );
+}
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::simple::testGraphFetchWithViewRootNested(): Boolean[1]
+{
+   let tree = #{
+      OrderPnl {
+         pnl,
+         supportContactName,
+         order {
+            id,
+            date,
+            quantity
+         }
+      }
+   }#;
+   let query = {|OrderPnl.all()->graphFetch($tree)->serialize($tree)};
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"pnl":100.0,"supportContactName":"Peter Smith","order":{"date":"2014-12-01","quantity":25.0,"id":1}},' +
+      '{"pnl":200.0,"supportContactName":"John Johnson","order":{"date":"2014-12-01","quantity":320.0,"id":2}},' +
+      '{"pnl":150.0,"supportContactName":"John Johnson","order":{"date":"2014-12-02","quantity":300.0,"id":4}}]',
+      $result
+   );
+}
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::simple::testGraphFetchWithViewRootNestedDeep(): Boolean[1]
+{
+   let tree = #{
+      AccountPnl {
+         pnl,
+         account {
+            name,
+            'category': accountCategory,
+            trades {
+               id,
+               date,
+               quantity,
+               product {
+                  name
+               }
+            }
+         }
+      }
+   }#;
+   let query = {|AccountPnl.all()->graphFetch($tree)->serialize($tree)};
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[' +
+      '  {' +
+      '    "account":     {' +
+      '      "name": "Account 1",' +
+      '      "trades": [' +
+      '        {' +
+      '          "date": "2014-12-01",' +
+      '          "product":           {' +
+      '            "name": "Firm X"' +
+      '          },' +
+      '          "quantity": 25.0,' +
+      '          "id": 1' +
+      '        },' +
+      '        {' +
+      '          "date": "2014-12-01",' +
+      '          "product":           {' +
+      '            "name": "Firm A"' +
+      '          },' +
+      '          "quantity": 11.0,' +
+      '          "id": 3' +
+      '        },' +
+      '        {' +
+      '          "date": "2014-12-02",' +
+      '          "product":           {' +
+      '            "name": "Firm A"' +
+      '          },' +
+      '          "quantity": 32.0,' +
+      '          "id": 5' +
+      '        },' +
+      '        {' +
+      '          "date": "2014-12-03",' +
+      '          "product":           {' +
+      '            "name": "Firm C"' +
+      '          },' +
+      '          "quantity": 27.0,' +
+      '          "id": 6' +
+      '        },' +
+      '        {' +
+      '          "date": "2014-12-03",' +
+      '          "product":           {' +
+      '            "name": "Firm C"' +
+      '          },' +
+      '          "quantity": 44.0,' +
+      '          "id": 7' +
+      '        }' +
+      '      ],' +
+      '      "category": "A"' +
+      '    },' +
+      '    "pnl": 100.0' +
+      '  },' +
+      '  {' +
+      '    "account":     {' +
+      '      "name": "Account 2",' +
+      '      "trades": [' +
+      '        {' +
+      '          "date": "2014-12-01",' +
+      '          "product":           {' +
+      '            "name": "Firm X"' +
+      '          },' +
+      '          "quantity": 320.0,' +
+      '          "id": 2' +
+      '        },' +
+      '        {' +
+      '          "date": "2014-12-02",' +
+      '          "product":           {' +
+      '            "name": "Firm A"' +
+      '          },' +
+      '          "quantity": 23.0,' +
+      '          "id": 4' +
+      '        },' +
+      '        {' +
+      '          "date": "2014-12-04",' +
+      '          "product":           {' +
+      '            "name": "Firm C"' +
+      '          },' +
+      '          "quantity": 22.0,' +
+      '          "id": 8' +
+      '        },' +
+      '        {' +
+      '          "date": "2014-12-04",' +
+      '          "product":           {' +
+      '            "name": "Firm C"' +
+      '          },' +
+      '          "quantity": 45.0,' +
+      '          "id": 9' +
+      '        },' +
+      '        {' +
+      '          "date": "2014-12-04",' +
+      '          "product":           {' +
+      '            "name": "Firm C"' +
+      '          },' +
+      '          "quantity": 38.0,' +
+      '          "id": 10' +
+      '        }' +
+      '      ],' +
+      '      "category": "A"' +
+      '    },' +
+      '    "pnl": 350.0' +
+      '  }' +
+      ']',
+      $result
+   );
+}
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::simple::testGraphFetchWithViewAtChild(): Boolean[1]
+{
+   let tree = #{
+      Account {
+         name,
+         orders {
+            id,
+            pnl,
+            pnlContact {
+               'name': name
+            }
+         }
+      }
+   }#;
+   let query = {|Account.all()->graphFetch($tree)->serialize($tree)};
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"name":"Account 1","orders":[{"pnlContact":{"name":"Peter Smith"},"id":1,"pnl":100.0},{"pnlContact":null,"id":3,"pnl":null}]},' +
+      '{"name":"Account 2","orders":[{"pnlContact":{"name":"John Johnson"},"id":2,"pnl":200.0},{"pnlContact":{"name":"John Johnson"},"id":4,"pnl":150.0}]}]',
+      $result
+   );
+}
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::simple::testGraphFetchWithGroupByViewAtChild(): Boolean[1]
+{
+   let tree = #{
+      Account {
+         name,
+         accountPnl {
+            pnl
+         }
+      }
+   }#;
+   let query = {|Account.all()->graphFetch($tree)->serialize($tree)};
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"name":"Account 1","accountPnl":{"pnl":100.0}},' +
+      '{"name":"Account 2","accountPnl":{"pnl":350.0}}]',
       $result
    );
 }
