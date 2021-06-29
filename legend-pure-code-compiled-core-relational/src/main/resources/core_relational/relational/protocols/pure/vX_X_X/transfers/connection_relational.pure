@@ -143,7 +143,11 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
             privateKeyVaultReference = $s.privateKeyVaultReference,
             passPhraseVaultReference = $s.passPhraseVaultReference,
             publicUserName = $s.publicUserName
-        )
+        ),
+      b:meta::pure::alloy::connections::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy[1] |
+         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy(
+            _type = 'gcpApplicationDefaultCredentials'
+         )
    ])->toOneMany())
 }
 
@@ -179,7 +183,13 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
             databaseName = $s.databaseName,
             cloudType = $s.cloudType,
             quotedIdentifiersIgnoreCase = $s.quotedIdentifiersIgnoreCase
-        )
+        ),
+      b:meta::pure::alloy::connections::alloy::specification::BigQueryDatasourceSpecification[1] |
+         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::BigQueryDatasourceSpecification(
+             _type = 'bigQuery',
+             projectId = $b.projectId,
+             defaultDataset = $b.defaultDataset
+         )
    ])->toOneMany())
 }
 

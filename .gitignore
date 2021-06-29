@@ -6,6 +6,7 @@
 .idea/**
 .factorypath
 **/*.iml
+**/yarn.lock
 
 # Build
 **/target

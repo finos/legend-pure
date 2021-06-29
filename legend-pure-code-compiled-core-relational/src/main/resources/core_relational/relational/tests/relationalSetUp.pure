@@ -221,6 +221,13 @@ Database meta::relational::tests::dbForMemSQL
 )
 
 ###Relational
+Database meta::relational::tests::dbForBQ
+(
+   Table personTable (ID INT PRIMARY KEY, firstName VARCHAR(200), lastName VARCHAR(200), age INT, key INT)
+   Join Person_Person(personTable.key = {target}.key)
+)
+
+###Relational
 Database meta::relational::tests::caseSensitiveTableNames
 (
    Schema schemaA
@@ -442,6 +449,21 @@ Mapping meta::relational::tests::simpleRelationalMappingPersonForMemSQL
       )
    }
 )
+
+Mapping meta::relational::tests::simpleRelationalMappingPersonForBQ
+(
+   Person : Relational
+   {
+      scope([dbForBQ])
+      (
+         firstName : personTable.firstName,
+         lastName: personTable.lastName,
+         age : @Person_Person|personTable.key
+      )
+   }
+)
+
+
 
 Mapping meta::relational::tests::simpleRelationalMappingInc
 (
@@ -871,6 +893,11 @@ import meta::relational::runtime::*;
 function meta::relational::tests::testRuntime():Runtime[1]
 {
    testRuntime(db);
+}
+
+function meta::relational::tests::testRuntimeForBQ():Runtime[1]
+{
+   testRuntime(dbForBQ);
 }
 
 function meta::relational::tests::testRuntime(timeZone:String[1]):Runtime[1]
