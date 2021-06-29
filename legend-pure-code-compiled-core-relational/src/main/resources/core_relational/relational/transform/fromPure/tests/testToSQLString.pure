@@ -1531,3 +1531,37 @@ function <<test.Test>> meta::relational::tests::functions::sqlstring::testToSQLS
    
    assertEquals('select 	"prodName" as "prodName" from (		select 			"root"."NAME" as "prodName" 		from "productSchema"."productTable" as "root" 		order by "prodName"		 limit 2,-1) as "subselect" limit 5', $result->replace('\n', ''));
 }
+
+function <<test.Test>> meta::relational::tests::functions::sqlstring::testMemSQLSubstring() : Boolean[1]
+{
+  let runtime = ^meta::pure::runtime::Runtime(connections = ^TestDatabaseConnection(element = meta::relational::tests::db,type = DatabaseType.MemSQL));
+
+   let result = toSQLStringPretty({|Firm.all()->project([
+        c | $c.legalName,
+        c | substring($c.legalName, 0, 5)
+      ],
+      [
+        'legalName',
+        'subname'
+      ]
+    )},simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+
+   assertEquals('select 	`root`.LEGALNAME as `legalName`, 	substring(`root`.LEGALNAME, 0 + 1, 5 - 0) as `subname` from firmTable as `root`', $result->replace('\n', ''));
+}
+
+function <<test.Test>> meta::relational::tests::functions::sqlstring::testMemSQLSubstringWithNonZeroIndex() : Boolean[1]
+{
+  let runtime = ^meta::pure::runtime::Runtime(connections = ^TestDatabaseConnection(element = meta::relational::tests::db,type = DatabaseType.MemSQL));
+
+   let result = toSQLStringPretty({|Firm.all()->project([
+        c | $c.legalName,
+        c | substring($c.legalName, 2, 3)
+      ],
+      [
+        'legalName',
+        'subname'
+      ]
+    )},simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+
+   assertEquals('select 	`root`.LEGALNAME as `legalName`, 	substring(`root`.LEGALNAME, 2 + 1, 3 - 2) as `subname` from firmTable as `root`', $result->replace('\n', ''));
+}
