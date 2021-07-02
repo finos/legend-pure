@@ -49,7 +49,7 @@ import java.util.Objects;
 
 public class MetadataLazy implements Metadata
 {
-    private static final PropertyValueVisitor VALUES_VISITOR = new PropertyValueVisitor()
+    private static final PropertyValueVisitor<Object> VALUES_VISITOR = new PropertyValueVisitor<Object>()
     {
         @Override
         public Object accept(PropertyValueMany many)
@@ -64,7 +64,7 @@ public class MetadataLazy implements Metadata
         }
     };
 
-    private final RValueVisitor valueToObjectVisitor = new RValueVisitor()
+    private final RValueVisitor<Object> valueToObjectVisitor = new RValueVisitor<Object>()
     {
         @Override
         public Object accept(Primitive primitive)
@@ -182,23 +182,23 @@ public class MetadataLazy implements Metadata
         }
 
         MutableSetMultimap<String, ObjRef> objRefsByClassifier = Multimaps.mutable.set.empty();
-        values.forEachWith(RValue::visit, new RValueVisitor()
+        values.forEachWith(RValue::visit, new RValueVisitor<Void>()
         {
             @Override
-            public Object accept(Primitive primitive)
+            public Void accept(Primitive primitive)
             {
                 return null;
             }
 
             @Override
-            public Object accept(ObjRef objRef)
+            public Void accept(ObjRef objRef)
             {
                 objRefsByClassifier.put(objRef.getClassifierId(), objRef);
                 return null;
             }
 
             @Override
-            public Object accept(EnumRef enumRef)
+            public Void accept(EnumRef enumRef)
             {
                 return null;
             }
@@ -244,7 +244,7 @@ public class MetadataLazy implements Metadata
                 }
             }
         }
-        return values.collectWith(RValue::visit, new RValueVisitor()
+        return values.collectWith(RValue::visit, new RValueVisitor<Object>()
         {
             @Override
             public Object accept(Primitive primitive)

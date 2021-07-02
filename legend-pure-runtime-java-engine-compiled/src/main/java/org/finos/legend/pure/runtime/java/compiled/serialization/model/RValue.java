@@ -16,5 +16,5 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
 public interface RValue
 {
-    Object visit(RValueVisitor visitor);
+    <T> T visit(RValueVisitor<T> visitor);
 }

@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
-public interface RValueVisitor
+public interface RValueVisitor<T>
 {
-    Object accept(Primitive primitive);
-    Object accept(ObjRef objRef);
-    Object accept(EnumRef enumRef);
+    T accept(Primitive primitive);
+    T accept(ObjRef objRef);
+    T accept(EnumRef enumRef);
 }

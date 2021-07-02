@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
-public interface PropertyValueVisitor
+public interface PropertyValueVisitor<T>
 {
-    Object accept(PropertyValueMany many);
-    Object accept(PropertyValueOne one);
+    T accept(PropertyValueMany many);
+    T accept(PropertyValueOne one);
 }

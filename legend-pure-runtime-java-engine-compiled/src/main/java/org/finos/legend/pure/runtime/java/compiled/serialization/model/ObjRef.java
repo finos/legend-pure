@@ -54,7 +54,7 @@ public class ObjRef implements RValue
             return false;
         }
 
-        ObjRef that = (ObjRef)other;
+        ObjRef that = (ObjRef) other;
         return this.id.equals(that.id) && this.classifierId.equals(that.classifierId);
     }
 
@@ -65,7 +65,7 @@ public class ObjRef implements RValue
     }
 
     @Override
-    public Object visit(RValueVisitor visitor)
+    public <T> T visit(RValueVisitor<T> visitor)
     {
         return visitor.accept(this);
     }

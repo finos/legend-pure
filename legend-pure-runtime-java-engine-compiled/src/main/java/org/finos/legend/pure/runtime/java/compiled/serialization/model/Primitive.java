@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
-import org.eclipse.collections.impl.block.factory.Comparators;
+import java.util.Objects;
 
 public class Primitive implements RValue
 {
@@ -25,11 +25,6 @@ public class Primitive implements RValue
         this.value = value;
     }
 
-    public String getClassName()
-    {
-        return this.value.getClass().getName();
-    }
-
     public Object getValue()
     {
         return this.value;
@@ -38,23 +33,23 @@ public class Primitive implements RValue
     @Override
     public boolean equals(Object other)
     {
-        return (this == other) || ((other instanceof Primitive) && Comparators.nullSafeEquals(this.value, ((Primitive)other).value));
+        return (this == other) || ((other instanceof Primitive) && Objects.equals(this.value, ((Primitive) other).value));
     }
 
     @Override
     public int hashCode()
     {
-        return (this.value == null) ? 0 : this.value.hashCode();
+        return Objects.hashCode(this.value);
     }
 
     @Override
     public String toString()
     {
-        return this.value.toString();
+        return String.valueOf(this.value);
     }
 
     @Override
-    public Object visit(RValueVisitor visitor)
+    public <T> T visit(RValueVisitor<T> visitor)
     {
         return visitor.accept(this);
     }
