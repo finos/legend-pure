@@ -137,6 +137,10 @@ function meta::protocols::pure::v1_20_0::transformation::fromPureGraph::connecti
          ^meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::alloy::authentication::TestDatabaseAuthenticationStrategy(
             _type = 'test'
          ),
+      l:meta::pure::alloy::connections::alloy::authentication::DeltaLakeAuthenticationStrategy[1] |
+         ^meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::alloy::authentication::DeltaLakeAuthenticationStrategy(
+            _type = 'deltaLake'
+         ),
       s:meta::pure::alloy::connections::alloy::authentication::SnowflakePublicAuthenticationStrategy[1] |
         ^meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::alloy::authentication::SnowflakePublicAuthenticationStrategy(
             _type = 'snowflakePublic',
@@ -170,6 +174,13 @@ function meta::protocols::pure::v1_20_0::transformation::fromPureGraph::connecti
              testDataSetupCsv = $l.testDataSetupCsv,
              testDataSetupSqls = $l.testDataSetupSqls
          ),
+      d:meta::pure::alloy::connections::alloy::specification::DeltaLakeDatasourceSpecification[1] |
+        ^meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::alloy::specification::DeltaLakeDatasourceSpecification(
+            _type = 'deltaLake',
+            shard = $d.shard,
+            httpPath = $d.httpPath,
+            token = $d.token
+        ),
       s:meta::pure::alloy::connections::alloy::specification::SnowflakeDatasourceSpecification[1] |
         ^meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::alloy::specification::SnowflakeDatasourceSpecification(
             _type = 'snowflake',

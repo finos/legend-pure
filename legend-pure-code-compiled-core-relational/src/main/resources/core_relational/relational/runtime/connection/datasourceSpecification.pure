@@ -36,6 +36,13 @@ Class meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpe
     testDataSetupSqls:String[*];
 }
 
+Class meta::pure::alloy::connections::alloy::specification::DeltaLakeDatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
+{
+    shard:String[1];
+    token:String[1];
+    httpPath:String[1];
+}
+
 Enum meta::pure::alloy::connections::alloy::specification::SnowflakeAccountType
 {
     VPS, MultiTenant
