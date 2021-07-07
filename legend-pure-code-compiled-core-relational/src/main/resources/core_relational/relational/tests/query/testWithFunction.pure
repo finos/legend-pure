@@ -327,6 +327,18 @@ function <<test.Test>> meta::relational::tests::query::function::round::testFilt
    assertSameSQL('select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".tradeDate as "date", "root".settlementDateTime as "settlementDateTime", "tradeeventviewmaxtradeeventdate_0".maxTradeEventDate as "latestEventDate" from tradeTable as "root" left outer join (select "root".trade_id as trade_id, max("root".eventDate) as maxTradeEventDate from tradeEventTable as "root" group by "root".trade_id) as "tradeeventviewmaxtradeeventdate_0" on ("root".ID = "tradeeventviewmaxtradeeventdate_0".trade_id) where round("root".ID, 0) = 1', $result);
 }
 
+function <<test.Test>> meta::relational::tests::query::function::round::testFilterUsingRoundFunctionWithScale():Boolean[1]
+{
+   let result = execute(|Trade.all()->filter(t | round($t.quantity/3, 2) > 10)->project([t | round($t.quantity/3, 2)], 'roundedQuantity'), simpleRelationalMapping, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('roundedQuantity\n' +
+                      '106.67\n'+
+                      '10.67\n'+
+                      '14.67\n'+
+                      '15.0\n'+
+                      '12.67\n', $result.values->meta::csv::toCSV());
+   assertSameSQL('select round(((1.0 * "root".quantity) / 3), 2) as "roundedQuantity" from tradeTable as "root" where round(((1.0 * "root".quantity) / 3), 2) > 10', $result);
+}
+
 function <<test.Test>> meta::relational::tests::query::function::ceiling::testFilterUsingCeilingFunction():Boolean[1]
 {
    let result = execute(|Trade.all()->filter(t | $t.id->ceiling() == 1), simpleRelationalMapping, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
