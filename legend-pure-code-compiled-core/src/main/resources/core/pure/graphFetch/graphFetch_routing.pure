@@ -72,7 +72,11 @@ function meta::pure::graphFetch::routing::clusterRoutedGraphFetchTree(r: RoutedG
    (
       s  = $systemMapping,
       store = $singleStore,
-      tree = ^$r(subTrees = $subTreeClusters->map(x | $x->match([c:ClusteredGraphFetchTree[1] | if($c.store->elementToPath() == $singleStore->elementToPath(), | $c.tree, | $c), g:GraphFetchTree[1] | $g]))),
+      tree = ^$r(subTrees = $subTreeClusters->map(x | $x->match([c:ClusteredGraphFetchTree[1] | if(($c.tree->cast(@RoutedPropertyGraphFetchTree).propertyMapping->isEmpty() && $c.store->elementToPath() != $singleStore->elementToPath()) 
+                                                                                                      || ($c.tree->cast(@RoutedPropertyGraphFetchTree).propertyMapping->isNotEmpty() && $c.tree->cast(@RoutedPropertyGraphFetchTree).propertyMapping->map(pm | $pm->instanceOf(meta::pure::mapping::xStore::XStorePropertyMapping))->toOneMany()->or()), 
+                                                                                                   | $c, 
+                                                                                                   | $c.tree),
+                                                                 g:GraphFetchTree[1] | $g]))),
       openVars = $openVariables,
       runtime = $runtime,
       mapping = $mapping,
