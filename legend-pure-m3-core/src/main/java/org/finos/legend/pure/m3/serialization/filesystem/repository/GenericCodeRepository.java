@@ -14,10 +14,9 @@
 
 package org.finos.legend.pure.m3.serialization.filesystem.repository;
 
-import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.set.ImmutableSet;
+import org.eclipse.collections.api.set.SetIterable;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -31,23 +30,28 @@ import java.util.regex.Pattern;
 
 public class GenericCodeRepository extends CodeRepository
 {
-    final private MutableSet<String> dependencies;
+    private final ImmutableSet<String> dependencies;
 
-    public GenericCodeRepository(String name, String pattern, MutableList<String> dependencies)
+    public GenericCodeRepository(String name, String pattern, Iterable<String> dependencies)
     {
         super(name, Pattern.compile(pattern));
-        this.dependencies = Sets.mutable.ofAll(dependencies);
+        this.dependencies = Sets.immutable.withAll(dependencies);
+    }
+
+    public GenericCodeRepository(String name, String pattern, String... dependencies)
+    {
+        this(name, pattern, Sets.immutable.with(dependencies));
     }
 
     @Override
     public boolean isVisible(CodeRepository other)
     {
-        return this == other || dependencies.contains(other.getName());
+        return this == other || this.dependencies.contains(other.getName());
     }
 
-    public MutableSet<String> getDependencies()
+    public SetIterable<String> getDependencies()
     {
-        return dependencies;
+        return this.dependencies;
     }
 
     public static GenericCodeRepository build(String resourcePath)
@@ -88,14 +92,14 @@ public class GenericCodeRepository extends CodeRepository
         return getString(obj, "pattern");
     }
 
-    private static MutableList<String> getDependencies(JSONObject obj)
+    private static List<String> getDependencies(JSONObject obj)
     {
         return getStringArray(obj, "dependencies");
     }
 
     private static String getString(JSONObject obj, String name)
     {
-        String val = (String)obj.get(name);
+        String val = (String) obj.get(name);
         if (val == null)
         {
             throw new RuntimeException("'" + name + "' has not been defined!");
@@ -103,13 +107,13 @@ public class GenericCodeRepository extends CodeRepository
         return val;
     }
 
-    private static MutableList<String> getStringArray(JSONObject obj, String name)
+    private static List<String> getStringArray(JSONObject obj, String name)
     {
-        JSONArray val = (JSONArray)obj.get(name);
+        JSONArray val = (JSONArray) obj.get(name);
         if (val == null)
         {
             throw new RuntimeException("'" + name + "' has not been defined!");
         }
-        return Lists.mutable.withAll((List<String>)val);
+        return val;
     }
 }

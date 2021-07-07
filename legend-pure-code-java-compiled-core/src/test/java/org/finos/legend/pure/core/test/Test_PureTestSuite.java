@@ -185,7 +185,7 @@ public class Test_PureTestSuite extends TestSuite
         MutableList<CodeRepository> codeRepos = Lists.mutable.of(CodeRepository.newPlatformCodeRepository()).withAll(CodeRepositoryProviderHelper.findCodeRepositories());
         return new CompiledExecutionSupport(
                 new JavaCompilerState(null, Test_PureTestSuite.class.getClassLoader()),
-                new CompiledProcessorSupport(Test_PureTestSuite.class.getClassLoader(), new MetadataLazy(Test_PureTestSuite.class.getClassLoader()), Sets.mutable.empty()),
+                new CompiledProcessorSupport(Test_PureTestSuite.class.getClassLoader(), MetadataLazy.fromClassLoader(Test_PureTestSuite.class.getClassLoader()), Sets.mutable.empty()),
                 null,
                 new PureCodeStorage(null, new ClassLoaderCodeStorage(Test_PureTestSuite.class.getClassLoader(), codeRepos)),
                 null,

@@ -15,15 +15,13 @@
 package org.finos.legend.pure.runtime.java.compiled.execution;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.procedure.Procedure;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.map.ImmutableMap;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
@@ -52,7 +50,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache;
-import org.finos.legend.pure.runtime.java.compiled.metadata.FunctionCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataHolder;
@@ -64,12 +61,11 @@ public class CompiledProcessorSupport implements ProcessorSupport
     private final ClassLoader globalClassLoader;
     private final Context context = new Context();
     private final MetadataAccessor metadataAccessor;
-    private final FunctionCache functionCache = new FunctionCache();
     private final ClassCache classCache = new ClassCache();
     private final Metadata metadata;
-    private final MutableSet<String> extraSupportedTypes;
+    private final SetIterable<String> extraSupportedTypes;
 
-    public CompiledProcessorSupport(ClassLoader globalClassLoader, Metadata metadata, MutableSet<String> extraSupportedTypes)
+    public CompiledProcessorSupport(ClassLoader globalClassLoader, Metadata metadata, SetIterable<String> extraSupportedTypes)
     {
         this.globalClassLoader = globalClassLoader;
         this.metadata = metadata;
@@ -88,8 +84,8 @@ public class CompiledProcessorSupport implements ProcessorSupport
                 {
                     return false;
                 }
-                Class cl = null;
-                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type type = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type)this.package_getByUserPath(typeName);
+                Class<?> cl = null;
+                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type type = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type) this.package_getByUserPath(typeName);
                 if (type != null)
                 {
                     cl = this.classCache.getIfAbsentPutInterfaceForType(type, this.globalClassLoader);
@@ -103,7 +99,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
             }
             else if (object instanceof ValCoreInstance)
             {
-                String valType = ((ValCoreInstance)object).getType();
+                String valType = ((ValCoreInstance) object).getType();
                 return typeName.equals(valType) ||
                         (M3Paths.Date.equals(typeName) && (valType.equals(M3Paths.DateTime) || valType.equals(M3Paths.StrictDate) || valType.equals(M3Paths.LatestDate)));
             }
@@ -125,11 +121,10 @@ public class CompiledProcessorSupport implements ProcessorSupport
     {
         try
         {
-
-            Class cl = type.getClass().getClassLoader().loadClass(FullJavaPaths.PrimitiveType);
+            Class<?> cl = type.getClass().getClassLoader().loadClass(FullJavaPaths.PrimitiveType);
             return cl.isInstance(type);
         }
-        catch (Exception e)
+        catch (ClassNotFoundException e)
         {
             throw new RuntimeException(e);
         }
@@ -147,13 +142,13 @@ public class CompiledProcessorSupport implements ProcessorSupport
             Class<?> typeCl = this.pureClassToJavaClass(type);
             return typeCl.isAssignableFrom(valueSpecType);
         }
-        catch (Exception e)
+        catch (ClassNotFoundException e)
         {
             throw new RuntimeException(e);
         }
     }
 
-    private Class pureClassToJavaClass(String fullName)
+    private Class<?> pureClassToJavaClass(String fullName)
     {
         if (fullName == null)
         {
@@ -206,13 +201,13 @@ public class CompiledProcessorSupport implements ProcessorSupport
     private String fullName(CoreInstance pureClass)
     {
         CoreInstance parent = pureClass.getValueForMetaPropertyToOne(M3Properties._package);
-        String pack = pureClass.getName();
+        MutableList<String> names = Lists.mutable.with(pureClass.getName());
         while (parent != null && !"Root".equals(parent.getName()))
         {
-            pack = parent.getName()+ "::" +pack;
+            names.add(parent.getName());
             parent = parent.getValueForMetaPropertyToOne(M3Properties._package);
         }
-        return pack;
+        return names.asReversed().makeString("::");
     }
 
 
@@ -222,14 +217,14 @@ public class CompiledProcessorSupport implements ProcessorSupport
         try
         {
             ClassLoader cl = aClass.getClass().getClassLoader();
-            Class genericType = cl.loadClass(FullJavaPaths.GenericType_Impl);
-            Class rawType = cl.loadClass(FullJavaPaths.Type);
+            Class<?> genericType = cl.loadClass(FullJavaPaths.GenericType_Impl);
+            Class<?> rawType = cl.loadClass(FullJavaPaths.Type);
             Object result = genericType.getConstructor(String.class).newInstance("id");
             Method m = genericType.getMethod("_rawType", rawType);
             m.invoke(result, aClass);
-            return (CoreInstance)result;
+            return (CoreInstance) result;
         }
-        catch (Exception e)
+        catch (ReflectiveOperationException e)
         {
             throw new RuntimeException(e);
         }
@@ -246,12 +241,12 @@ public class CompiledProcessorSupport implements ProcessorSupport
     {
         try
         {
-            return (CoreInstance)this.globalClassLoader.loadClass(
-                    inferred ? FullJavaPaths.InferredGenericType_Impl:
+            return (CoreInstance) this.globalClassLoader.loadClass(
+                    inferred ? FullJavaPaths.InferredGenericType_Impl :
                             FullJavaPaths.GenericType_Impl)
                     .getConstructor(String.class).newInstance("id");
         }
-        catch (Exception e)
+        catch (ReflectiveOperationException e)
         {
             throw new RuntimeException(e);
         }
@@ -320,10 +315,10 @@ public class CompiledProcessorSupport implements ProcessorSupport
             else
             {
                 String className = JavaPackageAndImportBuilder.buildPackageFromUserPath(type) + "." + "Root_" + type.replace("::", "_") + "_Impl";
-                return (CoreInstance)this.globalClassLoader.loadClass(className).getConstructor(String.class).newInstance("NO_ID");
+                return (CoreInstance) this.globalClassLoader.loadClass(className).getConstructor(String.class).newInstance("NO_ID");
             }
         }
-        catch (Exception e)
+        catch (ReflectiveOperationException e)
         {
             throw new RuntimeException(e);
         }
@@ -340,10 +335,10 @@ public class CompiledProcessorSupport implements ProcessorSupport
             }
             //When invoked from newCoreInstance(name, classifier, sourceInformation, repository), typeName already begins with Root
             String className = (typeName.startsWith("Root") ? JavaPackageAndImportBuilder.buildPackageFromSystemPath(typeName) + "." + typeName + "_Impl" :
-                    JavaPackageAndImportBuilder.buildPackageFromUserPath(typeName) + "." + "Root_" + typeName.replace("::","_") + "_Impl");
-            return (CoreInstance)this.globalClassLoader.loadClass(className).getConstructor(String.class).newInstance(name);
+                    JavaPackageAndImportBuilder.buildPackageFromUserPath(typeName) + "." + "Root_" + typeName.replace("::", "_") + "_Impl");
+            return (CoreInstance) this.globalClassLoader.loadClass(className).getConstructor(String.class).newInstance(name);
         }
-        catch (Exception e)
+        catch (ReflectiveOperationException e)
         {
             throw new RuntimeException(e);
         }
@@ -358,14 +353,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
 
     private CoreInstance getPrimitiveType(String type)
     {
-        try
-        {
-            return this.metadataAccessor.getPrimitiveType(type);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        return this.metadataAccessor.getPrimitiveType(type);
     }
 
     @Override
@@ -375,42 +363,23 @@ public class CompiledProcessorSupport implements ProcessorSupport
     }
 
     @Override
-    public SetIterable<CoreInstance> function_getFunctionsForName(final String functionName)
+    public SetIterable<CoreInstance> function_getFunctionsForName(String functionName)
     {
-        try
-        {
-            final MutableSet<CoreInstance> functions = UnifiedSet.newSet();
-
-            //TODO Iterate over ConcreteFunctionDefinition and FunctionDefinition along with NativeFunction.
-            //Get the map for NativeFunction
-            MutableMap fnMap = (MutableMap)this.metadata.getMetadata(MetadataJavaPaths.NativeFunction);
-            fnMap.putAll((MutableMap)this.metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition));
-
-            fnMap.forEachValue(new Procedure<ReflectiveCoreInstance>()
-            {
-                @Override
-                public void value(ReflectiveCoreInstance val)
+        //TODO Iterate over ConcreteFunctionDefinition and FunctionDefinition along with NativeFunction.
+        return this.metadata.getMetadata(MetadataJavaPaths.NativeFunction).valuesView().asLazy()
+                .concatenate(this.metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition))
+                .select(f ->
                 {
                     try
                     {
-                        Object fName = val.getClass().getMethod("_functionName").invoke(val);
-                        if ((fName != null) && fName.equals(functionName))
-                        {
-                            functions.add(val);
-                        }
+                        Object fName = f.getClass().getMethod("_functionName").invoke(f);
+                        return functionName.equals(fName);
                     }
-                    catch (Exception e)
+                    catch (Exception ignore)
                     {
-                        // Ignore
+                        return false;
                     }
-                }
-            });
-            return functions;
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+                }, Sets.mutable.empty());
     }
 
     @Override
@@ -423,18 +392,9 @@ public class CompiledProcessorSupport implements ProcessorSupport
     @Override
     public CoreInstance class_findPropertyUsingGeneralization(CoreInstance classifier, final String propertyName)
     {
-        ListIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(classifier,M3Properties.properties,this);
-        CoreInstance result = null ;
-        for(int index=0 ; index < properties.size(); index++)
-        {
-            CoreInstance property = properties.get(index);
-            if (Instance.getValueForMetaPropertyToOneResolved(property,M3Properties.name,this).getName().equals(propertyName) )
-            {
-                result = property;
-                break;
-            }
-        }
-        return result!=null ? result :_Class.computePropertiesByName(classifier, _Class.SIMPLE_PROPERTIES_PROPERTIES, this).get(propertyName);
+        CoreInstance result = Instance.getValueForMetaPropertyToManyResolved(classifier, M3Properties.properties, this)
+                .detect(property -> propertyName.equals(property.getValueForMetaPropertyToOne(M3Properties.name).getName()));
+        return (result == null) ? _Class.computePropertiesByName(classifier, _Class.SIMPLE_PROPERTIES_PROPERTIES, this).get(propertyName) : result;
     }
 
     @Override
@@ -452,15 +412,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
     @Override
     public MapIterable<String, CoreInstance> class_getSimplePropertiesByName(CoreInstance classifier)
     {
-        final ProcessorSupport processorSupport = this;
-        return this.context.getIfAbsentPutPropertiesByName(classifier, new org.eclipse.collections.api.block.function.Function<CoreInstance, ImmutableMap<String, CoreInstance>>()
-                    {
-                        @Override
-                        public ImmutableMap<String, CoreInstance> valueOf(CoreInstance cls)
-                        {
-                            return _Class.computePropertiesByName(cls, _Class.SIMPLE_PROPERTIES_PROPERTIES, processorSupport).toImmutable();
-                        }
-                    });
+        return this.context.getIfAbsentPutPropertiesByName(classifier, cls -> _Class.computePropertiesByName(cls, _Class.SIMPLE_PROPERTIES_PROPERTIES, this).toImmutable());
     }
 
     @Override
@@ -486,7 +438,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
     {
         if (instance instanceof ValCoreInstance)
         {
-            return this.metadataAccessor.getPrimitiveType(((ValCoreInstance)instance).getType());
+            return this.metadataAccessor.getPrimitiveType(((ValCoreInstance) instance).getType());
         }
 
         //todo: clean this up, seem to have interpreted style core instances in compiled
@@ -497,17 +449,17 @@ public class CompiledProcessorSupport implements ProcessorSupport
 
         if (instance instanceof Any)
         {
-            Any any = (Any)instance;
+            Any any = (Any) instance;
             GenericType genericType = any._classifierGenericType();
             org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type type = genericType != null ? genericType._rawType() : null;
-            return type == null ? CompiledSupport.getType((Any)instance, this.metadataAccessor) : type;
+            return type == null ? CompiledSupport.getType((Any) instance, this.metadataAccessor) : type;
         }
 
         try
         {
-            Class pure = this.globalClassLoader.loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + "Pure");
+            Class<?> pure = this.globalClassLoader.loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + "Pure");
             Method m = pure.getMethod("safeGetGenericType", Object.class, MetadataAccessor.class, ProcessorSupport.class);
-            GenericType genericType = (GenericType)m.invoke(null, instance, this.metadataAccessor, this);
+            GenericType genericType = (GenericType) m.invoke(null, instance, this.metadataAccessor, this);
             return genericType._rawType();
         }
         catch (Exception e)

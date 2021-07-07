@@ -154,7 +154,7 @@ public class DistributedMetadataTool implements Closeable
         this.zipFile.close();
     }
 
-    private class ObjPrinter implements PropertyValueVisitor, RValueVisitor
+    private class ObjPrinter implements PropertyValueVisitor<Void>, RValueVisitor<Void>
     {
         private final Obj obj;
 
@@ -180,7 +180,7 @@ public class DistributedMetadataTool implements Closeable
         }
 
         @Override
-        public Object accept(PropertyValueMany many)
+        public Void accept(PropertyValueMany many)
         {
             indent();
             print(many.getProperty());
@@ -192,7 +192,7 @@ public class DistributedMetadataTool implements Closeable
         }
 
         @Override
-        public Object accept(PropertyValueOne one)
+        public Void accept(PropertyValueOne one)
         {
             indent();
             print(one.getProperty());
@@ -204,21 +204,21 @@ public class DistributedMetadataTool implements Closeable
         }
 
         @Override
-        public Object accept(Primitive primitive)
+        public Void accept(Primitive primitive)
         {
             print(primitive.toString());
             return null;
         }
 
         @Override
-        public Object accept(ObjRef objRef)
+        public Void accept(ObjRef objRef)
         {
             printf("instance %s %s", objRef.getClassifierId(), objRef.getId());
             return null;
         }
 
         @Override
-        public Object accept(EnumRef enumRef)
+        public Void accept(EnumRef enumRef)
         {
             printf("enum %s %s", enumRef.getEnumerationId(), enumRef.getEnumerationId());
             return null;

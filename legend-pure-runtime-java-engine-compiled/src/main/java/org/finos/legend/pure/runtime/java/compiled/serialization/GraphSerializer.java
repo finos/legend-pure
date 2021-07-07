@@ -173,23 +173,7 @@ public class GraphSerializer
                 state.noteVisited(instance);
 
                 // Serialize
-                Obj obj = buildObj(instance, state, processorSupport);
-
-                if (Instance.instanceOf(instance, M3Paths.PackageableElement, processorSupport))
-                {
-                    CoreInstance packageCoreInstance = instance.getValueForMetaPropertyToOne(M3Properties._package);
-                    // Don't need to add links if the package is also being serialized as part of this process
-                    if ((packageCoreInstance != null) && !addedPackages.contains(packageCoreInstance))
-                    {
-                        links.put(packageCoreInstance, obj);
-                    }
-                    if (Instance.instanceOf(instance, M3Paths.Package, processorSupport))
-                    {
-                        addedPackages.add(instance);
-                        links.removeAll(instance);
-                    }
-                }
-
+                MutableList<PropertyValue> propertyValues = Lists.mutable.empty();
                 for (String key : instance.getKeys())
                 {
                     ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(instance, key, processorSupport);
@@ -223,9 +207,27 @@ public class GraphSerializer
                             }
                             propertyValue = new PropertyValueMany(key, rValues);
                         }
-                        obj.addPropertyValue(propertyValue);
+                        propertyValues.add(propertyValue);
                     }
                 }
+
+                Obj obj = buildObj(instance, propertyValues, state, processorSupport);
+
+                if (Instance.instanceOf(instance, M3Paths.PackageableElement, processorSupport))
+                {
+                    CoreInstance packageCoreInstance = instance.getValueForMetaPropertyToOne(M3Properties._package);
+                    // Don't need to add links if the package is also being serialized as part of this process
+                    if ((packageCoreInstance != null) && !addedPackages.contains(packageCoreInstance))
+                    {
+                        links.put(packageCoreInstance, obj);
+                    }
+                    if (Instance.instanceOf(instance, M3Paths.Package, processorSupport))
+                    {
+                        addedPackages.add(instance);
+                        links.removeAll(instance);
+                    }
+                }
+
                 added.add(obj);
             }
         }
@@ -234,7 +236,7 @@ public class GraphSerializer
         MutableList<Pair<Obj, Obj>> linksList = Lists.mutable.withInitialCapacity(links.sizeDistinct());
         links.forEachKeyMultiValues((pkg, objs) ->
         {
-            Obj pkgObj = buildObj(pkg, state, processorSupport);
+            Obj pkgObj = buildObj(pkg, null, state, processorSupport);
             objs.forEach(obj -> linksList.add(Tuples.pair(pkgObj, obj)));
         });
         return new Serialized(added, linksList);
@@ -242,21 +244,22 @@ public class GraphSerializer
 
     public static Obj buildObjWithProperties(CoreInstance instance, ClassifierCaches classifierCaches, ProcessorSupport processorSupport)
     {
-        Obj obj = buildObj(instance, classifierCaches, processorSupport);
-        collectPropertiesForObj(obj, instance, classifierCaches, processorSupport);
-        return obj;
+        return buildObj(instance, collectProperties(instance, classifierCaches, processorSupport), classifierCaches, processorSupport);
     }
 
-    private static Obj buildObj(CoreInstance instance, ClassifierCaches state, ProcessorSupport processorSupport)
+    private static Obj buildObj(CoreInstance instance, ListIterable<PropertyValue> propertyValues, ClassifierCaches state, ProcessorSupport processorSupport)
     {
         SourceInformation sourceInformation = instance.getSourceInformation();
         String identifier = IdBuilder.buildId(instance, processorSupport);
         String classifierString = state.getClassifierId(instance.getClassifier());
-        return state.isEnum(instance) ? new Enum(sourceInformation, identifier, classifierString, instance.getName()) : new Obj(sourceInformation, identifier, classifierString, instance.getName());
+        return state.isEnum(instance) ?
+                new Enum(sourceInformation, identifier, classifierString, instance.getName(), propertyValues) :
+                new Obj(sourceInformation, identifier, classifierString, instance.getName(), propertyValues);
     }
 
-    private static void collectPropertiesForObj(Obj obj, CoreInstance instance, ClassifierCaches classifierCaches, ProcessorSupport processorSupport)
+    private static ListIterable<PropertyValue> collectProperties(CoreInstance instance, ClassifierCaches classifierCaches, ProcessorSupport processorSupport)
     {
+        MutableList<PropertyValue> propertyValues = Lists.mutable.empty();
         for (String key : instance.getKeys())
         {
             ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(instance, key, processorSupport);
@@ -274,9 +277,10 @@ public class GraphSerializer
                     MutableList<RValue> rValues = values.collect(value -> buildRValue(value, classifierCaches, processorSupport), Lists.mutable.withInitialCapacity(values.size()));
                     propertyValue = new PropertyValueMany(key, rValues);
                 }
-                obj.addPropertyValue(propertyValue);
+                propertyValues.add(propertyValue);
             }
         }
+        return propertyValues;
     }
 
     private static RValue buildRValue(CoreInstance value, ClassifierCaches state, ProcessorSupport processorSupport)

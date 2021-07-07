@@ -14,9 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation;
 
-import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.coreinstance.GraphCoreInstanceFactoryRegistry;
@@ -140,7 +138,7 @@ public class JavaPackageAndImportBuilder
         return buildInterfaceReferenceFromUserPath(elementPath, null);
     }
 
-    public static String buildInterfaceReferenceFromUserPath(String elementPath, MutableSet<String> extraSupportedTypes)
+    public static String buildInterfaceReferenceFromUserPath(String elementPath, SetIterable<String> extraSupportedTypes)
     {
         if (M3_CLASSES.contains(elementPath) || (extraSupportedTypes != null && extraSupportedTypes.contains(elementPath)))
         {

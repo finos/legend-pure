@@ -51,19 +51,14 @@ public class PropertyValueOne implements PropertyValue
             return false;
         }
 
-        PropertyValueOne that = (PropertyValueOne)other;
+        PropertyValueOne that = (PropertyValueOne) other;
         return this.property.equals(that.property) && Objects.equals(this.value, that.value);
     }
 
     @Override
     public int hashCode()
     {
-        int hashCode = this.property.hashCode();
-        if (this.value != null)
-        {
-            hashCode += 31 * this.value.hashCode();
-        }
-        return hashCode;
+        return this.property.hashCode() + (59 * Objects.hashCode(this.value));
     }
 
     @Override
@@ -73,7 +68,7 @@ public class PropertyValueOne implements PropertyValue
     }
 
     @Override
-    public Object visit(PropertyValueVisitor visitor)
+    public <T> T visit(PropertyValueVisitor<T> visitor)
     {
         return visitor.accept(this);
     }

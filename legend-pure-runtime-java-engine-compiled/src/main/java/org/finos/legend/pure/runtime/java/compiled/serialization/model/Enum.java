@@ -15,18 +15,13 @@
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
 
-import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class Enum extends Obj
 {
-    public Enum(SourceInformation sourceInformation, String identifier, String classifier, String name, MutableList<PropertyValue> propertiesList)
+    public Enum(SourceInformation sourceInformation, String identifier, String classifier, String name, ListIterable<PropertyValue> propertiesList)
     {
         super(sourceInformation, identifier, classifier, name, propertiesList);
-    }
-
-    public Enum(SourceInformation sourceInformation, String identifier, String classifier, String name)
-    {
-        super(sourceInformation, identifier, classifier, name);
     }
 }
