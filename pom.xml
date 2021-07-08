@@ -246,7 +246,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <configuration>
-                    <failOnWarning>true</failOnWarning>
+                    <failOnWarning>false</failOnWarning>
                     <ignoreNonCompile>true</ignoreNonCompile>
                 </configuration>
                 <executions>

@@ -39,7 +39,6 @@ Class meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpe
 Class meta::pure::alloy::connections::alloy::specification::DeltaLakeDatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
 {
     shard:String[1];
-    token:String[1];
     httpPath:String[1];
 }
 
