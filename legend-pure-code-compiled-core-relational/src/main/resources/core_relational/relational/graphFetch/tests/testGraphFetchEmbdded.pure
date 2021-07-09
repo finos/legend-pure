@@ -92,3 +92,28 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::rel
       $result
    );
 }
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::embedded::testEmbeddedMappingQualifiedPropertyAccess(): Boolean[1]
+{
+   let tree = #{
+      Person {
+         firstName,
+         firm {
+            legalName,
+            'employeeByLastNameFirstName': employeeByLastNameFirstName('Smith')
+         }
+      }
+   }#;
+   let query = {|Person.all()->graphFetch($tree)->serialize($tree)};
+   let mapping = meta::relational::tests::mapping::embedded::model::mapping::testMappingEmbedded;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"firstName":"Peter","firm":{"legalName":"Firm X","employeeByLastNameFirstName":"Peter"}},' +
+      '{"firstName":"John","firm":{"legalName":"Firm X","employeeByLastNameFirstName":"Peter"}},' +
+      '{"firstName":"Fabrice","firm":{"legalName":"Firm A","employeeByLastNameFirstName":null}}]',
+      $result
+   );
+}
