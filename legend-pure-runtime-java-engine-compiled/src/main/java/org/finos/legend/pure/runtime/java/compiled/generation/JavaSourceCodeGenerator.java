@@ -24,7 +24,6 @@ import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
-import org.finos.legend.pure.m3.compiler.validation.functionExpression.NewValidator;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -140,7 +139,7 @@ public final class JavaSourceCodeGenerator
     private final CodeStorage codeStorage;
     private final boolean writeFilesToDisk;
     private final Path directoryToWriteFilesTo;
-    private String externalAPIPackage;
+    private final String externalAPIPackage;
 
     private final boolean includePureStackTrace;
     private final MutableSet<CoreInstance> processedClasses = Sets.mutable.empty();
@@ -492,7 +491,7 @@ public final class JavaSourceCodeGenerator
     {
         try
         {
-            java.lang.Class<?> externalClass = NewValidator.class.getClassLoader().loadClass("org.finos.legend.pure.runtime.java.compiled.generation.ExternalClassBuilder");
+            java.lang.Class<?> externalClass = Thread.currentThread().getContextClassLoader().loadClass("org.finos.legend.pure.runtime.java.compiled.generation.ExternalClassBuilder");
             Method method = externalClass.getMethod("buildExternalizableFunctionClass", RichIterable.class, String.class, RichIterable.class);
             return (String)method.invoke(null, functionDefinitions, EXTERNAL_FUNCTIONS_CLASS_NAME, this.codeStorage.getAllRepoNames());
         }

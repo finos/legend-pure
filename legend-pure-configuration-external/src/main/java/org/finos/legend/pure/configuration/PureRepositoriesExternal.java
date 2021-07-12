@@ -15,60 +15,62 @@
 package org.finos.legend.pure.configuration;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProvider;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 
-import java.util.ServiceLoader;
-
 public class PureRepositoriesExternal
 {
-    public static MutableMap<String, CodeRepository> repositoriesByName = Maps.mutable.empty();
+    private static final ConcurrentMutableMap<String, CodeRepository> REPOSITORIES_BY_NAME = ConcurrentHashMap.newMap();
 
     static
     {
-        addRepositories(FastList.newListWith(CodeRepository.newPlatformCodeRepository()).withAll(CodeRepositoryProviderHelper.findCodeRepositories()));
+        addRepository(CodeRepository.newPlatformCodeRepository());
+        addRepositories(CodeRepositoryProviderHelper.findCodeRepositories());
     }
 
     public static RichIterable<CodeRepository> repositories()
     {
-        return repositoriesByName.valuesView();
+        return REPOSITORIES_BY_NAME.valuesView();
     }
 
-    public static void addRepositories(RichIterable<CodeRepository> repositories)
+    public static CodeRepository getRepository(String repositoryName)
     {
-        repositories.forEach(repository -> {
-            if (repositoriesByName.put(repository.getName(), repository) != null)
-            {
-                throw new RuntimeException("The code repository " + repository.getName() + " already exists!");
-            }
-        });
-        repositories.select(r -> r instanceof GenericCodeRepository).forEach(r -> validate((GenericCodeRepository) r));
-    }
-
-    public static CodeRepository getRepository(String repo)
-    {
-        CodeRepository found = repositoriesByName.get(repo);
+        CodeRepository found = REPOSITORIES_BY_NAME.get(repositoryName);
         if (found == null)
         {
-            throw new RuntimeException("The code repository '" + repo + "' can't be found!");
+            throw new RuntimeException("The code repository '" + repositoryName + "' can't be found!");
         }
         return found;
     }
 
+    public static void addRepositories(Iterable<? extends CodeRepository> repositories)
+    {
+        repositories.forEach(PureRepositoriesExternal::addRepository);
+        LazyIterate.selectInstancesOf(repositories, GenericCodeRepository.class).forEach(PureRepositoriesExternal::validate);
+    }
+
+    private static void addRepository(CodeRepository repository)
+    {
+        if (REPOSITORIES_BY_NAME.putIfAbsent(repository.getName(), repository) != null)
+        {
+            throw new RuntimeException("The code repository " + repository.getName() + " already exists!");
+        }
+    }
+
     private static void validate(GenericCodeRepository codeRepo)
     {
-        codeRepo.getDependencies().forEach(d -> {
-                    if (!repositoriesByName.containsKey(d))
-                    {
-                        throw new RuntimeException("The dependency '" + d + "' required by the Code Repository '" + codeRepo.getName() + "' can't be found!");
-                    }
-                }
-        );
+        SetIterable<String> missingDependencies = codeRepo.getDependencies().reject(REPOSITORIES_BY_NAME::containsKey);
+        if (missingDependencies.notEmpty())
+        {
+            StringBuilder builder = new StringBuilder("The ").append((missingDependencies.size() == 1) ? "dependency" : "dependencies").append(" ");
+            missingDependencies.appendString(builder, "'", "', '", "'");
+            builder.append(" required by the Code Repository '").append(codeRepo.getName()).append("' can't be found!");
+            throw new RuntimeException(builder.toString());
+        }
     }
 }

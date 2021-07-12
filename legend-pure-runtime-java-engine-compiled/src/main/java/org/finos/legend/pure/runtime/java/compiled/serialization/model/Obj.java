@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 import java.util.Objects;
@@ -27,20 +26,15 @@ public class Obj
     private final String identifier;
     private final String classifier;
     private final String name;
-    private final MutableList<PropertyValue> properties;
+    private final ListIterable<PropertyValue> properties;
 
-    public Obj(SourceInformation sourceInformation, String identifier, String classifier, String name, MutableList<PropertyValue> propertiesList)
+    public Obj(SourceInformation sourceInformation, String identifier, String classifier, String name, ListIterable<PropertyValue> propertiesList)
     {
         this.sourceInformation = sourceInformation;
         this.identifier = identifier;
         this.classifier = classifier;
         this.name = name;
-        this.properties = (propertiesList == null) ? Lists.mutable.empty() : propertiesList;
-    }
-
-    public Obj(SourceInformation sourceInformation, String identifier, String classifier, String name)
-    {
-        this(sourceInformation, identifier, classifier, name, null);
+        this.properties = (propertiesList == null) ? Lists.immutable.empty() : propertiesList;
     }
 
     public SourceInformation getSourceInformation()
@@ -66,11 +60,6 @@ public class Obj
     public ListIterable<PropertyValue> getPropertyValues()
     {
         return this.properties;
-    }
-
-    public void addPropertyValue(PropertyValue value)
-    {
-        this.properties.add(value);
     }
 
     @Override

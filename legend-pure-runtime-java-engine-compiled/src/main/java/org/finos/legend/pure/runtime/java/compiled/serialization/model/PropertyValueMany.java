@@ -14,9 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-
-import java.util.Objects;
 
 public class PropertyValueMany implements PropertyValue
 {
@@ -26,7 +25,7 @@ public class PropertyValueMany implements PropertyValue
     public PropertyValueMany(String property, ListIterable<RValue> values)
     {
         this.property = property;
-        this.values = values;
+        this.values = (values == null) ? Lists.immutable.empty() : values;
     }
 
     @Override
@@ -54,18 +53,13 @@ public class PropertyValueMany implements PropertyValue
         }
 
         PropertyValueMany that = (PropertyValueMany) other;
-        return this.property.equals(that.property) && Objects.equals(this.values, that.values);
+        return this.property.equals(that.property) && this.values.equals(that.values);
     }
 
     @Override
     public int hashCode()
     {
-        int hashCode = this.property.hashCode();
-        if (this.values != null)
-        {
-            hashCode += 31 * this.values.hashCode();
-        }
-        return hashCode;
+        return this.property.hashCode() + (53 * this.values.hashCode());
     }
 
     @Override
@@ -75,7 +69,7 @@ public class PropertyValueMany implements PropertyValue
     }
 
     @Override
-    public Object visit(PropertyValueVisitor visitor)
+    public <T> T visit(PropertyValueVisitor<T> visitor)
     {
         return visitor.accept(this);
     }

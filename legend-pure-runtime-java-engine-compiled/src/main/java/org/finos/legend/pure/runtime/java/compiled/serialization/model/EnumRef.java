@@ -48,7 +48,7 @@ public class EnumRef implements RValue
             return false;
         }
 
-        EnumRef that = (EnumRef)other;
+        EnumRef that = (EnumRef) other;
         return this.enumerationId.equals(that.enumerationId) && this.enumName.equals(that.enumName);
     }
 
@@ -59,7 +59,7 @@ public class EnumRef implements RValue
     }
 
     @Override
-    public Object visit(RValueVisitor visitor)
+    public <T> T visit(RValueVisitor<T> visitor)
     {
         return visitor.accept(this);
     }

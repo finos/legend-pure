@@ -38,33 +38,33 @@ public class JavaPurePrimitiveTypeMapping
         return getPureM3TypeFromJavaPrimitivesAndDates(obj.getClass());
     }
 
-    public static String getPureM3TypeFromJavaPrimitivesAndDates(Class clazz)
+    public static String getPureM3TypeFromJavaPrimitivesAndDates(Class<?> clazz)
     {
-        if (clazz.equals(String.class))
+        if (String.class.equals(clazz))
         {
             return M3Paths.String;
         }
-        if (clazz.equals(Boolean.class) || clazz.equals(boolean.class))
+        if (Boolean.class.equals(clazz) || boolean.class.equals(clazz))
         {
             return M3Paths.Boolean;
         }
-        if (clazz.equals(Long.class) || clazz.equals(long.class))
+        if (Long.class.equals(clazz) || long.class.equals(clazz))
         {
             return M3Paths.Integer;
         }
-        if (clazz.equals(Double.class) || clazz.equals(double.class))
+        if (Double.class.equals(clazz) || double.class.equals(clazz))
         {
             return M3Paths.Float;
         }
-        if (clazz.equals(Number.class))
+        if (Number.class.equals(clazz))
         {
             return M3Paths.Number;
         }
-        if (clazz.equals(LatestDate.class))
+        if (LatestDate.class.equals(clazz))
         {
             return M3Paths.LatestDate;
         }
-        if (clazz.equals(StrictDate.class))
+        if (StrictDate.class.equals(clazz))
         {
             return M3Paths.StrictDate;
         }

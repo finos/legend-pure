@@ -117,7 +117,7 @@ abstract class AbstractStringCache implements StringCache
         void collectPrimitiveString(String string);
     }
 
-    protected static class PropertyValueCollectorVisitor implements PropertyValueVisitor
+    protected static class PropertyValueCollectorVisitor implements PropertyValueVisitor<Void>
     {
         private final StringCollector collector;
         private final RValueCollectorVisitor rValueVisitor;
@@ -129,7 +129,7 @@ abstract class AbstractStringCache implements StringCache
         }
 
         @Override
-        public Object accept(PropertyValueMany many)
+        public Void accept(PropertyValueMany many)
         {
             commonCollection(many);
             ListIterable<RValue> values = many.getValues();
@@ -141,7 +141,7 @@ abstract class AbstractStringCache implements StringCache
         }
 
         @Override
-        public Object accept(PropertyValueOne one)
+        public Void accept(PropertyValueOne one)
         {
             commonCollection(one);
             RValue value = one.getValue();
@@ -158,7 +158,7 @@ abstract class AbstractStringCache implements StringCache
         }
     }
 
-    private static class RValueCollectorVisitor implements RValueVisitor
+    private static class RValueCollectorVisitor implements RValueVisitor<Void>
     {
         private final StringCollector collector;
 
@@ -168,7 +168,7 @@ abstract class AbstractStringCache implements StringCache
         }
 
         @Override
-        public Object accept(Primitive primitive)
+        public Void accept(Primitive primitive)
         {
             Object value = primitive.getValue();
             if ((value instanceof String) || (value instanceof PureDate))
@@ -179,14 +179,14 @@ abstract class AbstractStringCache implements StringCache
         }
 
         @Override
-        public Object accept(ObjRef objRef)
+        public Void accept(ObjRef objRef)
         {
             this.collector.collectRef(objRef.getClassifierId(), objRef.getId());
             return null;
         }
 
         @Override
-        public Object accept(EnumRef enumRef)
+        public Void accept(EnumRef enumRef)
         {
             this.collector.collectRef(enumRef.getEnumerationId(), enumRef.getEnumName());
             return null;

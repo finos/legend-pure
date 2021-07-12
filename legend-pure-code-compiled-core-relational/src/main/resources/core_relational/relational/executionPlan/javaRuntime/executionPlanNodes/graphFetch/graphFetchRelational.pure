@@ -997,7 +997,12 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
       let propertyName = $prop.name->toOne();
       let propertyType = $prop->genericType().typeArguments->at(1).rawType->toOne();
       let propertyMultiplicity = $prop.multiplicity;
-      let javaType = if($propertyType->instanceOf(Enumeration), | $conventions->className($propertyType), | $pureTypeToJavaTypeMap->get($propertyType)->toOne());
+      let javaType = if ($propertyType->instanceOf(Enumeration),
+                         | $conventions->className($propertyType),
+                         | let jt = $pureTypeToJavaTypeMap->get($propertyType);
+                           assert($jt->isNotEmpty(), | 'Property type \'' + $propertyType->elementToPath() + '\' not supported yet. Property name: \'' + $propertyName + '\'');
+                           $jt->toOne();
+                     );
       let resVar = j_variable($javaType, 'res');
 
       [

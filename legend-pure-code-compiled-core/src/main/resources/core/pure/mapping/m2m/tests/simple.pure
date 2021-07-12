@@ -367,3 +367,50 @@ Mapping meta::pure::mapping::modelToModel::test::simple::ModelMappingWithJoinToE
 )
 
 
+###Mapping
+import meta::pure::mapping::modelToModel::test::shared::src::*;
+import meta::pure::mapping::modelToModel::test::shared::dest::*;
+import meta::pure::mapping::modelToModel::test::*;
+
+Mapping meta::pure::mapping::modelToModel::test::crossStore::crossStoreModelMappingWithLocalMappingProperty
+(
+   _SimplePerson[person_Set] : Pure
+   {
+      ~src FirmEmployee
+      fullName : $src.fullName,
+      +firmName: String[1] : $src.firmName
+   }
+
+   _SimpleFirm[firm_set] : Pure
+   {
+      ~src Firm
+      name : $src.legalName
+   }
+   
+   meta::pure::mapping::modelToModel::test::shared::src::_SimpleFirm_SimplePerson: XStore
+   {
+      simpleEmployees[firm_set, person_Set] : $this.name == $that.firmName,
+      firm[person_Set, firm_set]            : $that.name == $this.firmName
+   }
+)
+
+Mapping meta::pure::mapping::modelToModel::test::crossStore::crossStoreModelMapping
+(
+   _SimplePerson[person_Set] : Pure
+   {
+      ~src FirmEmployee
+      fullName : $src.fullName
+   }
+
+   _SimpleFirm[firm_set] : Pure
+   {
+      ~src Firm
+      name : $src.legalName
+   }
+   
+   meta::pure::mapping::modelToModel::test::shared::src::_SimpleFirm_SimplePerson: XStore
+   {
+      simpleEmployees[firm_set, person_Set] : $this.name == $that.fullName,
+      firm[person_Set, firm_set]            : $that.name == $this.fullName
+   }
+)

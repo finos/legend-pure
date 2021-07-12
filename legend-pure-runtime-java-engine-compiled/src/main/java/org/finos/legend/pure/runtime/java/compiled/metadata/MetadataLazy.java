@@ -45,10 +45,11 @@ import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValueVis
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.Objects;
 
 public class MetadataLazy implements Metadata
 {
-    private static final PropertyValueVisitor VALUES_VISITOR = new PropertyValueVisitor()
+    private static final PropertyValueVisitor<Object> VALUES_VISITOR = new PropertyValueVisitor<Object>()
     {
         @Override
         public Object accept(PropertyValueMany many)
@@ -63,7 +64,7 @@ public class MetadataLazy implements Metadata
         }
     };
 
-    private final RValueVisitor valueToObjectVisitor = new RValueVisitor()
+    private final RValueVisitor<Object> valueToObjectVisitor = new RValueVisitor<Object>()
     {
         @Override
         public Object accept(Primitive primitive)
@@ -92,17 +93,20 @@ public class MetadataLazy implements Metadata
 
     private volatile Constructor<? extends CoreInstance> enumConstructor = null; //NOSONAR we actually want to protect the pointer
 
+    @Deprecated
     public MetadataLazy(ClassLoader classLoader, DistributedBinaryGraphDeserializer deserializer)
     {
         this.classLoader = (classLoader == null) ? MetadataLazy.class.getClassLoader() : classLoader;
         this.deserializer = (deserializer == null) ? DistributedBinaryGraphDeserializer.fromClassLoader(this.classLoader) : deserializer;
     }
 
+    @Deprecated
     public MetadataLazy(ClassLoader classLoader)
     {
         this(classLoader, null);
     }
 
+    @Deprecated
     public MetadataLazy()
     {
         this(null, null);
@@ -178,23 +182,23 @@ public class MetadataLazy implements Metadata
         }
 
         MutableSetMultimap<String, ObjRef> objRefsByClassifier = Multimaps.mutable.set.empty();
-        values.forEachWith(RValue::visit, new RValueVisitor()
+        values.forEachWith(RValue::visit, new RValueVisitor<Void>()
         {
             @Override
-            public Object accept(Primitive primitive)
+            public Void accept(Primitive primitive)
             {
                 return null;
             }
 
             @Override
-            public Object accept(ObjRef objRef)
+            public Void accept(ObjRef objRef)
             {
                 objRefsByClassifier.put(objRef.getClassifierId(), objRef);
                 return null;
             }
 
             @Override
-            public Object accept(EnumRef enumRef)
+            public Void accept(EnumRef enumRef)
             {
                 return null;
             }
@@ -240,7 +244,7 @@ public class MetadataLazy implements Metadata
                 }
             }
         }
-        return values.collectWith(RValue::visit, new RValueVisitor()
+        return values.collectWith(RValue::visit, new RValueVisitor<Object>()
         {
             @Override
             public Object accept(Primitive primitive)
@@ -374,5 +378,26 @@ public class MetadataLazy implements Metadata
         {
             throw new RuntimeException("Error getting constructor for " + lazyImplEnumName);
         }
+    }
+
+    public static MetadataLazy newMetadata(ClassLoader classLoader, DistributedBinaryGraphDeserializer deserializer)
+    {
+        Objects.requireNonNull(classLoader, "class loader may not be null");
+        Objects.requireNonNull(deserializer, "deserializer may not be null");
+        return new MetadataLazy(classLoader, deserializer);
+    }
+
+    public static MetadataLazy fromClassLoader(ClassLoader classLoader)
+    {
+        Objects.requireNonNull(classLoader, "class loader may not be null");
+        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromClassLoader(classLoader);
+        return new MetadataLazy(classLoader, deserializer);
+    }
+
+    public static MetadataLazy fromClassLoader(ClassLoader classLoader, String metadataName)
+    {
+        Objects.requireNonNull(classLoader, "class loader may not be null");
+        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromClassLoader(metadataName, classLoader);
+        return new MetadataLazy(classLoader, deserializer);
     }
 }

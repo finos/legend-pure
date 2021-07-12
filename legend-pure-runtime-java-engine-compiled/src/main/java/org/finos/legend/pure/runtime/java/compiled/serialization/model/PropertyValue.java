@@ -17,5 +17,6 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 public interface PropertyValue
 {
     String getProperty();
-    Object visit(PropertyValueVisitor visitor);
+
+    <T> T visit(PropertyValueVisitor<T> visitor);
 }

@@ -1459,7 +1459,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Composite,    $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='substr%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
-                                                 choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
+                                                 choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|[$p->at(0), ($p->at(1) + ' + 1'), ($p->at(2) + ' - ' + $p->at(1))]->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.DeltaLake,    $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
