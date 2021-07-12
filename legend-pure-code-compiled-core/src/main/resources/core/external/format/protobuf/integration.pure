@@ -28,7 +28,7 @@ function <<access.private>>  meta::external::format::protobuf::generation::defau
     ^ProtobufConfig();
 }
 
-function <<access.private, Generation.Configuration>>  meta::external::format::protobuf::schema::generation::describeConfiguration():GenerationParameter[*]
+function <<access.private, Generation.Configuration>>  meta::external::format::protobuf::generation::describeConfiguration():GenerationParameter[*]
 {
     [];
 }
