@@ -33,6 +33,11 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
 {
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DeltaLakeAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
+{
+    apiToken:String[1];
+}
+
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::TestDatabaseAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DefaultH2AuthenticationStrategy
 {
 }
@@ -66,6 +71,12 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
    host: String[1];
    port: Integer[1];
    databaseName: String[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DeltaLakeDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
+{
+    shard : String[1];
+    httpPath : String[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::SnowflakeDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
