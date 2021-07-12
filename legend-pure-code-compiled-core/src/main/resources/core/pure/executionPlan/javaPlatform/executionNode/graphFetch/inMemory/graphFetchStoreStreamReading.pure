@@ -26,21 +26,19 @@ import meta::java::generation::utils::*;
 import meta::java::metamodel::factory::*;
 import meta::java::metamodel::project::*;
 import meta::java::serialization::*;
-import meta::flatData::transfer::*;
-import meta::flatData::runtime::*;
 import meta::pure::executionPlan::engine::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::mapping::modelToModel::graphFetch::executionPlan::*;
 import meta::pure::runtime::*;
 
-function meta::alloy::runtime::java::graphFetch::storeStreamReading::prepareForStoreStreamReading(node: StoreStreamReadingExecutionNode[1], path: String[1], context: GenerationContext[1], debug: DebugContext[1]):GenerationContext[1]
+function meta::alloy::runtime::java::graphFetch::storeStreamReading::prepareForStoreStreamReading(node: StoreStreamReadingExecutionNode[1], path: String[1], context: GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug: DebugContext[1]):GenerationContext[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') prepareStoreStreamReading\n', |''));
 
    let conventions = $context.conventions;
    let class       = $node.graphFetchTree.class;
    let simpleType  = ^SimpleJavaType(pureType = $class, javaType = $conventions->className($class));
-   let returnType  = if($node.checked, | ^CheckedJavaType(checkedOf = $simpleType, source = $node.connection->sourceTypeFromConnection($conventions)), | $simpleType);
+   let returnType  = if($node.checked, | ^CheckedJavaType(checkedOf = $simpleType, source = $node.connection->sourceTypeFromConnection($conventions, $extensions)), | $simpleType);
    
    let newTypeInfos = $context.typeInfos
       ->addForGraphFetchTree($node.graphFetchTree)
@@ -53,26 +51,24 @@ function meta::alloy::runtime::java::graphFetch::storeStreamReading::prepareForS
          ])
       })->removeDuplicates());
    
-   let connectionTree = $node.connection->match([ 
-      flat : FlatDataConnection[1]  | #{RawFlatData {number, lineNumber, record, recordValues {address, rawValue}}}#,
+   let connectionTree = $node.connection->match($extensions.plan_javaRuntime_graphFetchStream_getConnectionTree->concatenate([ 
       json : JsonModelConnection[1] | #{JsonDataRecord {number, record}}#,
       xml  : XmlModelConnection[1]  | #{XmlDataRecord {number, record}}#,
       a    : Any[1]                 | []
-   ]);
+   ])->toOneMany());
    
    let currentNodeInfo = ^NodeInfo(path = $path, returnType = $returnType, graphFetchTrees = [$node.graphFetchTree]->concatenate($connectionTree));
 
    ^$context(typeInfos = $newTypeInfos, nodeInfos = $context.nodeInfos->concatenate($currentNodeInfo));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::storeStreamReading::sourceTypeFromConnection(connection: Connection[1], conventions: Conventions[1]): JavaType[1]
+function <<access.private>> meta::alloy::runtime::java::graphFetch::storeStreamReading::sourceTypeFromConnection(connection: Connection[1], conventions: Conventions[1], extensions:meta::pure::router::extension::RouterExtension[*]): JavaType[1]
 {
-   let dataRecordClass = $connection->match([
-      f : FlatDataConnection[1]  | RawFlatData,
+   let dataRecordClass = $connection->match($extensions.plan_javaRuntime_graphFetchStream_sourceTypeFromConnection->concatenate([
       j : JsonModelConnection[1] | JsonDataRecord,
       x : XmlModelConnection[1]  | XmlDataRecord,
       a : Any[1]                 | JsonDataRecord
-   ]);
+   ])->toOneMany());
    
    ^SimpleJavaType(pureType = $dataRecordClass, javaType = $conventions->className($dataRecordClass));
 }
@@ -84,8 +80,14 @@ function meta::alloy::runtime::java::graphFetch::storeStreamReading::generateCod
    let conventions       = $context.conventions;
    let pureClass         = $node.graphFetchTree.class;
    let connection        = $node.connection;
-   let readableClasses   = if($connection->instanceOf(FlatDataConnection), | [], | $pureClass->concatenate($context.typeInfos->classDependenciesViaPropertiesWithsubTypes($pureClass)));
-   let readableEnums     = if($connection->instanceOf(FlatDataConnection), | [], | $context.typeInfos->enumDependenciesViaProperties($pureClass));
+   let genReader         = $connection->match([
+                              json  : JsonModelConnection[1] | true,
+                              xml   : XmlModelConnection[1]  | true,
+                              model : ModelConnection[1]     | true,
+                              other : Any[1]                 | false
+                           ]);
+   let readableClasses   = if($genReader, | $pureClass->concatenate($context.typeInfos->classDependenciesViaPropertiesWithsubTypes($pureClass)), | []);
+   let readableEnums     = if($genReader, | $context.typeInfos->enumDependenciesViaProperties($pureClass), | []);
    
    let dataClassesProject = $readableClasses->map(rc | $rc->createStreamReadingDataClass($path, $context, $node.checked || $node.enableConstraints, $debug->indent()));
 
@@ -93,12 +95,12 @@ function meta::alloy::runtime::java::graphFetch::storeStreamReading::generateCod
       json  : JsonModelConnection[1] | createJsonReading($pureClass, $conventions->className($pureClass), $path, $readableClasses, $readableEnums, $context, $debug->indent()),
       xml   : XmlModelConnection[1]  | createXmlReading($pureClass, $conventions->className($pureClass), $path, $readableClasses, $readableEnums, $context, $debug->indent()),
       model : ModelConnection[1]     | createStreamReading($pureClass, $conventions->className($pureClass), $path, $context, $debug->indent()),
-      flat  : FlatDataConnection[1]  | []
+      other : Any[1]                 | []
    ]);
 
    let storeStreamReadingContext = $conventions->iStoreStreamReadingExecutionNodeContextParam();   
 
-   let streamReaderMethodCodes = $connection->match([
+   let streamReaderMethodCodes = $connection->match($extensions.plan_javaRuntime_graphFetchStream_streamReaderMethodCodes->map(f| $f->eval($conventions, $storeStreamReadingContext))->concatenate([
       {
          json: JsonModelConnection[1] | 
             $conventions->jsonReaderClass($path, $pureClass)
@@ -119,14 +121,8 @@ function meta::alloy::runtime::java::graphFetch::storeStreamReading::generateCod
             let typeArg = $storeStreamReadingContext->j_invoke('streamType', $conventions->className($pureClass)->j_field('class', javaClassType()), javaReflectType());
             $conventions->streamReaderClass($path)
                ->j_new($storeStreamReadingContext->j_invoke('getResult', [j_string($varName), $typeArg], javaStream($conventions->className($pureClass))))->j_return();
-      },
-      {
-         flat: FlatDataConnection[1] | 
-             $storeStreamReadingContext->j_invoke('createReader', j_string($flat.url), $conventions->className(StoreStreamReader))
-               ->j_return()
-               ->j_ioExTryCatch()
       }
-   ]);
+   ])->toOneMany());
    
    let executeClassWithImports = $conventions->planNodeClass('public', $path, 'Execute')
       ->usingKnownPackages($conventions->knownPackages())

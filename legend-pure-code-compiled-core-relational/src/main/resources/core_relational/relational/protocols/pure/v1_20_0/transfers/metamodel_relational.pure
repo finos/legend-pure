@@ -14,9 +14,7 @@
 
 ###Pure
 import meta::pure::router::extension::*;
-import meta::protocols::pure::v1_20_0::transformation::fromPureGraph::mapping::flatData::*;
 import meta::protocols::pure::v1_20_0::transformation::fromPureGraph::*;
-import meta::protocols::pure::v1_20_0::transformation::fromPureGraph::store::flatData::*;
 import meta::protocols::pure::v1_20_0::transformation::fromPureGraph::mapping::modelToModel::*;
 import meta::protocols::pure::v1_20_0::transformation::fromPureGraph::store::*;
 import meta::protocols::pure::v1_20_0::transformation::fromPureGraph::modelToModel::*;

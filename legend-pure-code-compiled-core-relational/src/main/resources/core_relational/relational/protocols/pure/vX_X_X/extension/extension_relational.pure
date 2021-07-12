@@ -14,7 +14,6 @@
 
 import meta::protocols::pure::vX_X_X::extension::*;
 import meta::json::*;
-import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::flatData::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::csv::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::relational::*;

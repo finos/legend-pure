@@ -30,7 +30,6 @@ import meta::pure::mapping::*;
 import meta::alloy::runtime::java::*;
 
 import meta::json::*;
-import meta::flatData::runtime::*;
 
 Class meta::pure::mapping::modelToModel::ModelStore extends meta::pure::store::Store
 {
@@ -200,8 +199,6 @@ function meta::pure::mapping::modelToModel::modelToModelConnectionToString(c:Con
 // Strategic in memory graph fetch flow
 
 ###Pure
-import meta::flatData::runtime::*;
-import meta::flatData::transfer::*;
 import meta::pure::dataQuality::*;
 import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::toString::*;
@@ -280,10 +277,7 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planRootG
                         | $runtime->connectionByElement($store)
                     )->toOne();
    
-   let sourceTree = $connection->match([
-      f : FlatDataConnection[1] | #{ParsedFlatData{typeName, values{label, value->subType(@ParsedFlatData) {typeName, values {label, value}}, value}}}#,
-      c : Connection[1]         | calculateSourceTree($rootTree, $mapping, $extensions)
-   ]);
+   let sourceTree         = calculateSourceTree($rootTree, $mapping, $extensions);
    let sourceTreeExtended = if($enableConstraints, | $sourceTree->ensureConstraintsRequirements(), | $sourceTree);
    
    let chainConnectionNodeGeneration = {mcc: ModelChainConnection[1] |
