@@ -91,6 +91,8 @@ public class PureSession
                     .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
                     .with(this.buildCore(""))
                     .with(this.buildCore("relational"))
+                    .with(this.buildCore("external-shared"))
+                    .with(this.buildCore("external-format-xml"))
                     .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
 
             this.codeStorage = new PureCodeStorage(Paths.get(rootPath), repos.toArray(new RepositoryCodeStorage[0]));
@@ -110,8 +112,8 @@ public class PureSession
         String resources = "legend-pure-code-compiled-core" + (suffix.equals("") ? "" : "-" + suffix) + "/src/main/resources";
         String module = "core" + (suffix.equals("") ? "" : "_" + suffix);
         return new MutableFSCodeStorage(
-                GenericCodeRepository.build(Files.newInputStream(Paths.get(resources + "/" + module + ".definition.json"))),
-                Paths.get(resources + "/" + module)
+                GenericCodeRepository.build(Files.newInputStream(Paths.get(resources + "/" + module.replace("-","_") + ".definition.json"))),
+                Paths.get(resources + "/" + module.replace("-","_"))
         );
     }
 
