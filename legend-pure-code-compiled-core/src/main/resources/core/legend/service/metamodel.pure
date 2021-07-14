@@ -15,6 +15,7 @@
 import meta::pure::runtime::*;
 import meta::pure::mapping::*;
 import meta::legend::service::metamodel::*;
+import meta::pure::executionPlan::*;
 
 Class meta::legend::service::metamodel::Service extends PackageableElement
 [
@@ -58,6 +59,7 @@ Class meta::legend::service::metamodel::PureSingleExecution extends PureExecutio
 {
    mapping : Mapping[1];
    runtime : Runtime[1];
+   executionOptions : ExecutionOption[*];
 }
 
 Class meta::legend::service::metamodel::PureMultiExecution extends PureExecution
@@ -76,6 +78,7 @@ Class  meta::legend::service::metamodel::KeyedExecutionParameter
    key:String[1];
    mapping : Mapping[1];
    runtime : Runtime[1];
+   executionOptions : ExecutionOption[*];
 }
 
 Class meta::legend::service::metamodel::Test

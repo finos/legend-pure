@@ -86,6 +86,7 @@ Class meta::pure::router::extension::RouterExtension
    executionPlan_generation_isConnectionForClass : Function<{Class<Any>[1] -> Function<{Nil[1]->Boolean[1]}>[*]}>[0..1];
    executionPlan_generation_nodeFromConnection : Function<{RootGraphFetchTree<Any>[0..1], Boolean[1], Boolean[1] -> Function<{Nil[1]->ExecutionNode[1]}>[*]}>[0..1];
    executionPlan_generation_nodeFromFunctionExpression: Function<{FunctionExpression[1], ExecutionNode[*]->ExecutionNode[0..1]}>[*];
+   executionPlan_generation_executionOptionParameters : Function<{Nil[1] -> PlanVarPlaceHolder[*]}>[*];
 
    java_conventions_defaultProhibitedFunctions : Function<Any>[*];
    java_mappingAdaptor : Function<{Nil[1]->String[1]}>[*];
