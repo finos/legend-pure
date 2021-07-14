@@ -1,0 +1,61 @@
+import meta::json::*;
+
+function meta::external::language::morphir::transform::tests::verboseMin(v1:Number[1], v2:Number[1]):Number[1]
+{
+   if($v1 < $v2, |$v1,|$v2);
+}
+
+function meta::external::language::morphir::transform::tests::addTwoPointFive(v1:Number[1]):Number[1]
+{
+   $v1 + 2.5;
+}
+
+function meta::external::language::morphir::transform::tests::verboseMinAdd(v1:Number[1], v2:Number[1]):Number[1]
+{
+   if($v1 < $v2, |$v1 + 2.5,|$v2);
+}
+
+function meta::external::language::morphir::transform::tests::letFunction():Number[1]
+{
+   let a = 5;
+}
+
+function <<test.Test>> meta::external::language::morphir::transform::tests::testTransformAndSerializeVerboseMinFunction():Boolean[1]
+{
+   let func = meta::external::language::morphir::transform::tests::verboseMin_Number_1__Number_1__Number_1_;
+   let minFuncTransformedModel = $func->meta::external::language::morphir::transform::transformToMorphirModel();
+   let minFuncSerializedComplete = $minFuncTransformedModel->meta::external::language::morphir::serialization::morphirModelToJson();
+   let completeResult = $minFuncSerializedComplete->map(elem| $elem->toCompactJSONString());
+
+   assertEquals($completeResult, '{"formatVersion":1,"distribution":["library",[["system"],["morphir"]],[],{"modules":[{"name":[["transform"]],"def":["public",{"types":[],"values":[[["verbose","min"],["public",{"inputTypes":[[["v","1"],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]]],[["v","2"],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]]]],"outputType":["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],"body":["if_then_else",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["apply",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["bool"]],[]],["apply",["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["bool"]],[]]],["reference",["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["bool"]],[]]]],[[["morphir"],["s","d","k"]],[["basics"]],["less","than"]]],["variable",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["v","1"]]],["variable",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["v","2"]]],["variable",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["v","1"]],["variable",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["v","2"]]]}]]]}]}]}]}');
+}
+
+function <<test.Test>> meta::external::language::morphir::transform::tests::testTransformAndSerializeAddFunction():Boolean[1]
+{
+   let func = meta::external::language::morphir::transform::tests::addTwoPointFive_Number_1__Number_1_;
+   let addFuncTransformedModel = $func->meta::external::language::morphir::transform::transformToMorphirModel();
+   let addFuncSerializedComplete = $addFuncTransformedModel->meta::external::language::morphir::serialization::morphirModelToJson();
+   let addCompleteResult = $addFuncSerializedComplete->map(elem| $elem->toCompactJSONString());
+
+   assertEquals($addCompleteResult, '{"formatVersion":1,"distribution":["library",[["system"],["morphir"]],[],{"modules":[{"name":[["transform"]],"def":["public",{"types":[],"values":[[["add","two","point","five"],["public",{"inputTypes":[[["v","1"],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]]]],"outputType":["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],"body":["apply",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["apply",["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]]],["reference",["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]]]],[[["morphir"],["s","d","k"]],[["basics"]],["add"]]],["variable",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["v","1"]]],["literal",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["float_literal",2.5]]]}]]]}]}]}]}');
+}
+
+function <<test.Test>> meta::external::language::morphir::transform::tests::testTransformAndSerializeVerboseMinAddFunction():Boolean[1]
+{
+   let func = meta::external::language::morphir::transform::tests::verboseMinAdd_Number_1__Number_1__Number_1_;
+   let minFuncTwoTransformedModel = $func->meta::external::language::morphir::transform::transformToMorphirModel();
+   let minFuncTwoSerializedComplete = $minFuncTwoTransformedModel->meta::external::language::morphir::serialization::morphirModelToJson();
+   let minFuncTwoCompleteResult = $minFuncTwoSerializedComplete->map(elem| $elem->toCompactJSONString());
+
+   assertEquals($minFuncTwoCompleteResult, '{"formatVersion":1,"distribution":["library",[["system"],["morphir"]],[],{"modules":[{"name":[["transform"]],"def":["public",{"types":[],"values":[[["verbose","min","add"],["public",{"inputTypes":[[["v","1"],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]]],[["v","2"],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]]]],"outputType":["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],"body":["if_then_else",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["apply",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["bool"]],[]],["apply",["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["bool"]],[]]],["reference",["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["bool"]],[]]]],[[["morphir"],["s","d","k"]],[["basics"]],["less","than"]]],["variable",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["v","1"]]],["variable",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["v","2"]]],["apply",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["apply",["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]]],["reference",["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["function",{},["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]]]],[[["morphir"],["s","d","k"]],[["basics"]],["add"]]],["variable",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["v","1"]]],["literal",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["float_literal",2.5]]],["variable",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["float"]],[]],["v","2"]]]}]]]}]}]}]}');
+}
+
+function <<test.Test>> meta::external::language::morphir::transform::tests::testTransformAndSerializeLetFunction():Boolean[1]
+{
+   let func = meta::external::language::morphir::transform::tests::letFunction__Number_1_;
+   let letFuncTransformedModel = $func->meta::external::language::morphir::transform::transformToMorphirModel();
+   let letFuncSerializedComplete = $letFuncTransformedModel->meta::external::language::morphir::serialization::morphirModelToJson();
+   let letFuncTwoCompleteResult = $letFuncSerializedComplete->map(elem| $elem->toCompactJSONString());
+
+   assertEquals($letFuncTwoCompleteResult, '{"formatVersion":1,"distribution":["library",[["system"],["morphir"]],[],{"modules":[{"name":[["transform"]],"def":["public",{"types":[],"values":[[["let","function"],["public",{"inputTypes":[],"outputType":["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["int"]],[]],"body":["let_definition",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["int"]],[]],["a"],{"inputTypes":[],"outputType":["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["int"]],[]],"body":["literal",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["int"]],[]],["int_literal",5]]},["variable",["reference",{},[[["morphir"],["s","d","k"]],[["basics"]],["string"]],[]],["a"]]]}]]]}]}]}]}');
+}
