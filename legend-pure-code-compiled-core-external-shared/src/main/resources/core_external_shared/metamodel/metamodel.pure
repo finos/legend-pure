@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::shared::metamodel::*;
+import meta::external::shared::format::metamodel::*;
 
-Class meta::external::shared::metamodel::Schema extends PackageableElement
+Class meta::external::shared::format::metamodel::Schema extends PackageableElement
 {
    format     : String[1];
    requires   : Schema[*];
@@ -22,12 +22,22 @@ Class meta::external::shared::metamodel::Schema extends PackageableElement
    detail     : SchemaDetail[1];
 }
 
-Class meta::external::shared::metamodel::SchemaTag
+Class meta::external::shared::format::metamodel::SchemaTag
 {
    name  : String[1];
    value : String[1];
 }
 
-Class meta::external::shared::metamodel::SchemaDetail
+Class meta::external::shared::format::metamodel::SchemaDetail
 {
 }
+
+Class meta::external::shared::format::metamodel::SchemaBinding extends PackageableElement
+[
+   validModelTypes: $this.model->forAll(pe| $pe->instanceOf(Class) || $pe->instanceOf(Enumeration) || $pe->instanceOf(Association))
+]
+{
+   schema: Schema[1];
+   model: PackageableElement[*];
+}
+

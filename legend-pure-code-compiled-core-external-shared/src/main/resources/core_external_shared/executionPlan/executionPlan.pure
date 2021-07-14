@@ -15,7 +15,10 @@
 import meta::alloy::runtime::java::*;
 import meta::alloy::runtime::java::naming::*;
 import meta::alloy::runtime::java::typeInfo::*;
-import meta::external::shared::executionPlan::*;
+import meta::external::shared::engine::*;
+import meta::external::shared::format::executionPlan::*;
+import meta::external::shared::format::metamodel::*;
+import meta::external::shared::runtime::*;
 import meta::java::generation::code::*;
 import meta::java::generation::convention::*;
 import meta::java::generation::utils::*;
@@ -27,19 +30,13 @@ import meta::pure::executionPlan::toString::*;
 import meta::pure::metamodel::serialization::grammar::*;
 import meta::pure::router::extension::*;
 
-function meta::external::shared::executionPlan::createDataClassesProject(classes:Class<Any>[*], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::external::shared::format::executionPlan::createDataClassesProject(classes:Class<Any>[*], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') createDataClassesProject\n', |''));
    mergeProjects($classes->map(c| $c->createDataClass($path, $context, $debug->indent()))->toOneMany());
 }
 
-Class meta::external::shared::executionPlan::DataQualityExecutionNode extends ExecutionNode
-{
-   enableConstraints : Boolean[1];
-   checked           : Boolean[1];   
-}
-
-function meta::external::shared::executionPlan::generateDataQualityNode(deserializeNode:ExecutionNode[1], enableConstraints:Boolean[1], checked:Boolean[1]): ExecutionNode[1]
+function meta::external::shared::format::executionPlan::generateDataQualityNode(deserializeNode:ExecutionNode[1], enableConstraints:Boolean[1], checked:Boolean[1]): ExecutionNode[1]
 {
    ^DataQualityExecutionNode(
       resultType        = $deserializeNode.resultType,
@@ -50,7 +47,7 @@ function meta::external::shared::executionPlan::generateDataQualityNode(deserial
    );
 }
 
-function meta::external::shared::executionPlan::planPrepareDataQuality(path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): Function<{Nil[1]->GenerationContext[1]}>[*]
+function meta::external::shared::format::executionPlan::planPrepareDataQuality(path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): Function<{Nil[1]->GenerationContext[1]}>[*]
 {
    {node:DataQualityExecutionNode[1] | 
       print(if($debug.debug,|$debug.space+'('+$path+') prepare DataQualityExecutionNode\n', |''));
@@ -59,7 +56,7 @@ function meta::external::shared::executionPlan::planPrepareDataQuality(path:Stri
    };
 }
 
-function meta::external::shared::executionPlan::printPlanNodeToString(space:String[1], extensions:RouterExtension[*]): Function<{Nil[1]->String[1]}>[*]
+function meta::external::shared::format::executionPlan::printPlanNodeToString(space:String[1], extensions:RouterExtension[*]): Function<{Nil[1]->String[1]}>[*]
 {
    {node:DataQualityExecutionNode[1] |
       'DataQuality\n' + 
@@ -72,7 +69,7 @@ function meta::external::shared::executionPlan::printPlanNodeToString(space:Stri
    };
 }
 
-Class <<access.private>> meta::external::shared::executionPlan::PropertyDetails
+Class <<access.private>> meta::external::shared::format::executionPlan::PropertyDetails
 {
    property          : AbstractProperty<Any>[1];
    fieldName         : String[1];
@@ -89,23 +86,22 @@ Class <<access.private>> meta::external::shared::executionPlan::PropertyDetails
    isViaAssociation() {$this.property.owner->instanceOf(Association)}: Boolean[1];
 }
 
-function meta::external::shared::executionPlan::createDataClass(class:Class<Any>[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::external::shared::format::executionPlan::createDataClass(class:Class<Any>[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') createDataClass for '+$class->elementToPath()+'\n', |''));
    
    let conventions = $context.conventions;
    let pureDate    = $conventions->className(PureDate);
-   let commons     = ^ExternalSharedCommons();
    let defects     = j_variable(javaList($conventions->defectClass()), 'defects');
    
    let baseClass = $conventions->dataClass($class, $path)->addModifiers('public')
       ->implements($conventions->className($class))
-      ->implements($commons.iExternalData)
+      ->implements($conventions->className(_IExternalData))
       ->addField(c|
-           javaField(['public', 'static', 'final'], $commons.iExternalDataFactory, $commons.dataFactoryFieldName,
-              j_newAnon($commons.iExternalDataFactory, [],
+           javaField(['public', 'static', 'final'], $conventions->className(_IExternalDataFactory), 'FACTORY',
+              j_newAnon($conventions->className(_IExternalDataFactory), [],
                  [
-                    j_method(['public'], $commons.iExternalData, 'newInstance', [], j_return(j_new($c, []))),
+                    j_method(['public'], $conventions->className(_IExternalData), 'newInstance', [], j_return(j_new($c, []))),
                     j_method(['public'], javaString(), 'getPureClassName', [], j_return(j_string($class->elementToPath())))
                  ]
               ) 
@@ -230,7 +226,7 @@ function meta::external::shared::executionPlan::createDataClass(class:Class<Any>
                             {|
                                let value = j_parameter(javaBoolean(), 'value');
                                j_return(j_newAnon(
-                                  javaParameterizedType($commons.booleanAdder, $withFieldsAndGetters), j_string($p.name),
+                                  javaParameterizedType($conventions->className(_ExternalDataBooleanAdder), $withFieldsAndGetters), j_string($p.name),
                                   j_method(['public'], javaVoid(), 'addTo', [$objectParam, $value], $objectParam->j_invoke($p.adderName, $value, javaVoid()))
                                ));
                             },
@@ -239,7 +235,7 @@ function meta::external::shared::executionPlan::createDataClass(class:Class<Any>
                             {|
                                let value = j_parameter(javaLong(), 'value');
                                j_return(j_newAnon(
-                                  javaParameterizedType($commons.longAdder, $withFieldsAndGetters), j_string($p.name),
+                                  javaParameterizedType($conventions->className(_ExternalDataLongAdder), $withFieldsAndGetters), j_string($p.name),
                                   j_method(['public'], javaVoid(), 'addTo', [$objectParam, $value], $objectParam->j_invoke($p.adderName, $value, javaVoid()))
                                ));
                             },
@@ -248,14 +244,14 @@ function meta::external::shared::executionPlan::createDataClass(class:Class<Any>
                             {|
                                let value = j_parameter(javaDouble(), 'value');
                                j_return(j_newAnon(
-                                  javaParameterizedType($commons.doubleAdder, $withFieldsAndGetters), j_string($p.name),
+                                  javaParameterizedType($conventions->className(_ExternalDataDoubleAdder), $withFieldsAndGetters), j_string($p.name),
                                   j_method(['public'], javaVoid(), 'addTo', [$objectParam, $value], $objectParam->j_invoke($p.adderName, $value, javaVoid()))
                                ));
                             },
                             {|
                                let value = j_parameter($p.adderParam.type, 'value');
                                j_return(j_newAnon(
-                                  javaParameterizedType($commons.objectAdder, [$withFieldsAndGetters, $p.adderParam.type]), j_string($p.name),
+                                  javaParameterizedType($conventions->className(_ExternalDataObjectAdder), [$withFieldsAndGetters, $p.adderParam.type]), j_string($p.name),
                                   j_method(['public'], javaVoid(), 'addTo', [$objectParam, $value], $objectParam->j_invoke($p.adderName, $value, javaVoid()))
                                ));
                             }
@@ -276,7 +272,7 @@ function meta::external::shared::executionPlan::createDataClass(class:Class<Any>
       ->addMethod({c|
           let exception = javaIllegalArgumentException()->j_new(j_string('Unknown property ')->j_plus($propertyName))->j_throw();
          
-          javaMethod(['public', 'static'], javaParameterizedType($commons.adder, $c), $commons.adderGetterName, $propertyName,
+          javaMethod(['public', 'static'], javaParameterizedType($conventions->className(_ExternalDataAdder), $c), '_getAdderForProperty', $propertyName,
              if($adderClauses->isEmpty(), |$exception, |j_if(list($adderClauses), $exception))
           );
         })
@@ -286,7 +282,7 @@ function meta::external::shared::executionPlan::createDataClass(class:Class<Any>
    mergeProjects(newProject()->concatenate($constraintChecking)->toOneMany());
 }
 
-function <<access.private>> meta::external::shared::executionPlan::addAdderMethods(jc:meta::java::metamodel::Class[1], prop: PropertyDetails[1], conventions:Conventions[1], impl:Code[*]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::external::shared::format::executionPlan::addAdderMethods(jc:meta::java::metamodel::Class[1], prop: PropertyDetails[1], conventions:Conventions[1], impl:Code[*]): meta::java::metamodel::Class[1]
 {
    if($prop.isViaAssociation,
       {|
@@ -314,13 +310,13 @@ function <<access.private>> meta::external::shared::executionPlan::addAdderMetho
    )
 }
 
-function meta::external::shared::executionPlan::dataClass(conventions:Conventions[1], class:Class<Any>[1], path:String[1]): meta::java::metamodel::Class[1]
+function meta::external::shared::format::executionPlan::dataClass(conventions:Conventions[1], class:Class<Any>[1], path:String[1]): meta::java::metamodel::Class[1]
 {
   $conventions->planNodeClass([], $path, $conventions->identifier($class->elementToPath('_')) + '_Impl');
 }
 
 
-function meta::external::shared::executionPlan::occursFromMultiplicity(mult:Multiplicity[1]): Pair<Code, Code>[1]
+function meta::external::shared::format::executionPlan::occursFromMultiplicity(mult:Multiplicity[1]): Pair<Code, Code>[1]
 {
    if($mult == PureOne,
       | pair(j_long(1), j_long(1)),
@@ -334,19 +330,18 @@ function meta::external::shared::executionPlan::occursFromMultiplicity(mult:Mult
    )));
 }
 
-
-Class meta::external::shared::executionPlan::ExternalSharedCommons
+function meta::external::shared::format::executionPlan::printConnection(extensions:RouterExtension[*]): Function<{Nil[1]->String[1]}>[*]
 {
-   iExternalData()        { javaClass('org.finos.legend.engine.external.shared.runtime.dependencies.IExternalData')            }: meta::java::metamodel::Class[1];
-   iExternalDataFactory() { javaClass('org.finos.legend.engine.external.shared.runtime.dependencies.IExternalDataFactory')     }: meta::java::metamodel::Class[1];
-
-   dataFactoryFieldName() { 'FACTORY'              }: String[1];
-   adderGetterName()      { '_getAdderForProperty' }: String[1];
-   
-   adder()                { javaClass('org.finos.legend.engine.external.shared.runtime.dependencies.ExternalDataAdder')        }: meta::java::metamodel::Class[1];
-   objectAdder()          { javaClass('org.finos.legend.engine.external.shared.runtime.dependencies.ExternalDataObjectAdder')  }: meta::java::metamodel::Class[1];
-   booleanAdder()         { javaClass('org.finos.legend.engine.external.shared.runtime.dependencies.ExternalDataBooleanAdder') }: meta::java::metamodel::Class[1];
-   longAdder()            { javaClass('org.finos.legend.engine.external.shared.runtime.dependencies.ExternalDataLongAdder')    }: meta::java::metamodel::Class[1];
-   doubleAdder()          { javaClass('org.finos.legend.engine.external.shared.runtime.dependencies.ExternalDataDoubleAdder')  }: meta::java::metamodel::Class[1];
+   [
+      {url:UrlConnection[1] |
+         'url="'+$url.url+'", contentType="'+$url.contentType+'", class = '+$url.class->elementToPath()+$url.schema->match([s0:Schema[0]|'', s1:Schema[1]|', schema='+$s1->elementToPath()])
+      },
+      {ext:ExternalFormatConnection[1] |
+         let source = $ext.externalSource->match([
+            u:UrlStreamExternalSource[1] | 'url="'+$u.url+'"'
+         ]);
+         'schemaBinding="'+$ext.schemaBinding->elementToPath()+'", source=('+$source+')';
+      }
+   ];
 }
 

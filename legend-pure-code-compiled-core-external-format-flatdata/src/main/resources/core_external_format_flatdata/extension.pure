@@ -1,0 +1,192 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::external::shared::format::*;
+import meta::external::format::flatdata::executionPlan::*;
+import meta::java::generation::convention::*;
+import meta::java::metamodel::factory::*;
+
+/*
+ * Generated extension externalFormatFlatdata class definitions: see org.finos.legend.engine.external.shared.ExternalFormatJavaCompilerExtension
+ */
+Class meta::external::format::flatdata::engine::_IFlatDataSerializeExecutionNodeSpecifics {}
+Class meta::external::format::flatdata::engine::_IFlatDataDeserializeExecutionNodeSpecifics {}
+Class meta::external::format::flatdata::engine::_FlatDataContext {}
+Class meta::external::format::flatdata::engine::_ParsedFlatData {}
+Class meta::external::format::flatdata::engine::_ParsedFlatDataToObject {}
+Class meta::external::format::flatdata::engine::_ObjectToParsedFlatData {}
+Class meta::external::format::flatdata::engine::_FlatData {}
+Class meta::external::format::flatdata::engine::_FlatDataSection {}
+Class meta::external::format::flatdata::engine::_FlatDataRecordType {}
+Class meta::external::format::flatdata::engine::_FlatDataRecordField {}
+Class meta::external::format::flatdata::engine::_FlatDataDataType {}
+Class meta::external::format::flatdata::engine::_FlatDataString {}
+Class meta::external::format::flatdata::engine::_FlatDataBoolean {}
+Class meta::external::format::flatdata::engine::_FlatDataInteger {}
+Class meta::external::format::flatdata::engine::_FlatDataDecimal {}
+Class meta::external::format::flatdata::engine::_FlatDataDate {}
+Class meta::external::format::flatdata::engine::_FlatDataDateTime {}
+Class meta::external::format::flatdata::engine::_FlatDataNumber {}
+Class meta::external::format::flatdata::engine::_FlatDataTemporal {}
+
+function meta::external::format::flatdata::flatDataFormatExtension(): meta::external::shared::format::ExternalFormatExtension[1]
+{
+   ^ExternalFormatExtension(
+      contentType               = 'application/x.flatdata',
+      externalFormat            = 'FlatData',
+      generateSerializeNode     = generateSerializeNode_Boolean_1__SchemaBinding_1__ExecutionNode_MANY__ExternalFormatSerializeExecutionNode_1_,
+      generateDeserializeNode   = generateDeserializeNode_Connection_1__RootGraphFetchTree_$0_1$__ExecutionNode_1_,
+      printPlanNodeToString     = printPlanNodeToString_String_1__RouterExtension_MANY__Function_MANY_,
+
+      planJavaPrepare           = planJavaPrepare_String_1__GenerationContext_1__RouterExtension_MANY__DebugContext_1__Function_MANY_,
+      planJavaGenerate          = planJavaGenerate_String_1__GenerationContext_1__RouterExtension_MANY__DebugContext_1__Function_MANY_,
+      plan_javaRuntime_enginePlatformDependencies_conventions =
+         {conventions : Conventions[1] |
+            /*
+             * Generated extension externalFormatFlatdata configuration: see org.finos.legend.engine.external.shared.ExternalFormatJavaCompilerExtension
+             */
+
+            let jRawFlatDataValue = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.driver.spi.RawFlatDataValue')
+               ->addMethod(javaMethod('public', javaObject(), 'getAddress', []))
+               ->addMethod(javaMethod('public', javaString(), 'getRawValue', []));
+
+            let jRawFlatData = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.driver.spi.RawFlatData')
+               ->addMethod(javaMethod('public', javaLong(), 'getLineNumber', []))
+               ->addMethod(javaMethod('public', javaLong(), 'getNumber', []))
+               ->addMethod(javaMethod('public', javaString(), 'getRecord', []))
+               ->addMethod(javaMethod('public', javaList($jRawFlatDataValue), 'getRecordValues', []));
+
+            let jFlatDataDataType = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataDataType')
+               ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []));
+
+            let jFlatDataRecordField = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataRecordField')
+               ->addMethod(javaMethod('public', javaString(), 'getAddress', []))
+               ->addMethod(javaMethod('public', javaString(), 'getLabel', []))
+               ->addMethod(javaMethod('public', $jFlatDataDataType, 'getType', []))
+               ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []));
+
+            let jParsedFlatData = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.driver.spi.ParsedFlatData')
+               ->addMethod(javaMethod('public', javaBigDecimal(), 'getBigDecimal', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaBoolean(), 'getBoolean', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaDouble(), 'getDouble', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaInstant(), 'getInstant', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaLocalDate(), 'getLocalDate', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaLong(), 'getLong', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaString(), 'getString', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaBoolean(), 'hasBigDecimalValue', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaBoolean(), 'hasBooleanValue', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaBoolean(), 'hasDoubleValue', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaBoolean(), 'hasInstantValue', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaBoolean(), 'hasLocalDateValue', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaBoolean(), 'hasLongValue', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaBoolean(), 'hasStringValue', [javaParam($jFlatDataRecordField, 'p0')]));
+
+            let jParsedFlatDataToObject = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.driver.spi.ParsedFlatDataToObject')
+               ->addMethod(javaMethod('public', javaTypeVar('T'), 'make', [javaParam($jParsedFlatData, 'p0')]));
+
+            let jObjectToParsedFlatData = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.driver.spi.ObjectToParsedFlatData')
+               ->addMethod(javaMethod('public', $jParsedFlatData, 'make', [javaParam(javaTypeVar('T'), 'p0')]));
+
+            let jFlatDataRecordType = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataRecordType')
+               ->addMethod(javaMethod('public', javaList($jFlatDataRecordField), 'getFields', []))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataRecordType'), 'withField', [javaParam($jFlatDataRecordField, 'p0')]))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataRecordType'), 'withField', [javaParam(javaString(), 'p0'), javaParam($jFlatDataDataType, 'p1')]))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataRecordType'), 'withField', [javaParam(javaString(), 'p0'), javaParam($jFlatDataDataType, 'p1'), javaParam(javaString(), 'p2')]))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataRecordType'), 'withFields', [javaParam(javaParameterizedType(javaClass('java.lang.Iterable'), [$jFlatDataRecordField]), 'p0')]));
+
+            let jFlatDataContext = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.FlatDataContext')
+               ->addMethod(javaMethod('public', javaList(javaParameterizedType(javaClass('org.finos.legend.engine.external.format.flatdata.shared.driver.spi.FlatDataReadDriver'), [javaTypeVar('T')])), 'getReadDrivers', [javaParam(javaClass('org.finos.legend.engine.external.format.flatdata.shared.driver.spi.Connection'), 'p0')]))
+               ->addMethod(javaMethod('public', javaList(javaParameterizedType(javaClass('org.finos.legend.engine.external.format.flatdata.shared.driver.spi.FlatDataWriteDriver'), [javaTypeVar('T')])), 'getWriteDrivers', [javaParam(javaClass('org.finos.legend.engine.external.format.flatdata.shared.driver.spi.Connection'), 'p0')]))
+               ->addMethod(javaMethod('public', javaParameterizedType(javaClass('public', 'org.finos.legend.engine.external.format.flatdata.FlatDataContext'), [javaTypeVar('T')]), 'withSectionFromObjectFactory', [javaParam(javaString(), 'p0'), javaParam(javaFunction($jFlatDataRecordType, javaParameterizedType($jObjectToParsedFlatData, [javaWildcard()])), 'p1')]))
+               ->addMethod(javaMethod('public', javaParameterizedType(javaClass('public', 'org.finos.legend.engine.external.format.flatdata.FlatDataContext'), [javaTypeVar('T')]), 'withSectionToObjectFactory', [javaParam(javaString(), 'p0'), javaParam(javaFunction($jFlatDataRecordType, javaParameterizedType($jParsedFlatDataToObject, [javaWildcard()])), 'p1')]));
+
+            let jIFlatDataSerializeExecutionNodeSpecifics = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.write.IFlatDataSerializeExecutionNodeSpecifics')
+               ->addMethod(javaMethod('public', javaParameterizedType($jFlatDataContext, [javaTypeVar('T')]), 'createContext', []));
+
+            let jIFlatDataDeserializeExecutionNodeSpecifics = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.read.IFlatDataDeserializeExecutionNodeSpecifics')
+               ->addMethod(javaMethod('public', javaParameterizedType($jFlatDataContext, [javaTypeVar('T')]), 'createContext', []));
+
+            let jFlatDataSection = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataSection')
+               ->addMethod(javaMethod('public', javaString(), 'getDriverId', []))
+               ->addMethod(javaMethod('public', javaString(), 'getName', []))
+               ->addMethod(javaMethod('public', $jFlatDataRecordType, 'getRecordType', []))
+               ->addMethod(javaMethod('public', javaList(javaClass('org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataProperty')), 'getSectionProperties', []))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataSection'), 'setSectionProperties', [javaParam(javaParameterizedType(javaClass('java.util.ArrayList'), [javaClass('org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataProperty')]), 'p0')]))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataSection'), 'withProperties', [javaParam(javaParameterizedType(javaClass('java.lang.Iterable'), [javaClass('org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataProperty')]), 'p0')]))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataSection'), 'withProperty', [javaParam(javaClass('org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataProperty'), 'p0')]))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataSection'), 'withProperty', [javaParam(javaString(), 'p0'), javaParam(javaObject(), 'p1')]))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataSection'), 'withRecordType', [javaParam($jFlatDataRecordType, 'p0')]));
+
+            let jFlatData = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatData')
+               ->addMethod(javaMethod('public', javaList($jFlatDataSection), 'getSections', []))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatData'), 'withSection', [javaParam($jFlatDataSection, 'p0')]))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatData'), 'withSections', [javaParam(javaParameterizedType(javaClass('java.lang.Iterable'), [$jFlatDataSection]), 'p0')]));
+
+            let jFlatDataString = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataString');
+
+            let jFlatDataBoolean = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataBoolean')
+               ->addMethod(javaMethod('public', javaString(), 'getFalseString', []))
+               ->addMethod(javaMethod('public', javaString(), 'getTrueString', []))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataBoolean'), 'withFalseString', [javaParam(javaString(), 'p0')]))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataBoolean'), 'withTrueString', [javaParam(javaString(), 'p0')]));
+
+            let jFlatDataInteger = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataInteger');
+
+            let jFlatDataDecimal = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataDecimal');
+
+            let jFlatDataDate = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataDate');
+
+            let jFlatDataNumber = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataNumber')
+               ->addMethod(javaMethod('public', javaString(), 'getFormat', []))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataNumber'), 'withFormat', [javaParam(javaString(), 'p0')]));
+
+            let jFlatDataTemporal = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataTemporal')
+               ->addMethod(javaMethod('public', javaString(), 'getFormat', []))
+               ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataTemporal'), 'withFormat', [javaParam(javaString(), 'p0')]));
+
+            let jFlatDataDateTime = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataDateTime')
+               ->addMethod(javaMethod('public', javaString(), 'getTimeZone', []))
+               ->addMethod(javaMethod('public', $jFlatDataTemporal, 'withTimeZone', [javaParam(javaString(), 'p0')]));
+
+            $conventions
+               ->addProvidedType(meta::external::format::flatdata::executionPlan::RawFlatData, $jRawFlatData)
+               ->addProvidedType(meta::external::format::flatdata::executionPlan::RawFlatDataValue, $jRawFlatDataValue)
+               ->addProvidedType(meta::external::format::flatdata::engine::_IFlatDataSerializeExecutionNodeSpecifics, $jIFlatDataSerializeExecutionNodeSpecifics)
+               ->addProvidedType(meta::external::format::flatdata::engine::_IFlatDataDeserializeExecutionNodeSpecifics, $jIFlatDataDeserializeExecutionNodeSpecifics)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataContext, $jFlatDataContext)
+               ->addProvidedType(meta::external::format::flatdata::engine::_ParsedFlatData, $jParsedFlatData)
+               ->addProvidedType(meta::external::format::flatdata::engine::_ParsedFlatDataToObject, $jParsedFlatDataToObject)
+               ->addProvidedType(meta::external::format::flatdata::engine::_ObjectToParsedFlatData, $jObjectToParsedFlatData)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatData, $jFlatData)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataSection, $jFlatDataSection)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataRecordType, $jFlatDataRecordType)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataRecordField, $jFlatDataRecordField)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataDataType, $jFlatDataDataType)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataString, $jFlatDataString)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataBoolean, $jFlatDataBoolean)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataInteger, $jFlatDataInteger)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataDecimal, $jFlatDataDecimal)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataDate, $jFlatDataDate)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataDateTime, $jFlatDataDateTime)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataNumber, $jFlatDataNumber)
+               ->addProvidedType(meta::external::format::flatdata::engine::_FlatDataTemporal, $jFlatDataTemporal);
+         },
+      serializerExtension = meta::external::format::flatdata::serializerExtensionName_String_1__String_1_      
+   );
+}
+
+function <<access.private>> meta::external::format::flatdata::serializerExtensionName(version:String[1]): String[1]
+{
+   'meta::protocols::pure::' + $version + '::external::format::flatdata::serializerExtension_String_1__SerializerExtension_1_'
+}

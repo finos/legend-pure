@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::shared::metamodel::*;
-import meta::pure::mapping::modelToModel::*;
-import meta::pure::runtime::*;
+package org.finos.legend.pure.code.core;
 
-Class meta::external::shared::runtime::UrlConnection extends Connection
-[
-   $this.element->instanceOf(ModelStore)
-]
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProvider;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+
+public class CoreExternalFormatFlatDataCodeRepositoryProvider implements CodeRepositoryProvider
 {
-   url         : String[1];
-   contentType : String[1];
-   schema      : Schema[0..1];
-   class       : Class<Any>[1];
+    @Override
+    public CodeRepository repository()
+    {
+        return GenericCodeRepository.build("core_external_format_flatdata.definition.json");
+    }
 }
