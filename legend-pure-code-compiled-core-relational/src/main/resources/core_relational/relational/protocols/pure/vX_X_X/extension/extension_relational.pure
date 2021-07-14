@@ -259,6 +259,11 @@ function meta::protocols::pure::vX_X_X::extension::getRelationalExtension():meta
                   table=$p.first->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::relational::setRelationToTablePtr(),
                   columns=$p.second.values->map(c| $c.name)))
             );
+            let importDataFlowJoinedTables = if($r.importDataFlowJoinedTablesByTable->isEmpty(), |[],
+               |$r.importDataFlowJoinedTablesByTable->toOne()->keyValues()->map(p| ^meta::protocols::pure::vX_X_X::metamodel::JoinedTables(
+                  table=$p.first->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::relational::setRelationToTablePtr(),
+                  joinedTables=$p.second.values->map(t| $t->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::relational::setRelationToTablePtr())))
+            );
             ^meta::protocols::pure::vX_X_X::metamodel::RelationalExecutionContext
              (
                 queryTimeOutInSeconds = $r.queryTimeOutInSeconds,
@@ -269,6 +274,7 @@ function meta::protocols::pure::vX_X_X::extension::getRelationalExtension():meta
                 preserveJoinOrder = $r.preserveJoinOrder,
                 importDataFlow = $r.importDataFlow,
                 importDataFlowAddFks = $r.importDataFlowAddFks,
+                importDataFlowJoinedTables = $importDataFlowJoinedTables,
                 importDataFlowFkCols = $importDataFlowFkCols,
                 importDataFlowImplementationCount = $r.importDataFlowImplementationCount,
                 _type = 'RelationalExecutionContext'

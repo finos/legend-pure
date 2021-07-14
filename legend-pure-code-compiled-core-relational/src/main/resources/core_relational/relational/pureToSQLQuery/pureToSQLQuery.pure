@@ -93,6 +93,7 @@ Class meta::relational::functions::pureToSqlQuery::State
    functionReferenceScope : FunctionParamScope[0..1];
    importDataFlow : Boolean[0..1];
    importDataFlowAddFks:Boolean[0..1];
+   importDataFlowJoinedTablesByTable: Map<Relation, List<Relation>>[0..1];
    importDataFlowFksByTable : Map<Relation, List<Column>>[0..1];
    importDataFlowCurrentSetOffsetInUnion : Integer[0..1];
    importDataFlowImplementationCount : Integer[0..1];
@@ -272,6 +273,7 @@ function <<access.private>> meta::relational::functions::pureToSqlQuery::relatio
            useTempTableAsDriver = $execCtx.useTempTableAsDriver,
            importDataFlow = $execCtx.importDataFlow,
            importDataFlowAddFks = $execCtx.importDataFlowAddFks,
+           importDataFlowJoinedTablesByTable = $execCtx.importDataFlowJoinedTablesByTable,
            importDataFlowFksByTable = $execCtx.importDataFlowFksByTable,
            importDataFlowImplementationCount = $execCtx.importDataFlowImplementationCount
         )
@@ -1213,16 +1215,7 @@ function meta::relational::functions::pureToSqlQuery::processColumnsInRelational
                                                          |// Add the missing columns in the nested select (coming most likely from isolation)
                                                           // 1. find the right alias within the nested SQL ...
                                                           // the alias we are trying to find might be from a view
-                                                          let allNodes = $s.data->toOne()->getAllNodes()->cast(@RelationalTreeNode);
-                                                          let aliasToUse = $allNodes->filter(n| let relElements = $n.alias.relationalElement->match([v:ViewSelectSQLQuery[1]| $v.view,
-                                                                                                                                                     s:SelectSQLQuery[1]|
-                                                                                                                                                        let relationsSupportingProjectedColumn = $s.columns->filter(c|$c->extractColumnName() == $t.column.name)->extractTableAliasColumns().alias.relation;
-                                                                                                                                                        print(if(!$context.debug, |'', | $context.space+'Found depth-2 nested select while processing column - ' +  $t.column.name + '. Adding inner relations from depth-2 subselect for handling class mapping filter with inner join : ' + $relationsSupportingProjectedColumn->map(rel | $rel->buildUniqueName(false, $extensions))->joinStrings('[', ' , ', ']')));
-                                                                                                                                                        $relationsSupportingProjectedColumn->concatenate($s);,
-                                                                                                                                                     a:Any[1]| $a]);
-                                                                                                $relElements->contains($t.alias.relationalElement);).alias;
-                                                          assert($aliasToUse->size() == 1, | 'Found too many (or not enough) tables that could support the column '+$t.column.name+' in the nested SQL '+$s->meta::relational::functions::sqlQueryToString::processOperation(meta::relational::runtime::DatabaseType.H2, $extensions));
-                                                          let newSQL = ^$s(columns+=^Alias(name=$t.column.name, relationalElement = ^TableAliasColumn(alias=$aliasToUse->toOne(), columnName=$t.column.name, column=$t.column)));
+                                                          let newSQL = ^$s(columns+=^Alias(name=$t.column.name, relationalElement = $t->extractColumnAliasInSelectQuery($s, $context, $extensions)));
                                                           let newTreeNode = ^$currentTreeNode(alias = ^$alias(relationalElement = $newSQL));
                                                           let newData = if ($currentTreeNode->instanceOf(RootJoinTreeNode),
                                                                                |$newTreeNode,
@@ -1304,6 +1297,21 @@ function meta::relational::functions::pureToSqlQuery::processColumnsInRelational
             );
    $result->validate([], $extensions);
    $result;
+}
+
+function meta::relational::functions::pureToSqlQuery::extractColumnAliasInSelectQuery(t:TableAliasColumn[1], s:SelectSQLQuery[1], context:DebugContext[1], extensions:RouterExtension[*]): TableAliasColumn[1]
+{
+   let allNodes = $s.data->toOne()->getAllNodes()->cast(@RelationalTreeNode);
+   let aliasToUse = $allNodes->filter(n| let relElements = $n.alias.relationalElement->match([
+         v:ViewSelectSQLQuery[1]| $v.view,
+         s:SelectSQLQuery[1]|
+            let relationsSupportingProjectedColumn = $s.columns->filter(c|$c->extractColumnName() == $t.column.name)->extractTableAliasColumns().alias.relation;
+            print(if(!$context.debug, |'', | $context.space+'Found depth-2 nested select while processing column - ' +  $t.column.name + '. Adding inner relations from depth-2 subselect for handling class mapping filter with inner join : ' + $relationsSupportingProjectedColumn->map(rel | $rel->buildUniqueName(false, $extensions))->joinStrings('[', ' , ', ']')));
+            $relationsSupportingProjectedColumn->concatenate($s);,
+         a:Any[1]| $a]);
+      $relElements->contains($t.alias.relationalElement);).alias;
+   assert($aliasToUse->size() == 1, | 'Found too many (or not enough) tables that could support the column '+$t.column.name+' in the nested SQL '+$s->meta::relational::functions::sqlQueryToString::processOperation(meta::relational::runtime::DatabaseType.H2, $extensions));
+   ^TableAliasColumn(alias=$aliasToUse->toOne(), columnName=$t.column.name, column=$t.column);
 }
 
 function meta::relational::functions::pureToSqlQuery::processProperty(property:AbstractProperty<Any>[1], propertyOwnerClass:Class<Any>[1], currentPropertyMapping:PropertyMapping[*], propertyMappingFromRouter:PropertyMapping[*], srcOperation:SelectWithCursor[1], state:State[1], joinType:JoinType[1], nodeId:String[1],
@@ -3112,7 +3120,10 @@ function meta::relational::functions::pureToSqlQuery::processRelationalMappingSp
    let fks = if ($viewSpecification->getDistinct() == true && !$viewSpecification->instanceOf(View),
                      | collectAdditionalJoinColumnsForSource($viewSpecification, $state.mapping,  $merged.data->toOne(), $merged.columns->cast(@Alias)),
                      | if ($state.importDataFlowAddFks == true,
-                           |$state.importDataFlowFksByTable->toOne()->get($mainTable).values->map(c|^Alias(name=$c.name, relationalElement=^TableAliasColumn(alias=$merged.data.alias->toOne(), columnName=$c.name, column=$c))),
+                           |let fkTables = if($state.importDataFlowJoinedTablesByTable->isEmpty(), |$mainTable, |$mainTable->concatenate($state.importDataFlowJoinedTablesByTable->toOne()->get($mainTable).values));
+                            $fkTables->toIndexed()->map(p|
+                              let prefix = if($p.first > 0, |'j' + $p.first->toString() + '_', |'');
+                              $state.importDataFlowFksByTable->toOne()->get($p.second).values->map(c|^Alias(name=$prefix + $c.name, relationalElement=^TableAliasColumn(alias=^TableAlias(name='root', relationalElement=$p.second), columnName=$c.name, column=$c))););,
                            |[]
                        )
                  );
@@ -4987,11 +4998,15 @@ function meta::relational::functions::pureToSqlQuery::processProject(ids:String[
          let nonOlap = $newColumnsWithPossiblePKs->filter(c|!$c->instanceOf(WindowColumn));
 
          let possiblePKs = $possiblePKsWithUpdatedData.first.values->cast(@Alias).relationalElement->cast(@TableAliasColumn).column->map(c| pair($c.name, ^PathInformation(type = $c.type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType(), relationalType = $c.type)));
+         
+         let importDataFlowCols = if($state.importDataFlow == true && $state.importDataFlowAddFks == true,
+                                     |$mainQuery.select.columns->cast(@Alias)->map(c| if($c.name->startsWith('fk_j'), |^$c(relationalElement=$c.relationalElement->cast(@TableAliasColumn)->extractColumnAliasInSelectQuery($merge, $context, $extensions)), |$c)),
+                                     |[]);
 
          ^$operation(
                      select = ^TdsSelectSqlQuery(
                         distinct = $merge.distinct,
-                        columns = $nonOlap->concatenate(if($state.importDataFlow == true && $state.importDataFlowAddFks == true,|$mainQuery.select.columns,|[]))->cast(@Alias)->removeDuplicates({a,b|$a.name == $b.name})->concatenate($olapCols),//->concatenate($olapCols),
+                        columns = $nonOlap->concatenate($importDataFlowCols)->cast(@Alias)->removeDuplicates({a,b|$a.name == $b.name})->concatenate($olapCols),//->concatenate($olapCols),
                         data = $possiblePKsWithUpdatedData.second,
                         savedFilteringOperation = $merge.savedFilteringOperation,
                         filteringOperation = $merge.filteringOperation,

@@ -28,6 +28,7 @@ Class meta::relational::runtime::RelationalExecutionContext extends ExecutionCon
    preserveJoinOrder:Boolean[0..1];
    importDataFlow : Boolean[0..1];
    importDataFlowAddFks : Boolean[0..1];
+   importDataFlowJoinedTablesByTable: Map<Relation, List<Relation>>[0..1];
    importDataFlowFksByTable : Map<Relation, List<Column>>[0..1];
    importDataFlowImplementationCount : Integer[0..1];
 }
