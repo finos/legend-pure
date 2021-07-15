@@ -422,9 +422,9 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNode(srcNode
    let setContainsExplodeProperty = $setImplementation.propertyMappings->filter(pm|if($pm->instanceOf(PurePropertyMapping),| $pm->cast(@PurePropertyMapping).explodeProperty->isTrue(), |false))->isNotEmpty();
    let subTreeProperties          = $tgtNode.subTrees->cast(@PropertyGraphFetchTree).property.name;
    let requiredTgtSubTrees        = $tgtNode.subTrees->cast(@PropertyGraphFetchTree)->concatenate(if($setContainsExplodeProperty, 
-                                                                                                     |$setImplementation.propertyMappings.property->map(p | if(!$p.name->in($subTreeProperties),
-                                                                                                                                                               |^PropertyGraphFetchTree(property = $p),
-                                                                                                                                                               |[])),
+                                                                                                     |$setImplementation.propertyMappings->filter(pm | $pm->instanceOf(PurePropertyMapping)).property->map(p | if(!$p.name->in($subTreeProperties),
+                                                                                                                                                                                                                  |^PropertyGraphFetchTree(property = $p),
+                                                                                                                                                                                                                  |[])),
                                                                                                      |[]));
    let subTrees = $requiredTgtSubTrees->fold({st,n | $n->enrichSourceTreeNodeForProperty($setImplementation, $st, $extensions)}, $srcNode);
 }
