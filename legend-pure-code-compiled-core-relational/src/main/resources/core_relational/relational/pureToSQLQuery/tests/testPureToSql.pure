@@ -289,3 +289,37 @@ function <<test.Test>> meta::relational::tests::functions::pureToSqlQuery::addDr
    assert($columnNames->contains('"ID"'));
    assert($columnNames->fold({c, r | $r && $pathNames->contains($c)}, true));
 }
+
+function <<test.Test>> meta::relational::tests::functions::pureToSqlQuery::testImportDataFlow() : Boolean[1]
+{
+   let runtime = meta::relational::tests::testRuntime();
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let debugContext = noDebug();
+   let extensions = meta::pure::router::extension::defaultRelationalExtensions();
+   
+   let tables = meta::relational::tests::dbInc.schemas.tables;
+   let personTable = $tables->filter(t| $t.name == 'personTable')->toOne();
+   let personAddressIdCol = $personTable.columns->cast(@Column)->filter(c| $c.name == 'ADDRESSID')->toOne();
+   let firmTable = $tables->filter(t| $t.name == 'firmTable')->toOne();
+   let firmAddressIdCol = $firmTable.columns->cast(@Column)->filter(c| $c.name == 'ADDRESSID')->toOne();
+   
+   let context = ^RelationalExecutionContext(
+      importDataFlow=true,
+      importDataFlowAddFks=true,
+      importDataFlowJoinedTablesByTable=pair($personTable, $firmTable)->newMultiValueMap(),
+      importDataFlowFksByTable=[pair($personTable, $personAddressIdCol), pair($firmTable, $firmAddressIdCol)]->newMultiValueMap()
+   );
+
+   let x = {|Person.all()->project([p| $p.firstName, p| $p.firm.legalName], ['firstName', 'legalName'])}->evaluateAndDeactivate();
+
+   let routed = $x->routeFunction($mapping, $runtime, $context, $extensions, $debugContext);
+   let routedFunction = $routed.functions->evaluateAndDeactivate();
+   let clusters = $routedFunction.expressionSequence->evaluateAndDeactivate()->cast(@ClusteredValueSpecification);
+   let fe = $clusters.val->toOne()->cast(@FunctionExpression);
+
+   let sql = $fe->toSQLQuery($mapping, ^Map<String,List<Any>>(), $context, $debugContext, $extensions)->cast(@TdsSelectSqlQuery);
+   let sqlStr = $sql->meta::relational::functions::sqlQueryToString::sqlQueryToString(meta::relational::runtime::DatabaseType.H2, meta::pure::router::extension::defaultRelationalExtensions());
+
+   assertEquals('select "root".FIRSTNAME as "firstName", "firmTable_d#4_d_m2".LEGALNAME as "legalName", "root".ID as "ID", "root".ADDRESSID as fk_ADDRESSID, "firmTable_d#4_d_m2".ADDRESSID as fk_j1_ADDRESSID from personTable as "root" left outer join firmTable as "firmTable_d#4_d_m2" on ("firmTable_d#4_d_m2".ID = "root".FIRMID)', $sqlStr);
+}
+
