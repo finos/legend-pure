@@ -33,6 +33,11 @@ Class meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::
 {
 }
 
+Class meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::alloy::authentication::DeltaLakeAuthenticationStrategy extends meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
+{
+    apiToken:String[1];
+}
+
 Class meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::alloy::authentication::TestDatabaseAuthenticationStrategy extends meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::alloy::authentication::DefaultH2AuthenticationStrategy
 {
 }
@@ -74,6 +79,11 @@ Class meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::
     quotedIdentifiersIgnoreCase : Boolean[0..1];
 }
 
+Class meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::alloy::specification::DeltaLakeDatasourceSpecification extends meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
+{
+    shard : String[1];
+    httpPath : String[1];
+}
 
 Class meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::TestDatabaseConnection extends meta::protocols::pure::v1_20_0::metamodel::store::relational::connection::DatabaseConnection
 {

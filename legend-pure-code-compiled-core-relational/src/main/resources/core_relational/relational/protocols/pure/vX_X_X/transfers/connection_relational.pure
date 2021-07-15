@@ -133,6 +133,11 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DefaultH2AuthenticationStrategy(
             _type = 'h2Default'
          ),
+      l:meta::pure::alloy::connections::alloy::authentication::DeltaLakeAuthenticationStrategy[1] |
+         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DeltaLakeAuthenticationStrategy(
+            _type = 'deltaLake',
+            apiToken = $l.apiToken
+         ),
       t:meta::pure::alloy::connections::alloy::authentication::TestDatabaseAuthenticationStrategy[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::TestDatabaseAuthenticationStrategy(
             _type = 'test'
@@ -173,6 +178,12 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
              _type = 'h2Local',
              testDataSetupCsv = $l.testDataSetupCsv,
              testDataSetupSqls = $l.testDataSetupSqls
+         ),
+       d:meta::pure::alloy::connections::alloy::specification::DeltaLakeDatasourceSpecification[1] |
+          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DeltaLakeDatasourceSpecification(
+              _type = 'deltaLake',
+              shard = $d.shard,
+              httpPath = $d.httpPath
          ),
       s:meta::pure::alloy::connections::alloy::specification::SnowflakeDatasourceSpecification[1] |
         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::SnowflakeDatasourceSpecification(
