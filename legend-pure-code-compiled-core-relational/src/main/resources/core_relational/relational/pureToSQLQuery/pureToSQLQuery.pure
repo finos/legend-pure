@@ -1215,7 +1215,9 @@ function meta::relational::functions::pureToSqlQuery::processColumnsInRelational
                                                          |// Add the missing columns in the nested select (coming most likely from isolation)
                                                           // 1. find the right alias within the nested SQL ...
                                                           // the alias we are trying to find might be from a view
-                                                          let newSQL = ^$s(columns+=^Alias(name=$t.column.name, relationalElement = $t->extractColumnAliasInSelectQuery($s, $context, $extensions)));
+                                                          let aliasesToUse = $t->extractColumnAliasesInSelectQuery($s, $context, $extensions);                    
+                                                          assert($aliasesToUse->size() == 1, | 'Found too many (or not enough) tables that could support the column '+$t.column.name+' in the nested SQL '+$s->meta::relational::functions::sqlQueryToString::processOperation(meta::relational::runtime::DatabaseType.H2, $extensions));                    
+                                                          let newSQL = ^$s(columns+=^Alias(name=$t.column.name, relationalElement=$aliasesToUse->toOne()));
                                                           let newTreeNode = ^$currentTreeNode(alias = ^$alias(relationalElement = $newSQL));
                                                           let newData = if ($currentTreeNode->instanceOf(RootJoinTreeNode),
                                                                                |$newTreeNode,
@@ -1299,10 +1301,10 @@ function meta::relational::functions::pureToSqlQuery::processColumnsInRelational
    $result;
 }
 
-function meta::relational::functions::pureToSqlQuery::extractColumnAliasInSelectQuery(t:TableAliasColumn[1], s:SelectSQLQuery[1], context:DebugContext[1], extensions:RouterExtension[*]): TableAliasColumn[1]
+function meta::relational::functions::pureToSqlQuery::extractColumnAliasesInSelectQuery(t:TableAliasColumn[1], s:SelectSQLQuery[1], context:DebugContext[1], extensions:RouterExtension[*]): TableAliasColumn[*]
 {
    let allNodes = $s.data->toOne()->getAllNodes()->cast(@RelationalTreeNode);
-   let aliasToUse = $allNodes->filter(n| let relElements = $n.alias.relationalElement->match([
+   let aliasesToUse = $allNodes->filter(n| let relElements = $n.alias.relationalElement->match([
          v:ViewSelectSQLQuery[1]| $v.view,
          s:SelectSQLQuery[1]|
             let relationsSupportingProjectedColumn = $s.columns->filter(c|$c->extractColumnName() == $t.column.name)->extractTableAliasColumns().alias.relation;
@@ -1310,8 +1312,7 @@ function meta::relational::functions::pureToSqlQuery::extractColumnAliasInSelect
             $relationsSupportingProjectedColumn->concatenate($s);,
          a:Any[1]| $a]);
       $relElements->contains($t.alias.relationalElement);).alias;
-   assert($aliasToUse->size() == 1, | 'Found too many (or not enough) tables that could support the column '+$t.column.name+' in the nested SQL '+$s->meta::relational::functions::sqlQueryToString::processOperation(meta::relational::runtime::DatabaseType.H2, $extensions));
-   ^TableAliasColumn(alias=$aliasToUse->toOne(), columnName=$t.column.name, column=$t.column);
+   $aliasesToUse->map(a| ^TableAliasColumn(alias=$a, columnName=$t.column.name, column=$t.column));
 }
 
 function meta::relational::functions::pureToSqlQuery::processProperty(property:AbstractProperty<Any>[1], propertyOwnerClass:Class<Any>[1], currentPropertyMapping:PropertyMapping[*], propertyMappingFromRouter:PropertyMapping[*], srcOperation:SelectWithCursor[1], state:State[1], joinType:JoinType[1], nodeId:String[1],
@@ -5000,7 +5001,10 @@ function meta::relational::functions::pureToSqlQuery::processProject(ids:String[
          let possiblePKs = $possiblePKsWithUpdatedData.first.values->cast(@Alias).relationalElement->cast(@TableAliasColumn).column->map(c| pair($c.name, ^PathInformation(type = $c.type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType(), relationalType = $c.type)));
          
          let importDataFlowCols = if($state.importDataFlow == true && $state.importDataFlowAddFks == true,
-                                     |$mainQuery.select.columns->cast(@Alias)->map(c| if($c.name->startsWith('fk_j'), |^$c(relationalElement=$c.relationalElement->cast(@TableAliasColumn)->extractColumnAliasInSelectQuery($merge, $context, $extensions)), |$c)),
+                                     |$mainQuery.select.columns->cast(@Alias)->map(c| if($c.relationalElement->instanceOf(TableAliasColumn),
+                                                                                         |let aliases = $c.relationalElement->cast(@TableAliasColumn)->extractColumnAliasesInSelectQuery($merge, $context, $extensions);
+                                                                                          if($aliases->size() == 1, |^$c(relationalElement=$aliases->toOne()), |$c);,
+                                                                                         |$c)),
                                      |[]);
 
          ^$operation(
