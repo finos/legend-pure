@@ -25,6 +25,7 @@ import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connection:
 import meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::*;
 import meta::protocols::pure::vX_X_X::metamodel::store::relational::element::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::model::*;
+import meta::pure::alloy::connections::alloy::specification::*;
 
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connection::transformDatabaseConnection(otherConnection: meta::relational::runtime::DatabaseConnection[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection[1]
 {
@@ -147,6 +148,12 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
       b:meta::pure::alloy::connections::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy(
             _type = 'gcpApplicationDefaultCredentials'
+         ),
+      u:meta::pure::alloy::connections::alloy::authentication::UserPasswordAuthenticationStrategy[1] |
+         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::UserPasswordAuthenticationStrategy(
+            _type = 'userPassword',
+            userName = $u.userName,
+            passwordVaultReference = $u.passwordVaultReference
          )
    ])->toOneMany())
 }
@@ -189,7 +196,16 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
              _type = 'bigQuery',
              projectId = $b.projectId,
              defaultDataset = $b.defaultDataset
-         )
+         ),
+      r:meta::pure::alloy::connections::alloy::specification::RedshiftDatasourceSpecification[1] |
+          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::RedshiftDatasourceSpecification(
+              _type = 'redshift',
+              clusterName = $r.clusterName,
+              clusterID = $r.clusterID,
+              databaseName = $r.databaseName,
+              port = $r.port,
+              region = $r.region
+          )
    ])->toOneMany())
 }
 

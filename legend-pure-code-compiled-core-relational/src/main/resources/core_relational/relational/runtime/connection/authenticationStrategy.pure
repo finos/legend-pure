@@ -39,3 +39,9 @@ Class meta::pure::alloy::connections::alloy::authentication::DefaultH2Authentica
 Class meta::pure::alloy::connections::alloy::authentication::TestDatabaseAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy
 {
 }
+
+Class meta::pure::alloy::connections::alloy::authentication::UserPasswordAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
+{
+    userName:String[1];
+    passwordVaultReference:String[1];
+}
