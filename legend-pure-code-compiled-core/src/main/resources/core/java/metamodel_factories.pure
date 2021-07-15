@@ -2157,6 +2157,12 @@ function meta::java::generation::code::js_resolve(stream: Code[1], type: meta::j
    ^DeferredStreamResolve(stream=$stream, type=$type);
 }
 
+function meta::java::generation::code::jo_get(optional: Code[1]):Code[1]
+{
+   assert($optional.type->isJavaOptional(), 'Should apply to an Optional');
+   $optional->j_invoke('get', [], $optional.type->elementTypeOfJavaOptional());
+}
+
 function meta::java::generation::code::jo_orElse(optional: Code[1], else:Code[1]):Code[1]
 {
    assert($optional.type->isJavaOptional(), 'Should apply to an Optional');

@@ -101,6 +101,15 @@ function {doc.doc = 'Get all properties on the provided type / class'}
      ->concatenate($class.qualifiedPropertiesFromAssociations)
 }
 
+function {doc.doc = 'Get defined and inheritied properties on the provided class'}
+   meta::pure::functions::meta::hierarchicalProperties(class:Class<Any>[1]):Property<Nil,Any|*>[*]
+{
+   if($class==Any,
+      | [],
+      | $class.properties->concatenate($class.generalizations->map(g| hierarchicalProperties($g.general.rawType->cast(@Class<Any>)->toOne())))->removeDuplicates()
+   );
+}
+
 function
    {doc.doc = 'Returns the named property from the provided class'}
    meta::pure::functions::meta::propertyByName(class : Class<Any>[1], name : String[1]) : AbstractProperty<Any>[0..1]

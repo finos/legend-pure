@@ -12,40 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::external::format::xml::binding::toPure::*;
+import meta::external::format::xml::metamodel::xml::*;
+import meta::external::format::xml::metamodel::xsd::*;
 import meta::external::shared::*;
 import meta::external::shared::generation::*;
-import meta::external::shared::metamodel::*;
+import meta::external::shared::format::metamodel::*;
+import meta::external::shared::format::metamodel::toString::*;
 import meta::json::*;
 import meta::pure::functions::collection::*;
 import meta::pure::functions::meta::*;
 import meta::pure::functions::tests::collection::*;
 import meta::pure::graphFetch::*;
 import meta::pure::metamodel::serialization::grammar::*;
-import meta::xml::metamodel::*;
-import meta::xsd::metamodel::*;
-import meta::xsd::toPure::*;
 
 /// ========================================================================================================================================================
 // Entry points 
 // ========================================================================================================================================================
 
-Class meta::xsd::toPure::XsdToModelConfiguration extends meta::external::shared::generation::SchemaToModelConfiguration
+Class meta::external::format::xml::binding::toPure::XsdToModelConfiguration extends meta::external::shared::format::binding::toPure::SchemaToModelConfiguration
 {
    inlineCollectionClasses   : Boolean[1];
    includeUnreachableClasses : Boolean[1];
 }
 
-function meta::xsd::toPure::xsdToPure(schema:Schema[1], config:XsdToModelConfiguration[1]): ModelGenerationResult[1]
+function meta::external::format::xml::binding::toPure::xsdToPure(schema:Schema[1], config:XsdToModelConfiguration[1]): SchemaBinding[1]
 {
    xsdToPure($schema, $config, noDebug());
 }
 
-function meta::xsd::toPure::xsdToPureWithDebug(schema:Schema[1], config:XsdToModelConfiguration[1]): ModelGenerationResult[1]
+function meta::external::format::xml::binding::toPure::xsdToPureWithDebug(schema:Schema[1], config:XsdToModelConfiguration[1]): SchemaBinding[1]
 {
    xsdToPure($schema, $config, debug());
 }
 
-function meta::xsd::toPure::xsdToPure(schema:Schema[1], config:XsdToModelConfiguration[1], debug:DebugContext[1]): ModelGenerationResult[1]
+function meta::external::format::xml::binding::toPure::xsdToPure(schema:Schema[1], config:XsdToModelConfiguration[1], debug:DebugContext[1]): SchemaBinding[1]
 {
    let resolved = createGenerationContext($schema, $config)
       ->findAllGlobals($debug)
@@ -58,31 +59,25 @@ function meta::xsd::toPure::xsdToPure(schema:Schema[1], config:XsdToModelConfigu
       ->pruneUnreachableClasses($debug);
    
    let generatedElements = $optimized->generateTypes($debug)->removeDuplicates();   
-   let result            = ^ModelGenerationResult(generatedElements   = $generatedElements);
-      
-   $debug->log(|'\nGenerated the following model:\n\n'+$result->resultToString());
-   $result;
-}
 
-function meta::xsd::toPure::resultToString(result:ModelGenerationResult[1]): String[1]
-{
-   let enums = $result.generatedElements
-      ->filter(t |$t->instanceOf(meta::pure::metamodel::type::Enumeration))
-      ->cast(@meta::pure::metamodel::type::Enumeration<Any>) 
-      ->map(e | $e->printEnumeration());
-   let classes = $result.generatedElements
-      ->filter(t |$t->instanceOf(meta::pure::metamodel::type::Class))
-      ->cast(@meta::pure::metamodel::type::Class<Any>) 
-      ->map(c | $c->printClass());
-               
-   $enums->concatenate($classes)->joinStrings('\n\n');
+   let sepPos  = $config.targetOperation->lastIndexOf('::');
+   let pkgName = $config.targetOperation->substring(0, $sepPos);   
+   let result  = ^SchemaBinding(
+      package = pathToPackage($pkgName, true),
+      name    = $config.targetOperation->substring($sepPos+2),
+      schema  = $schema, 
+      model   = $generatedElements
+   );
+      
+   $debug->log(|'\nGenerated the following model:\n\n'+$result->bindingToString());
+   $result;
 }
 
 // ========================================================================================================================================================
 // GenerationContext
 // ========================================================================================================================================================
 
-Class <<access.private>> meta::xsd::toPure::GenerationContext
+Class <<access.private>> meta::external::format::xml::binding::toPure::GenerationContext
 {
    config          : XsdToModelConfiguration[1];
    externalSchema  : Schema[1];
@@ -99,7 +94,7 @@ Class <<access.private>> meta::xsd::toPure::GenerationContext
    package() {if($this.config.targetPackage->endsWith('::'), |$this.config.targetPackage, |$this.config.targetPackage+'::')}: String[1];
 }
 
-function <<access.private>> meta::xsd::toPure::createGenerationContext(externalSchema:Schema[1], config:XsdToModelConfiguration[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::createGenerationContext(externalSchema:Schema[1], config:XsdToModelConfiguration[1]): GenerationContext[1]
 {
    let schema  = $externalSchema.detail->cast(@XsdSchema); 
    let context = ^GenerationContext(
@@ -118,6 +113,8 @@ function <<access.private>> meta::xsd::toPure::createGenerationContext(externalS
             pair(xsName('ID'),                 infoPrimitive(String)),
             pair(xsName('IDREF'),              infoPrimitive(String)),
             pair(xsName('anyURI'),             infoPrimitive(String)),
+            pair(xsName('NCName'),             infoPrimitive(String)),
+            pair(xsName('Name'),               infoPrimitive(String)),
             pair(xsName('QName'),              infoPrimitive(String)),
             pair(xsName('integer'),            infoPrimitive(Decimal)),
             pair(xsName('long'),               infoPrimitive(Integer)),
@@ -145,39 +142,39 @@ function <<access.private>> meta::xsd::toPure::createGenerationContext(externalS
    );
 }
 
-function <<access.private>> meta::xsd::toPure::withTargetNamespace(context:GenerationContext[1], namespace:String[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::withTargetNamespace(context:GenerationContext[1], namespace:String[1]): GenerationContext[1]
 {
    ^$context(targetNamespace=$namespace);
 }
 
 // TODO REMOVE
-function <<access.private>> meta::xsd::toPure::getSchema(context:GenerationContext[1], location:String[1]): XsdSchema[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::getSchema(context:GenerationContext[1], location:String[1]): XsdSchema[1]
 {
    fail('No schema found for location ' + $location);
    ^XsdSchema();
 }
 
-function <<access.private>> meta::xsd::toPure::pushInScope(context:GenerationContext[1], schema:XsdSchema[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::pushInScope(context:GenerationContext[1], schema:XsdSchema[1]): GenerationContext[1]
 {
    ^$context(inScopeSchemas+=$schema);
 }
 
-function <<access.private>> meta::xsd::toPure::popInScope(context:GenerationContext[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::popInScope(context:GenerationContext[1]): GenerationContext[1]
 {
    ^$context(inScopeSchemas+=$context.inScopeSchemas->init());
 }
 
-function <<access.private>> meta::xsd::toPure::isInScope(context:GenerationContext[1], schema:XsdSchema[1]): Boolean[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::isInScope(context:GenerationContext[1], schema:XsdSchema[1]): Boolean[1]
 {
    $context.inScopeSchemas->contains($schema);
 }
 
-function <<access.private>> meta::xsd::toPure::isIncluding(context:GenerationContext[1]): Boolean[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::isIncluding(context:GenerationContext[1]): Boolean[1]
 {
    $context.inScopeSchemas->size() > 1;
 }
 
-function <<access.private>> meta::xsd::toPure::addGlobal(context:GenerationContext[1], global:XsdObject[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::addGlobal(context:GenerationContext[1], global:XsdObject[1]): GenerationContext[1]
 {
    assert($global->instanceOf(XsdNamed) && $global->cast(@XsdNamed).name->isNotEmpty());
 
@@ -191,7 +188,7 @@ function <<access.private>> meta::xsd::toPure::addGlobal(context:GenerationConte
    ]);
 }
 
-function <<access.private>> meta::xsd::toPure::registerGenInfo(context:GenerationContext[1], object:XsdNamed[1], genInfo:GenInfo[1], debug:DebugContext[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::registerGenInfo(context:GenerationContext[1], object:XsdNamed[1], genInfo:GenInfo[1], debug:DebugContext[1]): GenerationContext[1]
 {
    assert($object.name->isNotEmpty(), 'Only named object can be registered');
    let name = $object.name->toOne();
@@ -231,7 +228,7 @@ function <<access.private>> meta::xsd::toPure::registerGenInfo(context:Generatio
 }
 
 // TODO Deprecated
-function <<access.private>> meta::xsd::toPure::resolve<T>(context:GenerationContext[1], schemaElement:T[0..1]): T[0..1]
+function <<access.private>> meta::external::format::xml::binding::toPure::resolve<T>(context:GenerationContext[1], schemaElement:T[0..1]): T[0..1]
 {
    $schemaElement->match([
       {named:XsdNamed[1] |
@@ -249,7 +246,7 @@ function <<access.private>> meta::xsd::toPure::resolve<T>(context:GenerationCont
    ])->cast(@T);
 }
 
-function <<access.private>> meta::xsd::toPure::resolveNamedGenInfo(context:GenerationContext[1], name:QName[1], debug:DebugContext[1]): GenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::resolveNamedGenInfo(context:GenerationContext[1], name:QName[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->log(|'resolveNamedGenInfo ' + $name->qNameToString());
    
@@ -264,7 +261,7 @@ function <<access.private>> meta::xsd::toPure::resolveNamedGenInfo(context:Gener
    $result;   
 }
 
-function <<access.private>> meta::xsd::toPure::referencedGenInfo(context:GenerationContext[1], named:XsdNamed[1], debug:DebugContext[1]): GenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::referencedGenInfo(context:GenerationContext[1], named:XsdNamed[1], debug:DebugContext[1]): GenInfo[1]
 {
    assert($named.ref->isNotEmpty());
 
@@ -272,7 +269,7 @@ function <<access.private>> meta::xsd::toPure::referencedGenInfo(context:Generat
    $context->genInfoOf($named.ref->toOne(), $debug);
 }
 
-function <<access.private>> meta::xsd::toPure::genInfoOf(context:GenerationContext[1], name:QName[1], debug:DebugContext[1]): GenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::genInfoOf(context:GenerationContext[1], name:QName[1], debug:DebugContext[1]): GenInfo[1]
 {
    let result = $context.genInfos->get($name);
    if($result->isEmpty(), 
@@ -288,14 +285,14 @@ function <<access.private>> meta::xsd::toPure::genInfoOf(context:GenerationConte
 // discovery 
 // ========================================================================================================================================================
 
-function <<access.private>> meta::xsd::toPure::findAllGlobals(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::findAllGlobals(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
 {
    let targetNamespace = $context.schema.targetNamespace->orElse('');
    $debug->log(|'targetNamespace is ' + $targetNamespace->namespaceToString());
    $context->withTargetNamespace($targetNamespace)->findGlobalsInSchema($context.schema, $debug);
 }
 
-function <<access.private>> meta::xsd::toPure::findGlobalsInSchema(context:GenerationContext[1], schema:XsdSchema[1], debug:DebugContext[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::findGlobalsInSchema(context:GenerationContext[1], schema:XsdSchema[1], debug:DebugContext[1]): GenerationContext[1]
 {
    $debug->log(|'findGlobalsInSchema');
    
@@ -334,7 +331,7 @@ function <<access.private>> meta::xsd::toPure::findGlobalsInSchema(context:Gener
    );
 }
 
-function <<access.private>> meta::xsd::toPure::adjustNamespace(qName:QName[1], targetNamespace:String[1]): QName[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::adjustNamespace(qName:QName[1], targetNamespace:String[1]): QName[1]
 {
    if($qName.namespace == '' && $targetNamespace != '', |^$qName(namespace=$targetNamespace), |$qName);
 }
@@ -343,7 +340,7 @@ function <<access.private>> meta::xsd::toPure::adjustNamespace(qName:QName[1], t
 // type resolution 
 // ========================================================================================================================================================
 
-function <<access.private>> meta::xsd::toPure::resolveAllGlobalSimpleTypes(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::resolveAllGlobalSimpleTypes(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
 {
    resolveAll(
       $context,
@@ -353,7 +350,7 @@ function <<access.private>> meta::xsd::toPure::resolveAllGlobalSimpleTypes(conte
    );
 }
 
-function <<access.private>> meta::xsd::toPure::resolveAllGlobalComplexTypesAndElements(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::resolveAllGlobalComplexTypesAndElements(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
 {
    resolveAll(
       $context,
@@ -366,7 +363,7 @@ function <<access.private>> meta::xsd::toPure::resolveAllGlobalComplexTypesAndEl
    );
 }
 
-function <<access.private>> meta::xsd::toPure::resolveAll<T>(context       :GenerationContext[1], 
+function <<access.private>> meta::external::format::xml::binding::toPure::resolveAll<T>(context       :GenerationContext[1], 
                                                              getUnresolved :Function<{GenerationContext[1]->T[*]}>[1],
                                                              resolveOne    :Function<{T[1],GenerationContext[1]->GenInfo[1]}>[1], 
                                                              debug:DebugContext[1]
@@ -397,7 +394,7 @@ function <<access.private>> meta::xsd::toPure::resolveAll<T>(context       :Gene
 // Model optimization
 // ========================================================================================================================================================
 
-function <<access.private>> meta::xsd::toPure::inlineCollectionClasses(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::inlineCollectionClasses(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
 {
    if($context.config.inlineCollectionClasses,
       | $context->doInlineCollectionClasses($debug),
@@ -405,7 +402,7 @@ function <<access.private>> meta::xsd::toPure::inlineCollectionClasses(context:G
    );
 }
 
-function <<access.private>> meta::xsd::toPure::doInlineCollectionClasses(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::doInlineCollectionClasses(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
 {
    $debug->log(|'--- Inlining Collection Classes');
    
@@ -424,63 +421,64 @@ function <<access.private>> meta::xsd::toPure::doInlineCollectionClasses(context
       $canInline;      
    });
 
-   let newGenInfos = $context.genInfos->keyValues()->map({kv|
-      let name = $kv.first;
-      let info = $kv.second;
-
-      $info->match([
-         {cls:ClassGenInfo[1] |
-            $debug->log(|'   Examining class (pass 2) ' + $cls.name->qNameToString());
-            let newCls = $cls->inlineIfPossible($inlineable, $debug);
-            pair($name, $newCls);
-         },
-         {prop:PropertyGenInfo[1] |
-            $debug->log(|'   Examining property ' + $prop.rawName);
-            let newProp = if($prop.type->instanceOf(ClassGenInfo) && $name == $prop.type->cast(@ClassGenInfo).name,
-                             {|
-                                // Type defined directly in property
-                                let newType = $prop.type->cast(@ClassGenInfo)->inlineIfPossible($inlineable, $debug);
-                                ^$prop(type = $newType);
-                             },
-                             | $prop->inlineIfPossible($inlineable, $debug);
-                          );
-            
-            pair($name, $newProp);
-         },
-         gi:GenInfo[1] | pair($name, $info)
-      ]);
-   })->newMap();
-   
-   ^$context(genInfos=$newGenInfos);
+   ^$context(genInfos=$context.genInfos->keyValues()->map(kv| pair($kv.first, $kv.second->inlineIfPossible($inlineable, [], $debug)))->newMap());
 }
 
-function <<access.private>> meta::xsd::toPure::inlineIfPossible(cls:ClassGenInfo[1], inlineable:ClassGenInfo[*], debug:DebugContext[1]): ClassGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::inlineIfPossible(info:GenInfo[1], inlineable:ClassGenInfo[*], seen:GenInfo[*], debug:DebugContext[1]): GenInfo[1]
 {
-   let propertySet    = $cls.properties;
-   let newProperties  = $propertySet.properties->map(p| $p->inlineIfPossible($inlineable, $debug));
-   let newPropertySet = ^$propertySet(properties=$newProperties);
-   ^$cls(properties=$newPropertySet);
+   if($seen->contains($info), 
+      | $info,
+      {|
+         $info->match([
+            {cls:ClassGenInfo[1] |
+               $debug->log(|'Examining class (pass 2) ' + $cls.name->qNameToString());
+               $cls->inlineIfPossible($inlineable, $seen->add($cls), $debug);
+            },
+            {prop:PropertyGenInfo[1] |
+               $debug->log(|'Examining property (pass 2) ' + $prop.rawName);
+               $prop->inlineIfPossible($inlineable, $seen->add($prop), $debug);
+            },
+            {pset:PropertySetGenInfo[1] |
+               ^$pset(properties=$pset.properties->map(p| $p->inlineIfPossible($inlineable, $seen->add($pset), $debug)));
+            },
+            gi:GenInfo[1] | $gi
+         ]);
+      }
+   );
 }
 
-function <<access.private>> meta::xsd::toPure::inlineIfPossible(prop:PropertyGenInfo[1], inlineable:ClassGenInfo[*], debug:DebugContext[1]): PropertyGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::inlineIfPossible(cls:ClassGenInfo[1], inlineable:ClassGenInfo[*], seen:GenInfo[*], debug:DebugContext[1]): ClassGenInfo[1]
 {
-   let propTypeName = $prop.type->match([
-      cinf: ClassGenInfo[1]          | $cinf.name,
-      cref: ClassReferenceGenInfo[1] | $cref.name,
-      else: GenInfo[1]               | []
-   ]);
-   let inlineWith = $inlineable->filter(i| $i.name == $propTypeName);
-   $inlineWith->match([
-      {iw:ClassGenInfo[1] | 
-         $debug->log(|'   Inlining ' + $prop.rawName);
-         ^$prop(type=$iw.properties.properties->at(0).type, minOccurs=0, maxOccurs=[]);
-      },
-      a0:Any[0] | $prop
-   ]);
+   ^$cls(properties=$cls.properties->inlineIfPossible($inlineable, $seen, $debug->indent())->cast(@PropertySetGenInfo));
+}
+
+function <<access.private>> meta::external::format::xml::binding::toPure::inlineIfPossible(prop:PropertyGenInfo[1], inlineable:ClassGenInfo[*], seen:GenInfo[*], debug:DebugContext[1]): PropertyGenInfo[1]
+{
+//    if($prop.type->instanceOf(ClassGenInfo) && $prop.source.name == $prop.type->cast(@ClassGenInfo).name,
+//       {|
+//          // Type defined directly in property
+//          ^$prop(type = $prop.type->cast(@ClassGenInfo)->inlineIfPossible($inlineable, $seen, $debug));
+//       },
+//       {|
+         let propTypeName = $prop.type->match([
+            cinf: ClassGenInfo[1]          | $cinf.name,
+            cref: ClassReferenceGenInfo[1] | $cref.name,
+            else: GenInfo[1]               | []
+         ]);
+         let inlineWith = $inlineable->filter(i| $i.name == $propTypeName);
+         $inlineWith->match([
+            {iw:ClassGenInfo[1] | 
+               $debug->log(|'   Inlining ' + $prop.rawName);
+               ^$prop(type=$iw.properties.properties->at(0).type, minOccurs=0, maxOccurs=[]);
+            },
+            a0:Any[0] | ^$prop(type=$prop.type->inlineIfPossible($inlineable, $seen, $debug)->cast(@TypeGenInfo))
+         ]);
+//       }
+//    );
 }
 
 
-function <<access.private>> meta::xsd::toPure::pruneUnreachableClasses(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::pruneUnreachableClasses(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
 {
    if($context.config.includeUnreachableClasses,
       | $context,
@@ -488,7 +486,7 @@ function <<access.private>> meta::xsd::toPure::pruneUnreachableClasses(context:G
    );
 }
 
-function <<access.private>> meta::xsd::toPure::doPruneUnreachableClasses(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::doPruneUnreachableClasses(context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
 {
    $debug->log(|'--- Pruning Unreachable Classes');
 
@@ -498,7 +496,7 @@ function <<access.private>> meta::xsd::toPure::doPruneUnreachableClasses(context
    ^$context(genInfos=$newGenInfos);
 }
 
-function <<access.private>> meta::xsd::toPure::addReachable(info:GenInfo[1], reachable:Map<QName, GenInfo>[1], allInfos:Map<QName, GenInfo>[1], debug:DebugContext[1]): Map<QName, GenInfo>[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::addReachable(info:GenInfo[1], reachable:Map<QName, GenInfo>[1], allInfos:Map<QName, GenInfo>[1], debug:DebugContext[1]): Map<QName, GenInfo>[1]
 {
    $debug->log(|'Examining ' + $info->toDebugString());
    $info->match([
@@ -534,7 +532,7 @@ function <<access.private>> meta::xsd::toPure::addReachable(info:GenInfo[1], rea
 // Type generation
 // ========================================================================================================================================================
 
-function <<access.private>> meta::xsd::toPure::generateTypes(context:GenerationContext[1], debug:DebugContext[1]): PackageableElement[*]
+function <<access.private>> meta::external::format::xml::binding::toPure::generateTypes(context:GenerationContext[1], debug:DebugContext[1]): PackageableElement[*]
 {
    $debug->log(|'--- Generating Types');
 
@@ -579,7 +577,7 @@ function <<access.private>> meta::xsd::toPure::generateTypes(context:GenerationC
    })->newMap();
    $debug->log(|'Created ' + $nakedClasses->keyValues()->size()->toString() + ' classes');
 
-   $debug->log(|'Adding extensions');
+   $debug->log(|'Adding extend clauses');
    let extendedClasses = $nakedClasses->keyValues()->map({infoAndClass|
       let info = $infoAndClass.first;
       let cls = $infoAndClass.second;
@@ -597,10 +595,11 @@ function <<access.private>> meta::xsd::toPure::generateTypes(context:GenerationC
       pair($info, $cls);
    })->newMap();
 
+   $debug->log(|'Adding properties');
    let withProperties = $extendedClasses->keyValues()->map({infoAndClass|
       let info = $infoAndClass.first;
       let cls = $infoAndClass.second;
-
+      $debug->log(|'   Adding properties to ' + $cls.name->toOne());
       let propInfos = $info.properties.properties;
       let propNames = $propInfos->map(i| $context->toSafeIdentifier($i.rawName, false));
       assert($propNames->isDistinct(), | 'Property names are not unique');
@@ -639,7 +638,7 @@ function <<access.private>> meta::xsd::toPure::generateTypes(context:GenerationC
    $enums->values()->concatenate($withProperties);
 }
 
-function <<access.private>> meta::xsd::toPure::getClass(classes:Map<ClassGenInfo, Class<Any>>[1], info:GenInfo[1]): Class<Any>[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::getClass(classes:Map<ClassGenInfo, Class<Any>>[1], info:GenInfo[1]): Class<Any>[1]
 {
       $info->match([
          cinf:ClassGenInfo[1]          | $classes->keyValues()->filter(ic| $ic.first.name == $cinf.name)->map(ic| $ic.second),
@@ -647,7 +646,7 @@ function <<access.private>> meta::xsd::toPure::getClass(classes:Map<ClassGenInfo
       ])->toOne();
 }
 
-function <<access.private>> meta::xsd::toPure::createConstraints(cls:Class<Any>[1], propInfos:PropertyGenInfo[*], properties:AbstractProperty<Any>[*], sizeLimits:SizeLimitation[*], enums:Map<GenInfo,Enumeration<Any>>[1]): meta::pure::metamodel::constraint::Constraint[*]
+function <<access.private>> meta::external::format::xml::binding::toPure::createConstraints(cls:Class<Any>[1], propInfos:PropertyGenInfo[*], properties:AbstractProperty<Any>[*], sizeLimits:SizeLimitation[*], enums:Map<GenInfo,Enumeration<Any>>[1]): meta::pure::metamodel::constraint::Constraint[*]
 {
    let f       = newExpressionFactory();
    let thisVar = $f->variable('this', $cls, PureOne);
@@ -728,7 +727,7 @@ function <<access.private>> meta::xsd::toPure::createConstraints(cls:Class<Any>[
    });
 }
 
-function <<access.private>> meta::xsd::toPure::createSizeLimitsConstraint(limits:SizeLimitation[1], cls:Class<Any>[1], propInfos:PropertyGenInfo[*], properties:AbstractProperty<Any>[*]): ValueSpecification[*]
+function <<access.private>> meta::external::format::xml::binding::toPure::createSizeLimitsConstraint(limits:SizeLimitation[1], cls:Class<Any>[1], propInfos:PropertyGenInfo[*], properties:AbstractProperty<Any>[*]): ValueSpecification[*]
 {
    let f       = newExpressionFactory();
    let thisVar = $f->variable('this', $cls, PureOne);
@@ -751,16 +750,16 @@ function <<access.private>> meta::xsd::toPure::createSizeLimitsConstraint(limits
 // gen info 
 // ========================================================================================================================================================
 
-Class <<access.private>> meta::xsd::toPure::GenInfo
+Class <<access.private>> meta::external::format::xml::binding::toPure::GenInfo
 {
    annotation : XsdAnnotation[0..1];
 }
 
-Class <<access.private>> meta::xsd::toPure::TypeGenInfo extends GenInfo
+Class <<access.private>> meta::external::format::xml::binding::toPure::TypeGenInfo extends GenInfo
 {
 }
 
-Class <<access.private>> meta::xsd::toPure::PrimitiveTypeGenInfo extends TypeGenInfo
+Class <<access.private>> meta::external::format::xml::binding::toPure::PrimitiveTypeGenInfo extends TypeGenInfo
 {
    source       : XsdSimpleType[0..1];
    pureType     : Type[1];
@@ -769,13 +768,13 @@ Class <<access.private>> meta::xsd::toPure::PrimitiveTypeGenInfo extends TypeGen
    rawName() {$this.source.name->toOne().localPart}: String[1];
 }
 
-Class <<access.private>> meta::xsd::toPure::PrimitiveTypeExtensionGenInfo extends TypeGenInfo
+Class <<access.private>> meta::external::format::xml::binding::toPure::PrimitiveTypeExtensionGenInfo extends TypeGenInfo
 {
    primitive  : PrimitiveTypeGenInfo[1];
    properties : PropertySetGenInfo[1];
 }
 
-Class <<access.private>> meta::xsd::toPure::ClassGenInfo extends TypeGenInfo
+Class <<access.private>> meta::external::format::xml::binding::toPure::ClassGenInfo extends TypeGenInfo
 {
    source     : XsdComplexType[1];
    name       : QName[1];
@@ -784,7 +783,7 @@ Class <<access.private>> meta::xsd::toPure::ClassGenInfo extends TypeGenInfo
    rawName() {$this.name->toOne().localPart}: String[1];
 }
 
-Class <<access.private>> meta::xsd::toPure::ClassReferenceGenInfo extends TypeGenInfo
+Class <<access.private>> meta::external::format::xml::binding::toPure::ClassReferenceGenInfo extends TypeGenInfo
 {
    source     : XsdComplexType[1];
    name       : QName[1];
@@ -792,7 +791,7 @@ Class <<access.private>> meta::xsd::toPure::ClassReferenceGenInfo extends TypeGe
    rawName() {$this.name->toOne().localPart}: String[1];
 }
 
-Class <<access.private>> meta::xsd::toPure::PropertyGenInfo extends GenInfo
+Class <<access.private>> meta::external::format::xml::binding::toPure::PropertyGenInfo extends GenInfo
 {
    source     : XsdObject[1];
    rawName    : String[1];
@@ -804,7 +803,7 @@ Class <<access.private>> meta::xsd::toPure::PropertyGenInfo extends GenInfo
    multiplicity() {toMultiplicity($this.minOccurs, $this.maxOccurs)}: Multiplicity[1];
 }
 
-Class <<access.private>> meta::xsd::toPure::PropertySetGenInfo extends GenInfo
+Class <<access.private>> meta::external::format::xml::binding::toPure::PropertySetGenInfo extends GenInfo
 {
    source     : XsdObject[1];
    properties : PropertyGenInfo[*];
@@ -812,23 +811,23 @@ Class <<access.private>> meta::xsd::toPure::PropertySetGenInfo extends GenInfo
    sizeLimits : SizeLimitation[*];
 }
 
-Class <<access.private>> meta::xsd::toPure::PrimitiveRestriction
+Class <<access.private>> meta::external::format::xml::binding::toPure::PrimitiveRestriction
 {
 }
 
-Class <<access.private>> meta::xsd::toPure::EnumValuesRestriction extends PrimitiveRestriction
+Class <<access.private>> meta::external::format::xml::binding::toPure::EnumValuesRestriction extends PrimitiveRestriction
 {
    values : Any[*];
 }
 
-Class <<access.private>> meta::xsd::toPure::StringLengthRestriction extends PrimitiveRestriction
+Class <<access.private>> meta::external::format::xml::binding::toPure::StringLengthRestriction extends PrimitiveRestriction
 {
    length    : Integer[0..1];
    minLength : Integer[0..1];
    maxLength : Integer[0..1];
 }
 
-Class <<access.private>> meta::xsd::toPure::ValueRangeRestriction extends PrimitiveRestriction
+Class <<access.private>> meta::external::format::xml::binding::toPure::ValueRangeRestriction extends PrimitiveRestriction
 {
    minInclusive : Any[0..1];
    minExclusive : Any[0..1];
@@ -836,43 +835,43 @@ Class <<access.private>> meta::xsd::toPure::ValueRangeRestriction extends Primit
    maxExclusive : Any[0..1];
 }
 
-Class <<access.private>> meta::xsd::toPure::SizeLimitation
+Class <<access.private>> meta::external::format::xml::binding::toPure::SizeLimitation
 {
 }
 
-Class <<access.private>> meta::xsd::toPure::SizeLimitOne extends SizeLimitation
+Class <<access.private>> meta::external::format::xml::binding::toPure::SizeLimitOne extends SizeLimitation
 {
    rawName   : String[1];
    minOccurs : Integer[1];
    maxOccurs : Integer[0..1];
 }
 
-Class <<access.private>> meta::xsd::toPure::SizeLimitOr extends SizeLimitation
+Class <<access.private>> meta::external::format::xml::binding::toPure::SizeLimitOr extends SizeLimitation
 {
    limits : SizeLimitation[*];
 }
 
-Class <<access.private>> meta::xsd::toPure::SizeLimitAnd extends SizeLimitation
+Class <<access.private>> meta::external::format::xml::binding::toPure::SizeLimitAnd extends SizeLimitation
 {
    limits : SizeLimitation[*];
 }
 
-function <<access.private>> meta::xsd::toPure::infoUnknown(): UnknownGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoUnknown(): UnknownGenInfo[1]
 {
    ^UnknownGenInfo();
 }
 
-function <<access.private>> meta::xsd::toPure::infoPrimitive(pureType:Type[1]): PrimitiveTypeGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoPrimitive(pureType:Type[1]): PrimitiveTypeGenInfo[1]
 {
    ^PrimitiveTypeGenInfo(pureType=$pureType);
 }
 
-function <<access.private>> meta::xsd::toPure::infoPrimitive(type:XsdSimpleType[1], from:PrimitiveTypeGenInfo[1]): PrimitiveTypeGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoPrimitive(type:XsdSimpleType[1], from:PrimitiveTypeGenInfo[1]): PrimitiveTypeGenInfo[1]
 {
    ^$from(source=$type);
 }
 
-function <<access.private>> meta::xsd::toPure::infoClass(source:XsdComplexType[1], name:QName[1], properties:PropertySetGenInfo[1]): ClassGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoClass(source:XsdComplexType[1], name:QName[1], properties:PropertySetGenInfo[1]): ClassGenInfo[1]
 {
    ^ClassGenInfo
    (
@@ -882,7 +881,7 @@ function <<access.private>> meta::xsd::toPure::infoClass(source:XsdComplexType[1
    );
 }
 
-function <<access.private>> meta::xsd::toPure::infoClassReference(source:XsdComplexType[1], name:QName[1]): ClassReferenceGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoClassReference(source:XsdComplexType[1], name:QName[1]): ClassReferenceGenInfo[1]
 {
    ^ClassReferenceGenInfo
    (
@@ -891,7 +890,7 @@ function <<access.private>> meta::xsd::toPure::infoClassReference(source:XsdComp
    );
 }
 
-function <<access.private>> meta::xsd::toPure::typesAreCompatible(t1:TypeGenInfo[0..1], t2:TypeGenInfo[0..1]): Boolean[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::typesAreCompatible(t1:TypeGenInfo[0..1], t2:TypeGenInfo[0..1]): Boolean[1]
 {
    $t1->match([
       t1c:ClassGenInfo[1]          | $t2->match([t2c:ClassGenInfo[1] | $t1c.rawName == $t2c.rawName, t2r:ClassReferenceGenInfo[1] | $t1c.rawName == $t2r.rawName, t2p:PrimitiveTypeGenInfo[1] | false,                          t20:Any[0]| true]),
@@ -901,13 +900,13 @@ function <<access.private>> meta::xsd::toPure::typesAreCompatible(t1:TypeGenInfo
    ]);
 }
 
-function <<access.private>> meta::xsd::toPure::restrictEnumValues(primitive:PrimitiveTypeGenInfo[1], enumValues:Any[*]): PrimitiveTypeGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::restrictEnumValues(primitive:PrimitiveTypeGenInfo[1], enumValues:Any[*]): PrimitiveTypeGenInfo[1]
 {
    let restriction = ^EnumValuesRestriction(values = $enumValues);
    ^$primitive(restrictions=$primitive.restrictions->filter(r| !$r->instanceOf(EnumValuesRestriction))->concatenate($restriction));
 }
 
-function <<access.private>> meta::xsd::toPure::restrictStringLength(primitive:PrimitiveTypeGenInfo[1], length:Integer[0..1], minLength:Integer[0..1], maxLength:Integer[0..1]): PrimitiveTypeGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::restrictStringLength(primitive:PrimitiveTypeGenInfo[1], length:Integer[0..1], minLength:Integer[0..1], maxLength:Integer[0..1]): PrimitiveTypeGenInfo[1]
 {
    let existing = $primitive.restrictions->filter(r| $r->instanceOf(StringLengthRestriction))->first()->cast(@StringLengthRestriction);
    assert($existing->isEmpty() || $existing.length->isEmpty() || $existing.length->toOne() == $length->toOne(), | 'Cannot relax length restrictions');
@@ -922,7 +921,7 @@ function <<access.private>> meta::xsd::toPure::restrictStringLength(primitive:Pr
    ^$primitive(restrictions=$primitive.restrictions->filter(r| !$r->instanceOf(StringLengthRestriction))->concatenate($restriction));
 }
 
-function <<access.private>> meta::xsd::toPure::restrictValueRange(primitive:PrimitiveTypeGenInfo[1], minInclusive:Any[0..1], minExclusive:Any[0..1], maxInclusive:Any[0..1], maxExclusive:Any[0..1]): PrimitiveTypeGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::restrictValueRange(primitive:PrimitiveTypeGenInfo[1], minInclusive:Any[0..1], minExclusive:Any[0..1], maxInclusive:Any[0..1], maxExclusive:Any[0..1]): PrimitiveTypeGenInfo[1]
 {
    let restriction = ^ValueRangeRestriction(
       minInclusive = $minInclusive,
@@ -933,7 +932,7 @@ function <<access.private>> meta::xsd::toPure::restrictValueRange(primitive:Prim
    ^$primitive(restrictions=$primitive.restrictions->filter(r| !$r->instanceOf(ValueRangeRestriction))->concatenate($restriction));
 }
 
-function <<access.private>> meta::xsd::toPure::limitSize(rawName:String[1], minOccurs:Integer[1], maxOccurs:Integer[0..1]): SizeLimitation[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::limitSize(rawName:String[1], minOccurs:Integer[1], maxOccurs:Integer[0..1]): SizeLimitation[1]
 {
    ^SizeLimitOne
    (
@@ -943,7 +942,7 @@ function <<access.private>> meta::xsd::toPure::limitSize(rawName:String[1], minO
    );
 }
 
-function <<access.private>> meta::xsd::toPure::andSizeLimits(limits:SizeLimitation[*]): SizeLimitation[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::andSizeLimits(limits:SizeLimitation[*]): SizeLimitation[1]
 {
    ^SizeLimitAnd
    (
@@ -951,7 +950,7 @@ function <<access.private>> meta::xsd::toPure::andSizeLimits(limits:SizeLimitati
    );
 }
 
-function <<access.private>> meta::xsd::toPure::orSizeLimits(limits:SizeLimitation[*]): SizeLimitation[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::orSizeLimits(limits:SizeLimitation[*]): SizeLimitation[1]
 {
    ^SizeLimitOr
    (
@@ -959,29 +958,29 @@ function <<access.private>> meta::xsd::toPure::orSizeLimits(limits:SizeLimitatio
    );
 }
 
-function <<access.private>> meta::xsd::toPure::infoProperty(element:XsdElement[1], type:TypeGenInfo[1]): PropertyGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoProperty(element:XsdElement[1], type:TypeGenInfo[1]): PropertyGenInfo[1]
 {
    $element->infoProperty($element.name->toOne().localPart, $type, $element.minOccurs, $element.maxOccurs);
 }
 
-function <<access.private>> meta::xsd::toPure::infoProperty(attribute:XsdAttribute[1], type:TypeGenInfo[1]): PropertyGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoProperty(attribute:XsdAttribute[1], type:TypeGenInfo[1]): PropertyGenInfo[1]
 {
    let minOccurs = if($attribute.use == XsdUse.REQUIRED,   |1, |0);
    let maxOccurs = if($attribute.use == XsdUse.PROHIBITED, |0, |1);
    $attribute->infoProperty($attribute.name->toOne().localPart, $type, $minOccurs, $maxOccurs);
 }
 
-function <<access.private>> meta::xsd::toPure::infoProperty(content:XsdSimpleContent[1], type:TypeGenInfo[1]): PropertyGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoProperty(content:XsdSimpleContent[1], type:TypeGenInfo[1]): PropertyGenInfo[1]
 {
    $content->infoProperty('value', $type, 1, 1);
 }
 
-function <<access.private>> meta::xsd::toPure::infoProperty(object:XsdObject[1], rawName:String[1], type:TypeGenInfo[1], minOccurs:Integer[1], maxOccurs:Integer[0..1]): PropertyGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoProperty(object:XsdObject[1], rawName:String[1], type:TypeGenInfo[1], minOccurs:Integer[1], maxOccurs:Integer[0..1]): PropertyGenInfo[1]
 {
    $object->infoProperty($rawName, $type, $minOccurs, $maxOccurs, $object->cast(@XsdAnnotated).annotation);
 }
 
-function <<access.private>> meta::xsd::toPure::infoProperty(object:XsdObject[1], rawName:String[1], type:TypeGenInfo[1], minOccurs:Integer[1], maxOccurs:Integer[0..1], annotation:XsdAnnotation[0..1]): PropertyGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoProperty(object:XsdObject[1], rawName:String[1], type:TypeGenInfo[1], minOccurs:Integer[1], maxOccurs:Integer[0..1], annotation:XsdAnnotation[0..1]): PropertyGenInfo[1]
 {
    ^PropertyGenInfo
    (
@@ -994,12 +993,12 @@ function <<access.private>> meta::xsd::toPure::infoProperty(object:XsdObject[1],
    );
 }
 
-function <<access.private>> meta::xsd::toPure::infoPropertySet(source:XsdObject[1], properties:PropertyGenInfo[*]): PropertySetGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoPropertySet(source:XsdObject[1], properties:PropertyGenInfo[*]): PropertySetGenInfo[1]
 {
    infoPropertySet($source, $properties, []);
 }
 
-function <<access.private>> meta::xsd::toPure::infoPropertySet(source:XsdObject[1], properties:PropertyGenInfo[*], sizeLimits:SizeLimitation[*]): PropertySetGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoPropertySet(source:XsdObject[1], properties:PropertyGenInfo[*], sizeLimits:SizeLimitation[*]): PropertySetGenInfo[1]
 {
    ^PropertySetGenInfo
    (
@@ -1009,7 +1008,7 @@ function <<access.private>> meta::xsd::toPure::infoPropertySet(source:XsdObject[
    );
 }
 
-function <<access.private>> meta::xsd::toPure::infoExtension(source:XsdObject[1], base:ClassGenInfo[1], properties:PropertyGenInfo[*]): PropertySetGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoExtension(source:XsdObject[1], base:ClassGenInfo[1], properties:PropertyGenInfo[*]): PropertySetGenInfo[1]
 {
    ^PropertySetGenInfo
    (
@@ -1019,7 +1018,7 @@ function <<access.private>> meta::xsd::toPure::infoExtension(source:XsdObject[1]
    );
 }
 
-function <<access.private>> meta::xsd::toPure::infoExtension(source:XsdObject[1], base:ClassReferenceGenInfo[1], properties:PropertyGenInfo[*]): PropertySetGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoExtension(source:XsdObject[1], base:ClassReferenceGenInfo[1], properties:PropertyGenInfo[*]): PropertySetGenInfo[1]
 {
    ^PropertySetGenInfo
    (
@@ -1029,7 +1028,7 @@ function <<access.private>> meta::xsd::toPure::infoExtension(source:XsdObject[1]
    );
 }
 
-function <<access.private>> meta::xsd::toPure::infoPrimitiveExtension(primitive:PrimitiveTypeGenInfo[1], properties:PropertySetGenInfo[1]): PrimitiveTypeExtensionGenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::infoPrimitiveExtension(primitive:PrimitiveTypeGenInfo[1], properties:PropertySetGenInfo[1]): PrimitiveTypeExtensionGenInfo[1]
 {
    ^PrimitiveTypeExtensionGenInfo
    (
@@ -1038,7 +1037,7 @@ function <<access.private>> meta::xsd::toPure::infoPrimitiveExtension(primitive:
    );
 }
 
-function <<access.private>> meta::xsd::toPure::occurs(info:GenInfo[1], minOccurs:Integer[1], maxOccurs:Integer[0..1]): GenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::occurs(info:GenInfo[1], minOccurs:Integer[1], maxOccurs:Integer[0..1]): GenInfo[1]
 {
    $info->match([
       prop: PropertyGenInfo[1] | ^$prop(minOccurs = $minOccurs, maxOccurs=$maxOccurs),
@@ -1046,11 +1045,11 @@ function <<access.private>> meta::xsd::toPure::occurs(info:GenInfo[1], minOccurs
    ]);
 }
 
-Class <<access.private>> meta::xsd::toPure::UnknownGenInfo extends GenInfo
+Class <<access.private>> meta::external::format::xml::binding::toPure::UnknownGenInfo extends GenInfo
 {
 }
 
-function <<access.private>> meta::xsd::toPure::coalesce(xsdObject:XsdObject[1], infos:GenInfo[*]): GenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::coalesce(xsdObject:XsdObject[1], infos:GenInfo[*]): GenInfo[1]
 {
    if($infos->size() == 1 && !$infos->at(0)->instanceOf(PropertyGenInfo),
       {| 
@@ -1076,7 +1075,7 @@ function <<access.private>> meta::xsd::toPure::coalesce(xsdObject:XsdObject[1], 
    )));
 }
 
-function <<access.private>> meta::xsd::toPure::toMultiplicity(min:Integer[1], max:Integer[0..1]): Multiplicity[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::toMultiplicity(min:Integer[1], max:Integer[0..1]): Multiplicity[1]
 {
    if($min == 1 && $max == 1,
       | PureOne,
@@ -1093,7 +1092,7 @@ function <<access.private>> meta::xsd::toPure::toMultiplicity(min:Integer[1], ma
    )));
 }
 
-function <<access.private>> meta::xsd::toPure::forAllIfNeeded(fe:SimpleFunctionExpression[1], prop:AbstractProperty<Any>[1], thisVar:VariableExpression[1], f:ExpressionFactory[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::forAllIfNeeded(fe:SimpleFunctionExpression[1], prop:AbstractProperty<Any>[1], thisVar:VariableExpression[1], f:ExpressionFactory[1]): SimpleFunctionExpression[1]
 {
    if($prop.multiplicity == PureOne,
       | $fe,
@@ -1106,7 +1105,7 @@ function <<access.private>> meta::xsd::toPure::forAllIfNeeded(fe:SimpleFunctionE
    );
 }
 
-function <<access.private>> meta::xsd::toPure::replacePropWith(vs:ValueSpecification[1], prop:AbstractProperty<Any>[1], var:VariableExpression[1]): ValueSpecification[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::replacePropWith(vs:ValueSpecification[1], prop:AbstractProperty<Any>[1], var:VariableExpression[1]): ValueSpecification[1]
 {
    $vs->match([
       {fe: SimpleFunctionExpression[1] | 
@@ -1120,7 +1119,7 @@ function <<access.private>> meta::xsd::toPure::replacePropWith(vs:ValueSpecifica
    ])
 }
 
-function <<access.private>> meta::xsd::toPure::xsName(name:String[1]): QName[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::xsName(name:String[1]): QName[1]
 {
    ^QName(
       namespace = 'http://www.w3.org/2001/XMLSchema',
@@ -1129,10 +1128,10 @@ function <<access.private>> meta::xsd::toPure::xsName(name:String[1]): QName[1]
    )
 }
 
-function <<access.private>> meta::xsd::toPure::findClasses(info:GenInfo[1]): ClassGenInfo[*]
+function <<access.private>> meta::external::format::xml::binding::toPure::findClasses(info:GenInfo[1]): ClassGenInfo[*]
 {
    $info->match([
-      c:ClassGenInfo[1]       | $c,
+      c:ClassGenInfo[1]       | $c->concatenate($c.properties->findClasses()),
       p:PropertyGenInfo[1]    | $p.type->findClasses(),
       p:PropertySetGenInfo[1] | $p.properties->map(p| $p->findClasses()),
       x:GenInfo[1]            | []
@@ -1142,7 +1141,7 @@ function <<access.private>> meta::xsd::toPure::findClasses(info:GenInfo[1]): Cla
 // simple type analysis =========================================================================================================================================================================
 
 function <<access.private>> 
-meta::xsd::toPure::analyseGlobalSimpleType(context:GenerationContext[1], type:XsdSimpleType[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseGlobalSimpleType(context:GenerationContext[1], type:XsdSimpleType[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'simpleType (global) '+$type.name->toOne()->qNameToString());
 
@@ -1156,7 +1155,7 @@ meta::xsd::toPure::analyseGlobalSimpleType(context:GenerationContext[1], type:Xs
 }
 
 function <<access.private>> 
-meta::xsd::toPure::analyseLocalSimpleType(context:GenerationContext[1], type:XsdSimpleType[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseLocalSimpleType(context:GenerationContext[1], type:XsdSimpleType[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'simpleType (local)');
    
@@ -1168,7 +1167,7 @@ meta::xsd::toPure::analyseLocalSimpleType(context:GenerationContext[1], type:Xsd
 function <<access.private>> 
 {doc.doc='simpleType: annotation? (restriction|list|union)',
  doc.todo='list'}
-meta::xsd::toPure::analyseSimpleTypeDetails(context:GenerationContext[1], type:XsdSimpleType[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseSimpleTypeDetails(context:GenerationContext[1], type:XsdSimpleType[1], debug:DebugContext[1]): GenInfo[1]
 {
    $type.derivation->match([
       r:XsdRestriction[1] | $context->analyseSimpleType_Restriction($r, $debug->indent()),
@@ -1179,7 +1178,7 @@ meta::xsd::toPure::analyseSimpleTypeDetails(context:GenerationContext[1], type:X
 function <<access.private>> 
 {doc.doc='restriction: annotation? simpleType? (minExclusive|minInclusive|maxExclusive|maxInclusive|totalDigits|fractionDigits|length|minLength|maxLength|enumeration|whiteSpace|pattern)*',
  doc.todo='Most of it'}
-meta::xsd::toPure::analyseSimpleType_Restriction(context:GenerationContext[1], restriction:XsdRestriction[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseSimpleType_Restriction(context:GenerationContext[1], restriction:XsdRestriction[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'restriction');
 
@@ -1220,7 +1219,7 @@ meta::xsd::toPure::analyseSimpleType_Restriction(context:GenerationContext[1], r
 }
 
 function <<access.private>> 
-meta::xsd::toPure::analyseSimpleType_Union(context:GenerationContext[1], union:XsdUnion[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseSimpleType_Union(context:GenerationContext[1], union:XsdUnion[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'union');
    let members = $union.memberTypeNames->map(n| $context->resolveNamedGenInfo($n, $debug))
@@ -1253,7 +1252,7 @@ function <<access.private>>
 {doc.doc='complexType: annotation? (simpleContent|complexContent|group|all|choice|sequence)? (attribute|attributeGroup)* anyAttribute?',
  doc.doc='A compositor (all|choice|sequence) is supplied inline or referenced via group (or not at all),',
  doc.todo='anyAttribute'}
-meta::xsd::toPure::analyseGlobalComplexType(context:GenerationContext[1], type:XsdComplexType[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseGlobalComplexType(context:GenerationContext[1], type:XsdComplexType[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'complexType (global) '+$type.name->toOne()->qNameToString());
    let result = $context->analyseComplexTypeDetails($type, $type.name->toOne(), $debug);
@@ -1264,14 +1263,14 @@ function <<access.private>>
 {doc.doc='complexType: annotation? (simpleContent|complexContent|group|all|choice|sequence)? (attribute|attributeGroup)* anyAttribute?',
  doc.doc='A compositor (all|choice|sequence) is supplied inline or referenced via group (or not at all),',
  doc.todo='Everything'}
-meta::xsd::toPure::analyseLocalComplexType(context:GenerationContext[1], type:XsdComplexType[1], inElement:XsdElement[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseLocalComplexType(context:GenerationContext[1], type:XsdComplexType[1], inElement:XsdElement[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'complexType (local)');
    let result = $context->analyseComplexTypeDetails($type, $inElement.name->toOne(), $debug);
    $debug->logGenInfo($result);
 }
 
-function <<access.private>> meta::xsd::toPure::analyseComplexTypeDetails(context:GenerationContext[1], type:XsdComplexType[1], name:QName[1], debug:DebugContext[1]): GenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::analyseComplexTypeDetails(context:GenerationContext[1], type:XsdComplexType[1], name:QName[1], debug:DebugContext[1]): GenInfo[1]
 {
    let fromContent = $type.contentModel->match([
       simple:  XsdSimpleContent[1]  | $context->analyseSimpleContent($simple, $debug->indent()),
@@ -1291,7 +1290,7 @@ function <<access.private>> meta::xsd::toPure::analyseComplexTypeDetails(context
 function <<access.private>> 
 {doc.doc='simpleContent: annotation? (restriction|extension)',
  doc.todo='restriction'}
-meta::xsd::toPure::analyseSimpleContent(context:GenerationContext[1], content:XsdSimpleContent[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseSimpleContent(context:GenerationContext[1], content:XsdSimpleContent[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'simpleContent');
 
@@ -1317,7 +1316,7 @@ meta::xsd::toPure::analyseSimpleContent(context:GenerationContext[1], content:Xs
 function <<access.private>> 
 {doc.doc='restriction: annotation? (simpleType? (minExclusive|minInclusive|maxExclusive|maxInclusive|totalDigits|fractionDigits|length|minLength|maxLength|enumeration|whiteSpace|pattern)*)? (attribute|attributeGroup)* anyAttribute?',
  doc.todo='Everything'}
-meta::xsd::toPure::analyseSimpleContent_Restriction(context:GenerationContext[1], restriction:XsdRestriction[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseSimpleContent_Restriction(context:GenerationContext[1], restriction:XsdRestriction[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'restriction');
 
@@ -1329,7 +1328,7 @@ meta::xsd::toPure::analyseSimpleContent_Restriction(context:GenerationContext[1]
 function <<access.private>> 
 {doc.doc='complexContent: xs:annotation? (restriction|extension)',
  doc.todo='restriction'}
-meta::xsd::toPure::analyseComplexContent(context:GenerationContext[1], content:XsdComplexContent[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseComplexContent(context:GenerationContext[1], content:XsdComplexContent[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'complexContent');
 
@@ -1345,7 +1344,7 @@ meta::xsd::toPure::analyseComplexContent(context:GenerationContext[1], content:X
 function <<access.private>> 
 {doc.doc='restriction: annotation? (group|all|choice|sequence)? (attribute|attributeGroup)* anyAttribute?',
  doc.todo='Everything'}
-meta::xsd::toPure::analyseCommplexContent_Restriction(context:GenerationContext[1], restriction:XsdRestriction[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseCommplexContent_Restriction(context:GenerationContext[1], restriction:XsdRestriction[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'restriction');
 
@@ -1356,7 +1355,7 @@ meta::xsd::toPure::analyseCommplexContent_Restriction(context:GenerationContext[
 
 function <<access.private>> 
 {doc.todo='all | choice'}
-meta::xsd::toPure::analyseParticle(context:GenerationContext[1], particle:XsdParticle[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseParticle(context:GenerationContext[1], particle:XsdParticle[1], debug:DebugContext[1]): GenInfo[1]
 {
    $particle->match([
       group:   XsdGroup[1]    | $context->analyseGroup($group, $debug),
@@ -1371,7 +1370,7 @@ meta::xsd::toPure::analyseParticle(context:GenerationContext[1], particle:XsdPar
 function <<access.private>> 
 {doc.doc='sequence: annotation? (element|group|choice|sequence|any)*',
  doc.todo='group | choice | any'}
-meta::xsd::toPure::analyseGroup(context:GenerationContext[1], group:XsdGroup[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseGroup(context:GenerationContext[1], group:XsdGroup[1], debug:DebugContext[1]): GenInfo[1]
 {
    let resolved = $context->resolve($group);
    $debug->lookingAt(|'group '+$resolved.name->toOne()->qNameToString());
@@ -1384,7 +1383,7 @@ meta::xsd::toPure::analyseGroup(context:GenerationContext[1], group:XsdGroup[1],
 function <<access.private>> 
 {doc.doc='sequence: annotation? element*',
  doc.todo='group | choice | any'}
-meta::xsd::toPure::analyseAll(context:GenerationContext[1], all:XsdAll[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseAll(context:GenerationContext[1], all:XsdAll[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'sequence');
 
@@ -1397,7 +1396,7 @@ meta::xsd::toPure::analyseAll(context:GenerationContext[1], all:XsdAll[1], debug
 function <<access.private>> 
 {doc.doc='sequence: annotation? (element|group|choice|sequence|any)*',
  doc.todo='group | choice | any'}
-meta::xsd::toPure::analyseSequence(context:GenerationContext[1], sequence:XsdSequence[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseSequence(context:GenerationContext[1], sequence:XsdSequence[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'sequence');
 
@@ -1407,7 +1406,7 @@ meta::xsd::toPure::analyseSequence(context:GenerationContext[1], sequence:XsdSeq
    $debug->logGenInfo($result);
 }
 
-Class <<access.private>> meta::xsd::toPure::ChoiceProperty
+Class <<access.private>> meta::external::format::xml::binding::toPure::ChoiceProperty
 {
    type       : TypeGenInfo[0..1];
    rawName    : String[1];
@@ -1418,7 +1417,7 @@ Class <<access.private>> meta::xsd::toPure::ChoiceProperty
 
 function <<access.private>> 
 {doc.doc='choice: annotation? (element|group|choice|sequence|any)*'}
-meta::xsd::toPure::analyseChoice(context:GenerationContext[1], choice:XsdChoice[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseChoice(context:GenerationContext[1], choice:XsdChoice[1], debug:DebugContext[1]): GenInfo[1]
 {   
    $debug->lookingAt(|'choice');
 
@@ -1484,7 +1483,7 @@ meta::xsd::toPure::analyseChoice(context:GenerationContext[1], choice:XsdChoice[
 
 function <<access.private>> 
 {doc.doc='extension: annotation? (attribute|attributeGroup)* anyAttribute?'}
-meta::xsd::toPure::analyseSimpleContent_Extension(context:GenerationContext[1], extension:XsdExtension[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseSimpleContent_Extension(context:GenerationContext[1], extension:XsdExtension[1], debug:DebugContext[1]): GenInfo[1]
 {   
    $debug->lookingAt(|'extension');
 
@@ -1512,7 +1511,7 @@ function <<access.private>>
  doc.doc='A compositor (all|choice|sequence) is supplied inline or referenced via group (or not at all),',
  doc.todo='attributeGroup',
  doc.todo='anyAttribute'}
-meta::xsd::toPure::analyseComplexContent_Extension(context:GenerationContext[1], extension:XsdExtension[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseComplexContent_Extension(context:GenerationContext[1], extension:XsdExtension[1], debug:DebugContext[1]): GenInfo[1]
 {
    $debug->lookingAt(|'extension');
 
@@ -1538,7 +1537,7 @@ function <<access.private>>
 {doc.doc='element: annotation? (simpleType|complexType)? (unique|key|keyref)*',
  doc.todo='inline types',
  doc.todo='unique|key|keyref'}
-meta::xsd::toPure::analyseElement(context:GenerationContext[1], element:XsdElement[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseElement(context:GenerationContext[1], element:XsdElement[1], debug:DebugContext[1]): GenInfo[1]
 {
    let result = if($element.ref->isNotEmpty(),
       {|
@@ -1567,7 +1566,7 @@ meta::xsd::toPure::analyseElement(context:GenerationContext[1], element:XsdEleme
 }
 
 function <<access.private>> 
-meta::xsd::toPure::analyseAttributeItem(context:GenerationContext[1], item:XsdAttributeItem[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseAttributeItem(context:GenerationContext[1], item:XsdAttributeItem[1], debug:DebugContext[1]): GenInfo[1]
 {
    $item->match([
       group    : XsdAttributeGroup[1] | $context->analyseAttributeGroup($group, $debug),
@@ -1577,7 +1576,7 @@ meta::xsd::toPure::analyseAttributeItem(context:GenerationContext[1], item:XsdAt
 
 function <<access.private>> 
 {doc.doc='attribute: annotation? simpleType?'}
-meta::xsd::toPure::analyseAttribute(context:GenerationContext[1], attribute:XsdAttribute[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseAttribute(context:GenerationContext[1], attribute:XsdAttribute[1], debug:DebugContext[1]): GenInfo[1]
 {
    let resolved = $context->resolve($attribute);
    $debug->lookingAt(|'attribute '+$resolved.name->toOne()->qNameToString());
@@ -1598,7 +1597,7 @@ meta::xsd::toPure::analyseAttribute(context:GenerationContext[1], attribute:XsdA
 
 function <<access.private>> 
 {doc.doc='attribute: annotation? simpleType?'}
-meta::xsd::toPure::analyseAttributeGroup(context:GenerationContext[1], attributeGroup:XsdAttributeGroup[1], debug:DebugContext[1]): GenInfo[1]
+meta::external::format::xml::binding::toPure::analyseAttributeGroup(context:GenerationContext[1], attributeGroup:XsdAttributeGroup[1], debug:DebugContext[1]): GenInfo[1]
 {
    let resolved = $context->resolve($attributeGroup);
    $debug->lookingAt(|'attributeGroup '+$resolved.name->toOne()->qNameToString());
@@ -1613,12 +1612,12 @@ meta::xsd::toPure::analyseAttributeGroup(context:GenerationContext[1], attribute
 // helpers 
 // ========================================================================================================================================================
 
-function <<access.private>> meta::xsd::toPure::newClass(context:GenerationContext[1], type:XsdComplexType[1]): Class<Any>[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::newClass(context:GenerationContext[1], type:XsdComplexType[1]): Class<Any>[1]
 {
    $context->newClass($type, $context->typeName($type.name));
 }
 
-function <<access.private>> meta::xsd::toPure::newClass(context:GenerationContext[1], type:XsdComplexType[1], name:String[1]): Class<Any>[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::newClass(context:GenerationContext[1], type:XsdComplexType[1], name:String[1]): Class<Any>[1]
 {
    let c = newClass($name)
       ->applyAnnotations($type.annotation)
@@ -1629,19 +1628,19 @@ function <<access.private>> meta::xsd::toPure::newClass(context:GenerationContex
    ^$c(generalizations=[]);
 }
 
-function <<access.private>> meta::xsd::toPure::typeName(context:GenerationContext[1], xsdName:String[0..1]): String[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::typeName(context:GenerationContext[1], xsdName:String[0..1]): String[1]
 {
    let safe = $context->toSafeIdentifier($xsdName->toOne(), true);
    $context.package + $safe;
 }
 
-function <<access.private>> meta::xsd::toPure::typeName(context:GenerationContext[1], xsdName:QName[0..1]): String[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::typeName(context:GenerationContext[1], xsdName:QName[0..1]): String[1]
 {
    let safe = $context->toSafeIdentifier($xsdName.localPart->toOne(), true);
    $context.package + $safe;
 }
 
-function <<access.private>> meta::xsd::toPure::toSafeIdentifier(context:GenerationContext[1], text:String[1], upperFirst:Boolean[1]): String[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::toSafeIdentifier(context:GenerationContext[1], text:String[1], upperFirst:Boolean[1]): String[1]
 {
    let words = $text->splitOnCamelCase()
       ->map(s| $s->split('.'))
@@ -1660,56 +1659,56 @@ function <<access.private>> meta::xsd::toPure::toSafeIdentifier(context:Generati
    if($canonical->substring(0, 1)->isDigit(), |'_'+$canonical, |$canonical);
 }
 
-function <<access.private>> meta::xsd::toPure::toSafeEnumValue(context:GenerationContext[1], text:String[1]): String[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::toSafeEnumValue(context:GenerationContext[1], text:String[1]): String[1]
 {
    assert($text->length() > 0, 'Empty identifiers are not allowed');
    let canonical = $text->chunk(1)->map(ch| if($ch->isDigit() || $ch->isLetter() || $ch == '_', | $ch, | '_'))->joinStrings();
    if($canonical->substring(0, 1)->isDigit(), |'_'+$canonical, |$canonical);
 }
 
-function <<access.private>> meta::xsd::toPure::makeAbstract<T>(clazz:Class<T>[1]):Class<T>[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::makeAbstract<T>(clazz:Class<T>[1]):Class<T>[1]
 {
    let typeModifiers = Profile.all()->filter(p|$p.name == 'typemodifiers')->toOne();
    ^$clazz(stereotypes+=^Stereotype(profile=$typeModifiers, value='abstract'));
 }
 
-function <<access.private>> meta::xsd::toPure::applyAbstract<T>(clazz:Class<T>[1], isAbstract:Boolean[0..1]): Class<T>[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::applyAbstract<T>(clazz:Class<T>[1], isAbstract:Boolean[0..1]): Class<T>[1]
 {
    if($isAbstract->isTrue(), | $clazz->makeAbstract(), | $clazz);
 }
 
-function <<access.private>> meta::xsd::toPure::applyAnnotations(type:Type[1], annotations:XsdAnnotation[*]): Type[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::applyAnnotations(type:Type[1], annotations:XsdAnnotation[*]): Type[1]
 {
    ^$type(taggedValues=$type.taggedValues->concatenate($annotations->annotationsToDoc()));
 }
 
-function <<access.private>> meta::xsd::toPure::applyAnnotations(property:Property<Nil,Any|*>[1], annotations:XsdAnnotation[*]): Property<Nil,Any|*>[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::applyAnnotations(property:Property<Nil,Any|*>[1], annotations:XsdAnnotation[*]): Property<Nil,Any|*>[1]
 {
    ^$property(taggedValues=$property.taggedValues->concatenate($annotations->annotationsToDoc()));
 }
 
-function <<access.private>> meta::xsd::toPure::annotationsToDoc(annotations:XsdAnnotation[*]): TaggedValue[0..1]
+function <<access.private>> meta::external::format::xml::binding::toPure::annotationsToDoc(annotations:XsdAnnotation[*]): TaggedValue[0..1]
 {
    let docs = $annotations.items->filter(i| $i->instanceOf(XsdDocumentation))->cast(@XsdDocumentation).value;
    if($docs->isEmpty(), |[], |^TaggedValue(tag=doc->tag('doc'), value=$docs->joinStrings(' ')));
 }
 
-function <<access.private>> meta::xsd::toPure::qNameToString(name:QName[1]): String[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::qNameToString(name:QName[1]): String[1]
 {
    $name.prefix->map(p| $p+':')->orElse('') + $name.localPart + ' (' + $name.namespace->namespaceToString() + ')';
 }
 
-function <<access.private>> meta::xsd::toPure::namespaceToString(namespace:String[1]): String[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::namespaceToString(namespace:String[1]): String[1]
 {
    if($namespace == '', |'default namespace', |$namespace);
 }
 
-function <<access.private>> meta::xsd::toPure::facetValue(restriction:XsdRestriction[1], type:Type[1]): String[0..1]
+function <<access.private>> meta::external::format::xml::binding::toPure::facetValue(restriction:XsdRestriction[1], type:Type[1]): String[0..1]
 {
    $restriction.facets->filter(f|$f->instanceOf($type))->first().value;
 }
 
-function <<access.private>> meta::xsd::toPure::parse(value:String[0..1], type:Type[1]): Any[0..1]
+function <<access.private>> meta::external::format::xml::binding::toPure::parse(value:String[0..1], type:Type[1]): Any[0..1]
 {
    if($value->isEmpty(),
       | [],
@@ -1729,7 +1728,7 @@ function <<access.private>> meta::xsd::toPure::parse(value:String[0..1], type:Ty
    )))));
 }
 
-function <<access.private>> meta::xsd::toPure::log(debug:DebugContext[1], message:Function<{->String[1]}>[1]): Any[*]
+function <<access.private>> meta::external::format::xml::binding::toPure::log(debug:DebugContext[1], message:Function<{->String[1]}>[1]): Any[*]
 {
    if($debug.debug,
       | println($debug.space+$message->eval()),
@@ -1737,7 +1736,7 @@ function <<access.private>> meta::xsd::toPure::log(debug:DebugContext[1], messag
    );
 }
 
-function <<access.private>> meta::xsd::toPure::lookingAt(debug:DebugContext[1], message:Function<{->String[1]}>[1]): Any[*]
+function <<access.private>> meta::external::format::xml::binding::toPure::lookingAt(debug:DebugContext[1], message:Function<{->String[1]}>[1]): Any[*]
 {
    if($debug.debug,
       | println($debug.space+'~O^O~ '+$message->eval()),
@@ -1745,7 +1744,7 @@ function <<access.private>> meta::xsd::toPure::lookingAt(debug:DebugContext[1], 
    );
 }
 
-function <<access.private>> meta::xsd::toPure::logGenInfo(debug:DebugContext[1], result:GenInfo[1]): GenInfo[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::logGenInfo(debug:DebugContext[1], result:GenInfo[1]): GenInfo[1]
 {
    if($debug.debug,
       | println($debug.space+'>>--> '+$result->toDebugString()),
@@ -1755,7 +1754,7 @@ function <<access.private>> meta::xsd::toPure::logGenInfo(debug:DebugContext[1],
    $result;
 }
 
-function <<access.private>> meta::xsd::toPure::nameOrAnon(object:XsdNamed[1]): String[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::nameOrAnon(object:XsdNamed[1]): String[1]
 {
    if($object.name->isEmpty(),
       | 'anonymous',
@@ -1763,7 +1762,7 @@ function <<access.private>> meta::xsd::toPure::nameOrAnon(object:XsdNamed[1]): S
    );
 }
 
-function <<access.private>> meta::xsd::toPure::nameOrAnon(object:XsdObject[1]): String[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::nameOrAnon(object:XsdObject[1]): String[1]
 {
    if(!$object->instanceOf(XsdNamed) || $object->cast(@XsdNamed).name->isEmpty(),
       | 'anonymous',
@@ -1771,7 +1770,7 @@ function <<access.private>> meta::xsd::toPure::nameOrAnon(object:XsdObject[1]): 
    );
 }
 
-function <<access.private>> meta::xsd::toPure::toDebugString(result:GenInfo[1]): String[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::toDebugString(result:GenInfo[1]): String[1]
 {
    $result->match([
       u:UnknownGenInfo[1]                | 'Unknown',
@@ -1784,7 +1783,7 @@ function <<access.private>> meta::xsd::toPure::toDebugString(result:GenInfo[1]):
    ]);
 }
 
-function <<access.private>> meta::xsd::toPure::propertySetDebugDetails(p:PropertySetGenInfo[1]): String[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::propertySetDebugDetails(p:PropertySetGenInfo[1]): String[1]
 {
    $p.properties.rawName->joinStrings('{',',','}') + if($p.xtends->isEmpty(), |'', |' extends ' + $p.xtends->map(x| $x->match([c:ClassGenInfo[1] | $c.rawName, c:ClassReferenceGenInfo[1] | $c.rawName]))->joinStrings(','));
 }
@@ -1793,19 +1792,19 @@ function <<access.private>> meta::xsd::toPure::propertySetDebugDetails(p:Propert
 // expression factory
 // ========================================================================================================================================================
 
-Class <<access.private>> meta::xsd::toPure::ExpressionFactory
+Class <<access.private>> meta::external::format::xml::binding::toPure::ExpressionFactory
 {
    importGroup: ImportGroup[1];   
 }
 
-function <<access.private>> meta::xsd::toPure::newExpressionFactory(): ExpressionFactory[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::newExpressionFactory(): ExpressionFactory[1]
 {
    ^ExpressionFactory(
       importGroup =  {f: SimpleFunctionExpression[1]|$f.importGroup}.expressionSequence->evaluateAndDeactivate()->at(0)->cast(@SimpleFunctionExpression).importGroup
    );
 }
 
-function <<access.private>> meta::xsd::toPure::instance(factory:ExpressionFactory[1], values:Any[1], type:Type[1]): InstanceValue[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::instance(factory:ExpressionFactory[1], values:Any[1], type:Type[1]): InstanceValue[1]
 {
    ^InstanceValue(
       values=$values,
@@ -1814,7 +1813,7 @@ function <<access.private>> meta::xsd::toPure::instance(factory:ExpressionFactor
    )->evaluateAndDeactivate();
 }
 
-function <<access.private>> meta::xsd::toPure::instance(factory:ExpressionFactory[1], values:Any[0..1], type:Type[1]): InstanceValue[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::instance(factory:ExpressionFactory[1], values:Any[0..1], type:Type[1]): InstanceValue[1]
 {
    ^InstanceValue(
       values=$values,
@@ -1823,7 +1822,7 @@ function <<access.private>> meta::xsd::toPure::instance(factory:ExpressionFactor
    )->evaluateAndDeactivate();
 }
 
-function <<access.private>> meta::xsd::toPure::instance(factory:ExpressionFactory[1], values:Any[*], type:Type[1]): InstanceValue[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::instance(factory:ExpressionFactory[1], values:Any[*], type:Type[1]): InstanceValue[1]
 {
    ^InstanceValue(
       values=$values,
@@ -1832,7 +1831,7 @@ function <<access.private>> meta::xsd::toPure::instance(factory:ExpressionFactor
    )->evaluateAndDeactivate();
 }
 
-function <<access.private>> meta::xsd::toPure::variable(factory:ExpressionFactory[1], name:String[1], type:Type[1], multiplicity:Multiplicity[1]): VariableExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::variable(factory:ExpressionFactory[1], name:String[1], type:Type[1], multiplicity:Multiplicity[1]): VariableExpression[1]
 {
    ^VariableExpression( 
       name         = $name,
@@ -1841,7 +1840,7 @@ function <<access.private>> meta::xsd::toPure::variable(factory:ExpressionFactor
    )->evaluateAndDeactivate(); 
 }
 
-function <<access.private>> meta::xsd::toPure::func(factory:ExpressionFactory[1], object:VariableExpression[1], prop:AbstractProperty<Any>[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::func(factory:ExpressionFactory[1], object:VariableExpression[1], prop:AbstractProperty<Any>[1]): SimpleFunctionExpression[1]
 {
    ^SimpleFunctionExpression(
       func             = $prop,
@@ -1852,7 +1851,7 @@ function <<access.private>> meta::xsd::toPure::func(factory:ExpressionFactory[1]
    )->evaluateAndDeactivate();
 }
 
-function <<access.private>> meta::xsd::toPure::func(factory:ExpressionFactory[1], func:Function<Any>[1], args:ValueSpecification[*]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::func(factory:ExpressionFactory[1], func:Function<Any>[1], args:ValueSpecification[*]): SimpleFunctionExpression[1]
 {
    let funcType = $func->genericType().typeArguments->at(0).rawType->toOne()->cast(@FunctionType);
    
@@ -1865,7 +1864,7 @@ function <<access.private>> meta::xsd::toPure::func(factory:ExpressionFactory[1]
    )->evaluateAndDeactivate();
 }
 
-function <<access.private>> meta::xsd::toPure::lambda(factory:ExpressionFactory[1], params:VariableExpression[*], expr:ValueSpecification[1]): LambdaFunction<Any>[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::lambda(factory:ExpressionFactory[1], params:VariableExpression[*], expr:ValueSpecification[1]): LambdaFunction<Any>[1]
 {
    let classifierGenericType = ^GenericType(
       rawType = LambdaFunction, 
@@ -1882,65 +1881,65 @@ function <<access.private>> meta::xsd::toPure::lambda(factory:ExpressionFactory[
    ^$l(classifierGenericType = $classifierGenericType)->evaluateAndDeactivate();
 }
 
-function <<access.private>> meta::xsd::toPure::_isEmpty(factory:ExpressionFactory[1], arg:ValueSpecification[1]): SimpleFunctionExpression[1]     
+function <<access.private>> meta::external::format::xml::binding::toPure::_isEmpty(factory:ExpressionFactory[1], arg:ValueSpecification[1]): SimpleFunctionExpression[1]     
 {
    let func = if($arg.multiplicity == ZeroOne, |isEmpty_Any_$0_1$__Boolean_1_, |isEmpty_Any_MANY__Boolean_1_);
    $factory->func($func, $arg);
 }
 
-function <<access.private>> meta::xsd::toPure::_isNotEmpty(factory:ExpressionFactory[1], arg:ValueSpecification[1]): SimpleFunctionExpression[1]  
+function <<access.private>> meta::external::format::xml::binding::toPure::_isNotEmpty(factory:ExpressionFactory[1], arg:ValueSpecification[1]): SimpleFunctionExpression[1]  
 {
    let func = if($arg.multiplicity == ZeroOne, |isNotEmpty_Any_$0_1$__Boolean_1_, |isNotEmpty_Any_MANY__Boolean_1_);
    $factory->func($func, $arg);
 }
 
-function <<access.private>> meta::xsd::toPure::_forAll(factory:ExpressionFactory[1], arg:ValueSpecification[1], lambda:LambdaFunction<Any>[1]): SimpleFunctionExpression[1]  
+function <<access.private>> meta::external::format::xml::binding::toPure::_forAll(factory:ExpressionFactory[1], arg:ValueSpecification[1], lambda:LambdaFunction<Any>[1]): SimpleFunctionExpression[1]  
 {
    $factory->func(forAll_T_MANY__Function_1__Boolean_1_, [$arg, $factory->instance($lambda, LambdaFunction)]);
 }
 
-function <<access.private>> meta::xsd::toPure::_eq(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_eq(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
 {
    $factory->func(eq_Any_1__Any_1__Boolean_1_, [$arg1, $arg2]);
 }
 
-function <<access.private>> meta::xsd::toPure::_equal(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_equal(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
 {
    $factory->func(equal_Any_MANY__Any_MANY__Boolean_1_, [$arg1, $arg2]);
 }
 
 
-function <<access.private>> meta::xsd::toPure::_lessThan(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_lessThan(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
 {
    $factory->func(lessThan_Number_1__Number_1__Boolean_1_, [$arg1, $arg2]);
 }
 
-function <<access.private>> meta::xsd::toPure::_lessThanEqual(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_lessThanEqual(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
 {
    $factory->func(lessThanEqual_Number_1__Number_1__Boolean_1_, [$arg1, $arg2]);
 }
 
-function <<access.private>> meta::xsd::toPure::_greaterThan(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_greaterThan(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
 {
    $factory->func(greaterThan_Number_1__Number_1__Boolean_1_, [$arg1, $arg2]);
 }
 
-function <<access.private>> meta::xsd::toPure::_greaterThanEqual(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_greaterThanEqual(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
 {
    $factory->func(greaterThanEqual_Number_1__Number_1__Boolean_1_, [$arg1, $arg2]);
 }
 
-function <<access.private>> meta::xsd::toPure::_length(factory:ExpressionFactory[1], arg:ValueSpecification[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_length(factory:ExpressionFactory[1], arg:ValueSpecification[1]): SimpleFunctionExpression[1]
 {
    $factory->func(length_String_1__Integer_1_, $arg);
 }
 
-function <<access.private>> meta::xsd::toPure::_in(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_in(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
 {
    $factory->func(in_Any_1__Any_MANY__Boolean_1_, [$arg1, $arg2]);
 }
 
-function <<access.private>> meta::xsd::toPure::_and(factory:ExpressionFactory[1], args:ValueSpecification[*]): ValueSpecification[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_and(factory:ExpressionFactory[1], args:ValueSpecification[*]): ValueSpecification[1]
 {
    assert($args->isNotEmpty());
    if($args->size() == 1,
@@ -1952,12 +1951,12 @@ function <<access.private>> meta::xsd::toPure::_and(factory:ExpressionFactory[1]
    ));
 }
 
-function <<access.private>> meta::xsd::toPure::_and(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_and(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
 {
    $factory->func(and_Boolean_1__Boolean_1__Boolean_1_, [$arg1, $arg2]);
 }
 
-function <<access.private>> meta::xsd::toPure::_or(factory:ExpressionFactory[1], args:ValueSpecification[*]): ValueSpecification[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_or(factory:ExpressionFactory[1], args:ValueSpecification[*]): ValueSpecification[1]
 {
    assert($args->isNotEmpty());
    if($args->size() == 1,
@@ -1969,7 +1968,7 @@ function <<access.private>> meta::xsd::toPure::_or(factory:ExpressionFactory[1],
    ));
 }
 
-function <<access.private>> meta::xsd::toPure::_or(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::_or(factory:ExpressionFactory[1], arg1:ValueSpecification[1], arg2:ValueSpecification[1]): SimpleFunctionExpression[1]
 {
    $factory->func(or_Boolean_1__Boolean_1__Boolean_1_, [$arg1, $arg2]);
 }
