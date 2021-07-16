@@ -297,11 +297,11 @@ function <<test.Test>> meta::relational::tests::functions::pureToSqlQuery::testI
    let debugContext = noDebug();
    let extensions = meta::pure::router::extension::defaultRelationalExtensions();
    
-   let tables = meta::relational::tests::dbInc.schemas.tables;
-   let personTable = $tables->filter(t| $t.name == 'personTable')->toOne();
-   let personAddressIdCol = $personTable.columns->cast(@Column)->filter(c| $c.name == 'ADDRESSID')->toOne();
-   let firmTable = $tables->filter(t| $t.name == 'firmTable')->toOne();
-   let firmAddressIdCol = $firmTable.columns->cast(@Column)->filter(c| $c.name == 'ADDRESSID')->toOne();
+   let schema = meta::relational::tests::dbInc.schema('default');
+   let personTable = $schema.table('personTable')->toOne();
+   let personAddressIdCol = $personTable.column('ADDRESSID')->toOne();
+   let firmTable = $schema.table('firmTable')->toOne();
+   let firmAddressIdCol = $firmTable.column('ADDRESSID')->toOne();
    
    let context = ^RelationalExecutionContext(
       importDataFlow=true,
@@ -320,6 +320,6 @@ function <<test.Test>> meta::relational::tests::functions::pureToSqlQuery::testI
    let sql = $fe->toSQLQuery($mapping, ^Map<String,List<Any>>(), $context, $debugContext, $extensions)->cast(@TdsSelectSqlQuery);
    let sqlStr = $sql->meta::relational::functions::sqlQueryToString::sqlQueryToString(meta::relational::runtime::DatabaseType.H2, meta::pure::router::extension::defaultRelationalExtensions());
 
-   assertEquals('select "root".FIRSTNAME as "firstName", "firmTable_d#4_d_m2".LEGALNAME as "legalName", "root".ID as "ID", "root".ADDRESSID as fk_ADDRESSID, "firmTable_d#4_d_m2".ADDRESSID as fk_j1_ADDRESSID from personTable as "root" left outer join firmTable as "firmTable_d#4_d_m2" on ("firmTable_d#4_d_m2".ID = "root".FIRMID)', $sqlStr);
+   assertEquals('select "root".FIRSTNAME as "firstName", "firmTable_d#4_d_m2".LEGALNAME as "legalName", "root".ID as "ID", "root".ADDRESSID as fk_ADDRESSID, "firmTable_d#4_d_m2".ADDRESSID as fk_j0_ADDRESSID from personTable as "root" left outer join firmTable as "firmTable_d#4_d_m2" on ("firmTable_d#4_d_m2".ID = "root".FIRMID)', $sqlStr);
 }
 
