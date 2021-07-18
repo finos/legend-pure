@@ -16,7 +16,6 @@ import meta::protocols::pure::vX_X_X::metamodel::store::relational::element::*;
 import meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::*;
 import meta::protocols::pure::vX_X_X::metamodel::domain::*;
 import meta::protocols::pure::vX_X_X::metamodel::store::relational::mapping::*;
-import meta::pure::alloy::connections::alloy::specification::*;
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::RelationalDatabaseConnection extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection
 {
@@ -93,11 +92,11 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::RedshiftDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
 {
-    clusterName : String[1];
     clusterID : String[1];
+    clusterName : String[1];
     databaseName : String[1];
     port : Integer[1];
-    region : meta::pure::alloy::connections::alloy::specification::Region[1];
+    region : String[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::TestDatabaseConnection extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection
