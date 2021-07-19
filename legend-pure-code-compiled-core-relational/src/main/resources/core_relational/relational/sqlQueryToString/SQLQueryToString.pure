@@ -196,7 +196,7 @@ function meta::relational::functions::sqlQueryToString::processOperation(relatio
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processWindowColumn(w:WindowColumn[1], dbConfig : DbConfig[1], format:Format[1],generationState:GenerationState[1], config:Config[1], extensions:RouterExtension[*]):String[1]
 {
-   let supportedDbs = [DatabaseType.Sybase,DatabaseType.SybaseIQ,DatabaseType.DB2,DatabaseType.Hive,DatabaseType.H2,DatabaseType.MemSQL , DatabaseType.RedShift];
+   let supportedDbs = [DatabaseType.Sybase,DatabaseType.SybaseIQ,DatabaseType.DB2,DatabaseType.Hive,DatabaseType.H2,DatabaseType.MemSQL , DatabaseType.Redshift];
    assert($supportedDbs->contains($dbConfig.dbType), 'Window Columns are not supported for Database Type: '+$dbConfig.dbType->toString() +'. Supported Databases are: '+ $supportedDbs->map(d|$d->toString())->joinStrings(',') +'.') ;
    $w.func->processOperation($dbConfig, $format, $generationState, $config, $extensions) + ' OVER ('
    + if($w.window.partition->isNotEmpty(),
@@ -248,8 +248,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getLi
                             | getLiteralProcessorsForPostgres($dbTimeZone),
                             | if ($dbType == DatabaseType.Presto,
                                  | getLiteralProcessorsForPresto($dbTimeZone),
-                                 | if($dbType == DatabaseType.RedShift,
-                                  | getLiteralProcessorsForRedShift($dbTimeZone),
+                                 | if($dbType == DatabaseType.Redshift,
+                                  | getLiteralProcessorsForRedshift($dbTimeZone),
                                   | newMap([]->cast(@Pair<Type, LiteralProcessor>))
                              )))));
 
@@ -301,7 +301,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getLi
    ])
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::getLiteralProcessorsForRedShift(dbTimeZone:String[0..1]):Map<Type,LiteralProcessor>[1]
+function <<access.private>> meta::relational::functions::sqlQueryToString::getLiteralProcessorsForRedshift(dbTimeZone:String[0..1]):Map<Type,LiteralProcessor>[1]
 {
    newMap([
       pair(StrictDate,     ^LiteralProcessor(format = 'Date\'%s\'',      transform = {d:StrictDate[1] | $d->convertDateToSqlString($dbTimeZone)})),
@@ -769,7 +769,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::table
 function meta::relational::functions::sqlQueryToString::functions::stringCat(vals : String[*], dbType:DatabaseType[1], separator : String[1]):String[1]
 {
    let emptyStr = if ($dbType == DatabaseType.Postgres, | 'Text\'\'', | '\'\'');
-   if ($dbType->in([DatabaseType.H2, DatabaseType.Postgres, DatabaseType.MemSQL, DatabaseType.Presto, DatabaseType.RedShift]),
+   if ($dbType->in([DatabaseType.H2, DatabaseType.Postgres, DatabaseType.MemSQL, DatabaseType.Presto, DatabaseType.Redshift]),
       |$vals->joinStrings('concat(', if($emptyStr == $separator, |', ', | ',' + $separator + ',') , ')'),
       |if($dbType == DatabaseType.DB2,
           | $vals->joinStrings('(',if($emptyStr == $separator, |' concat ', | ' concat ' + $separator + ' concat '), ')'),
@@ -1013,7 +1013,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getTr
 
 function meta::relational::functions::sqlQueryToString::getDatabaseTypes():DatabaseType[*]
 {
-   [DatabaseType.DB2, DatabaseType.H2, DatabaseType.MemSQL, DatabaseType.Sybase, DatabaseType.SybaseIQ, DatabaseType.Composite, DatabaseType.Postgres, DatabaseType.SqlServer, DatabaseType.Snowflake, DatabaseType.Hive, DatabaseType.Presto, DatabaseType.RedShift];
+   [DatabaseType.DB2, DatabaseType.H2, DatabaseType.MemSQL, DatabaseType.Sybase, DatabaseType.SybaseIQ, DatabaseType.Composite, DatabaseType.Postgres, DatabaseType.SqlServer, DatabaseType.Snowflake, DatabaseType.Hive, DatabaseType.Presto, DatabaseType.Redshift];
 }
 
 //TO DO - Remove notASybaseAse and list all DBs for 'trim' function instead
@@ -1054,7 +1054,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='atan2(%s,%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='atan2(%s,%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='atan2(%s,%s)')),
-                                                 choice(DatabaseType.RedShift,       $allStates,            ^ToSql(format='atan2(%s,%s)')),
+                                                 choice(DatabaseType.Redshift,       $allStates,            ^ToSql(format='atan2(%s,%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='atn2(%s,%s)'))]),
       forDynafunction('average',               [ choice($allTypes,                 $allStates,            ^ToSql(format='avg(1.0 * %s)'))]),
       forDynafunction('averageRank',           [ choice($allTypes,                 $allStates,            ^ToSql(format='average_rank()'))]),
@@ -1175,7 +1175,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='hour(%s)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='date_part(\'hour\', %s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='date_part(\'hour\', %s)')),
-                                                 choice(DatabaseType.RedShift,    $allStates,            ^ToSql(format='date_part(hour, %s)')),
+                                                 choice(DatabaseType.Redshift,    $allStates,            ^ToSql(format='date_part(hour, %s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='hour(%s)'))]),
       forDynafunction('if',                    [ choice($allTypes,                 $allStates,            ^ToSql(format='case when %s then %s else %s end', parametersWithinWhenClause = [true, false, false]))]),
       forDynafunction('in',                    [ choice($allTypes,                 $allStates,            ^ToSql(format='%s in %s', transform={p:String[2] | if($p->at(1)->startsWith('(') && $p->at(1)->endsWith(')'), | $p, | [$p->at(0), ('(' + $p->at(1) + ')')])}))]),
@@ -1207,7 +1207,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='group_concat(%s separator %s)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='string_agg(%s, %s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='string_agg(%s, %s)')),
-                                                 choice(DatabaseType.RedShift,    $allStates,            ^ToSql(format='listagg(%s, %s)')),
+                                                 choice(DatabaseType.Redshift,    $allStates,            ^ToSql(format='listagg(%s, %s)')),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='group_concat(%s separator %s)'))]),
       forDynafunction('left',                  [ choice($aSybase,                  $allStates,            ^ToSql(format='left(%s,%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='left(%s,%s)')),
@@ -1244,7 +1244,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='minute(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='minute(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='minute(%s)')),
-                                                 choice(DatabaseType.RedShift,     $allStates,            ^ToSql(format='extract(minute from %s)'))]),
+                                                 choice(DatabaseType.Hive,    $allStates,            ^ToSql(format='minute(%s)')),
+                                                 choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='extract(minute from %s)'))]),
       forDynafunction('minus',                 [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|if($p->size() == 1, | '-' + $p->toOne(), | $p->joinStrings('(', ' - ', ')'))}))]),
       forDynafunction('mod',                   [ choice($aSybase,                  $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='mod(%s,%s)')),
@@ -1252,7 +1253,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='mod(%s,%s)')),
-                                                 choice(DatabaseType.RedShift,       $allStates,            ^ToSql(format='mod(%s,%s)')),
+                                                 choice(DatabaseType.Redshift,       $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='mod(%s,%s)'))]),
   forDynafunction('month',                 [ choice($aSybase,                  $allStates,            ^ToSql(format='month(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='month(%s)')),
@@ -1261,14 +1262,15 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='month(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='MONTH(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='month(%s)')),
-                                                 choice(DatabaseType.RedShift,     $allStates,            ^ToSql(format='extract(month from %s)'))]),
+                                                 choice(DatabaseType.Hive,    $allStates,            ^ToSql(format='month(%s)')),
+                                                 choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='extract(month from %s)'))]),
       forDynafunction('monthNumber',           [ choice($aSybase,                  $allStates,            ^ToSql(format='month(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='month(%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='month(%s)')),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='month(%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='month(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='MONTH(%s)')),
-                                                 choice(DatabaseType.RedShift,    $allStates,            ^ToSql(format='extract(month from %s)')),
+                                                 choice(DatabaseType.Redshift,    $allStates,            ^ToSql(format='extract(month from %s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='month(%s)'))]),
       forDynafunction('mostRecentDayOfWeek',   [ choice($aSybase,                  $allStates,            ^ToSql(format='dateadd(Day, case when %s - dow(%s) > 0 then %s - dow(%s) - 7 else %s - dow(%s) end, %s)', transform={p:String[1..2] | $p->formatMostRecentH2Sybase('today()')}, parametersWithinWhenClause = [false, false])),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='%s + case when %s - dayofweek(%s) > 0 then %s - dayofweek(%s) - 7 else %s - dayofweek(%s) end DAY', transform={p:String[1..2] | $p->formatMostRecentMemDb2('current date')}, parametersWithinWhenClause = [false, false])),
@@ -1283,7 +1285,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='now()')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='current_timestamp')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='current_timestamp')),
-                                                 choice(DatabaseType.RedShift,    $allStates,            ^ToSql(format='now()')),
+                                                 choice(DatabaseType.Redshift,    $allStates,            ^ToSql(format='now()')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='getdate()'))]),
       forDynafunction('notEqual',              [ choice($allTypes,                 $allStates,            ^ToSql(format='%s != %s'))]),
       forDynafunction('notEqualAnsi',          [ choice($allTypes,                 $allStates,            ^ToSql(format='%s <> %s'))]),
@@ -1292,7 +1294,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='parsedatetime(%s,%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='date_parse(%s,%s)'))]),
       forDynafunction('parseDecimal',          [ choice($aSybase,                  $allStates,            ^ToSql(format='cast(%s as decimal)')),
-                                                 choice(DatabaseType.RedShift,           $allStates,            ^ToSql(format='cast(%s as decimal)')),
+                                                 choice(DatabaseType.Redshift,           $allStates,            ^ToSql(format='cast(%s as decimal)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='cast(%s as decimal)'))]),
       forDynafunction('parseFloat',            [ choice($aSybase,                  $allStates,            ^ToSql(format='cast(%s as float)')),
                                                  choice(DatabaseType.Composite,    $allStates,            ^ToSql(format='cast(%s as float)')),
@@ -1302,7 +1304,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='cast(%s as double)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='cast(%s as float)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='cast(%s as float)')),
-                                                 choice(DatabaseType.RedShift,    $allStates,            ^ToSql(format='cast(%s as float)')),
+                                                 choice(DatabaseType.Redshift,    $allStates,            ^ToSql(format='cast(%s as float)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='cast(%s as float)'))]),
       forDynafunction('parseInteger',          [ choice($aSybase,                  $allStates,            ^ToSql(format='cast(%s as integer)'))]),
       forDynafunction('parseInteger',          [ choice(DatabaseType.Composite,    $allStates,            ^ToSql(format='cast(%s as integer)')),
@@ -1312,7 +1314,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='cast(%s as integer)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='cast(%s as integer)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='cast(%s as integer)')),
-                                                 choice(DatabaseType.RedShift,    $allStates,            ^ToSql(format='cast(%s as integer)')),
+                                                 choice(DatabaseType.Redshift,    $allStates,            ^ToSql(format='cast(%s as integer)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='cast(%s as integer)'))]),
       forDynafunction('plus',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform=getTransformForAddPlus()))]),
       forDynafunction('position',              [ choice($aSybase,                  $allStates,            ^ToSql(format='charindex(%s, %s)')),
@@ -1323,7 +1325,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='position(%s in %s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='position(%s in %s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='position(%s in %s)')),
-                                                 choice(DatabaseType.RedShift,     $allStates,            ^ToSql(format='position(%s in %s)')),
+                                                 choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='position(%s in %s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='charindex(%s, %s)'))]),
       forDynafunction('pow',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='power(%s, %s)'))]),
       forDynafunction('previousDayOfWeek',     [ choice($aSybase,                  $allStates,            ^ToSql(format='dateadd(DAY, case when %s - dow(%s) >= 0 then %s - dow(%s) - 7 else %s - dow(%s) end, %s)', transform={p:String[1..2] | $p->formatMostRecentH2Sybase('today()')}, parametersWithinWhenClause = [false, false])),
@@ -1340,14 +1342,14 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='mod(%s,%s)')),
-                                                 choice(DatabaseType.RedShift,       $allStates,            ^ToSql(format='mod(%s,%s)')),
+                                                 choice(DatabaseType.Redshift,       $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='mod(%s,%s)'))]),
       forDynafunction('replace',               [ choice($allTypes,                 $allStates,            ^ToSql(format='replace(%s, %s, %s)'))]),
       forDynafunction('right',                 [ choice($aSybase,                  $allStates,            ^ToSql(format='right(%s,%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='right(%s,%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='right(%s,%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='substr(%s,-1,%s)')),
-                                                 choice(DatabaseType.RedShift,    $allStates,            ^ToSql(format='right(%s,%s)')),
+                                                 choice(DatabaseType.Redshift,    $allStates,            ^ToSql(format='right(%s,%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='right(%s,%s)'))]),
       forDynafunction('rowNumber',             [ choice($allTypes,                 $allStates,            ^ToSql(format='row_number()'))]),
       forDynafunction('round',                 [ choice($aSybase,                  $allStates,            ^ToSql(format='round(%s, %s)', transform=transformRound_String_MANY__String_MANY_)),
@@ -1358,7 +1360,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='round(%s, %s)', transform=transformRound_String_MANY__String_MANY_)),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='round((%s)::numeric, %s)', transform=transformRound_String_MANY__String_MANY_)),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='round((%s)::numeric, %s)', transform=transformRound_String_MANY__String_MANY_)),
-                                                 choice(DatabaseType.RedShift,       $allStates,            ^ToSql(format='round(%s, %s)', transform=transformRound_String_MANY__String_MANY_)),
+                                                 choice(DatabaseType.Redshift,       $allStates,            ^ToSql(format='round(%s, %s)', transform=transformRound_String_MANY__String_MANY_)),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='round(%s, 0)'))]),
       forDynafunction('rtrim',                 [ choice($aSybase,                  $allStates,            ^ToSql(format='rtrim(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='rtrim(%s)')),
@@ -1366,7 +1368,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='rtrim(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='rtrim(%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='rtrim(%s)')),
-                                                 choice(DatabaseType.RedShift,       $allStates,            ^ToSql(format='rtrim(%s)')),
+                                                 choice(DatabaseType.Redshift,       $allStates,            ^ToSql(format='rtrim(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='rtrim(%s)'))]),
       forDynafunction('second',                [ choice($aSybase ,                 $allStates,            ^ToSql(format='second(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='second(%s)')),
@@ -1376,7 +1378,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='second(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='second(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='second(%s)')),
-                                                 choice(DatabaseType.RedShift,     $allStates,            ^ToSql(format='extract( second from %s)'))]),
+                                                 choice(DatabaseType.Hive,    $allStates,            ^ToSql(format='second(%s)')),
+                                                 choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='extract( second from %s)'))]),
       forDynafunction('sin',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='sin(%s)'))]),
       forDynafunction('size',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='count(%s)', transform={p:String[*]|if($p->isEmpty(),|'*',|$p)}))]),
       forDynafunction('sqlFalse',              [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|processLiteralValue(false, [], $dbType, [])}))]),
@@ -1393,7 +1396,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
-                                                 choice(DatabaseType.RedShift,       $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
+                                                 choice(DatabaseType.Redshift,       $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')}))]),
       forDynafunction('stdDevPopulation',      [ choice($aSybase,                  $allStates,            ^ToSql(format='stddev_pop(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='stddev_pop(%s)')),
@@ -1402,7 +1405,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='stddev_pop(%s)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='stddev_pop(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='stddev_pop(%s)')),
-                                                 choice(DatabaseType.RedShift,    $allStates,            ^ToSql(format='stddev_pop(%s)')),
+                                                 choice(DatabaseType.Redshift,    $allStates,            ^ToSql(format='stddev_pop(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='stdevp(%s)'))]),
       forDynafunction('stdDevSample',          [ choice($aSybase,                  $allStates,            ^ToSql(format='stddev_samp(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='stddev_samp(%s)')),
@@ -1411,7 +1414,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='stddev_samp(%s)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='stddev_samp(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='stddev_samp(%s)')),
-                                                 choice(DatabaseType.RedShift,    $allStates,            ^ToSql(format='stddev_samp(%s)')),
+                                                 choice(DatabaseType.Redshift,    $allStates,            ^ToSql(format='stddev_samp(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='stdev(%s)'))]),
       forDynafunction('sum',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='sum(%s)'))]),
       forDynafunction('tan',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='tan(%s)'))]),
@@ -1423,7 +1426,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='current_date')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='current_date')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='current_date')),
-                                                 choice(DatabaseType.RedShift,     $allStates,            ^ToSql(format='current_date')),
+                                                 choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='current_date')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='cast(getdate() as date)'))]),
       forDynafunction('toLower',               [ choice($allTypes,                 $allStates,            ^ToSql(format='lower(%s)'))]),
       forDynafunction('toOne',                 [ choice($allTypes,                 $allStates,            ^ToSql(format='%s'))]),
@@ -1433,7 +1436,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='cast(%s as char)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='cast(%s as varchar)')),
-                                                 choice(DatabaseType.RedShift,       $allStates,            ^ToSql(format='cast(%s as varchar)')),
+                                                 choice(DatabaseType.Redshift,       $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='cast(%s as varchar)'))]),
       forDynafunction('toUpper',               [ choice($allTypes,                 $allStates,            ^ToSql(format='upper(%s)'))]),
       forDynafunction('trim',                  [ choice($notASybaseAse,            $allStates,            ^ToSql(format='trim(%s)')),
@@ -1443,7 +1446,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='week(%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='week(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='WEEKOFYEAR(%s)')),
-                                                 choice(DatabaseType.RedShift,    $allStates,            ^ToSql(format='extract(week from %s)')),
+                                                 choice(DatabaseType.Redshift,    $allStates,            ^ToSql(format='extract(week from %s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='datepart(wk, %s)'))]),
       forDynafunction('year',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='year(%s)'))])
    ]);
