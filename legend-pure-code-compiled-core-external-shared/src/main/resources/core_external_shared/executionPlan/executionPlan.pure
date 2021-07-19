@@ -15,8 +15,8 @@
 import meta::alloy::runtime::java::*;
 import meta::alloy::runtime::java::naming::*;
 import meta::alloy::runtime::java::typeInfo::*;
-import meta::external::shared::engine::*;
 import meta::external::shared::format::executionPlan::*;
+import meta::external::shared::format::executionPlan::engine::*;
 import meta::external::shared::format::metamodel::*;
 import meta::external::shared::runtime::*;
 import meta::java::generation::code::*;
