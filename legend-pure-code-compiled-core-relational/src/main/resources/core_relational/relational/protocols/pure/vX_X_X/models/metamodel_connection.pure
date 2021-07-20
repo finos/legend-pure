@@ -92,11 +92,9 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::RedshiftDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
 {
-    clusterID : String[1];
-    clusterName : String[1];
     databaseName : String[1];
+    endpoint : String[1];
     port : Integer[1];
-    region : String[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::TestDatabaseConnection extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection

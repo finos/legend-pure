@@ -199,11 +199,9 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
       r:meta::pure::alloy::connections::alloy::specification::RedshiftDatasourceSpecification[1] |
           ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::RedshiftDatasourceSpecification(
               _type = 'redshift',
-              clusterID = $r.clusterID,
-              clusterName = $r.clusterName,
               databaseName = $r.databaseName,
-              port = $r.port,
-              region = $r.region
+              endpoint = $r.endpoint,
+              port = $r.port
           )
    ])->toOneMany())
 }

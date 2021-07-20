@@ -68,10 +68,8 @@ Class meta::pure::alloy::connections::alloy::specification::BigQueryDatasourceSp
 
 Class meta::pure::alloy::connections::alloy::specification::RedshiftDatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
 {
-    clusterID:String[1];
-    clusterName:String[1];
     databaseName:String[1];
+    endpoint:String[1];
     port:Integer[1];
-    region:String[1];
 }
 
