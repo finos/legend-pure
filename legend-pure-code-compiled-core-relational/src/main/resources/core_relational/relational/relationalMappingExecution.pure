@@ -213,7 +213,7 @@ function meta::relational::mapping::collectionRenderFunction():String[1]
    '<#function renderCollection collection separator prefix suffix defaultValue>'+
         '<#assign result = []>' +
         '<#list collection as c>' +
-           '<#assign result += [prefix + c + suffix]>' +
+           '<#assign result = [prefix + c + suffix] + result>' +
         '</#list>' +
         '<#return result?join(separator, defaultValue)>'+
    '</#function>';
@@ -221,12 +221,11 @@ function meta::relational::mapping::collectionRenderFunction():String[1]
 
 function meta::relational::mapping::utcToTimeZoneSupportFunction():String[1]
 {
-   '<#function GMTtoTZ tz paramDate><#return (tz+" "+paramDate)?date.@alloyDate></#function>'
-    +
+   '<#function GMTtoTZ tz paramDate><#return (tz+" "+paramDate)?date.@alloyDate></#function>'+
    '<#function renderCollectionWithTz collection timeZone separator prefix suffix defaultValue>'+
       '<#assign result = [] />'+
       '<#list collection as c>'+
-         '<#assign result +=[prefix + (timeZone+" "+c)?date.@alloyDate + suffix]>'+
+         '<#assign result = [prefix + (timeZone+" "+c)?date.@alloyDate + suffix] + result>'+
       '</#list>'+
       '<#return result?join(separator, defaultValue)>'+
    '</#function>';
