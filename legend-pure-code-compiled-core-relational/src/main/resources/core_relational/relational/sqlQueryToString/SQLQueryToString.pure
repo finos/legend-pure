@@ -246,13 +246,14 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getLi
                             | if ($dbType == DatabaseType.Postgres,
                             | getLiteralProcessorsForPostgres($dbTimeZone),
                             | if ($dbType == DatabaseType.Presto,
-                                 | getLiteralProcessorsForPresto($dbTimeZone),
-                                 | if($dbType == DatabaseType.BigQuery,
+                                 | getLiteralProcessorsForPresto($dbTimeZone),                              
+                                 | if($dbType == DatabaseType.BigQuery, 
                                   | getLiteralProcessorsForBigQuery($dbTimeZone),
                                     | if($dbType == DatabaseType.Redshift,
                                     | getLiteralProcessorsForRedshift($dbTimeZone),
                                   | newMap([]->cast(@Pair<Type, LiteralProcessor>))
                              ))))));
+
 
 
 
@@ -386,12 +387,12 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::conve
 function <<access.private>> meta::relational::functions::sqlQueryToString::getPrefixAndSuffixForType(type:Type[1], processors:Map<Type, LiteralProcessor>[1]):Pair<String, String>[1]
 {
    let lp           = $processors->get($type)->toOne();
-
+   
    let lpFormat     = $lp.format;
    let prefixSuffix = $lpFormat->split('%');
    let prefix       = if($prefixSuffix->size() == 1, | '', |$prefixSuffix->at(0));
    let suffix       = if($prefixSuffix->size() == 1, | $prefixSuffix->at(0), |$prefixSuffix->at(1))->substring(1);
-
+   
    ^Pair<String, String>(first = $prefix, second = $suffix);
 }
 
@@ -405,7 +406,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getVa
 function meta::relational::functions::sqlQueryToString::convertPlaceHolderToSQLString(v:VarPlaceHolder[1], processors:Map<Type, LiteralProcessor>[1], dbTimeZone:String[0..1]):String[1]
 {
    let vType        = $v->getVariableType();
-
+   
    let prefixSuffix = getPrefixAndSuffixForType($vType, $processors);
    let prefix       = $prefixSuffix.first;
    let suffix       = $prefixSuffix.second;
@@ -499,8 +500,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
                if($dbType == DatabaseType.Postgres,
                   |'%s offset %s'->format([$format.separator, $s.fromRow->toOne()->getValueForTake()]) + if ($size == -1, | '', | ' limit %s'->format($size)),
-                  | if ($dbType == DatabaseType.Presto,
-                     | processLimitForPresto($format, $s.fromRow, $size),
+                  | if ($dbType == DatabaseType.Presto, 
+                     | processLimitForPresto($format, $s.fromRow, $size), 
                      |
                      // queries where specifying query with "limit 100,1000" would return 1100 rows.
                      // However when a order by column is specified, the expected number of rows is returned (i.e. 900 rows).
@@ -518,7 +519,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processLimitForPresto(format:Format[1], fromRow:Literal[0..1], size:Any[1]):String[1]
 {
-   if ($fromRow->isNotEmpty(),
+   if ($fromRow->isNotEmpty(), 
        | if ($size == -1,
             | '%s offset %s'->format([$format.separator, $fromRow->toOne()->getValueForTake()]),
             | '%s offset %s rows fetch next %s rows only'->format([$format.separator, $fromRow->toOne()->getValueForTake(), $size])),
@@ -1060,7 +1061,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='(%s + (INTERVAL \'1 %s\' * %s))', transform={p:String[3] | [$p->at(0), $p->at(2)->replace('Text', ''), $p->at(1)]})), //https://www.postgresql.org/message-id/2B704E31-B533-4159-B6F0-EC284CFE824C%40skype.net
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='adddate(%s)', transform={p:String[3] | $p->at(0) + ', INTERVAL ' + $p->at(1) + ' ' + $p->at(2)->mapToDBUnitType()})),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='dateadd(%s)', transform={p:String[3] | $p->at(2)->mapToDBUnitType() + ', ' + $p->at(1) + ', ' + $p->at(0)})),
-                                                 choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='date_add(%s)', transform={p:String[3] | '\'' + $p->at(2)->mapToDBUnitType() + '\', ' + $p->at(1) + ', ' + $p->at(0)})),
+                                                 choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='date_add(%s)', transform={p:String[3] | '\'' + $p->at(2)->mapToDBUnitType() + '\', ' + $p->at(1) + ', ' + $p->at(0)})), 
                                                  choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='date_add(%s)', transform={p:String[3] | $p->at(0) + ', INTERVAL ' + $p->at(1) + ' ' + $p->at(2)->mapToDBUnitType()})) ]),
       forDynafunction('and',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|$p->makeString(' and ')}))]),
       forDynafunction('asin',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='asin(%s)'))]),
