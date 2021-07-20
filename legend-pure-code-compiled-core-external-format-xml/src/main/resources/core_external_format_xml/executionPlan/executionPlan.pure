@@ -15,12 +15,11 @@
 import meta::alloy::runtime::java::*;
 import meta::alloy::runtime::java::naming::*;
 import meta::alloy::runtime::java::typeInfo::*;
-import meta::external::format::xml::engine::*;
 import meta::external::format::xml::executionPlan::*;
+import meta::external::format::xml::executionPlan::engine::*;
 import meta::external::format::xml::runtime::*;
-import meta::external::shared::*;
-import meta::external::shared::engine::*;
 import meta::external::shared::format::executionPlan::*;
+import meta::external::shared::format::executionPlan::engine::*;
 import meta::external::shared::format::metamodel::*;
 import meta::external::shared::runtime::*;
 import meta::java::generation::code::*;

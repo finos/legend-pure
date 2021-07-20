@@ -25,60 +25,11 @@ import meta::pure::mapping::*;
 import meta::pure::router::extension::*;
 import meta::pure::runtime::*;
 
-/*
- * Generated extension externalShared class definitions: see org.finos.legend.engine.external.shared.ExternalFormatJavaCompilerExtension
- */
-Class meta::external::shared::engine::_ExternalDataAdder {}
-Class meta::external::shared::engine::_ExternalDataBooleanAdder {}
-Class meta::external::shared::engine::_ExternalDataDoubleAdder {}
-Class meta::external::shared::engine::_ExternalDataLongAdder {}
-Class meta::external::shared::engine::_ExternalDataObjectAdder {}
-Class meta::external::shared::engine::_IExternalData {}
-Class meta::external::shared::engine::_IExternalDataFactory {}
-
 function meta::external::shared::format::routerExtensions(type:String[1], externalFormatExtensions:ExternalFormatExtension[*]) : RouterExtension[*]
 {
    let shared = ^RouterExtension(
       type = $type,
-      plan_javaRuntime_enginePlatformDependencies_conventions =
-         {conventions : Conventions[1] |
-            /*
-             * Generated extension externalShared configuration: see org.finos.legend.engine.external.shared.ExternalFormatJavaCompilerExtension
-             */
-
-            let jIDefect = $conventions->className(meta::pure::dataQuality::Defect);
-
-            let jExternalDataAdder = javaClass('public', 'org.finos.legend.engine.external.shared.runtime.dependencies.ExternalDataAdder')
-               ->addMethod(javaMethod('public', javaString(), 'getPropertyName', []));
-
-            let jExternalDataBooleanAdder = javaClass('public', 'org.finos.legend.engine.external.shared.runtime.dependencies.ExternalDataBooleanAdder')
-               ->addMethod(javaMethod('public', javaVoid(), 'addTo', [javaParam(javaTypeVar('T'), 'p0'), javaParam(javaBoolean(), 'p1')]));
-
-            let jExternalDataDoubleAdder = javaClass('public', 'org.finos.legend.engine.external.shared.runtime.dependencies.ExternalDataDoubleAdder')
-               ->addMethod(javaMethod('public', javaVoid(), 'addTo', [javaParam(javaTypeVar('T'), 'p0'), javaParam(javaDouble(), 'p1')]));
-
-            let jExternalDataLongAdder = javaClass('public', 'org.finos.legend.engine.external.shared.runtime.dependencies.ExternalDataLongAdder')
-               ->addMethod(javaMethod('public', javaVoid(), 'addTo', [javaParam(javaTypeVar('T'), 'p0'), javaParam(javaLong(), 'p1')]));
-
-            let jExternalDataObjectAdder = javaClass('public', 'org.finos.legend.engine.external.shared.runtime.dependencies.ExternalDataObjectAdder')
-               ->addMethod(javaMethod('public', javaVoid(), 'addTo', [javaParam(javaTypeVar('T'), 'p0'), javaParam(javaTypeVar('V'), 'p1')]));
-
-            let jIExternalData = javaClass('public', 'org.finos.legend.engine.external.shared.runtime.dependencies.IExternalData')
-               ->addMethod(javaMethod('public', javaList($jIDefect), 'checkMultiplicities', []));
-
-            let jIExternalDataFactory = javaClass('public', 'org.finos.legend.engine.external.shared.runtime.dependencies.IExternalDataFactory')
-               ->addMethod(javaMethod('public', javaString(), 'getPureClassName', []))
-               ->addMethod(javaMethod('public', $jIExternalData, 'newInstance', []));
-
-            $conventions
-               ->addProvidedType(meta::external::shared::engine::_ExternalDataAdder, $jExternalDataAdder)
-               ->addProvidedType(meta::external::shared::engine::_ExternalDataBooleanAdder, $jExternalDataBooleanAdder)
-               ->addProvidedType(meta::external::shared::engine::_ExternalDataDoubleAdder, $jExternalDataDoubleAdder)
-               ->addProvidedType(meta::external::shared::engine::_ExternalDataLongAdder, $jExternalDataLongAdder)
-               ->addProvidedType(meta::external::shared::engine::_ExternalDataObjectAdder, $jExternalDataObjectAdder)
-               ->addProvidedType(meta::external::shared::engine::_IExternalData, $jIExternalData)
-               ->addProvidedType(meta::external::shared::engine::_IExternalDataFactory, $jIExternalDataFactory);
-         },
+      plan_javaRuntime_enginePlatformDependencies_conventions = meta::external::shared::format::executionPlan::engine::extendJavaEngineDependencies_Conventions_1__Conventions_1_,
       serializerExtension      = meta::external::shared::format::serializerExtensionName_String_1__String_1_,
       routing_extraShouldStop  = serializeFunctions(),
       routing_extraIsSerialize = isSerialize_FunctionExpression_1__Boolean_1_,
@@ -145,7 +96,7 @@ function meta::external::shared::format::routerExtensions(type:String[1], extern
 
 function <<access.private>> meta::external::shared::format::serializerExtensionName(version:String[1]): String[1]
 {
-   'meta::protocols::pure::' + $version + '::external::shared::serializerExtension_String_1__SerializerExtension_1_'
+   'meta::protocols::pure::' + $version + '::external::shared::format::serializerExtension_String_1__SerializerExtension_1_'
 }
 
 function <<access.private>> meta::external::shared::format::getExtension(externalFormatExtensions:ExternalFormatExtension[*], contentType:String[1]): ExternalFormatExtension[1]
