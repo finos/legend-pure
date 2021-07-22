@@ -413,6 +413,65 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterWithOpenVaria
       ')\n',$result->planToString(meta::pure::router::extension::defaultRelationalExtensions()));
 }
 
+Class meta::pure::executionPlan::tests::DummyExecutionOption extends ExecutionOption
+{
+   paramsRequired(){ ^PlanVarPlaceHolder(name = 'dummyOptionParam', type = String, multiplicity = PureOne) }:PlanVarPlaceHolder[1];
+}
+
+Class meta::pure::executionPlan::tests::OtherDummyExecutionOption extends ExecutionOption
+{
+   paramsRequired(){ ^PlanVarPlaceHolder(name = 'OtherDummyOptionParam', type = String, multiplicity = PureOne) }:PlanVarPlaceHolder[1];
+}
+
+function <<test.Test>> meta::pure::executionPlan::tests::testPlanForExecutionOption():Boolean[1]
+{
+   let dummyExtension = ^RouterExtension(type = 'dummy', serializerExtension =  meta::pure::router::extension::relationalSerializerExtension_String_1__String_1_,
+                                         executionPlan_generation_executionOptionParameters = [ d: DummyExecutionOption[1] | $d.paramsRequired ]);
+   let executionOptionContext = ^ExecutionOptionContext(executionOptions = [^DummyExecutionOption()]);
+   let extensions = meta::pure::router::extension::defaultRelationalExtensions()->add($dummyExtension);
+   let result = executionPlan({|let name = 'ok';
+                                Firm.all()->filter(f|$f.legalName == $name);}, simpleRelationalMapping, meta::relational::tests::testRuntime(), $executionOptionContext, $extensions);
+
+   assertEquals(true, isExecutionOptionPresent($executionOptionContext, DummyExecutionOption));
+   assertEquals(false, isExecutionOptionPresent($executionOptionContext, OtherDummyExecutionOption));
+
+   assertEquals(
+      'Sequence\n'+
+      '(\n'+
+      '  type = Class[impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
+      '  resultSizeRange = *\n'+
+      '  (\n'+
+      '    FunctionParametersValidationNode\n'+
+      '    (\n'+
+      '      functionParameters = [dummyOptionParam:String[1]]\n'+
+      '    )\n'+
+      '    Allocation\n'+
+      '    (\n'+
+      '      type = String\n'+
+      '      resultSizeRange = 1\n'+
+      '      name = name\n'+
+      '      value = \n'+
+      '        (\n'+
+      '          Constant\n'+
+      '          (\n'+
+      '            type = String\n'+
+      '            resultSizeRange = 1\n'+
+      '            values=[ok]\n'+
+      '          )\n'+
+      '        )\n'+
+      '    )\n'+
+      '    Relational\n'+
+      '    (\n'+
+      '      type = Class[impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
+      '      resultSizeRange = *\n'+
+      '      resultColumns = [("pk_0", INT), ("legalName", VARCHAR(200))]\n'+
+      '      sql = select "root".ID as "pk_0", "root".LEGALNAME as "legalName" from firmTable as "root" where "root".LEGALNAME = \'${name}\'\n'+
+      '      connection = TestDatabaseConnection(type = "H2")\n'+
+      '    )\n'+
+      '  )\n'+
+      ')\n',$result->planToString(meta::pure::router::extension::defaultRelationalExtensions()));
+}
+
 Class meta::pure::executionPlan::tests::Struct
 {
    val : Integer[1];
@@ -1620,6 +1679,6 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanWithL
   let runtime = ^Runtime(connections = $conn);
   let plan = executionPlan({|Product.all()->filter(p|$p.name == 'ok')}, simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
   assertEquals(['a','b'], $plan.rootExecutionNode.executionNodes->cast(@meta::relational::mapping::SQLExecutionNode).connection->cast(@meta::pure::alloy::connections::RelationalDatabaseConnection).datasourceSpecification->cast(@meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification).testDataSetupSqls);
-  let transformedPlan = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformPlan($plan, meta::pure::router::extension::defaultRelationalExtensions()); 
+  let transformedPlan = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformPlan($plan, meta::pure::router::extension::defaultRelationalExtensions());
   assertEquals(['a','b'], $transformedPlan.rootExecutionNode.executionNodes->cast(@meta::protocols::pure::vX_X_X::metamodel::executionPlan::SQLExecutionNode).connection->cast(@meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::RelationalDatabaseConnection).datasourceSpecification->cast(@meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::LocalH2DatasourceSpecification).testDataSetupSqls);
 }
