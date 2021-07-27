@@ -1610,7 +1610,9 @@ function  <<access.private>> meta::relational::functions::sqlQueryToString::gene
      ])},
      {| fail('The DurationUnit \''+$params->at(2)+'\' is not supported yet!');'';},
      {| fail('The DurationUnit \''+$params->at(2)+'\' is not supported yet!');'';},
-     {| fail('The DurationUnit \''+$params->at(2)+'\' is not supported yet!');'';},
+     {| format('(%s)', [
+        'time_to_sec(timediff(%s , %s))'
+     ])},
      {| fail('The DurationUnit \''+$params->at(2)+'\' is not supported yet!');'';}
   ];
 
