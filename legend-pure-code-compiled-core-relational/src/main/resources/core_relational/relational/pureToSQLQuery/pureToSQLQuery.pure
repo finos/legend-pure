@@ -93,7 +93,6 @@ Class meta::relational::functions::pureToSqlQuery::State
    functionReferenceScope : FunctionParamScope[0..1];
    importDataFlow : Boolean[0..1];
    importDataFlowAddFks:Boolean[0..1];
-   importDataFlowJoinedTablesByTable: Map<Relation, List<Relation>>[0..1];
    importDataFlowFksByTable : Map<Relation, List<Column>>[0..1];
    importDataFlowCurrentSetOffsetInUnion : Integer[0..1];
    importDataFlowImplementationCount : Integer[0..1];
@@ -273,7 +272,6 @@ function <<access.private>> meta::relational::functions::pureToSqlQuery::relatio
            useTempTableAsDriver = $execCtx.useTempTableAsDriver,
            importDataFlow = $execCtx.importDataFlow,
            importDataFlowAddFks = $execCtx.importDataFlowAddFks,
-           importDataFlowJoinedTablesByTable = $execCtx.importDataFlowJoinedTablesByTable,
            importDataFlowFksByTable = $execCtx.importDataFlowFksByTable,
            importDataFlowImplementationCount = $execCtx.importDataFlowImplementationCount
         )
@@ -1215,7 +1213,8 @@ function meta::relational::functions::pureToSqlQuery::processColumnsInRelational
                                                          |// Add the missing columns in the nested select (coming most likely from isolation)
                                                           // 1. find the right alias within the nested SQL ...
                                                           // the alias we are trying to find might be from a view
-                                                          let aliasesToUse = $t.column->extractColumnAliasesInSelectQuery($t.alias.relationalElement, $s, $context, $extensions);  
+                                                          let allNodes = $s.data->toOne()->getAllNodes()->cast(@RelationalTreeNode);
+                                                          let aliasesToUse = $t.column->extractColumnAliasesInRelationalTreeNodes($t.alias.relationalElement, $allNodes, $context, $extensions);  
                                                           assert($aliasesToUse->size() == 1, | 'Found too many (or not enough) tables that could support the column '+$t.column.name+' in the nested SQL '+$s->meta::relational::functions::sqlQueryToString::processOperation(meta::relational::runtime::DatabaseType.H2, $extensions));
                                                           let newSQL = ^$s(columns+=^Alias(name=$t.column.name, relationalElement=$aliasesToUse->toOne()));
                                                           let newTreeNode = ^$currentTreeNode(alias = ^$alias(relationalElement = $newSQL));
@@ -1301,10 +1300,9 @@ function meta::relational::functions::pureToSqlQuery::processColumnsInRelational
    $result;
 }
 
-function meta::relational::functions::pureToSqlQuery::extractColumnAliasesInSelectQuery(column:Column[1], relationalElement:RelationalOperationElement[1], s:SelectSQLQuery[1], context:DebugContext[1], extensions:RouterExtension[*]): TableAliasColumn[*]
+function meta::relational::functions::pureToSqlQuery::extractColumnAliasesInRelationalTreeNodes(column:Column[1], relationalElement:RelationalOperationElement[1], nodes:RelationalTreeNode[*], context:DebugContext[1], extensions:RouterExtension[*]): TableAliasColumn[*]
 {
-   let allNodes = $s.data->toOne()->getAllNodes()->cast(@RelationalTreeNode);
-   let aliasesToUse = $allNodes->filter(n| let relElements = $n.alias.relationalElement->match([
+   let aliasesToUse = $nodes->filter(n| let relElements = $n.alias.relationalElement->match([
          v:ViewSelectSQLQuery[1]| $v.view,
          s:SelectSQLQuery[1]|
             let relationsSupportingProjectedColumn = $s.columns->filter(c|$c->extractColumnName() == $column.name)->extractTableAliasColumns().alias.relation;
@@ -4998,13 +4996,16 @@ function meta::relational::functions::pureToSqlQuery::processProject(ids:String[
          let possiblePKs = $possiblePKsWithUpdatedData.first.values->cast(@Alias).relationalElement->cast(@TableAliasColumn).column->map(c| pair($c.name, ^PathInformation(type = $c.type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType(), relationalType = $c.type)));
          
          let importDataFlowCols = if($state.importDataFlow == true && $state.importDataFlowAddFks == true,
-                                     |let mainTable = $merge.data->toOne().alias.relation();
-                                      let joinedFkTables = if($state.importDataFlowJoinedTablesByTable->isEmpty(), |[], |$state.importDataFlowJoinedTablesByTable->toOne()->get($mainTable).values);
+                                     |let rootTreeNode = $merge.data->toOne();
+                                      let joinTreeNodes = $rootTreeNode.children()->map(c| $c->getAllNodes())->cast(@JoinTreeNode)->sortBy(j| $j.join.name);
+                                      let allTreeNodes = $rootTreeNode->concatenate($joinTreeNodes);
+                                      let candidateJoinedFkTables = if($state.importDataFlowFksByTable->isEmpty(), |[], |$state.importDataFlowFksByTable->toOne()->keys()->remove($rootTreeNode.alias.relation()));
+                                      let joinedFkTables = $joinTreeNodes->map(j| $j.alias.relation())->distinct()->filter(r| $candidateJoinedFkTables->contains($r));
                                       let joinedFkCols = $joinedFkTables->toIndexed()->map(p|
                                          let prefix = 'fk_j' + $p.first->toString() + '_';
                                          $state.importDataFlowFksByTable->toOne()->get($p.second).values->map(c|
-                                            let columnAliases = $c->extractColumnAliasesInSelectQuery($p.second, $merge, $context, $extensions);
-                                            if($columnAliases->size() == 1, |^Alias(name=$prefix + $c.name, relationalElement=$columnAliases->toOne()), |[]);););
+                                            let columnAliases = $c->extractColumnAliasesInRelationalTreeNodes($p.second, $allTreeNodes, $context, $extensions);
+                                            $columnAliases->toIndexed()->map(cp| ^Alias(name=$prefix + if($columnAliases->size() == 1, |'', |$cp.first->toString() + '_') + $c.name, relationalElement=$cp.second));););
                                       $mainQuery.select.columns->concatenate($joinedFkCols);,
                                      |[]);
 

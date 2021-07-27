@@ -25,15 +25,8 @@ Class meta::protocols::pure::vX_X_X::metamodel::RelationalExecutionContext exten
    preserveJoinOrder:Boolean[0..1];
    importDataFlow : Boolean[0..1];
    importDataFlowAddFks:Boolean[0..1];
-   importDataFlowJoinedTables: meta::protocols::pure::vX_X_X::metamodel::JoinedTables[*];
    importDataFlowFkCols : meta::protocols::pure::vX_X_X::metamodel::TableForeignColumns[*];
    importDataFlowImplementationCount : Integer[0..1];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::JoinedTables
-{
-   table: TablePtr[1];
-   joinedTables: TablePtr[*];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::TableForeignColumns
