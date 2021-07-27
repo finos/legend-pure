@@ -36,6 +36,19 @@ function meta::external::shared::format::executionPlan::createDataClassesProject
    mergeProjects($classes->map(c| $c->createDataClass($path, $context, $debug->indent()))->toOneMany());
 }
 
+function meta::external::shared::format::executionPlan::generateDataTestProject(packageName:String[1], baseJavaPackage:String[1]): Project[1]
+{
+   let conventions = alloyConventions(meta::external::shared::format::routerExtensions('externalFormat', []))->setBasePackageName($baseJavaPackage);
+
+   let package   = $packageName->pathToElement()->cast(@Package);
+   let classes   = $package.children->filter(pe| $pe->instanceOf(Class))->cast(@Class<Any>);
+   let typeInfos = $classes->fold({c, ti| $ti->addForClass($c, true, false, true)}, newTypeInfoSet());
+   let context   = ^GenerationContext(typeInfos=$typeInfos, conventions=$conventions);
+
+   let project = mergeProjects(generateTypes($context, noDebug())->concatenate($classes->map(c| $c->createDataClass('node', $context, noDebug())))->toOneMany());
+   newProject()->addClasses($project->allClasses()->map(cl | $cl->inferImports()));
+}
+
 function meta::external::shared::format::executionPlan::generateDataQualityNode(deserializeNode:ExecutionNode[1], enableConstraints:Boolean[1], checked:Boolean[1]): ExecutionNode[1]
 {
    ^DataQualityExecutionNode(
