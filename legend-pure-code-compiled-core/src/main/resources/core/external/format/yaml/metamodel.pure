@@ -11,44 +11,43 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import meta::external::format::yaml::metamodel::*;
 
-import meta::external::format::yaml::*;
-
-Class meta::external::format::yaml::YAMLElement
+Class meta::external::format::yaml::metamodel::YAMLElement
 {
 }
 
-Class meta::external::format::yaml::YAMLBoolean extends YAMLElement
+Class meta::external::format::yaml::metamodel::YAMLBoolean extends YAMLElement
 {
     <<equality.Key>> value : Boolean[1];
 }
 
-Class meta::external::format::yaml::YAMLString extends YAMLElement
+Class meta::external::format::yaml::metamodel::YAMLString extends YAMLElement
 {
     <<equality.Key>> value : String[1];
 }
 
-Class meta::external::format::yaml::YAMLNumber extends YAMLElement
+Class meta::external::format::yaml::metamodel::YAMLNumber extends YAMLElement
 {
     <<equality.Key>> value : Number[1];
 }
 
-Class meta::external::format::yaml::YAMLNull extends YAMLElement
+Class meta::external::format::yaml::metamodel::YAMLNull extends YAMLElement
 {
     <<equality.Key>> value : Nil[0];
 }
 
-Class meta::external::format::yaml::YAMLArray extends YAMLElement
+Class meta::external::format::yaml::metamodel::YAMLArray extends YAMLElement
 {
     <<equality.Key>> values : YAMLElement[*];
 }
 
-Class meta::external::format::yaml::YAMLObject extends YAMLElement
+Class meta::external::format::yaml::metamodel::YAMLObject extends YAMLElement
 {
-    <<equality.Key>> keyValuePairs : YAMLKeyValue[*];
+    <<equality.Key>> keyValuePairs : meta::external::format::yaml::metamodel::YAMLKeyValue[*];
 }
 
-Class meta::external::format::yaml::YAMLKeyValue
+Class meta::external::format::yaml::metamodel::YAMLKeyValue
 {
     <<equality.Key>> key : YAMLString[1];
     <<equality.Key>> value : YAMLElement[1];

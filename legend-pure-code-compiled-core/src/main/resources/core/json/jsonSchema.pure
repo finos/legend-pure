@@ -13,7 +13,9 @@
 // limitations under the License.
 
 import meta::pure::metamodeJSONSchemaConfigl::path::*;
+import meta::external::format::yaml::serialization::*;
 import meta::external::format::yaml::*;
+import meta::external::format::yaml::metamodel::*;
 import meta::pure::generation::*;
 import meta::pure::generation::metamodel::*;
 import meta::pure::profiles::doc::*;
@@ -1095,7 +1097,7 @@ function meta::json::schema::discriminateOneOf(sourceInstance:Any[1],propertyVal
    oneOf($classSelection->map(t| $t.name==$propertyValue ))  || $propertyValue->in($mapping.value);
 }
 
-function  meta::json::schema::JSONToYaml(json:meta::json::JSONElement[1]):meta::external::format::yaml::YAMLElement[1]
+function  meta::json::schema::JSONToYaml(json:meta::json::JSONElement[1]):meta::external::format::yaml::metamodel::YAMLElement[1]
 {
     $json->match([
                   b:JSONBoolean[1] |^YAMLBoolean(value=$b.value),
