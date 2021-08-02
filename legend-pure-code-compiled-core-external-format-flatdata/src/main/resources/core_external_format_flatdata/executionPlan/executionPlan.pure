@@ -1,0 +1,646 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::alloy::runtime::java::*;
+import meta::alloy::runtime::java::naming::*;
+import meta::alloy::runtime::java::typeInfo::*;
+import meta::external::format::flatdata::binding::validation::*;
+import meta::external::format::flatdata::executionPlan::*;
+import meta::external::format::flatdata::executionPlan::engine::*;
+import meta::external::format::flatdata::metamodel::*;
+import meta::external::format::flatdata::runtime::*;
+import meta::external::shared::format::binding::validation::*;
+import meta::external::shared::format::executionPlan::*;
+import meta::external::shared::format::executionPlan::engine::*;
+import meta::external::shared::format::metamodel::*;
+import meta::external::shared::runtime::*;
+import meta::java::generation::code::*;
+import meta::java::generation::convention::*;
+import meta::java::metamodel::factory::*;
+import meta::java::metamodel::project::*;
+import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::toString::*;
+import meta::pure::graphFetch::*;
+import meta::pure::router::extension::*;
+import meta::pure::runtime::*;
+
+Class meta::external::format::flatdata::executionPlan::FlatDataSerializeExecutionNode extends ExternalFormatSerializeExecutionNode
+{
+}
+
+Class meta::external::format::flatdata::executionPlan::FlatDataDeserializeExecutionNode extends ExecutionNode
+{
+   connection : Connection[1];
+   tree       : RootGraphFetchTree<Any>[0..1]; 
+}
+
+function meta::external::format::flatdata::executionPlan::generateSerializeNode(checked:Boolean[1], schemaBinding:SchemaBinding[1], children:ExecutionNode[*]): ExternalFormatSerializeExecutionNode[1]
+{
+   ^FlatDataSerializeExecutionNode(
+      resultType      = ^ResultType(type=String),
+      resultSizeRange = PureOne,
+      checked         = $checked,
+      schemaBinding   = $schemaBinding,
+      executionNodes  = $children
+   );
+}
+
+function meta::external::format::flatdata::executionPlan::generateDeserializeNode(connection:Connection[1], tree:RootGraphFetchTree<Any>[0..1]): ExecutionNode[1]
+{
+   assert($tree->isNotEmpty(), 'Deserialization without Graph Fetch Tree not yet supported');
+   let returnedClass = $tree.class->toOne();
+   
+   ^FlatDataDeserializeExecutionNode(
+      resultType      = ^PartialClassResultType(
+                           type=$returnedClass,
+                           propertiesWithParameters = $tree.subTrees->cast(@PropertyGraphFetchTree)->map(x | $x->map(x | ^PropertyWithParameters(property = $x.property, parameters = $x.parameters)))
+                        ),
+      resultSizeRange = ZeroMany,
+      connection      = $connection,
+      tree            = $tree
+   );
+}
+
+function meta::external::format::flatdata::executionPlan::printPlanNodeToString(space:String[1], extensions:RouterExtension[*]): Function<{Nil[1]->String[1]}>[*]
+{
+   [
+      {node:FlatDataSerializeExecutionNode[1] |
+         'FlatData_Serialize\n' + 
+         $space + '(' + header($node, $space, $extensions) + '\n' +
+         $space + '  checked = ' + $node.checked->toString() + '\n' +
+         $space + '  schemaBinding = ' + $node.schemaBinding->elementToPath() + '\n' +
+         $node->childrenToString($space+'  ', $extensions) + '\n' +
+         $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
+         $space + ')\n'
+      },
+      {node:FlatDataDeserializeExecutionNode[1] |
+         'FlatData_Deserialize\n' + 
+         $space + '(' + header($node, $space, $extensions) + '\n' +
+         $space + '  connection = ' + $node.connection->meta::pure::executionPlan::toString::connectionToString($extensions) + '\n' +
+         $node->childrenToString($space+'  ', $extensions) + '\n' +
+         $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
+         $space + ')\n'
+      }
+   ]
+}
+
+function meta::external::format::flatdata::executionPlan::planJavaPrepare(path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): Function<{Nil[1]->GenerationContext[1]}>[*]
+{
+   [
+      node:FlatDataSerializeExecutionNode[1]   | prepareForSerialize($node, $path, $context, $extensions, $debug),
+      node:FlatDataDeserializeExecutionNode[1] | prepareForDeserialize($node, $path, $context, $extensions, $debug)
+   ]
+}
+
+function meta::external::format::flatdata::executionPlan::planJavaGenerate(path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): Function<{Nil[1]->GeneratedCode[1]}>[*]
+{
+   [
+       node:FlatDataSerializeExecutionNode[1]   | generateForSerialize($node, $path, $context, $extensions, $debug),
+       node:FlatDataDeserializeExecutionNode[1] | generateForDeserialize($node, $path, $context, $extensions, $debug)
+   ]
+}
+
+Class <<access.private>> meta::external::format::flatdata::executionPlan::SerializeData
+{
+   bindingDetail : FlatDataBindingDetail[1];
+   classIn       : Class<Any>[1];
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::prepareForSerialize(node:FlatDataSerializeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): GenerationContext[1]
+{
+   print(if($debug.debug,|$debug.space+'('+$path+') prepare FlatDataSerializeExecutionNode\n', |''));
+   
+   let bindingDetail = bindDetails($node.schemaBinding);
+   assert($bindingDetail->instanceOf(FlatDataBindingDetail), | 'Detailed binding failed: ' + $bindingDetail->cast(@FailedBindingDetail).errorMessages->joinStrings('\n'));
+   
+   let classIn = $node.executionNodes.resultType->match([
+      c:ClassResultType[1] | $c.setImplementations.class->toOne()
+   ]);
+
+   let newTypeInfos = $context.typeInfos->addForClasses($node.schemaBinding.model->filter(pe| $pe->instanceOf(Class))->cast(@Class<Any>));
+
+   let nodeInfo = ^NodeInfo(
+      path            = $path, 
+      returnType      = ^SimpleJavaType(pureType=String, javaType=javaString()), 
+      data            = ^SerializeData(
+                           bindingDetail = $bindingDetail->cast(@FlatDataBindingDetail),
+                           classIn       = $classIn
+                        )
+   );
+   
+   $context
+      ->setTypeInfos($newTypeInfos)
+      ->addNodeInfo($nodeInfo);
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::prepareForDeserialize(node:FlatDataDeserializeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): GenerationContext[1]
+{
+   print(if($debug.debug,|$debug.space+'('+$path+') prepare FlatDataDeserializeExecutionNode\n', |''));
+
+   let conventions   = $context.conventions;
+   let bindingDetail = bindDetails($node.connection->cast(@ExternalFormatConnection).schemaBinding);
+   assert($bindingDetail->instanceOf(FlatDataBindingDetail), | 'Detailed binding failed: ' + $bindingDetail->cast(@FailedBindingDetail).errorMessages->joinStrings('\n'));
+
+   assert($node.tree->isNotEmpty(), |'Use case without graph fetch tree not yet supported');
+   let class       = $node.tree->toOne().class;
+   let simpleType  = ^SimpleJavaType(pureType=$class, javaType=$conventions->className($class));
+   let returnType  = ^CheckedJavaType(checkedOf=$simpleType, source=^SimpleJavaType(pureType=RawFlatData, javaType=$conventions->className(RawFlatData)));
+   
+   let newTypeInfos = $context.typeInfos
+                         ->addForGraphFetchTree($node.tree->toOne())
+                         ->addForClassWithAllProperties(RawFlatData);
+
+   let nodeInfo = ^NodeInfo(
+      path            = $path, 
+      returnType      = $returnType, 
+      graphFetchTrees = #{RawFlatData {number, lineNumber, record, recordValues {address, rawValue}}}#,
+      data            = $bindingDetail
+   );
+
+   
+   $context
+      ->setTypeInfos($newTypeInfos)
+      ->addNodeInfo($nodeInfo);
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::generateForSerialize(node:FlatDataSerializeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): GeneratedCode[1]
+{
+   print(if($debug.debug,|$debug.space+'('+$path+') generate FlatDataSerializeExecutionNode\n', |''));
+
+   let specificsClass  = createSerializeSpecificsClass($node, $path, $context);
+   newProject()->addClasses($specificsClass)->generatedCode($specificsClass);
+}
+
+Class <<access.private>> meta::external::format::flatdata::executionPlan::ParsedFlatDataCodes
+{
+   hasStringValue     : Pair<Code,Code>[*];
+   hasBooleanValue    : Pair<Code,Code>[*];
+   hasLongValue       : Pair<Code,Code>[*];
+   hasDoubleValue     : Pair<Code,Code>[*];
+   hasBigDecimalValue : Pair<Code,Code>[*];
+   hasLocalDateValue  : Pair<Code,Code>[*];
+   hasInstantValue    : Pair<Code,Code>[*];
+   getString          : Pair<Code,Code>[*];
+   getBoolean         : Pair<Code,Code>[*];
+   getLong            : Pair<Code,Code>[*];
+   getDouble          : Pair<Code,Code>[*];
+   getBigDecimal      : Pair<Code,Code>[*];
+   getLocalDate       : Pair<Code,Code>[*];
+   getInstant         : Pair<Code,Code>[*];
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::createSerializeSpecificsClass(node:FlatDataSerializeExecutionNode[1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+{   
+   let conventions   = $context.conventions;
+   let serializeData = $context->nodeInfosForPath($path).data->toOne()->cast(@SerializeData);
+   let rootInterface = $conventions->className($serializeData.classIn);
+   let contextType   = javaParameterizedType($conventions->className(_FlatDataContext), $rootInterface);
+   let factoryType   = javaParameterizedType($conventions->className(_ObjectToParsedFlatData), $rootInterface);
+   let schema        = $node.schemaBinding.schema;
+   let flatData      = $schema.detail->cast(@FlatData);
+
+   $context.conventions->planNodeClass('public', $path, 'FlatDataSerializeSpecifics')
+      ->implements(javaParameterizedType($conventions->className(_IFlatDataSerializeExecutionNodeSpecifics), $rootInterface))
+      ->addSectionMethods($flatData, $conventions)
+      ->addMethods({cls|
+         $flatData.sections->filter(s| $s.recordType->isNotEmpty())->map({section|
+            /*
+             * It may seem odd that the factory accepts a recordType when the recordType is already known.
+             * This happens because the implementation passed at runtime can include driver-specific 
+             * optimizations so when creating objects we use the driver-supplied record type details
+             * to interrogate the parsed data values.
+             */
+            let recordTypeParam = j_parameter($conventions->className(_FlatDataRecordType), 'recordType');
+            let fields          = $section.recordType.fields;
+            let fieldVars       = createFieldVars($fields, $recordTypeParam, $conventions);
+            let objectParam     = j_parameter($rootInterface, 'value');
+            let fieldParam      = j_parameter($conventions->className(_FlatDataRecordField), 'field');
+         
+            let sectionBindingDetail = $serializeData.bindingDetail.sectionBindingDetails->filter(sc| $sc.section == $section)->toOne();
+            let parsedFlatDataCodes  = $fields->toIndexed()->fold(
+               {indexedField, codes|
+                  let fieldVar     = $fieldVars->at($indexedField.first).first;
+                  let property     = $sectionBindingDetail.details->filter(c| $c.field == $indexedField.second).property->toOne();
+                  let propOptional = !$property.multiplicity->hasLowerBound();
+                  let propType     = $property->functionReturnType().rawType->toOne();
+                  let propJavaType = $conventions->pureTypeToJavaType($property);
+                  let fieldTest    = $fieldParam->j_invoke('equals', $fieldVar);
+                  let getter       = $objectParam->j_invoke($conventions->getterName($property), [], $propJavaType);
+
+                  if($propType == String,
+                     | ^$codes(
+                         hasStringValue += pair($fieldTest, j_return(if($propOptional, |$getter->j_ne(j_null()), |j_true()))),
+                         getString      += pair($fieldTest, j_return($getter))
+                       ),
+                     |
+                  if($propType == Boolean,
+                     | ^$codes(
+                         hasBooleanValue += pair($fieldTest, j_return(if($propOptional, |$getter->j_ne(j_null()), |j_true()))),
+                         getBoolean      += pair($fieldTest, j_return($getter))
+                       ),
+                     |
+                  if($propType == Integer,
+                     | ^$codes(
+                         hasLongValue += pair($fieldTest, j_return(if($propOptional, |$getter->j_ne(j_null()), |j_true()))),
+                         getLong      += pair($fieldTest, j_return($getter))
+                       ),
+                     | 
+                  if($propType == Float,
+                     | ^$codes(
+                         hasDoubleValue += pair($fieldTest, j_return(if($propOptional, |$getter->j_ne(j_null()), |j_true()))),
+                         getDouble      += pair($fieldTest, j_return($getter))
+                       ),
+                     | 
+                  if($propType == Decimal,
+                     | ^$codes(
+                         hasBigDecimalValue += pair($fieldTest, j_return(if($propOptional, |$getter->j_ne(j_null()), |j_true()))),
+                         getBigDecimal      += pair($fieldTest, j_return($getter))
+                       ),
+                     | 
+                  if($propType == StrictDate,
+                     | ^$codes(
+                         hasLocalDateValue += pair($fieldTest, j_return(if($propOptional, |$getter->j_ne(j_null()), |j_true()))),
+                         getLocalDate      += pair($fieldTest, j_return($getter->j_invoke('toLocalDate', [], javaLocalDate())))
+                       ),
+                     | 
+                  if($propType == DateTime,
+                     | ^$codes(
+                         hasInstantValue += pair($fieldTest, j_return(if($propOptional, |$getter->j_ne(j_null()), |j_true()))),
+                         getInstant      += pair($fieldTest, j_return($getter->j_invoke('toInstant', [], javaInstant())))
+                       ),
+                     | fail('Unknown type'); $codes;
+                  )))))));
+               },
+               ^ParsedFlatDataCodes()
+            );
+
+            let anonParsedFlatData = j_newAnon($conventions->className(_ParsedFlatData), [], 
+               [
+                  j_method('public', javaBoolean(),    'hasStringValue',     $fieldParam, codeHasValue($parsedFlatDataCodes.hasStringValue)),
+                  j_method('public', javaBoolean(),    'hasBooleanValue',    $fieldParam, codeHasValue($parsedFlatDataCodes.hasBooleanValue)),
+                  j_method('public', javaBoolean(),    'hasLongValue',       $fieldParam, codeHasValue($parsedFlatDataCodes.hasLongValue)),
+                  j_method('public', javaBoolean(),    'hasDoubleValue',     $fieldParam, codeHasValue($parsedFlatDataCodes.hasDoubleValue)),
+                  j_method('public', javaBoolean(),    'hasBigDecimalValue', $fieldParam, codeHasValue($parsedFlatDataCodes.hasBigDecimalValue)),
+                  j_method('public', javaBoolean(),    'hasLocalDateValue',  $fieldParam, codeHasValue($parsedFlatDataCodes.hasLocalDateValue)),
+                  j_method('public', javaBoolean(),    'hasInstantValue',    $fieldParam, codeHasValue($parsedFlatDataCodes.hasInstantValue)),
+                  j_method('public', javaString(),     'getString',          $fieldParam, codeGetValue($parsedFlatDataCodes.getString,     $fieldParam, 'String')),
+                  j_method('public', javaBoolean(),    'getBoolean',         $fieldParam, codeGetValue($parsedFlatDataCodes.getBoolean,    $fieldParam, 'boolean')),
+                  j_method('public', javaLong(),       'getLong',            $fieldParam, codeGetValue($parsedFlatDataCodes.getLong,       $fieldParam, 'long')),
+                  j_method('public', javaDouble(),     'getDouble',          $fieldParam, codeGetValue($parsedFlatDataCodes.getDouble,     $fieldParam, 'double')),
+                  j_method('public', javaBigDecimal(), 'getBigDecimal',      $fieldParam, codeGetValue($parsedFlatDataCodes.getBigDecimal, $fieldParam, 'BigDecimal')),
+                  j_method('public', javaLocalDate(),  'getLocalDate',       $fieldParam, codeGetValue($parsedFlatDataCodes.getLocalDate,  $fieldParam, 'LocalDate')),
+                  j_method('public', javaInstant(),    'getInstant',         $fieldParam, codeGetValue($parsedFlatDataCodes.getInstant,    $fieldParam, 'Instant'))
+               ]
+            );
+
+            let anonFactory = j_newAnon($factoryType, [], 
+               j_method('public', $conventions->className(_ParsedFlatData), 'make', $objectParam,
+                  j_return($anonParsedFlatData)
+               )
+            );
+         
+            javaMethod('public', $factoryType, $section->sectionFactoryMethodName(), $recordTypeParam,                      
+                $fieldVars.second->concatenate(j_return($anonFactory))
+            );
+         });
+      })
+      ->addMethod({cls |
+         let schemaVar            = j_variable($conventions->className(_FlatData), 'schema');
+         let newContext           = j_new($contextType, [$schemaVar, j_string($schema->elementToPath())]);
+         let contextWithFactories = $flatData.sections->fold(
+                                       {section, code| 
+                                          let factoryRef = j_this($cls)->j_methodReference($section->sectionFactoryMethodName(), javaFunctionType($conventions->className(_FlatDataRecordType), $conventions->className(_ParsedFlatDataToObject)));
+                                          $code->j_invoke('withSectionFromObjectFactory', [j_string($section.name), $factoryRef]);
+                                       }, 
+                                       $newContext
+                                    );
+         
+         javaMethod('public', $contextType, 'createContext', [], 
+             [
+                $schemaVar->j_declare($cls->createSchema($flatData, $conventions)),
+                j_return($contextWithFactories)
+             ]  
+         );
+      });
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::codeHasValue(clauses:Pair<Code,Code>[*]): Code[1]
+{
+   if($clauses->isEmpty(),
+      | j_return(j_false()),
+      | j_if(list($clauses), j_return(j_false()))
+   );
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::codeGetValue(clauses:Pair<Code,Code>[*], fieldParam:Code[1], type:String[1]): Code[1]
+{
+   let throw = j_throw(j_new(javaIllegalArgumentException(), j_string('Cannot get ' + $type + ' value for field \'')->j_plus($fieldParam->j_invoke('getLabel', []))->j_plus(j_string('\''))));
+   if($clauses->isEmpty(),
+      | $throw,
+      | j_if(list($clauses), $throw)
+   );
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::generateForDeserialize(node:FlatDataDeserializeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): GeneratedCode[1]
+{
+   print(if($debug.debug,|$debug.space+'('+$path+') generate FlatDataDeserializeExecutionNode\n', |''));
+   
+   let bindingDetail   = $context->nodeInfosForPath($path).data->toOne()->cast(@FlatDataBindingDetail);
+   let readableClasses = $bindingDetail.sectionBindingDetails.class;
+   let project         = $readableClasses->createDataClassesProject($path, $context, $debug->indent());
+   let specificsClass  = createDeserializeSpecificsClass($node, $path, $context);
+
+   $project->addClasses($specificsClass)->generatedCode($specificsClass);
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::createDeserializeSpecificsClass(node:FlatDataDeserializeExecutionNode[1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+{   
+   let conventions   = $context.conventions;
+   let bindingDetail = $context->nodeInfosForPath($path).data->toOne()->cast(@FlatDataBindingDetail);
+   let rootClass     = $node.tree->toOne().class;   
+   let rootInterface = $conventions->className($rootClass);
+   let contextType   = javaParameterizedType($conventions->className(_FlatDataContext), $rootInterface);
+   let factoryType   = javaParameterizedType($conventions->className(_ParsedFlatDataToObject), $rootInterface);
+   let schema        = $node.connection->cast(@ExternalFormatConnection).schemaBinding.schema;
+   let flatData      = $schema.detail->cast(@FlatData);
+
+   $context.conventions->planNodeClass('public', $path, 'FlatDataDeserializeSpecifics')
+      ->implements(javaParameterizedType($conventions->className(_IFlatDataDeserializeExecutionNodeSpecifics), $rootInterface))
+      ->addSectionMethods($flatData, $conventions)
+      ->addMethods({cls|
+         $flatData.sections->filter(s| $s.recordType->isNotEmpty())->map({section|
+            /*
+             * It may seem odd that the factory accepts a recordType when the recordType is already known.
+             * This happens because the implementation passed at runtime can include driver-specific 
+             * optimizations so when creating objects we use the driver-supplied record type details
+             * to interrogate the parsed data values.
+             */
+            let recordTypeParam = j_parameter($conventions->className(_FlatDataRecordType), 'recordType');
+            let fields          = $section.recordType.fields;
+            let fieldVars       = createFieldVars($fields, $recordTypeParam, $conventions);
+         
+            let sectionBindingDetail = $bindingDetail.sectionBindingDetails->filter(sc| $sc.section == $section)->toOne();
+            let dataClass            = $conventions->dataClass($sectionBindingDetail.class, $path);
+            let adderVars            = $fields->toIndexed()->map({indexedField|
+               let property  = $sectionBindingDetail.details->filter(c| $c.field == $indexedField.second).property->toOne();
+               let propType  = $property->functionReturnType().rawType->toOne();
+               let adderType = if($propType == String,
+                                  | javaParameterizedType($conventions->className(_ExternalDataObjectAdder), [$dataClass, javaString()]),
+                                  |
+                               if($propType == Boolean,
+                                  | javaParameterizedType($conventions->className(_ExternalDataBooleanAdder), $dataClass),
+                                  |
+                               if($propType == Integer,
+                                  | javaParameterizedType($conventions->className(_ExternalDataLongAdder), $dataClass),
+                                  | 
+                               if($propType == Float,
+                                  | javaParameterizedType($conventions->className(_ExternalDataDoubleAdder), $dataClass),
+                                  | 
+                               if($propType == Decimal,
+                                  | javaParameterizedType($conventions->className(_ExternalDataObjectAdder), [$dataClass, javaBigDecimal()]),
+                                  | 
+                               if($propType == StrictDate || $propType == DateTime,
+                                  | javaParameterizedType($conventions->className(_ExternalDataObjectAdder), [$dataClass, javaTemporal()]),
+                                  | fail('Unknown type'); javaVoid();
+                               ))))));
+               
+               let var       = j_variable($adderType, 'adder' + $indexedField.first->toString());                                                            
+               let declare   = $var->j_declare($dataClass->j_invoke('_getAdderForProperty', j_string($property.name->toOne()), $conventions->className(_ExternalDataAdder))->j_cast($adderType));
+               pair($var, $declare);
+            });
+            
+            let factoryType    = javaParameterizedType($conventions->className(_ParsedFlatDataToObject), $dataClass);
+            let parsedFlatData = j_parameter($conventions->className(_ParsedFlatData), 'parsedFlatData');
+            let resultVar      = j_variable($dataClass, 'result');
+            let addClauses     = $fields->toIndexed()->map({indexedField|
+               let fieldVar  = $fieldVars->at($indexedField.first).first;
+               let adderVar  = $adderVars->at($indexedField.first).first;               
+               let property  = $sectionBindingDetail.details->filter(c| $c.field == $indexedField.second).property->toOne();
+               let propType  = $property->functionReturnType().rawType->toOne();
+               
+               if($propType == String,
+                  | j_if($parsedFlatData->j_invoke('hasStringValue', $fieldVar),
+                       $adderVar->j_invoke('addTo', [$resultVar, $parsedFlatData->j_invoke('getString', $fieldVar)])
+                    ),
+                  |
+               if($propType == Boolean,
+                  | j_if($parsedFlatData->j_invoke('hasBooleanValue', $fieldVar),
+                       $adderVar->j_invoke('addTo', [$resultVar, $parsedFlatData->j_invoke('getBoolean', $fieldVar)])
+                    ),
+                  |
+               if($propType == Integer,
+                  | j_if($parsedFlatData->j_invoke('hasLongValue', $fieldVar),
+                       $adderVar->j_invoke('addTo', [$resultVar, $parsedFlatData->j_invoke('getLong', $fieldVar)])
+                    ),
+                  | 
+               if($propType == Float,
+                  | j_if($parsedFlatData->j_invoke('hasDoubleValue', $fieldVar),
+                       $adderVar->j_invoke('addTo', [$resultVar, $parsedFlatData->j_invoke('getDouble', $fieldVar)])
+                    ),
+                  | 
+               if($propType == Decimal,
+                  | j_if($parsedFlatData->j_invoke('hasBigDecimalValue', $fieldVar),
+                       $adderVar->j_invoke('addTo', [$resultVar, $parsedFlatData->j_invoke('getBigDecimal', $fieldVar)])
+                    ),
+                  | 
+               if($propType == StrictDate,
+                  | j_if($parsedFlatData->j_invoke('hasLocalDateValue', $fieldVar),
+                       $adderVar->j_invoke('addTo', [$resultVar, $parsedFlatData->j_invoke('getLocalDate', $fieldVar)])
+                    ),
+                  | 
+               if($propType == DateTime,
+                  | j_if($parsedFlatData->j_invoke('hasInstantValue', $fieldVar),
+                       $adderVar->j_invoke('addTo', [$resultVar, $parsedFlatData->j_invoke('getInstant', $fieldVar)])
+                    ),
+                  | fail('Unknown type'); j_null();
+               )))))));
+            });
+            let anonResult     = j_newAnon($factoryType, [], 
+               j_method('public', $dataClass, 'make', $parsedFlatData,
+                  $resultVar->j_declare(j_new($dataClass, []))
+                     ->concatenate($addClauses)
+                     ->concatenate(j_return($resultVar))
+                     ->j_block()
+               )
+            );
+         
+            javaMethod('public', $factoryType, $section->sectionFactoryMethodName(), $recordTypeParam,                      
+                $fieldVars.second->concatenate($adderVars.second)->concatenate(j_return($anonResult))
+            );
+         });
+      })
+      ->addMethod({cls |
+         let schemaVar            = j_variable($conventions->className(_FlatData), 'schema');
+         let newContext           = j_new($contextType, [$schemaVar, j_string($schema->elementToPath())]);
+         let contextWithFactories = $flatData.sections->fold(
+                                       {section, code| 
+                                          let factoryRef = j_this($cls)->j_methodReference($section->sectionFactoryMethodName(), javaFunctionType($conventions->className(_FlatDataRecordType), $conventions->className(_ParsedFlatDataToObject)));
+                                          $code->j_invoke('withSectionToObjectFactory', [j_string($section.name), $factoryRef]);
+                                       }, 
+                                       $newContext
+                                    );
+         
+         javaMethod('public', $contextType, 'createContext', [], 
+             [
+                $schemaVar->j_declare($cls->createSchema($flatData, $conventions)),
+                j_return($contextWithFactories)
+             ]  
+         );
+      });
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::createFieldVars(fields:FlatDataRecordField[*], recordTypeParam:Code[1], conventions:Conventions[1]): Pair<Code,Code>[*]
+{
+   $fields->toIndexed()->map({indexedField|
+      let var     = j_variable($conventions->className(_FlatDataRecordField), 'field' + $indexedField.first->toString());
+      let lParam  = j_parameter($conventions->className(_FlatDataRecordField), 'f');
+      let lambda  = j_lambda($lParam, $lParam->j_invoke('getLabel', [])->j_invoke('equals', j_string($indexedField.second.label)));                                                            
+      let declare = $var->j_declare($recordTypeParam->j_invoke('getFields', [])->j_streamOf()->js_filter($lambda)->js_findFirst()->jo_get());
+      pair($var, $declare);
+   });
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::createSchema(jClass:meta::java::metamodel::Class[1], flatData:FlatData[1], conventions:Conventions[1]): Code[1]
+{   
+   $flatData.sections->fold(
+      {section, code| 
+         $code->j_invoke('withSection', j_this($jClass)->j_invoke($section->sectionMethodName(), []), $conventions->className(_FlatData))
+      }, 
+      j_new($conventions->className(_FlatData), [])
+   );
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::sectionMethodName(section:FlatDataSection[1]): String[1]
+{   
+   'flatDataSection_' + $section.name;
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::sectionFactoryMethodName(section:FlatDataSection[1]): String[1]
+{   
+   'flatDataSection_Factory_' + $section.name;
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::addSectionMethods(jClass:meta::java::metamodel::Class[1], flatData:FlatData[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+{   
+   $jClass
+      ->addMethods({cls|
+         $flatData.sections->map({section|
+            javaMethod('public', $conventions->className(_FlatDataSection), $section->sectionMethodName(), [],
+               j_new($conventions->className(_FlatDataSection), [j_string($section.name), j_string($section.driverId)])
+                  ->map({jSection|
+                      $section.sectionProperties->fold(
+                         {sp, code| 
+                            let name  = j_string($sp.name);
+                            let value = $sp.value->match([
+                               s:String[1] | j_string($s), 
+                               b:Boolean[1]| j_boolean($b)
+                            ]);
+                            $code->j_invoke('withProperty', [$name, $value], $conventions->className(_FlatDataSection));
+                         },
+                         $jSection
+                      );
+                  })
+                  ->map({jSection|
+                     $section.recordType->match([
+                        {none:FlatDataRecordType[0]| 
+                           j_return($jSection)
+                        },
+                        {rt:FlatDataRecordType[1]|
+                           let recordTypeVar = j_variable($conventions->className(_FlatDataRecordType), 'recordType');
+                           let newRecordType = j_new($conventions->className(_FlatDataRecordType), []);
+                           let withFields    = $rt.fields->fold({field, rType| $rType->codeWithField($field, $conventions)}, $newRecordType);
+                           [
+                              $recordTypeVar->j_declare($withFields),
+                              j_return($jSection->j_invoke('withRecordType', $recordTypeVar))
+                           ];
+                        }
+                     ])
+                  })
+            );            
+         });
+      });
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::codeWithField(recordType:Code[1], field:FlatDataRecordField[1], conventions:Conventions[1]): Code[1]
+{
+   let fieldLabel = j_string($field.label);
+   let fieldType  = $field.type->codeFlatDataDatatype($conventions);
+
+   $field.address->match([
+      a0:String[0]| $recordType->j_invoke('withField', [$fieldLabel, $fieldType], $conventions->className(_FlatDataRecordType)),
+      a :String[1]| $recordType->j_invoke('withField', [$fieldLabel, $fieldType, j_string($a)], $conventions->className(_FlatDataRecordType))
+   ]);
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::codeFlatDataDatatype(type:FlatDataDataType[1], conventions:Conventions[1]): Code[1]
+{   
+   let optional = j_boolean($type.optional);
+   
+   $type->match([
+      {str:FlatDataString[1]|
+         j_new($conventions->className(_FlatDataString), $optional);
+      },
+      {bool:FlatDataBoolean[1]|
+         j_new($conventions->className(_FlatDataBoolean), $optional)
+            ->map(j| $bool.trueString->match([
+                        t0:String[0]| $j,
+                        t :String[1]| $j->j_invoke('withTrueString', j_string($t))
+                     ])
+            )
+            ->map(j| $bool.falseString->match([
+                        f0:String[0]| $j,
+                        f :String[1]| $j->j_invoke('withFalseString', j_string($f))
+                     ])
+            );
+      },
+      {int:FlatDataInteger[1]|
+         j_new($conventions->className(_FlatDataInteger), $optional)
+            ->map(j| $int.format->match([
+                        f0:String[0]| $j,
+                        f :String[1]| $j->j_invoke('withFormat', j_string($f))
+                     ])
+            );
+      },
+      {dec:FlatDataDecimal[1]|
+         j_new($conventions->className(_FlatDataDecimal), $optional)
+            ->map(j| $dec.format->match([
+                        f0:String[0]| $j,
+                        f :String[1]| $j->j_invoke('withFormat', j_string($f))
+                     ])
+            );
+      },
+      {date:FlatDataDate[1]|
+         j_new($conventions->className(_FlatDataDate), $optional)
+            ->map(j| $date.format->match([
+                        f0:String[0]| $j,
+                        f :String[1]| $j->j_invoke('withFormat', j_string($f))
+                     ])
+            );
+      },
+      {dateTime:FlatDataDateTime[1]|
+         j_new($conventions->className(_FlatDataDateTime), $optional)
+            ->map(j| $dateTime.timeZone->match([
+                        z0:String[0]| $j,
+                        z :String[1]| $j->j_invoke('withTimeZone', j_string($z))
+                     ])
+            )
+            ->map(j| $dateTime.format->match([
+                        f0:String[0]| $j,
+                        f :String[1]| $j->j_invoke('withFormat', j_string($f))
+                     ])
+            );
+      }
+   ]);
+}

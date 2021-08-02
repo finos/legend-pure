@@ -31,7 +31,7 @@ import meta::alloy::runtime::java::typeInfo::*;
 
 Profile meta::alloy::runtime::java::roadmap::feature
 {
-   stereotypes: [ M2MBasics, DataQuality, Enums, Filter, Project, Advanced, FlatData, XML, Runtime ];
+   stereotypes: [ M2MBasics, DataQuality, Enums, Filter, Project, Advanced, XML, Runtime ];
 }
 
 Class meta::alloy::runtime::java::GenerationContext
@@ -194,7 +194,7 @@ function meta::alloy::runtime::java::prepare(node:ExecutionNode[1], path:String[
    $node->match($extensions.plan_javaRuntime_main_prepare2->map(x|$x->eval($path, $contextFromOtherNodes, $extensions, $debug))->concatenate([
       g:GlobalGraphFetchExecutionNode[1]             | $g->prepareForGlobalGraphFetchNode($path, $contextFromOtherNodes, $debug),
       g:InMemoryGraphFetchExecutionNode[1]           | $g->prepareForInMemoryGraphFetch($path, $contextFromOtherNodes, $debug),
-      g:StoreStreamReadingExecutionNode[1]           | $g->prepareForStoreStreamReading($path, $contextFromOtherNodes, $debug),
+      g:StoreStreamReadingExecutionNode[1]           | $g->prepareForStoreStreamReading($path, $contextFromOtherNodes, $extensions, $debug),
       p:PureExpressionPlatformExecutionNode[1]       | $p->prepareForPlatformNode($path, $contextFromOtherNodes, $extensions, $debug),      
       e:ExecutionNode[1]                             |  $contextFromOtherNodes
    ])->toOneMany());

@@ -1,0 +1,278 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::meta::external::query::graphQL::metamodel::*;
+
+Enum meta::external::query::graphQL::metamodel::ExecutableDirectiveLocation
+{
+  QUERY,
+  MUTATION,
+  SUBSCRIPTION,
+  FIELD,
+  FRAGMENT_DEFINITION,
+  FRAGMENT_SPREAD,
+  INLINE_FRAGMENT
+}
+
+Enum meta::external::query::graphQL::metamodel::OperationType
+{
+  query,
+  mutation,
+  subscription
+}
+
+Enum meta::external::query::graphQL::metamodel::TypeSystemDirectiveLocation
+{
+  SCHEMA,
+  SCALAR,
+  OBJECT,
+  FIELD_DEFINITION,
+  ARGUMENT_DEFINITION,
+  INTERFACE,
+  UNION,
+  ENUM,
+  ENUM_VALUE,
+  INPUT_OBJECT,
+  INPUT_FIELD_DEFINITION
+}
+
+Class meta::external::query::graphQL::metamodel::Argument
+{
+  name: String[1];
+  value: meta::external::query::graphQL::metamodel::Value[1];
+}
+
+Class meta::external::query::graphQL::metamodel::BooleanValue extends meta::external::query::graphQL::metamodel::Value
+{
+  value: Boolean[1];
+}
+
+Class meta::external::query::graphQL::metamodel::Definition
+{
+}
+
+Class meta::external::query::graphQL::metamodel::Directive
+{
+  name: String[1];
+  arguments: meta::external::query::graphQL::metamodel::Argument[*];
+}
+
+Class meta::external::query::graphQL::metamodel::DirectiveDefinition extends meta::external::query::graphQL::metamodel::TypeSystemDefinition
+{
+  name: String[1];
+  executableLocation: meta::external::query::graphQL::metamodel::ExecutableDirectiveLocation[*];
+  typeSystemLocation: meta::external::query::graphQL::metamodel::TypeSystemDirectiveLocation[*];
+  argumentDefinitions: meta::external::query::graphQL::metamodel::InputValueDefinition[*];
+}
+
+Class meta::external::query::graphQL::metamodel::Document
+{
+  definitions: meta::external::query::graphQL::metamodel::Definition[*];
+}
+
+Class meta::external::query::graphQL::metamodel::EnumTypeDefinition extends meta::external::query::graphQL::metamodel::Type
+{
+  name: String[1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+  values: meta::external::query::graphQL::metamodel::EnumValueDefinition[*];
+}
+
+Class meta::external::query::graphQL::metamodel::EnumValue extends meta::external::query::graphQL::metamodel::Value
+[
+  not($this.value->in(['true', 'false', 'null']))
+]
+{
+  value: String[1];
+}
+
+Class meta::external::query::graphQL::metamodel::EnumValueDefinition
+{
+  value: String[1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+}
+
+Class meta::external::query::graphQL::metamodel::ExecutableDefinition extends meta::external::query::graphQL::metamodel::Definition
+{
+}
+
+Class meta::external::query::graphQL::metamodel::ExecutableDocument extends meta::external::query::graphQL::metamodel::Document
+[
+  $this.executableDefinitions->size() > 0
+]
+{
+  executableDefinitions() {$this.definitions->filter(c|$c->instanceOf(meta::external::query::graphQL::metamodel::ExecutableDefinition))}: meta::external::query::graphQL::metamodel::Definition[*];
+}
+
+Class meta::external::query::graphQL::metamodel::Field extends meta::external::query::graphQL::metamodel::Selection
+{
+  alias: String[0..1];
+  name: String[1];
+  arguments: meta::external::query::graphQL::metamodel::Argument[*];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+  selectionSet: meta::external::query::graphQL::metamodel::Selection[*];
+}
+
+Class meta::external::query::graphQL::metamodel::FieldDefinition
+{
+  name: String[1];
+  argumentDefinitions: meta::external::query::graphQL::metamodel::InputValueDefinition[*];
+  type: meta::external::query::graphQL::metamodel::TypeReference[1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+}
+
+Class meta::external::query::graphQL::metamodel::FloatValue extends meta::external::query::graphQL::metamodel::Value
+{
+  value: Float[1];
+}
+
+Class meta::external::query::graphQL::metamodel::FragmentDefinition extends meta::external::query::graphQL::metamodel::ExecutableDefinition
+[
+  not($this.typeCondition == 'on')
+]
+{
+  name: String[1];
+  typeCondition: String[1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+  selectionSet: meta::external::query::graphQL::metamodel::Selection[*];
+}
+
+Class meta::external::query::graphQL::metamodel::FragmentSpread extends meta::external::query::graphQL::metamodel::Selection
+{
+  name: String[1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+}
+
+Class meta::external::query::graphQL::metamodel::InLineFragment extends meta::external::query::graphQL::metamodel::Selection
+{
+  typeCondition: String[0..1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+  selectionSet: meta::external::query::graphQL::metamodel::Selection[*];
+}
+
+Class meta::external::query::graphQL::metamodel::InputValueDefinition
+{
+  description: String[0..1];
+  name: String[1];
+  type: meta::external::query::graphQL::metamodel::TypeReference[1];
+  defaultValue: meta::external::query::graphQL::metamodel::Value[0..1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+}
+
+Class meta::external::query::graphQL::metamodel::IntValue extends meta::external::query::graphQL::metamodel::Value
+{
+  value: Integer[1];
+}
+
+Class meta::external::query::graphQL::metamodel::InterfaceTypeDefinition extends meta::external::query::graphQL::metamodel::Type
+{
+  name: String[1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+  fields: meta::external::query::graphQL::metamodel::FieldDefinition[*];
+}
+
+Class meta::external::query::graphQL::metamodel::ListValue extends meta::external::query::graphQL::metamodel::Value
+{
+  values: meta::external::query::graphQL::metamodel::Value[*];
+}
+
+Class meta::external::query::graphQL::metamodel::NullValue extends meta::external::query::graphQL::metamodel::Value
+{
+}
+
+Class meta::external::query::graphQL::metamodel::ObjectTypeDefinition extends meta::external::query::graphQL::metamodel::Type
+{
+  name: String[1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+  fields: meta::external::query::graphQL::metamodel::FieldDefinition[*];
+  implements: String[*];
+}
+
+Class meta::external::query::graphQL::metamodel::ObjectValue extends meta::external::query::graphQL::metamodel::Value
+{
+}
+
+Class meta::external::query::graphQL::metamodel::OperationDefinition extends meta::external::query::graphQL::metamodel::ExecutableDefinition
+{
+  type: meta::external::query::graphQL::metamodel::OperationType[1];
+  name: String[0..1];
+  variables: meta::external::query::graphQL::metamodel::VariableDefinition[*];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+  selectionSet: meta::external::query::graphQL::metamodel::Selection[*];
+}
+
+Class meta::external::query::graphQL::metamodel::RootOperationTypeDefinition
+{
+  operationType: meta::external::query::graphQL::metamodel::OperationType[1];
+  type: String[1];
+}
+
+Class meta::external::query::graphQL::metamodel::ScalarTypeDefinition extends meta::external::query::graphQL::metamodel::Type
+{
+  name: String[1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+}
+
+Class meta::external::query::graphQL::metamodel::SchemaDefinition extends meta::external::query::graphQL::metamodel::TypeSystemDefinition
+{
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+  rootOperationTypeDefinitions: meta::external::query::graphQL::metamodel::RootOperationTypeDefinition[*];
+}
+
+Class meta::external::query::graphQL::metamodel::Selection
+{
+}
+
+Class meta::external::query::graphQL::metamodel::StringValue extends meta::external::query::graphQL::metamodel::Value
+{
+  value: String[1];
+}
+
+Class meta::external::query::graphQL::metamodel::Type extends meta::external::query::graphQL::metamodel::TypeSystemDefinition
+{
+}
+
+Class meta::external::query::graphQL::metamodel::TypeReference
+{
+  name: String[1];
+  list: Boolean[1];
+  nullable: Boolean[1];
+}
+
+Class meta::external::query::graphQL::metamodel::TypeSystemDefinition extends meta::external::query::graphQL::metamodel::Definition
+{
+}
+
+Class meta::external::query::graphQL::metamodel::UnionTypeDefinition extends meta::external::query::graphQL::metamodel::Type
+{
+  name: String[1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+  members: String[*];
+}
+
+Class meta::external::query::graphQL::metamodel::Value
+{
+}
+
+Class meta::external::query::graphQL::metamodel::Variable extends meta::external::query::graphQL::metamodel::Value
+{
+  name: String[1];
+}
+
+Class meta::external::query::graphQL::metamodel::VariableDefinition
+{
+  name: String[1];
+  type: meta::external::query::graphQL::metamodel::TypeReference[1];
+  defaultValue: meta::external::query::graphQL::metamodel::Value[0..1];
+  directives: meta::external::query::graphQL::metamodel::Directive[*];
+}

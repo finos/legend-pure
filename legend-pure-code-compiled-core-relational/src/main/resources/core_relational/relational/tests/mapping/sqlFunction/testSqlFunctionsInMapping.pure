@@ -675,6 +675,17 @@ function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteg
    assertEquals('select (datediff(\'2017-04-01\' , \'2017-03-01\')) as `dateDiff` from dataTable as `root`',$s);
 }
 
+function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteger::testToSQLStringDateDiffInSecondsInMemSQL():Boolean[1]
+{
+   let da = %2017-03-01T19:09:20;
+   let db = %2017-03-01T20:08:08;
+   let s = toSQLString(|SqlFunctionDemo.all()->project([s | dateDiff($da, $db, DurationUnit.SECONDS)], ['dateDiff']),
+                                                testMapping,
+                                                meta::relational::runtime::DatabaseType.MemSQL,
+                                                meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('select (time_to_sec(timediff(\'2017-03-01 20:08:08\' , \'2017-03-01 19:09:20\'))) as `dateDiff` from dataTable as `root`',$s);
+}
+
 function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteger::testToSQLStringDateDiffInPresto():Boolean[1]
 {
 

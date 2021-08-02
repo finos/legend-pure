@@ -62,10 +62,21 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::t
       functionDefinition = $constraint.functionDefinition->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformLambda($useAppliedFunction, $extensions),
       externalId         = $constraint.externalId,
       enforcementLevel   = $constraint.enforcementLevel,
-      messageFunction    = $constraint.messageFunction->map(f | $f->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformLambda($useAppliedFunction, $extensions))
+      messageFunction    = $constraint.messageFunction->map(f | let updatedMessageFunc = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::removeParameters($f);
+                                                            $updatedMessageFunc->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformLambda($useAppliedFunction, $extensions);)
    );
 }
 
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::removeParameters(messageFunction:FunctionDefinition<Any>[1]):FunctionDefinition<Any>[1]
+{
+    let classifierGenericType = $messageFunction.classifierGenericType->toOne();
+    let typeArgument = $classifierGenericType.typeArguments->at(0)->toOne();
+    let functionType = $typeArgument.rawType->cast(@FunctionType)->toOne();
+    let updatedFunctionType = ^$functionType(parameters = []);
+    let updatedTypeArgument = ^$typeArgument(rawType = $updatedFunctionType);
+    let updatedClassifierGenericType = ^$classifierGenericType(typeArguments = $updatedTypeArgument->concatenate($classifierGenericType.typeArguments->tail()));
+    let updatedMessageFunction = ^$messageFunction(classifierGenericType = $updatedClassifierGenericType);
+}
 
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformAssociation(association:Association[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::domain::Association[1]
 {

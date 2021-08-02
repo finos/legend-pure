@@ -13,48 +13,63 @@
 // limitations under the License.
 
 import meta::alloy::runtime::java::*;
-import meta::external::shared::*;
-import meta::external::shared::executionPlan::*;
-import meta::external::shared::functions::*;
+import meta::external::shared::format::*;
+import meta::external::shared::format::executionPlan::*;
+import meta::external::shared::format::metamodel::*;
 import meta::external::shared::runtime::*;
+import meta::java::generation::convention::*;
+import meta::java::metamodel::factory::*;
 import meta::pure::executionPlan::*;
 import meta::pure::graphFetch::*;
 import meta::pure::mapping::*;
 import meta::pure::router::extension::*;
 import meta::pure::runtime::*;
 
-function meta::external::shared::routerExtensions(type:String[1], externalFormatExtensions:ExternalFormatExtension[*]) : RouterExtension[*]
+function meta::external::shared::format::routerExtensions(type:String[1], externalFormatExtensions:ExternalFormatExtension[*]) : RouterExtension[*]
 {
    let shared = ^RouterExtension(
       type = $type,
-      serializerExtension      = meta::external::shared::serializerExtensionName_String_1__String_1_,
+      plan_javaRuntime_enginePlatformDependencies_conventions = meta::external::shared::format::executionPlan::engine::extendJavaEngineDependencies_Conventions_1__Conventions_1_,
+      serializerExtension      = meta::external::shared::format::serializerExtensionName_String_1__String_1_,
       routing_extraShouldStop  = serializeFunctions(),
       routing_extraIsSerialize = isSerialize_FunctionExpression_1__Boolean_1_,
       executionPlan_generation_isConnectionForClass = 
          {class:Class<Any>[1] |
-            {u:UrlConnection[1] | $u.class == $class}
+            [ 
+               u:UrlConnection[1]            | $u.class == $class,
+               x:ExternalFormatConnection[1] | $x.schemaBinding.model->contains($class)
+            ]
          },
       executionPlan_generation_nodeFromConnection = 
          {tree:RootGraphFetchTree<Any>[0..1], enableConstraints:Boolean[1], checked:Boolean[1] |
-            {u:UrlConnection[1] | 
-               let formatExtension = $externalFormatExtensions->getExtension($u.contentType);
-               let deserializeNode = $formatExtension.generateDeserializeNode->eval($u, $tree);
-               generateDataQualityNode($deserializeNode, $enableConstraints, $checked);
-            }
+            [
+               {u:UrlConnection[1] | 
+                  let formatExtension = $externalFormatExtensions->getExtension($u.contentType);
+                  let deserializeNode = $formatExtension.generateDeserializeNode->eval($u, $tree);
+                  generateDataQualityNode($deserializeNode, $enableConstraints, $checked);
+               },
+               {x:ExternalFormatConnection[1] | 
+                  let formatExtension = $externalFormatExtensions->getExtensionForFormat($x.schemaBinding.schema.format);
+                  let deserializeNode = $formatExtension.generateDeserializeNode->eval($x, $tree);
+                  generateDataQualityNode($deserializeNode, $enableConstraints, $checked);
+               }
+            ]
          },
       executionPlan_generation_nodeFromFunctionExpression =
          {fe:FunctionExpression[1], children:ExecutionNode[*] |
             if($fe->isSerialize(),
                {|
-                  let contentTypeArg  = $fe.parametersValues->at(2);
-                  assert($contentTypeArg->instanceOf(InstanceValue), 'Only literal contentType is supported');
-                  let contentType     = $contentTypeArg->cast(@InstanceValue).values->cast(@String)->toOne();
-                  let formatExtension = $externalFormatExtensions->getExtension($contentType);
-                  $formatExtension.generateSerializeNode->eval($fe, $children);
+                  let schemaBindingArg = $fe.parametersValues->at(1);
+                  assert($schemaBindingArg->instanceOf(InstanceValue), 'Only literal schemaBinding is supported');
+                  let checked         = $fe.func == meta::external::shared::format::executionPlan::externalize_Checked_MANY__SchemaBinding_1__String_1_;
+                  let schemaBinding   = $schemaBindingArg->cast(@InstanceValue).values->cast(@SchemaBinding)->toOne();
+                  let formatExtension = $externalFormatExtensions->getExtensionForFormat($schemaBinding.schema.format);
+                  $formatExtension.generateSerializeNode->eval($checked, $schemaBinding, $children);
                },
                | []
             );
          },
+      executionPlan_print_connectionToString = meta::external::shared::format::executionPlan::printConnection_RouterExtension_MANY__Function_MANY_,
       executionPlan_print_planNodeToString =
          {space:String[1], extensions:RouterExtension[*] |
             printPlanNodeToString($space, $extensions)
@@ -71,32 +86,45 @@ function meta::external::shared::routerExtensions(type:String[1], externalFormat
          }
    );
 
-   let perFormat = $externalFormatExtensions->map(formatExt| ^RouterExtension(type=$type+':'+$formatExt.contentType, serializerExtension=$formatExt.serializerExtension));
+   let perFormat = $externalFormatExtensions->map(formatExt| ^RouterExtension(type                                                    = $type+':'+$formatExt.externalFormat, 
+                                                                              plan_javaRuntime_enginePlatformDependencies_conventions = $formatExt.plan_javaRuntime_enginePlatformDependencies_conventions,
+                                                                              serializerExtension                                     = $formatExt.serializerExtension
+                                                                             ));
 
    $shared->concatenate($perFormat);
 }
 
-function <<access.private>> meta::external::shared::serializerExtensionName(version:String[1]): String[1]
+function <<access.private>> meta::external::shared::format::serializerExtensionName(version:String[1]): String[1]
 {
-   'meta::protocols::pure::' + $version + '::external::shared::serializerExtension_String_1__SerializerExtension_1_'
+   'meta::protocols::pure::' + $version + '::external::shared::format::serializerExtension_String_1__SerializerExtension_1_'
 }
 
-function <<access.private>> meta::external::shared::getExtension(externalFormatExtensions:ExternalFormatExtension[*], contentType:String[1]): ExternalFormatExtension[1]
+function <<access.private>> meta::external::shared::format::getExtension(externalFormatExtensions:ExternalFormatExtension[*], contentType:String[1]): ExternalFormatExtension[1]
 {
    let formatExtension = $externalFormatExtensions->filter(ext| $ext.contentType == $contentType);
    assert($formatExtension->size() == 1, | 'Expected to find 1 extension for ' + $contentType + ', found ' + $formatExtension->size()->toString());
    $formatExtension->toOne();
 }
 
-Class meta::external::shared::ExternalFormatExtension
+function <<access.private>> meta::external::shared::format::getExtensionForFormat(externalFormatExtensions:ExternalFormatExtension[*], format:String[1]): ExternalFormatExtension[1]
+{
+   let formatExtension = $externalFormatExtensions->filter(ext| $ext.externalFormat == $format);
+   assert($formatExtension->size() == 1, | 'Expected to find 1 extension for ' + $format + ', found ' + $formatExtension->size()->toString());
+   $formatExtension->toOne();
+}
+
+Class meta::external::shared::format::ExternalFormatExtension
 {
    contentType               : String[1];
-   generateSerializeNode     : Function<{FunctionExpression[1], ExecutionNode[*] -> ExecutionNode[1]}>[1];  
-   generateDeserializeNode   : Function<{UrlConnection[1], RootGraphFetchTree<Any>[0..1] -> ExecutionNode[1]}>[1];  
+   externalFormat            : String[1];
+   
+   generateSerializeNode     : Function<{Boolean[1], SchemaBinding[1], ExecutionNode[*] -> ExecutionNode[1]}>[1];  
+   generateDeserializeNode   : Function<{Connection[1], RootGraphFetchTree<Any>[0..1] -> ExecutionNode[1]}>[1];  
    printPlanNodeToString     : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[1];
    
    planJavaPrepare           : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GenerationContext[1]}>[*]}>[1];
    planJavaGenerate          : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GeneratedCode[1]}>[*]}>[1];
+   plan_javaRuntime_enginePlatformDependencies_conventions : Function<{Conventions[1]->Conventions[1]}>[0..1];
 
    serializerExtension       : Function<{String[1]->String[1]}>[1];
 }

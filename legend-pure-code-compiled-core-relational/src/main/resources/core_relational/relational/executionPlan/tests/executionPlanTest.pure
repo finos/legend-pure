@@ -46,7 +46,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDa
    let expected = 'Relational (   type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]   sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'2019-04-08 18:00:00\'   connection = TestDatabaseConnection(type = "H2") ) ';
    assertEquals($expected, $planAsString);
    assert($planAsString->indexOf('settlementDateTime = \'2019-04-08 18:00:00\'') != -1);
-   assertSameElements(['<#function renderCollection collection separator prefix suffix defaultValue><#assign result = []><#list collection as c><#assign result += [prefix + c + suffix]></#list><#return result?join(separator, defaultValue)></#function>', '<#function collectionSize collection> <#return collection?size?c> </#function>'],$planWithString.first.processingTemplateFunctions);
+   assertSameElements(['<#function renderCollection collection separator prefix suffix defaultValue><#if collection?size == 0><#return defaultValue></#if><#return prefix + collection?join(suffix + separator + prefix) + suffix></#function>', '<#function collectionSize collection> <#return collection?size?c> </#function>'],$planWithString.first.processingTemplateFunctions);
 }
 
 function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDateTimeConstantParameterGMTTimeZone():Boolean[1]
@@ -56,7 +56,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDa
    let expected = 'Relational (   type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]   sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'2019-04-08 18:00:00\'   connection = TestDatabaseConnection(type = "H2") ) ';
    assertEquals($expected, $planAsString);
    assert($planAsString->indexOf('settlementDateTime = \'2019-04-08 18:00:00\'') != -1);
-   assertSameElements(['<#function collectionSize collection> <#return collection?size?c> </#function>', '<#function renderCollection collection separator prefix suffix defaultValue><#assign result = []><#list collection as c><#assign result += [prefix + c + suffix]></#list><#return result?join(separator, defaultValue)></#function>'],$planWithString.first.processingTemplateFunctions);
+   assertSameElements(['<#function collectionSize collection> <#return collection?size?c> </#function>', '<#function renderCollection collection separator prefix suffix defaultValue><#if collection?size == 0><#return defaultValue></#if><#return prefix + collection?join(suffix + separator + prefix) + suffix></#function>'],$planWithString.first.processingTemplateFunctions);
 }
 
 function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDateTimeConstantParameterESTTimeZone():Boolean[1]
@@ -66,7 +66,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDa
    let expected = 'Relational (   type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]   sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'2019-04-08 13:00:00\'   connection = TestDatabaseConnection(type = "H2") ) ';
    assertEquals($expected, $planAsString);
    assert($planAsString->indexOf('settlementDateTime = \'2019-04-08 13:00:00\'') != -1);
-   assertSameElements(['<#function GMTtoTZ tz paramDate><#return (tz+" "+paramDate)?date.@alloyDate></#function><#function renderCollectionWithTz collection timeZone separator prefix suffix defaultValue><#assign result = [] /><#list collection as c><#assign result +=[prefix + (timeZone+" "+c)?date.@alloyDate + suffix]></#list><#return result?join(separator, defaultValue)></#function>', '<#function collectionSize collection> <#return collection?size?c> </#function>', '<#function renderCollection collection separator prefix suffix defaultValue><#assign result = []><#list collection as c><#assign result += [prefix + c + suffix]></#list><#return result?join(separator, defaultValue)></#function>'],$planWithString.first.processingTemplateFunctions);
+   assertSameElements(['<#function GMTtoTZ tz paramDate><#return (tz+" "+paramDate)?date.@alloyDate></#function><#function renderCollectionWithTz collection timeZone separator prefix suffix defaultValue><#assign result = [] /><#list collection as c><#assign result = [prefix + (timeZone+" "+c)?date.@alloyDate + suffix] + result></#list><#return result?reverse?join(separator, defaultValue)></#function>', '<#function collectionSize collection> <#return collection?size?c> </#function>', '<#function renderCollection collection separator prefix suffix defaultValue><#if collection?size == 0><#return defaultValue></#if><#return prefix + collection?join(suffix + separator + prefix) + suffix></#function>'],$planWithString.first.processingTemplateFunctions);
 }
 
 function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDateTimeVariableNoTimeZone():Boolean[1]
@@ -76,7 +76,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDa
    let expected = 'Sequence (   type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   (     FunctionParametersValidationNode     (       functionParameters = [dt:DateTime[1]]     )     Relational     (       type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]       resultSizeRange = *       resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]       sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'${dt}\'       connection = TestDatabaseConnection(type = "H2")     )   ) ) ';
    assertEquals($expected, $planAsString);
    assert($planAsString->indexOf('settlementDateTime = \'${dt}\'') != -1);
-   assertSameElements(['<#function renderCollection collection separator prefix suffix defaultValue><#assign result = []><#list collection as c><#assign result += [prefix + c + suffix]></#list><#return result?join(separator, defaultValue)></#function>', '<#function collectionSize collection> <#return collection?size?c> </#function>'],$planWithString.first.processingTemplateFunctions);
+   assertSameElements(['<#function renderCollection collection separator prefix suffix defaultValue><#if collection?size == 0><#return defaultValue></#if><#return prefix + collection?join(suffix + separator + prefix) + suffix></#function>', '<#function collectionSize collection> <#return collection?size?c> </#function>'],$planWithString.first.processingTemplateFunctions);
 }
 
 function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDateTimeVariableESTTimeZone():Boolean[1]
@@ -86,7 +86,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDa
    let expected = 'Sequence (   type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   (     FunctionParametersValidationNode     (       functionParameters = [dt:DateTime[1]]     )     Relational     (       type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]       resultSizeRange = *       resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]       sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'${GMTtoTZ( "[US/Arizona]" dt)}\'       connection = TestDatabaseConnection(type = "H2")     )   ) ) ';
    assertEquals($expected, $planAsString);
    assert($planAsString->indexOf('settlementDateTime = \'${GMTtoTZ( "[US/Arizona]" dt)}\'') != -1);
-   assertSameElements(['<#function GMTtoTZ tz paramDate><#return (tz+" "+paramDate)?date.@alloyDate></#function><#function renderCollectionWithTz collection timeZone separator prefix suffix defaultValue><#assign result = [] /><#list collection as c><#assign result +=[prefix + (timeZone+" "+c)?date.@alloyDate + suffix]></#list><#return result?join(separator, defaultValue)></#function>', '<#function collectionSize collection> <#return collection?size?c> </#function>', '<#function renderCollection collection separator prefix suffix defaultValue><#assign result = []><#list collection as c><#assign result += [prefix + c + suffix]></#list><#return result?join(separator, defaultValue)></#function>'],$planWithString.first.processingTemplateFunctions);
+   assertSameElements(['<#function GMTtoTZ tz paramDate><#return (tz+" "+paramDate)?date.@alloyDate></#function><#function renderCollectionWithTz collection timeZone separator prefix suffix defaultValue><#assign result = [] /><#list collection as c><#assign result = [prefix + (timeZone+" "+c)?date.@alloyDate + suffix] + result></#list><#return result?reverse?join(separator, defaultValue)></#function>', '<#function collectionSize collection> <#return collection?size?c> </#function>', '<#function renderCollection collection separator prefix suffix defaultValue><#if collection?size == 0><#return defaultValue></#if><#return prefix + collection?join(suffix + separator + prefix) + suffix></#function>'],$planWithString.first.processingTemplateFunctions);
 }
 
 function meta::pure::executionPlan::tests::datetime::executionPlanForQueryWithDateTimeVariableForDatabaseConnectionTimeZone(timeZone:String[0..1]):Pair<ExecutionPlan, String>[1]
@@ -386,6 +386,65 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterWithOpenVaria
       '  type = Class[impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
       '  resultSizeRange = *\n'+
       '  (\n'+
+      '    Allocation\n'+
+      '    (\n'+
+      '      type = String\n'+
+      '      resultSizeRange = 1\n'+
+      '      name = name\n'+
+      '      value = \n'+
+      '        (\n'+
+      '          Constant\n'+
+      '          (\n'+
+      '            type = String\n'+
+      '            resultSizeRange = 1\n'+
+      '            values=[ok]\n'+
+      '          )\n'+
+      '        )\n'+
+      '    )\n'+
+      '    Relational\n'+
+      '    (\n'+
+      '      type = Class[impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
+      '      resultSizeRange = *\n'+
+      '      resultColumns = [("pk_0", INT), ("legalName", VARCHAR(200))]\n'+
+      '      sql = select "root".ID as "pk_0", "root".LEGALNAME as "legalName" from firmTable as "root" where "root".LEGALNAME = \'${name}\'\n'+
+      '      connection = TestDatabaseConnection(type = "H2")\n'+
+      '    )\n'+
+      '  )\n'+
+      ')\n',$result->planToString(meta::pure::router::extension::defaultRelationalExtensions()));
+}
+
+Class meta::pure::executionPlan::tests::DummyExecutionOption extends ExecutionOption
+{
+   paramsRequired(){ ^PlanVarPlaceHolder(name = 'dummyOptionParam', type = String, multiplicity = PureOne) }:PlanVarPlaceHolder[1];
+}
+
+Class meta::pure::executionPlan::tests::OtherDummyExecutionOption extends ExecutionOption
+{
+   paramsRequired(){ ^PlanVarPlaceHolder(name = 'OtherDummyOptionParam', type = String, multiplicity = PureOne) }:PlanVarPlaceHolder[1];
+}
+
+function <<test.Test>> meta::pure::executionPlan::tests::testPlanForExecutionOption():Boolean[1]
+{
+   let dummyExtension = ^RouterExtension(type = 'dummy', serializerExtension =  meta::pure::router::extension::relationalSerializerExtension_String_1__String_1_,
+                                         executionPlan_generation_executionOptionParameters = [ d: DummyExecutionOption[1] | $d.paramsRequired ]);
+   let executionOptionContext = ^ExecutionOptionContext(executionOptions = [^DummyExecutionOption()]);
+   let extensions = meta::pure::router::extension::defaultRelationalExtensions()->add($dummyExtension);
+   let result = executionPlan({|let name = 'ok';
+                                Firm.all()->filter(f|$f.legalName == $name);}, simpleRelationalMapping, meta::relational::tests::testRuntime(), $executionOptionContext, $extensions);
+
+   assertEquals(true, isExecutionOptionPresent($executionOptionContext, DummyExecutionOption));
+   assertEquals(false, isExecutionOptionPresent($executionOptionContext, OtherDummyExecutionOption));
+
+   assertEquals(
+      'Sequence\n'+
+      '(\n'+
+      '  type = Class[impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
+      '  resultSizeRange = *\n'+
+      '  (\n'+
+      '    FunctionParametersValidationNode\n'+
+      '    (\n'+
+      '      functionParameters = [dummyOptionParam:String[1]]\n'+
+      '    )\n'+
       '    Allocation\n'+
       '    (\n'+
       '      type = String\n'+
@@ -1620,6 +1679,6 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanWithL
   let runtime = ^Runtime(connections = $conn);
   let plan = executionPlan({|Product.all()->filter(p|$p.name == 'ok')}, simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
   assertEquals(['a','b'], $plan.rootExecutionNode.executionNodes->cast(@meta::relational::mapping::SQLExecutionNode).connection->cast(@meta::pure::alloy::connections::RelationalDatabaseConnection).datasourceSpecification->cast(@meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification).testDataSetupSqls);
-  let transformedPlan = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformPlan($plan, meta::pure::router::extension::defaultRelationalExtensions()); 
+  let transformedPlan = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformPlan($plan, meta::pure::router::extension::defaultRelationalExtensions());
   assertEquals(['a','b'], $transformedPlan.rootExecutionNode.executionNodes->cast(@meta::protocols::pure::vX_X_X::metamodel::executionPlan::SQLExecutionNode).connection->cast(@meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::RelationalDatabaseConnection).datasourceSpecification->cast(@meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::LocalH2DatasourceSpecification).testDataSetupSqls);
 }

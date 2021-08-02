@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::format::yaml::*;
+import meta::external::format::yaml::serialization::*;
+import meta::external::format::yaml::metamodel::*;
 
-function meta::external::format::yaml::toYAMLString(json:YAMLElement[1]):String[1]
+function meta::external::format::yaml::serialization::toYAMLString(json:YAMLElement[1]):String[1]
 {
    $json->toYAMLString('',[]);
 }
 
 
-function <<access.private>> meta::external::format::yaml::toYAMLString(json:YAMLElement[1], offset:String[1],parentElement:YAMLElement[0..1]):String[1]
+function <<access.private>> meta::external::format::yaml::serialization::toYAMLString(json:YAMLElement[1], offset:String[1],parentElement:YAMLElement[0..1]):String[1]
 {
    let tab ='  ';
     let arrayChild = $parentElement->isNotEmpty() && $parentElement->toOne()->instanceOf(YAMLArray);
@@ -41,7 +42,7 @@ function <<access.private>> meta::external::format::yaml::toYAMLString(json:YAML
    ]);
 }
 
-function <<access.private>> meta::external::format::yaml::stringToYAML(string:String[1]):String[1]
+function <<access.private>> meta::external::format::yaml::serialization::stringToYAML(string:String[1]):String[1]
 {
 
    '"' + $string->replace('"','\"') + '"'

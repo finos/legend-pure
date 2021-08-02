@@ -68,7 +68,7 @@ Class meta::pure::router::extension::RouterExtension
    <<doc.deprecated>> graphFetch_executionPlan_1 : Function<{StoreQuery[1], RoutedValueSpecification[0..1], ClusteredGraphFetchTree[1], String[*], Mapping[1], Runtime[1], ExecutionContext[1], DebugContext[1]->Function<{Nil[1]->Pair<ExecutionNode, GlobalGraphFetchExecutionNode>[1]}>[*]}>[0..1];
    <<doc.deprecated>> graphFetch_executionPlan_2 : Function<{Nil[1]->Function<{StoreQuery[1]->Integer[0..1]}>[1]}>[0..1];
    <<doc.deprecated>> graphFetch_localGraphFetchExecutionNodeToString : Function<{String[1], meta::pure::router::extension::RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];
-   
+
    graphFetch_executionPlan_planGraphFetchExecution : Function<{StoreQuery[1], RoutedValueSpecification[0..1], ClusteredGraphFetchTree[1], String[*], Mapping[1], Runtime[1], ExecutionContext[1], Boolean[1], Boolean[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1] -> LocalGraphFetchExecutionNode[1]}>[*]}>[0..1];
    graphFetch_executionPlan_addCrossStoreChildren : Function<{ClusteredGraphFetchTree[1], String[*], String[1], Map<String, List<Any>>[1], Mapping[1], Runtime[1], ExecutionContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->LocalGraphFetchExecutionNode[1]}>[*]}>[0..1];
    graphFetch_executionPlan_localGraphFetchExecutionNodeToString : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[0..1];   
@@ -86,6 +86,7 @@ Class meta::pure::router::extension::RouterExtension
    executionPlan_generation_isConnectionForClass : Function<{Class<Any>[1] -> Function<{Nil[1]->Boolean[1]}>[*]}>[0..1];
    executionPlan_generation_nodeFromConnection : Function<{RootGraphFetchTree<Any>[0..1], Boolean[1], Boolean[1] -> Function<{Nil[1]->ExecutionNode[1]}>[*]}>[0..1];
    executionPlan_generation_nodeFromFunctionExpression: Function<{FunctionExpression[1], ExecutionNode[*]->ExecutionNode[0..1]}>[*];
+   executionPlan_generation_executionOptionParameters : Function<{Nil[1] -> PlanVarPlaceHolder[*]}>[*];
 
    java_conventions_defaultProhibitedFunctions : Function<Any>[*];
    java_mappingAdaptor : Function<{Nil[1]->String[1]}>[*];
@@ -115,6 +116,10 @@ Class meta::pure::router::extension::RouterExtension
    plan_javaRuntime_mappingAdaptor_generatePropertyMapping2 : Function<{Nil[1]->ValueTransformer<Any>[1]}>[*];
    
    plan_javaRuntime_enginePlatformDependencies_conventions : Function<{Conventions[1]->Conventions[1]}>[0..1];
+
+   <<doc.deprecated>> plan_javaRuntime_graphFetchStream_getConnectionTree : Function<{Nil[1] -> RootGraphFetchTree<Any>[0..1]}>[*];
+   <<doc.deprecated>> plan_javaRuntime_graphFetchStream_sourceTypeFromConnection : Function<{Nil[1] -> Class<Any>[1]}>[*];
+   <<doc.deprecated>> plan_javaRuntime_graphFetchStream_streamReaderMethodCodes : Function<{Conventions[1],Code[1]->Function<{Nil[1] -> Code[1]}>[*]}>[0..1];
      
    mapping_sourceClass : Function<{Nil[1] -> Class<Any>[1]}>[*];
    mapping_extractRelationalPropertyMappingFromEmbedded : Function<{AbstractProperty<Any>[1], SetImplementation[*], Mapping[1] -> String[*]}>[0..1];
