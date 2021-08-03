@@ -954,7 +954,7 @@ function meta::relational::tests::createFirmTableAndFillDb(connection : Database
 function meta::relational::tests::createTradeTableAndFillDb(connection : DatabaseConnection[1]) : Boolean[1]
 {
    executeInDb('Drop table if exists tradeTable;', $connection);
-   executeInDb('Create Table tradeTable(id INT, prodid INT, accountId INT, quantity FLOAT, tradeDate DATE, settlementDateTime TIMESTAMP(9));', $connection);
+   executeInDb('Create Table tradeTable(id INT, prodid INT, accountId INT, quantity FLOAT, tradeDate DATE, settlementDateTime TIMESTAMP);', $connection);
    executeInDb('insert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (1, 1, 1, 25, \'2014-12-01\', \'2014-12-02 21:00:00\');', $connection);
    executeInDb('insert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (2, 1, 2, 320, \'2014-12-01\',\'2014-12-02 21:00:00\');', $connection);
    executeInDb('insert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (3, 2, 1, 11, \'2014-12-01\', \'2014-12-02 21:00:00\');', $connection);
@@ -1000,7 +1000,9 @@ function meta::relational::tests::createTablesAndFillDb():Boolean[1]
 
    executeInDb('Drop table if exists PersonNameParameter;', $connection);
    executeInDb('Create Table PersonNameParameter(id INT, lastNameFirst VARCHAR(200), title VARCHAR(200));', $connection);
-   executeInDb('insert into PersonNameParameter (id, lastNameFirst, title) values (1, true, \'eee\');', $connection);
+      executeInDb('insert into PersonNameParameter (id, lastNameFirst, title) values (1, \'true\', \'eee\');', $connection);
+
+  //  executeInDb('insert into PersonNameParameter (id, lastNameFirst, title) values (1, true, \'eee\');', $connection);
 
    meta::relational::tests::createPersonTableAndFillDb($connection);
 

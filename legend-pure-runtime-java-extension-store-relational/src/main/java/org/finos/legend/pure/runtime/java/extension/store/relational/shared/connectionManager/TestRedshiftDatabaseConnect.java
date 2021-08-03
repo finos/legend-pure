@@ -31,8 +31,9 @@ import org.finos.legend.pure.runtime.java.extension.store.relational.shared.Data
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
+public class TestRedshiftDatabaseConnect extends PerThreadPoolableConnectionProvider
 {
+
     public static final String TEST_DB_HOST_NAME = "local";
     private static final String TEST_DB_NAME = "pure-h2-test-Db";
     private static final DataSource TEST_DATA_SOURCE = new DataSource(TEST_DB_HOST_NAME, -1, TEST_DB_NAME, null);
@@ -42,7 +43,7 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
         @Override
         public String value()
         {
-            return System.getProperty("legend.test.h2.port") != null ? "jdbc:h2:tcp://127.0.0.1:" + System.getProperty("legend.test.h2.port") + "/mem:testDB" : "jdbc:h2:mem:;ALIAS_COLUMN_NAME=TRUE";
+            return "jdbc:redshift://lab.cqzp3tj1qpzo.us-east-2.redshift.amazonaws.com:5439/dev";
         }
     };
 
@@ -51,11 +52,16 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
         @Override
         public Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource> safeValue() throws SQLException
         {
+
             BasicDataSource ds = new BasicDataSource();
+            ds.setDriverClassName("com.amazon.redshift.jdbc42.Driver");
             ds.setUrl(CONNECTION_URL.value());
-            ds.setUsername("sa");
-            ds.setPassword("");
+            ds.setUsername("awsuser");
+
+            ds.setPassword(System.getenv("redshiftPassword"));
             ds.setMaxTotal(1);
+
+
             ds.setMaxIdle(1);
             ThreadLocal<PerThreadPoolableConnectionWrapper> connTL = new ThreadLocal<PerThreadPoolableConnectionWrapper>();
             return Tuples.pair(connTL, ds);
@@ -74,20 +80,23 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
 
     private final KeyLockManager<String> userLocks = KeyLockManager.newManager();
 
-    public TestDatabaseConnect()
+    public TestRedshiftDatabaseConnect()
     {
+        System.out.println("testing redshift database connecting poiuyy");
         try
         {
-            Class.forName("org.h2.Driver");
+            System.out.println("trying driver found");
+            Class.forName("com.amazon.redshift.jdbc42.Driver");
         }
         catch (ClassNotFoundException e)
         {
+            System.out.println("class not found");
         }
     }
-
-
     public ConnectionWithDataSourceInfo getConnectionWithDataSourceInfo(String user)
     {
+        System.out.println("poiuy test execute in db");
+        System.out.println(user);
         PerThreadPoolableConnectionWrapper pcw;
         Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource> cs;
         synchronized (this.userLocks.getLock(user))
@@ -100,8 +109,6 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
         {
             if (pcw == null || pcw.isClosed())
             {
-
-                System.out.println("testing getting connection poiuy");
                 Connection connection = cs.getTwo().getConnection();
                 pcw = new PerThreadPoolableConnectionWrapper(connection, user, this);
                 tl.set(pcw);
@@ -109,11 +116,12 @@ public class TestDatabaseConnect extends PerThreadPoolableConnectionProvider
         }
         catch (SQLException ex)
         {
-            throw new PureExecutionException("Unable to create TestDatabaseConnection for user: " + user, ex);
+            System.out.println(ex);
+            throw new PureExecutionException("Unablee qwertest to create TestRedshiftDatabaseConnection for user: " + user, ex);
         }
 
         pcw.incrementBorrowedCounter();
-        return new ConnectionWithDataSourceInfo(pcw, TEST_DATA_SOURCE, "TestDatabaseConnect");
+        return new ConnectionWithDataSourceInfo(pcw, TEST_DATA_SOURCE, "TestRedshiftDatabaseConnect");
     }
 
 

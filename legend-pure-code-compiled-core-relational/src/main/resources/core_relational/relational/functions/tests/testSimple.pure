@@ -57,6 +57,7 @@ function meta::relational::tests::query::simple::getPersonNames( columnList:Stri
    ], $columnList );
 }
 
+
 function meta::relational::tests::query::simple::getTrades( columnList:String[*] ):TabularDataSet[1]
 {
    meta::relational::tests::model::simple::Trade.all()->meta::pure::tds::projectWithColumnSubset ([

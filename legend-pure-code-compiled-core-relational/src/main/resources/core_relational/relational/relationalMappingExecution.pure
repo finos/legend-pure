@@ -260,6 +260,7 @@ function meta::relational::mapping::execution(store: Database[1], f:FunctionExpr
    let connection = $runtime->connectionByElement($store)->cast(@DatabaseConnection);
 
    let sqlQueryToStringStart = now();
+   
    let sql = if($relationalExecutionContext.insertDriverTablePkInTempTable->isEmpty(),
                 |sqlQueryToStringPretty($postProcessorResult.query, $connection.type, $connection.timeZone, $connection.quoteIdentifiers, $extensions),
                 |meta::relational::functions::toDDL::buildInsertSQLQueryResultIntoTable
@@ -290,6 +291,8 @@ function meta::relational::mapping::execution(store: Database[1], f:FunctionExpr
 function meta::relational::mapping::executeQuery(sql:String[1], query:SQLQuery[0..1], paths: Pair<String, PathInformation>[*], connection : DatabaseConnection[1], runtime: Runtime[1], class:Type[0..1], ext:RoutedValueSpecification[0..1], m: Mapping[1], sqlGenerationTimeInNanoSecond:Integer[0..1], g_queryTimeOutInSeconds: Integer[0..1], exeCtx:ExecutionContext[1], extensions: RouterExtension[*], debug:DebugContext[1]):Result<Any|*>[1]
 {
    print(if(!$debug.debug, |'', | $debug.space+'>Execute SQL: '+$sql+'\n'));
+   
+   print($sql);
 
    let queryTimeOutInSeconds = if($g_queryTimeOutInSeconds->isNotEmpty(),
                                        | $g_queryTimeOutInSeconds->toOne(),
@@ -557,6 +560,8 @@ function meta::relational::mapping::processProperty(o:Any[1], property:Property<
            let sourceConnection = $keyInformation.sourceConnection->cast(@DatabaseConnection);
            let sql = sqlQueryToStringPretty($targetImplSqlQueryPair.second, $sourceConnection.type, $sourceConnection.timeZone, $sourceConnection.quoteIdentifiers, $extensions);
            let sqlQueryToStringDurationMilliseconds = ($sqlQueryToStringStart->dateDiff(now(),DurationUnit.MILLISECONDS));
+           print($sql);
+
 
            let executed = executeInDb($sql, $keyInformation.sourceConnection->cast(@DatabaseConnection));
 

@@ -140,7 +140,7 @@ public class TestPureRuntimeClass_FunctionExpressionParam extends AbstractPureTe
                                 "\n" +
                                 "function meta::pure::functions::meta::functionType(f:Function<Any>[1]):FunctionType[1]\n" +
                                 "{\n" +
-                                "   assert($f->instanceOf(FunctionDefinition) || $f->instanceOf(NativeFunction), | 'functionType is not supported yet for this subtype of function '+$f->type()->id());\n" +
+                                "   assert($f->instanceOf(FunctionDefinition) || $f->instanceOf(NativeFunction), | 'functionType qwertyy is not supported yet for this subtype of function '+$f->type()->id());\n" +
                                 "   $f.classifierGenericType->toOne().typeArguments->at(0).rawType->toOne()->cast(@FunctionType);\n" +
                                 "}\n" +
                                 "function go():Boolean[1]\n" +

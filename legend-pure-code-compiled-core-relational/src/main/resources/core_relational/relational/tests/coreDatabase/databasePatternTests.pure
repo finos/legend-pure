@@ -1,0 +1,351 @@
+
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+###Mapping
+import meta::relational::tests::mapping::sqlFunction::model::domain::*;
+import meta::relational::tests::mapping::sqlFunction::model::store::*;
+
+Mapping meta::relational::tests::databaseTestPattern::testMapping2
+(
+    SqlFunctionDemo: Relational
+    {
+       scope([myDB] dataTable)
+       (
+          concatResult : concat(string1, string2),
+          rtrimResult  :rtrim(string2),
+          ltrimResult  :ltrim(string2),
+          trimResult   :trim(string2),
+          string1Left : left(string1,2),
+          string1Right: right(string1,2),
+          string3Integer: parseInteger(string3),
+          string1Upper: toUpper(string1),
+          string1Lower: toLower(string1),
+          int1String: toString(int1),
+          float1Round: round(float1),
+          float1Ceiling: ceiling(float1),
+          float1Floor: floor(float1),
+          float1StdDevSample: stdDevSample(int1),
+          float1StdDevPopulation: stdDevPopulation(int1),
+          floatSinResult : sin(float1),
+          floatCosResult : cos(float1),
+          floatTanResult : tan(float1),
+          floatASinResult : asin(divide(int1,2)),
+          floatACosResult : acos(divide(int1,2)),
+          floatATanResult : atan(float1),
+          floatATan2Result : atan2(float1, int1),
+          floatSqrtResult : sqrt(int1),
+          string2Float : parseFloat(string2float),
+          string2Decimal : parseDecimal(string2Decimal),
+          string2decimal: trim(string2Decimal),
+          string2Date  : parseDate(string2date),
+          string2Integer  : parseInteger(string2Integer),
+          convertToDate1: convertDate(stringDateFormat),
+          convertToDate: convertDate(stringDateFormat,'yyyy-MM-dd'),
+          convertToDateUserDefinedFormat3: convertDate(stringUserDefinedDateFormat,'DD/MM/YYYY'),
+          convertToDateUserDefinedFormat2: convertDate(stringUserDefinedDateFormat,'YYYY/MM/DD'),
+          convertToDateUserDefinedFormat1: convertDate(stringUserDefinedDateFormat,'MMMYYYY'),
+          convertToDateUserDefinedFormat: convertDate(stringUserDefinedDateFormat,'MMMyyyy'),
+          convertToDateTime: convertDateTime(stringDateTimeFormat,'yyyy-MM-dd hh:mm:ss.mmm'),
+          convertToDateTimeUserDefinedFormat: convertDateTime(stringDateTimeFormat,'YYYY-MM-DDTHH:MI:SS'),
+          convertToDateTimeUserDefinedFormat1: convertDateTime(stringDateTimeFormat,'YYYY-MM-DDTHH:MI:SS.FF'),
+          replaceResult: replace(string1, 'J', 'P'),
+          powerResult: pow(float1, 3),
+          expResult: exp(float1),
+          logResult: log(float1),
+          floatModResult : mod(int1, 2),
+          floatRemResult : rem(int1, 2),
+          convertVarchar128 : convertVarchar128(int1),
+          indexOfResult: indexOf('String Random','o'),
+          isNumericResult1: isNumeric(stringToInt, stringToInt),
+          isNumericResult2: isNumeric(alphaNumericString, alphaNumericString),
+          hour : hour(dateTime),
+          month : monthNumber(dateTime),
+          week : weekOfYear(dateTime),
+          date : datePart(dateTime)
+       )
+
+    }
+)
+
+
+###Pure
+
+
+import meta::relational::metamodel::*;
+import meta::json::*;
+import meta::json::tests::*;
+import meta::relational::tests::*;
+import meta::pure::profiles::*;
+import meta::relational::metamodel::execute::*;
+import meta::pure::runtime::*;
+import meta::relational::runtime::*;
+import meta::pure::functions::asserts::*;
+import meta::relational::tests::databaseTestPattern::*;
+import meta::relational::metamodel::execute::*;
+import meta::relational::functions::database::*;
+
+
+import meta::relational::mapping::*;
+import meta::relational::tests::model::simple::*;
+import  meta::relational::tests::mapping::embedded::advanced::mapping::*;
+import meta::csv::*;
+import meta::relational::functions::asserts::*;
+
+import meta::relational::metamodel::join::*;
+import meta::relational::tests::tds::tdsJoin::*;
+
+import meta::relational::tests::mapping::sqlFunction::model::domain::*;
+import meta::relational::tests::databaseTestPattern::*;
+
+
+
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::create::testCreateDatabase():Boolean[1]
+{
+    (getDatabases() -> map ({
+     currDatabaseType | 
+      let connection = getConnectionTest($currDatabaseType) -> cast(@DatabaseConnection);
+      executeInDb('Drop table if exists PersonNameParameter;', $connection);
+      executeInDb('Create Table PersonNameParameter(id INT, lastNameFirst VARCHAR(200), title VARCHAR(200));', $connection);
+      executeInDb('insert into PersonNameParameter (id, lastNameFirst, title) values (1, \'true\', \'eee\');', $connection);
+   } ));
+  true; 
+}
+ 
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::columns::testLowerCase():Boolean[1]
+{      
+ getDatabases() -> map ({
+    currDatabaseType | 
+    let connection = getConnectionTest($currDatabaseType) -> cast(@DatabaseConnection);
+    executeInDb('Drop table if exists TableColumnTest;', $connection);
+    executeInDb('Create Table TableColumnTest(lowercase INT);', $connection);
+    let res = executeInDb('select * from TableColumnTest', $connection);
+    let columnNames = $res.columnNames;
+    assertEquals('LOWERCASE' , $columnNames);
+    }) -> fold ({a,b | $a && $b }, true ); 
+
+}
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::arithmetic::testDecimalPrecison():Boolean[1]
+{      
+    getDatabases() -> map ({
+    currDatabaseType | 
+    meta::relational::tests::databaseTestPattern::arithmetic::testDecimalPrecison($currDatabaseType)
+    }) -> fold ({a,b | $a && $b }, true ); 
+
+}
+
+function meta::relational::tests::databaseTestPattern::arithmetic::testDecimalPrecison(dbType: DatabaseType[1]):Boolean[1]
+{      
+  let result = execute(
+      |Person.all()
+         ->project(p|$p.firstName,'firstName')
+         ->project([col(r:TDSRow[1]|$r.getString('firstName'), 'firstName'),col({r:TDSRow[1]|%2016-08-10T08:55:00.0->hour()}, 'hour')]),
+      simpleRelationalMapping, 
+      getRuntime($dbType), meta::pure::router::extension::defaultRelationalExtensions());
+    let tds = $result.values->at(0);
+    assertEquals('Peter|8,John|8,John|8,Anthony|8,Fabrice|8,Oliver|8,David|8',    $tds.rows->map(r|$r.values->makeString('|'))->makeString(','));
+}
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::columns::testAmbiguousColumnReference():Boolean[1]
+{      
+   getDatabases() -> map ({
+    currDatabaseType | 
+     let result = execute(|Product.all()->groupBy(
+                           [p | $p.name], 
+                           [agg(p | $p.cusip, y|$y->count())], 
+                           ['name', 'cusip']
+                           )->sort('name'), 
+               meta::relational::tests::projection::qualifier::productMappingWithFilter, 
+               getRuntime($currDatabaseType), meta::pure::router::extension::defaultRelationalExtensions());
+   assertSize($result.values.rows, 4);
+   assertEquals(['Firm A', 1, 'Firm C', 1, 'Firm D', 0, 'Firm X', 0], $result.values.rows.values);
+   assertEquals('select "root".NAME as "name", count("synonymtable_0".NAME) as "cusip" from productSchema.productTable as "root" left outer join productSchema.synonymTable as "synonymtable_0" on ("synonymtable_0".PRODID = "root".ID and "synonymtable_0".TYPE = \'CUSIP\' and "synonymtable_0".ID != 1) group by "name" order by "name"', $result->sqlRemoveFormatting());
+    }) -> fold ({a,b | $a && $b }, true ); 
+}
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::arithmetic::testDateTimeFieldOutOfRange():Boolean[1]
+{      
+  getDatabases() -> map ({
+    currDatabaseType | 
+    let result = execute(|Trade.all()->filter(i|(%2014-12-04T15:22:23.123456789 < $i.settlementDateTime ) && ($i.settlementDateTime < %2014-12-04T23:59:59.999999999)) , simpleRelationalMapping, getRuntime($currDatabaseType), meta::pure::router::extension::defaultRelationalExtensions());
+    assertSize($result.values, 1);
+    assertEquals( [%2014-12-04T21:00:00.000000000], $result.values.settlementDateTime->sort());
+  }) -> fold ({a,b | $a && $b }, true ); 
+}
+
+
+// TODO: understand why error is causing 
+function <<test.Test>> meta::relational::tests::databaseTestPattern::arithmetic::decimalOffByOne():Boolean[1]
+{      
+   getDatabases() -> map ({
+    currDatabaseType | 
+       let result = execute(
+             |Firm.all()->groupBy(
+                                     [
+                                        f|$f.legalName,
+                                        f|$f.address.name
+                                     ],
+                                     agg(
+                                           f|$f->subFunction6(#/Firm/employees#),
+                                           y|$y->sum()*2
+                                         ),
+                                     ['legalName', 'addressName', 'employeeAge']
+                                 )->sort('legalName')
+             ,simpleRelationalMapping
+             ,getRuntime($currDatabaseType)
+          , meta::pure::router::extension::defaultRelationalExtensions());
+
+   assertEquals(['Firm A', 'Cupertino', 68.0, 'Firm B', 'Tokyo', 64.0, 'Firm C', 'Mountain View', 70.0, 'Firm X', 'New York', 39.5], $result.values.rows.values);
+   //result is 39.4 from sql query rather than 39.5
+    
+    }) -> fold ({a,b | $a && $b }, true ); 
+
+}
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::groupBy::groupByCat():Boolean[1]
+{      
+    getDatabases() -> map ({
+    currDatabaseType |  let result = execute(|Firm.all()->project([
+                                                  f|$f.legalName,
+                                                  f|$f.employees.firstName->joinStrings('^')
+                                              ],
+                                              [
+                                                  'legalName',
+                                                  'employeesFirstNamePerFirm'
+                           ]), simpleRelationalMapping, getRuntime($currDatabaseType), meta::pure::router::extension::defaultRelationalExtensions());
+   assertSize($result.values.rows, 4);
+    }) -> fold ({a,b | $a && $b }, true ); 
+}
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::limits::testLimitTwo():Boolean[1]
+{      
+    getDatabases() -> map ({
+    currDatabaseType |   let result = execute(|Person.all()->drop(0), simpleRelationalMapping, getRuntime($currDatabaseType), meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('select "root".ID as "pk_0", "root".FIRSTNAME as "firstName", "root".AGE as "age", "root".LASTNAME as "lastName" from personTable as "root" limit 0,-1', $result->sqlRemoveFormatting());
+   assertSize($result.values, 12 );
+    }) -> fold ({a,b | $a && $b }, true ); 
+}
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::keywords::makeTypeClob():Boolean[1]
+{      
+  getDatabases() -> map ({
+    currDatabaseType |   let result = execute(|Person.all()->drop(0), simpleRelationalMapping, getRuntime($currDatabaseType), meta::pure::router::extension::defaultRelationalExtensions());
+    let connection = getConnectionTest($currDatabaseType) -> cast(@DatabaseConnection);
+    executeInDb('Drop table if exists fetchDbMetaDatatestTable4;', $connection);
+    executeInDb('Create table fetchDbMetaDatatestTable4(ID INT NOT NULL,FIRSTNAME VARCHAR(200),OTHERSQLTYPE CLOB)', $connection); 
+    true; 
+  }) -> fold ({a,b | $a && $b }, true ); 
+
+}
+
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::groupBy::groupByClause():Boolean[1]
+{      
+  getDatabases() -> map ({
+    currDatabaseType | 
+    meta::relational::tests::mapping::groupBy::setUp();
+    let result = execute(|meta::relational::tests::mapping::groupBy::model::domain::Position.all()->project([#/meta::relational::tests::mapping::groupBy::model::domain::Position/gsn#, #/meta::relational::tests::mapping::groupBy::model::domain::Position/product/description#])->sort('gsn'), meta::relational::tests::mapping::groupBy::model::mapping::testMapping, getRuntime($currDatabaseType), meta::pure::router::extension::defaultRelationalExtensions());
+    assertSameElements(['gsn,description\nEA4GNY,Gold\nYU2EF5,Firm D\n'], $result.values->at(0)->toCSV());
+    assertEquals('select "root".GSN as "gsn", "product_0".DESCRIPTION as "description" from TRADE as "root" left outer join PRODUCT as "product_0" on ("root".PRODUCT_ID = "product_0".ID) group by "root".ACC_NUM,"root".PRODUCT_ID,"root".GSN order by "gsn"', $result->sqlRemoveFormatting());
+  }) -> fold ({a,b | $a && $b }, true ); 
+
+}
+
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::groupBy::testGroupByAfterFilterAfterExtendJoinAfterAfterGroupByAfterJoinOuter():Boolean[1]
+//should pass
+{      
+ getDatabases() -> map ({
+    currDatabaseType | 
+    let runtimeNew = getRuntime($currDatabaseType);
+     let type = JoinType.LEFT_OUTER;
+   let result = execute(|testJoinTDS_Person.all()->project([#/testJoinTDS_Person/personID!personID#, #/testJoinTDS_Person/lastName!personName#, #/testJoinTDS_Person/age!personAge#, #/testJoinTDS_Person/employerID!eID#])
+                        ->join(testJoinTDS_Firm.all()->project([#/testJoinTDS_Firm/legalName!firmName#, #/testJoinTDS_Firm/firmID!fID#,  #/testJoinTDS_Firm/firmAddrID!faID#]), $type, {a,b |$a.getInteger('eID')  == $b.getInteger('fID');})
+                        ->restrict(['personName', 'personAge', 'faID'])
+                        ->groupBy('faID', agg('cnt', x|$x, y| $y->count()))
+                        ->join(testJoinTDS_Address.all()->project([#/testJoinTDS_Address/addrID!aID#, #/testJoinTDS_Address/addrName!addrName#]), $type, {a,b |$a.getInteger('aID')  == $b.getInteger('faID');})
+                        ->extend([col({r:TDSRow[1]|$r.getString('addrName')->length()}, 'addr_length')])
+                        ->filter({p| $p.getInteger('addr_length') > 8})
+                        ->restrict(['addrName', 'addr_length', 'cnt'])
+                        ->groupBy('addrName', agg('cnt', x|$x, y| $y->count())), testJoinTDSMapping, $runtimeNew, meta::pure::router::extension::defaultRelationalExtensions());
+   assertSize($result.values.rows, 2);
+   assertSameElements(['Cupertino,1', 'Mountain View,1'], $result.values.rows->map(r|$r.values->makeString(','))); 
+       }) -> fold ({a,b | $a && $b }, true ); 
+
+}
+
+
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::types::testTinyInt():Boolean[1]
+{      
+  getDatabases() -> map ({
+    currDatabaseType | 
+    let runtimeNew = getRuntime($currDatabaseType);
+    meta::relational::tests::mapping::dataType::setUp();
+    let result = execute(|meta::relational::tests::mapping::dataType::model::domain::DataDBTypes.all(), meta::relational::tests::mapping::dataType::model::mapping::testMapping, $runtimeNew, meta::pure::router::extension::defaultRelationalExtensions());
+    assertSize($result.values, 3);
+    let populatedRow = $result.values->filter(e | $e.tinyInt == 2)->toOne();
+    assertEquals(false, $populatedRow.bit);
+  }) -> fold ({a,b | $a && $b }, true ); 
+
+}
+
+function meta::relational::tests::databaseTestPattern::subFunction6(f:Firm[1], func:Function<{Firm[1]->Person[*]}>[1]):Float[1]
+{
+   $f->map($func)->map(e|$e.age)->average();
+}
+ 
+ 
+function meta::relational::tests::databaseTestPattern::getDatabases():DatabaseType[*]
+{
+//  [DatabaseType.Redshift, DatabaseType.H2];
+ [DatabaseType.Redshift];
+
+ //trying for legend-engine
+//  [ DatabaseType.H2];
+}
+
+function meta::relational::tests::databaseTestPattern::getDatabasesTest():Any[*]
+{
+  //  [ DatabaseType.H2, DatabaseType.Redshift]; 
+  [DatabaseType.Redshift]; 
+}
+
+function meta::relational::tests::databaseTestPattern::getConnectionTest(dbType: Any[1] ):Connection[1]
+{
+  print($dbType);
+  ^TestDatabaseConnection(element = db, type = $dbType -> cast(@DatabaseType));
+// 
+  //poiuy qwerty change
+//getdatabaseconnection map function 
+
+//multiple if elses depnding on datatype
+//TODO: get these tests on engine
+  // ^meta::pure::alloy::connections::RelationalDatabaseConnection(element = db, datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::RedshiftDatasourceSpecification(databaseName = 'dev', port = 5439, endpoint = 'lab.cqzp3tj1qpzo.us-east-2.redshift.amazonaws.com'), authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::UserPasswordAuthenticationStrategy(passwordVaultReference = 'rEdShiFt528491!', userName = 'awsuser'), type = $dbType -> cast(@DatabaseType));
+}
+
+function meta::relational::tests::databaseTestPattern::getRuntime(dbType: Any[1] ):Runtime[1]
+{
+  //  ^Runtime(connections = ^TestDatabaseConnection(element = db, type = $dbType -> cast(@DatabaseType)));
+
+     ^Runtime(connections = getConnectionTest($dbType));
+
+}
+
+
+
+ 
