@@ -288,11 +288,11 @@ function meta::java::serialization::enumToString(j:meta::java::metamodel::Enumer
 {
    let tab = '    ';
    'package ' + $j.package->packageToString() + ';\n\n' +
-   $j.additionalImports->filter(i | $i != '')->map(i|'import '+$i+';')->joinStrings('\n')+(if($j.additionalImports->isEmpty(),|'',|'\n\n'))+
+   $j.additionalImports->filter(i | $i != '')->map(i|'import '+$i+';')->joinStrings('\n')+(if($j.additionalImports->isEmpty(),|'',|'\n'))+
    $j->annotationToString('', true)+
    $j->modifiersToString()+'enum '+$j.simpleName + ' {\n'+$tab+
-      $j.enumeration->map(e|$e->enumEntryToString())->joinStrings(',\n' + $tab) + ';' + '\n\n' + $j->bodyToString($tab) +
-   '\n}\n';
+      $j.enumeration->map(e|$e->enumEntryToString())->joinStrings(',\n' + $tab) + ';' + '\n' + $j->bodyToString($tab) +
+   '}\n';
 }
 
 function <<access.private>> meta::java::serialization::internalClassToString(j:meta::java::metamodel::Class[1]):String[1]
@@ -304,12 +304,12 @@ function <<access.private>> meta::java::serialization::internalClassToString(j:m
    $j->annotationToString('', true) +
    $j->modifiersToString() + if($j.modifiers ->contains(meta::java::metamodel::Modifier.Interface),
                                 | $j.simpleName + $j.typeParameters->typeVarsToString($j) +
-                                  if($j.interfaces ->isEmpty(), |'', |' extends '    + $j.interfaces->map(i|$i->typePathToString($j))->joinStrings(', ');) + ' {\n\n',
+                                  if($j.interfaces ->isEmpty(), |'', |' extends '    + $j.interfaces->map(i|$i->typePathToString($j))->joinStrings(', ');) + ' {\n',
                                 | 'class ' + $j.simpleName + $j.typeParameters->typeVarsToString($j) +
                                   if($j.superType ->isEmpty(), |'', |' extends '    + $j.superType->toOne()->typePathToString($j);) +
-                                  if($j.interfaces->isEmpty(), |'', |' implements ' + $j.interfaces->map(i|$i->typePathToString($j))->joinStrings(', ')) + ' {\n\n') +
+                                  if($j.interfaces->isEmpty(), |'', |' implements ' + $j.interfaces->map(i|$i->typePathToString($j))->joinStrings(', ')) + ' {\n') +
    $j->bodyToString($tab) +
-   '\n}\n';
+   '}\n';
 }
 
 function meta::java::serialization::bodyToString(j:meta::java::metamodel::Class[1], tab:String[1]):String[1]
@@ -322,14 +322,16 @@ function meta::java::serialization::bodyToString(j:meta::java::metamodel::Class[
                        $f.name+
                        if($f.value->isNotEmpty() || $f.valueCode->isNotEmpty(), |' = ' + $j->codeAsString($f.value, $f.valueCode, $tab), |'')+
                        ';'
-                    )->joinStrings('\n\n')+if($j.fields->isEmpty(),|'',|'\n\n')+
+                    )->joinStrings('\n')+if($j.fields->isEmpty(),|'',|'\n')+
+   + if (!$j.fields->isEmpty() && !$j.constructors->isEmpty(), |'\n', |'') +
    $j.constructors->map(c|$tab+$c->modifiersToString()+
                              $j.simpleName+
                              '('+
                              $c.parameters->map(p|$p->annotationToString('', false)+$p.type->typePathToString($j)+' '+$p.name)->joinStrings(',')+
                              ') {\n'+$j->codeAsMethodBody($c.body, $c.bodyCode, $tab)+$tab+'}'
 
-                          )->joinStrings('\n\n')+if($j.constructors->isEmpty(),|'',|'\n\n')+
+                          )->joinStrings('\n')+if($j.constructors->isEmpty(),|'',|'\n')+
+   + if ((!$j.fields->isEmpty() || !$j.constructors->isEmpty()) && !$j.methods->isEmpty(), |'\n', |'') +
    $j.methods->map(m|$m->javaDocToString($tab)+$m->annotationToString($tab, true)+$tab+
                         $m->modifiersToString()+
                         $m.typeParameters->typeVarsToString($j)+
@@ -343,7 +345,7 @@ function meta::java::serialization::bodyToString(j:meta::java::metamodel::Class[
                               |';',
                               |' {\n'+$j->codeAsMethodBody($m.body, $m.bodyCode, $tab)+$tab+'}'
                         )
-                      )->joinStrings('\n\n')
+                      )->joinStrings('\n')+if($j.methods->isEmpty(),|'',|'\n')
 }
 
 function meta::java::serialization::codeAsString(j:meta::java::metamodel::Class[1], s:String[0..1], c:Code[0..1], tab:String[1]):String[1]
