@@ -1,0 +1,214 @@
+Class meta::protocols::generation::tests::model::Message extends meta::protocols::generation::tests::model::ProtoBufType
+{
+   name:String[1];
+   fields:meta::protocols::generation::tests::model::Field[*];
+   reservedFieldNames:String[*];
+   reservedFieldNumbers:Integer[*];
+}
+
+Enum meta::protocols::generation::tests::model::FieldFlag
+{
+  ON, OFF
+}
+
+Class meta::protocols::generation::tests::model::Field
+{
+   flag:meta::protocols::generation::tests::model::FieldFlag[1];
+   binaryFieldNumber:Integer[1];
+   name:String[1];
+   type:meta::protocols::generation::tests::model::ProtoBufType[1];
+   repeated:Boolean[1];
+}
+
+
+Class meta::protocols::generation::tests::model::ProtoBufType
+{
+}
+
+Class meta::protocols::generation::tests::model::MessagePtr extends meta::protocols::generation::tests::model::ProtoBufType
+{
+   name : String[1];
+}
+
+Class meta::protocols::generation::tests::model::EnumPtr extends meta::protocols::generation::tests::model::ProtoBufType
+{
+   name : String[1];
+}
+
+Class meta::protocols::generation::tests::model::Enumeration extends meta::protocols::generation::tests::model::ProtoBufType
+{
+   name : String[1];
+   values:meta::protocols::generation::tests::model::Enum[*];
+}
+
+Class meta::protocols::generation::tests::model::Enum
+{
+   constant : String[1];
+   constantNumber : Integer[1];
+}
+
+Class meta::protocols::generation::tests::model::ScalarType extends meta::protocols::generation::tests::model::ProtoBufType
+{
+}
+
+Class meta::protocols::generation::tests::model::scalar::Int32 extends meta::protocols::generation::tests::model::ScalarType
+{
+}
+
+Class meta::protocols::generation::tests::model::scalar::Bool extends meta::protocols::generation::tests::model::ScalarType
+{
+}
+
+Class meta::protocols::generation::tests::model::scalar::String extends meta::protocols::generation::tests::model::ScalarType
+{
+}
+
+function <<test.Test>> meta::protocols::generation::tests::testProtocolJavaGeneration():Boolean[1]
+{
+  let sources = meta::protocols::generation::java::generateProtocolClasses('meta::protocols::generation::tests::model', 'org.finos')->meta::alloy::runtime::java::projectToImplementation().classes.source->sort();
+  assertEquals(13, $sources->size());
+
+  assertEquals('package org.finos.scalar;\n' +
+            '\n' +
+            'import org.finos.ProtoBufTypeVisitor;\n' +
+            'import org.finos.ScalarType;\n' +
+            '\n' +
+            'public class Bool extends ScalarType {\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            '        return visitor.visit(this);\n' +
+            '    }\n' +
+            '}\n', $sources->at(0));
+
+
+  assertEquals('package org.finos.scalar;\n' +
+            '\n' +
+            'import org.finos.ProtoBufTypeVisitor;\n' +
+            'import org.finos.ScalarType;\n' +
+            '\n' +
+            'public class Int32 extends ScalarType {\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            '        return visitor.visit(this);\n' +
+            '    }\n' +
+            '}\n', $sources->at(1));
+
+
+  assertEquals('package org.finos.scalar;\n' +
+            '\n' +
+            'import org.finos.ProtoBufTypeVisitor;\n' +
+            'import org.finos.ScalarType;\n' +
+            '\n' +
+            'public class String extends ScalarType {\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            '        return visitor.visit(this);\n' +
+            '    }\n' +
+            '}\n', $sources->at(2));
+
+
+  assertEquals('package org.finos;\n' +
+               '\n' +
+               'import java.util.Collections;\n' +
+               'import java.util.List;\n' +
+               '\n' +
+               'public class Enumeration extends ProtoBufType {\n' +
+               '    public String name;\n' +
+               '    public List<Enum> values = Collections.<org.finos.Enum>emptyList();\n' +
+               '\n' +
+               '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+               '        return visitor.visit(this);\n' +
+               '    }\n' +
+               '}\n', $sources->at(3));
+
+
+  assertEquals('package org.finos;\n' +
+            '\n' +
+            'import java.util.Collections;\n' +
+            'import java.util.List;\n' +
+            '\n' +
+            'public class Message extends ProtoBufType {\n' +
+            '    public String name;\n' +
+            '    public List<Field> fields = Collections.<org.finos.Field>emptyList();\n' +
+            '    public List<String> reservedFieldNames = Collections.<String>emptyList();\n' +
+            '    public List<Long> reservedFieldNumbers = Collections.<Long>emptyList();\n' +
+            '\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            '        return visitor.visit(this);\n' +
+            '    }\n' +
+            '}\n', $sources->at(4));
+
+
+  assertEquals('package org.finos;\n' +
+            '\n' +
+            'import org.finos.scalar.Bool;\n' +
+            'import org.finos.scalar.Int32;\n' +
+            '\n' +
+            'public interface ProtoBufTypeVisitor<T>  {\n' +
+            '    T visit(Bool val);\n' +
+            '    T visit(EnumPtr val);\n' +
+            '    T visit(Enumeration val);\n' +
+            '    T visit(Int32 val);\n' +
+            '    T visit(Message val);\n' +
+            '    T visit(MessagePtr val);\n' +
+            '    T visit(ScalarType val);\n' +
+            '    T visit(org.finos.scalar.String val);\n' +
+            '}\n', $sources->at(5));
+
+  assertEquals('package org.finos;\n' +
+            '\n' +
+            'public abstract class ProtoBufType {\n' +
+            '    public abstract <T> T accept(ProtoBufTypeVisitor<T> visitor);\n' +
+            '}\n', $sources->at(6));
+
+
+  assertEquals('package org.finos;\n' +
+               '\n' +
+               'public class Enum {\n' +
+               '    public String constant;\n' +
+               '    public long constantNumber;\n' +
+               '}\n', $sources->at(7));
+
+  assertEquals('package org.finos;\n' +
+               '\n' +
+               'public class EnumPtr extends ProtoBufType {\n' +
+               '    public String name;\n' +
+               '\n' +
+               '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+               '        return visitor.visit(this);\n' +
+               '    }\n' +
+               '}\n', $sources->at(8));
+
+
+  assertEquals('package org.finos;\n' +
+            '\n' +
+            'public class Field {\n' +
+            '    public FieldFlag flag;\n' +
+            '    public long binaryFieldNumber;\n' +
+            '    public String name;\n' +
+            '    public ProtoBufType type;\n' +
+            '    public boolean repeated;\n' +
+            '}\n', $sources->at(9));
+
+ assertEquals('package org.finos;\n' +
+            '\n' +
+            'public class MessagePtr extends ProtoBufType {\n' +
+            '    public String name;\n' +
+            '\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            '        return visitor.visit(this);\n' +
+            '    }\n' +
+            '}\n', $sources->at(10)); 
+
+  assertEquals('package org.finos;\n' +
+            '\n' +
+            'public class ScalarType extends ProtoBufType {\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            '        return visitor.visit(this);\n' +
+            '    }\n' +
+            '}\n', $sources->at(11));
+
+  assertEquals('package org.finos;\n' +
+            '\n' +
+            'public enum FieldFlag {\n' +
+            '    ON,\n' +
+            '    OFF;\n' +
+            '}\n', $sources->at(12));         
+}
