@@ -660,7 +660,7 @@ function <<access.private>> meta::relational::testDataGeneration::createTempTabl
                               | ' NULL',
                               | ''
                           );
-         if($dbType == DatabaseType.H2, | $c.name, | '"' + $c.name + '"') + ' ' + $sqlType + $nullSuffix;
+         if(($dbType == DatabaseType.H2) || $c.name->startsWith('"'), | $c.name, | '"' + $c.name + '"') + ' ' + $sqlType + $nullSuffix;
       })->joinStrings('(', ',', ')');
 
       if ($dbType == DatabaseType.H2,
@@ -677,7 +677,7 @@ function <<access.private>> meta::relational::testDataGeneration::insertIntoTemp
 {
   {ttName:String[1], cols: String[*], rows: Row[*], dbType: DatabaseType[1]|
 
-        let colsAsString = '(' + $cols->map(c| if($dbType == DatabaseType.H2, | $c, | '"' + $c + '"'))->joinStrings(', ') + ')';
+        let colsAsString = '(' + $cols->map(c| if(($dbType == DatabaseType.H2) || $c->startsWith('"'), | $c, | '"' + $c + '"'))->joinStrings(', ') + ')';
         'INSERT INTO '+ $ttName + $colsAsString +  ' values ' + $rows->map(r | '(' + $r.values->convertValuesToCsv() + ')')->joinStrings(', ') + ';';
   }
 }
