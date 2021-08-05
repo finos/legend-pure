@@ -315,7 +315,7 @@ function meta::relational::tests::databaseTestPattern::getDatabases():DatabaseTy
 //  [DatabaseType.Redshift, DatabaseType.H2];
  [DatabaseType.Redshift];
 
- //trying for legend-engine
+ //trying for legend-engineredshiftPassword
 //  [ DatabaseType.H2];
 }
 
@@ -327,15 +327,27 @@ function meta::relational::tests::databaseTestPattern::getDatabasesTest():Any[*]
 
 function meta::relational::tests::databaseTestPattern::getConnectionTest(dbType: Any[1] ):Connection[1]
 {
-  print($dbType);
-  ^TestDatabaseConnection(element = db, type = $dbType -> cast(@DatabaseType));
-// 
-  //poiuy qwerty change
-//getdatabaseconnection map function 
 
-//multiple if elses depnding on datatype
-//TODO: get these tests on engine
-  // ^meta::pure::alloy::connections::RelationalDatabaseConnection(element = db, datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::RedshiftDatasourceSpecification(databaseName = 'dev', port = 5439, endpoint = 'lab.cqzp3tj1qpzo.us-east-2.redshift.amazonaws.com'), authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::UserPasswordAuthenticationStrategy(passwordVaultReference = 'rEdShiFt528491!', userName = 'awsuser'), type = $dbType -> cast(@DatabaseType));
+  // FOR LEGEND-PURE IDE LIGHT
+  //^TestDatabaseConnection(element = db, type = $dbType -> cast(@DatabaseType));
+
+
+  //FOR LEGEND-ENGINE
+   if ( $dbType == DatabaseType.Redshift,
+
+     | print('Establish redshift relational database connection');
+     ^meta::pure::alloy::connections::RelationalDatabaseConnection(element = db, datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::RedshiftDatasourceSpecification(databaseName = 'dev', port = 5439, endpoint = 'lab.cqzp3tj1qpzo.us-east-2.redshift.amazonaws.com'), authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::UserPasswordAuthenticationStrategy(passwordVaultReference = 'rEdShiFt528491!', userName = 'awsuser'), type = $dbType -> cast(@DatabaseType));,
+     | if ( $dbType == DatabaseType.H2,
+         | print('hello we are h2');
+               ^meta::pure::alloy::connections::RelationalDatabaseConnection(element = db, datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification(), authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy(), type = $dbType -> cast(@DatabaseType));
+           ,
+         | print('hello we are neither h2 nor redshift');
+             ^meta::pure::alloy::connections::RelationalDatabaseConnection(element = db, datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification(), authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy(), type = $dbType -> cast(@DatabaseType));
+
+     );
+ );
+
+
 }
 
 function meta::relational::tests::databaseTestPattern::getRuntime(dbType: Any[1] ):Runtime[1]
