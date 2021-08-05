@@ -644,6 +644,11 @@ function <<access.private>> meta::java::generation::code::maybeInstanceParenthes
    );
 }
 
+function meta::java::metamodel::project::printProject(project: Project[1]):Any[*]
+{
+   $project->allDirectories()->map(d|$d->printDirectory());
+}
+
 function <<access.private>> meta::java::metamodel::project::printDirectory(dir: ProjectDirectory[1]): Any[*]
 {
    println('==== ' + $dir.fullPath());
@@ -654,7 +659,7 @@ function <<access.private>> meta::java::metamodel::project::printDirectory(dir: 
 function <<access.private>> meta::java::metamodel::project::printClass(class: meta::java::metamodel::Class[1], pathTo: String[1]): Any[*]
 {
    println('---- ' + $pathTo + '/' + $class.simpleName + '.java');
-   $class->meta::java::serialization::classToString(true)->printLines();
+   $class->meta::java::serialization::classToString()->printLines();
 }
 
 function <<access.private>> meta::java::metamodel::project::printFile(file: meta::java::metamodel::project::File[1], pathTo: String[1]): Any[*]

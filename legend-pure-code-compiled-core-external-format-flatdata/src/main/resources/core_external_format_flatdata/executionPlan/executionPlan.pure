@@ -20,6 +20,7 @@ import meta::external::format::flatdata::executionPlan::*;
 import meta::external::format::flatdata::executionPlan::engine::*;
 import meta::external::format::flatdata::metamodel::*;
 import meta::external::format::flatdata::runtime::*;
+import meta::external::shared::format::binding::*;
 import meta::external::shared::format::binding::validation::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::executionPlan::engine::*;
@@ -46,13 +47,13 @@ Class meta::external::format::flatdata::executionPlan::FlatDataDeserializeExecut
    tree       : RootGraphFetchTree<Any>[0..1]; 
 }
 
-function meta::external::format::flatdata::executionPlan::generateSerializeNode(checked:Boolean[1], schemaBinding:SchemaBinding[1], children:ExecutionNode[*]): ExternalFormatSerializeExecutionNode[1]
+function meta::external::format::flatdata::executionPlan::generateSerializeNode(checked:Boolean[1], binding:Binding[1], children:ExecutionNode[*]): ExternalFormatSerializeExecutionNode[1]
 {
    ^FlatDataSerializeExecutionNode(
       resultType      = ^ResultType(type=String),
       resultSizeRange = PureOne,
       checked         = $checked,
-      schemaBinding   = $schemaBinding,
+      binding         = $binding,
       executionNodes  = $children
    );
 }
@@ -80,7 +81,7 @@ function meta::external::format::flatdata::executionPlan::printPlanNodeToString(
          'FlatData_Serialize\n' + 
          $space + '(' + header($node, $space, $extensions) + '\n' +
          $space + '  checked = ' + $node.checked->toString() + '\n' +
-         $space + '  schemaBinding = ' + $node.schemaBinding->elementToPath() + '\n' +
+         $space + '  binding = ' + $node.binding->elementToPath() + '\n' +
          $node->childrenToString($space+'  ', $extensions) + '\n' +
          $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
          $space + ')\n'
@@ -122,14 +123,14 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::pre
 {
    print(if($debug.debug,|$debug.space+'('+$path+') prepare FlatDataSerializeExecutionNode\n', |''));
    
-   let bindingDetail = bindDetails($node.schemaBinding);
+   let bindingDetail = bindDetails($node.binding->cast(@Binding));
    assert($bindingDetail->instanceOf(FlatDataBindingDetail), | 'Detailed binding failed: ' + $bindingDetail->cast(@FailedBindingDetail).errorMessages->joinStrings('\n'));
    
    let classIn = $node.executionNodes.resultType->match([
       c:ClassResultType[1] | $c.setImplementations.class->toOne()
    ]);
 
-   let newTypeInfos = $context.typeInfos->addForClasses($node.schemaBinding.model->filter(pe| $pe->instanceOf(Class))->cast(@Class<Any>));
+   let newTypeInfos = $context.typeInfos->addForClasses($node.binding->cast(@Binding).modelUnit->meta::pure::model::unit::resolve().classes);
 
    let nodeInfo = ^NodeInfo(
       path            = $path, 
@@ -150,7 +151,7 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::pre
    print(if($debug.debug,|$debug.space+'('+$path+') prepare FlatDataDeserializeExecutionNode\n', |''));
 
    let conventions   = $context.conventions;
-   let bindingDetail = bindDetails($node.connection->cast(@ExternalFormatConnection).schemaBinding);
+   let bindingDetail = bindDetails($node.connection->cast(@ExternalFormatConnection).element->cast(@Binding));
    assert($bindingDetail->instanceOf(FlatDataBindingDetail), | 'Detailed binding failed: ' + $bindingDetail->cast(@FailedBindingDetail).errorMessages->joinStrings('\n'));
 
    assert($node.tree->isNotEmpty(), |'Use case without graph fetch tree not yet supported');
@@ -208,8 +209,8 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::cre
    let rootInterface = $conventions->className($serializeData.classIn);
    let contextType   = javaParameterizedType($conventions->className(_FlatDataContext), $rootInterface);
    let factoryType   = javaParameterizedType($conventions->className(_ObjectToParsedFlatData), $rootInterface);
-   let schema        = $node.schemaBinding.schema;
-   let flatData      = $schema.detail->cast(@FlatData);
+   let schemaSet     = $node.binding->cast(@Binding).schemaSet->toOne();
+   let flatData      = $schemaSet.schemas->at(0).detail->cast(@FlatData);
 
    $context.conventions->planNodeClass('public', $path, 'FlatDataSerializeSpecifics')
       ->implements(javaParameterizedType($conventions->className(_IFlatDataSerializeExecutionNodeSpecifics), $rootInterface))
@@ -318,7 +319,7 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::cre
       })
       ->addMethod({cls |
          let schemaVar            = j_variable($conventions->className(_FlatData), 'schema');
-         let newContext           = j_new($contextType, [$schemaVar, j_string($schema->elementToPath())]);
+         let newContext           = j_new($contextType, [$schemaVar, j_string($schemaSet->elementToPath())]);
          let contextWithFactories = $flatData.sections->fold(
                                        {section, code| 
                                           let factoryRef = j_this($cls)->j_methodReference($section->sectionFactoryMethodName(), javaFunctionType($conventions->className(_FlatDataRecordType), $conventions->className(_ParsedFlatDataToObject)));
@@ -373,8 +374,8 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::cre
    let rootInterface = $conventions->className($rootClass);
    let contextType   = javaParameterizedType($conventions->className(_FlatDataContext), $rootInterface);
    let factoryType   = javaParameterizedType($conventions->className(_ParsedFlatDataToObject), $rootInterface);
-   let schema        = $node.connection->cast(@ExternalFormatConnection).schemaBinding.schema;
-   let flatData      = $schema.detail->cast(@FlatData);
+   let schemaSet     = $node.connection->cast(@ExternalFormatConnection).element->cast(@Binding).schemaSet->toOne();
+   let flatData      = $schemaSet.schemas->at(0).detail->cast(@FlatData);
 
    $context.conventions->planNodeClass('public', $path, 'FlatDataDeserializeSpecifics')
       ->implements(javaParameterizedType($conventions->className(_IFlatDataDeserializeExecutionNodeSpecifics), $rootInterface))
@@ -483,7 +484,7 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::cre
       })
       ->addMethod({cls |
          let schemaVar            = j_variable($conventions->className(_FlatData), 'schema');
-         let newContext           = j_new($contextType, [$schemaVar, j_string($schema->elementToPath())]);
+         let newContext           = j_new($contextType, [$schemaVar, j_string($schemaSet->elementToPath())]);
          let contextWithFactories = $flatData.sections->fold(
                                        {section, code| 
                                           let factoryRef = j_this($cls)->j_methodReference($section->sectionFactoryMethodName(), javaFunctionType($conventions->className(_FlatDataRecordType), $conventions->className(_ParsedFlatDataToObject)));
