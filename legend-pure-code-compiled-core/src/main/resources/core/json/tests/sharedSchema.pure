@@ -486,6 +486,9 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
                                  '    meta::json::schema::tests::functionWithStringType: \n' +
                                  '      pattern: "test"\n' +
                                  '      type: "string"';
+   
+   
+   
 
     let expectedOPenAPI = '{' +
                         '  "components":   {' +
@@ -607,18 +610,83 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
                                        '    }' +
                                        '  }' +
                                        '}';
+   
+   
+      let ImportedCollectionNoPath= '{' +
+                                       '  "definitions":   {' +
+                                       '    "ClassWithFunctionReferences":     {' +
+                                       '      "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+                                       '      "title": "a custom title",' +
+                                       '      "type": "object",' +
+                                       '      "properties":       {' +
+                                       '        "one":         {' +
+                                       '          "$ref": "#\/definitions\/functionWithStringType"' +
+                                       '        },' +
+                                       '        "optional":         {' +
+                                       '          "$ref": "#\/definitions\/functionWithStringType"' +
+                                       '        },' +
+                                       '        "many":         {' +
+                                       '          "type": "array",' +
+                                       '          "items":           {' +
+                                       '            "$ref": "#\/definitions\/functionWithStringType"' +
+                                       '          }' +
+                                       '        }' +
+                                       '      },' +
+                                       '      "required": [' +
+                                       '"one"' +
+                                       '      ]' +
+                                       '    },' +
+                                       '    "SimpleClass":     {' +
+                                       '      "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+                                       '      "title": "meta::json::schema::tests::SimpleClass",' +
+                                       '      "type": "object",' +
+                                       '      "properties":       {' +
+                                       '        "p":         {' +
+                                       '          "type": "string"' +
+                                       '        },' +
+                                       '        "a":         {' +
+                                       '          "$ref": "#\/definitions\/SimpleClass2"' +
+                                       '        }' +
+                                       '      },' +
+                                       '      "required": [' +
+                                       '"p"' +
+                                       '      ]' +
+                                       '    },' +
+                                       '    "SimpleClass2":     {' +
+                                       '      "$schema": "http:\/\/json-schema.org\/draft-07\/schema#",' +
+                                       '      "title": "meta::json::schema::tests::SimpleClass2",' +
+                                       '      "type": "object",' +
+                                       '      "properties":       {' +
+                                       '        "p":         {' +
+                                       '          "type": "string"' +
+                                       '        }' +
+                                       '      },' +
+                                       '      "required": [' +
+                                       '"p"' +
+                                       '      ]' +
+                                       '    },' +
+                                       '    "functionWithStringType":     {' +
+                                       '      "pattern": "test",' +
+                                       '      "type": "string"' +
+                                       '    }' +
+                                       '  }' +
+                                       '}';
+   
       assert(jsonEquivalent($expectedStandardJSONSchema->parseJSON(),$collectWithNoRelatedTypes.content->toOne()->parseJSON()));
       assert(jsonEquivalent($expectedStandardJSONSchema->parseJSON(),$collectWithRelatedTypes.content->toOne()->parseJSON()));
 
       assert(jsonEquivalent($expectedOPenAPI->parseJSON(),$collectOpenAPI.content->toOne()->parseJSON()));
       assertEquals($expectedOpenAPIYAML,$collectOpenAPIYAML.content->toOne());
+    let OpenAPINoPaths = [schemaInput('/model.json', $ImportedCollectionNoPath,'meta::json::schema::tests')]->JSONSchemaToPure();
 
    
     let standardSchema = [schemaInput('/model.json', $expectedStandardJSONSchema,[])]->JSONSchemaToPure();
-    let openAPI = [schemaInput('/model.json', $expectedOPenAPI,[])]->JSONSchemaToPure();
+    let openAPI = [schemaInput('/model.json', $expectedOPenAPI,'should::be::ignored')]->JSONSchemaToPure();
+
 
    assert($standardSchema->size()==4);
    assert($openAPI->size()==4);
+   assert($OpenAPINoPaths->size()==4);
 
    meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::ClassWithFunctionReferences,$standardSchema);
    meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::functionWithStringType_String_$0_1$__Boolean_1_,$standardSchema);
@@ -630,6 +698,13 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
    meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::functionWithStringType_String_$0_1$__Boolean_1_,$openAPI);
    meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::SimpleClass2,$openAPI);
    meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::SimpleClass,$openAPI);
+
+
+   meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::ClassWithFunctionReferences,$OpenAPINoPaths);
+   meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::functionWithStringType_String_$0_1$__Boolean_1_,$OpenAPINoPaths);
+   meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::SimpleClass2,$OpenAPINoPaths);
+   meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::SimpleClass,$OpenAPINoPaths);
+
 
 }
 

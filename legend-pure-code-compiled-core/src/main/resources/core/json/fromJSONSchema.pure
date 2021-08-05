@@ -104,7 +104,7 @@ function <<access.private>> meta::json::schema::fromSchema::deReferenceElement(e
 
 function <<access.private>> meta::json::schema::fromSchema::extractSubSchemas(schema:ProcessedSchema[1]):ProcessedSchema[*]
 {   
-   $schema.embeddedSchemas->cast(@JSONObject).keyValuePairs->map(kv |let  fileName=$kv.key.value->refToFullPath($schema.fileName);
+   $schema.embeddedSchemas->cast(@JSONObject).keyValuePairs->map(kv |let  fileName=if($schema.pathPrefix->isEmpty(),|'',|if($kv.key.value->contains('::'),|'',|$schema.pathPrefix->toOne()->replace('::','/')))+$kv.key.value->refToFullPath($schema.fileName);
                                                                       processSchema($fileName,$kv.value->cast(@JSONObject) ,[]  ,true);
                                                       );
 }
@@ -152,7 +152,7 @@ function <<access.private>> meta::json::schema::fromSchema::processSchema(fileNa
                           ,
                               |$parsedSchema); 
    
-      let embeddedSchemas = $updatedSchema->extractEmbeddedSchema();
+    let embeddedSchemas = $updatedSchema->extractEmbeddedSchema();
 
    let schemaType = if( JSONSchemaIsObject($updatedSchema),
                           |SchemaType.object,
@@ -809,27 +809,27 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToClass(fi
                                      |[]);,
                                    |[]););
       
-      
     let class = newClass($fileName->typeFullPath($pathPrefix));
     let generalizations = $processedSchema.superTypes->distinct()->map(g |^Generalization(general = ^GenericType(rawType=newClass($g->packageFromPath($pathPrefix)+$g->refToFileName() )),specific= $class));
     let updatedGeneralizations = if($generalizations->isEmpty(),|$class.generalizations,|$generalizations);
     let classProperties = $properties->map(p|$p->JSONSchemaToProperty($class,$fileName,$pathSchemas,$pathPrefix,$p.key.value->in($required),$p.key.value==$discriminatorPropertyName,$extendedProfile ));
     let zippedPropertes = $properties->zip($classProperties);
-   
     let keysForInLine = functionConstraintMap(true)->keys()->filter(f|!$f->in(['$ref','type','items']));
-    let constraints =$zippedPropertes->map( zipped| let p = $zipped.first;
+    let constraints =$zippedPropertes->map( zipped| let p = $zipped.first;  
                                                     let propertyObject = $p->propertyObject($class);
-                                           if( $p.value->instanceOf(JSONObject) && $propertyObject.keyValuePairs->getValueForKey('$ref')->isNotEmpty() && ( $zipped.second.genericType.rawType->toOne() ->instanceOf(PrimitiveType)  || $zipped.second.genericType.rawType->toOne()==Any)  
+                                           if( $p.value->instanceOf(JSONObject) && $propertyObject.keyValuePairs->getValueForKey('$ref')->isNotEmpty() && 
+                                              ( $zipped.second.genericType.rawType->toOne() ->instanceOf(PrimitiveType)  || $zipped.second.genericType.rawType->toOne()==Any)  
                                               ,
-                                            |let refSchema = $pathSchemas->get($propertyObject.keyValuePairs->getValueForKey('$ref')->cast(@JSONString).value->toOne()->refToFullPath($fileName));
+                                            | 
+                                              let refSchema = $pathSchemas->get($propertyObject.keyValuePairs->getValueForKey('$ref')->cast(@JSONString).value->toOne()->refToFullPath($fileName)); 
                                                                if($refSchema->isNotEmpty() && $refSchema.schemaType== SchemaType.fragment && !$p.value->cast(@JSONObject).keyValuePairs.key.value->containsAny($keysForInLine)   ,   
                                                  | 
                                                    
                                                    let lambda = newLambdaFunction( ^FunctionType(returnMultiplicity = PureOne, 
                                                                                                  returnType = ^GenericType(rawType = Boolean),
                                                                                                  parameters= ^VariableExpression(name='this',multiplicity=PureOne,genericType=^GenericType(rawType=Any))
-       ));                                                                                               
-                                                                  let lambdaWithDef= ^$lambda(expressionSequence=createConstraintFunctionExpression($fileName,$refSchema.fileName->toOne()->typeFullPath($pathPrefix)  ,Any,$pathPrefix,$zipped.second,$p.value->cast(@JSONObject),$pathSchemas));
+                                                                                     ));    
+                                                    let lambdaWithDef= ^$lambda(expressionSequence=createConstraintFunctionExpression($fileName,$refSchema.fileName->toOne()->typeFullPath($pathPrefix)  ,Any,$pathPrefix,$zipped.second,$p.value->cast(@JSONObject),$pathSchemas));
                                                    ^meta::pure::metamodel::constraint::Constraint(functionDefinition=$lambdaWithDef,
                                                                                                   name =$p.key.value);,
                                                  |[]                   
@@ -838,7 +838,6 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToClass(fi
                                       );
                                        );
      let constraintFormats = 'uuid';
-
      let inLineConstraints = $zippedPropertes->filter(f| 
                                                                
                                                           $f.first.value->cast(@JSONObject).keyValuePairs.key.value->containsAny($keysForInLine) 
@@ -896,8 +895,7 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToProperty
 {
     let propertyName = $property.key.value;
    
-    
-    let propertyKVP = $property.value->cast(@JSONObject).keyValuePairs;
+   let propertyKVP = $property.value->cast(@JSONObject).keyValuePairs;
     
     let propertyAllOf =$propertyKVP->getValueForKey('allOf');
      
@@ -910,12 +908,10 @@ function <<access.private>> meta::json::schema::fromSchema::JSONSchemaToProperty
                     |$propertyAllOf->cast(@JSONArray).values->at(0)->cast(@JSONObject).keyValuePairs->getValueForKey('$ref');,
                     | $propertyObject.keyValuePairs->getValueForKey('$ref');
                 );
-   
      let type = if($ref->isNotEmpty(),
                      | $ref->cast(@JSONString).value->toOne()->refToPath($ownerPath,$pathSchemas,$pathPrefix),
                      | $propertyObject.keyValuePairs->getValueForKey('type')->JSONToPUREType($propertyObject.keyValuePairs->getValueForKey('format')->first());
                   );
-
    let minItems = $propertyKVP->getValueForKey('minItems');
    let maxItems = $propertyKVP->getValueForKey('maxItems');
    let minMult= ^MultiplicityValue(value=if($minItems->isNotEmpty(),
@@ -1140,9 +1136,12 @@ function <<access.private>> meta::json::schema::fromSchema::refToFileName(ref:St
 }
 
 
-function meta::json::schema::fromSchema::refToFullPath(ref:String[1],parentPath:String[0..1]):String[1]
+function {doc.doc='This function calculates the fully qualified path from a $ref and the parent schema file'}
+meta::json::schema::fromSchema::refToFullPath(ref:String[1],parentPath:String[0..1]):String[1]
 {    
-      
+      //References that are a Pure Path ($my::class) are taken as is and considered to already be fully qualified
+      //References to an embedded  component or definition schema will use the calculated path of the file of the reference if the pure path is not specified in the reference
+   
      let schemaRef = if($ref->contains('components/schemas'),|'components/schemas',| 'definitions');
    
      let isRoot = $ref->startsWith('#');
@@ -1175,7 +1174,8 @@ function meta::json::schema::fromSchema::refToFullPath(ref:String[1],parentPath:
      let refWithFileType = if($cleanRef->endsWith('.json'),|$cleanRef,|$cleanRef+'.json');
       
      let fullRefelments = $parentPathElements->take(max($parentPathElements->size()-$parentOffset,0));
-   if($fullRefelments->isEmpty(),
+      
+if($fullRefelments->isEmpty(),
          |$refWithFileType,
          |'/'+$fullRefelments->joinStrings('/')+$refWithFileType
        );     

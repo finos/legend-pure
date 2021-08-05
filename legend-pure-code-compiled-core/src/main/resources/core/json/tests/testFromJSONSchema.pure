@@ -112,10 +112,14 @@ function <<test.Test>> meta::json::schema::fromSchema::tests::dereferenceTest():
    assertEquals('/a/1/2/child.json',meta::json::schema::fromSchema::refToFullPath('../../1/2/child.json','/a/a/b/parent.json'));
    assertEquals('/l1/definitions/child.json',meta::json::schema::fromSchema::refToFullPath('/./child.json','/l1/definitions/parent.json'));
    assertEquals('/a/definitions/2/child.json',meta::json::schema::fromSchema::refToFullPath('../../definitions/2/child.json','/a/a/b/parent.json'));
+   assertEquals('/a/components/schemas/2/child.json',meta::json::schema::fromSchema::refToFullPath('../../components/schemas/2/child.json','/a/a/b/parent.json'));
    assertEquals('/l1/l2/child.json',meta::json::schema::fromSchema::refToFullPath('#/definitions/l1::l2::child','/a/b/parent.json'));
    assertEquals('/a/b/child.json',meta::json::schema::fromSchema::refToFullPath('#/definitions/child','/a/b/parent.json'));
    assertEquals('/a/l1a/child.json',meta::json::schema::fromSchema::refToFullPath('../l1a/parent2.json/definitions/child','/a/b/parent.json'));
-                 
+   assertEquals('/a/b/child.json',meta::json::schema::fromSchema::refToFullPath('/definitions/child','/a/b/parent.json'));
+   assertEquals('/a/b/child.json',meta::json::schema::fromSchema::refToFullPath('/definitions/a::b::child','/a/b/parent.json'));
+   assertEquals('/l1/l2/child.json',meta::json::schema::fromSchema::refToFullPath('/file.json/definitions/l1::l2::child','/a/b/c/parent.json'));
+             
 }
 
 
