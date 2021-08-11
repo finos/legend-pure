@@ -16,24 +16,25 @@ import meta::external::shared::format::binding::*;
 
 Class meta::external::shared::format::binding::GenerationConfiguration
 [
-  validTargetOperationName: $this.targetOperation->matches('[A-Za-z0-9_]+(::[A-Za-z0-9_]+)+')
+  validTargetOperationName: $this.targetBinding->matches('[A-Za-z0-9_]+(::[A-Za-z0-9_]+)+')
    
 ]
 {
-  targetOperation : String[1];
+  targetBinding : String[1];
 }
 
 Class meta::external::shared::format::binding::toPure::SchemaToModelConfiguration extends GenerationConfiguration
 {
+  sourceSchemaId  : String[0..1];
   targetPackage   : String[1];
 }
 
 Class meta::external::shared::format::binding::fromPure::ModelToSchemaConfiguration extends GenerationConfiguration
 [
-  validTargetSchemaName: $this.targetSchema->matches('[A-Za-z0-9_]+(::[A-Za-z0-9_]+)+')
+  validTargetSchemaName: $this.targetSchemaSet->matches('[A-Za-z0-9_]+(::[A-Za-z0-9_]+)+')
    
 ]
 {
-  targetSchema : String[1];
-  sourceModel  : PackageableElement[*];
+  targetSchemaSet : String[1];
+  sourceModel     : PackageableElement[*];
 }

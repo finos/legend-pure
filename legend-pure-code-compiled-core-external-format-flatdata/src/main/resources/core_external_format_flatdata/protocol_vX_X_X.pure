@@ -46,7 +46,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external:
    ^meta::protocols::pure::vX_X_X::metamodel::external::format::flatdata::executionPlan::FlatDataSerializeExecutionNode(
       _type           = 'flatDataSerialize',
       checked         = $node.checked,
-      schemaBinding   = $node.schemaBinding->elementToPath(),
+      binding         = $node.binding->elementToPath(),
       resultType      = $node.resultType->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformResultType($mapping, $extensions),
       resultSizeRange = $node.resultSizeRange->map(s| $s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity())
    );

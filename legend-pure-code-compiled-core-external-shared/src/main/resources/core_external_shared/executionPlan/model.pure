@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::external::shared::format::binding::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::metamodel::*;
 import meta::pure::executionPlan::*;
@@ -26,27 +27,15 @@ Class meta::external::shared::format::executionPlan::DataQualityExecutionNode ex
 
 Class meta::external::shared::format::executionPlan::ExternalFormatSerializeExecutionNode extends ExecutionNode
 {
-   checked       : Boolean[1];      
-   schemaBinding : SchemaBinding[1];
-}
-
-Class meta::external::shared::format::executionPlan::UrlConnection extends Connection
-[
-   $this.element->instanceOf(ModelStore)
-]
-{
-   url         : String[1];
-   contentType : String[1];
-   schema      : Schema[0..1];
-   class       : Class<Any>[1];
+   checked : Boolean[1];      
+   binding : Binding[1];
 }
 
 Class meta::external::shared::format::executionPlan::ExternalFormatConnection extends Connection
 [
-   $this.element->instanceOf(ModelStore)
+   $this.element->instanceOf(Binding)
 ]
 {
-   schemaBinding  : SchemaBinding[1];
    externalSource : ExternalSource[1];
 }
 

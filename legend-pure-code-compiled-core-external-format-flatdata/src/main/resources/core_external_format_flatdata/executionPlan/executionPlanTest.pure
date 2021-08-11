@@ -14,6 +14,7 @@
 
 import meta::external::format::flatdata::executionPlan::test::*;
 import meta::external::format::flatdata::metamodel::*;
+import meta::external::shared::format::binding::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::metamodel::*;
 import meta::external::shared::functions::*;
@@ -21,6 +22,7 @@ import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::toString::*;
 import meta::pure::graphFetch::execution::*;
 import meta::pure::mapping::modelToModel::*;
+import meta::pure::model::unit::*;
 import meta::pure::runtime::*;
 
 Class meta::external::format::flatdata::executionPlan::test::Person
@@ -33,44 +35,47 @@ function <<meta::pure::profiles::test.Test>> meta::external::format::flatdata::e
 {
    let extensions = meta::external::shared::format::routerExtensions('externalFormat', meta::external::format::flatdata::flatDataFormatExtension());
    
-   let schema = ^Schema(
+   let schemaSet = ^SchemaSet(
       name    = 'TestSchema',
       package = meta::external::format::flatdata::executionPlan::test,
       format  = 'FlatData',
-      detail  = ^FlatData(
-         sections = ^FlatDataSection(
-            name              = 'Person',
-            driverId          = 'DelimitedWithHeadings',
-            sectionProperties = [
-               ^FlatDataProperty(name='scope.untilEof', value=true),
-               ^FlatDataProperty(name='delimiter', value=',') 
-            ],
-            recordType        = ^FlatDataRecordType(
-               fields = [
-                  ^FlatDataRecordField(label='First Name', type=^FlatDataString(optional=false)),
-                  ^FlatDataRecordField(label='Last Name',  type=^FlatDataString(optional=false))
-               ]
+      schemas = ^Schema(
+         id = 'default.flatdata',
+         detail  = ^FlatData(
+            sections = ^FlatDataSection(
+               name              = 'Person',
+               driverId          = 'DelimitedWithHeadings',
+               sectionProperties = [
+                  ^FlatDataProperty(name='scope.untilEof', value=true),
+                  ^FlatDataProperty(name='delimiter', value=',') 
+               ],
+               recordType        = ^FlatDataRecordType(
+                  fields = [
+                     ^FlatDataRecordField(label='First Name', type=^FlatDataString(optional=false)),
+                     ^FlatDataRecordField(label='Last Name',  type=^FlatDataString(optional=false))
+                  ]
+               )
             )
          )
       )
    );
    
-   let schemaBinding = ^SchemaBinding(
-      name    = 'TestBinding',
-      package = meta::external::format::flatdata::executionPlan::test,
-      schema = $schema,
-      model  = Person
+   let binding = ^Binding(
+      name        = 'TestBinding',
+      package     = meta::external::format::flatdata::executionPlan::test,
+      schemaSet   = $schemaSet,
+      contentType = 'application/x.flatdata',
+      modelUnit   = newModelUnit()->include(Person)
    );
    
    let tree = #{Person {firstName, lastName}}#;
-   
+
    let plan = executionPlan(
-      |Person.all()->graphFetchChecked($tree)->externalize($schemaBinding),
+      |Person.all()->graphFetchChecked($tree)->externalize($binding),
       SelfMapping,
       ^Runtime(
          connections = ^ExternalFormatConnection(
-            element        = ^ModelStore(),
-            schemaBinding  = $schemaBinding,
+            element        = $binding,
             externalSource = ^UrlStreamExternalSource(url = 'executor:default')
          )
       ),
@@ -86,7 +91,7 @@ function <<meta::pure::profiles::test.Test>> meta::external::format::flatdata::e
       '  type = String\n' +
       '  resultSizeRange = 1\n' +
       '  checked = true\n' +
-      '  schemaBinding = meta::external::format::flatdata::executionPlan::test::TestBinding\n' +
+      '  binding = meta::external::format::flatdata::executionPlan::test::TestBinding\n' +
       '\n' +
       '  (\n' +
       '    GlobalGraphFetch\n' +
@@ -115,7 +120,7 @@ function <<meta::pure::profiles::test.Test>> meta::external::format::flatdata::e
       '                 (\n' +
       '                   type = PartialClass[impls=[], propertiesWithParameters = [firstName, lastName]]\n' +
       '                   resultSizeRange = *\n' +
-      '                   connection = ExternalFormatConnection(schemaBinding="meta::external::format::flatdata::executionPlan::test::TestBinding", source=(url="executor:default"))\n' +
+      '                   connection = ExternalFormatConnection(binding="meta::external::format::flatdata::executionPlan::test::TestBinding", source=(url="executor:default"))\n' +
       '\n' +
       '                 )\n' +
       '               )\n' +
