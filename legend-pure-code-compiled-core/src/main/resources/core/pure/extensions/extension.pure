@@ -33,7 +33,7 @@ Class meta::pure::router::extension::RouterExtension
 {
    type : String[1];
    serializerExtension : Function<{String[1]->String[1]}>[1];
-   
+   serializerExtensionByProtocolVersion : Map<String, SerializerExtension>[0..1];
    analytics_getStoreFromSetImpl : Function<{Mapping[1] -> Function<{Nil[1]->Store[1]}>[1]}>[0..1];
    analytics_getStoreFromSetImpl_Operation : Function<{Mapping[1] -> Function<{Nil[1]->Store[1]}>[1]}>[0..1];
    
@@ -133,6 +133,18 @@ Class meta::pure::router::extension::RouterExtension
    validTestPackages : String[*];
    
    serializerExtension(version : String[1])
+   {
+      if($this.serializerExtensionByProtocolVersion->isNotEmpty(),
+         | let serializerExtension = $this.serializerExtensionByProtocolVersion->toOne()->get($version)->cast(@SerializerExtension);
+            if(serializerExtension->isNotEmpty(),
+               | $serializerExtension->toOne(),
+               | $this.fetchSerializerExtension($version);
+               );,
+         |  $this.fetchSerializerExtension($version);
+         );
+   } : SerializerExtension[1];
+
+   fetchSerializerExtension(version : String[1])
    {
       let func = $this.serializerExtension->eval($version);
       $func->pathToElement()->cast(@Function<{String[1]->SerializerExtension[1]}>)->eval($this.type);
