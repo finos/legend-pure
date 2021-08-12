@@ -22,7 +22,6 @@ function meta::protocols::pure::vX_X_X::external::shared::format::serializerExte
    ^meta::protocols::pure::vX_X_X::extension::SerializerExtension_vX_X_X(
       transfers_store_transformConnection = 
          [
-            urlConnection:meta::external::shared::format::executionPlan::UrlConnection[1]            | $urlConnection->transformUrlConnection(),
             extConnection:meta::external::shared::format::executionPlan::ExternalFormatConnection[1] | $extConnection->transformExternalFormatConnection()
          ],
       transfers_executionPlan_transformNode = 
@@ -34,17 +33,8 @@ function meta::protocols::pure::vX_X_X::external::shared::format::serializerExte
    );
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::UrlConnection extends meta::protocols::pure::vX_X_X::metamodel::runtime::Connection
-{
-   class       : String[1];
-   contentType : String[1];
-   schema      : String[0..1];
-   url         : String[1];
-}
-
 Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalFormatConnection extends meta::protocols::pure::vX_X_X::metamodel::runtime::Connection
 {
-   schemaBinding  : String[1];
    externalSource : meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalSource[1];
 }
 
@@ -56,18 +46,6 @@ Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::execut
 Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::UrlStreamExternalSource extends meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalSource
 {
    url : String[1];
-}
-
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::shared::format::transformUrlConnection(urlConnection:meta::external::shared::format::executionPlan::UrlConnection[1]): meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::UrlConnection[1]
-{
-   ^meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::UrlConnection(
-      element     = 'ModelStore',
-      _type       = 'UrlConnection',
-      class       = $urlConnection.class->elementToPath(),
-      schema      = $urlConnection.schema->map(s| $s->elementToPath()),
-      contentType = $urlConnection.contentType,
-      url         = $urlConnection.url
-   );
 }
 
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::shared::format::transformExternalFormatConnection(extConnection:meta::external::shared::format::executionPlan::ExternalFormatConnection[1]): meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalFormatConnection[1]
@@ -82,7 +60,6 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external:
    ^meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalFormatConnection(
       element        = 'ModelStore',
       _type          = 'ExternalFormatConnection',
-      schemaBinding  = $extConnection.schemaBinding->elementToPath(),
       externalSource = $source
    );
 }
@@ -107,7 +84,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external:
 
 Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalFormatSerializeExecutionNode extends ExecutionNode
 {
-   checked       : Boolean[1];      
-   schemaBinding : String[1];   
+   checked : Boolean[1];      
+   binding : String[1];   
 }
 

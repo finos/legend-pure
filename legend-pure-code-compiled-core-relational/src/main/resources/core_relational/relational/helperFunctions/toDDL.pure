@@ -160,7 +160,7 @@ function meta::relational::functions::toDDL::possiblyQuoteColumn(col: String[1])
 
 function <<access.private>> meta::relational::functions::toDDL::reservedKeywords():String[*]
 {
-   ['window','limit'];
+   ['window','limit','order'];
 }
 
 function <<access.private>> meta::relational::functions::toDDL::getTable(database:Database[1], schemaName: String[1], tableName: String[1]):Table[1]

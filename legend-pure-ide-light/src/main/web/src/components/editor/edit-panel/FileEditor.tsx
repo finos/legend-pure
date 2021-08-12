@@ -74,6 +74,8 @@ export const FileEditor = observer((props: {
           flowResult(editorStore.executeGo()).catch(applicationStore.alertIllegalUnhandledError);
         } else if (event.keyCode === KeyCode.KEY_B && event.ctrlKey && !event.altKey) {
           // [ctrl + b] Navigate
+          event.preventDefault();
+          event.stopPropagation();
           const currentPosition = editor.getPosition();
           if (currentPosition) {
             const coordinate = new FileCoordinate(editorState.path, currentPosition.lineNumber, currentPosition.column);
@@ -81,9 +83,13 @@ export const FileEditor = observer((props: {
           }
         } else if (event.keyCode === KeyCode.KEY_B && event.ctrlKey && event.altKey) {
           // [ctrl + alt + b] Navigate back
+          event.preventDefault();
+          event.stopPropagation();
           flowResult(editorStore.navigateBack()).catch(applicationStore.alertIllegalUnhandledError);
         } else if (event.keyCode === KeyCode.F7 && event.altKey) {
           // [alt + f7] Find usages
+          event.preventDefault();
+          event.stopPropagation();
           const currentPosition = editor.getPosition();
           if (currentPosition) {
             const coordinate = new FileCoordinate(editorState.path, currentPosition.lineNumber, currentPosition.column);

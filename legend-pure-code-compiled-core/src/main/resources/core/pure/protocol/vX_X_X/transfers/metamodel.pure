@@ -209,11 +209,6 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
    );
 }
 
-function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::isToMany(m:Multiplicity[1]):Boolean[1]
-{
-   !$m->hasUpperBound() || ($m->getUpperBound() > 1);
-}
-
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformFunction(f:FunctionDefinition<Any>[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::domain::Function[1]
 {
 

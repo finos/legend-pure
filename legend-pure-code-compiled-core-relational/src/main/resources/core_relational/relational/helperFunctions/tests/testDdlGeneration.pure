@@ -44,6 +44,12 @@ function <<test.Test>>  meta::relational::tests::ddl::createCreateTableStatement
    assertEquals('Create Table baz_t(id INT NOT NULL,size FLOAT NULL,poem VARCHAR(255) NULL, PRIMARY KEY(id));', createTableStatement(meta::relational::tests::ddl::foo_db, 'baz_t'));
 }
 
+function <<test.Test>> meta::relational::tests::ddl::createCreateTableStatementWithReservedWorks():Boolean[1]
+{
+  let s = createTableStatement(foo_db, 'keyword_t');
+  assertEquals('Create Table keyword_t(id INT NOT NULL,"order" INT NULL,"limit" INT NULL,"window" INT NULL, PRIMARY KEY(id));', $s);
+}
+
 function <<test.Test>>  meta::relational::tests::ddl::dropAndCreateTable():Boolean[1]
 {
     let c = meta::relational::tests::testRuntime(foo_db).connections->toOne()->cast(@TestDatabaseConnection);
@@ -93,5 +99,13 @@ Database meta::relational::tests::ddl::foo_db
        id             integer PRIMARY KEY,
        size           float,
        poem           varchar(255)
+   )
+
+   Table keyword_t
+   (
+       id             integer PRIMARY KEY,
+       order          integer,
+       limit          integer,
+       window         integer
    )
 )
