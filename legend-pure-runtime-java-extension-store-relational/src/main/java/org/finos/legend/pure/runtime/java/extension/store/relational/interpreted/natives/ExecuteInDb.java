@@ -141,6 +141,7 @@ public class ExecuteInDb extends NativeFunction
 
         CoreInstance pureResult = this.repository.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), resultSetClassifier);
 
+        System.out.println("Exeecute in db happenin!");
         Connection connection = null;
         ConnectionWithDataSourceInfo connectionWithDataSourceInfo = null;
         Statement statement = null;
@@ -151,14 +152,27 @@ public class ExecuteInDb extends NativeFunction
                 MetricsRecorder.incrementRelationalExecutionCounters();
                 this.message.setMessage("Acquiring connection...");
 
+                System.out.println("poiiuy: acquiring connection");
+
+
                 CoreInstance dbTimeZone = connectionInformation.getValueForMetaPropertyToOne("timeZone");
                 String tz = dbTimeZone == null ? "GMT" : dbTimeZone.getName();
 
+                System.out.println("Poiuy most important trying to change something in here to get connection + redshift info pooled from legend engine");
+
                 long startRequestConnection = System.nanoTime();
                 connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(connectionInformation, processorSupport);
+
+                System.out.println("poiuy: connection with datasource info created");
+
                 Instance.addValueToProperty(pureResult, "connectionAcquisitionTimeInNanoSecond", this.repository.newIntegerCoreInstance(System.nanoTime() - startRequestConnection), processorSupport);
 
+
                 connection = connectionWithDataSourceInfo.getConnection();
+
+                System.out.println("poiuy: connection created");
+                System.out.println(connection);
+
                 if (!PureConnectionUtils.isPureConnectionType(connectionInformation, "Hive"))
                 {
                     connection.setAutoCommit(true);
@@ -178,7 +192,8 @@ public class ExecuteInDb extends NativeFunction
 
 
                 connectionManagerHandler.addPotentialDebug(connectionInformation, statement);
-                this.message.setMessage("Executing SQL...");
+                this.message.setMessage("Executing SQL QwertyTestExecuteindb...");
+                System.out.println("poiuy: ok finally go: Executing SQL QwertyTestExecuteindb..");
                 long start = System.nanoTime();
                 if (statement.execute(sql))
                 {
@@ -188,7 +203,13 @@ public class ExecuteInDb extends NativeFunction
                         Instance.addValueToProperty(pureResult, "executionPlanInformation", this.repository.newStringCoreInstance(URL), processorSupport);
                     }
 
+                    System.out.println("the url is ");
+                    System.out.println(URL);
+
                     ResultSet rs = statement.getResultSet();
+
+                    System.out.println("the result is ");
+                    System.out.println(rs);
 
                     createPureResultSetFromDatabaseResultSet(pureResult, rs, functionExpressionToUseInStack, rowClassifier, tz, repository, start, this.maxRows, processorSupport);
                 }
@@ -232,9 +253,12 @@ public class ExecuteInDb extends NativeFunction
         }
         catch (SQLException e)
         {
+            System.out.println("poiuy: there is an unfortuante sql exception from executeindb.java");
             throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), SQLExceptionHandler.buildExceptionString(e, connection), e);
         }
 
+
+        System.out.println("execute in db sql done!");
         this.message.setMessage("Executing SQL...[DONE]");
         return pureResult;
     }
@@ -419,6 +443,8 @@ public class ExecuteInDb extends NativeFunction
         CoreInstance schema = Instance.getValueForMetaPropertyToOneResolved(table, "schema", processorSupport);
         String schemaName = schema.getValueForMetaPropertyToOne(M3Properties.name).getName();
         StringBuilder sql = LoadToDbTableHelper.buildInsertStatementHeader(schemaName, tableName, columnNames);
+
+        System.out.println("poiuy building sql string time");
 
         Connection connection = null;
         PreparedStatement statement = null;

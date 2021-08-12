@@ -88,6 +88,7 @@ public class RelationalNativeImplementation
             {
                 RelationalActivity relationalActivity = (RelationalActivity)activity;
                 String sql = relationalActivity._sql();
+                System.out.println("poiuy the sql is : " + sql);
                 String executionPlanInformation = relationalActivity._executionPlanInformation();
                 Long executionTimeInNanoSeconds = relationalActivity._executionTimeInNanoSecond();
                 Long sqlGenerationTimeInNanoSeconds = relationalActivity._sqlGenerationTimeInNanoSecond();
@@ -102,6 +103,9 @@ public class RelationalNativeImplementation
                     dbHost = relationalActivity._dataSource()._host();
                     dbPort = (int)relationalActivity._dataSource()._port();
                     dbName = relationalActivity._dataSource()._name();
+
+                    System.out.println("poiuy data source isn't null we're setting like so dbtype host port name");
+                    System.out.println(dbType);
                 }
                 ((CompiledExecutionSupport)es).getExecutionActivityListener().relationalActivityCompleted(dbHost, dbPort, dbName, dbType, sql, executionPlanInformation, executionTimeInNanoSeconds, sqlGenerationTimeInNanoSeconds, connectionAcquisitionTimeInNanoSeconds);
             }
@@ -117,6 +121,8 @@ public class RelationalNativeImplementation
 
     public static ResultSet fetchDbMetaData(DatabaseConnection pureConnection, SqlFunction<DatabaseMetaData, java.sql.ResultSet> sqlFunction, ImmutableMap<String, ? extends Function<ListIterable<Object>, String>> extraValues, Function0<ResultSet> resultSetBuilder, Function0<SQLNull> sqlNullBuilder, Function0<Row> rowBuilder, Function0<DataSource> datasourceBuilder, ExecutionSupport es)
     {
+
+        System.out.println("poiuy: fetch db meta data is starting 8)");
         ResultSet pureResult = resultSetBuilder.value();//new Root_meta_relational_metamodel_execute_ResultSet_Impl("Anonymous_NoCounter");
 
         Connection connection = null;
@@ -125,7 +131,13 @@ public class RelationalNativeImplementation
         {
 
             long startRequestConnection = System.nanoTime();
+            System.out.println("Poiuy the start request started in relationalnativeimplementation.java");
             connectionWithDataSourceInfo = connectionManagerHandler.getConnectionWithDataSourceInfo(pureConnection, ((CompiledExecutionSupport)es).getProcessorSupport());
+
+            System.out.println(connectionWithDataSourceInfo);
+
+            System.out.println("The relational test finished");
+
             pureResult._connectionAcquisitionTimeInNanoSecond(System.nanoTime() - startRequestConnection);
             connection = connectionWithDataSourceInfo.getConnection();
             connection.setAutoCommit(true);
@@ -135,6 +147,8 @@ public class RelationalNativeImplementation
             String tz = pureConnection._timeZone() == null ? "GMT" : pureConnection._timeZone();
 
             String URL = connectionManagerHandler.getPotentialDebug(pureConnection, connection);
+
+            System.out.println("poiuy hello the url is " + URL);
             if (URL != null)
             {
                 pureResult = pureResult._executionPlanInformation(URL);
@@ -190,6 +204,12 @@ public class RelationalNativeImplementation
             Integer dbPort = connectionWithDataSourceInfo.getDataSource().getPort();
             String dbName = connectionWithDataSourceInfo.getDataSource().getDataSourceName();
             String serverPrincipal = connectionWithDataSourceInfo.getDataSource().getServerPrincipal();
+
+
+            System.out.println("poiuy: ok final string dbthost is " + dbHost);
+            System.out.println("poiuy: ok final serverprincipal " + serverPrincipal);
+
+
             if (pureConnection._type() != null && dbHost != null && dbPort != null && dbName != null)
             {
                 DataSource ds = datasourceBuilder.value();//new Root_meta_relational_runtime_DataSource_Impl("ID");
@@ -219,6 +239,7 @@ public class RelationalNativeImplementation
                 {
                 }
             }
+            System.out.println("poiyy: relational native implementaiton sql exception happenin");
             throw new PureExecutionException(SQLExceptionHandler.buildExceptionString(e, connection), e);
         }
     }
@@ -273,6 +294,8 @@ public class RelationalNativeImplementation
         }
         catch (SQLException e)
         {
+            System.out.println("poiyyyyy: relational native implementaiton sql exception happenin");
+
             throw new PureExecutionException(si, SQLExceptionHandler.buildExceptionString(e, connection), e);
         }
     }
@@ -428,6 +451,8 @@ public class RelationalNativeImplementation
         }
         catch (SQLException e)
         {
+            System.out.println("poiy3: relational native implementaiton sql exception happenin");
+
             throw new PureExecutionException(SQLExceptionHandler.buildExceptionString(e, connection), e);
         }
     }

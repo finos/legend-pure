@@ -92,6 +92,29 @@ Class meta::relational::runtime::PostProcessors
 
 }
 
+Class meta::relational::runtime::TestRedshiftDatabaseConnection extends TestDatabaseConnection
+{
+    {doc.doc = 'This is used to generate SQL from the test data.'}
+    testDataSetupCsv : String[0..1];
+    // testDataSetupCsv should follow the following format -
+    // 'default\n'+                                                               -> schema_name <newline>
+    // 'tradeTable\n'+                                                            -> table_name <newline>
+    // 'id, prodid, accountId, quantity, tradeDate, settlementDateTime\n'+        -> column_names separated by commas
+    // '1,1,1,15,2014-12-01,'+$settlementDateTime+'\n'+                           -> rows separated by new line
+    // '-\n'+                                                                     -> test data for different tables separated by - <newline>
+    // 'default\n'+                                                               -> schema_name <newline>
+    // 'tradeEventTable\n'+                                                       -> table_name <newline>
+    // 'event_id, trade_id, eventType, eventDate, person_id\n'+                   -> column_names separated by commas
+    // '1,1,New,2014-12-01,1\n'+                                                  -> rows separated by new line
+    // '\n\n\n'                                                                   -> test data end denoted by <newline><newline><newline>
+
+    {doc.doc = 'testDataSetupSqls field should never be populated manually. This is used exclusively in Legend Engine'}
+    testDataSetupSqls : String[*];
+
+    {doc.doc = 'testDataSchemas field should never be populated manually. This is used exclusively in Legend Engine'}
+    testDataSchemas : meta::relational::metamodel::Schema[*];
+}
+
 Class meta::relational::runtime::TestDatabaseConnection extends DatabaseConnection
 {
     {doc.doc = 'This is used to generate SQL from the test data.'}

@@ -34,8 +34,8 @@ import java.sql.SQLException;
 public class TestRedshiftDatabaseConnect extends PerThreadPoolableConnectionProvider
 {
 
-    public static final String TEST_DB_HOST_NAME = "local";
-    private static final String TEST_DB_NAME = "pure-h2-test-Db";
+    public static final String TEST_DB_HOST_NAME = "host_name_redshift";
+    private static final String TEST_DB_NAME = "db-name-redshift-techincally-no-Db";
     private static final DataSource TEST_DATA_SOURCE = new DataSource(TEST_DB_HOST_NAME, -1, TEST_DB_NAME, null);
 
     private static final Function0<String> CONNECTION_URL = new Function0<String>()
@@ -82,7 +82,7 @@ public class TestRedshiftDatabaseConnect extends PerThreadPoolableConnectionProv
 
     public TestRedshiftDatabaseConnect()
     {
-        System.out.println("testing redshift database connecting poiuyy");
+        System.out.println("poiuy: testing redshift database connect begin");
         try
         {
             System.out.println("trying driver found");
@@ -95,7 +95,7 @@ public class TestRedshiftDatabaseConnect extends PerThreadPoolableConnectionProv
     }
     public ConnectionWithDataSourceInfo getConnectionWithDataSourceInfo(String user)
     {
-        System.out.println("poiuy test execute in db");
+        System.out.println("poiuy test execute in db getConnectionWithDataSourceInfo() user is");
         System.out.println(user);
         PerThreadPoolableConnectionWrapper pcw;
         Pair<ThreadLocal<PerThreadPoolableConnectionWrapper>, BasicDataSource> cs;
@@ -121,6 +121,12 @@ public class TestRedshiftDatabaseConnect extends PerThreadPoolableConnectionProv
         }
 
         pcw.incrementBorrowedCounter();
+
+        System.out.println("poiuy: going to return connection with data source info");
+        System.out.println(pcw);
+        System.out.println(TEST_DATA_SOURCE);
+
+
         return new ConnectionWithDataSourceInfo(pcw, TEST_DATA_SOURCE, "TestRedshiftDatabaseConnect");
     }
 

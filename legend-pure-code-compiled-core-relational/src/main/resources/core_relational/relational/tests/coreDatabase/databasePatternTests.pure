@@ -109,20 +109,77 @@ import meta::relational::tests::tds::tdsJoin::*;
 import meta::relational::tests::mapping::sqlFunction::model::domain::*;
 import meta::relational::tests::databaseTestPattern::*;
 
+import meta::pure::router::*;
 
 
-
-function <<test.Test>> meta::relational::tests::databaseTestPattern::create::testCreateDatabase():Boolean[1]
+function <<test.BeforePackage>> meta::relational::tests::databaseTestPattern::setUp::setUpTesting():Boolean[1]
 {
-    (getDatabases() -> map ({
+   meta::relational::tests::databaseTestPattern::setUp::setUpRedshiftExecuteInDbCustom();
+}
+
+function meta::relational::tests::databaseTestPattern::setUp::setUpRedshiftExecuteInDbCustom():Boolean[1]
+{
+
+  print('Running the pretest things for setupredshiftexecuteindbcustom');
+
+
+//poiuyy
+
+
+  //  let connection = testRuntime().connectionByElement(db)->cast(@TestRedshiftDatabaseConnection);
+
+  //  let connection = ^TestRedshiftDatabaseConnection(element = db, type = DatabaseType.Redshift);
+
+
+
+      let connection = getConnectionTest(DatabaseType.Redshift) -> cast(@DatabaseConnection);
+  //  let connection = ^TestRedshiftDatabaseConnection(element = db, type = DatabaseType.Redshift);
+
+      // executeInDbCustom('Drop table if exists Tabledoesnotexistheree;', mapping,  getRuntime(DatabaseType.Redshift), meta::pure::router::extension::defaultRelationalExtensions());
+
+
+      // executeInDbCustom('Drop table if exists Tabledoesnotexistheree;', getRuntime($currDatabaseType) );
+  //  let connection = testRuntime().connectionByElement(db)->cast(@TestDatabaseConnection);
+   //firm with no people
+  //  executeInDb('insert into FirmTable (id, legalName, addressId, oioi) values (8, \'No Employees\', 11);', $connection);
+
+   
+  //  (getDatabases() -> map ({
+  //    currDatabaseType | 
+  //     let connection = getConnectionTest($currDatabaseType) -> cast(@DatabaseConnection);
+  //     //executeInDbCustom('Drop table if exists PersonNameParameterXu;', $connection,  getRuntime($currDatabaseType) );
+  //     //executeInDbCustom('Create Table PersonNameParameterXu(id INT, lastNameFirst VARCHAR(200), title VARCHAR(200));', $connection,  getRuntime($currDatabaseType));
+  //     //executeInDbCustom('insert into PersonNameParameterXu (id, lastNameFirst, title) values (1, \'true\', \'eee\');', $connection,  getRuntime($currDatabaseType));
+  //  } ));
+  true; 
+
+}
+
+function <<test.AfterPackage>>  meta::relational::tests::databaseTestPattern::setUp::tearDownAfterTesting():Boolean[1] {
+      (getDatabases() -> map ({
      currDatabaseType | 
       let connection = getConnectionTest($currDatabaseType) -> cast(@DatabaseConnection);
-      executeInDb('Drop table if exists PersonNameParameter;', $connection);
-      executeInDb('Create Table PersonNameParameter(id INT, lastNameFirst VARCHAR(200), title VARCHAR(200));', $connection);
-      executeInDb('insert into PersonNameParameter (id, lastNameFirst, title) values (1, \'true\', \'eee\');', $connection);
+     // if redshift = TestRedshiftDatabaseConnection()
+    //  if redshift =  executeInDb('Drop table if exists PersonNameParameterXu;', $connection);
+      executeInDb('Drop table if exists PersonNameParameterXu;', $connection);
    } ));
   true; 
+
+
 }
+
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::create::testCreateDatabase():Boolean[1]
+// {
+//     (getDatabases() -> map ({
+//      currDatabaseType | 
+//       let connection = getConnectionTest($currDatabaseType) -> cast(@DatabaseConnection);
+//       executeInDb('Drop table if exists PersonNameParameter;', $connection);
+//       executeInDb('Create Table PersonNameParameter(id INT, lastNameFirst VARCHAR(200), title VARCHAR(200));', $connection);
+//       executeInDb('insert into PersonNameParameter (id, lastNameFirst, title) values (1, \'true\', \'eee\');', $connection);
+//    } ));
+//   true; 
+// }
  
 
 function <<test.Test>> meta::relational::tests::databaseTestPattern::columns::testLowerCase():Boolean[1]
@@ -139,16 +196,16 @@ function <<test.Test>> meta::relational::tests::databaseTestPattern::columns::te
 
 }
 
-function <<test.Test>> meta::relational::tests::databaseTestPattern::arithmetic::testDecimalPrecison():Boolean[1]
+function <<test.Test>> meta::relational::tests::databaseTestPattern::setUp::testDecimalPrecison():Boolean[1]
 {      
     getDatabases() -> map ({
     currDatabaseType | 
-    meta::relational::tests::databaseTestPattern::arithmetic::testDecimalPrecison($currDatabaseType)
+    meta::relational::tests::databaseTestPattern::setUp::testDecimalPrecison($currDatabaseType)
     }) -> fold ({a,b | $a && $b }, true ); 
 
 }
 
-function meta::relational::tests::databaseTestPattern::arithmetic::testDecimalPrecison(dbType: DatabaseType[1]):Boolean[1]
+function meta::relational::tests::databaseTestPattern::setUp::testDecimalPrecison(dbType: DatabaseType[1]):Boolean[1]
 {      
   let result = execute(
       |Person.all()
@@ -310,6 +367,14 @@ function meta::relational::tests::databaseTestPattern::subFunction6(f:Firm[1], f
 }
  
  
+function meta::relational::tests::databaseTestPattern::executeEID(eidString: String[1], runtime:Runtime[1]):Any[1]
+{
+  println('temp placeholder for executeeid'); 
+executeEID($eidString,|meta::relational::tests::databaseTestPattern::functions::SqlTestFunctionDemo.all()->project([s | $s.hour], ['hour']), meta::relational::tests::mapping::sqlTestFunction::model::mapping::testSQLMapping,  $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+
+}
+
+   
 function meta::relational::tests::databaseTestPattern::getDatabases():DatabaseType[*]
 {
 //  [DatabaseType.Redshift, DatabaseType.H2];
@@ -321,22 +386,22 @@ function meta::relational::tests::databaseTestPattern::getDatabases():DatabaseTy
 
 function meta::relational::tests::databaseTestPattern::getDatabasesTest():Any[*]
 {
-  //  [ DatabaseType.H2, DatabaseType.Redshift]; 
-  [DatabaseType.Redshift]; 
+  //  [ DatabaseType.H2, DatabaseType.Redshift];
+  [DatabaseType.Redshift];
 }
 
 function meta::relational::tests::databaseTestPattern::getConnectionTest(dbType: Any[1] ):Connection[1]
 {
 
   // FOR LEGEND-PURE IDE LIGHT
-  //^TestDatabaseConnection(element = db, type = $dbType -> cast(@DatabaseType));
+  // ^TestDatabaseConnection(element = db, type = $dbType -> cast(@DatabaseType));
 
 
-  //FOR LEGEND-ENGINE
+  //FOR LEGEND-ENGINE force ^relational
    if ( $dbType == DatabaseType.Redshift,
 
-     | print('Establish redshift relational database connection');
-     ^meta::pure::alloy::connections::RelationalDatabaseConnection(element = db, datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::RedshiftDatasourceSpecification(databaseName = 'dev', port = 5439, endpoint = 'lab.cqzp3tj1qpzo.us-east-2.redshift.amazonaws.com'), authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::UserPasswordAuthenticationStrategy(passwordVaultReference = 'rEdShiFt528491!', userName = 'awsuser'), type = $dbType -> cast(@DatabaseType));,
+     | println('Establish redshift relational database connection');
+     ^meta::pure::alloy::connections::RelationalDatabaseConnection(element = db, datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::RedshiftDatasourceSpecification(databaseName = 'dev', port = 5439, endpoint = 'lab.cqzp3tj1qpzo.us-east-2.redshift.amazonaws.com'), authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::UserPasswordAuthenticationStrategy(passwordVaultReference = '9841Msifan278?78!', userName = 'awsuser'), type = $dbType -> cast(@DatabaseType));,
      | if ( $dbType == DatabaseType.H2,
          | print('hello we are h2');
                ^meta::pure::alloy::connections::RelationalDatabaseConnection(element = db, datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification(), authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy(), type = $dbType -> cast(@DatabaseType));
@@ -346,6 +411,7 @@ function meta::relational::tests::databaseTestPattern::getConnectionTest(dbType:
 
      );
  );
+
 
 
 }

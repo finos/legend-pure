@@ -26,6 +26,23 @@ Class meta::protocols::pure::vX_X_X::metamodel::invocation::execution::execute::
     model:meta::protocols::pure::vX_X_X::metamodel::PureModelContext[1];
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::invocation::execution::execute::ExecutionInputEIDddd
+{
+    clientVersion:String[1];
+    eidString:String[1]; 
+    runtime:meta::protocols::pure::vX_X_X::metamodel::Runtime[0..1];
+}
+Class meta::protocols::pure::vX_X_X::metamodel::invocation::execution::execute::ExecutionInputEID
+{
+    clientVersion:String[1];
+    eidString:String[1]; 
+    function:meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::Lambda[1];
+    mapping:String[0..1];
+    runtime:meta::protocols::pure::vX_X_X::metamodel::Runtime[0..1];
+    context:meta::protocols::pure::vX_X_X::metamodel::ExecutionContext[0..1];
+    model:meta::protocols::pure::vX_X_X::metamodel::PureModelContext[1];
+}
+
 Class meta::protocols::pure::vX_X_X::metamodel::invocation::execution::execute::Result
 {
    builder : meta::protocols::pure::vX_X_X::metamodel::invocation::execution::execute::Builder[1];
