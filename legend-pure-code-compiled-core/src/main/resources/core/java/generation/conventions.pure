@@ -33,26 +33,27 @@ Class meta::java::generation::convention::Conventions
    validBasePackage: !$this.basePackageName->endsWith('.')
 ]
 {
-   fieldNameStrategy          : Function<{String[1]->String[1]}>[1];
-   getterNameStrategy         : Function<{String[1]->String[1]}>[1];
-   setterNameStrategy         : Function<{String[1]->String[1]}>[1];
+   fieldNameStrategy           : Function<{String[1]->String[1]}>[1];
+   getterNameStrategy          : Function<{String[1]->String[1]}>[1];
+   setterNameStrategy          : Function<{String[1]->String[1]}>[1];
 
-   defaultClassPurpose        : Any[1];
+   defaultClassPurpose         : Any[1];
 
-   identifierFactory          : Function<{String[1]->String[1]}>[1];
-   basePackageName            : String[1];
-   functionSignatureFactory   : Function<{ConcreteFunctionDefinition<Any>[1],Conventions[1]->FunctionSignature[1]}>[1];
-   providedTypes              : ProvidedType[*];
+   identifierFactory           : Function<{String[1]->String[1]}>[1];
+   basePackageName             : String[1];
+   typeAndPackageNameStrategy  : Function<{Type[1],Conventions[1]->Pair<String,String>[1]}>[0..1];
+   functionSignatureFactory    : Function<{ConcreteFunctionDefinition<Any>[1],Conventions[1]->FunctionSignature[1]}>[1];
+   providedTypes               : ProvidedType[*];
 
-   classCoders                : Map<Any, Function<{Type[1],Conventions[1],DebugContext[1]->meta::java::metamodel::Class[1]}>>[1];
-   functionCoders             : Map<String, Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>>[1];
-   prohibitedFunctionStrategy : Function<{Conventions[1],Function<Any>[1]->Boolean[1]}>[1];
+   classCoders                 : Map<Any, Function<{Type[1],Conventions[1],DebugContext[1]->meta::java::metamodel::Class[1]}>>[1];
+   functionCoders              : Map<String, Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>>[1];
+   prohibitedFunctionStrategy  : Function<{Conventions[1],Function<Any>[1]->Boolean[1]}>[1];
 
-   libraries                  : ConventionsLibrary[*];
-   imports                    : meta::java::metamodel::Class[*];
-   newFunctionProhibitedList  : Class<Any>[*];
-   providedVariables          : Map<String, Code>[1];
-   
+   libraries                   : ConventionsLibrary[*];
+   imports                     : meta::java::metamodel::Class[*];
+   newFunctionProhibitedList   : Class<Any>[*];
+   providedVariables           : Map<String, Code>[1];
+
    extensions : meta::pure::router::extension::RouterExtension[*];
 }
 
@@ -351,14 +352,19 @@ function <<access.private>> meta::java::generation::convention::generateClassNam
 {
    assert(!$pe->instanceOf(Type) || !$conventions->isProvidedType($pe->cast(@Type)), 'Cannot provide implemention for provided types');
    assert($pe != Function, 'Cannot handle function, should use pureTypeToJavaType with generic type');
- 
-   let zoneRoot    = $conventions.basePackageName + '.' + $zone + '.';
-   let package     = if($pe->instanceOf(meta::pure::mapping::MappingClass), | $pe->cast(@meta::pure::mapping::MappingClass<Any>).generalizations.general->cast(@GenericType).rawType->cast(@Class<Any>).package->toOne(), | $pe.package->toOne());
-   let javaPkgName = $zoneRoot + $conventions->identifier($package->elementToPath()->replace('::', '.'));
+
+   let packageAndName = if ($conventions.typeAndPackageNameStrategy->isEmpty(),
+    |let zoneRoot    = $conventions.basePackageName + '.' + $zone + '.';
+     let package     = if($pe->instanceOf(meta::pure::mapping::MappingClass), | $pe->cast(@meta::pure::mapping::MappingClass<Any>).generalizations.general->cast(@GenericType).rawType->cast(@Class<Any>).package->toOne(), | $pe.package->toOne());
+     let javaPkgName = $zoneRoot + $conventions->identifier($package->elementToPath()->replace('::', '.'));
+     let name = $pe.name->toOne()->sanitizeIdentifier()->toUpperFirstCharacter()->toOne() + $suffix;
+     pair($javaPkgName, $name);,
+    | $conventions.typeAndPackageNameStrategy->toOne()->eval($pe->cast(@Type), $conventions)
+   );
+
    if($pe->instanceOf(Enumeration),
-      | javaEnum(javaPackage($javaPkgName), $pe.name->toUpperFirstCharacter()->toOne() + $suffix),
-      | let className = $pe.name->toOne()->sanitizeIdentifier()->toUpperFirstCharacter()->toOne();
-        javaClass(javaPackage($javaPkgName), $className + $suffix);
+      | javaEnum(javaPackage($packageAndName.first), $packageAndName.second),
+      | javaClass(javaPackage($packageAndName.first), $packageAndName.second);
    );
 }
 
@@ -1009,6 +1015,11 @@ function meta::java::generation::convention::setBasePackageName(conventions:Conv
    ^$conventions(basePackageName=$name);
 }
 
+function meta::java::generation::convention::setTypeAndPackageNameStrategy(conventions:Conventions[1], func:Function<{Type[1], Conventions[1]->Pair<String,String>[1]}>[1]): Conventions[1]
+{
+   ^$conventions(typeAndPackageNameStrategy=$func);
+}
+
 function meta::java::generation::convention::addProvidedType(conventions:Conventions[1], type:Type[1], providedAs:String[1]): Conventions[1]
 {
    $conventions->addProvidedType($type, javaClass($providedAs));
@@ -1252,7 +1263,7 @@ function <<access.private>> meta::java::generation::convention::replaceIllegalSy
    $symbol->replace('~', '_Tilde_');
 }
 
-function <<access.private>> meta::java::generation::convention::sanitizeJavaKeywords(name: String[1]): String[1]
+function meta::java::generation::convention::sanitizeJavaKeywords(name: String[1]): String[1]
 {
    $name
       ->split('.')

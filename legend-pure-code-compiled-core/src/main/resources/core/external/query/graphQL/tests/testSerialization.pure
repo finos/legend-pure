@@ -13,9 +13,12 @@
 // limitations under the License.
 
 import meta::external::query::graphQL::metamodel::*;
+import meta::external::query::graphQL::metamodel::executable::*;
+import meta::external::query::graphQL::metamodel::value::*;
+import meta::external::query::graphQL::metamodel::typeSystem::*;
 import meta::external::query::graphQL::serialization::*;
 
-function <<test.Test>> meta::external::query::graphQL::metamodel::tests::myTest():Boolean[1]
+function <<test.Test>> meta::external::query::graphQL::serialization::tests::myTest():Boolean[1]
 {
   let res = ^Document(
     definitions = 

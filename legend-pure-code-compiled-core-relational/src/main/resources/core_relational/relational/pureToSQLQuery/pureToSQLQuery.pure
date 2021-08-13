@@ -1214,15 +1214,9 @@ function meta::relational::functions::pureToSqlQuery::processColumnsInRelational
                                                           // 1. find the right alias within the nested SQL ...
                                                           // the alias we are trying to find might be from a view
                                                           let allNodes = $s.data->toOne()->getAllNodes()->cast(@RelationalTreeNode);
-                                                          let aliasToUse = $allNodes->filter(n| let relElements = $n.alias.relationalElement->match([v:ViewSelectSQLQuery[1]| $v.view,
-                                                                                                                                                     s:SelectSQLQuery[1]|
-                                                                                                                                                        let relationsSupportingProjectedColumn = $s.columns->filter(c|$c->extractColumnName() == $t.column.name)->extractTableAliasColumns().alias.relation;
-                                                                                                                                                        print(if(!$context.debug, |'', | $context.space+'Found depth-2 nested select while processing column - ' +  $t.column.name + '. Adding inner relations from depth-2 subselect for handling class mapping filter with inner join : ' + $relationsSupportingProjectedColumn->map(rel | $rel->buildUniqueName(false, $extensions))->joinStrings('[', ' , ', ']')));
-                                                                                                                                                        $relationsSupportingProjectedColumn->concatenate($s);,
-                                                                                                                                                     a:Any[1]| $a]);
-                                                                                                $relElements->contains($t.alias.relationalElement);).alias;
-                                                          assert($aliasToUse->size() == 1, | 'Found too many (or not enough) tables that could support the column '+$t.column.name+' in the nested SQL '+$s->meta::relational::functions::sqlQueryToString::processOperation(meta::relational::runtime::DatabaseType.H2, $extensions));
-                                                          let newSQL = ^$s(columns+=^Alias(name=$t.column.name, relationalElement = ^TableAliasColumn(alias=$aliasToUse->toOne(), columnName=$t.column.name, column=$t.column)));
+                                                          let aliasesToUse = $t.column->extractColumnAliasesInRelationalTreeNodes($t.alias.relationalElement, $allNodes, $context, $extensions);  
+                                                          assert($aliasesToUse->size() == 1, | 'Found too many (or not enough) tables that could support the column '+$t.column.name+' in the nested SQL '+$s->meta::relational::functions::sqlQueryToString::processOperation(meta::relational::runtime::DatabaseType.H2, $extensions));
+                                                          let newSQL = ^$s(columns+=^Alias(name=$t.column.name, relationalElement=$aliasesToUse->toOne()));
                                                           let newTreeNode = ^$currentTreeNode(alias = ^$alias(relationalElement = $newSQL));
                                                           let newData = if ($currentTreeNode->instanceOf(RootJoinTreeNode),
                                                                                |$newTreeNode,
@@ -1304,6 +1298,19 @@ function meta::relational::functions::pureToSqlQuery::processColumnsInRelational
             );
    $result->validate([], $extensions);
    $result;
+}
+
+function meta::relational::functions::pureToSqlQuery::extractColumnAliasesInRelationalTreeNodes(column:Column[1], relationalElement:RelationalOperationElement[1], nodes:RelationalTreeNode[*], context:DebugContext[1], extensions:RouterExtension[*]): TableAliasColumn[*]
+{
+   let aliasesToUse = $nodes->filter(n| let relElements = $n.alias.relationalElement->match([
+         v:ViewSelectSQLQuery[1]| $v.view,
+         s:SelectSQLQuery[1]|
+            let relationsSupportingProjectedColumn = $s.columns->filter(c|$c->extractColumnName() == $column.name)->extractTableAliasColumns().alias.relation;
+            print(if(!$context.debug, |'', | $context.space+'Found depth-2 nested select while processing column - ' +  $column.name + '. Adding inner relations from depth-2 subselect for handling class mapping filter with inner join : ' + $relationsSupportingProjectedColumn->map(rel | $rel->buildUniqueName(false, $extensions))->joinStrings('[', ' , ', ']')));
+            $relationsSupportingProjectedColumn->concatenate($s);,
+         a:Any[1]| $a]);
+      $relElements->contains($relationalElement);).alias;
+   $aliasesToUse->map(a| ^TableAliasColumn(alias=$a, columnName=$column.name, column=$column));
 }
 
 function meta::relational::functions::pureToSqlQuery::processProperty(property:AbstractProperty<Any>[1], propertyOwnerClass:Class<Any>[1], currentPropertyMapping:PropertyMapping[*], propertyMappingFromRouter:PropertyMapping[*], srcOperation:SelectWithCursor[1], state:State[1], joinType:JoinType[1], nodeId:String[1],
@@ -4987,11 +4994,25 @@ function meta::relational::functions::pureToSqlQuery::processProject(ids:String[
          let nonOlap = $newColumnsWithPossiblePKs->filter(c|!$c->instanceOf(WindowColumn));
 
          let possiblePKs = $possiblePKsWithUpdatedData.first.values->cast(@Alias).relationalElement->cast(@TableAliasColumn).column->map(c| pair($c.name, ^PathInformation(type = $c.type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType(), relationalType = $c.type)));
+         
+         let importDataFlowCols = if($state.importDataFlow == true && $state.importDataFlowAddFks == true,
+                                     |let rootTreeNode = $merge.data->toOne();
+                                      let joinTreeNodes = $rootTreeNode.children()->map(c| $c->getAllNodes())->cast(@JoinTreeNode)->sortBy(j| $j.join.name);
+                                      let allTreeNodes = $rootTreeNode->concatenate($joinTreeNodes);
+                                      let candidateJoinedFkTables = if($state.importDataFlowFksByTable->isEmpty(), |[], |$state.importDataFlowFksByTable->toOne()->keys()->remove($rootTreeNode.alias.relation()));
+                                      let joinedFkTables = $joinTreeNodes->map(j| $j.alias.relation())->distinct()->filter(r| $candidateJoinedFkTables->contains($r));
+                                      let joinedFkCols = $joinedFkTables->toIndexed()->map(p|
+                                         let prefix = 'fk_j' + $p.first->toString() + '_';
+                                         $state.importDataFlowFksByTable->toOne()->get($p.second).values->map(c|
+                                            let columnAliases = $c->extractColumnAliasesInRelationalTreeNodes($p.second, $allTreeNodes, $context, $extensions);
+                                            $columnAliases->toIndexed()->map(cp| ^Alias(name=$prefix + if($columnAliases->size() == 1, |'', |$cp.first->toString() + '_') + $c.name, relationalElement=$cp.second));););
+                                      $mainQuery.select.columns->concatenate($joinedFkCols);,
+                                     |[]);
 
          ^$operation(
                      select = ^TdsSelectSqlQuery(
                         distinct = $merge.distinct,
-                        columns = $nonOlap->concatenate(if($state.importDataFlow == true && $state.importDataFlowAddFks == true,|$mainQuery.select.columns,|[]))->cast(@Alias)->removeDuplicates({a,b|$a.name == $b.name})->concatenate($olapCols),//->concatenate($olapCols),
+                        columns = $nonOlap->concatenate($importDataFlowCols)->cast(@Alias)->removeDuplicates({a,b|$a.name == $b.name})->concatenate($olapCols),//->concatenate($olapCols),
                         data = $possiblePKsWithUpdatedData.second,
                         savedFilteringOperation = $merge.savedFilteringOperation,
                         filteringOperation = $merge.filteringOperation,

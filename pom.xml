@@ -26,7 +26,7 @@
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>1.31.1-SNAPSHOT</version>
+    <version>1.33.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -270,7 +270,7 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[11,12)</version>
+                                    <version>[11.0.10,12)</version>
                                 </requireJavaVersion>
                                 <dependencyConvergence />
                                 <bannedDependencies>

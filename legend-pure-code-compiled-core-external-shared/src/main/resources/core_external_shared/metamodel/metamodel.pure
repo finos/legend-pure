@@ -14,30 +14,25 @@
 
 import meta::external::shared::format::metamodel::*;
 
-Class meta::external::shared::format::metamodel::Schema extends PackageableElement
+Class meta::external::shared::format::metamodel::SchemaSet extends PackageableElement
 {
    format     : String[1];
-   requires   : Schema[*];
-   tags       : SchemaTag[*];
+}
+
+Class meta::external::shared::format::metamodel::Schema
+{
+   id         : String[0..1];
+   location   : String[0..1];
    detail     : SchemaDetail[1];
 }
 
-Class meta::external::shared::format::metamodel::SchemaTag
+Association meta::external::shared::format::metamodel::SchemaSetMembers
 {
-   name  : String[1];
-   value : String[1];
+   set        : SchemaSet[1];
+   schemas    : Schema[*];
 }
 
 Class meta::external::shared::format::metamodel::SchemaDetail
 {
-}
-
-Class meta::external::shared::format::metamodel::SchemaBinding extends PackageableElement
-[
-   validModelTypes: $this.model->forAll(pe| $pe->instanceOf(Class) || $pe->instanceOf(Enumeration) || $pe->instanceOf(Association))
-]
-{
-   schema: Schema[1];
-   model: PackageableElement[*];
 }
 
