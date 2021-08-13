@@ -275,14 +275,14 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::legendEx
 
    );
 
-   println('eid final steps'); 
+  //  println('eid final steps'); 
 
-   let resultJSON=$typeAndresultJSON.second->cast(@String);
-   let resultClassType=$typeAndresultJSON.first;
+  //  let resultJSON=$typeAndresultJSON.second->cast(@String);
+  //  let resultClassType=$typeAndresultJSON.first;
 
-   let result = $resultJSON->meta::json::parseJSON()->cast(@JSONObject);
-   println('yahooo result');
-   println($result.keyValuePairs); 
+  //  let result = $resultJSON->meta::json::parseJSON()->cast(@JSONObject);
+  //  println('yahooo result');
+  //  println($result.keyValuePairs); 
 
 
 
@@ -374,20 +374,13 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::generate
 }
 
 function meta::protocols::pure::vX_X_X::invocation::execution::execute::alloyExecuteLambda<T|m>(f:FunctionDefinition<{->T[m]}>[1], m:Mapping[1], pureRuntime:Runtime[1], context:ExecutionContext[0..1], host:String[1], port:Integer[1], version:String[1], serializationKind:String[1], executionMode:String[1], extensions:meta::pure::router::extension::RouterExtension[*]) : String[1]
-{
-
-  println('3) alloyExecuteLambda stuff'); 
-  
+{  
    let payload = buildExecutionInput($f,$m,$pureRuntime,$context,$version, $serializationKind, $executionMode, $extensions);
-   println($payload);
    let resp = executeHTTPRaw(^URL(host = $host , port=$port, path = '/api/pure/'+$version+'/execution/execute'),
                                  HTTPMethod.POST,
                                  'application/json',
                                  $payload
                               );
-
-  println($resp); 
-  println('4- finish execute lambda');
 
    assertEq(200, $resp.statusCode, | $resp.statusCode->toString()+' \''+$resp.entity+'\'');
    $resp.entity;

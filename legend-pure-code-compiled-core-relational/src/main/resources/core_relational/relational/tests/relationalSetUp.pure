@@ -1000,8 +1000,7 @@ function meta::relational::tests::createTablesAndFillDb():Boolean[1]
 
    executeInDb('Drop table if exists PersonNameParameter;', $connection);
    executeInDb('Create Table PersonNameParameter(id INT, lastNameFirst VARCHAR(200), title VARCHAR(200));', $connection);
-      executeInDb('insert into PersonNameParameter (id, lastNameFirst, title) values (1, \'true\', \'eee\');', $connection);
-
+   executeInDb('insert into PersonNameParameter (id, lastNameFirst, title) values (1, \'true\', \'eee\');', $connection);
   //  executeInDb('insert into PersonNameParameter (id, lastNameFirst, title) values (1, true, \'eee\');', $connection);
 
    meta::relational::tests::createPersonTableAndFillDb($connection);

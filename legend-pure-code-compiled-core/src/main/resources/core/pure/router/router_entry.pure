@@ -57,7 +57,6 @@ function meta::pure::router::execute<T|y>(f:FunctionDefinition<{->T[y]}>[1], m:M
 function meta::pure::router::executeEID<T|y>(str: String[1], f:FunctionDefinition<{->T[y]}>[1], m:Mapping[1], runtime:Runtime[1], extensions:meta::pure::router::extension::RouterExtension[*]):Any[1]
 {
 
-  print($f);
   executeEID($str, $f, $m, $runtime, ^ExecutionContext(), $extensions);
 }
 
