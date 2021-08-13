@@ -557,8 +557,6 @@ function meta::relational::mapping::processProperty(o:Any[1], property:Property<
            let sourceConnection = $keyInformation.sourceConnection->cast(@DatabaseConnection);
            let sql = sqlQueryToStringPretty($targetImplSqlQueryPair.second, $sourceConnection.type, $sourceConnection.timeZone, $sourceConnection.quoteIdentifiers, $extensions);
            let sqlQueryToStringDurationMilliseconds = ($sqlQueryToStringStart->dateDiff(now(),DurationUnit.MILLISECONDS));
-           print($sql);
-
 
            let executed = executeInDb($sql, $keyInformation.sourceConnection->cast(@DatabaseConnection));
 
