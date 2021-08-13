@@ -147,6 +147,12 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
       b:meta::pure::alloy::connections::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy(
             _type = 'gcpApplicationDefaultCredentials'
+         ),
+      u:meta::pure::alloy::connections::alloy::authentication::UserPasswordAuthenticationStrategy[1] |
+         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::UserPasswordAuthenticationStrategy(
+            _type = 'userPassword',
+            userName = $u.userName,
+            passwordVaultReference = $u.passwordVaultReference
          )
    ])->toOneMany())
 }
@@ -189,7 +195,14 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
              _type = 'bigQuery',
              projectId = $b.projectId,
              defaultDataset = $b.defaultDataset
-         )
+         ),
+      r:meta::pure::alloy::connections::alloy::specification::RedshiftDatasourceSpecification[1] |
+          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::RedshiftDatasourceSpecification(
+              _type = 'redshift',
+              databaseName = $r.databaseName,
+              endpoint = $r.endpoint,
+              port = $r.port
+          )
    ])->toOneMany())
 }
 

@@ -19,7 +19,7 @@ import meta::relational::metamodel::relation::*;
 
 Enum meta::relational::runtime::DatabaseType
 {
-   DB2, H2, MemSQL, Sybase, SybaseIQ, Composite, Postgres, SqlServer, Hive, Snowflake, Presto, BigQuery
+   DB2, H2, MemSQL, Sybase, SybaseIQ, Composite, Postgres, SqlServer, Hive, Snowflake, Presto, BigQuery, Redshift
 }
 
 Class meta::relational::runtime::DatabaseConnection extends Connection
@@ -90,6 +90,17 @@ Class meta::relational::runtime::PostProcessors
        if($this.sqlQueryPostProcessor->size() == 1,|$this.sqlQueryPostProcessor->toOne()->elementToPath(),|[])
        }:String[0..1];
 
+}
+
+Class meta::relational::runtime::TestRedshiftDatabaseConnection extends TestDatabaseConnection
+{
+    {doc.doc = 'This is used to generate SQL from the test data.'}
+    testDataSetupCsv : String[0..1];
+    {doc.doc = 'testDataSetupSqls field should never be populated manually. This is used exclusively in Legend Engine'}
+    testDataSetupSqls : String[*];
+
+    {doc.doc = 'testDataSchemas field should never be populated manually. This is used exclusively in Legend Engine'}
+    testDataSchemas : meta::relational::metamodel::Schema[*];
 }
 
 Class meta::relational::runtime::TestDatabaseConnection extends DatabaseConnection

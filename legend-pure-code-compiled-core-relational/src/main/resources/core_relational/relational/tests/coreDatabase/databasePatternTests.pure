@@ -1,0 +1,296 @@
+
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+
+import meta::relational::metamodel::*;
+import meta::json::*;
+import meta::json::tests::*;
+import meta::relational::tests::*;
+import meta::pure::profiles::*;
+import meta::pure::runtime::*;
+import meta::relational::runtime::*;
+import meta::pure::functions::asserts::*;
+import meta::relational::tests::databaseTestPattern::*;
+import meta::relational::metamodel::execute::*;
+import meta::relational::functions::database::*;
+import meta::relational::mapping::*;
+import meta::relational::tests::model::simple::*;
+import  meta::relational::tests::mapping::embedded::advanced::mapping::*;
+import meta::csv::*;
+import meta::relational::functions::asserts::*;
+import meta::relational::metamodel::join::*;
+import meta::relational::tests::tds::tdsJoin::*;
+import meta::relational::tests::mapping::sqlFunction::model::domain::*;
+import meta::relational::tests::databaseTestPattern::*;
+import meta::pure::router::*;
+
+
+function <<test.BeforePackage>> meta::relational::tests::databaseTestPattern::setUp::setUpTesting():Boolean[1]
+{
+   meta::relational::tests::databaseTestPattern::setUp::setUpRedshiftExecuteInDbCustom();
+}
+
+function meta::relational::tests::databaseTestPattern::setUp::setUpRedshiftExecuteInDbCustom():Boolean[1]
+{
+    (getDatabases() -> map ({
+     currDatabaseType | 
+       let runtime = getRuntime($currDatabaseType);
+    executeEID('Drop table if exists PersonTable;', $runtime);
+    executeEID('Create Table PersonTable (id INT, firstName VARCHAR(200), lastName VARCHAR(200), age INT, addressId INT, firmId INT, managerId INT);', $runtime);
+    executeEID('insert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (1, \'Peter\', \'Smith\',23, 1,1,2);', $runtime);
+    executeEID('insert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (2, \'John\', \'Johnson\',22, 2,1,4);', $runtime);
+    executeEID('insert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (3, \'John\', \'Hill\',12, 3,1,2);', $runtime);
+    executeEID('insert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (4, \'Anthony\', \'Allen\',22, 4,1,null);', $runtime);
+    executeEID('insert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (5, \'Fabrice\', \'Roberts\',34, 5,2,null);', $runtime);
+    executeEID('insert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (6, \'Oliver\', \'Hill\',32, 6,3,null);', $runtime);
+    executeEID('insert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (7, \'David\', \'Harris\',35, 7,4,null);', $runtime);
+
+   } ));
+  true; 
+}
+
+function <<test.AfterPackage>>  meta::relational::tests::databaseTestPattern::setUp::tearDown():Boolean[1] {
+      (getDatabases() -> map ({
+     currDatabaseType | 
+    let runtime = getRuntime($currDatabaseType);
+    executeEID('Drop table if exists PersonTable;', $runtime);
+   } ));
+  true; 
+}
+
+function meta::relational::tests::databaseTestPattern::executeEID(eidString: String[1], runtime:Runtime[1]):Any[1]
+{
+ //temp placeholder for executeeid with irrelevant mapping and function placed in 
+executeEID($eidString,|meta::relational::tests::databaseTestPattern::functions::SqlTestFunctionDemo.all()->project([s | $s.hour], ['hour']), meta::relational::tests::mapping::sqlTestFunction::model::mapping::testSQLMapping,  $runtime, meta::pure::router::extension::defaultRelationalExtensions());
+}
+
+   
+function meta::relational::tests::databaseTestPattern::getDatabases():DatabaseType[*]
+{
+ [DatabaseType.Redshift];
+}
+
+
+function meta::relational::tests::databaseTestPattern::getConnectionTest(dbType: Any[1] ):Connection[1]
+{
+  // for LEGEND-PURE IDE LIGHT
+  // ^TestDatabaseConnection(element = db, type = $dbType -> cast(@DatabaseType));
+
+  //for LEGEND-ENGINE 
+   if ( $dbType == DatabaseType.Redshift,
+     | ^meta::pure::alloy::connections::RelationalDatabaseConnection(element = db, datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::RedshiftDatasourceSpecification(databaseName = 'dev', port = 5439, endpoint = 'lab.cqzp3tj1qpzo.us-east-2.redshift.amazonaws.com'), authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::UserPasswordAuthenticationStrategy(passwordVaultReference = '9841Msifan278?78!', userName = 'awsuser'), type = $dbType -> cast(@DatabaseType));,
+     | if ( $dbType == DatabaseType.H2,
+         | ^meta::pure::alloy::connections::RelationalDatabaseConnection(element = db, datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification(), authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy(), type = $dbType -> cast(@DatabaseType));
+        ,
+         | ^meta::pure::alloy::connections::RelationalDatabaseConnection(element = db, datasourceSpecification = ^meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification(), authenticationStrategy = ^meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy(), type = $dbType -> cast(@DatabaseType));
+     );
+ );
+}
+
+function meta::relational::tests::databaseTestPattern::getRuntime(dbType: Any[1] ):Runtime[1]
+{
+     ^Runtime(connections = getConnectionTest($dbType));
+}
+
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::columns::testLowerCase():Boolean[1]
+// {      
+//  getDatabases() -> map ({
+//     currDatabaseType | 
+//     let connection = getConnectionTest($currDatabaseType) -> cast(@DatabaseConnection);
+//     executeInDb('Drop table if exists TableColumnTest;', $connection);
+//     executeInDb('Create Table TableColumnTest(lowercase INT);', $connection);
+//     let res = executeInDb('select * from TableColumnTest', $connection);
+//     let columnNames = $res.columnNames;
+//     assertEquals('LOWERCASE' , $columnNames);
+//     }) -> fold ({a,b | $a && $b }, true ); 
+// }
+
+function <<test.Test>> meta::relational::tests::databaseTestPattern::arithmetic::testDecimalPrecison():Boolean[1]
+{      
+    getDatabases() -> map ({
+    currDatabaseType | 
+    meta::relational::tests::databaseTestPattern::arithmetic::testDecimalPrecison($currDatabaseType)
+    }) -> fold ({a,b | $a && $b }, true ); 
+}
+
+function meta::relational::tests::databaseTestPattern::arithmetic::testDecimalPrecison(dbType: DatabaseType[1]):Boolean[1]
+{      
+  let result = execute(
+      |Person.all()
+         ->project(p|$p.firstName,'firstName')
+         ->project([col(r:TDSRow[1]|$r.getString('firstName'), 'firstName'),col({r:TDSRow[1]|%2016-08-10T08:55:00.0->hour()}, 'hour')]),
+      simpleRelationalMapping, 
+      getRuntime($dbType), meta::pure::router::extension::defaultRelationalExtensions());
+    let tds = $result.values->at(0);
+    if ($dbType == DatabaseType.Redshift,
+        | assertEquals('Peter|8.0,John|8.0,John|8.0,Anthony|8.0,Fabrice|8.0,Oliver|8.0,David|8.0',    $tds.rows->map(r|$r.values->makeString('|'))->makeString(','));,
+        | if ( $dbType == DatabaseType.H2,
+            | assertEquals('Peter|8,John|8,John|8,Anthony|8,Fabrice|8,Oliver|8,David|8',    $tds.rows->map(r|$r.values->makeString('|'))->makeString(',')); 
+            ,
+            | assertEquals('Peter|8,John|8,John|8,Anthony|8,Fabrice|8,Oliver|8,David|8',    $tds.rows->map(r|$r.values->makeString('|'))->makeString(','));
+        );
+    );
+}
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::columns::testAmbiguousColumnReference():Boolean[1]
+// {      
+//    getDatabases() -> map ({
+//     currDatabaseType | 
+//      let result = execute(|Product.all()->groupBy(
+//                            [p | $p.name], 
+//                            [agg(p | $p.cusip, y|$y->count())], 
+//                            ['name', 'cusip']
+//                            )->sort('name'), 
+//                meta::relational::tests::projection::qualifier::productMappingWithFilter, 
+//                getRuntime($currDatabaseType), meta::pure::router::extension::defaultRelationalExtensions());
+//    assertSize($result.values.rows, 4);
+//    assertEquals(['Firm A', 1, 'Firm C', 1, 'Firm D', 0, 'Firm X', 0], $result.values.rows.values);
+//    assertEquals('select "root".NAME as "name", count("synonymtable_0".NAME) as "cusip" from productSchema.productTable as "root" left outer join productSchema.synonymTable as "synonymtable_0" on ("synonymtable_0".PRODID = "root".ID and "synonymtable_0".TYPE = \'CUSIP\' and "synonymtable_0".ID != 1) group by "name" order by "name"', $result->sqlRemoveFormatting());
+//     }) -> fold ({a,b | $a && $b }, true ); 
+// }
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::arithmetic::testDateTimeFieldOutOfRange():Boolean[1]
+// {      
+//   getDatabases() -> map ({
+//     currDatabaseType | 
+//     let result = execute(|Trade.all()->filter(i|(%2014-12-04T15:22:23.123456789 < $i.settlementDateTime ) && ($i.settlementDateTime < %2014-12-04T23:59:59.999999999)) , simpleRelationalMapping, getRuntime($currDatabaseType), meta::pure::router::extension::defaultRelationalExtensions());
+//     assertSize($result.values, 1);
+//     assertEquals( [%2014-12-04T21:00:00.000000000], $result.values.settlementDateTime->sort());
+//   }) -> fold ({a,b | $a && $b }, true ); 
+// }
+
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::arithmetic::decimalOffByOne():Boolean[1]
+// {      
+//    getDatabases() -> map ({
+//     currDatabaseType | 
+//        let result = execute(
+//              |Firm.all()->groupBy(
+//                                      [
+//                                         f|$f.legalName,
+//                                         f|$f.address.name
+//                                      ],
+//                                      agg(
+//                                            f|$f->subFunction6(#/Firm/employees#),
+//                                            y|$y->sum()*2
+//                                          ),
+//                                      ['legalName', 'addressName', 'employeeAge']
+//                                  )->sort('legalName')
+//              ,simpleRelationalMapping
+//              ,getRuntime($currDatabaseType)
+//           , meta::pure::router::extension::defaultRelationalExtensions());
+
+//    assertEquals(['Firm A', 'Cupertino', 68.0, 'Firm B', 'Tokyo', 64.0, 'Firm C', 'Mountain View', 70.0, 'Firm X', 'New York', 39.5], $result.values.rows.values);
+//    //result is 39.4 from sql query rather than 39.5
+//     }) -> fold ({a,b | $a && $b }, true ); 
+
+// }
+
+// function meta::relational::tests::databaseTestPattern::subFunction6(f:Firm[1], func:Function<{Firm[1]->Person[*]}>[1]):Float[1]
+// {
+//    $f->map($func)->map(e|$e.age)->average();
+// }
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::limits::testLimitTwo():Boolean[1]
+// {      
+//     getDatabases() -> map ({
+//     currDatabaseType |   let result = execute(|Person.all()->drop(0), simpleRelationalMapping, getRuntime($currDatabaseType), meta::pure::router::extension::defaultRelationalExtensions());
+//    assertEquals('select "root".ID as "pk_0", "root".FIRSTNAME as "firstName", "root".AGE as "age", "root".LASTNAME as "lastName" from personTable as "root" limit 0,-1', $result->sqlRemoveFormatting());
+//    assertSize($result.values, 12 );
+//     }) -> fold ({a,b | $a && $b }, true ); 
+// }
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::keywords::makeTypeClob():Boolean[1]
+// {      
+//   getDatabases() -> map ({
+//     currDatabaseType |   let result = execute(|Person.all()->drop(0), simpleRelationalMapping, getRuntime($currDatabaseType), meta::pure::router::extension::defaultRelationalExtensions());
+//     let connection = getConnectionTest($currDatabaseType) -> cast(@DatabaseConnection);
+//     executeInDb('Drop table if exists fetchDbMetaDatatestTable4;', $connection);
+//     executeInDb('Create table fetchDbMetaDatatestTable4(ID INT NOT NULL,FIRSTNAME VARCHAR(200),OTHERSQLTYPE CLOB)', $connection); 
+//     true; 
+//   }) -> fold ({a,b | $a && $b }, true ); 
+// }
+
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::types::testTinyInt():Boolean[1]
+// {      
+//   getDatabases() -> map ({
+//     currDatabaseType | 
+//     let runtimeNew = getRuntime($currDatabaseType);
+//     meta::relational::tests::mapping::dataType::setUp();
+//     let result = execute(|meta::relational::tests::mapping::dataType::model::domain::DataDBTypes.all(), meta::relational::tests::mapping::dataType::model::mapping::testMapping, $runtimeNew, meta::pure::router::extension::defaultRelationalExtensions());
+//     assertSize($result.values, 3);
+//     let populatedRow = $result.values->filter(e | $e.tinyInt == 2)->toOne();
+//     assertEquals(false, $populatedRow.bit);
+//   }) -> fold ({a,b | $a && $b }, true ); 
+// }
+
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::keywords::testtColumnNameOid():Any[1]
+// {      
+//     (getDatabases() -> fold ({
+//     currDatabaseType, nxtType | 
+//     let connection = getConnectionTest($currDatabaseType) -> cast(@TestDatabaseConnection); 
+//     executeInDb('Drop table if exists TableColumnKeywordTest;', $connection);
+//     executeInDb('Create Table TableColumnKeywordTest(oid INT);', $connection);
+//     let res = executeInDb('select * from TableColumnKeywordTest', $connection);  
+//     let columnNames = $res.columnNames;
+//     assertEquals('OID' , $columnNames);
+//     }, 0));
+// }
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::keywords::testtColumnNameXmin():Any[1]
+// {      
+//     (getDatabases() -> fold ({
+//     currDatabaseType, nxtType | 
+//     let connection = getConnectionTest($currDatabaseType) -> cast(@TestDatabaseConnection); 
+//     executeInDb('Drop table if exists TableColumnKeywordTest;', $connection);
+//     executeInDb('Create Table TableColumnKeywordTest(xmin INT);', $connection);
+//     let res = executeInDb('select * from TableColumnKeywordTest', $connection);
+//     let columnNames = $res.columnNames;
+//     assertEquals('XMIN' , $columnNames);
+//     }, 0));
+// }
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::columns::testtColumnNameSystem():Any[1]
+// {      
+//     (getDatabases() -> fold ({
+//     currDatabaseType, nxtType |
+//     let connection = getConnectionTest($currDatabaseType) -> cast(@TestDatabaseConnection); 
+//     executeInDb('Drop table if exists TableColumnKeywordTest;', $connection);
+//     executeInDb('Create Table TableColumnKeywordTest(system INT);', $connection);
+//     let res = executeInDb('select * from TableColumnKeywordTest', $connection);
+//     let columnNames = $res.columnNames;
+//     assertEquals('SYSTEM' , $columnNames);
+//     }, 0));
+// }
+
+// function <<test.Test>> meta::relational::tests::databaseTestPattern::columns::testtColumnNameSystemQuoted():Any[1]
+// {      
+//     (getDatabases() -> fold ({
+//     currDatabaseType, nxtType |
+//     let connection = getConnectionTest($currDatabaseType) -> cast(@TestDatabaseConnection); 
+//     executeInDb('Drop table if exists TableColumnKeywordTest;', $connection);
+//     executeInDb('Create Table TableColumnKeywordTest("system" INT);', $connection);
+//     let res = executeInDb('select * from TableColumnKeywordTest', $connection);
+//     let columnNames = $res.columnNames;
+//     assertEquals('SYSTEM' , $columnNames);
+//     }, 0));
+// }
+
+
+ 
