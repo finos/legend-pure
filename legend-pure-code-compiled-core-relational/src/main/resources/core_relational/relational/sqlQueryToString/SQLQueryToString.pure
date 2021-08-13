@@ -1515,7 +1515,14 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='datepart(wk, %s)')),
                                                  choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='extract(week from %s)')),
                                                  choice(DatabaseType.BigQuery,     $allStates,           ^ToSql(format='extract(week from %s)'))]),
-      forDynafunction('year',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='year(%s)'))])
+      forDynafunction('year',                  [ choice($aSybase,                  $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.H2,           $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.Redshift,    $allStates,             ^ToSql(format='extract(year from %s)')),
+                                                 choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='year(wk, %s)'))])
    ]);
 
    { func:DynaFunction[1], generationState:GenerationState[1] |
