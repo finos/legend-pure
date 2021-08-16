@@ -100,13 +100,13 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::testSourceConstrain
                           ^Runtime(connections = ^JsonModelConnection(
                                 element=^ModelStore(), 
                                 class=_Car,
-                             url='data:application/json,{"make" : "Ford", "engineSize" : "big", "numOfDoors" : "1"}'
+                             url='data:application/json,{"make" : "Ford", "engineSize" : "big", "numOfDoors" : 1}'
                              )
                            ),
                            []
                      );
 
-   assert(jsonEquivalent('{"defects":[{"path":[],"enforcementLevel":"Critical","ruleType":"NoInput","externalId":null,"id":null,"ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::constraints::Car","message":"No Input Available"}],"source":{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"InvalidInput","externalId":null,"id":null,"ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::constraints::_Car","message":"numOfDoors: Unexpected node type:STRING for PURE Integer"},{"path":[],"enforcementLevel":"Critical","ruleType":"ClassStructure","externalId":null,"id":null,"ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::constraints::_Car","message":"Invalid multiplicity for numOfDoors: expected [1] found [0]"}],"source":{"number":1,"record":"{\\"make\\":\\"Ford\\",\\"engineSize\\":\\"big\\",\\"numOfDoors\\":\\"1\\"}"},"value":null},"value":null}'->parseJSON(), $result.values->toOne()->parseJSON()));
+  assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"make\\":\\"Ford\\",\\"engineSize\\":\\"big\\",\\"numOfDoors\\":1}"},"value":{"engineSize":"big","make":"Ford"}},"value":{"engineSize":"big"}}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
@@ -386,20 +386,22 @@ Class meta::pure::mapping::modelToModel::test::alloy::constraints::CurrentCarDat
    
 }
 
+
 Class meta::pure::mapping::modelToModel::test::alloy::constraints::_Car
 [
-   $this.make->in(^CurrentCarData(allowed=[CarManufacturer.Ford]).allowed)
+  $this.qp1() || $this.make->in(^CurrentCarData(allowed=[CarManufacturer.Ford]).allowed)
 ]
 {
    make : CarManufacturer[1];
    engineSize : String[1];
    numOfDoors : Integer[1];
+   qp1() {$this.make->in(^CurrentCarData(allowed=[CarManufacturer.Peugeot]).allowed)}:Boolean[1];
 }
 
 Class meta::pure::mapping::modelToModel::test::alloy::constraints::Car
 {
    make:CarManufacturer[1];
-  engineSize : String[1];
+   engineSize : String[1];
 }
 
 Class meta::pure::mapping::modelToModel::test::alloy::constraints::A
