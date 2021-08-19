@@ -58,6 +58,64 @@ function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly
    doc.doc='When:  the mapping is executed using graphFetch with subType and serialize.',
    doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
 } 
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObjectWithSubTypeWithoutAssoc() : Boolean[1]
+{   
+   let tree = #{
+      meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target{ 
+         targetAddress
+      }
+   }#;
+   
+   let result = execute(
+      |meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target.all()->graphFetch($tree)->serialize($tree),
+      meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Person, 
+                                url='data:application/json,[{"address": [{"zipCode" : "10282", "coordinates" : "1", "street": "200 west", "@type":"meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Street"}]}]'
+                             )
+      ),
+      []
+   );      
+   
+   assert(jsonEquivalent('{"targetAddress":"200 west"}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_20_0',
+   doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch with subType and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObjectWithMultiSubTypesWithoutAssoc() : Boolean[1]
+{   
+   let tree = #{
+      meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target{ 
+         targetAddress
+      }
+   }#;
+   
+   let result = execute(
+      |meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target.all()->graphFetch($tree)->serialize($tree),
+      meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithMultipleSubTypes,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Person, 
+                                url='data:application/json,[{"address": [{"zipCode" : "10282", "coordinates" : "1", "road": "200 west", "@type":"meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Road"}]}]'
+                             )
+      ),
+      []
+   );      
+   
+   assert(jsonEquivalent('{"targetAddress":"200 west"}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_20_0',
+   doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch with subType and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+} 
 meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObjectWithSubType() : Boolean[1]
 {
    let tree = #{Firm {legalName, employees{firstName}} }#;

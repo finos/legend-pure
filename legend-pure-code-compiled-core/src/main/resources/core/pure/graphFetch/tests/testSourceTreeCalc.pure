@@ -1000,3 +1000,171 @@ Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withUnrelatedConstraintPr
          a1: $src.a1
       }
 )
+
+###Pure
+import meta::pure::graphFetch::*;
+import meta::pure::graphFetch::execution::*;
+import meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::*;
+ 
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target
+{
+   targetZipCode: String[1];
+   targetAddress: String[1];
+}
+ 
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Person
+{
+   address: Location[1];
+}
+ 
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Location
+{
+   zipCode: String[1];
+   coordinates: String[1];
+}
+ 
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Street extends Location
+{
+   street: String[1];
+}
+ 
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Road extends Location
+{
+   road: String[1];
+}
+ 
+function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testWithSingleSubType():Boolean[1]
+{
+   let tree0 = #{
+      Target{
+         targetZipCode
+      }
+   }#;
+   let sourceTree0 = calculateSourceTree($tree0, meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType, meta::pure::router::extension::defaultExtensions())->sortTree();
+   let expectedSourceTree0 = #{
+      Person{
+         address{
+            zipCode
+         }
+      }
+   }#; 
+   assertEquals($expectedSourceTree0->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree0->sortTree()->meta::pure::graphFetch::treeToString());    
+   
+   let tree = #{
+      Target{
+         targetZipCode, 
+         targetAddress
+      }
+   }#;
+   let sourceTree = calculateSourceTree($tree, meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType, meta::pure::router::extension::defaultExtensions())->sortTree();
+   let expectedSourceTree = #{
+      Person{
+         address{
+            zipCode
+         },
+         address->subType(@Street){
+            zipCode,
+            street
+         }
+      }
+   }#; 
+   
+   assertEquals($expectedSourceTree->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree->sortTree()->meta::pure::graphFetch::treeToString()); 
+  
+   let tree1 = #{
+      Target{
+         targetAddress
+      }
+   }#;
+   let sourceTree1 = calculateSourceTree($tree1, meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType, meta::pure::router::extension::defaultExtensions())->sortTree();
+   let expectedSourceTree1 = #{
+      Person{
+         address->subType(@Street){
+            street
+         }
+      }
+   }#; 
+   assertEquals($expectedSourceTree1->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree1->sortTree()->meta::pure::graphFetch::treeToString());  
+}
+ 
+function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testWithMultipleSubTypes():Boolean[1]
+{   
+   let tree = #{
+      Target{
+         targetZipCode, 
+         targetAddress
+      }
+   }#;
+   let sourceTree = calculateSourceTree($tree, meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithMultipleSubTypes, meta::pure::router::extension::defaultExtensions())->sortTree();
+   let expectedSourceTree = #{
+      Person
+      {
+         address{
+            coordinates, 
+            zipCode
+         }, 
+         address->subType(@Street){
+            coordinates,
+            street,
+            zipCode
+         },       
+         address->subType(@Road){
+            coordinates,
+            road, 
+            zipCode
+         }
+      }
+   }#; 
+   assertEquals($expectedSourceTree->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree->meta::pure::graphFetch::treeToString());
+   
+   let tree1 = #{
+      Target{
+         targetAddress
+      }
+   }#;
+   let sourceTree1 = calculateSourceTree($tree1, meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithMultipleSubTypes, meta::pure::router::extension::defaultExtensions())->sortTree();
+   let expectedSourceTree1 = #{
+      Person
+      {  
+         address{
+            coordinates
+         },   
+         address->subType(@Street){
+            coordinates,
+            street
+         },
+         address->subType(@Road){
+            coordinates,
+            road
+         }
+      }
+   }#; 
+   assertEquals($expectedSourceTree1->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree1->meta::pure::graphFetch::treeToString());      
+}
+ 
+###Mapping
+Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType
+(
+   *meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target: Pure
+   {
+      ~src meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Person
+      targetZipCode: $src.address.zipCode,
+      targetAddress: if($src.address->instanceOf(meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Street),|$src.address->cast(@meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Street).street,|'unknown')
+   }
+)
+ 
+###Mapping
+import meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::*;
+Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithMultipleSubTypes
+(
+   *meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target: Pure
+   {
+      ~src meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Person
+      targetZipCode: $src.address.zipCode,
+      targetAddress: $src.address->match([
+         s:Street[1] | $s.street, 
+         r:Road[1] | $r.road,
+         l:Location[1] | $l.coordinates
+         ])
+   }
+)
