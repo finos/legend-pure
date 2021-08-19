@@ -43,6 +43,11 @@ function meta::alloy::runtime::java::graphFetch::json::createJsonReading(pureCla
       ->addMavenDependency('com.fasterxml.jackson.core', 'jackson-core', '2.10.3');
 }
 
+function meta::alloy::runtime::java::graphFetch::json::hasDecimal(typeInfos:TypeInfoSet[1]):Boolean[1]
+{
+  $typeInfos.typeInfos->filter(ti | $ti->instanceOf(ClassTypeInfo))->cast(@ClassTypeInfo)->exists(cti| $cti.properties->exists(p | $p.genericType.rawType == Decimal));
+}
+
 function meta::alloy::runtime::java::graphFetch::json::createJsonReadingClass(pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], readableClasses:Class<Any>[*], readableEnums:Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): meta::java::metamodel::Class[1]
 {
    let proto = $context.conventions->jsonReaderClass($path, $pureClass)
@@ -81,7 +86,7 @@ function meta::alloy::runtime::java::graphFetch::json::createJsonReadingClass(pu
       ->addField(javaField('private', javaLong(), 'recordCount', '0'))      
       ->addField(javaField('private', javaInputStream(), 'in'))
       ->addConstructor()
-      ->addInitReading()
+      ->addInitReading($context.typeInfos->hasDecimal())
       ->addMethodExist()
       ->addMethodInvoke()
       ->addMethod(
@@ -512,16 +517,20 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addCon
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addInitReading(class:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addInitReading(class:meta::java::metamodel::Class[1], useBigDecimalForFloats:Boolean[0..1]): meta::java::metamodel::Class[1]
 {
    let jThis  = j_this($class);
    let parser = $jThis->j_field('parser');
    let objectMapper = $jThis->j_field('objectMapper');
-
+   let objectMapperInstantiation = if($useBigDecimalForFloats->isTrue(), 
+                                      | $objectMapper->j_assign(objectMapper()->j_new([])->j_invoke('configure', [deserializationFeatureBigDecimalForFloats()->j_field('USE_BIG_DECIMAL_FOR_FLOATS', deserializationFeatureBigDecimalForFloats()), j_true()] , objectMapper())),
+                                      | $objectMapper->j_assign(objectMapper()->j_new([]))
+                                    );
+   
    $class->addMethod(javaMethod('public', javaVoid(), 'initReading', [],
       [
          $parser->j_assign(jsonFactory()->j_new([])->j_invoke('createParser', $jThis->j_field('in'), jsonParser())),
-         $objectMapper->j_assign(objectMapper()->j_new([]))
+         $objectMapperInstantiation
       ]->j_ioExTryCatch()->codesToString($class)
    ));
 }
