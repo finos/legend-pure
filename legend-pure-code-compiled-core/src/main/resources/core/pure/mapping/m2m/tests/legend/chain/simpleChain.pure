@@ -399,7 +399,7 @@ meta::pure::mapping::modelToModel::test::alloy::chain::simple::testJsonModelConn
       }#;
 
    let chainedQuery = {|Firm.all()->graphFetch($tree1)->serialize($tree1)};
-   let simpleQuery = {|Firm.all()->graphFetch($tree2)->serialize($tree2)};
+   let simpleQuery = {|_Firm.all()->graphFetch($tree2)->serialize($tree2)};
 
    let sourceFirms = '{"name":"Firm1"}';
    let runtime = ^Runtime(
@@ -412,13 +412,13 @@ meta::pure::mapping::modelToModel::test::alloy::chain::simple::testJsonModelConn
    let simpleQueryResult = execute($simpleQuery, SrcToBridgeMapping, $runtime, []).values;
    assertJsonStringsEqual(
          '{"name":"$Firm1$"}',
-         $result
+         $simpleQueryResult
       );
 
    let chainedQueryResult = execute($chainedQuery, BridgeToDestMapping, $runtime, []).values;
    assertJsonStringsEqual(
       '{"name":"|$Firm1$|"}',
-      $result
+      $chainedQueryResult
    );
 }
 
