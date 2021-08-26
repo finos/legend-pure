@@ -383,6 +383,45 @@ meta::pure::mapping::modelToModel::test::alloy::chain::simple::simpleChainSerial
    assert(jsonEquivalent($expected->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> {serverVersion.start='v1_19_0'}
+meta::pure::mapping::modelToModel::test::alloy::chain::simple::testJsonModelConnectionPriorityOverModelChainConnection(): Boolean[1]
+{
+   let tree1 = #{
+      Firm {
+         name
+      }
+   }#;
+
+   let tree2 = #{
+         _Firm {
+            name
+         }
+      }#;
+
+   let chainedQuery = {|Firm.all()->graphFetch($tree1)->serialize($tree1)};
+   let simpleQuery = {|Firm.all()->graphFetch($tree2)->serialize($tree2)};
+
+   let sourceFirms = '{"name":"Firm1"}';
+   let runtime = ^Runtime(
+                          connections = [
+                             ^ModelChainConnection(element = ^ModelStore(), mappings = [SrcToBridgeMapping]),
+                             ^JsonModelConnection(element = ^ModelStore(), class = __Firm, url = 'data:application/json,' + $sourceFirms)
+                          ]
+                       );
+
+   let simpleQueryResult = execute($simpleQuery, SrcToBridgeMapping, $runtime, []).values;
+   assertJsonStringsEqual(
+         '{"name":"$Firm1$"}',
+         $result
+      );
+
+   let chainedQueryResult = execute($chainedQuery, BridgeToDestMapping, $runtime, []).values;
+   assertJsonStringsEqual(
+      '{"name":"|$Firm1$|"}',
+      $result
+   );
+}
+
 ###Pure
 import meta::pure::mapping::modelToModel::test::alloy::chain::simple::src::*;
 import meta::pure::mapping::modelToModel::test::alloy::chain::simple::bridge::*;
