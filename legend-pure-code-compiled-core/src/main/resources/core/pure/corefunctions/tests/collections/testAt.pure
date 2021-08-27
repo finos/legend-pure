@@ -20,6 +20,9 @@ function <<test.Test>> meta::pure::functions::collection::tests::at::testAt():Bo
     assertEq('a', $collection->at(0));
     assertEq('b', $collection->at(1));
     assertEq('c', $collection->at(2));
+   
+   let singleItem = 'a';
+   assertEq('a', $singleItem->at(0));
 }
 
 function <<test.Test>> meta::pure::functions::collection::tests::at::testAtOtherScenario():Boolean[1]

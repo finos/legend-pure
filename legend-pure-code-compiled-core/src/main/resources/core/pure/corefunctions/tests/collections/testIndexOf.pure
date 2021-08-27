@@ -18,3 +18,9 @@ function <<test.Test>> meta::pure::functions::collection::tests::indexof::testIn
 {
    assertEquals(2, ['a', 'b', 'c', 'd']->indexOf('c'));
 }
+
+function <<test.Test>> meta::pure::functions::collection::tests::indexof::testIndexOfOneElement():Boolean[1]
+{
+   assertEquals(0, 'c'->indexOf('c'));
+   assertEquals(-1, 'c'->indexOf('b'));
+}
