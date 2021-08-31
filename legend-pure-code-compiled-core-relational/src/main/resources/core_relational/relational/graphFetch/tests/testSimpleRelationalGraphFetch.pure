@@ -1070,13 +1070,13 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::rel
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
 
    assertJsonStringsEqual(
-      '[{"firstName":"Peter","fullName(false)":"Peter Smith","nwt":"Mr Peter Smith"},'+
-      '{"firstName":"John","fullName(false)":"John Johnson","nwt":"Mr John Johnson"},'+
-      '{"firstName":"John","fullName(false)":"John Hill","nwt":"Mr John Hill"},'+
-      '{"firstName":"Anthony","fullName(false)":"Anthony Allen","nwt":"Mr Anthony Allen"},'+
-      '{"firstName":"Fabrice","fullName(false)":"Fabrice Roberts","nwt":"Mr Fabrice Roberts"},'+
-      '{"firstName":"Oliver","fullName(false)":"Oliver Hill","nwt":"Mr Oliver Hill"},'+
-      '{"firstName":"David","fullName(false)":"David Harris","nwt":"Mr David Harris"}]',
+      '[{"firstName":"Peter","fullName($boolVar)":"Peter Smith","nwt":"Mr Peter Smith"},'+
+      '{"firstName":"John","fullName($boolVar)":"John Johnson","nwt":"Mr John Johnson"},'+
+      '{"firstName":"John","fullName($boolVar)":"John Hill","nwt":"Mr John Hill"},'+
+      '{"firstName":"Anthony","fullName($boolVar)":"Anthony Allen","nwt":"Mr Anthony Allen"},'+
+      '{"firstName":"Fabrice","fullName($boolVar)":"Fabrice Roberts","nwt":"Mr Fabrice Roberts"},'+
+      '{"firstName":"Oliver","fullName($boolVar)":"Oliver Hill","nwt":"Mr Oliver Hill"},'+
+      '{"firstName":"David","fullName($boolVar)":"David Harris","nwt":"Mr David Harris"}]',
       $result
    );
 }
