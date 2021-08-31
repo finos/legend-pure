@@ -1040,6 +1040,47 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::rel
    );
 }
 
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::qualifier::testInScopeVariableBoolean(): Boolean[1]
+{
+   let query = {|
+      let var = 'Mr';
+      let boolVar = false;
+      Person.all()->graphFetch(
+         #{
+            Person {
+               firstName,
+               fullName($boolVar),
+               nameWithTitle($var)
+            }
+         }#
+      )->serialize(
+         #{
+            Person {
+               firstName,
+               fullName($boolVar),
+               'nwt' : nameWithTitle($var)
+            }
+         }#
+      );
+   };
+
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"firstName":"Peter","fullName(false)":"Peter Smith","nwt":"Mr Peter Smith"},'+
+      '{"firstName":"John","fullName(false)":"John Johnson","nwt":"Mr John Johnson"},'+
+      '{"firstName":"John","fullName(false)":"John Hill","nwt":"Mr John Hill"},'+
+      '{"firstName":"Anthony","fullName(false)":"Anthony Allen","nwt":"Mr Anthony Allen"},'+
+      '{"firstName":"Fabrice","fullName(false)":"Fabrice Roberts","nwt":"Mr Fabrice Roberts"},'+
+      '{"firstName":"Oliver","fullName(false)":"Oliver Hill","nwt":"Mr Oliver Hill"},'+
+      '{"firstName":"David","fullName(false)":"David Harris","nwt":"Mr David Harris"}]',
+      $result
+   );
+}
+
 function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::qualifier::testQualifierWithManyMultiplicityParameter_EmptyInput(): Boolean[1]
 {
    let tree = #{
