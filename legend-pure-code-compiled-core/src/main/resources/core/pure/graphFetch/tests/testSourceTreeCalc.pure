@@ -977,10 +977,11 @@ Class meta::pure::graphFetch::tests::sourceTreeCalc::withUnrelatedConstraintProp
 
 Class meta::pure::graphFetch::tests::sourceTreeCalc::withUnrelatedConstraintProperty::_A
 [
-   constraint: $this.a1 == ^_B(b1='x').b1
+   constraint: $this.a1 == ^_B(b1='x').b1 || $this.qp1()
 ]
 {
    a1: String[1];
+   qp1() { $this.a1 == ^_B(b1='y').b1} : Boolean[1];
 }
 
 Class meta::pure::graphFetch::tests::sourceTreeCalc::withUnrelatedConstraintProperty::_B

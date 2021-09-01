@@ -183,8 +183,10 @@ meta::java::generation::tests::functions::collection::testPartsOfCollections() :
    let conventions = alloyConventions([]);
    
    javaExpressionTests($conventions)
-      ->addTest('at from many', {|[1,2]->at(1)}, 'java.util.Arrays.asList(1L, 2L).get((int) 1L).longValue()', javaLong())
+      ->addTest('at from many', {|[1,2]->at(1)}, 'org.finos.legend.engine.plan.dependencies.util.Library.at(java.util.Arrays.asList(1L, 2L), 1L).longValue()', javaLong())
          ->assert('%s == 2L')
+      ->addTest('at from single', {|8->at(0)}, 'org.finos.legend.engine.plan.dependencies.util.Library.at(8L, 0L)', javaLong())
+         ->assert('%s == 8L')
       ->addTest('find first', {|[1,2,3]->first()}, 'org.finos.legend.engine.plan.dependencies.util.Library.first(java.util.Arrays.asList(1L, 2L, 3L))', javaLong()->toBoxed())
          ->assert('%s == 1L')
       ->addTest('find first', {|1->first()}, 'org.finos.legend.engine.plan.dependencies.util.Library.first(1L)', javaLong()->toBoxed())
@@ -265,6 +267,7 @@ meta::java::generation::tests::functions::collection::testPureTests() : Boolean[
       ->addTestsWithin(meta::pure::functions::collection::tests::init)
       ->addTestsWithin(meta::pure::functions::collection::tests::tail)
       ->addTestsWithin(meta::pure::functions::collection::tests::last)
+      ->addTestsWithin(meta::pure::functions::collection::tests::at)
       ->addTestsWithin(meta::pure::functions::collection::tests::sort)
       ->addTestsWithin(meta::pure::functions::collection::tests::indexof)
       ->addTestsWithin(meta::pure::functions::collection::tests::range)   

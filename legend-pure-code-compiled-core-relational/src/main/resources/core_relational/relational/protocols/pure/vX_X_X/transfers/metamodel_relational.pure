@@ -227,7 +227,7 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
    );
    if ($j.target->isEmpty(),
     |$r,
-    |^$r(target=$j.target.name)
+    |^$r(target='{target}')
    );
 }
 
@@ -251,13 +251,13 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::re
                                ^meta::protocols::pure::vX_X_X::metamodel::store::relational::element::ColumnPtr
                                (
                                   _type = 'column',
-                                  tableAlias = $t.alias.name,
+                                  tableAlias = if($t.alias.name->equal('t_' + $table.name),|'{target}',|$t.alias.name),
                                   table = ^meta::protocols::pure::vX_X_X::metamodel::store::relational::element::TablePtr(
                                      _type = 'table',
                                      database = $schema.database->elementToPath(),
                                      mainTableDb = $schema.database->elementToPath(),
                                      schema = $schema.name,
-                                     table = $table.name),
+                                     table = if($t.alias.name->equal('t_' + $table.name),|'{target}',|$table.name)),
                                   column = $t.column.name
                                );,
          r:RelationalOperationElementWithJoin[1]| ^meta::protocols::pure::vX_X_X::metamodel::store::relational::element::ElementWithJoins
