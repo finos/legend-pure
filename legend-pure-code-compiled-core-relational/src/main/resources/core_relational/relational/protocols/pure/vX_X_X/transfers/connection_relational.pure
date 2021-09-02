@@ -189,6 +189,13 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
              _type = 'bigQuery',
              projectId = $b.projectId,
              defaultDataset = $b.defaultDataset
+         ),
+      s:meta::pure::alloy::connections::alloy::specification::SpannerDatasourceSpecification[1] |
+         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::SpannerDatasourceSpecification(
+             _type = 'spanner',
+             projectId = $s.projectId,
+             instanceId = $s.instanceId,
+             databaseId = $s.databaseId
          )
    ])->toOneMany())
 }

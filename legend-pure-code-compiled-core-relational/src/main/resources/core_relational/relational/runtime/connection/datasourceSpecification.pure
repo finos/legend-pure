@@ -65,3 +65,10 @@ Class meta::pure::alloy::connections::alloy::specification::BigQueryDatasourceSp
     projectId:String[1];
     defaultDataset:String[1];
 }
+
+Class meta::pure::alloy::connections::alloy::specification::SpannerDatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
+{
+    projectId:String[1];
+    instanceId:String[1];
+    databaseId:String[1];
+}
