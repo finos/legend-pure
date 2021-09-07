@@ -311,7 +311,7 @@ function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialise
                                       {|
                                          let valueExtractor = {x: VariableExpression[1] | 
                                                                  let javaType = $conventions->pureTypeToJavaType($x.genericType, $x.multiplicity);
-                                                                 let typeArg  = if($javaType->isJavaList(), |$fContext->j_invoke('listType', $javaType->elementType()->j_field('class', javaClassType())), |$javaType->j_field('class', javaClassType()));
+                                                                 let typeArg  = if($javaType->isJavaList(), |$fContext->j_invoke('listType', $javaType->elementType()->toBoxed()->j_classField()), |$javaType->toBoxed()->j_classField());
                                                                  $fContext->j_invoke('getResult', [j_string($x.name), $typeArg], $javaType);
                                                               };
                                          let parameters = $spgft.parameters->evaluateAndDeactivate();

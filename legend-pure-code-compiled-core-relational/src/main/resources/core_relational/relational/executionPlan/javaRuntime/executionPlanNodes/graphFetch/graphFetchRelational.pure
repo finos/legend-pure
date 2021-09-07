@@ -736,7 +736,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
 
                let valueExtractor = {x: VariableExpression[1] |
                   let javaType = $conventions->pureTypeToJavaType($x.genericType.rawType->toOne(), PureOne);
-                  let typeArg  = if($javaType->isJavaList(), |$contextParam->j_invoke('listType', $javaType->elementType()->j_field('class', javaClassType())), |$javaType->j_field('class', javaClassType()));
+                  let typeArg  = if($javaType->isJavaList(), |$contextParam->j_invoke('listType', $javaType->elementType()->toBoxed()->j_classField()), |$javaType->toBoxed()->j_classField());
                   j_cast(
                      $contextParam->j_invoke('getResult', [j_string($x.name), $typeArg], $javaType),
                      $javaType
