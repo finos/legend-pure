@@ -787,9 +787,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::table
 
    let schemaName = if ($dbConfig.dbType == DatabaseType.Presto,
                         | $table.schema.name->replace('$', '.'),
-                        | if ($dbConfig.dbType == DatabaseType.Spanner,
-                        | 'default',
-                        | $table.schema.name)
+                        | $table.schema.name
                      );
    if($schemaName == 'default', | $table.name->processIdentifier($dbConfig), | $schemaName->processIdentifier($dbConfig) + '.' + $table.name->processIdentifier($dbConfig));
 }
