@@ -677,16 +677,15 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
 
       assert(jsonEquivalent($expectedOPenAPI->parseJSON(),$collectOpenAPI.content->toOne()->parseJSON()));
       assertEquals($expectedOpenAPIYAML,$collectOpenAPIYAML.content->toOne());
-    let OpenAPINoPaths = [schemaInput('/model.json', $ImportedCollectionNoPath,'meta::json::schema::tests')]->JSONSchemaToPure();
-
-   
+    let mergedPaths = [schemaInput('/schema/tests.json', $ImportedCollectionNoPath,'meta::json')]->JSONSchemaToPure();
+    let OpenAPINoPaths = [schemaInput('/tests.json', $ImportedCollectionNoPath,'meta::json::schema')]->JSONSchemaToPure();
     let standardSchema = [schemaInput('/model.json', $expectedStandardJSONSchema,[])]->JSONSchemaToPure();
     let openAPI = [schemaInput('/model.json', $expectedOPenAPI,'should::be::ignored')]->JSONSchemaToPure();
-
 
    assert($standardSchema->size()==4);
    assert($openAPI->size()==4);
    assert($OpenAPINoPaths->size()==4);
+   assert($mergedPaths->size()==4);
 
    meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::ClassWithFunctionReferences,$standardSchema);
    meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::functionWithStringType_String_$0_1$__Boolean_1_,$standardSchema);
@@ -704,7 +703,11 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
    meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::functionWithStringType_String_$0_1$__Boolean_1_,$OpenAPINoPaths);
    meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::SimpleClass2,$OpenAPINoPaths);
    meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::SimpleClass,$OpenAPINoPaths);
-
+   
+   meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::ClassWithFunctionReferences,$mergedPaths);
+   meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::functionWithStringType_String_$0_1$__Boolean_1_,$mergedPaths);
+   meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::SimpleClass2,$mergedPaths);
+   meta::json::schema::fromSchema::tests::testfromJSONSchema(meta::json::schema::tests::SimpleClass,$mergedPaths);
 
 }
 

@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import meta::pure::profiles::*;
+import meta::json::schema::tests::constraints::*;
+import meta::json::schema::tests::*;
 import meta::pure::executionPlan::profiles::*;
 import meta::pure::generation::metamodel::*;
 import meta::json::schema::generation::*;
@@ -215,12 +217,12 @@ function meta::json::schema::tests::unsupportedFunction(value:Integer[1]):Boolea
 }
 
 
-function <<access.private>>  meta::json::schema::tests::matchString():String[1]
+function <<access.private>>  meta::json::schema::tests::constraints::matchString():String[1]
 {
  'abcd';
 }
 
-function {doc.doc='a complex function'}  meta::json::schema::tests::constraintFunctionComplex(value:Any[0..1]):Boolean[1]
+function {doc.doc='a complex function'}  meta::json::schema::tests::constraints::constraintFunctionComplex(value:Any[0..1]):Boolean[1]
 {
 oneOf([((($value->makeString()->isNoLongerThan(32) && $value->makeString()->isNoShorterThan(4) && $value->makeString()->matches(matchString()) )
           || $value->makeString()->isNoShorterThan(7)
@@ -229,18 +231,18 @@ oneOf([((($value->makeString()->isNoLongerThan(32) && $value->makeString()->isNo
 }
 
 
-function  meta::json::schema::tests::nested::constraintFunctionSimpleNumberNested(valueNumber:Any[0..1]):Boolean[1]
+function  meta::json::schema::tests::constraints::nested::constraintFunctionSimpleNumberNested(valueNumber:Any[0..1]):Boolean[1]
 {
     $valueNumber->toOne()->instanceOf(Number)  ;
 }
 
-function  meta::json::schema::tests::constraintFunctionSimpleNumber(valueNumber:Any[0..1]):Boolean[1]
+function  meta::json::schema::tests::constraints::constraintFunctionSimpleNumber(valueNumber:Any[0..1]):Boolean[1]
 {
-    $valueNumber->toOne()->instanceOf(String)  ||  $valueNumber->meta::json::schema::tests::nested::constraintFunctionSimpleNumberNested() ;
+    $valueNumber->toOne()->instanceOf(String)  ||  $valueNumber->meta::json::schema::tests::constraints::nested::constraintFunctionSimpleNumberNested() ;
 }
 
 
-function  meta::json::schema::tests::constraintRegEXFn(value:String[1]):Boolean[1]
+function  meta::json::schema::tests::constraints::constraintRegEXFn(value:String[1]):Boolean[1]
 {
    $value->matches('regexp');
 }
@@ -257,7 +259,7 @@ function  meta::json::schema::tests::AnimalOneOf(value:Any[1]):Boolean[1]
 
 Class
 {doc.doc = 'Class With Constraints'}
-  meta::json::schema::tests::ClassWithConstraints
+  meta::json::schema::tests::constraints::ClassWithConstraints
 [
    simple: $this.simple->constraintFunctionSimpleNumber(),
    complex: $this.complex->constraintFunctionComplex() && $this.complex->makeString()->isNoShorterThan(4),
@@ -364,7 +366,7 @@ Class  meta::json::schema::tests::parent2::level1::level2::childClass2
 
 
 Class
-<<JSONSchemaGeneration.noAdditionalProperties>> {JSONSchemaJavaExtension.javaType = 'com.supertype' }
+<<meta::json::schema::JSONSchemaGeneration.noAdditionalProperties>> {JSONSchemaJavaExtension.javaType = 'com.supertype' }
   meta::json::schema::tests::ClassWithProfileInterface
 {
       classType:String[1];
@@ -1364,13 +1366,13 @@ function <<test.Test>>  meta::json::schema::generation::tests::testInterface():B
 
 function <<test.Test>>  meta::json::schema::generation::tests::toJSONSchemaWithConstraint():Boolean[1]
 {
-    let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::ClassWithConstraints],
+    let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[ meta::json::schema::tests::constraints],
                                                            useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true ));
     assertFalse( $jsonSchema->isEmpty() );
     let expectedjson=  '{\n' +
         '  "$schema": "http:\\/\\/json-schema.org\\/draft-07\\/schema#",\n' +
         '  "description": "Class With Constraints",\n' +
-        '  "title": "meta::json::schema::tests::ClassWithConstraints",\n' +
+        '  "title": "meta::json::schema::tests::constraints::ClassWithConstraints",\n' +
         '  "type": "object",\n' +
         '  "properties":   {\n' +
         '    "requiredMax":     {\n' +
@@ -1492,20 +1494,21 @@ function <<test.Test>>  meta::json::schema::generation::tests::toJSONSchemaWithC
         '"requiredMinItem"\n' +
         '  ]\n' +
         '}';
-
-   assertEquals($expectedjson->meta::json::parseJSON()->toCompactJSONString(),$jsonSchema->at(0).content->meta::json::parseJSON()->toCompactJSONString());
+   
+  let constraintClassSchema = $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/constraints/ClassWithConstraints.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString(); 
+   assertEquals($expectedjson->meta::json::parseJSON()->toCompactJSONString(),$constraintClassSchema);
 
 }
 
 
 function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchema():Boolean[1]
 {
-    let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::constraintFunctionSimpleNumber_Any_$0_1$__Boolean_1_,meta::json::schema::tests::ClassWithFunctionReference,meta::json::schema::tests::constraintFunctionComplex_Any_$0_1$__Boolean_1_],
+    let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::constraints::constraintFunctionSimpleNumber_Any_$0_1$__Boolean_1_,meta::json::schema::tests::ClassWithFunctionReference,meta::json::schema::tests::constraints::constraintFunctionComplex_Any_$0_1$__Boolean_1_],
                                                          useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true ));
     assertFalse( $jsonSchema->isEmpty() );
     assertSize($jsonSchema,3);
 
-      let actualFunctionSchema = $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/constraintFunctionSimpleNumber.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
+      let actualFunctionSchema = $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/constraints/constraintFunctionSimpleNumber.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
 
 
     let expectedFunctionSchemajson=  '{\n' +
@@ -1518,7 +1521,7 @@ function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchem
         '      "$ref": "nested\\/constraintFunctionSimpleNumberNested.json"\n' +
         '    }\n' +
         '  ],\n' +
-        '  "title": "meta::json::schema::tests::constraintFunctionSimpleNumber"\n' +
+        '  "title": "meta::json::schema::tests::constraints::constraintFunctionSimpleNumber"\n' +
         '}';
    assertEquals($expectedFunctionSchemajson->meta::json::parseJSON()->toCompactJSONString(),$actualFunctionSchema);
 
@@ -1532,7 +1535,7 @@ function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchem
         '  "type": "object",\n' +
         '  "properties":   {\n' +
         '    "simple":     {\n' +
-        '      "$ref": "constraintFunctionSimpleNumber.json"\n' +
+        '      "$ref": "constraints\\/constraintFunctionSimpleNumber.json"\n' +
         '    }\n' +
         '  }\n' +
         '}';
@@ -1540,7 +1543,7 @@ function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchem
 
    assertEquals($expectedClassWithFunctionRef->meta::json::parseJSON()->toCompactJSONString(),$actualClassWithFunctionRef);
 
-   let actualComplexSchema = $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/constraintFunctionComplex.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
+   let actualComplexSchema = $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/constraints/constraintFunctionComplex.json').content->toOne()->meta::json::parseJSON()->toCompactJSONString();
     let expectedComplexFunction= '{\n' +
         '  "oneOf": [\n' +
         '    {\n' +
@@ -1565,7 +1568,7 @@ function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchem
         '  ],\n' +
         '  "$schema": "http:\\/\\/json-schema.org\\/draft-07\\/schema#",\n' +
         '  "description": "a complex function",\n' +
-        '  "title": "meta::json::schema::tests::constraintFunctionComplex"\n' +
+        '  "title": "meta::json::schema::tests::constraints::constraintFunctionComplex"\n' +
         '}';
 
 
@@ -1736,6 +1739,71 @@ function <<test.Test>>  meta::json::schema::generation::tests::testFunctionSchem
   assertEquals($expectedSubTypeAnimal,$actualsubTypeAnimal);
   assertEquals($expectedAnimal,$actualAnimal);
 }
+
+ function <<test.Test>> meta::json::schema::generation::tests::testOpenAPIYAMLPlain():Boolean[1]
+{
+
+
+     let jsonSchema = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::subtypeAnimal_Animal_1__Boolean_1_,
+                                                                                           meta::json::schema::tests::Animal,
+                                                                                           meta::json::schema::tests::Cat,
+                                                                                           meta::json::schema::tests::Dog],
+                                                         useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true,schemaSpecification=JSONSchemaSpecification.OPEN_API_V3_0_3_YAML_PLAIN ));
+
+
+   let expectedSubTypeAnimal= 'discriminator: \n' +
+                              '  propertyName: type\n' +
+                              '  mapping: \n' +
+                              '    CAT: Cat.yaml\n' +
+                              '    dog: Dog.yaml\n' +
+                              '    DOG: Dog.yaml\n' +
+                              'oneOf: \n' +
+                              '  - $ref: Dog.yaml\n' +
+                              '  - $ref: Fish.yaml\n' +
+                              '  - $ref: Cat.yaml\n' +
+                              'title: meta::json::schema::tests::subtypeAnimal';
+
+
+   let expectedAnimal = 'title: meta::json::schema::tests::Animal\n' +
+                        'description: The Animal Class\n' +
+                        'allOf: \n' +
+                        '  - $ref: Being.yaml\n' +
+                        'type: object\n' +
+                        'properties: \n' +
+                        '  name: \n' +
+                        '    type: string\n' +
+                        '  age: \n' +
+                        '    type: integer\n' +
+                        '  type: \n' +
+                        '    $ref: AnimalType.yaml\n' +
+                        '  aliases: \n' +
+                        '    type: array\n' +
+                        '    items: \n' +
+                        '      type: string\n' +
+                        '  extra: \n' +
+                        '    type: array\n' +
+                        '    items: \n' +
+                        '      $ref: OtherInfo.yaml\n' +
+                        '    minItems: 4\n' +
+                        '    maxItems: 4\n' +
+                        'discriminator: \n' +
+                        '  propertyName: type\n' +
+                        '  mapping: \n' +
+                        '    CAT: Cat.yaml\n' +
+                        '    cat: Cat.yaml\n' +
+                        '    DOG: Dog.yaml\n' +
+                        'required: \n' +
+                        '  - name\n' +
+                        '  - age\n' +
+                        '  - type\n' +
+                        '  - extra' ;
+
+  let actualsubTypeAnimal =  $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/subtypeAnimal.yaml').content->toOne();
+  let actualAnimal = $jsonSchema->filter(f|$f.fileName=='meta/json/schema/tests/Animal.yaml').content->toOne();
+  assertEquals($expectedSubTypeAnimal,$actualsubTypeAnimal);
+  assertEquals($expectedAnimal,$actualAnimal);
+}
+
 
 
  function <<test.Test>> meta::json::schema::generation::tests::testUnsupportedConstraint():Boolean[1]
