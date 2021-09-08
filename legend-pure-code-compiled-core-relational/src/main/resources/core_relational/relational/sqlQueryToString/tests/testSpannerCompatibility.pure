@@ -101,7 +101,7 @@ function <<test.Test>> meta::relational::spanner::tests::tableAndColumnNamesAreQ
 
 
 // TODO : Test this from engine so as to catch assertion failure
-function <<test.Test>> meta::relational::spanner::tests::tableWithNonDefaultSchemaNotSupported():Boolean[1]
+function meta::relational::spanner::tests::tableWithNonDefaultSchemaNotSupported():Boolean[1]
 {
    let result = toSQLString(
     |meta::relational::spanner::tests::domain::Thing.all()->project([s | $s.id], ['ID']), 
@@ -112,7 +112,7 @@ function <<test.Test>> meta::relational::spanner::tests::tableWithNonDefaultSche
 }
 
 // TODO : Test this from engine so as to catch assertion failure
-function <<test.Test>> meta::relational::spanner::tests::windowFunctionNotSupported():Boolean[1]
+function meta::relational::spanner::tests::windowFunctionNotSupported():Boolean[1]
 {
    let func = {|meta::relational::tests::model::simple::Person.all()
       ->project([

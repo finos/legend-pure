@@ -96,7 +96,6 @@ function <<test.Test>> meta::relational::bigquery::tests::tableAndColumnNamesAre
     meta::relational::bigquery::tests::mapping::simpleRelationalMappingPersonForBQ,
     meta::relational::runtime::DatabaseType.BigQuery, 
     meta::pure::router::extension::defaultRelationalExtensions());
-    println($result);
    assertEquals('select `person_table_d#2_d_m1`.key as `KEY` from `person table` as `root` left outer join `person table` as `person_table_d#2_d_m1` on (`root`.key = `person_table_d#2_d_m1`.key)', $result);
 }
 

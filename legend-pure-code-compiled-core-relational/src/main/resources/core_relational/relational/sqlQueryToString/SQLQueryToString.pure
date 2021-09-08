@@ -785,17 +785,11 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    $children->map(child | processJoinTreeNode($child, $tableAlias->cast(@TableAlias), $dbConfig, $format, $extensions))->joinStrings($val, '', '');
 }
 
-
-function <<access.private>> meta::relational::functions::sqlQueryToString::isDefaultSchema(table:Table[1], dbConfig : DbConfig[1]):Boolean[1]
-{
-  ($table.schema.name->length() > 0) && ($table.schema.name == 'default');
-}
-
 function <<access.private>> meta::relational::functions::sqlQueryToString::tableToString(table:Table[1], dbConfig : DbConfig[1]):String[1]
 {
-   let validSchema = if ( $dbConfig.dbType == DatabaseType.Spanner, | isDefaultSchema($table, $dbConfig), | true);
+   let isValidSpannerSchema = if ( $dbConfig.dbType == DatabaseType.Spanner, | table.schema.name == 'default', | true);
 
-   assert($validSchema, 'Invalid schema specification "' + $table.schema.name + '". Spanner does not support named schemas');
+   assert($isValidSpannerSchema, 'Invalid schema specification "' + $table.schema.name + '". Spanner does not support named schemas');
 
    let schemaName = if ($dbConfig.dbType == DatabaseType.Presto,
                         | $table.schema.name->replace('$', '.'),
