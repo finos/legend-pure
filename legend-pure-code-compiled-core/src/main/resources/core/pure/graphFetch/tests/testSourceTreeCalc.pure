@@ -1106,25 +1106,6 @@ function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testWithSi
    }#; 
    assertEquals($expectedSourceTree1->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree1->sortTree()->meta::pure::graphFetch::treeToString());  
 }
-
-function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testM2MMappingUsingSuperTypeProperties():Boolean[1]
-{
-   let tree =
-   #{
-      meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetStreetCluster{
-         streetNames
-      }
-   }#;
-   let sourceTree = calculateSourceTree($tree, meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType, meta::pure::router::extension::defaultExtensions());
-   let expectedSourceTree = #{
-         SourceStreetCluster{
-            streetCluster{
-               street
-            }
-         }
-      }#;
-   assertEquals($expectedSourceTree->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree->sortTree()->meta::pure::graphFetch::treeToString()); 
-}
  
 function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testWithMultipleSubTypes():Boolean[1]
 {   
