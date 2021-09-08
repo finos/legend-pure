@@ -276,7 +276,7 @@ function <<test.Test>> meta::relational::spanner::tests::position():Boolean[1]
         meta::relational::tests::mapping::propertyfunc::model::mapping::PropertyfuncMapping,
         DatabaseType.Spanner, 
         meta::pure::router::extension::defaultRelationalExtensions());  
-    assertEquals('select substring(`root`.FULLNAME, 0, strpos(\',\', `root`.FULLNAME)-1) as `firstName` from personTable as `root`', $result);
+    assertEquals('select substr(`root`.FULLNAME, 0, strpos(\',\', `root`.FULLNAME)-1) as `firstName` from personTable as `root`', $result);
 }
 
 function <<test.Test>> meta::relational::spanner::tests::parseInteger():Boolean[1]

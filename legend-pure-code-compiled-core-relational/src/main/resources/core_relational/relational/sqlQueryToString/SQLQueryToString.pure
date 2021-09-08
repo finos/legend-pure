@@ -750,12 +750,6 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::suppo
    !($dbType == DatabaseType.SybaseIQ) && !($dbType == DatabaseType.DB2)
 }
 
-// TOOD : epsstan - Double check alias
-function <<access.private>> meta::relational::functions::formatAliasName(alias: TableAlias[1], dbConfig:DbConfig[1]):TableAlias[1]
-{
-  if ($dbConfig.dbType == DatabaseType.BigQuery, | ^$alias(name =  $alias.name ), | ^$alias(name = '"' + $alias.name + '"'))
-}
-
 function <<access.private>> meta::relational::functions::sqlQueryToString::processJoinTreeNode(joinTreeNode:RelationalTreeNode[1], parent:TableAlias[0..1], dbConfig : DbConfig[1], format:Format[1], extensions:RouterExtension[*]):String[1]
 {
    let tableAlias = $joinTreeNode->match(
@@ -787,7 +781,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::tableToString(table:Table[1], dbConfig : DbConfig[1]):String[1]
 {
-   let isValidSpannerSchema = if ( $dbConfig.dbType == DatabaseType.Spanner, | table.schema.name == 'default', | true);
+   let isValidSpannerSchema = if ( $dbConfig.dbType == DatabaseType.Spanner, | $table.schema.name == 'default', | true);
 
    assert($isValidSpannerSchema, 'Invalid schema specification "' + $table.schema.name + '". Spanner does not support named schemas');
 
