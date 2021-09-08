@@ -438,7 +438,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::unmappedOptionalProperti
 }
 
 
-function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
 {  serverVersion.start='v1_20_0',
    doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch with subType and serialize.',
