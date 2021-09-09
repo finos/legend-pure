@@ -205,3 +205,24 @@ function <<test.Test>> meta::external::format::yaml::tests::testToYamlString():B
                   '      - "info"';
    assertEquals($expected,$actual);
 }
+
+function <<test.Test>> meta::external::format::yaml::tests::testEscaping():Boolean[1]
+{
+   
+ let objectwithWhiteSpace  =  ^YAMLObject(keyValuePairs = [^YAMLKeyValue( key=^YAMLString( value='doc'), value=^YAMLString( value = 'A \'doc\' "with" a \twhite \nspaces/'))]);
+   
+  
+ let doubleQuote =  $objectwithWhiteSpace->toYAMLString();
+ let plain =   $objectwithWhiteSpace->toYAMLString(FlowScalarStyle.PLAIN);
+ assertEquals('doc: "A \'doc\' \\"with\\" a \\twhite \\nspaces/"',$doubleQuote);
+ assertEquals('doc: "A \'doc\' \\"with\\" a \\twhite \\nspaces/"',$plain);
+
+ let objectwithBasicString  =  ^YAMLObject(keyValuePairs = [^YAMLKeyValue( key=^YAMLString( value='doc'), value=^YAMLString( value = 'A \'doc\' "with" no \\white spaces/'))]);
+
+ let doubleQuoteNoWhiteSpace =  $objectwithBasicString->toYAMLString();
+ let plainNoWhiteSpace =   $objectwithBasicString->toYAMLString(FlowScalarStyle.PLAIN);
+  assertEquals('doc: "A \'doc\' \\"with\\" no \\\\white spaces/"',$doubleQuoteNoWhiteSpace);
+  assertEquals('doc: A \'doc\' "with" no \\white spaces/',$plainNoWhiteSpace);
+
+   
+}
