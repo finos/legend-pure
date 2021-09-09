@@ -97,20 +97,26 @@ function <<test.Test>> meta::protocols::generation::tests::testTranslatorJavaGen
                 'import org.finos.scalar.Int32;\n' +
                 '\n' +
                 'public class Translator {\n' +
-                '    public Root_meta_protocols_generation_tests_model_scalar_Int32 translate(Int32 int32, PureModel pureModel) {\n' +
-                '        return new Root_meta_protocols_generation_tests_model_scalar_Int32_Impl(\"\");\n' +
+                '    public org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum translate(FieldFlag fieldflag, PureModel pureModel) {\n' +
+                '        return pureModel.getEnumValue(\"meta::protocols::generation::tests::model::FieldFlag\", fieldflag.name());\n' +
                 '    }\n' +
-                '    public Root_meta_protocols_generation_tests_model_scalar_Bool translate(Bool bool, PureModel pureModel) {\n' +
-                '        return new Root_meta_protocols_generation_tests_model_scalar_Bool_Impl(\"\");\n' +
+                '    public Root_meta_protocols_generation_tests_model_Enum translate(Enum enum, PureModel pureModel) {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_Enum_Impl(\"\")._constant(enum.constant)._constantNumber(enum.constantNumber);\n' +
                 '    }\n' +
-                '    public Root_meta_protocols_generation_tests_model_scalar_String translate(org.finos.scalar.String string, PureModel pureModel) {\n' +
-                '        return new Root_meta_protocols_generation_tests_model_scalar_String_Impl(\"\");\n' +
+                '    public Root_meta_protocols_generation_tests_model_EnumPtr translate(EnumPtr enumptr, PureModel pureModel) {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_EnumPtr_Impl(\"\")._name(enumptr.name);\n' +
+                '    }\n' +
+                '    public Root_meta_protocols_generation_tests_model_Enumeration translate(Enumeration enumeration, PureModel pureModel) {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_Enumeration_Impl(\"\")._name(enumeration.name)._values(ListIterate.collect(enumeration.values, (Enum x) -> this.translate(x, pureModel)));\n' +
+                '    }\n' +
+                '    public Root_meta_protocols_generation_tests_model_Field translate(Field field, PureModel pureModel) {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_Field_Impl(\"\")._flag(this.translate(field.flag, pureModel))._binaryFieldNumber(field.binaryFieldNumber)._name(field.name)._type(this.translate(field.type, pureModel))._repeated(field.repeated);\n' +
                 '    }\n' +
                 '    public Root_meta_protocols_generation_tests_model_Message translate(Message message, PureModel pureModel) {\n' +
                 '        return new Root_meta_protocols_generation_tests_model_Message_Impl(\"\")._name(message.name)._fields(ListIterate.collect(message.fields, (Field x) -> this.translate(x, pureModel)))._reservedFieldNames(Lists.mutable.withAll(message.reservedFieldNames))._reservedFieldNumbers(Lists.mutable.withAll(message.reservedFieldNumbers));\n' +
                 '    }\n' +
-                '    public Root_meta_protocols_generation_tests_model_Field translate(Field field, PureModel pureModel) {\n' +
-                '        return new Root_meta_protocols_generation_tests_model_Field_Impl(\"\")._flag(this.translate(field.flag, pureModel))._binaryFieldNumber(field.binaryFieldNumber)._name(field.name)._type(this.translate(field.type, pureModel))._repeated(field.repeated);\n' +
+                '    public Root_meta_protocols_generation_tests_model_MessagePtr translate(MessagePtr messageptr, PureModel pureModel) {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_MessagePtr_Impl(\"\")._name(messageptr.name);\n' +
                 '    }\n' +
                 '    public Root_meta_protocols_generation_tests_model_ProtoBufType translate(ProtoBufType protobuftype, PureModel pureModel) {\n' +
                 '        return protobuftype == null ? null : protobuftype.accept(new ProtoBufTypeVisitor<Root_meta_protocols_generation_tests_model_ProtoBufType>()\n' +
@@ -149,18 +155,6 @@ function <<test.Test>> meta::protocols::generation::tests::testTranslatorJavaGen
                 '            }\n' +
                 '        });\n' +
                 '    }\n' +
-                '    public Root_meta_protocols_generation_tests_model_MessagePtr translate(MessagePtr messageptr, PureModel pureModel) {\n' +
-                '        return new Root_meta_protocols_generation_tests_model_MessagePtr_Impl(\"\")._name(messageptr.name);\n' +
-                '    }\n' +
-                '    public Root_meta_protocols_generation_tests_model_EnumPtr translate(EnumPtr enumptr, PureModel pureModel) {\n' +
-                '        return new Root_meta_protocols_generation_tests_model_EnumPtr_Impl(\"\")._name(enumptr.name);\n' +
-                '    }\n' +
-                '    public Root_meta_protocols_generation_tests_model_Enumeration translate(Enumeration enumeration, PureModel pureModel) {\n' +
-                '        return new Root_meta_protocols_generation_tests_model_Enumeration_Impl(\"\")._name(enumeration.name)._values(ListIterate.collect(enumeration.values, (Enum x) -> this.translate(x, pureModel)));\n' +
-                '    }\n' +
-                '    public Root_meta_protocols_generation_tests_model_Enum translate(Enum enum, PureModel pureModel) {\n' +
-                '        return new Root_meta_protocols_generation_tests_model_Enum_Impl(\"\")._constant(enum.constant)._constantNumber(enum.constantNumber);\n' +
-                '    }\n' +
                 '    public Root_meta_protocols_generation_tests_model_ScalarType translate(ScalarType scalartype, PureModel pureModel) {\n' +
                 '        return scalartype == null ? null : scalartype.accept(new ProtoBufTypeVisitor<Root_meta_protocols_generation_tests_model_ScalarType>()\n' +
                 '        {\n' +
@@ -198,8 +192,14 @@ function <<test.Test>> meta::protocols::generation::tests::testTranslatorJavaGen
                 '            }\n' +
                 '        });\n' +
                 '    }\n' +
-                '    public org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum translate(FieldFlag fieldflag, PureModel pureModel) {\n' +
-                '        return pureModel.getEnumValue(\"meta::protocols::generation::tests::model::FieldFlag\", fieldflag.name());\n' +
+                '    public Root_meta_protocols_generation_tests_model_scalar_Bool translate(Bool bool, PureModel pureModel) {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_scalar_Bool_Impl(\"\");\n' +
+                '    }\n' +
+                '    public Root_meta_protocols_generation_tests_model_scalar_Int32 translate(Int32 int32, PureModel pureModel) {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_scalar_Int32_Impl(\"\");\n' +
+                '    }\n' +
+                '    public Root_meta_protocols_generation_tests_model_scalar_String translate(org.finos.scalar.String string, PureModel pureModel) {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_scalar_String_Impl(\"\");\n' +
                 '    }\n' +
                 '}\n', $sources->at(0));
 }

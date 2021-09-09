@@ -5,6 +5,44 @@ import meta::java::metamodel::factory::*;
 import meta::java::generation::convention::*;
 import meta::java::generation::code::*;
 
+function meta::protocols::generation::java::translation::generateTranslation(purePackage:String[1], javaPackage:String[1]):meta::java::metamodel::project::Project[1]
+{
+  let pack = $purePackage->pathToElement()->cast(@Package);
+  let basePackageStr = $pack->elementToPath('.');
+  let conventions = conventions($purePackage, $javaPackage, $basePackageStr);
+  let taxonomies = $pack->findTaxonomies();
+  let package = meta::java::metamodel::factory::javaPackage($javaPackage);
+
+  let translatorClass = javaClass(['public'], $package, 'Translator');
+  meta::java::metamodel::project::newProject()->addClass(
+    $translatorClass->addMethods(generateTranslationMethods($pack, $translatorClass, $taxonomies, $conventions)->sortBy({a|$a.returnType->cast(@meta::java::metamodel::Class).simpleName}))
+  );
+}
+
+
+function meta::protocols::generation::java::generateProtocolClasses(purePackage:String[1], javaPackage:String[1]):meta::java::metamodel::project::Project[1]
+{
+  let pack = $purePackage->pathToElement()->cast(@Package);
+  let basePackageStr = $pack->elementToPath('.');
+  let conventions = conventions($purePackage, $javaPackage, $basePackageStr);
+  let taxonomies = $pack->findTaxonomies();
+  let package = meta::java::metamodel::factory::javaPackage($javaPackage);
+
+  let visitorByTaxonomy = newMap($taxonomies->map(t|pair($t, $t->generateVisitor($package, $conventions))));
+
+  let context = ^Context(conventions=$conventions,
+                         rootPackage=$package,
+                         taxonomies = $taxonomies,
+                         visitorByTaxonomy=$visitorByTaxonomy);
+
+  let javaClasses = $pack.children->map(c|generateProtocolClasses($c, $context));
+
+  meta::java::metamodel::project::newProject()
+                ->addClasses($javaClasses)
+                ->addClasses($visitorByTaxonomy->values());
+}
+
+
 function meta::protocols::generation::java::conventions(purePackage:String[1], javaPackage:String[1], basePackageStr:String[1]):meta::java::generation::convention::Conventions[1]
 {
   meta::alloy::runtime::java::alloyConventions([])
@@ -17,21 +55,6 @@ function meta::protocols::generation::java::conventions(purePackage:String[1], j
           $package->sanitizeIdentifier(),
           $t.name->toOne()->sanitizeIdentifier()->toUpperFirstCharacter()->toOne()
         );}
-  );
-}
-
-function meta::protocols::generation::java::translation::generateTranslation(purePackage:String[1], javaPackage:String[1]):meta::java::metamodel::project::Project[1]
-{
-  let pack = $purePackage->pathToElement()->cast(@Package);
-  let basePackageStr = $pack->elementToPath('.');
-
-  let conventions = conventions($purePackage, $javaPackage, $basePackageStr);
-
-  let taxonomies = $pack->findTaxonomies();
-
-  let translatorClass = javaClass(['public'], $javaPackage->javaPackage(), 'Translator');
-  meta::java::metamodel::project::newProject()->addClass(
-    $translatorClass->addMethods(generateTranslationMethods($purePackage->pathToElement()->cast(@Package), $translatorClass, $taxonomies, $conventions))
   );
 }
 
@@ -80,18 +103,18 @@ function <<access.private>> meta::protocols::generation::java::translation::gene
     $c->hierarchicalProperties()->fold(
       {a,b | if(!$a->meta::protocols::generation::java::translation::shouldTranslateReturn(),
                 |let propertyAccess = j_field(j_variable($parameters->at(0)), $a.name->toOne()->sanitizeJavaKeywords(), javaObject());
-                  let processedPropertyAccess = if($a.multiplicity->isToMany(),
-                  |let listsClass = javaClass('public', meta::java::metamodel::factory::javaPackage('org.eclipse.collections.impl.factory'), 'Lists');
-                   j_invoke(j_field($listsClass, 'mutable', javaObject()), 'withAll', $propertyAccess, javaObject());,
-                  |$propertyAccess
-                  );
-                  j_invoke($b, '_'+$a.name->toOne(), $processedPropertyAccess, $returnType);,
+                 let processedPropertyAccess = if($a.multiplicity->isToMany(),
+                                                  |let listsClass = javaClass('public', meta::java::metamodel::factory::javaPackage('org.eclipse.collections.impl.factory'), 'Lists');
+                                                   j_invoke(j_field($listsClass, 'mutable', javaObject()), 'withAll', $propertyAccess, javaObject());,
+                                                  |$propertyAccess
+                                               );
+                 j_invoke($b, '_'+$a.name->toOne(), $processedPropertyAccess, $returnType);,
                 |if($a.multiplicity->isToMany(),
-                  |let xParam = ^meta::java::metamodel::Parameter(name='x',type=meta::java::generation::convention::pureTypeToJavaType($conventions, $a.genericType.rawType->toOne(), PureOne));
-                    j_invoke($b, '_'+$a.name->toOne(), j_invoke(javaClass('public', meta::java::metamodel::factory::javaPackage('org.eclipse.collections.impl.utility'), 'ListIterate'), 'collect', [j_field(j_variable($parameters->at(0)), $a.name->toOne()->sanitizeJavaKeywords(), javaObject()), j_lambda($xParam, j_invoke(j_this($translatorClass),'translate',[j_variable($xParam), j_variable($parameters->at(1))], javaObject()))], javaObject()), $returnType);,
-                  |j_invoke($b, '_'+$a.name->toOne(), j_invoke(j_this($translatorClass), 'translate', [j_field(j_variable($parameters->at(0)), $a.name->toOne()->sanitizeJavaKeywords(), javaObject()), j_variable($parameters->at(1))], javaObject()), $returnType)
-                  )
-              )
+                    |let xParam = ^meta::java::metamodel::Parameter(name='x',type=meta::java::generation::convention::pureTypeToJavaType($conventions, $a.genericType.rawType->toOne(), PureOne));
+                     j_invoke($b, '_'+$a.name->toOne(), j_invoke(javaClass('public', meta::java::metamodel::factory::javaPackage('org.eclipse.collections.impl.utility'), 'ListIterate'), 'collect', [j_field(j_variable($parameters->at(0)), $a.name->toOne()->sanitizeJavaKeywords(), javaObject()), j_lambda($xParam, j_invoke(j_this($translatorClass),'translate',[j_variable($xParam), j_variable($parameters->at(1))], javaObject()))], javaObject()), $returnType);,
+                    |j_invoke($b, '_'+$a.name->toOne(), j_invoke(j_this($translatorClass), 'translate', [j_field(j_variable($parameters->at(0)), $a.name->toOne()->sanitizeJavaKeywords(), javaObject()), j_variable($parameters->at(1))], javaObject()), $returnType)
+                 )
+             )
       },
       j_new(javaClass('public', meta::java::metamodel::factory::javaPackage('org.finos.legend.pure.generated'), 'Root_'+$c.package->toOne()->elementToPath('_')+'_'+$c.name->toOne()+'_Impl'), j_string(''))
     )
@@ -110,7 +133,7 @@ function <<access.private>> meta::protocols::generation::java::translation::gene
                     $param,
                     if ($cl == $c,
                       |$returnInstance,
-                      |if ($cl->subTypeOf($c),
+                      |if ($cl->_subTypeOf($c),
                         |j_return(j_invoke(j_this($translatorClass),'translate',[j_variable($param->cast(@meta::java::metamodel::Parameter)), j_variable($parameters->at(1))], javaObject())),
                         |j_return(j_null())
                       )
@@ -169,30 +192,6 @@ function <<access.private>> meta::protocols::generation::java::translation::gene
 
 
 
-function meta::protocols::generation::java::generateProtocolClasses(purePackage:String[1], javaPackage:String[1]):meta::java::metamodel::project::Project[1]
-{
-  let pack = $purePackage->pathToElement()->cast(@Package);
-  let package = meta::java::metamodel::factory::javaPackage($javaPackage);
-
-  let basePackageStr = $pack->elementToPath('.');
-
-  let conventions = conventions($purePackage, $javaPackage, $basePackageStr);
-
-  let taxonomies = $pack->findTaxonomies();
-
-  let visitorByTaxonomy = newMap($taxonomies->map(t|pair($t, $t->generateVisitor($package, $conventions))));
-
-  let context = ^Context(conventions=$conventions,
-                         rootPackage=$package,
-                         taxonomies = $taxonomies,
-                         visitorByTaxonomy=$visitorByTaxonomy);
-
-  let javaClasses = $pack.children->map(c|generateProtocolClasses($c, $context));
-
-  meta::java::metamodel::project::newProject()
-                ->addClasses($javaClasses)
-                ->addClasses($visitorByTaxonomy->values());
-}
 
 Class meta::protocols::generation::java::Context
 {
