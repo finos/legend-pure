@@ -1036,21 +1036,12 @@ Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Road extends L
 Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetStreetCluster
 {
   streetNames: String[*];
+  zipCodes: String[*];
 }
 
 Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceStreetCluster
 {
   streetCluster: Street[*];
-}
-
-function meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::validation(t: SourceStreetCluster[1]): Street[*]
-{
-   $t.streetCluster->filter(m|$m->meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::isNonEmptyData())
-}
-
-function meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::isNonEmptyData(location: Location[1]): Boolean[1]
-{
-   $location.zipCode->isNotEmpty() && $location.coordinates->isNotEmpty()
 }
  
 function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testWithSingleSubType():Boolean[1]
@@ -1171,11 +1162,15 @@ Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingW
       targetZipCode: $src.address.zipCode,
       targetAddress: if($src.address->instanceOf(meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Street),|$src.address->cast(@meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Street).street,|'unknown')
    }
-   
+)
+
+Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSuperTypeProperties
+(
   *meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetStreetCluster: Pure
   {
     ~src meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceStreetCluster
-    streetNames: $src->meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::validation().street
+    streetNames: $src.streetCluster.street
+    zipCodes: $src.streetCluster.zipCode
   }
 )
 

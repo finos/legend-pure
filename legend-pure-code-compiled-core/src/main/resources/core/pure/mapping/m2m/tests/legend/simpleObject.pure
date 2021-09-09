@@ -449,12 +449,13 @@ meta::pure::mapping::modelToModel::test::alloy::simple::testM2MQueryWithMappingU
    let tree =
    #{
       meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetStreetCluster{
-         streetNames
+         streetNames,
+         zipCodes
       }
    }#;
    let result = execute(
       |meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetStreetCluster.all()->graphFetch($tree)->serialize($tree),
-       meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType,
+       meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSuperTypeProperties,
       ^Runtime(connections = ^JsonModelConnection(
                                 element=^ModelStore(), 
                                 class=meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceStreetCluster, 
@@ -464,7 +465,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::testM2MQueryWithMappingU
       []
    );
    let json = $result.values->toOne();
-   let expected= '{"streetNames":["Oxford"]}';
+   let expected= '{"streetNames":["Oxford"],"zipCodes":["123456"}';
 
    assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
 }
