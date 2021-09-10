@@ -258,6 +258,64 @@ meta::pure::mapping::modelToModel::test::alloy::simple::supportForEmptyValues() 
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_20_0',
+   doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch with subType and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObjectWithSubTypeWithoutAssoc() : Boolean[1]
+{   
+   let tree = #{
+      meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target{ 
+         targetAddress
+      }
+   }#;
+   
+   let result = execute(
+      |meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target.all()->graphFetch($tree)->serialize($tree),
+      meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Person, 
+                                url='data:application/json,[{"address": [{"zipCode" : "10282", "coordinates" : "1", "street": "200 west", "@type":"meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Street"}]}]'
+                             )
+      ),
+      []
+   );      
+   
+   assert(jsonEquivalent('{"targetAddress":"200 west"}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
+{  serverVersion.start='v1_20_0',
+   doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch with subType and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObjectWithMultiSubTypesWithoutAssoc() : Boolean[1]
+{   
+   let tree = #{
+      meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target{ 
+         targetAddress
+      }
+   }#;
+   
+   let result = execute(
+      |meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target.all()->graphFetch($tree)->serialize($tree),
+      meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithMultipleSubTypes,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Person, 
+                                url='data:application/json,[{"address": [{"zipCode" : "10282", "coordinates" : "1", "road": "200 west", "@type":"meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Road"}]}]'
+                             )
+      ),
+      []
+   );      
+   
+   assert(jsonEquivalent('{"targetAddress":"200 west"}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
 {  serverVersion.start='v1_19_0',
    doc.doc='Given: a source class',
    doc.doc='Given: data with unused fields',
@@ -377,6 +435,39 @@ meta::pure::mapping::modelToModel::test::alloy::simple::unmappedOptionalProperti
    let expected = '{"s1":"Hello", "s2":[], "i":null, "f":null, "d":[], "sd":[], "dt":[], "b":null, "c":null, "nm":null}';
 
    assert(jsonEquivalent($expected->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
+{  serverVersion.start='v1_20_0',
+   doc.doc='Given: a single JSON object that matches a source defintion, and an M2M mapping',
+   doc.doc='When:  the mapping is executed using graphFetch with subType and serialize.',
+   doc.doc='Then:  the mapping is applied and the result of the mapping is serialized.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::testM2MQueryWithMappingUsingSuperTypeProperties():Boolean[1]
+{
+   let tree =
+   #{
+      meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetStreetCluster{
+         streetNames,
+         zipCodes
+      }
+   }#;
+   let result = execute(
+      |meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetStreetCluster.all()->graphFetch($tree)->serialize($tree),
+       meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSuperTypeProperties,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceStreetCluster, 
+                                url='data:application/json,[{"streetCluster": [{"coordinates":"22.22.22.22","zipCode":"123456","street":"Oxford"}]}]'
+                             )
+      ),
+      []
+   );
+   let json = $result.values->toOne();
+   let expected= '{"streetNames":["Oxford"],"zipCodes":["123456"]}';
+
+   assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>

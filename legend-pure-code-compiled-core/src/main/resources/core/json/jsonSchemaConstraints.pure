@@ -85,8 +85,8 @@ function meta::json::schema::constraint::createType(type:Any[1] ) : JSONKeyValue
 
 function  meta::json::schema::constraint::toJSONSchemaFromValueSpecification( fn:ValueSpecification[1],config:JSONSchemaConfigInternal[1] ) : SchemaConstraint[0..1]
 {
-
-  let property = $fn->cast(@SimpleFunctionExpression).parametersValues->at(0)->meta::json::schema::constraint::getSchemaProperty();
+  let property = $fn->match([s:SimpleFunctionExpression[1]|$s.parametersValues->at(0)->meta::json::schema::constraint::getSchemaProperty(),
+                             v:ValueSpecification[1] |[]]);
   let type = if($config.rootElement->isNotEmpty() && $config.rootElement->toOne()->instanceOf(Function) && $config.rootElement->cast(@Function<Any>)->toOne()->evaluateAndDeactivate()->functionType().parameters->isNotEmpty(),
                   | $config.rootElement->cast(@Function<Any>)->toOne()->evaluateAndDeactivate()->functionType().parameters->at(0).genericType.rawType->toOne()->createType();,
                  |[]);

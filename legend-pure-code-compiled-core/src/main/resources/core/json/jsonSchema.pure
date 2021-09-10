@@ -87,7 +87,8 @@ meta::json::schema::generation::JSONSchemaSpecification
 {
    OPEN_API_V3_0_3,
    JSON_SCHEMA_DRAFT_07,
-   OPEN_API_V3_0_3_YAML
+   OPEN_API_V3_0_3_YAML,
+   OPEN_API_V3_0_3_YAML_PLAIN
 }
 
 Class meta::json::schema::generation::JSONSchemaOutput extends GenerationOutput
@@ -177,7 +178,10 @@ function <<access.protected>> meta::json::schema::generateFunctionSchema(config:
 function <<access.private>> meta::json::schema::jsonSchemaString(element:JSONElement[1],config:JSONSchemaConfigInternal[1]):String[1]
 {
   if($config.schemaSpecification->isYAML(),
-     |$element->meta::json::schema::JSONToYaml()->toYAMLString(),
+     | if($config.schemaSpecification->isPlainYAML(),
+            |$element->meta::json::schema::JSONToYaml()->toYAMLString(FlowScalarStyle.PLAIN),
+            |$element->meta::json::schema::JSONToYaml()->toYAMLString(FlowScalarStyle.DOUBLE_QUOTE)
+          ),
       |$element->meta::json::toPrettyJSONString()
    )
 
@@ -1055,17 +1059,24 @@ function <<access.private>> meta::json::schema::isRequired( property:Property<Ni
 }
 function <<access.private>>  meta::json::schema::isOpenAPI(config:JSONSchemaConfigInternal[1]):Boolean[1]
 {
-    $config.schemaSpecification == JSONSchemaSpecification.OPEN_API_V3_0_3 || $config.schemaSpecification == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML;
+    $config.schemaSpecification ->meta::json::schema::isOpenAPI();
 }
 
 function <<access.private>>  meta::json::schema::isOpenAPI(spec:JSONSchemaSpecification[0..1]):Boolean[1]
 {
-    if($spec->isNotEmpty(),|$spec == JSONSchemaSpecification.OPEN_API_V3_0_3 || $spec == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML,|false);
+    if($spec->isNotEmpty(),
+       |$spec->toOne()  == JSONSchemaSpecification.OPEN_API_V3_0_3 ||$spec->toOne()==JSONSchemaSpecification.OPEN_API_V3_0_3_YAML ||$spec->toOne() == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML_PLAIN;
+      ,|false);
 }
 
 function <<access.private>>  meta::json::schema::isYAML(spec:JSONSchemaSpecification[1]):Boolean[1]
 {
-    $spec == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML;
+    $spec == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML ||     $spec == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML_PLAIN;
+}
+
+function <<access.private>>  meta::json::schema::isPlainYAML(spec:JSONSchemaSpecification[1]):Boolean[1]
+{
+      $spec == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML_PLAIN;
 }
 
 function <<access.private>>  meta::json::schema::addDiscriminator(pureElement:Class<Any>[1],config:JSONSchemaConfigInternal[1]):JSONKeyValue[0..1]
