@@ -465,7 +465,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::testM2MQueryWithMappingU
       []
    );
    let json = $result.values->toOne();
-   let expected= '{"streetNames":["Oxford"],"zipCodes":["123456"]';
+   let expected= '{"streetNames":["Oxford"],"zipCodes":["123456"]}';
 
    assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
 }
