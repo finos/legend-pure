@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::java::generation::tests::*;
-import meta::java::metamodel::factory::*;
+import meta::external::language::java::factory::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::tests::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0', doc.todo='empty equalities' }
-meta::java::generation::tests::functions::boolean::testEquals() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testEquals() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('equalities on one primitive true', {|5 == 5}, '5L == 5L', javaBoolean())
          ->assert('%s == true')
       ->addTest('equalities on one primitive false', {|4 == 5}, '4L == 5L', javaBoolean())
@@ -51,9 +51,9 @@ meta::java::generation::tests::functions::boolean::testEquals() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::boolean::testBooleanInQualities() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testBooleanInQualities() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('true > null', {|true > []}, 'org.finos.legend.engine.plan.dependencies.util.Library.greaterThan(true, (Boolean) null)', javaBoolean())
          ->assert('%s == false')
       ->addTest('true < null', {|true < []}, 'org.finos.legend.engine.plan.dependencies.util.Library.greaterThan((Boolean) null, true)', javaBoolean())
@@ -73,9 +73,9 @@ meta::java::generation::tests::functions::boolean::testBooleanInQualities() : Bo
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0' }
-meta::java::generation::tests::functions::boolean::pureTests() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::pureBooleanTests() : Boolean[1]
 {
-   javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
+   javaPureTests(engineConventions([]), [
       meta::pure::functions::boolean::tests::testIsPrimitive__Boolean_1_,
       meta::pure::functions::boolean::tests::testIsEnum__Boolean_1_
       //meta::pure::functions::boolean::tests::testIsNonPrimitive__Boolean_1_, // TODO Requires New

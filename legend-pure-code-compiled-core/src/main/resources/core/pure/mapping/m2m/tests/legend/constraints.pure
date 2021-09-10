@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-import meta::alloy::runtime::java::roadmap::*;
+import meta::pure::executionPlan::engine::java::roadmap::*;
 import meta::json::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::runtime::*;

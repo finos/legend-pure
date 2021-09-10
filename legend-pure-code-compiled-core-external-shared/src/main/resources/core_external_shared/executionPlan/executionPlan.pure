@@ -12,26 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::typeInfo::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::transform::*;
 import meta::external::shared::format::binding::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::executionPlan::engine::*;
 import meta::external::shared::format::metamodel::*;
-import meta::external::shared::runtime::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
 import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::executionPlan::toString::*;
 import meta::pure::metamodel::serialization::grammar::*;
 import meta::pure::router::extension::*;
 
-function meta::external::shared::format::executionPlan::createDataClassesProject(classes:Class<Any>[*], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::external::shared::format::executionPlan::createDataClassesProject(classes:meta::pure::metamodel::type::Class<Any>[*], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') createDataClassesProject\n', |''));
    mergeProjects($classes->map(c| $c->createDataClass($path, $context, $debug->indent()))->toOneMany());
@@ -39,10 +38,10 @@ function meta::external::shared::format::executionPlan::createDataClassesProject
 
 function meta::external::shared::format::executionPlan::generateDataTestProject(packageName:String[1], baseJavaPackage:String[1]): Project[1]
 {
-   let conventions = alloyConventions(meta::external::shared::format::routerExtensions('externalFormat', []))->setBasePackageName($baseJavaPackage);
+   let conventions = engineConventions(meta::external::shared::format::routerExtensions('externalFormat', []))->setBasePackageName($baseJavaPackage);
 
    let package   = $packageName->pathToElement()->cast(@Package);
-   let classes   = $package.children->filter(pe| $pe->instanceOf(Class))->cast(@Class<Any>);
+   let classes   = $package.children->filter(pe| $pe->instanceOf(meta::pure::metamodel::type::Class))->cast(@meta::pure::metamodel::type::Class<Any>);
    let typeInfos = $classes->fold({c, ti| $ti->addForClass($c, true, false, true)}, newTypeInfoSet());
    let context   = ^GenerationContext(typeInfos=$typeInfos, conventions=$conventions);
 
@@ -88,9 +87,9 @@ Class <<access.private>> meta::external::shared::format::executionPlan::Property
    property          : AbstractProperty<Any>[1];
    fieldName         : String[1];
    sizeFieldName     : String[1];
-   propType          : Type[1];
-   javaType          : meta::java::metamodel::Type[1];
-   itemType          : meta::java::metamodel::Type[1];
+   propType          : meta::pure::metamodel::type::Type[1];
+   javaType          : meta::external::language::java::metamodel::Type[1];
+   itemType          : meta::external::language::java::metamodel::Type[1];
    getterName        : String[1];
    adderName         : String[1];
    adderParam        : Code[1];
@@ -100,7 +99,7 @@ Class <<access.private>> meta::external::shared::format::executionPlan::Property
    isViaAssociation() {$this.property.owner->instanceOf(Association)}: Boolean[1];
 }
 
-function meta::external::shared::format::executionPlan::createDataClass(class:Class<Any>[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::external::shared::format::executionPlan::createDataClass(class:meta::pure::metamodel::type::Class<Any>[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') createDataClass for '+$class->elementToPath()+'\n', |''));
    
@@ -148,8 +147,8 @@ function meta::external::shared::format::executionPlan::createDataClass(class:Cl
          itemType          = $itemType,
          getterName        = $conventions->getterName($p),
          adderName         = '_'+$fieldName+'Add',
-         adderParam        = if($propType->instanceOf(Class),
-                                | j_parameter($conventions->dataClass($propType->cast(@Class<Any>), $path), 'value'),
+         adderParam        = if($propType->instanceOf(meta::pure::metamodel::type::Class),
+                                | j_parameter($conventions->dataClass($propType->cast(@meta::pure::metamodel::type::Class<Any>), $path), 'value'),
                                 |
                              if($itemType == $pureDate,
                                 | j_parameter(javaTemporal(), 'value'),
@@ -296,7 +295,7 @@ function meta::external::shared::format::executionPlan::createDataClass(class:Cl
    mergeProjects(newProject()->concatenate($constraintChecking)->toOneMany());
 }
 
-function <<access.private>> meta::external::shared::format::executionPlan::addAdderMethods(jc:meta::java::metamodel::Class[1], prop: PropertyDetails[1], conventions:Conventions[1], impl:Code[*]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::external::shared::format::executionPlan::addAdderMethods(jc:meta::external::language::java::metamodel::Class[1], prop: PropertyDetails[1], conventions:Conventions[1], impl:Code[*]): meta::external::language::java::metamodel::Class[1]
 {
    if($prop.isViaAssociation,
       {|
@@ -324,7 +323,7 @@ function <<access.private>> meta::external::shared::format::executionPlan::addAd
    )
 }
 
-function meta::external::shared::format::executionPlan::dataClass(conventions:Conventions[1], class:Class<Any>[1], path:String[1]): meta::java::metamodel::Class[1]
+function meta::external::shared::format::executionPlan::dataClass(conventions:Conventions[1], class:meta::pure::metamodel::type::Class<Any>[1], path:String[1]): meta::external::language::java::metamodel::Class[1]
 {
   $conventions->planNodeClass([], $path, $conventions->identifier($class->elementToPath('_')) + '_Impl');
 }

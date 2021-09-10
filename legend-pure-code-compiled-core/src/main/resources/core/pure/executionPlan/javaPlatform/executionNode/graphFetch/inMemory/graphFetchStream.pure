@@ -12,30 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::graphFetch::stream::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
-import meta::java::serialization::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::dataQuality::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::graphFetch::stream::*;
+import meta::pure::executionPlan::engine::java::naming::*;
 
-// TODO This depends on meta::alloy::runtime::java::generateResultBasedConstructor being used for this specific purpose.  The approach should be generalized and the specifics moved to this package
+// TODO This depends on meta::pure::executionPlan::engine::java::generateResultBasedConstructor being used for this specific purpose.  The approach should be generalized and the specifics moved to this package
 
-function meta::alloy::runtime::java::graphFetch::stream::createStreamReading(pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::pure::executionPlan::engine::java::graphFetch::stream::createStreamReading(pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    newProject()->addClasses(createStreamReadingClass($pureClass, $javaInterface, $path, $context, $debug));
 }
 
-function meta::alloy::runtime::java::graphFetch::stream::streamReaderClass(conventions:Conventions[1], path:String[1]): meta::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::graphFetch::stream::streamReaderClass(conventions:Conventions[1], path:String[1]): meta::external::language::java::metamodel::Class[1]
 {
    $conventions->planNodeClass('public', $path, 'StreamReader');
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::stream::createStreamReadingClass(pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::stream::createStreamReadingClass(pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): meta::external::language::java::metamodel::Class[1]
 {
    let itr  = javaField('private', javaIterator($javaInterface), 'itr');
 
@@ -50,29 +51,29 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::stream::crea
       ->addReadCheckedObjects($pureClass, $javaInterface, $path, $context, $itr);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::stream::addConstructor(class:meta::java::metamodel::Class[1], sourceClass:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::stream::addConstructor(class:meta::external::language::java::metamodel::Class[1], sourceClass:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
    let in    = j_parameter(javaStream($sourceClass),'in');
    let jThis = j_this($class);
 
-   $class->addConstructor(javaConstructor([], [$in]->cast(@meta::java::metamodel::Parameter),
+   $class->addConstructor(javaConstructor([], [$in]->cast(@meta::external::language::java::metamodel::Parameter),
       [
          $jThis->j_field('stream')->j_assign($in),
          $jThis->j_field('itr')->j_assign($jThis->j_field('stream')->j_invoke('iterator', []))
-      ]->codesToString($class)
+      ]
    ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::stream::addIsFinished(class:meta::java::metamodel::Class[1], itr:meta::java::metamodel::Field[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::stream::addIsFinished(class:meta::external::language::java::metamodel::Class[1], itr:meta::external::language::java::metamodel::Field[1]): meta::external::language::java::metamodel::Class[1]
 {
    $class->addMethod(javaMethod(['public'], javaBoolean(), 'isFinished', [],
       [
          j_not(j_this($class)->j_field($itr)->j_invoke('hasNext', []))->j_return()
-      ]->codesToString($class)
+      ]
    ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::stream::addReadCheckedObjects(class:meta::java::metamodel::Class[1], pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1], itr:meta::java::metamodel::Field[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::stream::addReadCheckedObjects(class:meta::external::language::java::metamodel::Class[1], pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], context:GenerationContext[1], itr:meta::external::language::java::metamodel::Field[1]): meta::external::language::java::metamodel::Class[1]
 {
    let checkedClass  = $context.baseProject->toOne()->resolve($context.conventions->className(Checked));
    let checkedSource = javaParameterizedType($checkedClass, $javaInterface);
@@ -95,7 +96,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::stream::addR
             ]->j_block(),
             javaCollections()->j_invoke('emptyList', [], javaCollection($checkedSource))->j_return()
         )
-      ]->codesToString($class)
+      ]
    ));
 }
 
