@@ -57,11 +57,11 @@ Profile meta::json::schema::JSONSchemaOpenAPIExtension
 Class meta::json::schema::generation::JSONSchemaConfig extends GenerationConfiguration
 {
   {doc.doc='Generate JSON schema constraints from class constraints, unsupported functions will not generate'}useConstraints:Boolean[0..1];  //defaults false
-  {doc.doc='Include related types in a definitions element on the schema'}  includeAllRelatedTypes:Boolean[0..1];  // defaults true - if true , dependencies generate to definitions elements
-  {doc.doc='If true, An additional schema will be generated that can be used as a collection of subTypes' }generateAnyOfSubType:Boolean[0..1];  // defaults true - if true , SupertTypes generate an additional anyOf for all the subTypes.
+  {doc.doc='Include related types in a definitions element on the schema, ignored if generating openAPI'}  includeAllRelatedTypes:Boolean[0..1];  // defaults true - if true , dependencies generate to definitions elements
+  {doc.doc='If true,An additional schema will be generated that can be used as a collection of subTypes' }generateAnyOfSubType:Boolean[0..1];  // defaults true - if true , SupertTypes generate an additional anyOf for all the subTypes.
   {doc.doc='If true, constraint functions generate as schema files, if false constraint function content is in-lined with the parent schema' }generateConstraintFunctionSchemas:Boolean[0..1];  // defaults false - if true , functions generate seperate schemas.
   {doc.doc='The specification which your schema should be compatible with' }schemaSpecification:JSONSchemaSpecification[0..1];
-  {doc.doc='Generate a components or definitions collection, if true, only one file will generate with a collection of related elements in scope for execution' }createSchemaCollection:Boolean[0..1];
+  {doc.doc='Generate a components or definitions collection, if true, only one file will generate with a collection of related elements in scope for execution and there will be no root element in the schema' }createSchemaCollection:Boolean[0..1];
 
 
 }
@@ -87,7 +87,8 @@ meta::json::schema::generation::JSONSchemaSpecification
 {
    OPEN_API_V3_0_3,
    JSON_SCHEMA_DRAFT_07,
-   OPEN_API_V3_0_3_YAML
+   OPEN_API_V3_0_3_YAML,
+   OPEN_API_V3_0_3_YAML_PLAIN
 }
 
 Class meta::json::schema::generation::JSONSchemaOutput extends GenerationOutput
@@ -177,7 +178,10 @@ function <<access.protected>> meta::json::schema::generateFunctionSchema(config:
 function <<access.private>> meta::json::schema::jsonSchemaString(element:JSONElement[1],config:JSONSchemaConfigInternal[1]):String[1]
 {
   if($config.schemaSpecification->isYAML(),
-     |$element->meta::json::schema::JSONToYaml()->toYAMLString(),
+     | if($config.schemaSpecification->isPlainYAML(),
+            |$element->meta::json::schema::JSONToYaml()->toYAMLString(FlowScalarStyle.PLAIN),
+            |$element->meta::json::schema::JSONToYaml()->toYAMLString(FlowScalarStyle.DOUBLE_QUOTE)
+          ),
       |$element->meta::json::toPrettyJSONString()
    )
 
@@ -242,11 +246,11 @@ function <<access.protected>> meta::json::schema::externalToInternalConfig(confi
   if($config->isEmpty() ,
       | defaultInternalConfig(),
       | let useConstraints = if($config.useConstraints->isEmpty(),|false,|$config.useConstraints->toOne());
-        let includeAllRelatedTypes = if($config.includeAllRelatedTypes->isEmpty(),|true,|$config.includeAllRelatedTypes->toOne());
         let generateAnyOfSubType = if($config.generateAnyOfSubType->isEmpty(),|true,|$config.generateAnyOfSubType->toOne());
         let generateConstraintFunctionSchemas = if($config.generateConstraintFunctionSchemas->isEmpty(),|false,|$config.generateConstraintFunctionSchemas->toOne());
         let schemaSpecification =   if($config.schemaSpecification->isEmpty(),|JSONSchemaSpecification.JSON_SCHEMA_DRAFT_07,|$config.schemaSpecification->toOne());
         let fileType =   if($config.schemaSpecification->isEmpty(),|'json',|if($config.schemaSpecification->toOne()->meta::json::schema::isYAML() ,|'yaml',|'json'));
+        let includeAllRelatedTypes = if($schemaSpecification->isOpenAPI(),|false,|if($config.includeAllRelatedTypes->isEmpty(),|true,| $config.includeAllRelatedTypes->toOne()));  
 
         let createSchemaCollection =   if($config.createSchemaCollection->isEmpty(),|false,|$config.createSchemaCollection->toOne());
       ^JSONSchemaConfigInternal(useConstraints =$useConstraints,
@@ -1055,12 +1059,24 @@ function <<access.private>> meta::json::schema::isRequired( property:Property<Ni
 }
 function <<access.private>>  meta::json::schema::isOpenAPI(config:JSONSchemaConfigInternal[1]):Boolean[1]
 {
-    $config.schemaSpecification == JSONSchemaSpecification.OPEN_API_V3_0_3 || $config.schemaSpecification == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML;
+    $config.schemaSpecification ->meta::json::schema::isOpenAPI();
+}
+
+function <<access.private>>  meta::json::schema::isOpenAPI(spec:JSONSchemaSpecification[0..1]):Boolean[1]
+{
+    if($spec->isNotEmpty(),
+       |$spec->toOne()  == JSONSchemaSpecification.OPEN_API_V3_0_3 ||$spec->toOne()==JSONSchemaSpecification.OPEN_API_V3_0_3_YAML ||$spec->toOne() == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML_PLAIN;
+      ,|false);
 }
 
 function <<access.private>>  meta::json::schema::isYAML(spec:JSONSchemaSpecification[1]):Boolean[1]
 {
-    $spec == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML;
+    $spec == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML ||     $spec == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML_PLAIN;
+}
+
+function <<access.private>>  meta::json::schema::isPlainYAML(spec:JSONSchemaSpecification[1]):Boolean[1]
+{
+      $spec == JSONSchemaSpecification.OPEN_API_V3_0_3_YAML_PLAIN;
 }
 
 function <<access.private>>  meta::json::schema::addDiscriminator(pureElement:Class<Any>[1],config:JSONSchemaConfigInternal[1]):JSONKeyValue[0..1]

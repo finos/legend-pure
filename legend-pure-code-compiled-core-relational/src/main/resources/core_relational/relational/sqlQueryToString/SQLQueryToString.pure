@@ -658,7 +658,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processGroupByColumns(columns:RelationalOperationElement[*], dbConfig : DbConfig[1], format:Format[1], extensions:RouterExtension[*]):String[*]
 {
-   let supportsAliasInGroupBy = !($dbConfig.dbType->in([DatabaseType.DB2, DatabaseType.Sybase, DatabaseType.Presto]));
+   let supportsAliasInGroupBy = !($dbConfig.dbType->in([DatabaseType.DB2, DatabaseType.Sybase, DatabaseType.Presto, DatabaseType.Snowflake]));
    $columns->map(c | $c->match([
                                 a:Alias[1] | if($supportsAliasInGroupBy == true, | $a->cast(@Alias).name->processIdentifier($dbConfig)
                                                                                , | $a->cast(@Alias).relationalElement->processOperation($dbConfig, $format, $extensions)),
@@ -2241,12 +2241,22 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::conve
    'to_date('+$params->at(0)+','+$dateFormat +')';
 }
 
+function meta::relational::functions::sqlQueryToString::normalizeH2DateFormat(params:String[1]):String[1]
+{
+   [pair('YYYY', 'yyyy'), pair('DD', 'dd')]->fold({e, a| $a->replace($e.first,$e.second)}, $params);
+  
+}
+
 function <<access.private>> meta::relational::functions::sqlQueryToString::convertToDateH2(params:String[*]):String[1]
 {
-   assert( 2 - $params->size()  >= 0,'Incorrect number of parameters for convertDate: convertDate(column,[dateformat])');
-   assert($params->size()==1 || dateFormatsH2()->contains($params->at(1)->replace('\'', '')) , | $params->at(1) +' not supported ');
-   let dateFormat = if( $params->size() == 1,|'\'yyyy-MM-dd\'' ,| $params->at(1););
-   'cast( parseDateTime('+$params->at(0)+','+$dateFormat +') as date)';
+   
+      assert( 2 - $params->size()  >= 0,'Incorrect number of parameters for convertDate: convertDate(column,[dateformat])');
+      let dateFormat = if( $params->size() == 1,|'\'yyyy-MM-dd\'' ,| let normalizedFormat = $params->at(1)->normalizeH2DateFormat();
+                                                                     assert(dateFormatsH2()->contains($normalizedFormat->replace('\'', '')), $normalizedFormat +' not supported ');
+                                                                     $normalizedFormat;
+                                                                     );
+      'cast( parseDateTime('+$params->at(0)+','+$dateFormat +') as date)';
+   
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::convertToDateTimeH2(params:String[*]):String[1]
