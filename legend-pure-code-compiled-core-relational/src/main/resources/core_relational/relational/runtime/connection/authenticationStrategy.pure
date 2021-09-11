@@ -36,7 +36,7 @@ Class meta::pure::alloy::connections::alloy::authentication::DefaultH2Authentica
 {
 }
 
-Class meta::pure::alloy::connections::alloy::authentication::DeltaLakeAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
+Class meta::pure::alloy::connections::alloy::authentication::ApiTokenAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
 {
     apiToken:String[1];
 }

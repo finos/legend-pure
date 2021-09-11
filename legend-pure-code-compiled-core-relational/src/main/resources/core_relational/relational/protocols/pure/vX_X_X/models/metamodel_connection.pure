@@ -33,7 +33,7 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
 {
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DeltaLakeAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::ApiTokenAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
 {
     apiToken:String[1];
 }
@@ -73,7 +73,7 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
    databaseName: String[1];
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DeltaLakeDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatabricksDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
 {
     shard : String[1];
     httpPath : String[1];

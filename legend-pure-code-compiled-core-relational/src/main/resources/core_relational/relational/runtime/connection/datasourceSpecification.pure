@@ -36,7 +36,7 @@ Class meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpe
     testDataSetupSqls:String[*];
 }
 
-Class meta::pure::alloy::connections::alloy::specification::DeltaLakeDatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
+Class meta::pure::alloy::connections::alloy::specification::DatabricksDatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
 {
     shard:String[1];
     httpPath:String[1];
