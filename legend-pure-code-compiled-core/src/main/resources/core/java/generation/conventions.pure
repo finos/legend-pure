@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::generation::code::*;
-import meta::java::generation::functions::date::pure::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::expression::*;
-import meta::java::generation::plan::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
-import meta::java::serialization::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::transform::*;
+import meta::external::language::java::transform::utils::*;
+import meta::external::language::java::transform::functions::date::pure::*;
+import meta::external::language::java::serialization::*;
 
-Enum meta::java::generation::convention::ClassPurpose
+Enum meta::external::language::java::transform::ClassPurpose
 {
    ENUMERATION,
    MODEL
 }
 
-Class meta::java::generation::convention::Conventions
+Class meta::external::language::java::transform::Conventions
 [
    validBasePackage: !$this.basePackageName->endsWith('.')
 ]
@@ -41,55 +40,54 @@ Class meta::java::generation::convention::Conventions
 
    identifierFactory           : Function<{String[1]->String[1]}>[1];
    basePackageName             : String[1];
-   typeAndPackageNameStrategy  : Function<{Type[1],Conventions[1]->Pair<String,String>[1]}>[0..1];
+   typeAndPackageNameStrategy  : Function<{meta::pure::metamodel::type::Type[1],Conventions[1]->Pair<String,String>[1]}>[0..1];
    functionSignatureFactory    : Function<{ConcreteFunctionDefinition<Any>[1],Conventions[1]->FunctionSignature[1]}>[1];
    providedTypes               : ProvidedType[*];
 
-   classCoders                 : Map<Any, Function<{Type[1],Conventions[1],DebugContext[1]->meta::java::metamodel::Class[1]}>>[1];
+   classCoders                 : Map<Any, Function<{meta::pure::metamodel::type::Type[1],Conventions[1],DebugContext[1]->meta::external::language::java::metamodel::Class[1]}>>[1];
    functionCoders              : Map<String, Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>>[1];
    prohibitedFunctionStrategy  : Function<{Conventions[1],Function<Any>[1]->Boolean[1]}>[1];
 
    libraries                   : ConventionsLibrary[*];
-   imports                     : meta::java::metamodel::Class[*];
-   newFunctionProhibitedList   : Class<Any>[*];
+   newFunctionProhibitedList   : meta::pure::metamodel::type::Class<Any>[*];
    providedVariables           : Map<String, Code>[1];
 
    extensions : meta::pure::router::extension::RouterExtension[*];
 }
 
-Class <<access.private>> meta::java::generation::convention::TypeConversion
+Class <<access.private>> meta::external::language::java::transform::TypeConversion
 {
-   type           : Type[1];
-   oneJavaType    : meta::java::metamodel::Type[1];
-   nonOneJavaType : meta::java::metamodel::Type[1];
+   type           : meta::pure::metamodel::type::Type[1];
+   oneJavaType    : meta::external::language::java::metamodel::Type[1];
+   nonOneJavaType : meta::external::language::java::metamodel::Type[1];
    literalCoder   : Function<{Any[1]->Code[1]}>[1];
 }
 
-Class meta::java::generation::convention::ConventionsLibrary
+Class meta::external::language::java::transform::ConventionsLibrary
 {
    name               : String[0..1];
-   typeConversions    : Map<Type, TypeConversion>[1];
+   typeConversions    : Map<meta::pure::metamodel::type::Type, TypeConversion>[1];
    functionCoders     : Map<String, Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>>[1];
-   javaPackagesUsed   : meta::java::metamodel::Package[*];
-   javaClassesUsed    : meta::java::metamodel::Class[*];
-   javaClassesDefined : meta::java::metamodel::Class[*];
+   javaPackagesUsed   : meta::external::language::java::metamodel::Package[*];
+   javaClassesUsed    : meta::external::language::java::metamodel::Class[*];
+   javaClassesDefined : meta::external::language::java::metamodel::Class[*];
    fundamentals       : Function<{Conventions[1],DebugContext[1]->Project[1]}>[1];
 }
 
-Class meta::java::generation::convention::FunctionSignature
+Class meta::external::language::java::transform::FunctionSignature
 {
-   class  : meta::java::metamodel::Class[1];
-   method : meta::java::metamodel::Method[1];
+   class  : meta::external::language::java::metamodel::Class[1];
+   method : meta::external::language::java::metamodel::Method[1];
 }
 
-Class meta::java::generation::convention::ProvidedType
+Class meta::external::language::java::transform::ProvidedType
 {
-   type           : Type[1];
-   providedAs     : meta::java::metamodel::Class[1];
+   type           : meta::pure::metamodel::type::Type[1];
+   providedAs     : meta::external::language::java::metamodel::Class[1];
 }
 
 function {doc.doc='Returns any base-level java types and dependencied necessary'}
-meta::java::generation::convention::fundamentals(conventions: Conventions[1], debug:DebugContext[1]): Project[0..1]
+meta::external::language::java::transform::fundamentals(conventions: Conventions[1], debug:DebugContext[1]): Project[0..1]
 {
    let libFundamentals = $conventions.libraries->map(l|$l.fundamentals->eval($conventions, $debug));
 
@@ -99,71 +97,71 @@ meta::java::generation::convention::fundamentals(conventions: Conventions[1], de
    ]);
 }
 
-function meta::java::generation::convention::usesLibrary(conventions: Conventions[1], name: String[1]): Boolean[1]
+function meta::external::language::java::transform::usesLibrary(conventions: Conventions[1], name: String[1]): Boolean[1]
 {
    $conventions.libraries->exists(l | $l.name == $name);
 }
 
-function meta::java::generation::convention::fieldName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
+function meta::external::language::java::transform::fieldName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
 {
    $conventions->identifier($conventions.fieldNameStrategy->eval($property.name->toOne()));
 }
 
-function meta::java::generation::convention::getterName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
+function meta::external::language::java::transform::getterName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
 {
    $conventions->identifier($conventions.getterNameStrategy->eval($property.name->toOne()));
 }
 
-function meta::java::generation::convention::setterName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
+function meta::external::language::java::transform::setterName(conventions: Conventions[1], property: AbstractProperty<Any>[1]): String[1]
 {
    $conventions->identifier($conventions.setterNameStrategy->eval($property.name->toOne()));
 }
 
-function meta::java::generation::convention::fieldName(conventions: Conventions[1], propertyName: String[1]): String[1]
+function meta::external::language::java::transform::fieldName(conventions: Conventions[1], propertyName: String[1]): String[1]
 {
    $conventions->identifier($conventions.fieldNameStrategy->eval($propertyName));
 }
 
-function meta::java::generation::convention::getterName(conventions: Conventions[1], propertyName: String[1]): String[1]
+function meta::external::language::java::transform::getterName(conventions: Conventions[1], propertyName: String[1]): String[1]
 {
    $conventions->identifier($conventions.getterNameStrategy->eval($propertyName));
 }
 
-function meta::java::generation::convention::setterName(conventions: Conventions[1], propertyName: String[1]): String[1]
+function meta::external::language::java::transform::setterName(conventions: Conventions[1], propertyName: String[1]): String[1]
 {
    $conventions->identifier($conventions.setterNameStrategy->eval($propertyName));
 }
 
-function meta::java::generation::convention::getProvidedType(conventions: Conventions[1], type: Type[1]): meta::java::metamodel::Class[1]
+function meta::external::language::java::transform::getProvidedType(conventions: Conventions[1], type: meta::pure::metamodel::type::Type[1]): meta::external::language::java::metamodel::Class[1]
 {
    $conventions.providedTypes->filter(pt| $pt.type == $type).providedAs->toOne();
 }
 
-function meta::java::generation::convention::isProvidedType(conventions: Conventions[1], type: Type[1]): Boolean[1]
+function meta::external::language::java::transform::isProvidedType(conventions: Conventions[1], type: meta::pure::metamodel::type::Type[1]): Boolean[1]
 {
    $conventions.providedTypes->filter(pt| $pt.type == $type)->isNotEmpty();
 }
 
-function meta::java::generation::convention::getProvidedVariable(conventions: Conventions[1], name:String[1]): Code[1]
+function meta::external::language::java::transform::getProvidedVariable(conventions: Conventions[1], name:String[1]): Code[1]
 {
    $conventions.providedVariables->get($name)->toOne();
 }
 
-function meta::java::generation::convention::isProvidedVariable(conventions:Conventions[1], name:String[1]): Boolean[1]
+function meta::external::language::java::transform::isProvidedVariable(conventions:Conventions[1], name:String[1]): Boolean[1]
 {
    $conventions.providedVariables->keys()->contains($name);
 }
 
-function meta::java::generation::convention::pureTypeToJavaType(conventions:Conventions[1], p:AbstractProperty<Any>[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::pureTypeToJavaType(conventions:Conventions[1], p:AbstractProperty<Any>[1]): meta::external::language::java::metamodel::Type[1]
 {
    $conventions->pureTypeToJavaType($p.genericType, $p.multiplicity);
 }
 
-function meta::java::generation::convention::pureTypeToJavaType(conventions:Conventions[1], g:GenericType[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::pureTypeToJavaType(conventions:Conventions[1], g:GenericType[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    if($g.rawType == Function,
       {|
-         let fType = $g.typeArguments->at(0).rawType->toOne()->cast(@FunctionType);
+         let fType = $g.typeArguments->at(0).rawType->toOne()->cast(@meta::pure::metamodel::type::FunctionType);
          let rtn   = $conventions->pureTypeToJavaType($fType.returnType, $fType.returnMultiplicity);
          assert($fType.parameters->isEmpty(), | 'Function with parameters not yet handled');
          javaSupplier($rtn)->listIfMulti($mult);
@@ -172,7 +170,7 @@ function meta::java::generation::convention::pureTypeToJavaType(conventions:Conv
    );
 }
 
-function meta::java::generation::convention::pureTypeToJavaType(conventions:Conventions[1], type:Type[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::pureTypeToJavaType(conventions:Conventions[1], type:meta::pure::metamodel::type::Type[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    let t = if($type == Nil,
               | javaList(javaWildcard()),
@@ -204,114 +202,114 @@ function meta::java::generation::convention::pureTypeToJavaType(conventions:Conv
            if($type == Date,
               | $conventions->dateType($mult),
               |
-           if($type->instanceOf(Enumeration) || $type->instanceOf(Class) || $type->instanceOf(Unit) || $type->instanceOf(Measure),
+           if($type->instanceOf(meta::pure::metamodel::type::Enumeration) || $type->instanceOf(meta::pure::metamodel::type::Class) || $type->instanceOf(Unit) || $type->instanceOf(Measure),
               | $conventions->className($type)->listIfMulti($mult),
               | fail('Unsupported type: ' + $type.name->toOne());
-                ^meta::java::metamodel::Type();
+                ^meta::external::language::java::metamodel::Type();
    )))))))))));
 }
 
-function meta::java::generation::convention::stringType(     conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->stringType(     PureOne); }
-function meta::java::generation::convention::booleanType(    conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->booleanType(    PureOne); }
-function meta::java::generation::convention::integerType(    conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->integerType(    PureOne); }
-function meta::java::generation::convention::floatType(      conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->floatType(      PureOne); }
-function meta::java::generation::convention::decimalType(    conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->decimalType(    PureOne); }
-function meta::java::generation::convention::numberType(     conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->numberType(     PureOne); }
-function meta::java::generation::convention::strictDateType( conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->strictDateType( PureOne); }
-function meta::java::generation::convention::dateTimeType(   conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->dateTimeType(   PureOne); }
-function meta::java::generation::convention::dateType(       conventions:Conventions[1]): meta::java::metamodel::Type[1] { $conventions->dateType(       PureOne); }
+function meta::external::language::java::transform::stringType(     conventions:Conventions[1]): meta::external::language::java::metamodel::Type[1] { $conventions->stringType(     PureOne); }
+function meta::external::language::java::transform::booleanType(    conventions:Conventions[1]): meta::external::language::java::metamodel::Type[1] { $conventions->booleanType(    PureOne); }
+function meta::external::language::java::transform::integerType(    conventions:Conventions[1]): meta::external::language::java::metamodel::Type[1] { $conventions->integerType(    PureOne); }
+function meta::external::language::java::transform::floatType(      conventions:Conventions[1]): meta::external::language::java::metamodel::Type[1] { $conventions->floatType(      PureOne); }
+function meta::external::language::java::transform::decimalType(    conventions:Conventions[1]): meta::external::language::java::metamodel::Type[1] { $conventions->decimalType(    PureOne); }
+function meta::external::language::java::transform::numberType(     conventions:Conventions[1]): meta::external::language::java::metamodel::Type[1] { $conventions->numberType(     PureOne); }
+function meta::external::language::java::transform::strictDateType( conventions:Conventions[1]): meta::external::language::java::metamodel::Type[1] { $conventions->strictDateType( PureOne); }
+function meta::external::language::java::transform::dateTimeType(   conventions:Conventions[1]): meta::external::language::java::metamodel::Type[1] { $conventions->dateTimeType(   PureOne); }
+function meta::external::language::java::transform::dateType(       conventions:Conventions[1]): meta::external::language::java::metamodel::Type[1] { $conventions->dateType(       PureOne); }
 
-function meta::java::generation::convention::stringType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::stringType(conventions:Conventions[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
     javaString()->listIfMulti($mult)
 }
 
-function meta::java::generation::convention::booleanType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::booleanType(conventions:Conventions[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    if($mult == PureOne, |javaBoolean(), | javaBooleanBoxed())->listIfMulti($mult)
 }
 
-function meta::java::generation::convention::integerType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::integerType(conventions:Conventions[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    $conventions->javaType(Integer, $mult);
 }
 
-function meta::java::generation::convention::floatType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::floatType(conventions:Conventions[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    $conventions->javaType(Float, $mult);
 }
 
-function meta::java::generation::convention::decimalType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::decimalType(conventions:Conventions[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    $conventions->javaType(Decimal, $mult);
 }
 
-function meta::java::generation::convention::numberType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::numberType(conventions:Conventions[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    $conventions->javaType(Number, $mult);
 }
 
-function meta::java::generation::convention::strictDateType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::strictDateType(conventions:Conventions[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    $conventions->javaType(StrictDate, $mult);
 }
 
-function meta::java::generation::convention::dateTimeType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::dateTimeType(conventions:Conventions[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    $conventions->javaType(DateTime, $mult);
 }
 
-function meta::java::generation::convention::dateType(conventions:Conventions[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::dateType(conventions:Conventions[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    $conventions->javaType(Date, $mult);
 }
 
-function meta::java::generation::convention::stringLiteral(conventions:Conventions[1], s:String[1]): Code[1]
+function meta::external::language::java::transform::stringLiteral(conventions:Conventions[1], s:String[1]): Code[1]
 {
    $conventions->typeConversion(String).literalCoder->eval($s)
 }
 
-function meta::java::generation::convention::integerLiteral(conventions:Conventions[1], i:Integer[1]): Code[1]
+function meta::external::language::java::transform::integerLiteral(conventions:Conventions[1], i:Integer[1]): Code[1]
 {
    $conventions->typeConversion(Integer).literalCoder->eval($i)
 }
 
-function meta::java::generation::convention::floatLiteral(conventions:Conventions[1], f:Float[1]): Code[1]
+function meta::external::language::java::transform::floatLiteral(conventions:Conventions[1], f:Float[1]): Code[1]
 {
    $conventions->typeConversion(Float).literalCoder->eval($f)
 }
 
-function meta::java::generation::convention::decimalLiteral(conventions:Conventions[1], d:Decimal[1]): Code[1]
+function meta::external::language::java::transform::decimalLiteral(conventions:Conventions[1], d:Decimal[1]): Code[1]
 {
    $conventions->typeConversion(Decimal).literalCoder->eval($d)
 }
 
-function meta::java::generation::convention::numberLiteral(conventions:Conventions[1], n:Number[1]): Code[1]
+function meta::external::language::java::transform::numberLiteral(conventions:Conventions[1], n:Number[1]): Code[1]
 {
    $conventions->typeConversion(Number).literalCoder->eval($n)
 }
 
-function meta::java::generation::convention::booleanLiteral(conventions:Conventions[1], b:Boolean[1]) : Code[1]
+function meta::external::language::java::transform::booleanLiteral(conventions:Conventions[1], b:Boolean[1]) : Code[1]
 {
    $conventions->typeConversion(Boolean).literalCoder->eval($b)
 }
 
-function meta::java::generation::convention::strictDateLiteral(conventions:Conventions[1], sd:StrictDate[1]): Code[1]
+function meta::external::language::java::transform::strictDateLiteral(conventions:Conventions[1], sd:StrictDate[1]): Code[1]
 {
    $conventions->typeConversion(StrictDate).literalCoder->eval($sd)
 }
 
-function meta::java::generation::convention::dateTimeLiteral(conventions:Conventions[1], dt:DateTime[1]): Code[1]
+function meta::external::language::java::transform::dateTimeLiteral(conventions:Conventions[1], dt:DateTime[1]): Code[1]
 {
    $conventions->typeConversion(DateTime).literalCoder->eval($dt)
 }
 
-function meta::java::generation::convention::dateLiteral(conventions:Conventions[1], d:Date[1]): Code[1]
+function meta::external::language::java::transform::dateLiteral(conventions:Conventions[1], d:Date[1]): Code[1]
 {
    $conventions->typeConversion(Date).literalCoder->eval($d)
 }
 
-function meta::java::generation::convention::primitiveLiteral(conventions: Conventions[1], a: Any[1]): Code[1]
+function meta::external::language::java::transform::primitiveLiteral(conventions: Conventions[1], a: Any[1]): Code[1]
 {
    $a->match([
       {s:String[1]      | $conventions->stringLiteral($s)},
@@ -323,57 +321,57 @@ function meta::java::generation::convention::primitiveLiteral(conventions: Conve
       {d:Date[1]        | $conventions->dateLiteral($d)},
       {b:Boolean[1]     | $conventions->booleanLiteral($b)},
       {e:Enum[1] |
-         let enumeration = $e->type()->cast(@Enumeration<Any>);
+         let enumeration = $e->type()->cast(@meta::pure::metamodel::type::Enumeration<Any>);
          let javaType    = $conventions->pureTypeToJavaType($enumeration, PureOne);
          $javaType->j_field($e.name, $javaType);
       }
    ])
 }
 
-function meta::java::generation::convention::identifier(conventions: Conventions[1], name: String[1]):String[1]
+function meta::external::language::java::transform::identifier(conventions: Conventions[1], name: String[1]):String[1]
 {
    $conventions.identifierFactory->eval($name);
 }
 
-function meta::java::generation::convention::className(conventions: Conventions[1], pe:PackageableElement[1]): meta::java::metamodel::Class[1]
+function meta::external::language::java::transform::className(conventions: Conventions[1], pe:PackageableElement[1]): meta::external::language::java::metamodel::Class[1]
 {
-   if($pe->instanceOf(Type) && $conventions->isProvidedType($pe->cast(@Type)),
-      | $conventions->getProvidedType($pe->cast(@Type)),
+   if($pe->instanceOf(meta::pure::metamodel::type::Type) && $conventions->isProvidedType($pe->cast(@meta::pure::metamodel::type::Type)),
+      | $conventions->getProvidedType($pe->cast(@meta::pure::metamodel::type::Type)),
       | $conventions->generateClassName($pe, 'app', '')
    );
 }
 
-function meta::java::generation::convention::implClassName(conventions: Conventions[1], pe:PackageableElement[1]): meta::java::metamodel::Class[1]
+function meta::external::language::java::transform::implClassName(conventions: Conventions[1], pe:PackageableElement[1]): meta::external::language::java::metamodel::Class[1]
 {
    $conventions->generateClassName($pe, 'internal', '_Impl');
 }
 
-function <<access.private>> meta::java::generation::convention::generateClassName(conventions:Conventions[1], pe:PackageableElement[1], zone:String[1], suffix:String[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::external::language::java::transform::generateClassName(conventions:Conventions[1], pe:PackageableElement[1], zone:String[1], suffix:String[1]): meta::external::language::java::metamodel::Class[1]
 {
-   assert(!$pe->instanceOf(Type) || !$conventions->isProvidedType($pe->cast(@Type)), 'Cannot provide implemention for provided types');
+   assert(!$pe->instanceOf(meta::pure::metamodel::type::Type) || !$conventions->isProvidedType($pe->cast(@meta::pure::metamodel::type::Type)), 'Cannot provide implemention for provided types');
    assert($pe != Function, 'Cannot handle function, should use pureTypeToJavaType with generic type');
 
    let packageAndName = if ($conventions.typeAndPackageNameStrategy->isEmpty(),
     |let zoneRoot    = $conventions.basePackageName + '.' + $zone + '.';
-     let package     = if($pe->instanceOf(meta::pure::mapping::MappingClass), | $pe->cast(@meta::pure::mapping::MappingClass<Any>).generalizations.general->cast(@GenericType).rawType->cast(@Class<Any>).package->toOne(), | $pe.package->toOne());
+     let package     = if($pe->instanceOf(meta::pure::mapping::MappingClass), | $pe->cast(@meta::pure::mapping::MappingClass<Any>).generalizations.general->cast(@GenericType).rawType->cast(@meta::pure::metamodel::type::Class<Any>).package->toOne(), | $pe.package->toOne());
      let javaPkgName = $zoneRoot + $conventions->identifier($package->elementToPath()->replace('::', '.'));
      let name = $pe.name->toOne()->sanitizeIdentifier()->toUpperFirstCharacter()->toOne() + $suffix;
      pair($javaPkgName, $name);,
-    | $conventions.typeAndPackageNameStrategy->toOne()->eval($pe->cast(@Type), $conventions)
+    | $conventions.typeAndPackageNameStrategy->toOne()->eval($pe->cast(@meta::pure::metamodel::type::Type), $conventions)
    );
 
-   if($pe->instanceOf(Enumeration),
+   if($pe->instanceOf(meta::pure::metamodel::type::Enumeration),
       | javaEnum(javaPackage($packageAndName.first), $packageAndName.second),
       | javaClass(javaPackage($packageAndName.first), $packageAndName.second);
    );
 }
 
-function meta::java::generation::convention::functionSignature(conventions: Conventions[1], cfd:ConcreteFunctionDefinition<Any>[1]): FunctionSignature[1]
+function meta::external::language::java::transform::functionSignature(conventions: Conventions[1], cfd:ConcreteFunctionDefinition<Any>[1]): FunctionSignature[1]
 {
    $conventions.functionSignatureFactory->eval($cfd, $conventions);
 }
 
-function meta::java::generation::convention::codeParseInteger(conventions: Conventions[1], toParse:Code[1]): Code[1]
+function meta::external::language::java::transform::codeParseInteger(conventions: Conventions[1], toParse:Code[1]): Code[1]
 {
    let intType = $conventions->integerType()->toBoxed();
    if($intType == javaInt()->toBoxed(),
@@ -381,21 +379,21 @@ function meta::java::generation::convention::codeParseInteger(conventions: Conve
       |
    if($intType == javaLong()->toBoxed(),
       | javaLong()->toBoxed()->j_invoke('parseLong', $toParse),
-      | fail('Unsupported Integer type: '+$intType->typePathToString(true)); j_null();
+      | fail('Unsupported Integer type: '+$intType->typeToString()); j_null();
    ));
 }
 
-function meta::java::generation::convention::codeParseDecimal(conventions: Conventions[1], toParse:Code[1]): Code[1]
+function meta::external::language::java::transform::codeParseDecimal(conventions: Conventions[1], toParse:Code[1]): Code[1]
 {
    let decimalType = $conventions->decimalType()->toBoxed();
 
    if($decimalType == javaBigDecimal(),
       | javaBigDecimal()->j_new(j_conditional($toParse->j_invoke('endsWith', j_string('D'))->j_or($toParse->j_invoke('endsWith', j_string('d'))), $toParse->j_invoke('substring', [j_int(0), $toParse->j_invoke('length', [])->j_minus(j_int(1))]), $toParse)),
-      | fail('Unsupported Decimal type: '+$decimalType->typePathToString(true)); j_null();
+      | fail('Unsupported Decimal type: '+$decimalType->typeToString()); j_null();
    );
 }
 
-function meta::java::generation::convention::codeParseFloat(conventions: Conventions[1], toParse:Code[1]): Code[1]
+function meta::external::language::java::transform::codeParseFloat(conventions: Conventions[1], toParse:Code[1]): Code[1]
 {
    let floatType = $conventions->floatType()->toBoxed();
    if($floatType == javaFloat()->toBoxed(),
@@ -403,24 +401,24 @@ function meta::java::generation::convention::codeParseFloat(conventions: Convent
       |
    if($floatType == javaDouble()->toBoxed(),
       | javaDouble()->toBoxed()->j_invoke('parseDouble', $toParse),
-      | fail('Unsupported Float type: '+$floatType->typePathToString(true)); j_null();
+      | fail('Unsupported Float type: '+$floatType->typeToString()); j_null();
    ));
 }
 
-function meta::java::generation::convention::codeParseBoolean(conventions: Conventions[1], toParse:Code[1]): Code[1]
+function meta::external::language::java::transform::codeParseBoolean(conventions: Conventions[1], toParse:Code[1]): Code[1]
 {
    javaBooleanBoxed()->j_invoke('parseBoolean', $toParse);
 }
 
-function meta::java::generation::convention::codeType(conventions: Conventions[1], javaType:meta::java::metamodel::Type[1]): Code[1]
+function meta::external::language::java::transform::codeType(conventions: Conventions[1], javaType:meta::external::language::java::metamodel::Type[1]): Code[1]
 {
    let code = $javaType->match([
-      {p:meta::java::metamodel::PrimitiveType[1]     | $p.simpleName},
-      {a:meta::java::metamodel::Array[1]             | $conventions->codeType($a.rawType)->codeToString($conventions) + '[]'},
-      {p:meta::java::metamodel::ParameterizedType[1] | $conventions->codeType($p.rawType)->codeToString($conventions)+'<'+$p.typeArguments->map(t|$conventions->codeType($t)->codeToString($conventions))->makeString(', ')+'>'},
-      {t:meta::java::metamodel::TypeVariable[1]      | $t.name},
-      {c:meta::java::metamodel::Class[1] |
-         let imported       = $conventions->isImported($c);
+      {p:meta::external::language::java::metamodel::PrimitiveType[1]     | $p.simpleName},
+      {a:meta::external::language::java::metamodel::Array[1]             | $conventions->codeType($a.rawType)->codeToString() + '[]'},
+      {p:meta::external::language::java::metamodel::ParameterizedType[1] | $conventions->codeType($p.rawType)->codeToString()+'<'+$p.typeArguments->map(t|$conventions->codeType($t)->codeToString())->makeString(', ')+'>'},
+      {t:meta::external::language::java::metamodel::TypeVariable[1]      | $t.name},
+      {c:meta::external::language::java::metamodel::Class[1] |
+         let imported       = $c.package->isJavaLang();
          let prefix         = if($imported, |'', |$c.package->packageToString()+'.');
          let res            = $prefix+$c.simpleName;
          if($res=='java.lang.Void' || $res=='Void',|'void',|$res);
@@ -430,12 +428,12 @@ function meta::java::generation::convention::codeType(conventions: Conventions[1
    j_code($code, $javaType);
 }
 
-function meta::java::generation::convention::codeClass(conventions:Conventions[1], type:Type[1], purpose:Any[1], debug:DebugContext[1]): meta::java::metamodel::Class[1]
+function meta::external::language::java::transform::codeClass(conventions:Conventions[1], type:meta::pure::metamodel::type::Type[1], purpose:Any[1], debug:DebugContext[1]): meta::external::language::java::metamodel::Class[1]
 {
    $conventions.classCoders->get($purpose)->toOne()->eval($type, $conventions, $debug);
 }
 
-function meta::java::generation::convention::getFunctionCoder(conventions:Conventions[1], pureFunction:Function<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[0..1]
+function meta::external::language::java::transform::getFunctionCoder(conventions:Conventions[1], pureFunction:Function<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[0..1]
 {
    let name = $pureFunction.name->toOne();
    if($conventions->isProhibitedFunction($pureFunction),
@@ -451,24 +449,24 @@ function meta::java::generation::convention::getFunctionCoder(conventions:Conven
    );
 }
 
-function meta::java::generation::convention::isProhibitedFunction(conventions: Conventions[1], pureFunction:Function<Any>[1]): Boolean[1]
+function meta::external::language::java::transform::isProhibitedFunction(conventions: Conventions[1], pureFunction:Function<Any>[1]): Boolean[1]
 {
    $conventions.prohibitedFunctionStrategy->eval($conventions, $pureFunction);
 }
 
-function meta::java::generation::convention::standardImports(conventions: Conventions[1]): meta::java::metamodel::Importable[*]
+function meta::external::language::java::transform::standardImports(conventions: Conventions[1]): meta::external::language::java::metamodel::Importable[*]
 {
    let packages = [javaPackage('java.util'), javaPackage('java.util.stream'), javaPackage('java.util.function')]
       ->concatenate($conventions->definedPackages().package)
       ->concatenate($conventions.libraries.javaPackagesUsed)
       ->removeDuplicates();
    let classes  = $conventions.libraries.javaClassesUsed->removeDuplicates()->filter(c| !$c.package->in($packages));
-   $packages->concatenate($classes)->cast(@meta::java::metamodel::Importable);
+   $packages->concatenate($classes)->cast(@meta::external::language::java::metamodel::Importable);
 }
 
-function meta::java::generation::convention::knownPackages(conventions: Conventions[1]): Function<{meta::java::metamodel::Package[1]->meta::java::generation::utils::KnownPackage[1]}>[1]
+function meta::external::language::java::transform::knownPackages(conventions: Conventions[1]): Function<{meta::external::language::java::metamodel::Package[1]->meta::external::language::java::factory::KnownPackage[1]}>[1]
 {
-   {pkg: meta::java::metamodel::Package[1]|
+   {pkg: meta::external::language::java::metamodel::Package[1]|
       let defined = $conventions->definedPackages()->filter(dp| $dp.package == $pkg);
       if($defined->isEmpty(),
          | knownPackage($pkg),
@@ -477,15 +475,15 @@ function meta::java::generation::convention::knownPackages(conventions: Conventi
    }
 }
 
-function <<access.private>> meta::java::generation::convention::definedPackages(conventions: Conventions[1]): meta::java::generation::utils::KnownPackage[*]
+function <<access.private>> meta::external::language::java::transform::definedPackages(conventions: Conventions[1]): meta::external::language::java::factory::KnownPackage[*]
 {
    $conventions.libraries.javaClassesDefined
       ->groupBy(c| $c.package)
       ->keyValues()
-      ->map(kv| ^meta::java::generation::utils::KnownPackage(package=$kv.first, classNames=$kv.second->map(cs| $cs.values.simpleName)));
+      ->map(kv| ^meta::external::language::java::factory::KnownPackage(package=$kv.first, classNames=$kv.second->map(cs| $cs.values.simpleName)));
 }
 
-function meta::java::generation::convention::standardDataTypeImports(conventions: Conventions[1]): meta::java::metamodel::Importable[*]
+function meta::external::language::java::transform::standardDataTypeImports(conventions: Conventions[1]): meta::external::language::java::metamodel::Importable[*]
 {
    let javaTypesForPureTypes = [
       $conventions->stringType(ZeroOne),
@@ -497,27 +495,22 @@ function meta::java::generation::convention::standardDataTypeImports(conventions
       $conventions->strictDateType(ZeroOne),
       $conventions->dateTimeType(ZeroOne),
       $conventions->dateType(ZeroOne)
-   ]->cast(@meta::java::metamodel::Class);
+   ]->cast(@meta::external::language::java::metamodel::Class);
 
    $conventions->standardImports()->filter(imp|$imp->match([
-      p: meta::java::metamodel::Package[1] | $p == javaPackage('java.util') || $p->in($javaTypesForPureTypes.package),
-      c: meta::java::metamodel::Class[1]   | $c->in($javaTypesForPureTypes)
+      p: meta::external::language::java::metamodel::Package[1] | $p == javaPackage('java.util') || $p->in($javaTypesForPureTypes.package),
+      c: meta::external::language::java::metamodel::Class[1]   | $c->in($javaTypesForPureTypes)
    ]));
-}
-
-function meta::java::generation::convention::isImported(conventions: Conventions[1], javaClass: meta::java::metamodel::Class[1]): Boolean[1]
-{
-   $conventions.imports->contains($javaClass);
 }
 
 // ----------------------------------------------------------------------------------------------------------
 // --- FunctionSignatureFactory factory methods
 // ----------------------------------------------------------------------------------------------------------
 
-function meta::java::generation::convention::defaultFunctionSignatureFactory(): Function<{ConcreteFunctionDefinition<Any>[1],Conventions[1]->FunctionSignature[1]}>[1]
+function meta::external::language::java::transform::defaultFunctionSignatureFactory(): Function<{ConcreteFunctionDefinition<Any>[1],Conventions[1]->FunctionSignature[1]}>[1]
 {
    {cfd:ConcreteFunctionDefinition<Any>[1], conventions:Conventions[1]|
-      let funcsClass = ^Class<Any>(package=$cfd.package, name=if($cfd.package->isEmpty(), |'', |$cfd.package->toOne()->elementToPath('_'))+'__Functions');
+      let funcsClass = ^meta::pure::metamodel::type::Class<Any>(package=$cfd.package, name=if($cfd.package->isEmpty(), |'', |$cfd.package->toOne()->elementToPath('_'))+'__Functions');
       let funcType   = $cfd->functionType();
       assert($funcType.typeParameters->isEmpty(), 'Generics not supported (function: '+$cfd->elementToPath()+')');
 
@@ -535,43 +528,43 @@ function meta::java::generation::convention::defaultFunctionSignatureFactory(): 
 // --- FunctionCoder helper methods
 // ----------------------------------------------------------------------------------------------------------
 
-function meta::java::generation::convention::inlineCoder(pattern: String[1], returnType: String[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::external::language::java::transform::inlineCoder(pattern: String[1], returnType: String[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    inlineCoder($pattern, javaType($returnType));
 }
 
-function meta::java::generation::convention::inlineCoder(pattern: String[1], returnType: meta::java::metamodel::Type[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::external::language::java::transform::inlineCoder(pattern: String[1], returnType: meta::external::language::java::metamodel::Type[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    {f:FunctionExpression[1], c:Conventions[1], debug:DebugContext[1] |
       let params = $f.parametersValues->evaluateAndDeactivate()->map(v|$v->generateJava($c, $debug->indent()));
-      let call   = j_code(format($pattern, $params->map(p| $p->codeToString($c))), $returnType);
+      let call   = j_code(format($pattern, $params->map(p| $p->codeToString())), $returnType);
       merge($call->concatenate($params)->toOneMany());
    };
 }
 
-function meta::java::generation::convention::inlineCoder(patternFunc: Function<{Conventions[1]->String[1]}>[1], returnType: String[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::external::language::java::transform::inlineCoder(patternFunc: Function<{Conventions[1]->String[1]}>[1], returnType: String[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    inlineCoder($patternFunc, javaType($returnType));
 }
 
-function meta::java::generation::convention::inlineCoder(patternFunc: Function<{Conventions[1]->String[1]}>[1], returnType: meta::java::metamodel::Type[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::external::language::java::transform::inlineCoder(patternFunc: Function<{Conventions[1]->String[1]}>[1], returnType: meta::external::language::java::metamodel::Type[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    {f:FunctionExpression[1], c:Conventions[1], debug:DebugContext[1] |
       let params  = $f.parametersValues->evaluateAndDeactivate()->map(v|$v->generateJava($c, $debug->indent()));
       let pattern = $patternFunc->eval($c);
-      let call    = j_code(format($pattern, $params->map(p| $p->codeToString($c))), $returnType);
+      let call    = j_code(format($pattern, $params->map(p| $p->codeToString())), $returnType);
       merge($call->concatenate($params)->toOneMany());
    };
 }
 
-function meta::java::generation::convention::requires(coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1], dependency: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->CodeDependency[1]}>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::external::language::java::transform::requires(coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1], dependency: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->CodeDependency[1]}>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    {f:FunctionExpression[1], c:Conventions[1], debug:DebugContext[1] |
       merge([$coder->eval($f, $c, $debug), j_code('', javaType('void'), $dependency->eval($f, $c, $debug))]);
    };
 }
 
-function meta::java::generation::convention::appendToName(suffix: String[1]):Function<{PackageableElement[1],Conventions[1]->meta::java::metamodel::Class[1]}>[1]
+function meta::external::language::java::transform::appendToName(suffix: String[1]):Function<{PackageableElement[1],Conventions[1]->meta::external::language::java::metamodel::Class[1]}>[1]
 {
    {pe:PackageableElement[1], c:Conventions[1] |
       let base = $c->className($pe);
@@ -583,60 +576,60 @@ function meta::java::generation::convention::appendToName(suffix: String[1]):Fun
 // --- Factory methods for ConventionsLibrary
 // ----------------------------------------------------------------------------------------------------------
 
-function meta::java::generation::convention::newConventionsLibrary():ConventionsLibrary[1]
+function meta::external::language::java::transform::newConventionsLibrary():ConventionsLibrary[1]
 {
    ^ConventionsLibrary
    (
-      typeConversions = newMap(@Pair<Type, TypeConversion>),
+      typeConversions = newMap(@Pair<meta::pure::metamodel::type::Type, TypeConversion>),
       functionCoders  = newMap(@Pair<String, Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>>),
       fundamentals    = {c:Conventions[1], d:DebugContext[1] | newProject()}
    );
 }
 
-function meta::java::generation::convention::newConventionsLibrary(name:String[1]):ConventionsLibrary[1]
+function meta::external::language::java::transform::newConventionsLibrary(name:String[1]):ConventionsLibrary[1]
 {
    let lib = newConventionsLibrary();
    ^$lib(name=$name);
 }
 
-function meta::java::generation::convention::setFundamentals(library:ConventionsLibrary[1], fundamentals:Function<{Conventions[1],DebugContext[1]->Project[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::setFundamentals(library:ConventionsLibrary[1], fundamentals:Function<{Conventions[1],DebugContext[1]->Project[1]}>[1]): ConventionsLibrary[1]
 {
    ^$library(fundamentals=$fundamentals);
 }
 
-function meta::java::generation::convention::usesJavaPackage(library:ConventionsLibrary[1], javaPackage:String[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesJavaPackage(library:ConventionsLibrary[1], javaPackage:String[1]): ConventionsLibrary[1]
 {
    $library->usesJavaPackage(javaPackage($javaPackage));
 }
 
-function meta::java::generation::convention::usesJavaPackage(library:ConventionsLibrary[1], javaPackage:meta::java::metamodel::Package[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesJavaPackage(library:ConventionsLibrary[1], javaPackage:meta::external::language::java::metamodel::Package[1]): ConventionsLibrary[1]
 {
    // Ensure package is well known
    knownPackage($javaPackage);
    ^$library(javaPackagesUsed=$library.javaPackagesUsed->concatenate($javaPackage)->removeDuplicates());
 }
 
-function meta::java::generation::convention::usesJavaClass(library:ConventionsLibrary[1], javaClass:String[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesJavaClass(library:ConventionsLibrary[1], javaClass:String[1]): ConventionsLibrary[1]
 {
    $library->usesJavaClass(javaClass($javaClass));
 }
 
-function meta::java::generation::convention::usesJavaClass(library:ConventionsLibrary[1], javaClass:meta::java::metamodel::Class[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesJavaClass(library:ConventionsLibrary[1], javaClass:meta::external::language::java::metamodel::Class[1]): ConventionsLibrary[1]
 {
    ^$library(javaClassesUsed=$library.javaClassesUsed->concatenate($javaClass)->removeDuplicates());
 }
 
-function meta::java::generation::convention::definesJavaClass(library:ConventionsLibrary[1], javaClass:String[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::definesJavaClass(library:ConventionsLibrary[1], javaClass:String[1]): ConventionsLibrary[1]
 {
    $library->definesJavaClass(javaClass($javaClass));
 }
 
-function meta::java::generation::convention::definesJavaClass(library:ConventionsLibrary[1], javaClass:meta::java::metamodel::Class[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::definesJavaClass(library:ConventionsLibrary[1], javaClass:meta::external::language::java::metamodel::Class[1]): ConventionsLibrary[1]
 {
    ^$library(javaClassesDefined=$library.javaClassesDefined->concatenate($javaClass)->removeDuplicates());
 }
 
-function meta::java::generation::convention::usesString(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{String[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesString(library:ConventionsLibrary[1], oneJavaType:meta::external::language::java::metamodel::Type[1], nonOneJavaType:meta::external::language::java::metamodel::Type[1], literalCoder:Function<{String[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -649,7 +642,7 @@ function meta::java::generation::convention::usesString(library:ConventionsLibra
    ^$library(typeConversions=$library.typeConversions->put(String, $typeCoder));
 }
 
-function meta::java::generation::convention::usesInteger(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Integer[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesInteger(library:ConventionsLibrary[1], oneJavaType:meta::external::language::java::metamodel::Type[1], nonOneJavaType:meta::external::language::java::metamodel::Type[1], literalCoder:Function<{Integer[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -662,7 +655,7 @@ function meta::java::generation::convention::usesInteger(library:ConventionsLibr
    ^$library(typeConversions=$library.typeConversions->put(Integer, $typeCoder));
 }
 
-function meta::java::generation::convention::usesFloat(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Float[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesFloat(library:ConventionsLibrary[1], oneJavaType:meta::external::language::java::metamodel::Type[1], nonOneJavaType:meta::external::language::java::metamodel::Type[1], literalCoder:Function<{Float[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -675,7 +668,7 @@ function meta::java::generation::convention::usesFloat(library:ConventionsLibrar
    ^$library(typeConversions=$library.typeConversions->put(Float, $typeCoder));
 }
 
-function meta::java::generation::convention::usesDecimal(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Decimal[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesDecimal(library:ConventionsLibrary[1], oneJavaType:meta::external::language::java::metamodel::Type[1], nonOneJavaType:meta::external::language::java::metamodel::Type[1], literalCoder:Function<{Decimal[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -688,7 +681,7 @@ function meta::java::generation::convention::usesDecimal(library:ConventionsLibr
    ^$library(typeConversions=$library.typeConversions->put(Decimal, $typeCoder));
 }
 
-function meta::java::generation::convention::usesNumber(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Number[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesNumber(library:ConventionsLibrary[1], oneJavaType:meta::external::language::java::metamodel::Type[1], nonOneJavaType:meta::external::language::java::metamodel::Type[1], literalCoder:Function<{Number[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -701,7 +694,7 @@ function meta::java::generation::convention::usesNumber(library:ConventionsLibra
    ^$library(typeConversions=$library.typeConversions->put(Number, $typeCoder));
 }
 
-function meta::java::generation::convention::usesBoolean(library:ConventionsLibrary[1], oneJavaType:meta::java::metamodel::Type[1], nonOneJavaType:meta::java::metamodel::Type[1], literalCoder:Function<{Boolean[1]->Code[1]}>[1]):ConventionsLibrary[1]
+function meta::external::language::java::transform::usesBoolean(library:ConventionsLibrary[1], oneJavaType:meta::external::language::java::metamodel::Type[1], nonOneJavaType:meta::external::language::java::metamodel::Type[1], literalCoder:Function<{Boolean[1]->Code[1]}>[1]):ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -714,7 +707,7 @@ function meta::java::generation::convention::usesBoolean(library:ConventionsLibr
    ^$library(typeConversions=$library.typeConversions->put(Boolean, $typeCoder));
 }
 
-function meta::java::generation::convention::usesStrictDate(library:ConventionsLibrary[1], javaType:meta::java::metamodel::Type[1], literalCoder:Function<{StrictDate[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesStrictDate(library:ConventionsLibrary[1], javaType:meta::external::language::java::metamodel::Type[1], literalCoder:Function<{StrictDate[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -727,7 +720,7 @@ function meta::java::generation::convention::usesStrictDate(library:ConventionsL
    ^$library(typeConversions=$library.typeConversions->put(StrictDate, $typeCoder));
 }
 
-function meta::java::generation::convention::usesDateTime(library:ConventionsLibrary[1], javaType:meta::java::metamodel::Type[1], literalCoder:Function<{DateTime[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesDateTime(library:ConventionsLibrary[1], javaType:meta::external::language::java::metamodel::Type[1], literalCoder:Function<{DateTime[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -740,7 +733,7 @@ function meta::java::generation::convention::usesDateTime(library:ConventionsLib
    ^$library(typeConversions=$library.typeConversions->put(DateTime, $typeCoder));
 }
 
-function meta::java::generation::convention::usesDate(library:ConventionsLibrary[1], javaType:meta::java::metamodel::Type[1], literalCoder:Function<{Date[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::usesDate(library:ConventionsLibrary[1], javaType:meta::external::language::java::metamodel::Type[1], literalCoder:Function<{Date[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let typeCoder = ^TypeConversion
    (
@@ -757,7 +750,7 @@ function meta::java::generation::convention::usesDate(library:ConventionsLibrary
 // --- Function Coders
 // ----------------------------------------------------------------------------------------------------------
 
-Class meta::java::generation::convention::FuncCoderContext
+Class meta::external::language::java::transform::FuncCoderContext
 {
    fe          : FunctionExpression[1];
    params      : ValueSpecification[*];
@@ -774,96 +767,96 @@ Class meta::java::generation::convention::FuncCoderContext
    returnType()
    {
       $this.conventions->pureTypeToJavaType($this.fe.genericType.rawType->toOne(), $this.fe.multiplicity);
-   }:meta::java::metamodel::Type[1];
+   }:meta::external::language::java::metamodel::Type[1];
 }
 
-Class meta::java::generation::convention::FunctionCoder
+Class meta::external::language::java::transform::FunctionCoder
 {
    pureFunction : String[1];
    coder        : Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1];
 }
 
-function meta::java::generation::convention::fc0(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc0(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc0($pureFunction.name->toOne(), $coder2);
 }
 
-function meta::java::generation::convention::fc0(pureFunction:String[1], coder2:Function<{FuncCoderContext[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc0(pureFunction:String[1], coder2:Function<{FuncCoderContext[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder2->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::generation::convention::fc1(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc1(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc1($pureFunction.name->toOne(), $coder2);
 }
 
-function meta::java::generation::convention::fc1(pureFunction:String[1], coder2:Function<{FuncCoderContext[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc1(pureFunction:String[1], coder2:Function<{FuncCoderContext[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder2->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::generation::convention::fc2(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc2(pureFunction:Function<Any>[1], coder2:Function<{FuncCoderContext[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc2($pureFunction.name->toOne(), $coder2);
 }
 
-function meta::java::generation::convention::fc2(pureFunction:String[1], coder2:Function<{FuncCoderContext[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc2(pureFunction:String[1], coder2:Function<{FuncCoderContext[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder2->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::generation::convention::fc3(pureFunction:Function<Any>[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc3(pureFunction:Function<Any>[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc3($pureFunction.name->toOne(), $coder3);
 }
 
-function meta::java::generation::convention::fc3(pureFunction:String[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc3(pureFunction:String[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder3->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::generation::convention::fc4(pureFunction:Function<Any>[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc4(pureFunction:Function<Any>[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc4($pureFunction.name->toOne(), $coder3);
 }
 
-function meta::java::generation::convention::fc4(pureFunction:String[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc4(pureFunction:String[1], coder3:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder3->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::generation::convention::fc5(pureFunction:Function<Any>[1], coder5:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc5(pureFunction:Function<Any>[1], coder5:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc5($pureFunction.name->toOne(), $coder5);
 }
 
-function meta::java::generation::convention::fc5(pureFunction:String[1], coder5:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc5(pureFunction:String[1], coder5:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder5->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::generation::convention::fc6(pureFunction:Function<Any>[1], coder6:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc6(pureFunction:Function<Any>[1], coder6:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc6($pureFunction.name->toOne(), $coder6);
 }
 
-function meta::java::generation::convention::fc6(pureFunction:String[1], coder6:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc6(pureFunction:String[1], coder6:Function<{FuncCoderContext[1],Code[1],Code[1],Code[1],Code[1],Code[1],Code[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction, adaptCoder($coder6->cast(@FunctionDefinition<Any>)));
 }
 
-function meta::java::generation::convention::fc(pureFunction:Function<Any>[1], coder:Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc(pureFunction:Function<Any>[1], coder:Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    fc($pureFunction.name->toOne(), $coder);
 }
 
-function meta::java::generation::convention::fc(pureFunction:String[1], coder:Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): FunctionCoder[1]
+function meta::external::language::java::transform::fc(pureFunction:String[1], coder:Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): FunctionCoder[1]
 {
    ^FunctionCoder(pureFunction=$pureFunction, coder=$coder);
 }
 
-function meta::java::generation::convention::fcAlias(pureFunction:Function<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function meta::external::language::java::transform::fcAlias(pureFunction:Function<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    {fe: FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1] |
       let toEval = $conventions->getFunctionCoder($pureFunction);
@@ -872,7 +865,7 @@ function meta::java::generation::convention::fcAlias(pureFunction:Function<Any>[
    };
 }
 
-function <<access.private>> meta::java::generation::convention::adaptCoder(adaptee:FunctionDefinition<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
+function <<access.private>> meta::external::language::java::transform::adaptCoder(adaptee:FunctionDefinition<Any>[1]): Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]
 {
    let fType = $adaptee->evaluateAndDeactivate()->functionType();
    assert($fType.returnType.rawType == Code, 'Must return Code');
@@ -919,12 +912,12 @@ function <<access.private>> meta::java::generation::convention::adaptCoder(adapt
    };
 }
 
-function meta::java::generation::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunctions:Function<Any>[*], paramNames:String[*], contextCoder:Function<{FuncCoderContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::addFunctionCoder(library:ConventionsLibrary[1], pureFunctions:Function<Any>[*], paramNames:String[*], contextCoder:Function<{FuncCoderContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    addFunctionCoder($library, $pureFunctions.name, $paramNames, $contextCoder);
 }
 
-function meta::java::generation::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunctions:String[*], paramNames:String[*], contextCoder:Function<{FuncCoderContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::addFunctionCoder(library:ConventionsLibrary[1], pureFunctions:String[*], paramNames:String[*], contextCoder:Function<{FuncCoderContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    let coder = {fe: FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1] |
       let params = $fe.parametersValues->evaluateAndDeactivate();
@@ -961,7 +954,7 @@ function meta::java::generation::convention::addFunctionCoder(library:Convention
    $pureFunctions->fold({f, l| $l->addFunctionCoder($f, $coder)}, $library);
 }
 
-function meta::java::generation::convention::addFunctionCoders(library:ConventionsLibrary[1], functionCoders:FunctionCoder[*]): ConventionsLibrary[1]
+function meta::external::language::java::transform::addFunctionCoders(library:ConventionsLibrary[1], functionCoders:FunctionCoder[*]): ConventionsLibrary[1]
 {
    let existingNames = $library.functionCoders->keys();
    let newNames      = $functionCoders.pureFunction;
@@ -971,12 +964,12 @@ function meta::java::generation::convention::addFunctionCoders(library:Conventio
    ^$library(functionCoders=$library.functionCoders->putAll($functionCoders->map(fc| pair($fc.pureFunction, $fc.coder))));
 }
 
-function meta::java::generation::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunction:Function<Any>[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::addFunctionCoder(library:ConventionsLibrary[1], pureFunction:Function<Any>[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    addFunctionCoder($library, $pureFunction.name->toOne(), $coder);
 }
 
-function meta::java::generation::convention::addFunctionCoder(library:ConventionsLibrary[1], pureFunction:String[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
+function meta::external::language::java::transform::addFunctionCoder(library:ConventionsLibrary[1], pureFunction:String[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): ConventionsLibrary[1]
 {
    assert($library.functionCoders->get($pureFunction)->isEmpty(), |'A function is already exists for ' + $pureFunction);
    ^$library(functionCoders=$library.functionCoders->put($pureFunction, $coder));
@@ -986,7 +979,7 @@ function meta::java::generation::convention::addFunctionCoder(library:Convention
 // --- Factory methods for Conventions
 // ----------------------------------------------------------------------------------------------------------
 
-function meta::java::generation::convention::newConventions(extensions : meta::pure::router::extension::RouterExtension[*]): Conventions[1]
+function meta::external::language::java::transform::newConventions(extensions : meta::pure::router::extension::RouterExtension[*]): Conventions[1]
 {
    let result = ^Conventions
    (
@@ -995,82 +988,65 @@ function meta::java::generation::convention::newConventions(extensions : meta::p
       setterNameStrategy         = {p:String[1] | 'set' + $p->toUpperFirstCharacter()->toOne()},
       defaultClassPurpose        = ClassPurpose.MODEL,
 
-      identifierFactory          = meta::java::generation::convention::sanitizeJavaKeywords_String_1__String_1_,
+      identifierFactory          = meta::external::language::java::transform::sanitizeJavaKeywords_String_1__String_1_,
       basePackageName            = '_pure',
       functionSignatureFactory   = defaultFunctionSignatureFactory(),
 
-      classCoders                = newMap(@Pair<Any, Function<{Type[1],Conventions[1],DebugContext[1]->meta::java::metamodel::Class[1]}>>),
+      classCoders                = newMap(@Pair<Any, Function<{meta::pure::metamodel::type::Type[1],Conventions[1],DebugContext[1]->meta::external::language::java::metamodel::Class[1]}>>),
       functionCoders             = newMap(@Pair<String, Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>>),
       prohibitedFunctionStrategy = defaultProhibitedFunctions($extensions),
       providedVariables          = ^Map<String,Code>(),
       extensions = $extensions
    )
-      ->addProvidedType(Any, javaObject())
-      ->assumeImportedPackage('java.lang');
+      ->addProvidedType(Any, javaObject());
 }
 
-function meta::java::generation::convention::setBasePackageName(conventions:Conventions[1], name:String[1]): Conventions[1]
+function meta::external::language::java::transform::setBasePackageName(conventions:Conventions[1], name:String[1]): Conventions[1]
 {
    assert($name->isValidPackageName(), 'Not a valid base package');
    ^$conventions(basePackageName=$name);
 }
 
-function meta::java::generation::convention::setTypeAndPackageNameStrategy(conventions:Conventions[1], func:Function<{Type[1], Conventions[1]->Pair<String,String>[1]}>[1]): Conventions[1]
+function meta::external::language::java::transform::setTypeAndPackageNameStrategy(conventions:Conventions[1], func:Function<{meta::pure::metamodel::type::Type[1], Conventions[1]->Pair<String,String>[1]}>[1]): Conventions[1]
 {
    ^$conventions(typeAndPackageNameStrategy=$func);
 }
 
-function meta::java::generation::convention::addProvidedType(conventions:Conventions[1], type:Type[1], providedAs:String[1]): Conventions[1]
+function meta::external::language::java::transform::addProvidedType(conventions:Conventions[1], type:meta::pure::metamodel::type::Type[1], providedAs:String[1]): Conventions[1]
 {
    $conventions->addProvidedType($type, javaClass($providedAs));
 }
 
-function meta::java::generation::convention::addProvidedType(conventions:Conventions[1], type:Type[1], providedAs:meta::java::metamodel::Class[1]): Conventions[1]
+function meta::external::language::java::transform::addProvidedType(conventions:Conventions[1], type:meta::pure::metamodel::type::Type[1], providedAs:meta::external::language::java::metamodel::Class[1]): Conventions[1]
 {
    let cleaned = $conventions.providedTypes->filter(pt | $pt.type != $type);
    ^$conventions(providedTypes=$cleaned->add(^ProvidedType(type=$type, providedAs=$providedAs)));
 }
 
-function meta::java::generation::convention::addProvidedVariables(conventions:Conventions[1], codes:Code[*]): Conventions[1]
+function meta::external::language::java::transform::addProvidedVariables(conventions:Conventions[1], codes:Code[*]): Conventions[1]
 {
    assert($codes->forAll(c|$c->isVariable()));
    let namesToCodes = $codes->map(c|pair($c->variableName(), $c));
    ^$conventions(providedVariables=$conventions.providedVariables->putAll($namesToCodes));
 }
 
-function meta::java::generation::convention::assumeImported(conventions: Conventions[1], javaClass: String[1]): Conventions[1]
-{
-   assumeImported($conventions, javaClass($javaClass))
-}
-
-function meta::java::generation::convention::assumeImported(conventions: Conventions[1], javaClass: meta::java::metamodel::Class[1]): Conventions[1]
-{
-   ^$conventions(imports=$conventions.imports->concatenate($javaClass))
-}
-
-function meta::java::generation::convention::assumeImportedPackage(conventions: Conventions[1], pkg: String[1]): Conventions[1]
-{
-   let knownPackages = $conventions->knownPackages();
-   $knownPackages->eval(javaPackage($pkg)).classNames->fold({className, conv| $conv->assumeImported($pkg+'.'+$className)}, $conventions);
-}
-
-function meta::java::generation::convention::registerClassCoder(conventions: Conventions[1], purpose: Any[1], coder: Function<{Type[1],Conventions[1],DebugContext[1]->meta::java::metamodel::Class[1]}>[1]): Conventions[1]
+function meta::external::language::java::transform::registerClassCoder(conventions: Conventions[1], purpose: Any[1], coder: Function<{meta::pure::metamodel::type::Type[1],Conventions[1],DebugContext[1]->meta::external::language::java::metamodel::Class[1]}>[1]): Conventions[1]
 {
    ^$conventions(classCoders=$conventions.classCoders->put($purpose, $coder));
 }
 
-function meta::java::generation::convention::registerFunctionCoder(conventions: Conventions[1], pureFunction: Function<Any>[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): Conventions[1]
+function meta::external::language::java::transform::registerFunctionCoder(conventions: Conventions[1], pureFunction: Function<Any>[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): Conventions[1]
 {
    registerFunctionCoder($conventions, $pureFunction.name->toOne(), $coder);
 }
 
-function meta::java::generation::convention::registerFunctionCoder(conventions: Conventions[1], pureFunction: String[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): Conventions[1]
+function meta::external::language::java::transform::registerFunctionCoder(conventions: Conventions[1], pureFunction: String[1], coder: Function<{FunctionExpression[1],Conventions[1],DebugContext[1]->Code[1]}>[1]): Conventions[1]
 {
    assert($conventions.functionCoders->get($pureFunction)->isEmpty(), |'A function is already registered for ' + $pureFunction);
    ^$conventions(functionCoders=$conventions.functionCoders->put($pureFunction, $coder));
 }
 
-function meta::java::generation::convention::registerLibrary(conventions: Conventions[1], library: ConventionsLibrary[1]): Conventions[1]
+function meta::external::language::java::transform::registerLibrary(conventions: Conventions[1], library: ConventionsLibrary[1]): Conventions[1]
 {
    let stillValidLibraries = $conventions.libraries
       ->filter(
@@ -1088,18 +1064,7 @@ function meta::java::generation::convention::registerLibrary(conventions: Conven
    ^$conventions(libraries=$stillValidLibraries->concatenate($library));
 }
 
-function meta::java::generation::convention::forClass(conventions:Conventions[1], class:meta::java::metamodel::Class[1]): Conventions[1]
-{
-   $class.additionalImports->fold({imp,conv|
-      if($imp->endsWith('.*'),
-         |$conv->assumeImportedPackage($imp->substring(0, $imp->length()-2)),
-         |$conv->assumeImported(javaClass($imp))
-      )
-
-   }, $conventions);
-}
-
-function meta::java::generation::convention::defaultProhibitedFunctions(extensions : meta::pure::router::extension::RouterExtension[*]): Function<{Conventions[1],Function<Any>[1]->Boolean[1]}>[1]
+function meta::external::language::java::transform::defaultProhibitedFunctions(extensions : meta::pure::router::extension::RouterExtension[*]): Function<{Conventions[1],Function<Any>[1]->Boolean[1]}>[1]
 {
    let functionsBlacklist = [
       // Instances
@@ -1200,7 +1165,7 @@ function meta::java::generation::convention::defaultProhibitedFunctions(extensio
 
    let manipulatesTypesWhitelist = [
       Any,
-      Enumeration,
+      meta::pure::metamodel::type::Enumeration,
       Enum,
       Measure,
       Nil,
@@ -1234,7 +1199,7 @@ function meta::java::generation::convention::defaultProhibitedFunctions(extensio
 // --- Helpers
 // ----------------------------------------------------------------------------------------------------------
 
-function <<access.private>> meta::java::generation::convention::listIfMulti(base: meta::java::metamodel::Type[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function <<access.private>> meta::external::language::java::transform::listIfMulti(base: meta::external::language::java::metamodel::Type[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    if(!$mult->hasUpperBound() || ($mult->getUpperBound() > 1 || $mult->getUpperBound() == -1),
       | javaList($base),
@@ -1242,28 +1207,28 @@ function <<access.private>> meta::java::generation::convention::listIfMulti(base
    );
 }
 
-function <<access.private>> meta::java::generation::convention::typeConversion(conventions:Conventions[1], type:Type[1]): TypeConversion[1]
+function <<access.private>> meta::external::language::java::transform::typeConversion(conventions:Conventions[1], type:meta::pure::metamodel::type::Type[1]): TypeConversion[1]
 {
    $conventions.libraries->map(l|$l.typeConversions->get($type))->at(0);
 }
 
-function meta::java::generation::convention::javaType(conventions:Conventions[1], type:Type[1], mult:Multiplicity[1]): meta::java::metamodel::Type[1]
+function meta::external::language::java::transform::javaType(conventions:Conventions[1], type:meta::pure::metamodel::type::Type[1], mult:Multiplicity[1]): meta::external::language::java::metamodel::Type[1]
 {
    let conversion = $conventions->typeConversion($type);
    if($mult == PureOne, |$conversion.oneJavaType, |$conversion.nonOneJavaType)->listIfMulti($mult);
 }
 
-function meta::java::generation::convention::sanitizeIdentifier(name: String[1]): String[1]
+function meta::external::language::java::transform::sanitizeIdentifier(name: String[1]): String[1]
 {
    $name->sanitizeJavaKeywords()->replaceIllegalSymbols();
 }
 
-function <<access.private>> meta::java::generation::convention::replaceIllegalSymbols(symbol: String[1]): String[1]
+function <<access.private>> meta::external::language::java::transform::replaceIllegalSymbols(symbol: String[1]): String[1]
 {
    $symbol->replace('~', '_Tilde_');
 }
 
-function meta::java::generation::convention::sanitizeJavaKeywords(name: String[1]): String[1]
+function meta::external::language::java::transform::sanitizeJavaKeywords(name: String[1]): String[1]
 {
    $name
       ->split('.')
@@ -1272,7 +1237,7 @@ function meta::java::generation::convention::sanitizeJavaKeywords(name: String[1
       ->joinStrings('.');
 }
 
-function <<access.private>> meta::java::generation::convention::startsWithNumber(s: String[1]): Boolean[1]
+function <<access.private>> meta::external::language::java::transform::startsWithNumber(s: String[1]): Boolean[1]
 {
    ['0','1','2','3','4','5','6','7','8','9']->contains($s->substring(0, 1))
 }

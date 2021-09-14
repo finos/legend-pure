@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import meta::external::format::rosetta::generation::*;
-import meta::java::generation::functions::lang::*;
 
 function meta::external::format::rosetta::generation::enumToRosettaEnum(enum:Enumeration<Any>[1]):String[1]
 {

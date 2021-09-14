@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::generation::convention::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::transform::*;
 import meta::pure::executionPlan::engine::*;
-import meta::java::metamodel::factory::*;
-import meta::java::generation::code::*;
 
-function meta::java::generation::functions::runtime::register(conventions: Conventions[1]): Conventions[1]
+function meta::pure::executionPlan::engine::java::registerRuntimeLibrary(conventions: Conventions[1]): Conventions[1]
 {
   let library  = $conventions->className(Library);
 

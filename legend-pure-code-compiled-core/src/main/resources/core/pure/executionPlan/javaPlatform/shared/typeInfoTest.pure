@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::typeInfo::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::alloy::test::runtime::java::typeInfo::*;
 
 Enum meta::alloy::test::runtime::java::typeInfo::Colour

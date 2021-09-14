@@ -12,27 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::generation::convention::*;
-import meta::java::generation::tests::functions::unit::*;
-import meta::java::generation::code::*;
-import meta::java::generation::functions::unit::*;
-import meta::java::generation::expression::*;
-import meta::java::generation::tests::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::serialization::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::serialization::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::tests::*;
 import meta::pure::functions::asserts::*;
 import meta::pure::unit::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0' }
-meta::java::generation::tests::functions::unit::unitPureTests() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::unitPureTests() : Boolean[1]
 {
-   javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
-      meta::java::generation::tests::functions::unit::testNewUnit__Boolean_1_,
-      meta::java::generation::tests::functions::unit::testUnitType__Boolean_1_,
-      meta::java::generation::tests::functions::unit::testUnitValue__Boolean_1_,
-      meta::java::generation::tests::functions::unit::testConvert__Boolean_1_
+   javaPureTests(meta::pure::executionPlan::engine::java::engineConventions([]), [
+      meta::pure::executionPlan::engine::java::tests::testNewUnit__Boolean_1_,
+      meta::pure::executionPlan::engine::java::tests::testUnitType__Boolean_1_,
+      meta::pure::executionPlan::engine::java::tests::testUnitValue__Boolean_1_,
+      meta::pure::executionPlan::engine::java::tests::testUnitConvert__Boolean_1_
    ])
       ->generate(Mass~Kilogram)
       ->generate(Mass~Pound)
@@ -42,22 +37,22 @@ meta::java::generation::tests::functions::unit::unitPureTests() : Boolean[1]
 // TODO Does not work for literal units is used here
 
 
-function meta::java::generation::tests::functions::unit::testUnitType():Boolean[1]
+function meta::pure::executionPlan::engine::java::tests::testUnitType():Boolean[1]
 {
    assertEquals('meta::pure::unit::Mass~Kilogram', newUnit(Mass~Kilogram, 5.5)->unitType());
 }
 
-function meta::java::generation::tests::functions::unit::testUnitValue():Boolean[1]
+function meta::pure::executionPlan::engine::java::tests::testUnitValue():Boolean[1]
 {
    assertEquals(5.5, newUnit(Mass~Kilogram, 5.5)->unitValue());
 }
 
-function meta::java::generation::tests::functions::unit::testNewUnit():Boolean[1]
+function meta::pure::executionPlan::engine::java::tests::testNewUnit():Boolean[1]
 {
    assert(newUnit(Mass~Kilogram, 5.5)->instanceOf(Mass~Kilogram));
 }
 
-function meta::java::generation::tests::functions::unit::testConvert():Boolean[1]
+function meta::pure::executionPlan::engine::java::tests::testUnitConvert():Boolean[1]
 {
    let pounds = newUnit(Mass~Kilogram, 5.5)->convert(Mass~Pound);
    assert($pounds->instanceOf(Mass~Pound));

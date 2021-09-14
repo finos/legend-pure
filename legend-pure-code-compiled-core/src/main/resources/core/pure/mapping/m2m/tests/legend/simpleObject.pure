@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::roadmap::*;
+import meta::pure::executionPlan::engine::java::roadmap::*;
 import meta::json::*;
 import meta::pure::dataQuality::*;
 import meta::pure::executionPlan::profiles::*;

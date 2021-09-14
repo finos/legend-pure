@@ -13,9 +13,8 @@
 // limitations under the License.
 
 import meta::external::format::xml::executionPlan::*;
+import meta::external::language::java::factory::*;
 import meta::external::shared::format::*;
-import meta::java::generation::convention::*;
-import meta::java::metamodel::factory::*;
 
 function meta::external::format::xml::xmlFormatExtension(): meta::external::shared::format::ExternalFormatExtension[1]
 {

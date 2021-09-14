@@ -52,7 +52,7 @@ function meta::pure::executionPlan::processNode(node:ExecutionNode[1], mapping:M
    );
 }
 
-function meta::pure::executionPlan::buildVariableTemplateString(name:String[1], parameterVal: Any[1], type: Type[1], runtime:Runtime[1], extensions:meta::pure::router::extension::RouterExtension[*]): String[1]
+function meta::pure::executionPlan::buildVariableTemplateString(name:String[1], parameterVal:Any[1], type:meta::pure::metamodel::type::Type[1], runtime:Runtime[1], extensions:meta::pure::router::extension::RouterExtension[*]): String[1]
 {
    if ($extensions.executionPlan_execution_buildVariableTemplateString->isEmpty(),
        | '',

@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::generation::convention::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
+import meta::external::language::java::transform::*;
 import meta::pure::executionPlan::engine::*;
 import meta::pure::mapping::*;
 import meta::pure::executionPlan::*;
 import meta::relational::mapping::*;
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::typeInfo::*;
 
-function meta::alloy::runtime::java::storeObjectReferenceIdentifier(conventions:Conventions[1]):String[1]
+function meta::pure::executionPlan::engine::java::storeObjectReferenceIdentifier(conventions:Conventions[1]):String[1]
 {
    let methodName = $conventions->className(IReferencedObject).methods->toOne().name;
    let identifier = $methodName->substring(3, 4)->toLower()+$methodName->substring(4);
@@ -28,12 +28,12 @@ function meta::alloy::runtime::java::storeObjectReferenceIdentifier(conventions:
    $identifier;
 }
 
-function meta::alloy::runtime::java::setIdPropertyName():String[1]
+function meta::pure::executionPlan::engine::java::setIdPropertyName():String[1]
 {
    'setId$'
 }
 
-function meta::alloy::runtime::java::prepareForClassResult(node: RelationalClassInstantiationExecutionNode[1], path: String[1], context:GenerationContext[1], debug: DebugContext[1]):GenerationContext[1]
+function meta::pure::executionPlan::engine::java::prepareForClassResult(node: RelationalClassInstantiationExecutionNode[1], path: String[1], context:GenerationContext[1], debug: DebugContext[1]):GenerationContext[1]
 {  
    let classResultType = $node.resultType->cast(@ClassResultType);
    let newInfo = $context.typeInfos->addForInstanceSetImplementations($classResultType.setImplementations->cast(@InstanceSetImplementation));

@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::transform::*;
 import meta::external::shared::format::*;
 import meta::external::shared::format::binding::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::runtime::*;
-import meta::java::generation::convention::*;
-import meta::java::metamodel::factory::*;
 import meta::pure::executionPlan::*;
 import meta::pure::graphFetch::*;
 import meta::pure::mapping::*;
