@@ -1,0 +1,66 @@
+{
+  "name": "@finos/legend-pure-ide",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Legend Pure IDE",
+  "keywords": [
+    "legend",
+    "legend-pure",
+    "pure-ide"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/finos/legend-pure.git",
+    "directory": "legend-pure-ide-light/src/main/web/packages/legend-pure-ide"
+  },
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "type": "module",
+  "main": "lib/index.js",
+  "module": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "yarn clean && yarn build:sass && yarn build:tsc",
+    "build:sass": "cross-env INIT_CWD=$INIT_CWD sass ./style/index.scss ./lib/index.css --style=compressed && node ../../scripts/copyright/addBundledCodeCopyrightHeader.js ./lib/index.css",
+    "build:tsc": "tsc --project ./tsconfig.build.json",
+    "clean": "rimraf \"lib\" \"build\"",
+    "dev": "npm-run-all --parallel dev:sass dev:tsc",
+    "dev:sass": "sass ./style/index.scss ./lib/index.css --watch",
+    "dev:tsc": "tsc --watch --preserveWatchOutput",
+    "lint:js": "cross-env NODE_ENV=production eslint --cache --cache-location ./build/.eslintcache --report-unused-disable-directives --parser-options=project:\"./tsconfig.json\" \"./src/**/*.{js,ts,tsx}\""
+  },
+  "dependencies": {
+    "@material-ui/core": "4.12.3",
+    "@testing-library/react": "12.1.0",
+    "@types/react": "17.0.21",
+    "@types/react-dom": "17.0.9",
+    "@types/react-router-dom": "5.1.9",
+    "history": "5.0.1",
+    "mobx": "6.3.3",
+    "mobx-react-lite": "3.2.1",
+    "monaco-editor": "0.27.0",
+    "react": "17.0.2",
+    "react-dnd": "14.0.3",
+    "react-dnd-html5-backend": "14.0.1",
+    "react-dom": "17.0.2",
+    "react-hotkeys": "2.0.0",
+    "react-icons": "4.2.0",
+    "react-resize-detector": "6.7.6",
+    "react-router": "5.2.1",
+    "react-router-dom": "5.3.0",
+    "serializr": "2.0.5"
+  },
+  "devDependencies": {
+    "@finos/legend-dev-utils": "0.0.8",
+    "@testing-library/dom": "8.5.0",
+    "cross-env": "7.0.3",
+    "eslint": "7.32.0",
+    "npm-run-all": "4.1.5",
+    "rimraf": "3.0.2",
+    "sass": "1.41.0",
+    "typescript": "4.4.3"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0"
+  }
+}

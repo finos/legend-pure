@@ -1,37 +1,7 @@
 {
-  "compilerOptions": {
-    "target": "esnext",
-    "lib": ["dom", "dom.iterable", "esnext", "webworker", "scripthost"],
-    "strict": true,
-    "skipLibCheck": true,
-    "importsNotUsedAsValues": "error",
-    "forceConsistentCasingInFileNames": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "preserve",
-    // `esModuleInterop` and `allowSyntheticDefaultImports` are needed to support compilation and type-checking on
-    // modules that do not have default exports
-    // See https://stackoverflow.com/questions/56238356/understanding-esmoduleinterop-in-tsconfig-file
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    // This option is needed for `mobx` decorator in contructor to work properly with uninitialized class attributes
-    // See https://github.com/mobxjs/mobx/issues/2486
-    "useDefineForClassFields": true,
-    "baseUrl": ".",
-    "paths": {
-      "ServerConfig": ["../resources/ideLightConfig.json"],
-      "BaseConfig": ["./ide.config.json"],
-      "Const": ["src/const"],
-      "Utilities/*": ["src/utils/*"],
-      "Models/*": ["src/models/*"],
-      "Stores/*": ["src/stores/*"],
-      "Components/*": ["src/components/*"],
-      "API/*": ["src/api/*"],
-      "Style/*": ["style/*"]
-    }
-  },
-  "include": ["style/**/*.ts", "src/**/*.ts", "src/**/*.tsx"]
+  "files": [],
+  "references": [
+    { "path": "packages/legend-pure-ide" },
+    { "path": "packages/legend-pure-ide-deployment" }
+  ]
 }
