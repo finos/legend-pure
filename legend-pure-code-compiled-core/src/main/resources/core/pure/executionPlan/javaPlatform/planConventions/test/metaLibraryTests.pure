@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::generation::tests::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::tests::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0' }
-meta::java::generation::tests::functions::meta::pureTests() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::pureMetaTests() : Boolean[1]
 {
-   javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
+   javaPureTests(engineConventions([]), [
       // instanceOf
       meta::pure::functions::meta::tests::instanceOf::testInstanceOfPrimitive__Boolean_1_,
       //meta::pure::functions::meta::tests::instanceOf::testInstanceOfPrimitiveType__Boolean_1_, // TODO Requires metadata

@@ -65,7 +65,7 @@ public final class JsonParser
         }
         catch (ParseException e)
         {
-            throw new RuntimeException("Failed to parse input", e);
+            throw new RuntimeException("Failed to parse input: " + e.getMessage(), e);
         }
     }
 
@@ -78,7 +78,7 @@ public final class JsonParser
         }
         catch (ParseException e)
         {
-            throw new RuntimeException("Failed to parse input", e);
+            throw new RuntimeException("Failed to parse input: " + e.getMessage(), e);
         }
     }
 

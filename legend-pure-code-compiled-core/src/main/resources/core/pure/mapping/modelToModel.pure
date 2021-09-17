@@ -27,10 +27,9 @@ import meta::pure::mapping::modelToModel::graphFetch::executionPlan::*;
 import meta::pure::runtime::*;
 import meta::pure::mapping::*;
 
-import meta::alloy::runtime::java::*;
+import meta::pure::executionPlan::engine::java::*;
 
 import meta::json::*;
-import meta::flatData::runtime::*;
 
 Class meta::pure::mapping::modelToModel::ModelStore extends meta::pure::store::Store
 {
@@ -200,8 +199,6 @@ function meta::pure::mapping::modelToModel::modelToModelConnectionToString(c:Con
 // Strategic in memory graph fetch flow
 
 ###Pure
-import meta::flatData::runtime::*;
-import meta::flatData::transfer::*;
 import meta::pure::dataQuality::*;
 import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::toString::*;
@@ -275,15 +272,22 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planRootG
                              j : JsonModelConnection[1]  | $j.class == $sourceClass,
                              x : XmlModelConnection[1]   | $x.class ==  $sourceClass,
                              m : ModelConnection[1]      | true,
-                             m : ModelChainConnection[1] | true
+                             m : ModelChainConnection[1] | false
                           ])->toOneMany()));,
                         | $runtime->connectionByElement($store)
-                    )->toOne();
-   
-   let sourceTree = $connection->match([
-      f : FlatDataConnection[1] | #{ParsedFlatData{typeName, values{label, value->subType(@ParsedFlatData) {typeName, values {label, value}}, value}}}#,
-      c : Connection[1]         | calculateSourceTree($rootTree, $mapping, $extensions)
-   ]);
+                    );
+   assert($connection->size() <= 1, | 'Multiple connections available for source class - ' + $rootTree.sets->toOne()->cast(@PureInstanceSetImplementation).srcClass.name->toOne());
+
+   let chainConnection = if ($sq.store->instanceOf(ModelStore),
+                             | $runtime.connections->filter(c|$c.element->instanceOf(ModelStore) && $c->instanceOf(ModelChainConnection));,
+                             | []
+                         );
+   assert($chainConnection->size() <= 1, | 'Multiple ModelChainConnection\'s not supported yet! Please merge your ModelChainConnection\'s.');
+
+   assert($connection->concatenate($chainConnection)->isNotEmpty(), | 'No connection available for source class - ' + $rootTree.sets->toOne()->cast(@PureInstanceSetImplementation).srcClass.name->toOne());
+   let updatedConnection = $connection->concatenate($chainConnection)->first()->toOne();
+
+   let sourceTree         = calculateSourceTree($rootTree, $mapping, $extensions);
    let sourceTreeExtended = if($enableConstraints, | $sourceTree->ensureConstraintsRequirements(), | $sourceTree);
    
    let chainConnectionNodeGeneration = {mcc: ModelChainConnection[1] |
@@ -300,7 +304,7 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planRootG
          ),
          graphFetchTree    = $sourceTreeExtended,
          store             = $store,
-         connection        = $connection,
+         connection        = $updatedConnection,
          enableConstraints = $enableConstraints,
          checked           = $checked
       )
@@ -314,7 +318,7 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planRootG
       batchSize         = $batchSize,
       checked           = $checked,
       children          = $rootTree->generateInMemoryChildGraphNodes($rootTree->nodePathName(), $orderedPaths, $debug),
-      executionNodes    = $connection->meta::pure::executionPlan::nodeFromConnection($sourceTreeExtended, $enableConstraints, $checked, $extensions, $chainConnectionNodeGeneration->concatenate($defaultGenerateExecutionNode))
+      executionNodes    = $updatedConnection->meta::pure::executionPlan::nodeFromConnection($sourceTreeExtended, $enableConstraints, $checked, $extensions, $chainConnectionNodeGeneration->concatenate($defaultGenerateExecutionNode))
    );
 }
 

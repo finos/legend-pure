@@ -675,6 +675,17 @@ function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteg
    assertEquals('select (datediff(\'2017-04-01\' , \'2017-03-01\')) as `dateDiff` from dataTable as `root`',$s);
 }
 
+function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteger::testToSQLStringDateDiffInSecondsInMemSQL():Boolean[1]
+{
+   let da = %2017-03-01T19:09:20;
+   let db = %2017-03-01T20:08:08;
+   let s = toSQLString(|SqlFunctionDemo.all()->project([s | dateDiff($da, $db, DurationUnit.SECONDS)], ['dateDiff']),
+                                                testMapping,
+                                                meta::relational::runtime::DatabaseType.MemSQL,
+                                                meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('select (time_to_sec(timediff(\'2017-03-01 20:08:08\' , \'2017-03-01 19:09:20\'))) as `dateDiff` from dataTable as `root`',$s);
+}
+
 function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteger::testToSQLStringDateDiffInPresto():Boolean[1]
 {
 
@@ -1052,6 +1063,14 @@ function <<test.Test>> meta::relational::tests::mapping::sqlFunction::date::test
     assertEquals('select Date("root".dateTime) as "date" from dataTable as "root"',$s);
 }
 
+function <<test.Test>> meta::relational::tests::mapping::sqlFunction::date::testToSQLConvertDateH2():Boolean[1]
+{
+    let s = toSQLString(|SqlFunctionDemo.all()->project([s | $s.convertToDateMemSQL], ['date']),
+                                                testMapping,
+                                                meta::relational::runtime::DatabaseType.H2, meta::pure::router::extension::defaultRelationalExtensions());
+    assertEquals('select cast( parseDateTime("root".stringDateFormat,\'yyyy-MM-dd\') as date) as "date" from dataTable as "root"',$s);
+}
+
 Class meta::relational::tests::mapping::sqlFunction::model::domain::SqlFunctionDemo
 {
    concatResult :String[1];
@@ -1088,6 +1107,7 @@ Class meta::relational::tests::mapping::sqlFunction::model::domain::SqlFunctionD
    string2DateTime: DateTime[1];
    convertToDate1: Date[1];
    convertToDate: Date[1];
+   convertToDateMemSQL: Date[1];
    convertToDateUserDefinedFormat: Date[1];
    convertToDateUserDefinedFormat1: Date[1];
    convertToDateUserDefinedFormat2: Date[1];
@@ -1184,6 +1204,7 @@ Mapping meta::relational::tests::mapping::sqlFunction::model::mapping::testMappi
           string2Integer  : parseInteger(string2Integer),
           convertToDate1: convertDate(stringDateFormat),
           convertToDate: convertDate(stringDateFormat,'yyyy-MM-dd'),
+          convertToDateMemSQL: convertDate(stringDateFormat,'YYYY-MM-DD'),
           convertToDateUserDefinedFormat3: convertDate(stringUserDefinedDateFormat,'DD/MM/YYYY'),
           convertToDateUserDefinedFormat2: convertDate(stringUserDefinedDateFormat,'YYYY/MM/DD'),
           convertToDateUserDefinedFormat1: convertDate(stringUserDefinedDateFormat,'MMMYYYY'),

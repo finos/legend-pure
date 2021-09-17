@@ -12,17 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::functions::date::pure::*;
-import meta::java::generation::expression::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
-import meta::java::serialization::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::executionPlan::engine::*;
 
-function meta::java::generation::functions::date::pure::register(conventions: Conventions[1]): Conventions[1]
+function meta::pure::executionPlan::engine::java::registerPureDateLibrary(conventions: Conventions[1]): Conventions[1]
 {
    let pureDate = $conventions->className(PureDate);
    let library  = $conventions->className(Library);
@@ -31,7 +27,7 @@ function meta::java::generation::functions::date::pure::register(conventions: Co
       ->usesJavaClass($conventions->className(DayOfWeek))
       ->usesJavaClass($conventions->className(DurationUnit))
       ->usesJavaClass($conventions->className(Library))
-      ->usesJavaClass($pureDate->typePathToString(true))
+      ->usesJavaClass($pureDate->typeToString())
       ->usesStrictDate($pureDate, {d:StrictDate[1] | $pureDate->j_invoke('parsePureDate', j_string($d->toString()), $pureDate)})
       ->usesDateTime(  $pureDate, {d:DateTime[1]   | $pureDate->j_invoke('parsePureDate', j_string($d->toString()), $pureDate)})
       ->usesDate(      $pureDate, {d:Date[1]       | $pureDate->j_invoke('parsePureDate', j_string($d->toString()), $pureDate)})

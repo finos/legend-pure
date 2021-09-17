@@ -55,6 +55,15 @@ Class meta::pure::executionPlan::NodeAndVars
    vars : Map<String, List<Any>>[1];
 }
 
+Class meta::pure::executionPlan::ExecutionOption
+{
+}
+
+Class meta::pure::executionPlan::ExecutionOptionContext extends ExecutionContext
+{
+   executionOptions : ExecutionOption[*];
+}
+
 // Move to platform
 
 
@@ -108,7 +117,10 @@ function meta::pure::executionPlan::executionPlan(routed:RoutingResult[1], f:Fun
          );
    );
 
-   let updatedNode = addFunctionParametersValidationNode($node, $f, $functionParameters, $routedFunction);
+   let executionOptionParameters = $context->match([
+                                             p: meta::pure::executionPlan::ExecutionOptionContext[1] | $p->meta::pure::executionPlan::stubExecutionOptionParameters($extensions),
+                                             c: ExecutionContext[1] | [] ]);
+   let updatedNode = addFunctionParametersValidationNode($node, $f, $functionParameters->concatenate($executionOptionParameters)->checkConflictingParameters(), $routedFunction);
 
    ^ExecutionPlan
    (
@@ -133,7 +145,7 @@ function meta::pure::executionPlan::generatePlatformCode(plan:ExecutionPlan[1], 
 function meta::pure::executionPlan::generatePlatformCode(plan:ExecutionPlan[1], config:PlatformCodeGenerationConfig[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):ExecutionPlan[1]
 {
    assert($config.platform == Platform.JAVA, 'Platform Not Supported: ' + $config.platform.name);
-   meta::alloy::runtime::java::generatePlatformCode($plan, $config, $extensions, $debug);
+   meta::pure::executionPlan::engine::java::generatePlatformCode($plan, $config, $extensions, $debug);
 }
 
 
@@ -261,4 +273,22 @@ function meta::pure::executionPlan::updateConnection(c:Connection[1], extensions
             ])->toOneMany());
 }
 
+function meta::pure::executionPlan::isExecutionOptionPresent(execCtx: ExecutionOptionContext[1], execOption: Class<Any>[1]):Boolean[1]
+{
+   let executionOptionsList = $execCtx.executionOptions->filter(f| $f->instanceOf($execOption));
+   assert($executionOptionsList->size() <= 1, |'Execution Option List provided has two or more instances of the following Execution Options' + $execOption.name->toOne());
+   $executionOptionsList->isNotEmpty();
+}
 
+function meta::pure::executionPlan::stubExecutionOptionParameters(execOptionCtx: ExecutionOptionContext[1], extensions: meta::pure::router::extension::RouterExtension[*]):PlanVarPlaceHolder[*]
+{
+   let planVarPlaceHolders = $execOptionCtx.executionOptions->map(x| $x->match($extensions.executionPlan_generation_executionOptionParameters->toOneMany()));
+   $planVarPlaceHolders->checkConflictingParameters();
+}
+
+function meta::pure::executionPlan::checkConflictingParameters(planVarPlaceHolderList: PlanVarPlaceHolder[*]):PlanVarPlaceHolder[*]
+{
+   let removeDuplicatesFromList  = $planVarPlaceHolderList->removeDuplicatesBy(y|$y.name);
+   assert($removeDuplicatesFromList->size()==$planVarPlaceHolderList->size(), |'Conflicting variable names present in the following list: ' + $planVarPlaceHolderList->map(y|$y.name)->makeString(', '));
+   $planVarPlaceHolderList;
+}

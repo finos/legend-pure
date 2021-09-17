@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.30.1-SNAPSHOT</version>
+        <version>1.37.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -51,6 +51,7 @@
                                 <repository>core_relational</repository>
                                 <repository>core_external_shared</repository>
                                 <repository>core_external_format_xml</repository>
+                                <repository>core_external_format_flatdata</repository>
                             </repositories>
                         </configuration>
                     </execution>
@@ -79,6 +80,11 @@
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-core-external-format-xml</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-code-compiled-core-external-format-flatdata</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>
@@ -205,6 +211,11 @@
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-code-compiled-core-external-format-xml</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-code-compiled-core-external-format-flatdata</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

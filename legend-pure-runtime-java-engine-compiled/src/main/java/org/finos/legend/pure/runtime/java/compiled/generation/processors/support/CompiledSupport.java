@@ -263,7 +263,7 @@ public class CompiledSupport
         {
             return (RichIterable<T>)objects;
         }
-        return LazyIterate.adapt(objects);
+        return Lists.immutable.ofAll(objects);
     }
 
     public static <T> RichIterable<T> toPureCollection(T object)
@@ -280,7 +280,7 @@ public class CompiledSupport
         // TODO remove this hack
         if (object instanceof Iterable)
         {
-            return LazyIterate.adapt((Iterable<T>)object);
+            return toPureCollection((Iterable<T>) object);
         }
         return Lists.immutable.with(object);
     }
@@ -479,7 +479,7 @@ public class CompiledSupport
             {
                 throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity [1..*]");
             }
-            return LazyIterate.adapt((Iterable<T>)object);
+            return toPureCollection((Iterable<T>)object);
         }
         return Lists.immutable.with(object);
     }
@@ -583,7 +583,7 @@ public class CompiledSupport
         }
 
         int size = list.size();
-        return (size <= 1) ? Lists.immutable.<T>empty() : LazyIterate.take(list, size - 1);
+        return (size <= 1) ? Lists.immutable.<T>empty() : LazyIterate.take(list, size - 1).toList();
     }
 
     public static <T> RichIterable<T> tail(T list)
@@ -2159,7 +2159,7 @@ public class CompiledSupport
             if (m.getReturnType() == RichIterable.class)
             {
                 RichIterable l = (RichIterable)m.invoke(val);
-                RichIterable newValues = Iterate.isEmpty(l) ? vals : LazyIterate.concatenate(l, vals);
+                RichIterable newValues = Iterate.isEmpty(l) ? vals : LazyIterate.concatenate(l, vals).toList();
 
                 m = val.getClass().getMethod("_" + property, RichIterable.class);
                 m.invoke(val, newValues);
@@ -2964,12 +2964,12 @@ public class CompiledSupport
 
     public static RichIterable values(PureMap map)
     {
-        return map.getMap().valuesView();
+        return map.getMap().valuesView().toList();
     }
 
     public static RichIterable keys(PureMap map)
     {
-        return map.getMap().keysView();
+        return map.getMap().keysView().toList();
     }
 
     public static String readFile(String path, ExecutionSupport es)

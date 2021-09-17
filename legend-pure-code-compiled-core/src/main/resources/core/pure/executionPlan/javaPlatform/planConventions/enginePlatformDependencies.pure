@@ -17,8 +17,8 @@
  */
 
 import meta::pure::executionPlan::engine::*;
-import meta::java::generation::convention::*;
-import meta::java::metamodel::factory::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::transform::*;
 
 Class meta::pure::executionPlan::engine::IConstantResult {}
 Class meta::pure::executionPlan::engine::EngineIResult {}
