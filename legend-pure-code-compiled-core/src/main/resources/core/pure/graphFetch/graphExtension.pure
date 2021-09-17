@@ -487,7 +487,7 @@ function <<access.private>> meta::pure::graphFetch::propertyTreeToGraphFetchTree
        let childrenGroupedByDerivedClasses = $pTree.children->groupBy(c|$c.value->cast(@PropertyPathNode).class);
        $childrenGroupedByDerivedClasses->keyValues()->map(k|let propertyPathOwner = $k.first;
                                                             let children = $k.second.values;
-                                                            if($propertyPathOwner != $nodeClass && $propertyPathOwner->subTypeOf($nodeClass->toOne()),
+                                                            if($propertyPathOwner != $nodeClass && $propertyPathOwner->_subTypeOf($nodeClass->toOne()),
                                                                 |^PropertyGraphFetchTree(property = $node.property, subType = $propertyPathOwner, subTrees = $children->map(c| $c->propertyTreeToGraphFetchTree($propertyPathOwner))),
                                                                 |^PropertyGraphFetchTree(property = $node.property, subTrees = $children->map(c| $c->propertyTreeToGraphFetchTree($node.property->functionReturnType().rawType->cast(@Class<Any>)->toOne()))));
                                                          );
