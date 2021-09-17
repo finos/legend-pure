@@ -72,6 +72,8 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.coreinstance.meta.pure.router.RoutedValueSpecification;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.tools.ListHelper;
@@ -858,7 +860,18 @@ public class Pure
             return (obj instanceof Enum) && type.equals(((CompiledExecutionSupport) es).getMetadataAccessor().getEnumeration(((Enum) obj).getFullSystemPath()));
         }
 
-        Class<?> javaClass = pureTypeToJavaClass(type, es);
+        Class<?> javaClass;
+        try
+        {
+            javaClass = pureTypeToJavaClass(type, es);
+        }
+        catch (Exception e)
+        {
+            if (obj instanceof CoreInstance) {
+                return Instance.instanceOf((CoreInstance) obj, type, ((CompiledExecutionSupport) es).getProcessorSupport());
+            }
+            throw e;
+        }
         if (javaClass == Any.class)
         {
             return true;
