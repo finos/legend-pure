@@ -19,7 +19,7 @@ import meta::external::format::flatdata::binding::validation::*;
 import meta::external::format::flatdata::metamodel::*;
 import meta::pure::model::unit::*;
 
-Class meta::external::format::flatdata::binding::validation::FlatDataBindingDetail extends BindingDetail
+Class meta::external::format::flatdata::binding::validation::FlatDataBindingDetail extends SuccessfulBindingDetail
 {
    sectionBindingDetails: SectionBindingDetail[*];
 }
@@ -52,7 +52,7 @@ function meta::external::format::flatdata::binding::validation::bindDetails(bind
    
    if($sectionBindingDetails->exists(sc| $sc->instanceOf(FailedBindingDetail)),
       | ^FailedBindingDetail(errorMessages=$sectionBindingDetails->filter(sc| $sc->instanceOf(FailedBindingDetail))->cast(@FailedBindingDetail).errorMessages),
-      | ^FlatDataBindingDetail(sectionBindingDetails=$sectionBindingDetails->cast(@SectionBindingDetail))
+      | ^FlatDataBindingDetail(sectionBindingDetails=$sectionBindingDetails->cast(@SectionBindingDetail), fetchMappedPropertiesForClass = meta::external::format::flatdata::binding::validation::findMatchedProperties_SuccessfulBindingDetail_1__Class_1__AbstractProperty_MANY_)
    );
 }
 
@@ -107,6 +107,16 @@ function <<access.private>> meta::external::format::flatdata::binding::validatio
          );
       }
    ));
+}
+
+function meta::external::format::flatdata::binding::validation::findMatchedProperties(binding:SuccessfulBindingDetail[1], class:Class<Any>[1]): AbstractProperty<Any>[*]
+{
+   assert($binding->instanceOf(FlatDataBindingDetail), | 'Expected FlatDataBindingDetail!!');
+   
+   let flatDataBinding = $binding->cast(@FlatDataBindingDetail);
+   
+   let sectionForClass = $flatDataBinding.sectionBindingDetails->filter(s | $s.class == $class);
+   $sectionForClass.details.property; 
 }
 
 Class <<access.private>> meta::external::format::flatdata::binding::validation::NonMatch extends FieldToProperty
