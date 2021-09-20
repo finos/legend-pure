@@ -48,6 +48,12 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
 {
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::UserPasswordAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
+{
+    userName : String[1];
+    passwordVaultReference : String[1];
+}
+
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::LocalH2DatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
 {
     testDataSetupCsv:String[0..1];
@@ -82,6 +88,13 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
 {
     projectId:String[1];
     defaultDataset:String[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::RedshiftDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
+{
+    databaseName : String[1];
+    endpoint : String[1];
+    port : Integer[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::TestDatabaseConnection extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection
