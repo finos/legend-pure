@@ -195,7 +195,7 @@ function meta::relational::functions::sqlQueryToString::processOperation(relatio
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processWindowColumn(w:WindowColumn[1], dbConfig : DbConfig[1], format:Format[1],generationState:GenerationState[1], config:Config[1], extensions:RouterExtension[*]):String[1]
 {
-   let supportedDbs = [DatabaseType.Sybase,DatabaseType.SybaseIQ,DatabaseType.DB2,DatabaseType.Hive,DatabaseType.H2,DatabaseType.MemSQL, DatabaseType.BigQuery];
+   let supportedDbs = [DatabaseType.Sybase,DatabaseType.SybaseIQ,DatabaseType.DB2,DatabaseType.Hive,DatabaseType.H2,DatabaseType.MemSQL, DatabaseType.BigQuery, DatabaseType.Redshift];
    assert($supportedDbs->contains($dbConfig.dbType), 'Window Columns are not supported for Database Type: '+$dbConfig.dbType->toString() +'. Supported Databases are: '+ $supportedDbs->map(d|$d->toString())->joinStrings(',') +'.') ;
    $w.func->processOperation($dbConfig, $format, $generationState, $config, $extensions) + ' OVER ('
    + if($w.window.partition->isNotEmpty(),
@@ -249,6 +249,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getLi
                                  | getLiteralProcessorsForPresto($dbTimeZone),                              
                                  | if($dbType == DatabaseType.BigQuery, 
                                   | getLiteralProcessorsForBigQuery($dbTimeZone),
+                                    | if($dbType == DatabaseType.Redshift,
+                                    | getLiteralProcessorsForRedshift($dbTimeZone),
                                   | newMap([]->cast(@Pair<Type, LiteralProcessor>))
                              )))));
 
@@ -310,6 +312,16 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getLi
       pair(Date,           ^LiteralProcessor(format = 'PARSE_DATE(\'%s\')', transform = {d:Date[1] | $d->convertDateToSqlString($dbTimeZone)}))
    ])
 }
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::getLiteralProcessorsForRedShift(dbTimeZone:String[0..1]):Map<Type,LiteralProcessor>[1]
+{
+   newMap([
+      pair(StrictDate,     ^LiteralProcessor(format = 'Date\'%s\'',      transform = {d:StrictDate[1] | $d->convertDateToSqlString($dbTimeZone)})),
+      pair(DateTime,       ^LiteralProcessor(format = 'Timestamp\'%s\'', transform = {d:DateTime[1] | $d->convertDateToSqlString($dbTimeZone)})),
+      pair(Date,           ^LiteralProcessor(format = 'Timestamp\'%s\'', transform = {d:Date[1] | $d->convertDateToSqlString($dbTimeZone)}))
+   ])
+}
+
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processLiteral(literal:Literal[1], dbConfig : DbConfig[1]) : String[1]
 {
@@ -1194,6 +1206,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='date_part(\'hour\', %s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='date_part(\'hour\', %s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='hour(%s)')),
+                                                 choice(DatabaseType.RedShift,     $allStates,            ^ToSql(format='date_part(hour, %s)')),
                                                  choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='extract(hour from %s)'))]),
       forDynafunction('if',                    [ choice($allTypes,                 $allStates,            ^ToSql(format='case when %s then %s else %s end', parametersWithinWhenClause = [true, false, false]))]),
       forDynafunction('in',                    [ choice($allTypes,                 $allStates,            ^ToSql(format='%s in %s', transform={p:String[2] | if($p->at(1)->startsWith('(') && $p->at(1)->endsWith(')'), | $p, | [$p->at(0), ('(' + $p->at(1) + ')')])}))]),
@@ -1262,6 +1275,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='minute(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='minute(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='minute(%s)')),
+                                                 choice(DatabaseType.RedShift,     $allStates,            ^ToSql(format='extract(minute from %s)'))]),
                                                  choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='extract(minute from %s)'))]),
       forDynafunction('minus',                 [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|if($p->size() == 1, | '-' + $p->toOne(), | $p->joinStrings('(', ' - ', ')'))}))]),
       forDynafunction('mod',                   [ choice($aSybase,                  $allStates,            ^ToSql(format='mod(%s,%s)')),
@@ -1271,6 +1285,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='mod(%s,%s)')),
+                                                 choice(DatabaseType.RedShift,     $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='mod(%s,%s)'))]),
       forDynafunction('month',                 [ choice($aSybase,                  $allStates,            ^ToSql(format='month(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='month(%s)')),
@@ -1279,6 +1294,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='month(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='MONTH(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='month(%s)')),
+                                                 choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='extract(month from %s)')),
                                                  choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='extract(month from %s)'))]),
       forDynafunction('monthNumber',           [ choice($aSybase,                  $allStates,            ^ToSql(format='month(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='month(%s)')),
@@ -1478,8 +1494,16 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='week(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='WEEKOFYEAR(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='datepart(wk, %s)')),
-                                                 choice(DatabaseType.BigQuery  ,    $allStates,           ^ToSql(format='extract(week from %s)'))]),
-      forDynafunction('year',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='year(%s)'))])
+                                                 choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='extract(week from %s)')),
+                                                 choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='extract(week from %s)'))]),
+      forDynafunction('year',                  [ choice($aSybase,                  $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.H2,           $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='year(%s)')),
+                                                 choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='extract(year from %s)')),
+                                                 choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='year(wk, %s)'))])
    ]);
 
    { func:DynaFunction[1], generationState:GenerationState[1] |
