@@ -14,9 +14,16 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance;
 
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+
 public abstract class PersistentReflectiveCoreInstance extends ReflectiveCoreInstance
 {
-    public PersistentReflectiveCoreInstance(String id)
+    protected PersistentReflectiveCoreInstance(String id, SourceInformation sourceInformation)
+    {
+        super(id, sourceInformation);
+    }
+
+    protected PersistentReflectiveCoreInstance(String id)
     {
         super(id);
     }
