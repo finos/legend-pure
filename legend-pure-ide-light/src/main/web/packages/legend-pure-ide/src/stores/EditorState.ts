@@ -15,10 +15,10 @@
  */
 
 import { action, makeObservable, observable } from 'mobx';
-import type { FileCoordinate, PureFile } from 'Models/PureFile';
-import { trimPathLeadingSlash } from 'Models/PureFile';
-import type { EditorStore } from 'Stores/EditorStore';
-import { uuid } from 'Utilities/GeneralUtil';
+import type { FileCoordinate, PureFile } from '../models/PureFile';
+import { trimPathLeadingSlash } from '../models/PureFile';
+import type { EditorStore } from './EditorStore';
+import { uuid } from '../utils/GeneralUtil';
 
 export abstract class EditorState {
   uuid = uuid(); // NOTE: used to detect when an element editor state changes so we can force a remount of the editor component
@@ -34,9 +34,14 @@ export abstract class EditorState {
 export class FileEditorState extends EditorState {
   file: PureFile;
   path: string;
-  coordinate?: FileCoordinate;
+  coordinate?: FileCoordinate | undefined;
 
-  constructor(editorStore: EditorStore, file: PureFile, path: string, coordinate?: FileCoordinate) {
+  constructor(
+    editorStore: EditorStore,
+    file: PureFile,
+    path: string,
+    coordinate?: FileCoordinate,
+  ) {
     super(editorStore);
     makeObservable(this, {
       file: observable,
@@ -49,9 +54,15 @@ export class FileEditorState extends EditorState {
     this.coordinate = coordinate;
   }
 
-  setFile(value: PureFile): void { this.file = value }
-  setCoordinate(value: FileCoordinate | undefined): void { this.coordinate = value }
-  clearError(): void { this.coordinate?.setErrorMessage(undefined) }
+  setFile(value: PureFile): void {
+    this.file = value;
+  }
+  setCoordinate(value: FileCoordinate | undefined): void {
+    this.coordinate = value;
+  }
+  clearError(): void {
+    this.coordinate?.setErrorMessage(undefined);
+  }
 
   get headerName(): string {
     return trimPathLeadingSlash(this.path);

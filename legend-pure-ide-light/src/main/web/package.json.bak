@@ -116,13 +116,6 @@
     "paths": {
       "ServerConfig": ["../resources/ideLightConfig.json"],
       "BaseConfig": ["./ide.config.json"],
-      "Const": ["src/const"],
-      "Utilities/*": ["src/utils/*"],
-      "Models/*": ["src/models/*"],
-      "Stores/*": ["src/stores/*"],
-      "Components/*": ["src/components/*"],
-      "API/*": ["src/api/*"],
-      "Style/*": ["style/*"]
     }
   },
   "include": ["style/**/*.ts", "src/**/*.ts", "src/**/*.tsx"]

@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import clsx from 'clsx';
 import { observer } from 'mobx-react-lite';
-import { useEditorStore } from 'Stores/EditorStore';
-import { ACTIVITY_MODE } from 'Stores/EditorConfig';
-import { ConceptTreeExplorer } from 'Components/editor/side-bar/ConceptTreeExplorer';
-import { DirectoryTreeExplorer } from 'Components/editor/side-bar/DirectoryTreeExplorer';
+import { useEditorStore } from '../../../stores/EditorStore';
+import { ACTIVITY_MODE } from '../../../stores/EditorConfig';
+import { ConceptTreeExplorer } from './ConceptTreeExplorer';
+import { DirectoryTreeExplorer } from './DirectoryTreeExplorer';
 
 /**
  * Wrapper component around different implementations of sidebar, such as to view domain, to manage SDLC, etc.
@@ -30,15 +29,21 @@ export const SideBar = observer(() => {
 
   const renderSideBar = (): React.ReactNode => {
     switch (editorStore.activeActivity) {
-      case ACTIVITY_MODE.CONCEPT: return <ConceptTreeExplorer />;
-      case ACTIVITY_MODE.FILE: return <DirectoryTreeExplorer />;
-      default: return null;
+      case ACTIVITY_MODE.CONCEPT:
+        return <ConceptTreeExplorer />;
+      case ACTIVITY_MODE.FILE:
+        return <DirectoryTreeExplorer />;
+      default:
+        return null;
     }
   };
 
   return (
     <div className="side-bar">
-      <div key={editorStore.activeActivity} className={clsx('side-bar__view', 'side-bar__view--active')}>
+      <div
+        key={editorStore.activeActivity}
+        className={clsx('side-bar__view', 'side-bar__view--active')}
+      >
         {renderSideBar()}
       </div>
     </div>

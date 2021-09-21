@@ -15,12 +15,12 @@
  */
 
 export interface TreeNodeData {
-  isSelected?: boolean;
-  isOpen?: boolean;
-  isLoading?: boolean; // for lazy-loading
+  isSelected?: boolean | undefined;
+  isOpen?: boolean | undefined;
+  isLoading?: boolean | undefined; // for lazy-loading
   id: string;
   label: string;
-  childrenIds?: string[];
+  childrenIds?: string[] | undefined;
 }
 
 export interface TreeData<T extends TreeNodeData> {

@@ -15,16 +15,34 @@
  */
 
 import { action, flowResult, makeAutoObservable, observable } from 'mobx';
-import type { TestExecutionResult, TestInfo } from 'Models/Execution';
-import type { TestResult } from 'Models/Test';
-import { deserializeTestRunnerCheckResult, TestFailureResult, TestResultStatus, TestRunnerCheckResult } from 'Models/Test';
-import type { EditorStore } from 'Stores/EditorStore';
-import { ActionState } from 'Utilities/ActionState';
-import { addUniqueEntry, assertTrue, guaranteeNonNullable, guaranteeType, promisify, UnsupportedOperationError } from 'Utilities/GeneralUtil';
-import type { TreeData, TreeNodeData } from 'Utilities/TreeUtil';
+import type { TestExecutionResult, TestInfo } from '../models/Execution';
+import type { TestResult } from '../models/Test';
+import {
+  deserializeTestRunnerCheckResult,
+  TestFailureResult,
+  TestResultStatus,
+  TestRunnerCheckResult,
+} from '../models/Test';
+import type { EditorStore } from '../stores/EditorStore';
+import { ActionState } from '../utils/ActionState';
+import {
+  addUniqueEntry,
+  assertTrue,
+  guaranteeNonNullable,
+  guaranteeType,
+  promisify,
+  UnsupportedOperationError,
+} from '../utils/GeneralUtil';
+import type { TreeData, TreeNodeData } from '../utils/TreeUtil';
 
-const getFullParentId = (testInfo: TestInfo, testExecutionResult: TestExecutionResult): string => `test${testExecutionResult.runnerId}_${testInfo.li_attr.parentId}`;
-const getFullTestId = (testResult: TestResult, testExecutionResult: TestExecutionResult): string => `test${testExecutionResult.runnerId}_${testResult.test.join('_')}`;
+const getFullParentId = (
+  testInfo: TestInfo,
+  testExecutionResult: TestExecutionResult,
+): string => `test${testExecutionResult.runnerId}_${testInfo.li_attr.parentId}`;
+const getFullTestId = (
+  testResult: TestResult,
+  testExecutionResult: TestExecutionResult,
+): string => `test${testExecutionResult.runnerId}_${testResult.test.join('_')}`;
 
 export interface TestTreeNode extends TreeNodeData {
   data: TestInfo;
@@ -43,26 +61,34 @@ export enum TestResultType {
   RUNNING = 'RUNNING',
 }
 
-export const getTestResultById = (id: string, testResultInfo: TestResultInfo): TestResultType => testResultInfo.passedTests.has(id)
-  ? TestResultType.PASSED
-  : testResultInfo.failedTests.has(id)
+export const getTestResultById = (
+  id: string,
+  testResultInfo: TestResultInfo,
+): TestResultType =>
+  testResultInfo.passedTests.has(id)
+    ? TestResultType.PASSED
+    : testResultInfo.failedTests.has(id)
     ? TestResultType.FAILED
     : testResultInfo.testsWithError.has(id)
-      ? TestResultType.ERROR
-      : TestResultType.RUNNING;
+    ? TestResultType.ERROR
+    : TestResultType.RUNNING;
 
-export const getTestTreeNodeStatus = (node: TestTreeNode, testResultInfo: TestResultInfo): TestResultType => {
+export const getTestTreeNodeStatus = (
+  node: TestTreeNode,
+  testResultInfo: TestResultInfo,
+): TestResultType => {
   const id = node.id;
   const isLeafNode = Boolean(node.data.type);
   if (isLeafNode) {
     return getTestResultById(id, testResultInfo);
   }
   // order matters here, also if one test fail/error the whole sub-tree (package) will be marked as failed
-  return testResultInfo.failedTestIds.some(i => i.startsWith(id)) || testResultInfo.testWithErrorIds.some(i => i.startsWith(id))
+  return testResultInfo.failedTestIds.some((i) => i.startsWith(id)) ||
+    testResultInfo.testWithErrorIds.some((i) => i.startsWith(id))
     ? TestResultType.FAILED
-    : testResultInfo.notRunTestIds.some(i => i.startsWith(id))
-      ? TestResultType.RUNNING
-      : TestResultType.PASSED;
+    : testResultInfo.notRunTestIds.some((i) => i.startsWith(id))
+    ? TestResultType.RUNNING
+    : TestResultType.PASSED;
 };
 
 export class TestResultInfo {
@@ -85,26 +111,68 @@ export class TestResultInfo {
     this.notRunTests = new Set(allTestIds);
   }
 
-  setTime(val: number): void { this.time = val }
-  get passed(): number { return this.passedTests.size }
-  get error(): number { return this.testsWithError.size }
-  get failed(): number { return this.failedTests.size }
-  get passedTestIds(): string[] { return Array.from(this.passedTests.values()) }
-  get failedTestIds(): string[] { return Array.from(this.failedTests.keys()) }
-  get testWithErrorIds(): string[] { return Array.from(this.testsWithError.keys()) }
-  get notRunTestIds(): string[] { return Array.from(this.notRunTests.values()) }
-  get numberOfTestsRun(): number { return this.passed + this.error + this.failed }
-  get runPercentage(): number { return Math.floor(this.numberOfTestsRun * 100 / this.total) }
-  get suiteStatus(): TestSuiteStatus { return (this.failed + this.error) ? TestSuiteStatus.FAILED : (this.passed ? TestSuiteStatus.PASSED : TestSuiteStatus.NONE) }
+  setTime(val: number): void {
+    this.time = val;
+  }
+  get passed(): number {
+    return this.passedTests.size;
+  }
+  get error(): number {
+    return this.testsWithError.size;
+  }
+  get failed(): number {
+    return this.failedTests.size;
+  }
+  get passedTestIds(): string[] {
+    return Array.from(this.passedTests.values());
+  }
+  get failedTestIds(): string[] {
+    return Array.from(this.failedTests.keys());
+  }
+  get testWithErrorIds(): string[] {
+    return Array.from(this.testsWithError.keys());
+  }
+  get notRunTestIds(): string[] {
+    return Array.from(this.notRunTests.values());
+  }
+  get numberOfTestsRun(): number {
+    return this.passed + this.error + this.failed;
+  }
+  get runPercentage(): number {
+    return Math.floor((this.numberOfTestsRun * 100) / this.total);
+  }
+  get suiteStatus(): TestSuiteStatus {
+    return this.failed + this.error
+      ? TestSuiteStatus.FAILED
+      : this.passed
+      ? TestSuiteStatus.PASSED
+      : TestSuiteStatus.NONE;
+  }
 
   addResult(result: TestResult, testId: string): void {
     this.results.set(testId, result);
     this.notRunTests.delete(testId);
     switch (result.status) {
-      case TestResultStatus.PASSED: { this.passedTests.add(testId); break }
-      case TestResultStatus.FAILED: { this.failedTests.set(testId, guaranteeType(result, TestFailureResult)); break }
-      case TestResultStatus.ERROR: { this.testsWithError.set(testId, guaranteeType(result, TestFailureResult)); break }
-      default: { throw new UnsupportedOperationError(`Unsupported test result status '${result.status}'`) }
+      case TestResultStatus.PASSED: {
+        this.passedTests.add(testId);
+        break;
+      }
+      case TestResultStatus.FAILED: {
+        this.failedTests.set(testId, guaranteeType(result, TestFailureResult));
+        break;
+      }
+      case TestResultStatus.ERROR: {
+        this.testsWithError.set(
+          testId,
+          guaranteeType(result, TestFailureResult),
+        );
+        break;
+      }
+      default: {
+        throw new UnsupportedOperationError(
+          `Unsupported test result status '${result.status}'`,
+        );
+      }
     }
     this.time = Date.now() - this._startTime;
   }
@@ -114,15 +182,18 @@ export class TestRunnerState {
   editorStore: EditorStore;
   testExecutionResult: TestExecutionResult;
   checkTestRunnerState = new ActionState();
-  testResultInfo?: TestResultInfo;
+  testResultInfo?: TestResultInfo | undefined;
   allTests = new Map<string, TestInfo>();
-  selectedTestId?: string;
+  selectedTestId?: string | undefined;
   // explorer tree
-  selectedNode?: TestTreeNode;
-  treeData?: TreeData<TestTreeNode>;
+  selectedNode?: TestTreeNode | undefined;
+  treeData?: TreeData<TestTreeNode> | undefined;
   treeBuildingState = new ActionState();
 
-  constructor(editorStore: EditorStore, testExecutionResult: TestExecutionResult) {
+  constructor(
+    editorStore: EditorStore,
+    testExecutionResult: TestExecutionResult,
+  ) {
     makeAutoObservable(this, {
       treeData: observable.ref,
       testResultInfo: observable.ref,
@@ -140,12 +211,25 @@ export class TestRunnerState {
     this.testExecutionResult = testExecutionResult;
   }
 
-  getTreeData(): TreeData<TestTreeNode> { return guaranteeNonNullable(this.treeData, 'Test tree data has not been initialized') }
+  getTreeData(): TreeData<TestTreeNode> {
+    return guaranteeNonNullable(
+      this.treeData,
+      'Test tree data has not been initialized',
+    );
+  }
 
-  setSelectedTestId(val: string | undefined): void { this.selectedTestId = val }
-  setTestResultInfo(val: TestResultInfo | undefined): void { this.testResultInfo = val }
-  setTreeData(data: TreeData<TestTreeNode>): void { this.treeData = data }
-  refreshTree(): void { this.setTreeData({ ...guaranteeNonNullable(this.treeData) }) }
+  setSelectedTestId(val: string | undefined): void {
+    this.selectedTestId = val;
+  }
+  setTestResultInfo(val: TestResultInfo | undefined): void {
+    this.testResultInfo = val;
+  }
+  setTreeData(data: TreeData<TestTreeNode>): void {
+    this.treeData = data;
+  }
+  refreshTree(): void {
+    this.setTreeData({ ...guaranteeNonNullable(this.treeData) });
+  }
   setSelectedNode(node: TestTreeNode | undefined): void {
     if (node?.id !== this.selectedNode?.id) {
       if (this.selectedNode) {
@@ -164,7 +248,7 @@ export class TestRunnerState {
       return;
     }
     this.treeBuildingState.inProgress();
-    const rootIds = this.testExecutionResult.tests.map(test => {
+    const rootIds = this.testExecutionResult.tests.map((test) => {
       const id = test.li_attr.id;
       if (test.type) {
         this.allTests.set(id, test);
@@ -179,7 +263,7 @@ export class TestRunnerState {
 
   collapseTree(): void {
     const treeData = this.getTreeData();
-    treeData.nodes.forEach(node => {
+    treeData.nodes.forEach((node) => {
       node.isOpen = false;
     });
     this.setSelectedNode(undefined);
@@ -188,7 +272,7 @@ export class TestRunnerState {
 
   expandTree(): void {
     const treeData = this.getTreeData();
-    treeData.nodes.forEach(node => {
+    treeData.nodes.forEach((node) => {
       node.isOpen = true;
     });
     this.setSelectedNode(undefined);
@@ -198,47 +282,64 @@ export class TestRunnerState {
   async buildTreeDataByLayer(tests: TestInfo[]): Promise<void> {
     const treeData = this.getTreeData();
     const childLevelTests: TestInfo[] = [];
-    await Promise.all<void>(tests.map(test => new Promise((resolve, reject) => setTimeout(() => {
-      const id = test.li_attr.id;
-      const node = {
-        id: id,
-        label: test.text,
-        data: test,
-        childrenIds: test.type ? undefined : [],
-      };
-      if (test.type) {
-        this.allTests.set(id, test);
-      }
-      treeData.nodes.set(id, node);
-      if (test.li_attr.parentId !== 'Root') {
-        try {
-          const parentNode = guaranteeNonNullable(treeData.nodes.get(getFullParentId(test, this.testExecutionResult)), `Can't find parent test node with ID '${test.li_attr.parentId}'`);
-          if (parentNode.childrenIds) {
-            addUniqueEntry(parentNode.childrenIds, id);
-          } else {
-            parentNode.childrenIds = [id];
-          }
-        } catch (e) {
-          reject(e);
-          return;
-        }
-      }
-      childLevelTests.push(...test.children);
-      resolve();
-    }, 0))));
+    await Promise.all<void>(
+      tests.map(
+        (test) =>
+          new Promise((resolve, reject) =>
+            setTimeout(() => {
+              const id = test.li_attr.id;
+              const node = {
+                id: id,
+                label: test.text,
+                data: test,
+                childrenIds: test.type ? undefined : [],
+              };
+              if (test.type) {
+                this.allTests.set(id, test);
+              }
+              treeData.nodes.set(id, node);
+              if (test.li_attr.parentId !== 'Root') {
+                try {
+                  const parentNode = guaranteeNonNullable(
+                    treeData.nodes.get(
+                      getFullParentId(test, this.testExecutionResult),
+                    ),
+                    `Can't find parent test node with ID '${test.li_attr.parentId}'`,
+                  );
+                  if (parentNode.childrenIds) {
+                    addUniqueEntry(parentNode.childrenIds, id);
+                  } else {
+                    parentNode.childrenIds = [id];
+                  }
+                } catch (e) {
+                  reject(e);
+                  return;
+                }
+              }
+              childLevelTests.push(...test.children);
+              resolve();
+            }, 0),
+          ),
+      ),
+    );
     if (childLevelTests.length) {
       return this.buildTreeDataByLayer(childLevelTests);
     }
     return Promise.resolve();
   }
 
-  *pollTestRunnerResult(this: TestRunnerState): Generator<Promise<unknown> | undefined, void, unknown> {
+  *pollTestRunnerResult(
+    this: TestRunnerState,
+  ): Generator<Promise<unknown> | undefined, void, unknown> {
     if (!this.checkTestRunnerState.isInInitialState) {
       return;
     }
     this.checkTestRunnerState.inProgress();
     try {
-      assertTrue(this.allTests.size === this.testExecutionResult.count, `Number of tests scanned in tree (${this.allTests.size}) does not match the number of total reported tests (${this.testExecutionResult.count})`);
+      assertTrue(
+        this.allTests.size === this.testExecutionResult.count,
+        `Number of tests scanned in tree (${this.allTests.size}) does not match the number of total reported tests (${this.testExecutionResult.count})`,
+      );
       const testResultInfo = new TestResultInfo(new Set(this.allTests.keys()));
       this.testResultInfo = testResultInfo;
       yield this.pullTestRunnerResult(testResultInfo);
@@ -248,20 +349,35 @@ export class TestRunnerState {
   }
 
   async pullTestRunnerResult(testResultInfo: TestResultInfo): Promise<void> {
-    const result = deserializeTestRunnerCheckResult(await this.editorStore.applicationStore.client.checkTestRunner(this.testExecutionResult.runnerId));
+    const result = deserializeTestRunnerCheckResult(
+      await this.editorStore.applicationStore.client.checkTestRunner(
+        this.testExecutionResult.runnerId,
+      ),
+    );
     if (result instanceof TestRunnerCheckResult) {
-      await Promise.all(result.tests.map(test => promisify(() => testResultInfo.addResult(test, getFullTestId(test, this.testExecutionResult)))));
+      await Promise.all(
+        result.tests.map((test) =>
+          promisify(() =>
+            testResultInfo.addResult(
+              test,
+              getFullTestId(test, this.testExecutionResult),
+            ),
+          ),
+        ),
+      );
       if (!result.finished) {
         return new Promise((resolve, reject) =>
           setTimeout(() => {
             try {
               resolve(this.pullTestRunnerResult(testResultInfo));
             } catch (e) {
-              this.editorStore.applicationStore.notifyWarning(`Failed to run test${e.message ? `: ${e.message}` : ''}`);
+              this.editorStore.applicationStore.notifyWarning(
+                `Failed to run test${e.message ? `: ${e.message}` : ''}`,
+              );
               reject(e);
             }
             // NOTE: this call might take a while so we need to tune this depending on the performance of the app
-          }, 1000)
+          }, 1000),
         );
       }
       return Promise.resolve();
@@ -271,18 +387,31 @@ export class TestRunnerState {
     return Promise.resolve();
   }
 
-  *rerunTestSuite(this: TestRunnerState): Generator<Promise<unknown> | undefined, void, unknown> {
+  *rerunTestSuite(
+    this: TestRunnerState,
+  ): Generator<Promise<unknown> | undefined, void, unknown> {
     if (this.editorStore.testRunState.isInProgress) {
       return;
     }
-    yield flowResult(this.editorStore.executeTests(this.testExecutionResult.path, this.testExecutionResult.relevantTestsOnly));
+    yield flowResult(
+      this.editorStore.executeTests(
+        this.testExecutionResult.path,
+        this.testExecutionResult.relevantTestsOnly,
+      ),
+    );
   }
 
-  *cancelTestRun(this: TestRunnerState): Generator<Promise<unknown> | undefined, void, unknown> {
+  *cancelTestRun(
+    this: TestRunnerState,
+  ): Generator<Promise<unknown> | undefined, void, unknown> {
     if (!this.editorStore.testRunState.isInProgress) {
       return;
     }
-    yield this.editorStore.applicationStore.client.cancelTestRunner(this.testExecutionResult.runnerId);
-    this.editorStore.applicationStore.notifyWarning(`Stopped running test (id: ${this.testExecutionResult.runnerId}) successfully!`);
+    yield this.editorStore.applicationStore.client.cancelTestRunner(
+      this.testExecutionResult.runnerId,
+    );
+    this.editorStore.applicationStore.notifyWarning(
+      `Stopped running test (id: ${this.testExecutionResult.runnerId}) successfully!`,
+    );
   }
 }

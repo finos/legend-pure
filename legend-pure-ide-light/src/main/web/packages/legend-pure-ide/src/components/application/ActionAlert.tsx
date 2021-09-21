@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import Dialog from '@material-ui/core/Dialog';
-import type { ActionAlertInfo } from 'Stores/ApplicationStore';
-import { useApplicationStore, ActionAlertActionType, ActionAlertType } from 'Stores/ApplicationStore';
+import type { ActionAlertInfo } from '../../stores/ApplicationStore';
+import {
+  useApplicationStore,
+  ActionAlertActionType,
+  ActionAlertType,
+} from '../../stores/ApplicationStore';
 import { observer } from 'mobx-react-lite';
 
 const getActionButtonClassName = (type: ActionAlertActionType): string => {
   switch (type) {
-    case ActionAlertActionType.PROCEED_WITH_CAUTION: return 'btn--caution';
+    case ActionAlertActionType.PROCEED_WITH_CAUTION:
+      return 'btn--caution';
     case ActionAlertActionType.PROCEED:
     case ActionAlertActionType.STANDARD:
-    default: return 'btn--dark';
+    default:
+      return 'btn--dark';
   }
 };
 
-const ActionAlertInner = observer((props: {
-  info: ActionAlertInfo;
-}) => {
+const ActionAlertInner = observer((props: { info: ActionAlertInfo }) => {
   const { info } = props;
   const applicationStore = useApplicationStore();
   const { title, message, prompt, type, onClose, onEnter, actions } = info;
@@ -41,11 +44,16 @@ const ActionAlertInner = observer((props: {
   };
   const handlEnter = (): void => onEnter?.();
   const handleSubmit = (): void => {
-    const proceedActions = actions.filter(action => action.default);
-    if (proceedActions.length) { proceedActions[0].handler?.() }
+    const proceedActions = actions.filter((action) => action.default);
+    if (proceedActions.length) {
+      proceedActions[0].handler?.();
+    }
     handleClose();
   };
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>): void => { event.preventDefault(); handleSubmit() };
+  const onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    handleSubmit();
+  };
 
   return (
     <Dialog
@@ -57,36 +65,58 @@ const ActionAlertInner = observer((props: {
       disableBackdropClick={true}
       disableEscapeKeyDown={true}
     >
-      <form onSubmit={onSubmit} className={`modal search-modal modal--dark blocking-alert blocking-alert--${(type ?? ActionAlertType.STANDARD).toLowerCase()}`}>
-        {title &&
+      <form
+        onSubmit={onSubmit}
+        className={`modal search-modal modal--dark blocking-alert blocking-alert--${(
+          type ?? ActionAlertType.STANDARD
+        ).toLowerCase()}`}
+      >
+        {title && (
           <div className="modal__header">
             <div className="modal__title">
               <div className="modal__title__label">{title}</div>
             </div>
           </div>
-        }
+        )}
         <div className="modal__body">
           <div className="blocking-alert__summary-text">{message}</div>
           <div className="blocking-alert__prompt-text">{prompt}</div>
         </div>
         <div className="modal__footer">
-          {actions.map(action => {
+          {actions.map((action) => {
             // NOTE: need to prevent default for the submit button, otherwise, we would get the warning "Form submission canceled because the form is not connected"
             // See https://stackoverflow.com/a/58234405
-            const handler: React.ReactEventHandler<HTMLButtonElement> = (e): void => { e.preventDefault(); action.handler?.(); handleClose() };
+            const handler: React.ReactEventHandler<HTMLButtonElement> = (
+              e,
+            ): void => {
+              e.preventDefault();
+              action.handler?.();
+              handleClose();
+            };
             return (
-              <button key={action.label}
+              <button
+                key={action.label}
                 type={action.default ? 'submit' : 'button'}
-                className={`btn btn--dark ${getActionButtonClassName(action.type ?? ActionAlertActionType.STANDARD)}`}
+                className={`btn btn--dark ${getActionButtonClassName(
+                  action.type ?? ActionAlertActionType.STANDARD,
+                )}`}
                 onClick={handler}
                 autoFocus={Boolean(action.default)}
-              // since this is a text button, no need for tooltip
-              >{action.label}</button>
+                // since this is a text button, no need for tooltip
+              >
+                {action.label}
+              </button>
             );
           })}
-          {!actions.length &&
-            <button type="button" className="btn btn--dark blocking-alert__action--standard" onClick={handleClose}>Cancel</button>
-          }
+          {!actions.length && (
+            <button
+              type="button"
+              className="btn btn--dark blocking-alert__action--standard"
+              onClick={handleClose}
+            >
+              Cancel
+            </button>
+          )}
         </div>
       </form>
     </Dialog>

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import Dialog from '@material-ui/core/Dialog';
-import { useApplicationStore } from 'Stores/ApplicationStore';
+import { useApplicationStore } from '../../stores/ApplicationStore';
 import { observer } from 'mobx-react-lite';
-import { PanelLoadingIndicator } from 'Components/shared/PanelLoadingIndicator';
+import { PanelLoadingIndicator } from '../shared/PanelLoadingIndicator';
 
 /**
  * The users of this need to justify their use case because blocking app disrupts the UX flow.
@@ -37,7 +36,7 @@ export const BlockingAlert = observer(() => {
       open={Boolean(info)}
       classes={{
         root: 'blocking-alert__root-container',
-        container: 'blocking-alert__container'
+        container: 'blocking-alert__container',
       }}
       disableBackdropClick={true}
       disableEscapeKeyDown={true}
@@ -46,7 +45,9 @@ export const BlockingAlert = observer(() => {
         <PanelLoadingIndicator isLoading={Boolean(info.showLoading)} />
         <div className="modal__body">
           <div className="blocking-alert__message">{info.message}</div>
-          {info.prompt && <div className="blocking-alert__message__prompt">{info.prompt}</div>}
+          {info.prompt && (
+            <div className="blocking-alert__message__prompt">{info.prompt}</div>
+          )}
         </div>
       </div>
     </Dialog>

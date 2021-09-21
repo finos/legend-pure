@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-import { custom, SKIP, deserialize, createModelSchema, primitive } from 'serializr';
-import type { Clazz } from 'Utilities/GeneralUtil';
-import { guaranteeType } from 'Utilities/GeneralUtil';
-import type { TreeNodeData } from 'Utilities/TreeUtil';
+import {
+  custom,
+  SKIP,
+  deserialize,
+  createModelSchema,
+  primitive,
+} from 'serializr';
+import type { Clazz } from '../utils/GeneralUtil';
+import { guaranteeType } from '../utils/GeneralUtil';
+import type { TreeNodeData } from '../utils/TreeUtil';
 
 abstract class DirectoryAttribute {
   id!: string;
@@ -57,19 +63,32 @@ export class DirectoryNode {
   children?: boolean;
   state?: string;
 
-  get isFolderNode(): boolean { return this.li_attr instanceof FolderDirectoryAttribute }
-  get isFileNode(): boolean { return this.li_attr instanceof FileDirectoryAttribute }
-  getNodeAttribute<T extends DirectoryAttribute>(clazz: Clazz<T>): T { return guaranteeType(this.li_attr, clazz, `Expected directory node attribute to be of type '${clazz.name}'`) }
+  get isFolderNode(): boolean {
+    return this.li_attr instanceof FolderDirectoryAttribute;
+  }
+  get isFileNode(): boolean {
+    return this.li_attr instanceof FileDirectoryAttribute;
+  }
+  getNodeAttribute<T extends DirectoryAttribute>(clazz: Clazz<T>): T {
+    return guaranteeType(
+      this.li_attr,
+      clazz,
+      `Expected directory node attribute to be of type '${clazz.name}'`,
+    );
+  }
 }
 
 createModelSchema(DirectoryNode, {
-  li_attr: custom(() => SKIP, value => {
-    if (value.file && value.file === 'true') {
-      return deserialize(FileDirectoryAttribute, value);
-    } else {
-      return deserialize(FolderDirectoryAttribute, value);
-    }
-  }),
+  li_attr: custom(
+    () => SKIP,
+    (value) => {
+      if (value.file && value.file === 'true') {
+        return deserialize(FileDirectoryAttribute, value);
+      } else {
+        return deserialize(FolderDirectoryAttribute, value);
+      }
+    },
+  ),
   text: primitive(),
   icon: primitive(),
   children: primitive(),

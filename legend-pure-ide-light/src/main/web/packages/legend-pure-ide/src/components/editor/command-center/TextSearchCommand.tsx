@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { VscCaseSensitive, VscRegex } from 'react-icons/vsc';
-import { useEditorStore } from 'Stores/EditorStore';
+import { useEditorStore } from '../../../stores/EditorStore';
 import Dialog from '@material-ui/core/Dialog';
 import clsx from 'clsx';
-import { useApplicationStore } from 'Stores/ApplicationStore';
+import { useApplicationStore } from '../../../stores/ApplicationStore';
 import { flowResult } from 'mobx';
 
 export const TextSearchCommand = observer(() => {
@@ -33,11 +33,17 @@ export const TextSearchCommand = observer(() => {
   const toggleRegExp = (): void => searchState.toggleRegExp();
   // actions
   const closeModal = (): void => editorStore.setOpenTextSearchCommand(false);
-  const onSearchTextChange: React.ChangeEventHandler<HTMLInputElement> = (event): void => searchState.setText(event.target.value);
-  const search = (event: React.FormEvent<HTMLFormElement | HTMLButtonElement>): void => {
+  const onSearchTextChange: React.ChangeEventHandler<HTMLInputElement> = (
+    event,
+  ): void => searchState.setText(event.target.value);
+  const search = (
+    event: React.FormEvent<HTMLFormElement | HTMLButtonElement>,
+  ): void => {
     event.preventDefault();
     closeModal();
-    flowResult(editorStore.searchText()).catch(applicationStore.alertIllegalUnhandledError);
+    flowResult(editorStore.searchText()).catch(
+      applicationStore.alertIllegalUnhandledError,
+    );
   };
   const handleEnter = (): void => {
     inputRef.current?.focus();
@@ -62,21 +68,34 @@ export const TextSearchCommand = observer(() => {
               value={searchState.text}
             />
           </form>
-          <button className={clsx('command-modal__content__config-btn btn--sm', {
-            'command-modal__content__config-btn--toggled': searchState.isCaseSensitive
-          })}
+          <button
+            className={clsx('command-modal__content__config-btn btn--sm', {
+              'command-modal__content__config-btn--toggled':
+                searchState.isCaseSensitive,
+            })}
             title={`Match Case (${searchState.isCaseSensitive ? 'on' : 'off'})`}
             onClick={toggleCaseSensitive}
-          ><VscCaseSensitive /></button>
-          <button className={clsx('command-modal__content__config-btn btn--sm', {
-            'command-modal__content__config-btn--toggled': searchState.isRegExp
-          })}
-            title={`Use Regular Expression (${searchState.isRegExp ? 'on' : 'off'})`}
+          >
+            <VscCaseSensitive />
+          </button>
+          <button
+            className={clsx('command-modal__content__config-btn btn--sm', {
+              'command-modal__content__config-btn--toggled':
+                searchState.isRegExp,
+            })}
+            title={`Use Regular Expression (${
+              searchState.isRegExp ? 'on' : 'off'
+            })`}
             onClick={toggleRegExp}
-          ><VscRegex /></button>
-          <button className="command-modal__content__submit-btn btn--dark btn--caution"
+          >
+            <VscRegex />
+          </button>
+          <button
+            className="command-modal__content__submit-btn btn--dark btn--caution"
             onClick={search}
-          >Search</button>
+          >
+            Search
+          </button>
         </div>
       </div>
     </Dialog>

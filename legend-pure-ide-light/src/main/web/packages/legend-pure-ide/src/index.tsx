@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import ReactDOM from 'react-dom';
-import 'Style/main.scss';
+import '../style/main.scss';
 import { configure as hotkeysConfigure } from 'react-hotkeys';
-import { editor as monacoEditorAPI, languages as monacoLanguagesAPI } from 'monaco-editor';
-import { configuration, language, theme } from 'Utilities/LanguageUtil';
-import { EDITOR_THEME, EDITOR_LANGUAGE } from 'Stores/EditorConfig';
-import { App } from 'Components/App';
+import {
+  editor as monacoEditorAPI,
+  languages as monacoLanguagesAPI,
+} from 'monaco-editor';
+import { configuration, language, theme } from './utils/LanguageUtil';
+import { App } from './components/App';
+import { EDITOR_LANGUAGE, EDITOR_THEME } from './stores/EditorConfig';
 
 // Register Pure as a language in `monaco-editor`
 monacoEditorAPI.defineTheme(EDITOR_THEME.NATIVE, theme);
 monacoLanguagesAPI.register({ id: EDITOR_LANGUAGE.PURE });
-monacoLanguagesAPI.setLanguageConfiguration(EDITOR_LANGUAGE.PURE, configuration);
+monacoLanguagesAPI.setLanguageConfiguration(
+  EDITOR_LANGUAGE.PURE,
+  configuration,
+);
 monacoLanguagesAPI.setMonarchTokensProvider(EDITOR_LANGUAGE.PURE, language);
 
 hotkeysConfigure({
@@ -56,7 +61,9 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 const root = ((): Element => {
-  let rootEl = document.getElementsByTagName('root').length ? document.getElementsByTagName('root')[0] : undefined;
+  let rootEl = document.getElementsByTagName('root').length
+    ? document.getElementsByTagName('root')[0]
+    : undefined;
   if (!rootEl) {
     rootEl = document.createElement('root');
     document.body.appendChild(rootEl);

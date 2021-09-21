@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import React, { useState } from 'react';
-import { useDimensions } from 'Utilities/GeneralUtil';
+import { useState } from 'react';
+import { useDimensions } from '../../utils/GeneralUtil';
 import ReactResizeDetector from 'react-resize-detector';
 import clsx from 'clsx';
 
@@ -23,12 +23,20 @@ const DEFAULT_CONTENT_PADDING = 20;
 
 export const BlankPanelContent: React.FC<{
   children: React.ReactNode;
-}> = props => {
+}> = (props) => {
   const { children } = props;
   const [contentRef, contentDimensions] = useDimensions();
   const [showContent, setShowContent] = useState(false);
-  const handleResize = (width: number | undefined, height: number | undefined): void => {
-    setShowContent((width ?? 0) > ((contentDimensions?.width ?? 0) + DEFAULT_CONTENT_PADDING * 2) && (height ?? 0) > ((contentDimensions?.height ?? 0) + DEFAULT_CONTENT_PADDING * 2));
+  const handleResize = (
+    width: number | undefined,
+    height: number | undefined,
+  ): void => {
+    setShowContent(
+      (width ?? 0) >
+        (contentDimensions?.width ?? 0) + DEFAULT_CONTENT_PADDING * 2 &&
+        (height ?? 0) >
+          (contentDimensions?.height ?? 0) + DEFAULT_CONTENT_PADDING * 2,
+    );
   };
 
   return (
@@ -41,7 +49,14 @@ export const BlankPanelContent: React.FC<{
       refreshOptions={{ trailing: true }}
     >
       <div className="panel__content__blank">
-        <div ref={contentRef} className={clsx('panel__content__blank__content', { 'panel__content__blank__content--hide': !showContent })}>{children}</div>
+        <div
+          ref={contentRef}
+          className={clsx('panel__content__blank__content', {
+            'panel__content__blank__content--hide': !showContent,
+          })}
+        >
+          {children}
+        </div>
       </div>
     </ReactResizeDetector>
   );

@@ -16,7 +16,7 @@
 
 // This is simple to do but material-ui has not offered an official guide about this
 // See https://github.com/mui-org/material-ui/issues/1462
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import type { MenuProps } from '@material-ui/core/Menu';
 import Menu from '@material-ui/core/Menu';
 
@@ -27,8 +27,9 @@ export const ContextMenu: React.FC<{
   onOpen?: () => void;
   className?: string;
   disabled?: boolean;
-}> = props => {
-  const { className, children, menuProps, content, disabled, onClose, onOpen } = props;
+}> = (props) => {
+  const { className, children, menuProps, content, disabled, onClose, onOpen } =
+    props;
   const contextMenuRoot = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<Element>();
@@ -40,13 +41,13 @@ export const ContextMenu: React.FC<{
     setTop(0);
     setLeft(0);
   };
-  const close: React.MouseEventHandler = event => {
+  const close: React.MouseEventHandler = (event) => {
     event.stopPropagation();
     event.preventDefault();
     reset();
     onClose?.();
   };
-  const onContextMenu: React.MouseEventHandler = event => {
+  const onContextMenu: React.MouseEventHandler = (event) => {
     event.stopPropagation();
     event.preventDefault();
     if (disabled) {
@@ -57,8 +58,12 @@ export const ContextMenu: React.FC<{
       // Get position of the container element relative to the page document
       // See https://plainjs.com/javascript/styles/get-the-position-of-an-element-relative-to-the-document-24/
       const containerRect = contextMenuRoot.current.getBoundingClientRect();
-      const containerLeft = containerRect.left + (window.pageXOffset || document.documentElement.scrollLeft);
-      const containerTop = containerRect.top + (window.pageYOffset || document.documentElement.scrollTop);
+      const containerLeft =
+        containerRect.left +
+        (window.pageXOffset || document.documentElement.scrollLeft);
+      const containerTop =
+        containerRect.top +
+        (window.pageYOffset || document.documentElement.scrollTop);
       const { clientX, clientY, target } = event;
       const eventTarget = target as HTMLElement;
       if (anchorEl !== eventTarget) {
@@ -66,9 +71,12 @@ export const ContextMenu: React.FC<{
         // Besides checking for the element containment, we also want to check for position as `material-ui`
         // Menu have a background that spans the whole screen to check for clickout and trap focus
         // which means right click on other part of the screen will also result in context menu being shown
-        const hasAnchor = elements.some(element => element === eventTarget)
-          && (containerLeft <= clientX && clientX <= containerLeft + containerRect.width)
-          && (containerTop <= clientY && clientY <= containerTop + containerRect.height);
+        const hasAnchor =
+          elements.some((element) => element === eventTarget) &&
+          containerLeft <= clientX &&
+          clientX <= containerLeft + containerRect.width &&
+          containerTop <= clientY &&
+          clientY <= containerTop + containerRect.height;
         if (!hasAnchor) {
           reset();
           onClose?.();
@@ -83,7 +91,11 @@ export const ContextMenu: React.FC<{
   };
 
   return (
-    <div ref={contextMenuRoot} className={className} onContextMenu={onContextMenu}>
+    <div
+      ref={contextMenuRoot}
+      className={className}
+      onContextMenu={onContextMenu}
+    >
       {children}
       <Menu
         key={`${left}, ${top}`}
@@ -104,4 +116,3 @@ export const ContextMenu: React.FC<{
     </div>
   );
 };
-

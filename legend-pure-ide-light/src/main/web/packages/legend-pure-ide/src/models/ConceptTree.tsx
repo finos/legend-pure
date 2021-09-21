@@ -14,13 +14,31 @@
  * limitations under the License.
  */
 
-import { AssociationIcon, ClassIcon, DiagramIcon, ElementIcon, EnumerationIcon, FunctionIcon, NativeFunctionIcon, MeasureIcon, PackageIcon, ProfileIcon, UnitIcon, UnknownTypeIcon } from 'Components/shared/Icon';
-import React from 'react';
+import {
+  AssociationIcon,
+  ClassIcon,
+  DiagramIcon,
+  ElementIcon,
+  EnumerationIcon,
+  FunctionIcon,
+  NativeFunctionIcon,
+  MeasureIcon,
+  PackageIcon,
+  ProfileIcon,
+  UnitIcon,
+  UnknownTypeIcon,
+} from '../components/shared/Icon';
 import type { Clazz } from 'serializr';
-import { createModelSchema, primitive, custom, SKIP, deserialize } from 'serializr';
+import {
+  createModelSchema,
+  primitive,
+  custom,
+  SKIP,
+  deserialize,
+} from 'serializr';
 
-import { guaranteeType } from 'Utilities/GeneralUtil';
-import type { TreeNodeData } from 'Utilities/TreeUtil';
+import { guaranteeType } from '../utils/GeneralUtil';
+import type { TreeNodeData } from '../utils/TreeUtil';
 
 export enum ConceptType {
   // PRIMITIVE = 'Primitive',
@@ -40,18 +58,30 @@ export enum ConceptType {
 
 export const getConceptIcon = (type: string): React.ReactNode => {
   switch (type) {
-    case ConceptType.PACKAGE: return <PackageIcon />;
-    case ConceptType.PROFILE: return <ProfileIcon />;
-    case ConceptType.CLASS: return <ClassIcon />;
-    case ConceptType.ASSOCIATION: return <AssociationIcon />;
-    case ConceptType.PROPERTY: return <ElementIcon />;
-    case ConceptType.ENUMERATION: return <EnumerationIcon />;
-    case ConceptType.MEASURE: return <MeasureIcon />;
-    case ConceptType.UNIT: return <UnitIcon />;
-    case ConceptType.FUNCTION: return <FunctionIcon />;
-    case ConceptType.NATIVE_FUNCTION: return <NativeFunctionIcon />;
-    case ConceptType.DIAGRAM: return <DiagramIcon />;
-    default: return <UnknownTypeIcon />;
+    case ConceptType.PACKAGE:
+      return <PackageIcon />;
+    case ConceptType.PROFILE:
+      return <ProfileIcon />;
+    case ConceptType.CLASS:
+      return <ClassIcon />;
+    case ConceptType.ASSOCIATION:
+      return <AssociationIcon />;
+    case ConceptType.PROPERTY:
+      return <ElementIcon />;
+    case ConceptType.ENUMERATION:
+      return <EnumerationIcon />;
+    case ConceptType.MEASURE:
+      return <MeasureIcon />;
+    case ConceptType.UNIT:
+      return <UnitIcon />;
+    case ConceptType.FUNCTION:
+      return <FunctionIcon />;
+    case ConceptType.NATIVE_FUNCTION:
+      return <NativeFunctionIcon />;
+    case ConceptType.DIAGRAM:
+      return <DiagramIcon />;
+    default:
+      return <UnknownTypeIcon />;
   }
 };
 
@@ -60,7 +90,9 @@ abstract class ConceptAttribute {
   pureType!: string;
   // test?: string; // boolean
 
-  get id(): string { return this.pureId }
+  get id(): string {
+    return this.pureId;
+  }
 }
 
 export class PackageConceptAttribute extends ConceptAttribute {
@@ -84,7 +116,9 @@ export class PropertyConceptAttribute extends ConceptAttribute {
   line!: string; // number
   column!: string; // number
 
-  get id(): string { return `${this.classPath}.${this.pureId}` }
+  override get id(): string {
+    return `${this.classPath}.${this.pureId}`;
+  }
 }
 
 createModelSchema(PropertyConceptAttribute, {
@@ -127,19 +161,28 @@ export class ConceptNode {
   children?: boolean;
   state?: string;
 
-  getNodeAttribute<T extends ConceptAttribute>(clazz: Clazz<T>): T { return guaranteeType(this.li_attr, clazz, `Expected concept node attribute to be of type '${clazz.name}'`) }
+  getNodeAttribute<T extends ConceptAttribute>(clazz: Clazz<T>): T {
+    return guaranteeType(
+      this.li_attr,
+      clazz,
+      `Expected concept node attribute to be of type '${clazz.name}'`,
+    );
+  }
 }
 
 createModelSchema(ConceptNode, {
-  li_attr: custom(() => SKIP, value => {
-    if (value.classPath) {
-      return deserialize(PropertyConceptAttribute, value);
-    } else if (value.file) {
-      return deserialize(ElementConceptAttribute, value);
-    } else {
-      return deserialize(PackageConceptAttribute, value);
-    }
-  }),
+  li_attr: custom(
+    () => SKIP,
+    (value) => {
+      if (value.classPath) {
+        return deserialize(PropertyConceptAttribute, value);
+      } else if (value.file) {
+        return deserialize(ElementConceptAttribute, value);
+      } else {
+        return deserialize(PackageConceptAttribute, value);
+      }
+    },
+  ),
   id: primitive(),
   text: primitive(),
   icon: primitive(),

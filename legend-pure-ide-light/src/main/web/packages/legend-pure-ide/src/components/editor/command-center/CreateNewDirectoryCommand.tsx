@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useEditorStore } from 'Stores/EditorStore';
+import { useEditorStore } from '../../../stores/EditorStore';
 import Dialog from '@material-ui/core/Dialog';
-import { useApplicationStore } from 'Stores/ApplicationStore';
+import { useApplicationStore } from '../../../stores/ApplicationStore';
 import { flowResult } from 'mobx';
 
 export const CreateNewDirectoryCommand = observer(() => {
@@ -28,15 +28,24 @@ export const CreateNewDirectoryCommand = observer(() => {
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   // actions
-  const closeModal = (): void => editorStore.directoryTreeState.setNodeForCreateNewDirectory(undefined);
-  const onValueChange: React.ChangeEventHandler<HTMLInputElement> = (event): void => setValue(event.target.value);
-  const create = (event: React.FormEvent<HTMLFormElement | HTMLButtonElement>): void => {
+  const closeModal = (): void =>
+    editorStore.directoryTreeState.setNodeForCreateNewDirectory(undefined);
+  const onValueChange: React.ChangeEventHandler<HTMLInputElement> = (
+    event,
+  ): void => setValue(event.target.value);
+  const create = (
+    event: React.FormEvent<HTMLFormElement | HTMLButtonElement>,
+  ): void => {
     if (!currentNode) {
       return;
     }
     event.preventDefault();
     closeModal();
-    flowResult(editorStore.createNewDirectory(`${currentNode.data.li_attr.path}/${value}`)).catch(applicationStore.alertIllegalUnhandledError);
+    flowResult(
+      editorStore.createNewDirectory(
+        `${currentNode.data.li_attr.path}/${value}`,
+      ),
+    ).catch(applicationStore.alertIllegalUnhandledError);
   };
   const handleEnter = (): void => {
     setValue('');
@@ -62,9 +71,12 @@ export const CreateNewDirectoryCommand = observer(() => {
               value={value}
             />
           </form>
-          <button className="command-modal__content__submit-btn btn--dark"
+          <button
+            className="command-modal__content__submit-btn btn--dark"
             onClick={create}
-          >Create</button>
+          >
+            Create
+          </button>
         </div>
       </div>
     </Dialog>

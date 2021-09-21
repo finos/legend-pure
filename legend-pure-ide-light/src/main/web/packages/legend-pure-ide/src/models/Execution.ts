@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-import { createModelSchema, deserialize, list, object, primitive } from 'serializr';
-import { uuid } from 'Utilities/GeneralUtil';
+import {
+  createModelSchema,
+  deserialize,
+  list,
+  object,
+  primitive,
+} from 'serializr';
+import { uuid } from '../utils/GeneralUtil';
 
 export interface ExecutionActivity {
   executing: boolean;
@@ -135,7 +141,9 @@ export class UnmatchedFunctionResult extends ExecutionFailureResult {
 createModelSchema(UnmatchedFunctionResult, {
   candidateName: primitive(),
   candidatesWithPackageImported: list(object(CandidateWithPackageImported)),
-  candidatesWithPackageNotImported: list(object(CandidateWithPackageNotImported)),
+  candidatesWithPackageNotImported: list(
+    object(CandidateWithPackageNotImported),
+  ),
 });
 
 export class UnmatchedResult extends ExecutionFailureResult {
@@ -196,7 +204,9 @@ createModelSchema(TestExecutionResult, {
   tests: list(object(TestInfo)),
 });
 
-export const deserializeExecutionResult = (value: Record<PropertyKey, unknown>): ExecutionResult => {
+export const deserializeExecutionResult = (
+  value: Record<PropertyKey, unknown>,
+): ExecutionResult => {
   if (value.error) {
     if (value.candidateName && value.PureUnmatchedFunctionException) {
       return deserialize(UnmatchedFunctionResult, value);

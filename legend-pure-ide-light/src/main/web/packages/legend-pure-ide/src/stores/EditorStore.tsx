@@ -14,36 +14,86 @@
  * limitations under the License.
  */
 
-import React, { createContext, useContext } from 'react';
+import { createContext, useContext } from 'react';
 import { useLocalObservable } from 'mobx-react-lite';
 import { editor as monacoEditorAPI } from 'monaco-editor';
 import { action, flowResult, makeAutoObservable } from 'mobx';
-import type { ApplicationStore, ActionAlertInfo, BlockingAlertInfo } from './ApplicationStore';
-import { ActionAlertType, ActionAlertActionType, useApplicationStore } from './ApplicationStore';
-import { ACTIVITY_MODE, DEFAULT_SIDE_BAR_SIZE, AUX_PANEL_MODE, DEFAULT_AUX_PANEL_SIZE, MONOSPACE_FONT_FAMILY } from 'Stores/EditorConfig';
-import type { Clazz, PlainObject } from 'Utilities/GeneralUtil';
-import { guaranteeType, guaranteeNonNullable, assertNonNullable, assertTrue } from 'Utilities/GeneralUtil';
-import type { EditorState } from 'Stores/EditorState';
-import { FileEditorState } from 'Stores/EditorState';
+import type {
+  ApplicationStore,
+  ActionAlertInfo,
+  BlockingAlertInfo,
+} from './ApplicationStore';
+import {
+  ActionAlertType,
+  ActionAlertActionType,
+  useApplicationStore,
+} from './ApplicationStore';
+import {
+  ACTIVITY_MODE,
+  DEFAULT_SIDE_BAR_SIZE,
+  AUX_PANEL_MODE,
+  DEFAULT_AUX_PANEL_SIZE,
+  MONOSPACE_FONT_FAMILY,
+} from './EditorConfig';
+import type { Clazz, PlainObject } from '../utils/GeneralUtil';
+import {
+  guaranteeType,
+  guaranteeNonNullable,
+  assertNonNullable,
+  assertTrue,
+} from '../utils/GeneralUtil';
+import type { EditorState } from './EditorState';
+import { FileEditorState } from './EditorState';
 import { deserialize } from 'serializr';
-import { ActionState } from 'Utilities/ActionState';
-import { FileCoordinate, PureFile, trimPathLeadingSlash } from 'Models/PureFile';
-import { DirectoryTreeState } from 'Stores/DirectoryTreeState';
-import { ConceptTreeState } from 'Stores/ConceptTreeState';
-import type { InitializationActivity, InitializationResult } from 'Models/Initialization';
-import { InitializationFailureWithSourceResult, InitializationFailureResult, deserializeInitializationnResult } from 'Models/Initialization';
-import type { CandidateWithPackageNotImported, ExecutionActivity, ExecutionResult } from 'Models/Execution';
-import { TestExecutionResult, UnmatchedFunctionResult, UnmatchedResult, GetConceptResult, deserializeExecutionResult, ExecutionFailureResult, ExecutionSuccessResult } from 'Models/Execution';
-import type { SearchResultEntry } from 'Models/SearchEntry';
-import { getSearchResultEntry } from 'Models/SearchEntry';
-import type { SearchState } from 'Stores/SearchResultState';
-import { UsageResultState, UnmatchedFunctionExecutionResultState, UnmatchExecutionResultState, SearchResultState } from 'Stores/SearchResultState';
-import { TestRunnerState } from 'Stores/TestRunnerState';
-import type { UsageConcept } from 'Models/Usage';
-import { getUsageConceptLabel, Usage } from 'Models/Usage';
-import type { CommandResult } from 'Models/Command';
-import { CommandFailureResult, deserializeCommandResult } from 'Models/Command';
-import { LOG_EVENT } from 'Utilities/Logger';
+import { ActionState } from '../utils/ActionState';
+import {
+  FileCoordinate,
+  PureFile,
+  trimPathLeadingSlash,
+} from '../models/PureFile';
+import { DirectoryTreeState } from './DirectoryTreeState';
+import { ConceptTreeState } from './ConceptTreeState';
+import type {
+  InitializationActivity,
+  InitializationResult,
+} from '../models/Initialization';
+import {
+  InitializationFailureWithSourceResult,
+  InitializationFailureResult,
+  deserializeInitializationnResult,
+} from '../models/Initialization';
+import type {
+  CandidateWithPackageNotImported,
+  ExecutionActivity,
+  ExecutionResult,
+} from '../models/Execution';
+import {
+  TestExecutionResult,
+  UnmatchedFunctionResult,
+  UnmatchedResult,
+  GetConceptResult,
+  deserializeExecutionResult,
+  ExecutionFailureResult,
+  ExecutionSuccessResult,
+} from '../models/Execution';
+import type { SearchResultEntry } from '../models/SearchEntry';
+import { getSearchResultEntry } from '../models/SearchEntry';
+import type { SearchState } from './SearchResultState';
+import {
+  UsageResultState,
+  UnmatchedFunctionExecutionResultState,
+  UnmatchExecutionResultState,
+  SearchResultState,
+} from './SearchResultState';
+import { TestRunnerState } from './TestRunnerState';
+import type { UsageConcept } from '../models/Usage';
+import { getUsageConceptLabel, Usage } from '../models/Usage';
+import type { CommandResult } from '../models/Command';
+import {
+  CommandFailureResult,
+  deserializeCommandResult,
+} from '../models/Command';
+import { LOG_EVENT } from '../utils/Logger';
 
 // FontFaceSet API is still experimental and has not been added to Typescript lib
 // See https://developer.mozilla.org/en-US/docs/Web/API/FontFaceSet
@@ -52,8 +102,8 @@ declare global {
   interface Document {
     fonts: {
       check(font: string, text?: string): boolean;
-      load(font: string, text?: string): Promise<unknown[]>
-    }
+      load(font: string, text?: string): Promise<unknown[]>;
+    };
   }
 }
 
@@ -76,11 +126,21 @@ class SearchCommandState {
     this.setCaseSensitive(false);
     this.setRegExp(false);
   }
-  setText(value: string): void { this.text = value }
-  setCaseSensitive(value: boolean): void { this.isCaseSensitive = value }
-  toggleCaseSensitive(): void { this.setCaseSensitive(!this.isCaseSensitive) }
-  setRegExp(value: boolean): void { this.isRegExp = value }
-  toggleRegExp(): void { this.setRegExp(!this.isRegExp) }
+  setText(value: string): void {
+    this.text = value;
+  }
+  setCaseSensitive(value: boolean): void {
+    this.isCaseSensitive = value;
+  }
+  toggleCaseSensitive(): void {
+    this.setCaseSensitive(!this.isCaseSensitive);
+  }
+  setRegExp(value: boolean): void {
+    this.isRegExp = value;
+  }
+  toggleRegExp(): void {
+    this.setRegExp(!this.isRegExp);
+  }
 }
 
 export class EditorStore {
@@ -89,7 +149,7 @@ export class EditorStore {
   conceptTreeState: ConceptTreeState;
   initState = new ActionState();
   // Tabs
-  currentEditorState?: EditorState;
+  currentEditorState?: EditorState | undefined;
   openedEditorStates: EditorState[] = [];
   showOpenedTabsMenu = false;
   // App states
@@ -107,7 +167,7 @@ export class EditorStore {
   sideBarSize = DEFAULT_SIDE_BAR_SIZE;
   sideBarSizeBeforeHidden = DEFAULT_SIDE_BAR_SIZE;
   // Console
-  consoleText?: string;
+  consoleText?: string | undefined;
   // Execution
   executionState = new ActionState();
   // Navigation
@@ -122,10 +182,10 @@ export class EditorStore {
   textSearchCommandLoadingState = new ActionState();
   textSearchCommandState = new SearchCommandState();
   // Search Panel
-  searchState?: SearchState;
+  searchState?: SearchState | undefined;
   // Test
   testRunState = new ActionState();
-  testRunnerState?: TestRunnerState;
+  testRunnerState?: TestRunnerState | undefined;
 
   constructor(applicationStore: ApplicationStore) {
     makeAutoObservable(this, {
@@ -150,26 +210,56 @@ export class EditorStore {
     this.conceptTreeState = new ConceptTreeState(this);
   }
 
-  get isAuxPanelMaximized(): boolean { return this.auxPanelSize === this.maxAuxPanelSize }
+  get isAuxPanelMaximized(): boolean {
+    return this.auxPanelSize === this.maxAuxPanelSize;
+  }
 
-  setShowOpenedTabsMenu(val: boolean): void { this.showOpenedTabsMenu = val }
-  setBlockGlobalHotkeys(val: boolean): void { this.blockGlobalHotkeys = val }
-  setCurrentEditorState(val: EditorState | undefined): void { this.currentEditorState = val }
-  setBackdrop(val: boolean): void { this.backdrop = val }
-  setExpandedMode(val: boolean): void { this.isInExpandedMode = val }
-  setOpenFileSearchCommand(val: boolean): void { this.openFileSearchCommand = val }
-  setOpenTextSearchCommand(val: boolean): void { this.openTextSearchCommand = val }
-  setAuxPanelSize(val: number): void { this.auxPanelSize = val }
-  setActiveAuxPanelMode(val: AUX_PANEL_MODE): void { this.activeAuxPanelMode = val }
-  setSideBarSize(val: number): void { this.sideBarSize = val }
-  setActionAltertInfo(alertInfo: ActionAlertInfo | undefined): void { this.applicationStore.setActionAltertInfo(alertInfo) }
-  setConsoleText(value: string | undefined): void { this.consoleText = value }
+  setShowOpenedTabsMenu(val: boolean): void {
+    this.showOpenedTabsMenu = val;
+  }
+  setBlockGlobalHotkeys(val: boolean): void {
+    this.blockGlobalHotkeys = val;
+  }
+  setCurrentEditorState(val: EditorState | undefined): void {
+    this.currentEditorState = val;
+  }
+  setBackdrop(val: boolean): void {
+    this.backdrop = val;
+  }
+  setExpandedMode(val: boolean): void {
+    this.isInExpandedMode = val;
+  }
+  setOpenFileSearchCommand(val: boolean): void {
+    this.openFileSearchCommand = val;
+  }
+  setOpenTextSearchCommand(val: boolean): void {
+    this.openTextSearchCommand = val;
+  }
+  setAuxPanelSize(val: number): void {
+    this.auxPanelSize = val;
+  }
+  setActiveAuxPanelMode(val: AUX_PANEL_MODE): void {
+    this.activeAuxPanelMode = val;
+  }
+  setSideBarSize(val: number): void {
+    this.sideBarSize = val;
+  }
+  setActionAltertInfo(alertInfo: ActionAlertInfo | undefined): void {
+    this.applicationStore.setActionAltertInfo(alertInfo);
+  }
+  setConsoleText(value: string | undefined): void {
+    this.consoleText = value;
+  }
   setBlockingAlert(alertInfo: BlockingAlertInfo | undefined): void {
     this.setBlockGlobalHotkeys(Boolean(alertInfo)); // block global hotkeys if alert is shown
     this.applicationStore.setBlockingAlert(alertInfo);
   }
-  setSearchState(val: SearchState | undefined): void { this.searchState = val }
-  setTestRunnerState(val: TestRunnerState | undefined): void { this.testRunnerState = val }
+  setSearchState(val: SearchState | undefined): void {
+    this.searchState = val;
+  }
+  setTestRunnerState(val: TestRunnerState | undefined): void {
+    this.testRunnerState = val;
+  }
 
   cleanUp(): void {
     // dismiss all the alerts as these are parts of application, if we don't do this, we might
@@ -185,9 +275,17 @@ export class EditorStore {
    * Here, we ensure the order of calls after checking existence of current project and workspace
    * If either of them does not exist, we cannot proceed.
    */
-  *initialize(this: EditorStore, fullInit: boolean, func: (() => Promise<void>) | undefined, mode: string | undefined, fastCompile: string | undefined): Generator<Promise<unknown>, void, unknown> {
+  *initialize(
+    this: EditorStore,
+    fullInit: boolean,
+    func: (() => Promise<void>) | undefined,
+    mode: string | undefined,
+    fastCompile: string | undefined,
+  ): Generator<Promise<unknown>, void, unknown> {
     if (!this.initState.isInInitialState) {
-      this.applicationStore.notifyIllegalState('Editor store is re-initialized');
+      this.applicationStore.notifyIllegalState(
+        'Editor store is re-initialized',
+      );
       return;
     }
     // set PURE IDE mode
@@ -196,23 +294,45 @@ export class EditorStore {
     // initialize editor
     this.initState.inProgress();
     try {
-      const initializationPromise = this.applicationStore.client.initialize(!fullInit);
-      this.setBlockingAlert({ message: 'Loading Pure IDE...', prompt: 'Please be patient as we are building the initial application state', showLoading: true });
+      const initializationPromise = this.applicationStore.client.initialize(
+        !fullInit,
+      );
+      this.setBlockingAlert({
+        message: 'Loading Pure IDE...',
+        prompt:
+          'Please be patient as we are building the initial application state',
+        showLoading: true,
+      });
       yield this.pullInitializationActivity();
       this.setBlockingAlert(undefined);
       const openWelcomeFilePromise = flowResult(this.loadFile('/welcome.pure'));
       const directoryTreeInitPromise = this.directoryTreeState.initialize();
       const conceptTreeInitPromise = this.conceptTreeState.initialize();
-      const result = deserializeInitializationnResult((yield initializationPromise) as PlainObject<InitializationResult>);
+      const result = deserializeInitializationnResult(
+        (yield initializationPromise) as PlainObject<InitializationResult>,
+      );
       if (result.text) {
         this.setConsoleText(result.text);
         this.openAuxPanel(AUX_PANEL_MODE.CONSOLE, true);
       }
       if (result instanceof InitializationFailureResult) {
         if (result.sessionError) {
-          this.setBlockingAlert({ message: 'Session corrupted', prompt: result.sessionError });
+          this.setBlockingAlert({
+            message: 'Session corrupted',
+            prompt: result.sessionError,
+          });
         } else if (result instanceof InitializationFailureWithSourceResult) {
-          yield flowResult(this.loadFile(result.source, new FileCoordinate(result.source, result.line, result.column, (result.text ?? '').split('\n').filter(Boolean)[0])));
+          yield flowResult(
+            this.loadFile(
+              result.source,
+              new FileCoordinate(
+                result.source,
+                result.line,
+                result.column,
+                (result.text ?? '').split('\n').filter(Boolean)[0],
+              ),
+            ),
+          );
         }
       } else {
         if (func) {
@@ -228,24 +348,43 @@ export class EditorStore {
     } catch (e) {
       this.applicationStore.notifyError(e);
       this.initState.conclude(false);
-      this.setBlockingAlert({ message: 'Failed to initialize IDE', prompt: 'Make sure the IDE server is working, otherwise try to restart it' });
+      this.setBlockingAlert({
+        message: 'Failed to initialize IDE',
+        prompt:
+          'Make sure the IDE server is working, otherwise try to restart it',
+      });
       return;
     }
     this.initState.conclude(true);
   }
 
-  *checkIfSessionWakingUp(this: EditorStore, message?: string): Generator<Promise<unknown> | undefined, void, unknown> {
-    this.setBlockingAlert({ message: message ?? 'Checking IDE session...', showLoading: true });
-    yield this.pullInitializationActivity((activity: InitializationActivity) => {
-      if (activity.text) {
-        this.setBlockingAlert({ message: message ?? 'Checking IDE session...', prompt: activity.text, showLoading: true });
-      }
+  *checkIfSessionWakingUp(
+    this: EditorStore,
+    message?: string,
+  ): Generator<Promise<unknown> | undefined, void, unknown> {
+    this.setBlockingAlert({
+      message: message ?? 'Checking IDE session...',
+      showLoading: true,
     });
+    yield this.pullInitializationActivity(
+      (activity: InitializationActivity) => {
+        if (activity.text) {
+          this.setBlockingAlert({
+            message: message ?? 'Checking IDE session...',
+            prompt: activity.text,
+            showLoading: true,
+          });
+        }
+      },
+    );
     this.setBlockingAlert(undefined);
   }
 
-  async pullInitializationActivity(fn?: (activity: InitializationActivity) => void): Promise<void> {
-    const result = await this.applicationStore.client.getInitializationActivity() as unknown as InitializationActivity;
+  async pullInitializationActivity(
+    fn?: (activity: InitializationActivity) => void,
+  ): Promise<void> {
+    const result =
+      (await this.applicationStore.client.getInitializationActivity()) as unknown as InitializationActivity;
     if (result.initializing) {
       return new Promise((resolve, reject) =>
         setTimeout(() => {
@@ -254,21 +393,31 @@ export class EditorStore {
           } catch (e) {
             reject(e);
           }
-        }, 1000)
+        }, 1000),
       );
     }
     return Promise.resolve();
   }
 
   getCurrentEditorState<T extends EditorState>(clazz: Clazz<T>): T {
-    return guaranteeType(this.currentEditorState, clazz, `Expected current editor state to be of type '${clazz.name}' (this is caused by calling this method at the wrong place)`);
+    return guaranteeType(
+      this.currentEditorState,
+      clazz,
+      `Expected current editor state to be of type '${clazz.name}' (this is caused by calling this method at the wrong place)`,
+    );
   }
 
-  openAuxPanel(auxPanelMode: AUX_PANEL_MODE, resetHeightIfTooSmall: boolean): void {
+  openAuxPanel(
+    auxPanelMode: AUX_PANEL_MODE,
+    resetHeightIfTooSmall: boolean,
+  ): void {
     this.activeAuxPanelMode = auxPanelMode;
     if (this.auxPanelSize === 0) {
       this.toggleAuxPanel();
-    } else if (this.auxPanelSize < DEFAULT_AUX_PANEL_SIZE && resetHeightIfTooSmall) {
+    } else if (
+      this.auxPanelSize < DEFAULT_AUX_PANEL_SIZE &&
+      resetHeightIfTooSmall
+    ) {
       this.auxPanelSize = DEFAULT_AUX_PANEL_SIZE;
     }
   }
@@ -284,7 +433,10 @@ export class EditorStore {
 
   toggleExpandAuxPanel(): void {
     if (this.auxPanelSize === this.maxAuxPanelSize) {
-      this.auxPanelSize = this.previousAuxPanelSize === this.maxAuxPanelSize ? DEFAULT_AUX_PANEL_SIZE : this.previousAuxPanelSize;
+      this.auxPanelSize =
+        this.previousAuxPanelSize === this.maxAuxPanelSize
+          ? DEFAULT_AUX_PANEL_SIZE
+          : this.previousAuxPanelSize;
     } else {
       this.previousAuxPanelSize = this.auxPanelSize;
       this.auxPanelSize = this.maxAuxPanelSize;
@@ -293,8 +445,12 @@ export class EditorStore {
 
   setMaxAuxPanelSize(val: number): void {
     if (this.isMaxAuxPanelSizeSet) {
-      if (this.previousAuxPanelSize === this.maxAuxPanelSize) { this.previousAuxPanelSize = val }
-      if (this.auxPanelSize === this.maxAuxPanelSize) { this.auxPanelSize = val }
+      if (this.previousAuxPanelSize === this.maxAuxPanelSize) {
+        this.previousAuxPanelSize = val;
+      }
+      if (this.auxPanelSize === this.maxAuxPanelSize) {
+        this.auxPanelSize = val;
+      }
     }
     this.maxAuxPanelSize = val;
     this.isMaxAuxPanelSizeSet = true;
@@ -302,11 +458,14 @@ export class EditorStore {
 
   setActiveActivity(
     activity: ACTIVITY_MODE,
-    options?: { keepShowingIfMatchedCurrent?: boolean }
+    options?: { keepShowingIfMatchedCurrent?: boolean },
   ): void {
     if (this.sideBarSize === 0) {
       this.sideBarSize = this.sideBarSizeBeforeHidden;
-    } else if (activity === this.activeActivity && !options?.keepShowingIfMatchedCurrent) {
+    } else if (
+      activity === this.activeActivity &&
+      !options?.keepShowingIfMatchedCurrent
+    ) {
       this.sideBarSizeBeforeHidden = this.sideBarSize || DEFAULT_SIDE_BAR_SIZE;
       this.sideBarSize = 0;
     }
@@ -314,13 +473,19 @@ export class EditorStore {
   }
 
   closeState(editorState: EditorState): void {
-    const elementIndex = this.openedEditorStates.findIndex(e => e === editorState);
+    const elementIndex = this.openedEditorStates.findIndex(
+      (e) => e === editorState,
+    );
     assertTrue(elementIndex !== -1, `Can't close a tab which is not opened`);
     this.openedEditorStates.splice(elementIndex, 1);
     if (this.currentEditorState === editorState) {
       if (this.openedEditorStates.length) {
         const openIndex = elementIndex - 1;
-        this.setCurrentEditorState(openIndex >= 0 ? this.openedEditorStates[openIndex] : this.openedEditorStates[0]);
+        this.setCurrentEditorState(
+          openIndex >= 0
+            ? this.openedEditorStates[openIndex]
+            : this.openedEditorStates[0],
+        );
       } else {
         this.setCurrentEditorState(undefined);
       }
@@ -328,7 +493,10 @@ export class EditorStore {
   }
 
   closeAllOtherStates(editorState: EditorState): void {
-    assertNonNullable(this.openedEditorStates.find(e => e === editorState), 'Editor tab should be currently opened');
+    assertNonNullable(
+      this.openedEditorStates.find((e) => e === editorState),
+      'Editor tab should be currently opened',
+    );
     this.currentEditorState = editorState;
     this.openedEditorStates = [editorState];
   }
@@ -344,23 +512,36 @@ export class EditorStore {
     }
   }
 
-  *loadFile(path: string, coordinate?: FileCoordinate): Generator<Promise<unknown>, void, unknown> {
-    const existingFileState = this.openedEditorStates.find(editorState => editorState instanceof FileEditorState && editorState.path === path);
+  *loadFile(
+    path: string,
+    coordinate?: FileCoordinate,
+  ): Generator<Promise<unknown>, void, unknown> {
+    const existingFileState = this.openedEditorStates.find(
+      (editorState) =>
+        editorState instanceof FileEditorState && editorState.path === path,
+    );
     if (existingFileState instanceof FileEditorState) {
       if (coordinate) {
         existingFileState.setCoordinate(coordinate);
       }
       this.openFile(existingFileState.file, existingFileState.path);
     } else {
-      const file = deserialize(PureFile, yield this.applicationStore.client.getFile(path));
+      const file = deserialize(
+        PureFile,
+        yield this.applicationStore.client.getFile(path),
+      );
       yield flowResult(this.checkIfSessionWakingUp());
       this.openFile(file, path, coordinate);
     }
   }
 
   openFile(file: PureFile, path: string, coordinate?: FileCoordinate): void {
-    const existingFileState = this.openedEditorStates.find(editorState => editorState instanceof FileEditorState && editorState.path === path);
-    const fileState = existingFileState ?? new FileEditorState(this, file, path, coordinate);
+    const existingFileState = this.openedEditorStates.find(
+      (editorState) =>
+        editorState instanceof FileEditorState && editorState.path === path,
+    );
+    const fileState =
+      existingFileState ?? new FileEditorState(this, file, path, coordinate);
     if (!existingFileState) {
       this.openedEditorStates.push(fileState);
     }
@@ -368,21 +549,37 @@ export class EditorStore {
   }
 
   *reloadFile(path: string): Generator<Promise<unknown>, void, unknown> {
-    const existingFileState = this.openedEditorStates.find(editorState => editorState instanceof FileEditorState && editorState.path === path);
+    const existingFileState = this.openedEditorStates.find(
+      (editorState) =>
+        editorState instanceof FileEditorState && editorState.path === path,
+    );
     if (existingFileState instanceof FileEditorState) {
-      const file = deserialize(PureFile, yield this.applicationStore.client.getFile(path));
+      const file = deserialize(
+        PureFile,
+        yield this.applicationStore.client.getFile(path),
+      );
       existingFileState.setFile(file);
       existingFileState.setCoordinate(undefined);
     }
   }
 
-  *execute(this: EditorStore, url: string, extraParams: Record<PropertyKey, unknown>, checkExecutionStatus: boolean, manageResult: (result: ExecutionResult) => Promise<void>): Generator<Promise<unknown>, void, unknown> {
+  *execute(
+    this: EditorStore,
+    url: string,
+    extraParams: Record<PropertyKey, unknown>,
+    checkExecutionStatus: boolean,
+    manageResult: (result: ExecutionResult) => Promise<void>,
+  ): Generator<Promise<unknown>, void, unknown> {
     if (!this.initState.hasSucceeded) {
-      this.applicationStore.notifyWarning(`Can't execute while initializing application`);
+      this.applicationStore.notifyWarning(
+        `Can't execute while initializing application`,
+      );
       return;
     }
     if (this.executionState.isInProgress) {
-      this.applicationStore.notifyWarning('Another execution is already in progress!');
+      this.applicationStore.notifyWarning(
+        'Another execution is already in progress!',
+      );
       return;
     }
     // reset search state before execution
@@ -392,13 +589,20 @@ export class EditorStore {
     this.executionState.inProgress();
     try {
       const openedFiles = this.openedEditorStates
-        .filter((editorState): editorState is FileEditorState => editorState instanceof FileEditorState)
-        .map(fileEditorState => ({
+        .filter(
+          (editorState): editorState is FileEditorState =>
+            editorState instanceof FileEditorState,
+        )
+        .map((fileEditorState) => ({
           path: fileEditorState.path,
           // TODO: investigate why if we send `\r\n` the server will duplicate the new line character
           code: fileEditorState.file.content.replace(/\r\n/g, '\n'),
         }));
-      const executionPromise = this.applicationStore.client.execute(openedFiles, url, extraParams);
+      const executionPromise = this.applicationStore.client.execute(
+        openedFiles,
+        url,
+        extraParams,
+      );
       // NOTE: when we execute, it could take a while, and by default, we run a status check which potentially
       // blocks the screen, as such, to be less disruptive to the UX and to avoid creating the illusion of slowness
       // we will have a wait time, if execution is below this threshold, we will not conduct the check.
@@ -406,32 +610,69 @@ export class EditorStore {
       const WAIT_TIME_TO_TRIGGER_STATUS_CHECK = 1000;
       let executionPromiseFinished = false;
       let executionPromiseResult: PlainObject<ExecutionResult> | undefined;
-      yield Promise.all<void>([executionPromise.then(value => {
-        executionPromiseFinished = true;
-        executionPromiseResult = value;
-      }), new Promise(resolve => setTimeout(() => {
-        if (!executionPromiseFinished && checkExecutionStatus) {
-          this.setBlockingAlert({ message: 'Executing...', prompt: 'Please do not refresh the application', showLoading: true });
-          resolve(this.pullExecutionStatus());
-        }
-        resolve();
-      }, WAIT_TIME_TO_TRIGGER_STATUS_CHECK, true))]);
-      const result = deserializeExecutionResult(guaranteeNonNullable(executionPromiseResult));
+      yield Promise.all<void>([
+        executionPromise.then((value) => {
+          executionPromiseFinished = true;
+          executionPromiseResult = value;
+        }),
+        new Promise((resolve) =>
+          setTimeout(
+            () => {
+              if (!executionPromiseFinished && checkExecutionStatus) {
+                this.setBlockingAlert({
+                  message: 'Executing...',
+                  prompt: 'Please do not refresh the application',
+                  showLoading: true,
+                });
+                resolve(this.pullExecutionStatus());
+              }
+              resolve();
+            },
+            WAIT_TIME_TO_TRIGGER_STATUS_CHECK,
+            true,
+          ),
+        ),
+      ]);
+      const result = deserializeExecutionResult(
+        guaranteeNonNullable(executionPromiseResult),
+      );
       this.setBlockingAlert(undefined);
       this.setConsoleText(result.text);
       if (result instanceof ExecutionFailureResult) {
         this.applicationStore.notifyWarning('Execution failed!');
         if (result.sessionError) {
-          this.setBlockingAlert({ message: 'Session corrupted', prompt: result.sessionError });
+          this.setBlockingAlert({
+            message: 'Session corrupted',
+            prompt: result.sessionError,
+          });
         } else {
           yield flowResult(manageResult(result));
         }
       } else if (result instanceof ExecutionSuccessResult) {
         this.applicationStore.notifySuccess('Execution succeeded!');
         if (result.reinit) {
-          this.setBlockingAlert({ message: 'Reinitializing...', prompt: 'Please do not refresh the application', showLoading: true });
+          this.setBlockingAlert({
+            message: 'Reinitializing...',
+            prompt: 'Please do not refresh the application',
+            showLoading: true,
+          });
           this.initState.initial();
-          yield flowResult(this.initialize(false, () => flowResult(this.execute(url, extraParams, checkExecutionStatus, manageResult)), this.applicationStore.client.mode, this.applicationStore.client.compilerMode));
+          yield flowResult(
+            this.initialize(
+              false,
+              () =>
+                flowResult(
+                  this.execute(
+                    url,
+                    extraParams,
+                    checkExecutionStatus,
+                    manageResult,
+                  ),
+                ),
+              this.applicationStore.client.mode,
+              this.applicationStore.client.compilerMode,
+            ),
+          );
         } else {
           yield flowResult(manageResult(result));
         }
@@ -447,8 +688,15 @@ export class EditorStore {
   // NOTE: currently backend do not suppor this operation, so we temporarily disable it, but
   // in theory, this will pull up a blocking modal to show the execution status to user
   async pullExecutionStatus(): Promise<void> {
-    const result = await this.applicationStore.client.getExecutionActivity() as unknown as ExecutionActivity;
-    this.setBlockingAlert({ message: 'Executing...', prompt: result.text ? result.text : 'Please do not refresh the application', showLoading: true });
+    const result =
+      (await this.applicationStore.client.getExecutionActivity()) as unknown as ExecutionActivity;
+    this.setBlockingAlert({
+      message: 'Executing...',
+      prompt: result.text
+        ? result.text
+        : 'Please do not refresh the application',
+      showLoading: true,
+    });
     if (result.executing) {
       return new Promise((resolve, reject) =>
         setTimeout(() => {
@@ -459,23 +707,45 @@ export class EditorStore {
           }
           // NOTE: tune this slightly lower for better experience, also for sub-second execution, setting a high number
           // might create the illusion that the system is slow
-        }, 500)
+        }, 500),
       );
     }
-    this.setBlockingAlert({ message: 'Executing...', prompt: 'Please do not refresh the application', showLoading: true });
+    this.setBlockingAlert({
+      message: 'Executing...',
+      prompt: 'Please do not refresh the application',
+      showLoading: true,
+    });
     return Promise.resolve();
   }
 
   *executeGo(this: EditorStore): Generator<Promise<unknown>, void, unknown> {
-    yield flowResult(this.execute('executeGo', {}, true, (result: ExecutionResult) => flowResult(this.manageExecuteGoResult(result))));
+    yield flowResult(
+      this.execute('executeGo', {}, true, (result: ExecutionResult) =>
+        flowResult(this.manageExecuteGoResult(result)),
+      ),
+    );
   }
 
-  *manageExecuteGoResult(result: ExecutionResult): Generator<Promise<unknown>, void, unknown> {
+  *manageExecuteGoResult(
+    result: ExecutionResult,
+  ): Generator<Promise<unknown>, void, unknown> {
     const refreshTreesPromise = flowResult(this.refreshTrees());
     if (result instanceof ExecutionFailureResult) {
-      yield flowResult(this.loadFile(result.source, new FileCoordinate(result.source, result.line, result.column, result.text.split('\n').filter(Boolean)[0])));
+      yield flowResult(
+        this.loadFile(
+          result.source,
+          new FileCoordinate(
+            result.source,
+            result.line,
+            result.column,
+            result.text.split('\n').filter(Boolean)[0],
+          ),
+        ),
+      );
       if (result instanceof UnmatchedFunctionResult) {
-        this.setSearchState(new UnmatchedFunctionExecutionResultState(this, result));
+        this.setSearchState(
+          new UnmatchedFunctionExecutionResultState(this, result),
+        );
         this.openAuxPanel(AUX_PANEL_MODE.SEARCH_RESULT, true);
       } else if (result instanceof UnmatchedResult) {
         this.setSearchState(new UnmatchExecutionResultState(this, result));
@@ -491,58 +761,103 @@ export class EditorStore {
     yield refreshTreesPromise;
   }
 
-  *executeTests(path: string, relevantTestsOnly?: boolean): Generator<Promise<unknown>, void, unknown> {
+  *executeTests(
+    path: string,
+    relevantTestsOnly?: boolean,
+  ): Generator<Promise<unknown>, void, unknown> {
     if (this.testRunState.isInProgress) {
-      this.applicationStore.notifyWarning('Test runner is working. Please try again later');
+      this.applicationStore.notifyWarning(
+        'Test runner is working. Please try again later',
+      );
       return;
     }
     this.testRunState.inProgress();
-    yield flowResult(this.execute('executeTests', {
-      path,
-      relevantTestsOnly,
-    }, false, async (result: ExecutionResult) => {
-      const refreshTreesPromise = flowResult(this.refreshTrees());
-      if (result instanceof ExecutionFailureResult) {
-        await flowResult(this.loadFile(result.source, new FileCoordinate(result.source, result.line, result.column, result.text.split('\n').filter(Boolean)[0])));
-        this.openAuxPanel(AUX_PANEL_MODE.CONSOLE, true);
-        this.testRunState.conclude(false);
-      } else if (result instanceof TestExecutionResult) {
-        this.openAuxPanel(AUX_PANEL_MODE.TEST_RUNNER, true);
-        const testRunnerState = new TestRunnerState(this, result);
-        this.setTestRunnerState(testRunnerState);
-        await flowResult(testRunnerState.buildTestTreeData());
-        // make sure we refresh tree so it is shown in the explorer panel
-        // NOTE: we could potentially expand the tree here, but this operation is expensive since we have all nodes observable
-        // so it will lag the UI if we have too many nodes open
-        testRunnerState.refreshTree();
-        await flowResult(testRunnerState.pollTestRunnerResult());
-        this.testRunState.conclude(true);
-      }
-      // do nothing?
-      await refreshTreesPromise;
-    }));
+    yield flowResult(
+      this.execute(
+        'executeTests',
+        {
+          path,
+          relevantTestsOnly,
+        },
+        false,
+        async (result: ExecutionResult) => {
+          const refreshTreesPromise = flowResult(this.refreshTrees());
+          if (result instanceof ExecutionFailureResult) {
+            await flowResult(
+              this.loadFile(
+                result.source,
+                new FileCoordinate(
+                  result.source,
+                  result.line,
+                  result.column,
+                  result.text.split('\n').filter(Boolean)[0],
+                ),
+              ),
+            );
+            this.openAuxPanel(AUX_PANEL_MODE.CONSOLE, true);
+            this.testRunState.conclude(false);
+          } else if (result instanceof TestExecutionResult) {
+            this.openAuxPanel(AUX_PANEL_MODE.TEST_RUNNER, true);
+            const testRunnerState = new TestRunnerState(this, result);
+            this.setTestRunnerState(testRunnerState);
+            await flowResult(testRunnerState.buildTestTreeData());
+            // make sure we refresh tree so it is shown in the explorer panel
+            // NOTE: we could potentially expand the tree here, but this operation is expensive since we have all nodes observable
+            // so it will lag the UI if we have too many nodes open
+            testRunnerState.refreshTree();
+            await flowResult(testRunnerState.pollTestRunnerResult());
+            this.testRunState.conclude(true);
+          }
+          // do nothing?
+          await refreshTreesPromise;
+        },
+      ),
+    );
   }
 
-  *executeFullTestSuite(relevantTestsOnly?: boolean): Generator<Promise<unknown>, void, unknown> {
+  *executeFullTestSuite(
+    relevantTestsOnly?: boolean,
+  ): Generator<Promise<unknown>, void, unknown> {
     yield flowResult(this.executeTests('::', relevantTestsOnly));
   }
 
-  *executeNavigation(this: EditorStore, coordinate: FileCoordinate): Generator<Promise<unknown>, void, unknown> {
+  *executeNavigation(
+    this: EditorStore,
+    coordinate: FileCoordinate,
+  ): Generator<Promise<unknown>, void, unknown> {
     this.navigationStack.push(coordinate);
-    yield flowResult(this.execute('getConcept', {
-      file: coordinate.file,
-      line: coordinate.line,
-      column: coordinate.column,
-    }, false, async (result: ExecutionResult) => {
-      if (result instanceof GetConceptResult) {
-        await flowResult(this.loadFile(result.jumpTo.source, new FileCoordinate(result.jumpTo.source, result.jumpTo.line, result.jumpTo.column)));
-      }
-    }));
+    yield flowResult(
+      this.execute(
+        'getConcept',
+        {
+          file: coordinate.file,
+          line: coordinate.line,
+          column: coordinate.column,
+        },
+        false,
+        async (result: ExecutionResult) => {
+          if (result instanceof GetConceptResult) {
+            await flowResult(
+              this.loadFile(
+                result.jumpTo.source,
+                new FileCoordinate(
+                  result.jumpTo.source,
+                  result.jumpTo.line,
+                  result.jumpTo.column,
+                ),
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 
   *navigateBack(this: EditorStore): Generator<Promise<unknown>, void, unknown> {
     if (this.navigationStack.length === 0) {
-      this.applicationStore.notifyWarning(`Can't navigate back any further - navigation stack is empty`);
+      this.applicationStore.notifyWarning(
+        `Can't navigate back any further - navigation stack is empty`,
+      );
       return;
     }
     if (this.navigationStack.length > 0) {
@@ -553,15 +868,37 @@ export class EditorStore {
     }
   }
 
-  *executeSaveAndReset(this: EditorStore, fullInit: boolean): Generator<Promise<unknown>, void, unknown> {
-    yield flowResult(this.execute('executeSaveAndReset', {}, true, async (result: ExecutionResult) => {
-      this.initState.initial();
-      await flowResult(this.initialize(fullInit, undefined, this.applicationStore.client.mode, this.applicationStore.client.compilerMode));
-      this.setActiveActivity(ACTIVITY_MODE.CONCEPT, { keepShowingIfMatchedCurrent: true });
-    }));
+  *executeSaveAndReset(
+    this: EditorStore,
+    fullInit: boolean,
+  ): Generator<Promise<unknown>, void, unknown> {
+    yield flowResult(
+      this.execute(
+        'executeSaveAndReset',
+        {},
+        true,
+        async (result: ExecutionResult) => {
+          this.initState.initial();
+          await flowResult(
+            this.initialize(
+              fullInit,
+              undefined,
+              this.applicationStore.client.mode,
+              this.applicationStore.client.compilerMode,
+            ),
+          );
+          this.setActiveActivity(ACTIVITY_MODE.CONCEPT, {
+            keepShowingIfMatchedCurrent: true,
+          });
+        },
+      ),
+    );
   }
 
-  *fullReCompile(this: EditorStore, fullInit: boolean): Generator<Promise<unknown>, void, unknown> {
+  *fullReCompile(
+    this: EditorStore,
+    fullInit: boolean,
+  ): Generator<Promise<unknown>, void, unknown> {
     this.setActionAltertInfo({
       message: 'Are you sure you want to perform a full re-compile?',
       prompt: 'This may take a long time to complete',
@@ -572,13 +909,14 @@ export class EditorStore {
         {
           label: 'Perform full re-compile',
           type: ActionAlertActionType.PROCEED_WITH_CAUTION,
-          handler: (): Promise<void> => flowResult(this.executeSaveAndReset(fullInit))
+          handler: (): Promise<void> =>
+            flowResult(this.executeSaveAndReset(fullInit)),
         },
         {
           label: 'Abort',
           type: ActionAlertActionType.PROCEED,
           default: true,
-        }
+        },
       ],
     });
   }
@@ -590,23 +928,51 @@ export class EditorStore {
     ]);
   }
 
-  *updateFileUsingSuggestionCandidate(this: EditorStore, candidate: CandidateWithPackageNotImported): Generator<Promise<unknown>, void, unknown> {
+  *updateFileUsingSuggestionCandidate(
+    this: EditorStore,
+    candidate: CandidateWithPackageNotImported,
+  ): Generator<Promise<unknown>, void, unknown> {
     this.setSearchState(undefined);
-    yield flowResult(this.updateFile(candidate.fileToBeModified, candidate.lineToBeModified, candidate.columnToBeModified, candidate.add, candidate.messageToBeModified));
+    yield flowResult(
+      this.updateFile(
+        candidate.fileToBeModified,
+        candidate.lineToBeModified,
+        candidate.columnToBeModified,
+        candidate.add,
+        candidate.messageToBeModified,
+      ),
+    );
     this.openAuxPanel(AUX_PANEL_MODE.CONSOLE, true);
   }
 
-  *updateFile(this: EditorStore, path: string, line: number, column: number, add: boolean, message: string): Generator<Promise<unknown>, void, unknown> {
-    yield flowResult(this.execute('updateSource', {
-      updatePath: path,
-      updateSources: [{
-        path,
-        line,
-        column,
-        add,
-        message,
-      }],
-    }, false, (result: ExecutionResult) => flowResult(this.manageExecuteGoResult(result))));
+  *updateFile(
+    this: EditorStore,
+    path: string,
+    line: number,
+    column: number,
+    add: boolean,
+    message: string,
+  ): Generator<Promise<unknown>, void, unknown> {
+    yield flowResult(
+      this.execute(
+        'updateSource',
+        {
+          updatePath: path,
+          updateSources: [
+            {
+              path,
+              line,
+              column,
+              add,
+              message,
+            },
+          ],
+        },
+        false,
+        (result: ExecutionResult) =>
+          flowResult(this.manageExecuteGoResult(result)),
+      ),
+    );
   }
 
   *searchFile(this: EditorStore): Generator<Promise<unknown>, void, unknown> {
@@ -614,7 +980,11 @@ export class EditorStore {
       return;
     }
     this.fileSearchCommandLoadingState.inProgress();
-    this.fileSearchCommandResults = (yield this.applicationStore.client.findFiles(this.fileSearchCommandState.text, this.fileSearchCommandState.isRegExp)) as string[];
+    this.fileSearchCommandResults =
+      (yield this.applicationStore.client.findFiles(
+        this.fileSearchCommandState.text,
+        this.fileSearchCommandState.isRegExp,
+      )) as string[];
     this.fileSearchCommandLoadingState.conclude(true);
   }
 
@@ -625,7 +995,13 @@ export class EditorStore {
     this.textSearchCommandLoadingState.inProgress();
     this.openAuxPanel(AUX_PANEL_MODE.SEARCH_RESULT, true);
     try {
-      const results = ((yield this.applicationStore.client.searchText(this.textSearchCommandState.text, this.textSearchCommandState.isCaseSensitive, this.textSearchCommandState.isRegExp)) as PlainObject<SearchResultEntry>[]).map(result => getSearchResultEntry(result));
+      const results = (
+        (yield this.applicationStore.client.searchText(
+          this.textSearchCommandState.text,
+          this.textSearchCommandState.isCaseSensitive,
+          this.textSearchCommandState.isRegExp,
+        )) as PlainObject<SearchResultEntry>[]
+      ).map((result) => getSearchResultEntry(result));
       this.setSearchState(new SearchResultState(this, results));
       this.textSearchCommandLoadingState.conclude(true);
     } catch (e) {
@@ -634,23 +1010,41 @@ export class EditorStore {
     }
   }
 
-  *findUsages(this: EditorStore, coordinate: FileCoordinate): Generator<Promise<unknown>, void, unknown> {
-    const errorMessage = 'Error finding references. Please make sure that the code compiles and that you are looking for references of non primitive types!';
+  *findUsages(
+    this: EditorStore,
+    coordinate: FileCoordinate,
+  ): Generator<Promise<unknown>, void, unknown> {
+    const errorMessage =
+      'Error finding references. Please make sure that the code compiles and that you are looking for references of non primitive types!';
     let concept: UsageConcept;
     try {
-      concept = ((yield this.applicationStore.client.getConceptPath(coordinate.file, coordinate.line, coordinate.column)) as UsageConcept);
+      concept = (yield this.applicationStore.client.getConceptPath(
+        coordinate.file,
+        coordinate.line,
+        coordinate.column,
+      )) as UsageConcept;
     } catch {
       this.applicationStore.notifyWarning(errorMessage);
       return;
     }
     try {
-      this.setBlockingAlert({ message: 'Finding concept usages...', prompt: `Finding references of ${getUsageConceptLabel(concept)}`, showLoading: true });
-      const usages = ((yield this.applicationStore.client.getUsages(concept.owner
-        ? (concept.type
-          ? 'meta::pure::ide::findusages::findUsagesForEnum_String_1__String_1__SourceInformation_MANY_'
-          : 'meta::pure::ide::findusages::findUsagesForProperty_String_1__String_1__SourceInformation_MANY_')
-        : 'meta::pure::ide::findusages::findUsagesForPath_String_1__SourceInformation_MANY_', (concept.owner ? [`'${concept.owner}'`] : []).concat(`'${concept.path}'`))) as PlainObject<Usage>[])
-        .map(usage => deserialize(Usage, usage));
+      this.setBlockingAlert({
+        message: 'Finding concept usages...',
+        prompt: `Finding references of ${getUsageConceptLabel(concept)}`,
+        showLoading: true,
+      });
+      const usages = (
+        (yield this.applicationStore.client.getUsages(
+          concept.owner
+            ? concept.type
+              ? 'meta::pure::ide::findusages::findUsagesForEnum_String_1__String_1__SourceInformation_MANY_'
+              : 'meta::pure::ide::findusages::findUsagesForProperty_String_1__String_1__SourceInformation_MANY_'
+            : 'meta::pure::ide::findusages::findUsagesForPath_String_1__SourceInformation_MANY_',
+          (concept.owner ? [`'${concept.owner}'`] : []).concat(
+            `'${concept.path}'`,
+          ),
+        )) as PlainObject<Usage>[]
+      ).map((usage) => deserialize(Usage, usage));
       this.setSearchState(new UsageResultState(this, concept, usages));
       this.openAuxPanel(AUX_PANEL_MODE.SEARCH_RESULT, true);
     } catch {
@@ -660,9 +1054,14 @@ export class EditorStore {
     }
   }
 
-  *command(this: EditorStore, cmd: () => Promise<PlainObject<CommandResult>>): Generator<Promise<unknown>, boolean, unknown> {
+  *command(
+    this: EditorStore,
+    cmd: () => Promise<PlainObject<CommandResult>>,
+  ): Generator<Promise<unknown>, boolean, unknown> {
     try {
-      const result = deserializeCommandResult((yield cmd()) as PlainObject<CommandResult>);
+      const result = deserializeCommandResult(
+        (yield cmd()) as PlainObject<CommandResult>,
+      );
       if (result instanceof CommandFailureResult) {
         if (result.errorDialog) {
           this.applicationStore.notifyWarning(`Error: ${result.text}`);
@@ -678,30 +1077,65 @@ export class EditorStore {
     }
   }
 
-  *createNewDirectory(this: EditorStore, path: string): Generator<Promise<unknown>, void, unknown> {
-    yield flowResult(this.command(() => this.applicationStore.client.createFolder(trimPathLeadingSlash(path))));
+  *createNewDirectory(
+    this: EditorStore,
+    path: string,
+  ): Generator<Promise<unknown>, void, unknown> {
+    yield flowResult(
+      this.command(() =>
+        this.applicationStore.client.createFolder(trimPathLeadingSlash(path)),
+      ),
+    );
     yield flowResult(this.directoryTreeState.refreshTreeData());
   }
 
-  *createNewFile(this: EditorStore, path: string): Generator<Promise<unknown>, void, unknown> {
-    const result = (yield flowResult(this.command(() => this.applicationStore.client.createFile(trimPathLeadingSlash(path))))) as boolean;
+  *createNewFile(
+    this: EditorStore,
+    path: string,
+  ): Generator<Promise<unknown>, void, unknown> {
+    const result = (yield flowResult(
+      this.command(() =>
+        this.applicationStore.client.createFile(trimPathLeadingSlash(path)),
+      ),
+    )) as boolean;
     yield flowResult(this.directoryTreeState.refreshTreeData());
     if (result) {
       yield flowResult(this.loadFile(path));
     }
   }
 
-  private *_deleteDirectoryOrFile(this: EditorStore, path: string): Generator<Promise<unknown>, void, unknown> {
-    yield flowResult(this.command(() => this.applicationStore.client.deleteDirectoryOrFile(trimPathLeadingSlash(path))));
-    const editorStatesToClose = this.openedEditorStates.filter(state => state instanceof FileEditorState && state.path.startsWith(path));
-    editorStatesToClose.forEach(state => this.closeState(state));
+  private *_deleteDirectoryOrFile(
+    this: EditorStore,
+    path: string,
+  ): Generator<Promise<unknown>, void, unknown> {
+    yield flowResult(
+      this.command(() =>
+        this.applicationStore.client.deleteDirectoryOrFile(
+          trimPathLeadingSlash(path),
+        ),
+      ),
+    );
+    const editorStatesToClose = this.openedEditorStates.filter(
+      (state) =>
+        state instanceof FileEditorState && state.path.startsWith(path),
+    );
+    editorStatesToClose.forEach((state) => this.closeState(state));
     yield flowResult(this.directoryTreeState.refreshTreeData());
   }
 
-  *deleteDirectoryOrFile(this: EditorStore, path: string, isDirectory: boolean, hasChildContent: boolean): Generator<Promise<unknown>, void, unknown> {
+  *deleteDirectoryOrFile(
+    this: EditorStore,
+    path: string,
+    isDirectory: boolean,
+    hasChildContent: boolean,
+  ): Generator<Promise<unknown>, void, unknown> {
     this.setActionAltertInfo({
-      message: `Are you sure you would like to delete this ${isDirectory ? 'directory' : 'file'}?`,
-      prompt: hasChildContent ? 'Beware! This directory is not empty, this action is not undo-able, you have to manually revert using VCS' : 'Beware! This action is not undo-able, you have to manually revert using VCS',
+      message: `Are you sure you would like to delete this ${
+        isDirectory ? 'directory' : 'file'
+      }?`,
+      prompt: hasChildContent
+        ? 'Beware! This directory is not empty, this action is not undo-able, you have to manually revert using VCS'
+        : 'Beware! This action is not undo-able, you have to manually revert using VCS',
       type: ActionAlertType.CAUTION,
       onEnter: (): void => this.setBlockGlobalHotkeys(true),
       onClose: (): void => this.setBlockGlobalHotkeys(false),
@@ -709,43 +1143,73 @@ export class EditorStore {
         {
           label: 'Delete anyway',
           type: ActionAlertActionType.PROCEED_WITH_CAUTION,
-          handler: (): Promise<void> => flowResult(this._deleteDirectoryOrFile(path)).catch(this.applicationStore.alertIllegalUnhandledError)
+          handler: (): Promise<void> =>
+            flowResult(this._deleteDirectoryOrFile(path)).catch(
+              this.applicationStore.alertIllegalUnhandledError,
+            ),
         },
         {
           label: 'Abort',
           type: ActionAlertActionType.PROCEED,
           default: true,
-        }
+        },
       ],
     });
   }
 
-  createGlobalHotKeyAction = (handler: (event?: KeyboardEvent | undefined) => void): (event: KeyboardEvent | undefined) => void => (event: KeyboardEvent | undefined): void => {
-    event?.preventDefault();
-    if (!this.blockGlobalHotkeys) { handler(event) }
-  }
+  createGlobalHotKeyAction =
+    (
+      handler: (event?: KeyboardEvent | undefined) => void,
+    ): ((event: KeyboardEvent | undefined) => void) =>
+    (event: KeyboardEvent | undefined): void => {
+      event?.preventDefault();
+      if (!this.blockGlobalHotkeys) {
+        handler(event);
+      }
+    };
 
   // Since we use a custom monospaced font for `monaco-editor` we want to make sure we can load it before any rendering and measuring happens
-  *preloadTextEditorFont(this: EditorStore): Generator<Promise<unknown>, void, unknown> {
+  *preloadTextEditorFont(
+    this: EditorStore,
+  ): Generator<Promise<unknown>, void, unknown> {
     const fontLoadFailureErrorMessage = `Monospaced font '${MONOSPACE_FONT_FAMILY}' has not been loaded properly, text editor display problem might occur`;
-    yield document.fonts.load(`1em ${MONOSPACE_FONT_FAMILY}`).then(() => {
-      if (document.fonts.check(`1em ${MONOSPACE_FONT_FAMILY}`)) {
-        monacoEditorAPI.remeasureFonts();
-        this.applicationStore.logger.info(LOG_EVENT.EDITOR_FONT_LOADED, `Monospaced font '${MONOSPACE_FONT_FAMILY}' has been loaded`);
-      } else {
-        this.applicationStore.notifyError(fontLoadFailureErrorMessage);
-      }
-    }).catch(() => this.applicationStore.notifyError(fontLoadFailureErrorMessage));
+    yield document.fonts
+      .load(`1em ${MONOSPACE_FONT_FAMILY}`)
+      .then(() => {
+        if (document.fonts.check(`1em ${MONOSPACE_FONT_FAMILY}`)) {
+          monacoEditorAPI.remeasureFonts();
+          this.applicationStore.logger.info(
+            LOG_EVENT.EDITOR_FONT_LOADED,
+            `Monospaced font '${MONOSPACE_FONT_FAMILY}' has been loaded`,
+          );
+        } else {
+          this.applicationStore.notifyError(fontLoadFailureErrorMessage);
+        }
+      })
+      .catch(() =>
+        this.applicationStore.notifyError(fontLoadFailureErrorMessage),
+      );
   }
 }
 
 const EditorStoreContext = createContext<EditorStore | undefined>(undefined);
 
-export const EditorStoreProvider = ({ children }: { children: React.ReactNode }): React.ReactElement => {
+export const EditorStoreProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactElement => {
   const applicationStore = useApplicationStore();
   const store = useLocalObservable(() => new EditorStore(applicationStore));
-  return <EditorStoreContext.Provider value={store}>{children}</EditorStoreContext.Provider>;
+  return (
+    <EditorStoreContext.Provider value={store}>
+      {children}
+    </EditorStoreContext.Provider>
+  );
 };
 
 export const useEditorStore = (): EditorStore =>
-  guaranteeNonNullable(useContext(EditorStoreContext), 'useEditorStore() hook must be used inside EditorStore context provider');
+  guaranteeNonNullable(
+    useContext(EditorStoreContext),
+    'useEditorStore() hook must be used inside EditorStore context provider',
+  );

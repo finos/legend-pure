@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import { Editor } from './editor/Editor';
-import { ApplicationStoreProvider } from 'Stores/ApplicationStore';
-import { NotificationSnackbar } from 'Components/shared/NotificationSnackbar';
-import { ActionAlert } from 'Components/application/ActionAlert';
-import { BlockingAlert } from 'Components/application/BlockingAlert';
+import { ApplicationStoreProvider } from '../stores/ApplicationStore';
+import { NotificationSnackbar } from './shared/NotificationSnackbar';
+import { ActionAlert } from './application/ActionAlert';
+import { BlockingAlert } from './application/BlockingAlert';
 import { MuiThemeProvider, createMuiTheme } from '@material-ui/core';
 
 const materialUiTheme = createMuiTheme({
@@ -31,7 +30,7 @@ const materialUiTheme = createMuiTheme({
   },
   transitions: {
     // So we have `transition: none;` everywhere
-    create: (): string => 'none'
+    create: (): string => 'none',
   },
   typography: {
     fontFamily: 'Roboto',
@@ -46,7 +45,7 @@ const materialUiTheme = createMuiTheme({
         background: 'var(--color-dark-grey-100)',
         color: 'var(--color-light-grey-100)',
         fontSize: '1.2rem',
-        maxWidth: 'inherit'
+        maxWidth: 'inherit',
       },
       tooltipPlacementTop: {
         margin: '0.5rem 0',
@@ -58,26 +57,26 @@ const materialUiTheme = createMuiTheme({
       },
       rounded: {
         borderRadius: 0,
-      }
+      },
     },
     MuiDialog: {
       scrollPaper: {
-        alignItems: 'flex-start'
+        alignItems: 'flex-start',
       },
       paper: {
-        margin: 0
+        margin: 0,
       },
       root: {
-        marginTop: '4.8rem'
-      }
+        marginTop: '4.8rem',
+      },
     },
     MuiList: {
       padding: {
         paddingTop: 0,
         paddingBottom: 0,
-      }
-    }
-  }
+      },
+    },
+  },
 });
 
 export const App: React.FC = () => (

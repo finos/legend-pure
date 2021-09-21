@@ -14,25 +14,32 @@
  * limitations under the License.
  */
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import ReactResizeDetector from 'react-resize-detector';
 import { AuxiliaryPanel } from './aux-panel/AuxiliaryPanel';
 import { SideBar } from './side-bar/SideBar';
 import { GlobalHotKeys } from 'react-hotkeys';
 import { ActivityBar } from './ActivityBar';
-import { SIDE_BAR_RESIZE_SNAP_THRESHOLD, DEFAULT_SIDE_BAR_SIZE, HOTKEY, HOTKEY_MAP, AUX_PANEL_RESIZE_BOTTOM_SNAP_THRESHOLD, AUX_PANEL_RESIZE_TOP_SNAP_THRESHOLD } from 'Stores/EditorConfig';
-import { EditorStoreProvider, useEditorStore } from 'Stores/EditorStore';
+import {
+  SIDE_BAR_RESIZE_SNAP_THRESHOLD,
+  DEFAULT_SIDE_BAR_SIZE,
+  HOTKEY,
+  HOTKEY_MAP,
+  AUX_PANEL_RESIZE_BOTTOM_SNAP_THRESHOLD,
+  AUX_PANEL_RESIZE_TOP_SNAP_THRESHOLD,
+} from '../../stores/EditorConfig';
+import { EditorStoreProvider, useEditorStore } from '../../stores/EditorStore';
 import clsx from 'clsx';
 import Backdrop from '@material-ui/core/Backdrop';
-import { useApplicationStore } from 'Stores/ApplicationStore';
-import { StatusBar } from 'Components/editor/StatusBar';
-import { EditPanel } from 'Components/editor/edit-panel/EditPanel';
+import { useApplicationStore } from '../../stores/ApplicationStore';
+import { StatusBar } from './StatusBar';
+import { EditPanel } from './edit-panel/EditPanel';
 import { flowResult } from 'mobx';
 import { parse } from 'query-string';
-import { FileEditorState } from 'Stores/EditorState';
-import { FileSearchCommand } from 'Components/editor/command-center/FileSearchCommand';
-import { TextSearchCommand } from 'Components/editor/command-center/TextSearchCommand';
+import { FileEditorState } from '../../stores/EditorState';
+import { FileSearchCommand } from './command-center/FileSearchCommand';
+import { TextSearchCommand } from './command-center/TextSearchCommand';
 import type { HandlerProps } from 'react-reflex';
 import { ReflexContainer, ReflexElement, ReflexSplitter } from 'react-reflex';
 
@@ -55,15 +62,29 @@ export const EditorInner = observer(() => {
   };
   const snapSideBar = (handlerProps: HandlerProps): void => {
     const newSize = (handlerProps.domElement as HTMLDivElement).offsetWidth;
-    editorStore.setSideBarSize(newSize < SIDE_BAR_RESIZE_SNAP_THRESHOLD ? (editorStore.sideBarSize > 0 ? 0 : DEFAULT_SIDE_BAR_SIZE) : newSize);
+    editorStore.setSideBarSize(
+      newSize < SIDE_BAR_RESIZE_SNAP_THRESHOLD
+        ? editorStore.sideBarSize > 0
+          ? 0
+          : DEFAULT_SIDE_BAR_SIZE
+        : newSize,
+    );
   };
   const snapAuxPanel = (handlerProps: HandlerProps): void => {
     const newSize = (handlerProps.domElement as HTMLDivElement).offsetHeight;
     if (editorContainerRef.current) {
-      if (newSize >= editorContainerRef.current.offsetHeight - AUX_PANEL_RESIZE_TOP_SNAP_THRESHOLD) {
+      if (
+        newSize >=
+        editorContainerRef.current.offsetHeight -
+          AUX_PANEL_RESIZE_TOP_SNAP_THRESHOLD
+      ) {
         editorStore.setAuxPanelSize(editorContainerRef.current.offsetHeight);
       } else if (newSize <= AUX_PANEL_RESIZE_BOTTOM_SNAP_THRESHOLD) {
-        editorStore.setAuxPanelSize(editorStore.auxPanelSize > 0 ? 0 : AUX_PANEL_RESIZE_BOTTOM_SNAP_THRESHOLD);
+        editorStore.setAuxPanelSize(
+          editorStore.auxPanelSize > 0
+            ? 0
+            : AUX_PANEL_RESIZE_BOTTOM_SNAP_THRESHOLD,
+        );
       } else {
         editorStore.setAuxPanelSize(newSize);
       }
@@ -88,30 +109,69 @@ export const EditorInner = observer(() => {
     [HOTKEY.TOGGLE_OPEN_TABS_MENU]: HOTKEY_MAP[HOTKEY.TOGGLE_OPEN_TABS_MENU],
   };
   const handlers = {
-    [HOTKEY.SEARCH_FILE]: editorStore.createGlobalHotKeyAction(() => { editorStore.setOpenFileSearchCommand(true) }),
-    [HOTKEY.SEARCH_TEXT]: editorStore.createGlobalHotKeyAction(() => { editorStore.setOpenTextSearchCommand(true) }),
-    [HOTKEY.EXECUTE]: editorStore.createGlobalHotKeyAction(() => { flowResult(editorStore.executeGo()).catch(applicationStore.alertIllegalUnhandledError) }),
-    [HOTKEY.TOGGLE_AUX_PANEL]: editorStore.createGlobalHotKeyAction(() => editorStore.toggleAuxPanel()),
+    [HOTKEY.SEARCH_FILE]: editorStore.createGlobalHotKeyAction(() => {
+      editorStore.setOpenFileSearchCommand(true);
+    }),
+    [HOTKEY.SEARCH_TEXT]: editorStore.createGlobalHotKeyAction(() => {
+      editorStore.setOpenTextSearchCommand(true);
+    }),
+    [HOTKEY.EXECUTE]: editorStore.createGlobalHotKeyAction(() => {
+      flowResult(editorStore.executeGo()).catch(
+        applicationStore.alertIllegalUnhandledError,
+      );
+    }),
+    [HOTKEY.TOGGLE_AUX_PANEL]: editorStore.createGlobalHotKeyAction(() =>
+      editorStore.toggleAuxPanel(),
+    ),
     [HOTKEY.GO_TO_FILE]: editorStore.createGlobalHotKeyAction(() => {
       const currentEditorState = editorStore.currentEditorState;
       if (currentEditorState instanceof FileEditorState) {
-        editorStore.directoryTreeState.revealPath(currentEditorState.path, true);
+        editorStore.directoryTreeState.revealPath(
+          currentEditorState.path,
+          true,
+        );
       }
     }),
-    [HOTKEY.FULL_RECOMPILE]: editorStore.createGlobalHotKeyAction((event: KeyboardEvent | undefined) => { flowResult(editorStore.fullReCompile(Boolean(event?.shiftKey ?? event?.ctrlKey))).catch(applicationStore.alertIllegalUnhandledError) }),
-    [HOTKEY.RUN_TEST]: editorStore.createGlobalHotKeyAction((event: KeyboardEvent | undefined) => { flowResult(editorStore.executeFullTestSuite(event?.shiftKey)).catch(applicationStore.alertIllegalUnhandledError) }),
+    [HOTKEY.FULL_RECOMPILE]: editorStore.createGlobalHotKeyAction(
+      (event: KeyboardEvent | undefined) => {
+        flowResult(
+          editorStore.fullReCompile(Boolean(event?.shiftKey ?? event?.ctrlKey)),
+        ).catch(applicationStore.alertIllegalUnhandledError);
+      },
+    ),
+    [HOTKEY.RUN_TEST]: editorStore.createGlobalHotKeyAction(
+      (event: KeyboardEvent | undefined) => {
+        flowResult(editorStore.executeFullTestSuite(event?.shiftKey)).catch(
+          applicationStore.alertIllegalUnhandledError,
+        );
+      },
+    ),
     // NOTE: right now this is fairly simplistic, we can create it to navigate in 2 directions like `Tab` and `Shift + Tab`.
     // in VSCode for example, they always show the current tab on top/bottom based on the navigation direction
-    [HOTKEY.TOGGLE_OPEN_TABS_MENU]: editorStore.createGlobalHotKeyAction(() => { editorStore.setShowOpenedTabsMenu(!editorStore.showOpenedTabsMenu) }),
+    [HOTKEY.TOGGLE_OPEN_TABS_MENU]: editorStore.createGlobalHotKeyAction(() => {
+      editorStore.setShowOpenedTabsMenu(!editorStore.showOpenedTabsMenu);
+    }),
   };
 
   // Cleanup the editor
-  useEffect(() => (): void => { editorStore.cleanUp() }, [editorStore]);
+  useEffect(
+    () => (): void => {
+      editorStore.cleanUp();
+    },
+    [editorStore],
+  );
 
   // Initialize the app
   useEffect(() => {
     const queryParams = parse(window.location.search) as EditorQueryParams;
-    flowResult(editorStore.initialize(false, undefined, queryParams.mode, queryParams.fastCompile)).catch(applicationStore.alertIllegalUnhandledError);
+    flowResult(
+      editorStore.initialize(
+        false,
+        undefined,
+        queryParams.mode,
+        queryParams.fastCompile,
+      ),
+    ).catch(applicationStore.alertIllegalUnhandledError);
   }, [editorStore, applicationStore]);
 
   const editable = editorStore.initState.hasSucceeded;
@@ -128,9 +188,17 @@ export const EditorInner = observer(() => {
             onResize={handleResize}
           >
             <div className="editor__content-container" ref={editorContainerRef}>
-              <div className={clsx('editor__content', { 'editor__content--expanded': editorStore.isInExpandedMode })}>
+              <div
+                className={clsx('editor__content', {
+                  'editor__content--expanded': editorStore.isInExpandedMode,
+                })}
+              >
                 <ReflexContainer orientation="vertical">
-                  <ReflexElement size={editorStore.sideBarSize} minSize={0} onStopResize={snapSideBar}>
+                  <ReflexElement
+                    size={editorStore.sideBarSize}
+                    minSize={0}
+                    onStopResize={snapSideBar}
+                  >
                     <SideBar />
                   </ReflexElement>
                   <ReflexSplitter />
@@ -140,7 +208,12 @@ export const EditorInner = observer(() => {
                         <EditPanel />
                       </ReflexElement>
                       <ReflexSplitter />
-                      <ReflexElement size={editorStore.auxPanelSize} direction={-1} minSize={0} onStopResize={snapAuxPanel}>
+                      <ReflexElement
+                        size={editorStore.auxPanelSize}
+                        direction={-1}
+                        minSize={0}
+                        onStopResize={snapAuxPanel}
+                      >
                         <AuxiliaryPanel />
                       </ReflexElement>
                     </ReflexContainer>

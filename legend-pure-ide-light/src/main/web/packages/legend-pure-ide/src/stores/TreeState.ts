@@ -16,14 +16,14 @@
 
 import { action, observable, makeObservable, flow, flowResult } from 'mobx';
 import type { EditorStore } from './EditorStore';
-import { guaranteeNonNullable } from 'Utilities/GeneralUtil';
-import type { TreeData, TreeNodeData } from 'Utilities/TreeUtil';
-import { ActionState } from 'Utilities/ActionState';
+import { guaranteeNonNullable } from '../utils/GeneralUtil';
+import type { TreeData, TreeNodeData } from '../utils/TreeUtil';
+import { ActionState } from '../utils/ActionState';
 
 export abstract class TreeState<T extends TreeNodeData, V> {
   editorStore: EditorStore;
   treeData?: TreeData<T>;
-  selectedNode?: T;
+  selectedNode?: T | undefined;
   loadInitialDataState = new ActionState();
   refreshDataState = new ActionState();
 
@@ -42,16 +42,25 @@ export abstract class TreeState<T extends TreeNodeData, V> {
     this.editorStore = editorStore;
   }
 
-  getTreeData(): TreeData<T> { return guaranteeNonNullable(this.treeData, 'Tree data has not been initialized') }
+  getTreeData(): TreeData<T> {
+    return guaranteeNonNullable(
+      this.treeData,
+      'Tree data has not been initialized',
+    );
+  }
 
-  abstract getRootNodes(): Promise<V[]>
-  abstract buildTreeData(rootNodes: V[]): TreeData<T>
-  abstract getChildNodes(node: T): Promise<V[]>
-  abstract processChildNodes(node: T, childNodes: V[]): void
+  abstract getRootNodes(): Promise<V[]>;
+  abstract buildTreeData(rootNodes: V[]): TreeData<T>;
+  abstract getChildNodes(node: T): Promise<V[]>;
+  abstract processChildNodes(node: T, childNodes: V[]): void;
 
-  *initialize(this: TreeState<T, V>): Generator<Promise<unknown>, void, unknown> {
+  *initialize(
+    this: TreeState<T, V>,
+  ): Generator<Promise<unknown>, void, unknown> {
     if (this.loadInitialDataState.isInProgress) {
-      this.editorStore.applicationStore.notifyWarning('Tree state initialization is in progress');
+      this.editorStore.applicationStore.notifyWarning(
+        'Tree state initialization is in progress',
+      );
       return;
     }
     this.loadInitialDataState.inProgress();
@@ -76,12 +85,22 @@ export abstract class TreeState<T extends TreeNodeData, V> {
       this.refreshTree();
     }
   }
-  setTreeData(data: TreeData<T>): void { this.treeData = data }
-  refreshTree(): void { this.setTreeData({ ...guaranteeNonNullable(this.treeData) }) }
+  setTreeData(data: TreeData<T>): void {
+    this.treeData = data;
+  }
+  refreshTree(): void {
+    this.setTreeData({ ...guaranteeNonNullable(this.treeData) });
+  }
 
-  abstract openNode(this: TreeState<T, V>, node: T): Generator<Promise<unknown>, void, unknown>
+  abstract openNode(
+    this: TreeState<T, V>,
+    node: T,
+  ): Generator<Promise<unknown>, void, unknown>;
 
-  *expandNode(this: TreeState<T, V>, node: T): Generator<Promise<unknown>, void, unknown> {
+  *expandNode(
+    this: TreeState<T, V>,
+    node: T,
+  ): Generator<Promise<unknown>, void, unknown> {
     if (node.isLoading) {
       return;
     }
@@ -104,8 +123,14 @@ export abstract class TreeState<T extends TreeNodeData, V> {
     }
   }
 
-  *refreshTreeData(this: TreeState<T, V>): Generator<Promise<unknown>, void, unknown> {
-    const openingNodeIds = new Set(Array.from(this.getTreeData().nodes.values()).filter(node => node.isOpen).map(node => node.id));
+  *refreshTreeData(
+    this: TreeState<T, V>,
+  ): Generator<Promise<unknown>, void, unknown> {
+    const openingNodeIds = new Set(
+      Array.from(this.getTreeData().nodes.values())
+        .filter((node) => node.isOpen)
+        .map((node) => node.id),
+    );
     const selectedNodeId = this.selectedNode?.id;
     this.refreshDataState.inProgress();
     try {
@@ -115,19 +140,35 @@ export abstract class TreeState<T extends TreeNodeData, V> {
       this.refreshDataState.conclude(false);
       return;
     }
-    const nodesToOpen = this.getTreeData().rootIds.map(id => guaranteeNonNullable(this.getTreeData().nodes.get(id))).filter(node => openingNodeIds.has(node.id));
+    const nodesToOpen = this.getTreeData()
+      .rootIds.map((id) =>
+        guaranteeNonNullable(this.getTreeData().nodes.get(id)),
+      )
+      .filter((node) => openingNodeIds.has(node.id));
     yield this.refreshOpenNodes(nodesToOpen, openingNodeIds);
     if (selectedNodeId && this.getTreeData().nodes.has(selectedNodeId)) {
-      this.setSelectedNode(guaranteeNonNullable(this.getTreeData().nodes.get(selectedNodeId)));
+      this.setSelectedNode(
+        guaranteeNonNullable(this.getTreeData().nodes.get(selectedNodeId)),
+      );
     }
   }
 
-  async refreshOpenNodes(nodesToOpen: T[], openingNodeIds: Set<string>): Promise<void> {
-    await Promise.all(nodesToOpen.map(node => {
-      openingNodeIds.delete(node.id);
-      return flowResult(this.expandNode(node)).catch(() => undefined);
-    }));
-    nodesToOpen = nodesToOpen.flatMap(node => node.childrenIds ?? []).map(childId => guaranteeNonNullable(this.getTreeData().nodes.get(childId))).filter(node => openingNodeIds.has(node.id));
+  async refreshOpenNodes(
+    nodesToOpen: T[],
+    openingNodeIds: Set<string>,
+  ): Promise<void> {
+    await Promise.all(
+      nodesToOpen.map((node) => {
+        openingNodeIds.delete(node.id);
+        return flowResult(this.expandNode(node)).catch(() => undefined);
+      }),
+    );
+    nodesToOpen = nodesToOpen
+      .flatMap((node) => node.childrenIds ?? [])
+      .map((childId) =>
+        guaranteeNonNullable(this.getTreeData().nodes.get(childId)),
+      )
+      .filter((node) => openingNodeIds.has(node.id));
     if (nodesToOpen.length) {
       return this.refreshOpenNodes(nodesToOpen, openingNodeIds);
     }

@@ -17,7 +17,8 @@
 import { action, makeAutoObservable, makeObservable, observable } from 'mobx';
 import { createModelSchema, primitive } from 'serializr';
 
-export const trimPathLeadingSlash = (path: string): string => path.startsWith('/') ? path.substring(1, path.length) : path;
+export const trimPathLeadingSlash = (path: string): string =>
+  path.startsWith('/') ? path.substring(1, path.length) : path;
 
 export class PureFile {
   content!: string;
@@ -29,7 +30,9 @@ export class PureFile {
     });
   }
 
-  setContent(value: string): void { this.content = value }
+  setContent(value: string): void {
+    this.content = value;
+  }
 }
 
 createModelSchema(PureFile, {
@@ -40,9 +43,14 @@ export class FileCoordinate {
   file: string;
   line: number;
   column: number;
-  errorMessage?: string; // we might need to support different level of severity like warning
+  errorMessage?: string | undefined; // we might need to support different level of severity like warning
 
-  constructor(file: string, line: number, column: number, errorMessage?: string) {
+  constructor(
+    file: string,
+    line: number,
+    column: number,
+    errorMessage?: string,
+  ) {
     makeAutoObservable(this, {
       setErrorMessage: action,
     });
@@ -52,7 +60,9 @@ export class FileCoordinate {
     this.errorMessage = errorMessage;
   }
 
-  setErrorMessage(value: string | undefined): void { this.errorMessage = value }
+  setErrorMessage(value: string | undefined): void {
+    this.errorMessage = value;
+  }
 }
 
 export interface FileData {

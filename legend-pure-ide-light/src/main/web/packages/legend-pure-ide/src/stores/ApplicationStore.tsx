@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-import React, { createContext, useContext } from 'react';
-import type { SuperGenericFunction } from 'Utilities/GeneralUtil';
-import { guaranteeNonNullable, isString, ApplicationError } from 'Utilities/GeneralUtil';
+import { createContext, useContext } from 'react';
+import type { SuperGenericFunction } from '../utils/GeneralUtil';
+import {
+  guaranteeNonNullable,
+  isString,
+  ApplicationError,
+} from '../utils/GeneralUtil';
 import { action, makeAutoObservable } from 'mobx';
-import { Logger, LOG_EVENT } from 'Utilities/Logger';
+import { Logger, LOG_EVENT } from '../utils/Logger';
 import { useLocalObservable } from 'mobx-react-lite';
-import { NetworkClient } from 'Utilities/NetworkClient';
-import { PureClient } from 'Stores/PureClient';
+import { NetworkClient } from '../utils/NetworkClient';
+import { PureClient } from './PureClient';
 
 export enum ActionAlertType {
   STANDARD = 'STANDARD',
@@ -75,9 +79,14 @@ export class Notification {
   severity: NOTIFCATION_SEVERITY;
   message: string;
   actions: NotificationAction[];
-  autoHideDuration?: number;
+  autoHideDuration?: number | undefined;
 
-  constructor(severity: NOTIFCATION_SEVERITY, message: string, actions: NotificationAction[], autoHideDuration: number | undefined) {
+  constructor(
+    severity: NOTIFCATION_SEVERITY,
+    message: string,
+    actions: NotificationAction[],
+    autoHideDuration: number | undefined,
+  ) {
     this.severity = severity;
     this.message = message;
     this.actions = actions;
@@ -88,10 +97,10 @@ export class Notification {
 export class ApplicationStore {
   coreClient: NetworkClient;
   client: PureClient;
-  notification?: Notification;
+  notification?: Notification | undefined;
   logger: Logger;
-  blockingAlertInfo?: BlockingAlertInfo;
-  actionAlertInfo?: ActionAlertInfo;
+  blockingAlertInfo?: BlockingAlertInfo | undefined;
+  actionAlertInfo?: ActionAlertInfo | undefined;
 
   constructor() {
     makeAutoObservable(this, {
@@ -104,22 +113,82 @@ export class ApplicationStore {
     this.logger = new Logger();
   }
 
-  setBlockingAlert(alertInfo: BlockingAlertInfo | undefined): void { this.blockingAlertInfo = alertInfo }
+  setBlockingAlert(alertInfo: BlockingAlertInfo | undefined): void {
+    this.blockingAlertInfo = alertInfo;
+  }
   setActionAltertInfo(alertInfo: ActionAlertInfo | undefined): void {
-    if (this.actionAlertInfo && alertInfo) { this.notifyIllegalState('Action alert is stacked: new alert is invoked while another one is being displayed') }
+    if (this.actionAlertInfo && alertInfo) {
+      this.notifyIllegalState(
+        'Action alert is stacked: new alert is invoked while another one is being displayed',
+      );
+    }
     this.actionAlertInfo = alertInfo;
   }
 
-  setNotification(notification: Notification | undefined): void { this.notification = notification }
-  notify(message: string, actions?: NotificationAction[], autoHideDuration?: number): void { this.setNotification(new Notification(NOTIFCATION_SEVERITY.INFO, message, actions ?? [], autoHideDuration ?? DEFAULT_NOTIFICATION_HIDE_TIME)) }
-  notifySuccess(message: string, actions?: NotificationAction[], autoHideDuration?: number): void { this.setNotification(new Notification(NOTIFCATION_SEVERITY.SUCCESS, message, actions ?? [], autoHideDuration ?? DEFAULT_NOTIFICATION_HIDE_TIME)) }
-  notifyWarning(message: string, actions?: NotificationAction[], autoHideDuration?: number): void { this.setNotification(new Notification(NOTIFCATION_SEVERITY.WARNING, message, actions ?? [], autoHideDuration ?? DEFAULT_NOTIFICATION_HIDE_TIME)) }
-  notifyIllegalState(message: string, actions?: NotificationAction[], autoHideDuration?: number): void { this.setNotification(new Notification(NOTIFCATION_SEVERITY.ILEGAL_STATE, isString(message) ? `[PLEASE NOTIFY DEVELOPER] ${message}` : message, actions ?? [], autoHideDuration ?? DEFAULT_ERROR_NOTIFICATION_HIDE_TIME)) }
+  setNotification(notification: Notification | undefined): void {
+    this.notification = notification;
+  }
+  notify(
+    message: string,
+    actions?: NotificationAction[],
+    autoHideDuration?: number,
+  ): void {
+    this.setNotification(
+      new Notification(
+        NOTIFCATION_SEVERITY.INFO,
+        message,
+        actions ?? [],
+        autoHideDuration ?? DEFAULT_NOTIFICATION_HIDE_TIME,
+      ),
+    );
+  }
+  notifySuccess(
+    message: string,
+    actions?: NotificationAction[],
+    autoHideDuration?: number,
+  ): void {
+    this.setNotification(
+      new Notification(
+        NOTIFCATION_SEVERITY.SUCCESS,
+        message,
+        actions ?? [],
+        autoHideDuration ?? DEFAULT_NOTIFICATION_HIDE_TIME,
+      ),
+    );
+  }
+  notifyWarning(
+    message: string,
+    actions?: NotificationAction[],
+    autoHideDuration?: number,
+  ): void {
+    this.setNotification(
+      new Notification(
+        NOTIFCATION_SEVERITY.WARNING,
+        message,
+        actions ?? [],
+        autoHideDuration ?? DEFAULT_NOTIFICATION_HIDE_TIME,
+      ),
+    );
+  }
+  notifyIllegalState(
+    message: string,
+    actions?: NotificationAction[],
+    autoHideDuration?: number,
+  ): void {
+    this.setNotification(
+      new Notification(
+        NOTIFCATION_SEVERITY.ILEGAL_STATE,
+        isString(message) ? `[PLEASE NOTIFY DEVELOPER] ${message}` : message,
+        actions ?? [],
+        autoHideDuration ?? DEFAULT_ERROR_NOTIFICATION_HIDE_TIME,
+      ),
+    );
+  }
 
   notifyError(
     content: unknown,
     actions?: NotificationAction[],
-    autoHideDuration?: number
+    autoHideDuration?: number,
   ): void {
     let message: string | undefined;
     if (content instanceof Error || content instanceof ApplicationError) {
@@ -128,12 +197,23 @@ export class ApplicationStore {
       message = content;
     } else {
       message = undefined;
-      this.logger.error(LOG_EVENT.ILLEGAL_APPLICATION_STATE_OCCURRED, 'Unable to display error in notification', message);
+      this.logger.error(
+        LOG_EVENT.ILLEGAL_APPLICATION_STATE_OCCURRED,
+        'Unable to display error in notification',
+        message,
+      );
       this.notifyIllegalState('Unable to display error');
     }
     if (message) {
       this.logger.error(LOG_EVENT.NONE, content);
-      this.setNotification(new Notification(NOTIFCATION_SEVERITY.ERROR, message, actions ?? [], autoHideDuration ?? DEFAULT_ERROR_NOTIFICATION_HIDE_TIME));
+      this.setNotification(
+        new Notification(
+          NOTIFCATION_SEVERITY.ERROR,
+          message,
+          actions ?? [],
+          autoHideDuration ?? DEFAULT_ERROR_NOTIFICATION_HIDE_TIME,
+        ),
+      );
     }
   }
 
@@ -149,36 +229,59 @@ export class ApplicationStore {
    * ever occurs, it still shows very apparently in the UI, as such, printing out in the console is not good enough,
    * but crashing the app is bad too, so this is a good balance.
    */
-  notifyAndReturnAlternativeOnError = <T extends SuperGenericFunction, W>(fn: T, alternative?: W): ReturnType<T> | W | undefined => {
+  notifyAndReturnAlternativeOnError = <T extends SuperGenericFunction, W>(
+    fn: T,
+    alternative?: W,
+  ): ReturnType<T> | W | undefined => {
     try {
       return fn();
     } catch (error) {
       this.notifyIllegalState(error.message);
       return alternative;
     }
-  }
+  };
 
   /**
    * When we call store/state functions from the component, we should handle error thrown at these functions instead
    * of throwing them to the UI. This enforces that by throwing `IllegalStateError`
    */
   alertIllegalUnhandledError = (error: Error): void => {
-    this.logger.error(LOG_EVENT.ILLEGAL_APPLICATION_STATE_OCCURRED, 'Encountered unhandled rejection in component', error);
+    this.logger.error(
+      LOG_EVENT.ILLEGAL_APPLICATION_STATE_OCCURRED,
+      'Encountered unhandled rejection in component',
+      error,
+    );
     this.notifyIllegalState(error.message);
-  }
+  };
 
   /**
    * Guarantee that the action being used by the component does not throw unhandled errors
    */
-  guaranteeSafeAction = (action: () => Promise<void>): () => Promise<void> => (): Promise<void> => action().catch(this.alertIllegalUnhandledError);
+  guaranteeSafeAction =
+    (action: () => Promise<void>): (() => Promise<void>) =>
+    (): Promise<void> =>
+      action().catch(this.alertIllegalUnhandledError);
 }
 
-const ApplicationStoreContext = createContext<ApplicationStore | undefined>(undefined);
+const ApplicationStoreContext = createContext<ApplicationStore | undefined>(
+  undefined,
+);
 
-export const ApplicationStoreProvider = ({ children }: { children: React.ReactNode }): React.ReactElement => {
+export const ApplicationStoreProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactElement => {
   const applicationStore = useLocalObservable(() => new ApplicationStore());
-  return <ApplicationStoreContext.Provider value={applicationStore}>{children}</ApplicationStoreContext.Provider>;
+  return (
+    <ApplicationStoreContext.Provider value={applicationStore}>
+      {children}
+    </ApplicationStoreContext.Provider>
+  );
 };
 
 export const useApplicationStore = (): ApplicationStore =>
-  guaranteeNonNullable(useContext(ApplicationStoreContext), 'useApplicationStore() hook must be used inside ApplicationStore context provider');
+  guaranteeNonNullable(
+    useContext(ApplicationStoreContext),
+    'useApplicationStore() hook must be used inside ApplicationStore context provider',
+  );

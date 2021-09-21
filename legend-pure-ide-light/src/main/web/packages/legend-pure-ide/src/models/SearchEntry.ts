@@ -15,9 +15,15 @@
  */
 
 import { action, makeObservable, observable } from 'mobx';
-import { createModelSchema, deserialize, list, object, primitive } from 'serializr';
-import type { PlainObject } from 'Utilities/GeneralUtil';
-import { deleteEntry, uuid } from 'Utilities/GeneralUtil';
+import {
+  createModelSchema,
+  deserialize,
+  list,
+  object,
+  primitive,
+} from 'serializr';
+import type { PlainObject } from '../utils/GeneralUtil';
+import { deleteEntry, uuid } from '../utils/GeneralUtil';
 
 export abstract class SearchEntry {
   uuid = uuid();
@@ -30,7 +36,12 @@ export class SearchResultCoordinate {
   endLine!: number;
   endColumn!: number;
 
-  constructor(startLine: number, startColumn: number, endLine: number, endColumn: number) {
+  constructor(
+    startLine: number,
+    startColumn: number,
+    endLine: number,
+    endColumn: number,
+  ) {
     this.startLine = startLine;
     this.startColumn = startColumn;
     this.endLine = endLine;
@@ -57,8 +68,12 @@ export class SearchResultEntry extends SearchEntry {
     });
   }
 
-  setCoordinates(value: SearchResultCoordinate[]): void { this.coordinates = value }
-  dismissCoordinate(value: SearchResultCoordinate): void { deleteEntry(this.coordinates, value) }
+  setCoordinates(value: SearchResultCoordinate[]): void {
+    this.coordinates = value;
+  }
+  dismissCoordinate(value: SearchResultCoordinate): void {
+    deleteEntry(this.coordinates, value);
+  }
 }
 
 createModelSchema(SearchResultEntry, {
@@ -66,4 +81,6 @@ createModelSchema(SearchResultEntry, {
   coordinates: list(object(SearchResultCoordinate)),
 });
 
-export const getSearchResultEntry = (result: PlainObject<SearchResultEntry>): SearchResultEntry => deserialize(SearchResultEntry, result);
+export const getSearchResultEntry = (
+  result: PlainObject<SearchResultEntry>,
+): SearchResultEntry => deserialize(SearchResultEntry, result);

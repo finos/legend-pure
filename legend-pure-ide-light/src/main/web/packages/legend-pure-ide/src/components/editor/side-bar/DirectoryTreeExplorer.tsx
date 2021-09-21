@@ -14,64 +14,129 @@
  * limitations under the License.
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useEditorStore } from 'Stores/EditorStore';
-import { FaChevronDown, FaChevronRight, FaCompress, FaFolder, FaFolderOpen, FaFileAlt, FaCircleNotch, FaCrosshairs } from 'react-icons/fa';
-import { ContextMenu } from 'Components/shared/ContextMenu';
+import { useEditorStore } from '../../../stores/EditorStore';
+import {
+  FaChevronDown,
+  FaChevronRight,
+  FaCompress,
+  FaFolder,
+  FaFolderOpen,
+  FaFileAlt,
+  FaCircleNotch,
+  FaCrosshairs,
+} from 'react-icons/fa';
+import { ContextMenu } from '../../shared/ContextMenu';
 import clsx from 'clsx';
-import { PanelLoadingIndicator } from 'Components/shared/PanelLoadingIndicator';
-import type { TreeNodeContainerProps } from 'Components/shared/TreeView';
-import { TreeView } from 'Components/shared/TreeView';
-import type { DirectoryTreeNode } from 'Models/DirectoryTree';
-import { useApplicationStore } from 'Stores/ApplicationStore';
+import { PanelLoadingIndicator } from '../../shared/PanelLoadingIndicator';
+import type { TreeNodeContainerProps } from '../../shared/TreeView';
+import { TreeView } from '../../shared/TreeView';
+import type { DirectoryTreeNode } from '../../../models/DirectoryTree';
+import { useApplicationStore } from '../../../stores/ApplicationStore';
 import { flowResult } from 'mobx';
-import { isNonNullable } from 'Utilities/GeneralUtil';
+import { isNonNullable } from '../../../utils/GeneralUtil';
 import { MdRefresh } from 'react-icons/md';
-import { FileEditorState } from 'Stores/EditorState';
-import { CreateNewFileCommand } from 'Components/editor/command-center/CreateNewFileCommand';
-import { CreateNewDirectoryCommand } from 'Components/editor/command-center/CreateNewDirectoryCommand';
-import { BlankPanelContent } from 'Components/shared/BlankPanelContent';
+import { FileEditorState } from '../../../stores/EditorState';
+import { CreateNewFileCommand } from '../command-center/CreateNewFileCommand';
+import { CreateNewDirectoryCommand } from '../command-center/CreateNewDirectoryCommand';
+import { BlankPanelContent } from '../../shared/BlankPanelContent';
 
-const FileExplorerContextMenu = observer((props: {
-  node: DirectoryTreeNode;
-}, ref: React.Ref<HTMLDivElement>) => {
-  const { node } = props;
-  const isDir = node.data.isFolderNode;
-  const hasChildContent = Boolean(node.data.children);
-  const applicationStore = useApplicationStore();
-  const editorStore = useEditorStore();
-  const createNewFile = (): void => editorStore.directoryTreeState.setNodeForCreateNewFile(node);
-  const createNewDirectory = (): void => editorStore.directoryTreeState.setNodeForCreateNewDirectory(node);
-  const deleteFileOrDirectory = (): Promise<void> => flowResult(editorStore.deleteDirectoryOrFile(node.data.li_attr.path, isDir, hasChildContent)).catch(applicationStore.alertIllegalUnhandledError);
-  const renameFile = (): void => applicationStore.notifyUnsupportedFeature('Rename file');
-  const moveFile = (): void => applicationStore.notifyUnsupportedFeature('Move file');
+const FileExplorerContextMenu = observer(
+  (
+    props: {
+      node: DirectoryTreeNode;
+    },
+    ref: React.Ref<HTMLDivElement>,
+  ) => {
+    const { node } = props;
+    const isDir = node.data.isFolderNode;
+    const hasChildContent = Boolean(node.data.children);
+    const applicationStore = useApplicationStore();
+    const editorStore = useEditorStore();
+    const createNewFile = (): void =>
+      editorStore.directoryTreeState.setNodeForCreateNewFile(node);
+    const createNewDirectory = (): void =>
+      editorStore.directoryTreeState.setNodeForCreateNewDirectory(node);
+    const deleteFileOrDirectory = (): Promise<void> =>
+      flowResult(
+        editorStore.deleteDirectoryOrFile(
+          node.data.li_attr.path,
+          isDir,
+          hasChildContent,
+        ),
+      ).catch(applicationStore.alertIllegalUnhandledError);
+    const renameFile = (): void =>
+      applicationStore.notifyUnsupportedFeature('Rename file');
+    const moveFile = (): void =>
+      applicationStore.notifyUnsupportedFeature('Move file');
 
-  return (
-    <div ref={ref} className="explorer__context-menu">
-      {isDir && <div className="explorer__context-menu__item" onClick={createNewFile}>New File</div>}
-      {isDir && <div className="explorer__context-menu__item" onClick={createNewDirectory}>New Folder</div>}
-      {!isDir && <div className="explorer__context-menu__item" onClick={renameFile}>Rename</div>}
-      <div className="explorer__context-menu__item" onClick={deleteFileOrDirectory}>Delete</div>
-      {!isDir && <div className="explorer__context-menu__item" onClick={moveFile}>Move</div>}
-    </div>
-  );
-}, { forwardRef: true });
+    return (
+      <div ref={ref} className="explorer__context-menu">
+        {isDir && (
+          <div className="explorer__context-menu__item" onClick={createNewFile}>
+            New File
+          </div>
+        )}
+        {isDir && (
+          <div
+            className="explorer__context-menu__item"
+            onClick={createNewDirectory}
+          >
+            New Folder
+          </div>
+        )}
+        {!isDir && (
+          <div className="explorer__context-menu__item" onClick={renameFile}>
+            Rename
+          </div>
+        )}
+        <div
+          className="explorer__context-menu__item"
+          onClick={deleteFileOrDirectory}
+        >
+          Delete
+        </div>
+        {!isDir && (
+          <div className="explorer__context-menu__item" onClick={moveFile}>
+            Move
+          </div>
+        )}
+      </div>
+    );
+  },
+  { forwardRef: true },
+);
 
-const FileTreeNodeContainer: React.FC<TreeNodeContainerProps<DirectoryTreeNode, {
-  onNodeOpen: (node: DirectoryTreeNode) => void;
-  onNodeExpand: (node: DirectoryTreeNode) => void;
-  onNodeCompress: (node: DirectoryTreeNode) => void;
-}>> = props => {
+const FileTreeNodeContainer: React.FC<
+  TreeNodeContainerProps<
+    DirectoryTreeNode,
+    {
+      onNodeOpen: (node: DirectoryTreeNode) => void;
+      onNodeExpand: (node: DirectoryTreeNode) => void;
+      onNodeCompress: (node: DirectoryTreeNode) => void;
+    }
+  >
+> = (props) => {
   const { node, level, stepPaddingInRem, onNodeSelect, innerProps } = props;
-  const [isSelectedFromContextMenu, setIsSelectedFromContextMenu] = useState(false);
+  const [isSelectedFromContextMenu, setIsSelectedFromContextMenu] =
+    useState(false);
   const { onNodeOpen, onNodeExpand, onNodeCompress } = innerProps;
   const isFolder = node.data.isFolderNode;
-  const nodeIcon = isFolder
-    ? node.isOpen ? <div><FaFolderOpen /></div> :
-      <div><FaFolder /></div>
-    : <FaFileAlt />;
-  const selectNode: React.MouseEventHandler = event => {
+  const nodeIcon = isFolder ? (
+    node.isOpen ? (
+      <div>
+        <FaFolderOpen />
+      </div>
+    ) : (
+      <div>
+        <FaFolder />
+      </div>
+    )
+  ) : (
+    <FaFileAlt />
+  );
+  const selectNode: React.MouseEventHandler = (event) => {
     event.stopPropagation();
     event.preventDefault();
     onNodeSelect?.(node);
@@ -106,25 +171,45 @@ const FileTreeNodeContainer: React.FC<TreeNodeContainerProps<DirectoryTreeNode, 
       onOpen={onContextMenuOpen}
       onClose={onContextMenuClose}
     >
-      <div className={clsx('tree-view__node__container explorer__package-tree__node__container',
-        { 'explorer__package-tree__node__container--selected-from-context-menu': !node.isSelected && isSelectedFromContextMenu },
-        { 'explorer__package-tree__node__container--selected': node.isSelected }
-      )}
+      <div
+        className={clsx(
+          'tree-view__node__container explorer__package-tree__node__container',
+          {
+            'explorer__package-tree__node__container--selected-from-context-menu':
+              !node.isSelected && isSelectedFromContextMenu,
+          },
+          {
+            'explorer__package-tree__node__container--selected':
+              node.isSelected,
+          },
+        )}
         onClick={selectNode}
         onDoubleClick={onDoubleClick}
-        style={{ paddingLeft: `${level * (stepPaddingInRem ?? 1)}rem`, display: 'flex' }}
+        style={{
+          paddingLeft: `${level * (stepPaddingInRem ?? 1)}rem`,
+          display: 'flex',
+        }}
       >
         <div className="tree-view__node__icon explorer__package-tree__node__icon">
-          {node.isLoading &&
+          {node.isLoading && (
             <div className="explorer__package-tree__node__icon__expand explorer__package-tree__node__icon__expand--is-loading">
               <FaCircleNotch />
             </div>
-          }
-          {!node.isLoading &&
-            <div className="explorer__package-tree__node__icon__expand" onClick={toggleExpansion}>
-              {!isFolder ? <div /> : node.isOpen ? <FaChevronDown /> : <FaChevronRight />}
+          )}
+          {!node.isLoading && (
+            <div
+              className="explorer__package-tree__node__icon__expand"
+              onClick={toggleExpansion}
+            >
+              {!isFolder ? (
+                <div />
+              ) : node.isOpen ? (
+                <FaChevronDown />
+              ) : (
+                <FaChevronRight />
+              )}
             </div>
-          }
+          )}
           <div className="explorer__package-tree__node__icon__type">
             {nodeIcon}
           </div>
@@ -132,7 +217,9 @@ const FileTreeNodeContainer: React.FC<TreeNodeContainerProps<DirectoryTreeNode, 
         <button
           className="tree-view__node__label explorer__package-tree__node__label"
           tabIndex={-1}
-        >{node.label}</button>
+        >
+          {node.label}
+        </button>
       </div>
     </ContextMenu>
   );
@@ -143,9 +230,16 @@ const FileExplorerTree = observer(() => {
   const applicationStore = useApplicationStore();
   const treeState = editorStore.directoryTreeState;
   const treeData = editorStore.directoryTreeState.getTreeData();
-  const onNodeSelect = (node: DirectoryTreeNode): void => treeState.setSelectedNode(node);
-  const onNodeOpen = (node: DirectoryTreeNode): Promise<void> => flowResult(treeState.openNode(node)).catch(applicationStore.alertIllegalUnhandledError);
-  const onNodeExpand = (node: DirectoryTreeNode): Promise<void> => flowResult(treeState.expandNode(node)).catch(applicationStore.alertIllegalUnhandledError);
+  const onNodeSelect = (node: DirectoryTreeNode): void =>
+    treeState.setSelectedNode(node);
+  const onNodeOpen = (node: DirectoryTreeNode): Promise<void> =>
+    flowResult(treeState.openNode(node)).catch(
+      applicationStore.alertIllegalUnhandledError,
+    );
+  const onNodeExpand = (node: DirectoryTreeNode): Promise<void> =>
+    flowResult(treeState.expandNode(node)).catch(
+      applicationStore.alertIllegalUnhandledError,
+    );
   const onNodeCompress = (node: DirectoryTreeNode): void => {
     node.isOpen = false;
     treeState.refreshTree();
@@ -154,7 +248,9 @@ const FileExplorerTree = observer(() => {
     if (node.isLoading || !node.childrenIds) {
       return [];
     }
-    return node.childrenIds.map(childId => treeData.nodes.get(childId)).filter(isNonNullable);
+    return node.childrenIds
+      .map((childId) => treeData.nodes.get(childId))
+      .filter(isNonNullable);
   };
   const deselectTreeNode = (): void => treeState.setSelectedNode(undefined);
 
@@ -167,7 +263,7 @@ const FileExplorerTree = observer(() => {
       <div className="explorer__content__inner" onClick={deselectTreeNode}>
         <TreeView
           components={{
-            TreeNodeContainer: FileTreeNodeContainer
+            TreeNodeContainer: FileTreeNodeContainer,
           }}
           treeData={treeData}
           onNodeSelect={onNodeSelect}
@@ -189,16 +285,21 @@ export const DirectoryTreeExplorer = observer(() => {
   const editorStore = useEditorStore();
   const applicationStore = useApplicationStore();
   const treeState = editorStore.directoryTreeState;
-  const refreshTree = (): Promise<void> => flowResult(treeState.refreshTreeData()).catch(applicationStore.alertIllegalUnhandledError);
+  const refreshTree = (): Promise<void> =>
+    flowResult(treeState.refreshTreeData()).catch(
+      applicationStore.alertIllegalUnhandledError,
+    );
   const focus = (): void => {
     const currentEditorState = editorStore.currentEditorState;
     if (currentEditorState instanceof FileEditorState) {
-      flowResult(treeState.revealPath(currentEditorState.path, false)).catch(applicationStore.alertIllegalUnhandledError);
+      flowResult(treeState.revealPath(currentEditorState.path, false)).catch(
+        applicationStore.alertIllegalUnhandledError,
+      );
     }
   };
   const collapseTree = (): void => {
     const treeData = treeState.getTreeData();
-    treeData.nodes.forEach(node => {
+    treeData.nodes.forEach((node) => {
       node.isOpen = false;
     });
     treeState.setSelectedNode(undefined);
@@ -209,7 +310,9 @@ export const DirectoryTreeExplorer = observer(() => {
     <div className="panel explorer">
       <div className="panel__header side-bar__header">
         <div className="panel__header__title">
-          <div className="panel__header__title__content side-bar__header__title__content">FILES</div>
+          <div className="panel__header__title__content side-bar__header__title__content">
+            FILES
+          </div>
         </div>
       </div>
       <div className="panel__content side-bar__content">
@@ -217,24 +320,41 @@ export const DirectoryTreeExplorer = observer(() => {
           <div className="panel__header explorer__header">
             <div className="panel__header__title" />
             <div className="panel__header__actions">
-              <button className="panel__header__action explorer__btn__refresh"
+              <button
+                className="panel__header__action explorer__btn__refresh"
                 onClick={refreshTree}
                 title="Refresh Tree"
-              ><MdRefresh /></button>
-              <button className="panel__header__action"
+              >
+                <MdRefresh />
+              </button>
+              <button
+                className="panel__header__action"
                 onClick={focus}
                 title="Focus"
-              ><FaCrosshairs /></button>
-              <button className="panel__header__action"
+              >
+                <FaCrosshairs />
+              </button>
+              <button
+                className="panel__header__action"
                 onClick={collapseTree}
                 title="Collapse All"
-              ><FaCompress /></button>
+              >
+                <FaCompress />
+              </button>
             </div>
           </div>
           <div className="panel__content explorer__content__container">
-            <PanelLoadingIndicator isLoading={treeState.loadInitialDataState.isInProgress} />
-            {treeState.loadInitialDataState.hasSucceeded && <FileExplorerTree />}
-            {treeState.loadInitialDataState.hasFailed && <BlankPanelContent>Failed to build directory tree</BlankPanelContent>}
+            <PanelLoadingIndicator
+              isLoading={treeState.loadInitialDataState.isInProgress}
+            />
+            {treeState.loadInitialDataState.hasSucceeded && (
+              <FileExplorerTree />
+            )}
+            {treeState.loadInitialDataState.hasFailed && (
+              <BlankPanelContent>
+                Failed to build directory tree
+              </BlankPanelContent>
+            )}
           </div>
         </div>
       </div>

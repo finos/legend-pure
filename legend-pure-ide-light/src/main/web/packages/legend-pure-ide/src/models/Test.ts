@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-import { createModelSchema, custom, deserialize, list, object, primitive, SKIP } from 'serializr';
+import {
+  createModelSchema,
+  custom,
+  deserialize,
+  list,
+  object,
+  primitive,
+  SKIP,
+} from 'serializr';
 
 export enum TestResultStatus {
   // PASSED = 'passed',
@@ -33,7 +41,7 @@ export abstract class TestResult {
 
 export class TestSuccessResult extends TestResult {
   declare status: string;
-  test: string[] = [];
+  override test: string[] = [];
 }
 
 createModelSchema(TestSuccessResult, {
@@ -61,7 +69,7 @@ createModelSchema(TestFailureResultError, {
 
 export class TestFailureResult extends TestResult {
   declare status: string;
-  test: string[] = [];
+  override test: string[] = [];
   error!: TestFailureResultError;
 }
 
@@ -71,7 +79,7 @@ createModelSchema(TestFailureResult, {
   error: object(TestFailureResultError),
 });
 
-export class AbstractTestRunnerCheckResult { }
+export class AbstractTestRunnerCheckResult {}
 
 export class TestRunnerCheckResult extends AbstractTestRunnerCheckResult {
   finished!: boolean;
@@ -80,15 +88,17 @@ export class TestRunnerCheckResult extends AbstractTestRunnerCheckResult {
 
 createModelSchema(TestRunnerCheckResult, {
   finished: primitive(),
-  tests: list(custom(
-    () => SKIP,
-    value => {
-      if (value.error) {
-        return deserialize(TestFailureResult, value);
-      }
-      return deserialize(TestSuccessResult, value);
-    }
-  )),
+  tests: list(
+    custom(
+      () => SKIP,
+      (value) => {
+        if (value.error) {
+          return deserialize(TestFailureResult, value);
+        }
+        return deserialize(TestSuccessResult, value);
+      },
+    ),
+  ),
 });
 
 export class TestRunnerCheckError extends AbstractTestRunnerCheckResult {
@@ -101,7 +111,9 @@ createModelSchema(TestRunnerCheckError, {
   text: primitive(),
 });
 
-export const deserializeTestRunnerCheckResult = (value: Record<PropertyKey, unknown>): AbstractTestRunnerCheckResult => {
+export const deserializeTestRunnerCheckResult = (
+  value: Record<PropertyKey, unknown>,
+): AbstractTestRunnerCheckResult => {
   if (value.error) {
     return deserialize(TestRunnerCheckError, value);
   }

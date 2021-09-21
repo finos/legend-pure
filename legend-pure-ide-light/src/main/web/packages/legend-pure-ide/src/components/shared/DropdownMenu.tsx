@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MenuProps } from '@material-ui/core/Menu';
 import Menu from '@material-ui/core/Menu';
 
@@ -26,11 +26,20 @@ export const DropdownMenu: React.FC<{
   disabled?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
-}> = props => {
-  const { open, className, children, menuProps, content, onClose, onOpen, disabled } = props;
+}> = (props) => {
+  const {
+    open,
+    className,
+    children,
+    menuProps,
+    content,
+    onClose,
+    onOpen,
+    disabled,
+  } = props;
   const triggerRef = useRef<HTMLDivElement>(null);
   const [anchorEl, setAnchorEl] = useState<Element>();
-  const onTriggerClick: React.MouseEventHandler = event => {
+  const onTriggerClick: React.MouseEventHandler = (event) => {
     event.stopPropagation();
     event.preventDefault();
     if (disabled) {
@@ -84,4 +93,3 @@ export const DropdownMenu: React.FC<{
 };
 
 DropdownMenu.displayName = 'DropdownMenu';
-

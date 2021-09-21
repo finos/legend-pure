@@ -15,13 +15,18 @@
  */
 
 import { computed, makeObservable, observable } from 'mobx';
-import type { UnmatchedFunctionResult, UnmatchedResult } from 'Models/Execution';
-import type { SearchEntry } from 'Models/SearchEntry';
-import { SearchResultCoordinate, SearchResultEntry } from 'Models/SearchEntry';
-
-import type { Usage, UsageConcept } from 'Models/Usage';
-import type { EditorStore } from 'Stores/EditorStore';
-import { deleteEntry, guaranteeNonNullable } from 'Utilities/GeneralUtil';
+import type {
+  UnmatchedFunctionResult,
+  UnmatchedResult,
+} from '../models/Execution';
+import type { SearchEntry } from '../models/SearchEntry';
+import {
+  SearchResultCoordinate,
+  SearchResultEntry,
+} from '../models/SearchEntry';
+import type { Usage, UsageConcept } from '../models/Usage';
+import type { EditorStore } from './EditorStore';
+import { deleteEntry, guaranteeNonNullable } from '../utils/GeneralUtil';
 
 export abstract class SearchState {
   editorStore: EditorStore;
@@ -53,16 +58,24 @@ export class SearchResultState extends SearchState {
     }
   }
 
-  get numberOfFiles(): number { return this.searchEntries.length }
-  get numberOfResults(): number { return this.searchEntries.flatMap(entry => (entry).coordinates).length }
+  get numberOfFiles(): number {
+    return this.searchEntries.length;
+  }
+  get numberOfResults(): number {
+    return this.searchEntries.flatMap((entry) => entry.coordinates).length;
+  }
 }
 
 export class UsageResultState extends SearchResultState {
   usageConcept: UsageConcept;
 
-  constructor(editorStore: EditorStore, usageConcept: UsageConcept, references: Usage[]) {
+  constructor(
+    editorStore: EditorStore,
+    usageConcept: UsageConcept,
+    references: Usage[],
+  ) {
     const fileMap = new Map<string, SearchResultEntry>();
-    references.forEach(ref => {
+    references.forEach((ref) => {
       let entry: SearchResultEntry;
       if (fileMap.has(ref.source)) {
         entry = guaranteeNonNullable(fileMap.get(ref.source));
@@ -71,14 +84,30 @@ export class UsageResultState extends SearchResultState {
         entry.sourceId = ref.source;
         fileMap.set(ref.source, entry);
       }
-      entry.coordinates.push(new SearchResultCoordinate(ref.startLine, ref.startColumn, ref.endLine, ref.endColumn));
+      entry.coordinates.push(
+        new SearchResultCoordinate(
+          ref.startLine,
+          ref.startColumn,
+          ref.endLine,
+          ref.endColumn,
+        ),
+      );
     });
-    super(editorStore, Array.from(fileMap.keys()).sort((f1, f2) => f1.localeCompare(f2)).map(file => {
-      const entry = guaranteeNonNullable(fileMap.get(file));
-      // NOTE: sorting the list of coordinates (line has higher precendence than column)
-      entry.setCoordinates(entry.coordinates.sort((c1, c2) => c1.startColumn - c2.startColumn).sort((c1, c2) => c1.startLine - c2.startLine));
-      return entry;
-    }));
+    super(
+      editorStore,
+      Array.from(fileMap.keys())
+        .sort((f1, f2) => f1.localeCompare(f2))
+        .map((file) => {
+          const entry = guaranteeNonNullable(fileMap.get(file));
+          // NOTE: sorting the list of coordinates (line has higher precendence than column)
+          entry.setCoordinates(
+            entry.coordinates
+              .sort((c1, c2) => c1.startColumn - c2.startColumn)
+              .sort((c1, c2) => c1.startLine - c2.startLine),
+          );
+          return entry;
+        }),
+    );
     this.usageConcept = usageConcept;
   }
 }

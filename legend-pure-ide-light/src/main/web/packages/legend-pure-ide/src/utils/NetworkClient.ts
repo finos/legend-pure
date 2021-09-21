@@ -23,7 +23,12 @@
 // See https://www.npmjs.com/package/node-fetch#motivation
 
 import { StatusCodes } from 'http-status-codes';
-import { isNonNullable, isString, isObject, AssertionError } from 'Utilities/GeneralUtil';
+import {
+  isNonNullable,
+  isString,
+  isObject,
+  AssertionError,
+} from './GeneralUtil';
 
 export const HttpStatus = StatusCodes;
 export const CHARSET = 'charset=utf-8';
@@ -40,7 +45,7 @@ enum HttpMethod {
   GET = 'GET',
   PUT = 'PUT',
   POST = 'POST',
-  DELETE = 'DELETE'
+  DELETE = 'DELETE',
 }
 
 export const DEFAULT_OPTIONS = {
@@ -52,10 +57,21 @@ export const DEFAULT_OPTIONS = {
 /**
  * NOTE: the latter headers value will override the those of the first
  */
-export const mergeRequestHeaders = (headersOne: RequestHeaders | undefined, headersTwo: RequestHeaders | undefined): RequestHeaders => {
+export const mergeRequestHeaders = (
+  headersOne: RequestHeaders | undefined,
+  headersTwo: RequestHeaders | undefined,
+): RequestHeaders => {
   const requestHeaders: RequestHeaders = {};
-  if (headersOne) { Object.entries(headersOne).forEach(([key, value]) => { requestHeaders[key] = value }) }
-  if (headersTwo) { Object.entries(headersTwo).forEach(([key, value]) => { requestHeaders[key] = value }) }
+  if (headersOne) {
+    Object.entries(headersOne).forEach(([key, value]) => {
+      requestHeaders[key] = value;
+    });
+  }
+  if (headersTwo) {
+    Object.entries(headersTwo).forEach(([key, value]) => {
+      requestHeaders[key] = value;
+    });
+  }
   return requestHeaders;
 };
 
@@ -80,31 +96,35 @@ export type Payload = Record<PropertyKey, unknown> | string;
  * as pure/generic as possible
  */
 const extractMessage = (payload: Payload): string => {
-  if (isObject(payload) && isString(payload.message)) { return payload.message }
+  if (isObject(payload) && isString(payload.message)) {
+    return payload.message;
+  }
   return isString(payload) ? payload : '';
 };
 
 // NOTE: status 0 is either timeout or client error possibly caused by authentication
-export const unauthenticated = (response: Response): boolean => response.status === 0 || response.status === HttpStatus.UNAUTHORIZED;
+export const unauthenticated = (response: Response): boolean =>
+  response.status === 0 || response.status === HttpStatus.UNAUTHORIZED;
 
-export const authenticate = (authenticationUrl: string): Promise<void> => new Promise((resolve: Function): void => {
-  const id = 'AUTHENTICATION_IFRAME';
-  const previous = document.getElementById(id);
-  previous?.remove();
-  const element = document.createElement('iframe');
-  element.id = id;
-  element.src = authenticationUrl;
-  element.style.display = 'none';
-  element.addEventListener('load', (): void => {
-    element.remove();
-    resolve();
+export const authenticate = (authenticationUrl: string): Promise<void> =>
+  new Promise((resolve: Function): void => {
+    const id = 'AUTHENTICATION_IFRAME';
+    const previous = document.getElementById(id);
+    previous?.remove();
+    const element = document.createElement('iframe');
+    element.id = id;
+    element.src = authenticationUrl;
+    element.style.display = 'none';
+    element.addEventListener('load', (): void => {
+      element.remove();
+      resolve();
+    });
+    document.body.appendChild(element);
   });
-  document.body.appendChild(element);
-});
 
 export class NetworkClientError extends Error {
   response: Response & { data?: Record<PropertyKey, unknown> };
-  payload?: Payload;
+  payload?: Payload | undefined;
 
   constructor(response: Response, payload: Payload | undefined) {
     super();
@@ -116,31 +136,42 @@ export class NetworkClientError extends Error {
     this.response = response;
     const { status, statusText, url } = response;
     const summary = `Received response with status ${status} (${statusText}) for ${url}`;
-    this.message = (payload ? extractMessage(payload).substr(0, MAX_ERROR_MESSAGE_LENGTH) : '') || summary;
+    this.message =
+      (payload
+        ? extractMessage(payload).substr(0, MAX_ERROR_MESSAGE_LENGTH)
+        : '') || summary;
     this.payload = payload;
   }
 }
 
-const makeUrl = (baseUrl: string | undefined, relativeUrl: string, parameters?: Parameters): string => {
+const makeUrl = (
+  baseUrl: string | undefined,
+  relativeUrl: string,
+  parameters?: Parameters,
+): string => {
   const url = new URL(relativeUrl, baseUrl ?? window.location.href);
   if (parameters instanceof Object) {
-    Object.entries(parameters)
-      .forEach(([name, value]) => {
-        if (value !== undefined) {
-          if (Array.isArray(value)) {
-            // if value is an array, keep adding it to the URL with the same parameter name, for example: /reviews?revisionIds=rev2&revisionIds=rev1
-            value.filter(isNonNullable).forEach(subVal => url.searchParams.append(name, subVal.toString()));
-          } else {
-            url.searchParams.append(name, value.toString());
-          }
+    Object.entries(parameters).forEach(([name, value]) => {
+      if (value !== undefined) {
+        if (Array.isArray(value)) {
+          // if value is an array, keep adding it to the URL with the same parameter name, for example: /reviews?revisionIds=rev2&revisionIds=rev1
+          value
+            .filter(isNonNullable)
+            .forEach((subVal) =>
+              url.searchParams.append(name, subVal.toString()),
+            );
+        } else {
+          url.searchParams.append(name, value.toString());
         }
-      });
+      }
+    });
   }
   return url.toString();
 };
 
 // NOTE: in case of missing CORS headers, failed authentication manifests itself as CORS error
-const couldBeCORS = (error: Error): boolean => error instanceof TypeError && error.message === 'Failed to fetch';
+const couldBeCORS = (error: Error): boolean =>
+  error instanceof TypeError && error.message === 'Failed to fetch';
 
 const err = async (response: Response): Promise<NetworkClientError> => {
   let payload;
@@ -153,27 +184,44 @@ const err = async (response: Response): Promise<NetworkClientError> => {
   return Promise.reject(new NetworkClientError(response, payload));
 };
 
-const unwrap = async <T extends ClientResponse>(response: Response, init: RequestInit): Promise<T> => {
+const unwrap = async <T extends ClientResponse>(
+  response: Response,
+  init: RequestInit,
+): Promise<T> => {
   const accept = (init.headers as RequestHeaders).Accept;
-  if (accept !== ContentType.APPLICATION_JSON && accept !== ContentType.TEXT_PLAIN) {
-    return Promise.reject(new NetworkClientError(response, `Unexpected request accept type '${accept}'`));
+  if (
+    accept !== ContentType.APPLICATION_JSON &&
+    accept !== ContentType.TEXT_PLAIN
+  ) {
+    return Promise.reject(
+      new NetworkClientError(
+        response,
+        `Unexpected request accept type '${accept}'`,
+      ),
+    );
   }
   return response.ok
     ? response.status === HttpStatus.NO_CONTENT
       ? Promise.resolve(response)
       : accept === ContentType.APPLICATION_JSON
-        ? await response.json()
-        : await response.text()
-    // TODO: might need to handle */* ContentType and other types
-    // See https://github.github.io/fetch/
-    : await err(response);
+      ? await response.json()
+      : await response.text()
+    : // TODO: might need to handle */* ContentType and other types
+      // See https://github.github.io/fetch/
+      await err(response);
 };
 
-const retry = async <T extends ClientResponse>(url: string, init: RequestInit, authenticationUrl?: string): Promise<T> => {
+const retry = async <T extends ClientResponse>(
+  url: string,
+  init: RequestInit,
+  authenticationUrl?: string,
+): Promise<T> => {
   if (authenticationUrl) {
-    return authenticate(authenticationUrl).then(() => fetch(url, init)).then(response => unwrap(response, init));
+    return authenticate(authenticationUrl)
+      .then(() => fetch(url, init))
+      .then((response) => unwrap(response, init));
   }
-  return fetch(url, init).then(response => unwrap(response, init));
+  return fetch(url, init).then((response) => unwrap(response, init));
 };
 
 interface NetworkClientConfig {
@@ -186,31 +234,89 @@ interface NetworkClientConfig {
  */
 export class NetworkClient {
   private options = {};
-  private baseUrl?: string;
+  private baseUrl?: string | undefined;
 
   constructor(config: NetworkClientConfig) {
     this.baseUrl = config.baseUrl;
     this.options = { ...DEFAULT_OPTIONS, ...(config.options ?? {}) };
   }
 
-  async get<T extends ClientResponse>(url: string, options: RequestInit = {}, headers?: RequestHeaders, parameters?: Parameters): Promise<T> {
+  async get<T extends ClientResponse>(
+    url: string,
+    options: RequestInit = {},
+    headers?: RequestHeaders,
+    parameters?: Parameters,
+  ): Promise<T> {
     // NOTE: do not use Content-Type for GET to avoid unnecessary pre-flight when cross-origin
-    return this.request(HttpMethod.GET, url, undefined, options, headers, parameters);
+    return this.request(
+      HttpMethod.GET,
+      url,
+      undefined,
+      options,
+      headers,
+      parameters,
+    );
   }
 
-  async put<T extends ClientResponse>(url: string, data: unknown = {}, options: RequestInit = {}, headers?: RequestHeaders, parameters?: Parameters): Promise<T> {
-    return this.request(HttpMethod.PUT, url, data, options, headers, parameters);
+  async put<T extends ClientResponse>(
+    url: string,
+    data: unknown = {},
+    options: RequestInit = {},
+    headers?: RequestHeaders,
+    parameters?: Parameters,
+  ): Promise<T> {
+    return this.request(
+      HttpMethod.PUT,
+      url,
+      data,
+      options,
+      headers,
+      parameters,
+    );
   }
 
-  async post<T extends ClientResponse>(url: string, data: unknown = {}, options: RequestInit = {}, headers?: RequestHeaders, parameters?: Parameters): Promise<T> {
-    return this.request(HttpMethod.POST, url, data, options, headers, parameters);
+  async post<T extends ClientResponse>(
+    url: string,
+    data: unknown = {},
+    options: RequestInit = {},
+    headers?: RequestHeaders,
+    parameters?: Parameters,
+  ): Promise<T> {
+    return this.request(
+      HttpMethod.POST,
+      url,
+      data,
+      options,
+      headers,
+      parameters,
+    );
   }
 
-  async delete<T extends ClientResponse>(url: string, data: unknown = {}, options: RequestInit = {}, headers?: RequestHeaders, parameters?: Parameters): Promise<T> {
-    return this.request(HttpMethod.DELETE, url, data, options, headers, parameters);
+  async delete<T extends ClientResponse>(
+    url: string,
+    data: unknown = {},
+    options: RequestInit = {},
+    headers?: RequestHeaders,
+    parameters?: Parameters,
+  ): Promise<T> {
+    return this.request(
+      HttpMethod.DELETE,
+      url,
+      data,
+      options,
+      headers,
+      parameters,
+    );
   }
 
-  async request<T extends ClientResponse>(method: HttpMethod, url: string, data: unknown = undefined, options: RequestInit, headers?: RequestHeaders, parameters?: Parameters): Promise<T> {
+  async request<T extends ClientResponse>(
+    method: HttpMethod,
+    url: string,
+    data: unknown = undefined,
+    options: RequestInit,
+    headers?: RequestHeaders,
+    parameters?: Parameters,
+  ): Promise<T> {
     const requestUrl = makeUrl(this.baseUrl, url, parameters);
     let body: Blob | string | undefined;
     if (data !== undefined) {
@@ -219,7 +325,9 @@ export class NetworkClient {
       } else if (isObject(data)) {
         body = JSON.stringify(data);
       } else {
-        throw new AssertionError(`Request body can only be either a 'string' or an 'object'`);
+        throw new AssertionError(
+          `Request body can only be either a 'string' or an 'object'`,
+        );
       }
     }
     const requestInit = { ...this.options, ...options, method, body };
@@ -230,11 +338,23 @@ export class NetworkClient {
      * authentication problem, which is not desirable.
      */
     baseRequestHeaders.Accept = ContentType.APPLICATION_JSON;
-    if (method !== HttpMethod.GET) { baseRequestHeaders['Content-Type'] = `${ContentType.APPLICATION_JSON}; ${CHARSET}` }
+    if (method !== HttpMethod.GET) {
+      baseRequestHeaders[
+        'Content-Type'
+      ] = `${ContentType.APPLICATION_JSON}; ${CHARSET}`;
+    }
     requestInit.headers = mergeRequestHeaders(baseRequestHeaders, headers);
 
     return fetch(requestUrl, requestInit)
-      .then(response => (unauthenticated(response) ? retry<T>(requestUrl, requestInit, undefined) : unwrap<T>(response, requestInit)))
-      .catch(error => (couldBeCORS(error) ? retry<T>(requestUrl, requestInit, undefined) : Promise.reject(error)));
+      .then((response) =>
+        unauthenticated(response)
+          ? retry<T>(requestUrl, requestInit, undefined)
+          : unwrap<T>(response, requestInit),
+      )
+      .catch((error) =>
+        couldBeCORS(error)
+          ? retry<T>(requestUrl, requestInit, undefined)
+          : Promise.reject(error),
+      );
   }
 }

@@ -14,25 +14,60 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import { FaQuestion, FaShapes } from 'react-icons/fa';
 import { FiPackage } from 'react-icons/fi';
 import { BiAtom } from 'react-icons/bi';
 import { CgTab } from 'react-icons/cg';
 
-export const PrimitiveTypeIcon: React.FC = () => <div className="icon icon--primitive color--primitive">p</div>;
-export const PackageIcon: React.FC = () => <div className="icon color--package"><FiPackage /></div>;
-export const ClassIcon: React.FC = () => <div className="icon color--class">C</div>;
-export const AssociationIcon: React.FC = () => <div className="icon color--association">A</div>;
-export const EnumValueIcon: React.FC = () => <div className="icon icon--enum-value color--enum-value">e</div>;
-export const EnumerationIcon: React.FC = () => <div className="icon color--enumeration">E</div>;
-export const MeasureIcon: React.FC = () => <div className="icon color--measure">M</div>;
-export const UnitIcon: React.FC = () => <div className="icon color--unit">u</div>;
-export const ProfileIcon: React.FC = () => <div className="icon color--profile">P</div>;
-export const FunctionIcon: React.FC = () => <div className="icon icon--function color--function">(x)</div>;
-export const NativeFunctionIcon: React.FC = () => <div className="icon icon--function color--native-function">(x)</div>;
-export const ElementIcon: React.FC = () => <div className="icon icon--property color--property"><BiAtom /></div>;
-export const DiagramIcon: React.FC = () => <div className="icon color--diagram"><FaShapes /></div>;
-export const UnknownTypeIcon: React.FC = () => <div><FaQuestion /></div>;
+export const PrimitiveTypeIcon: React.FC = () => (
+  <div className="icon icon--primitive color--primitive">p</div>
+);
+export const PackageIcon: React.FC = () => (
+  <div className="icon color--package">
+    <FiPackage />
+  </div>
+);
+export const ClassIcon: React.FC = () => (
+  <div className="icon color--class">C</div>
+);
+export const AssociationIcon: React.FC = () => (
+  <div className="icon color--association">A</div>
+);
+export const EnumValueIcon: React.FC = () => (
+  <div className="icon icon--enum-value color--enum-value">e</div>
+);
+export const EnumerationIcon: React.FC = () => (
+  <div className="icon color--enumeration">E</div>
+);
+export const MeasureIcon: React.FC = () => (
+  <div className="icon color--measure">M</div>
+);
+export const UnitIcon: React.FC = () => (
+  <div className="icon color--unit">u</div>
+);
+export const ProfileIcon: React.FC = () => (
+  <div className="icon color--profile">P</div>
+);
+export const FunctionIcon: React.FC = () => (
+  <div className="icon icon--function color--function">(x)</div>
+);
+export const NativeFunctionIcon: React.FC = () => (
+  <div className="icon icon--function color--native-function">(x)</div>
+);
+export const ElementIcon: React.FC = () => (
+  <div className="icon icon--property color--property">
+    <BiAtom />
+  </div>
+);
+export const DiagramIcon: React.FC = () => (
+  <div className="icon color--diagram">
+    <FaShapes />
+  </div>
+);
+export const UnknownTypeIcon: React.FC = () => (
+  <div>
+    <FaQuestion />
+  </div>
+);
 
 export const TabIcon: React.FC = () => <CgTab className="icon__tab" />;

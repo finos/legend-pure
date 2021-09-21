@@ -14,23 +14,32 @@
  * limitations under the License.
  */
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const PanelLoadingIndicator: React.FC<{
   isLoading: boolean;
-}> = props => {
+}> = (props) => {
   const { isLoading } = props;
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (ref.current) {
       if (isLoading) {
-        ref.current.parentElement?.classList.add('panel-loading-indicator__container');
+        ref.current.parentElement?.classList.add(
+          'panel-loading-indicator__container',
+        );
       } else {
-        ref.current.parentElement?.classList.remove('panel-loading-indicator__container');
+        ref.current.parentElement?.classList.remove(
+          'panel-loading-indicator__container',
+        );
       }
     }
   }, [isLoading]);
 
-  return <div ref={ref} className={`panel-loading-indicator${isLoading ? '' : '--disabled'}`} />;
+  return (
+    <div
+      ref={ref}
+      className={`panel-loading-indicator${isLoading ? '' : '--disabled'}`}
+    />
+  );
 };

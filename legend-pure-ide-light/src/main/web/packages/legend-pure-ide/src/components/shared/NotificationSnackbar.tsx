@@ -14,12 +14,22 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import { observer } from 'mobx-react-lite';
 import Snackbar from '@material-ui/core/Snackbar';
 import SnackbarContent from '@material-ui/core/SnackbarContent';
-import { useApplicationStore, DEFAULT_NOTIFICATION_HIDE_TIME, NOTIFCATION_SEVERITY } from 'Stores/ApplicationStore';
-import { FaTimes, FaCheckCircle, FaInfoCircle, FaTimesCircle, FaExclamationTriangle, FaBug } from 'react-icons/fa';
+import {
+  useApplicationStore,
+  DEFAULT_NOTIFICATION_HIDE_TIME,
+  NOTIFCATION_SEVERITY,
+} from '../../stores/ApplicationStore';
+import {
+  FaTimes,
+  FaCheckCircle,
+  FaInfoCircle,
+  FaTimesCircle,
+  FaExclamationTriangle,
+  FaBug,
+} from 'react-icons/fa';
 
 export const NotificationSnackbar = observer(() => {
   const applicationStore = useApplicationStore();
@@ -27,19 +37,39 @@ export const NotificationSnackbar = observer(() => {
   const isOpen = Boolean(nofication);
   const message = nofication?.message ?? '';
   const severity = nofication?.severity ?? NOTIFCATION_SEVERITY.INFO;
-  let notificationIcon = <div className="notification__message__content__icon notification__message__content__icon--info"><FaInfoCircle /></div>;
+  let notificationIcon = (
+    <div className="notification__message__content__icon notification__message__content__icon--info">
+      <FaInfoCircle />
+    </div>
+  );
   switch (severity) {
     case NOTIFCATION_SEVERITY.ILEGAL_STATE:
-      notificationIcon = <div className="notification__message__content__icon notification__message__content__icon--error"><FaBug /></div>;
+      notificationIcon = (
+        <div className="notification__message__content__icon notification__message__content__icon--error">
+          <FaBug />
+        </div>
+      );
       break;
     case NOTIFCATION_SEVERITY.ERROR:
-      notificationIcon = <div className="notification__message__content__icon notification__message__content__icon--error"><FaTimesCircle /></div>;
+      notificationIcon = (
+        <div className="notification__message__content__icon notification__message__content__icon--error">
+          <FaTimesCircle />
+        </div>
+      );
       break;
     case NOTIFCATION_SEVERITY.WARNING:
-      notificationIcon = <div className="notification__message__content__icon notification__message__content__icon--warning"><FaExclamationTriangle /></div>;
+      notificationIcon = (
+        <div className="notification__message__content__icon notification__message__content__icon--warning">
+          <FaExclamationTriangle />
+        </div>
+      );
       break;
     case NOTIFCATION_SEVERITY.SUCCESS:
-      notificationIcon = <div className="notification__message__content__icon notification__message__content__icon--success"><FaCheckCircle /></div>;
+      notificationIcon = (
+        <div className="notification__message__content__icon notification__message__content__icon--success">
+          <FaCheckCircle />
+        </div>
+      );
       break;
     default:
       break;
@@ -58,12 +88,20 @@ export const NotificationSnackbar = observer(() => {
       }}
       open={isOpen}
       // setting the auto-hide duration to null will stop it from hiding automatically
-      autoHideDuration={applicationStore.notification ? (applicationStore.notification.autoHideDuration ?? null) : DEFAULT_NOTIFICATION_HIDE_TIME}
+      autoHideDuration={
+        applicationStore.notification
+          ? applicationStore.notification.autoHideDuration ?? null
+          : DEFAULT_NOTIFICATION_HIDE_TIME
+      }
       onClose={handleClose}
       // When displaying multiple consecutive Snackbars from a parent rendering a single <Snackbar/>,
       // add the key prop to ensure independent treatment of each message. e.g. <Snackbar key={message}/>,
       // otherwise, the message may update-in-place and features such as autoHideDuration may be canceled.
-      key={typeof message === 'string' || typeof message === 'number' ? message : ''}
+      key={
+        typeof message === 'string' || typeof message === 'number'
+          ? message
+          : ''
+      }
     >
       <SnackbarContent
         classes={{
@@ -74,7 +112,9 @@ export const NotificationSnackbar = observer(() => {
         message={
           <div className="notification__message__content">
             {notificationIcon}
-            <div className="notification__message__content__text">{message}</div>
+            <div className="notification__message__content__text">
+              {message}
+            </div>
           </div>
         }
         action={[
@@ -84,10 +124,11 @@ export const NotificationSnackbar = observer(() => {
             onClick={handleClose}
             tabIndex={-1}
             title="Dismiss"
-          ><FaTimes /></button>
+          >
+            <FaTimes />
+          </button>,
         ]}
       />
     </Snackbar>
   );
 });
-

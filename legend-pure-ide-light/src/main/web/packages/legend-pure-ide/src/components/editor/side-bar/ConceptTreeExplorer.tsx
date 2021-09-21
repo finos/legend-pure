@@ -14,68 +14,132 @@
  * limitations under the License.
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useEditorStore } from 'Stores/EditorStore';
-import { FaChevronDown, FaChevronRight, FaCompress, FaCircleNotch } from 'react-icons/fa';
-import { ContextMenu } from 'Components/shared/ContextMenu';
+import { useEditorStore } from '../../../stores/EditorStore';
+import {
+  FaChevronDown,
+  FaChevronRight,
+  FaCompress,
+  FaCircleNotch,
+} from 'react-icons/fa';
+import { ContextMenu } from '../../shared/ContextMenu';
 import clsx from 'clsx';
-import { PanelLoadingIndicator } from 'Components/shared/PanelLoadingIndicator';
-import type { TreeNodeContainerProps } from 'Components/shared/TreeView';
-import { TreeView } from 'Components/shared/TreeView';
-import type { ConceptTreeNode } from 'Models/ConceptTree';
-import { ElementConceptAttribute, PropertyConceptAttribute, ConceptType, getConceptIcon } from 'Models/ConceptTree';
-import { useApplicationStore } from 'Stores/ApplicationStore';
+import { PanelLoadingIndicator } from '../../shared/PanelLoadingIndicator';
+import type { TreeNodeContainerProps } from '../../shared/TreeView';
+import { TreeView } from '../../shared/TreeView';
+import type { ConceptTreeNode } from '../../../models/ConceptTree';
+import {
+  ElementConceptAttribute,
+  PropertyConceptAttribute,
+  ConceptType,
+  getConceptIcon,
+} from '../../../models/ConceptTree';
+import { useApplicationStore } from '../../../stores/ApplicationStore';
 import { flowResult } from 'mobx';
-import { isNonNullable } from 'Utilities/GeneralUtil';
-import { BlankPanelContent } from 'Components/shared/BlankPanelContent';
-import { FileCoordinate } from 'Models/PureFile';
+import { isNonNullable } from '../../../utils/GeneralUtil';
+import { BlankPanelContent } from '../../shared/BlankPanelContent';
+import { FileCoordinate } from '../../../models/PureFile';
 import { MdRefresh } from 'react-icons/md';
 
-const FileExplorerContextMenu = observer((props: {
-  node: ConceptTreeNode;
-  viewConceptSource: (node: ConceptTreeNode) => void;
-}, ref: React.Ref<HTMLDivElement>) => {
-  const { node, viewConceptSource } = props;
-  const nodeType = node.data.li_attr.pureType;
-  const editorStore = useEditorStore();
-  const applicationStore = useApplicationStore();
-  const rename = (): void => applicationStore.notifyUnsupportedFeature('Rename');
-  const renamePackage = (): void => applicationStore.notifyUnsupportedFeature('Rename package');
-  const renameProperty = (): void => applicationStore.notifyUnsupportedFeature('Rename property');
-  const runTests = (): Promise<void> => flowResult(editorStore.executeTests(node.data.li_attr.pureId));
-  const move = (): void => applicationStore.notifyUnsupportedFeature('Move file');
-  const viewSource = (): void => viewConceptSource(node);
-  const serviceJSON = (): void => { window.open(`${applicationStore.client.baseUrl}/execute?func=${node.data.li_attr.pureId}&mode=${applicationStore.client.mode}`, '_blank') };
+const FileExplorerContextMenu = observer(
+  (
+    props: {
+      node: ConceptTreeNode;
+      viewConceptSource: (node: ConceptTreeNode) => void;
+    },
+    ref: React.Ref<HTMLDivElement>,
+  ) => {
+    const { node, viewConceptSource } = props;
+    const nodeType = node.data.li_attr.pureType;
+    const editorStore = useEditorStore();
+    const applicationStore = useApplicationStore();
+    const rename = (): void =>
+      applicationStore.notifyUnsupportedFeature('Rename');
+    const renamePackage = (): void =>
+      applicationStore.notifyUnsupportedFeature('Rename package');
+    const renameProperty = (): void =>
+      applicationStore.notifyUnsupportedFeature('Rename property');
+    const runTests = (): Promise<void> =>
+      flowResult(editorStore.executeTests(node.data.li_attr.pureId));
+    const move = (): void =>
+      applicationStore.notifyUnsupportedFeature('Move file');
+    const viewSource = (): void => viewConceptSource(node);
+    const serviceJSON = (): void => {
+      window.open(
+        `${applicationStore.client.baseUrl}/execute?func=${node.data.li_attr.pureId}&mode=${applicationStore.client.mode}`,
+        '_blank',
+      );
+    };
 
-  return (
-    <div ref={ref} className="explorer__context-menu">
-      {nodeType === ConceptType.PACKAGE && <div className="explorer__context-menu__item" onClick={renamePackage}>Rename</div>}
-      {nodeType === ConceptType.PROPERTY && <div className="explorer__context-menu__item" onClick={renameProperty}>Rename</div>}
-      {nodeType !== ConceptType.PACKAGE && nodeType !== ConceptType.PROPERTY && <div className="explorer__context-menu__item" onClick={rename}>Rename</div>}
-      {nodeType === ConceptType.PACKAGE && <div className="explorer__context-menu__item" onClick={runTests}>Run tests</div>}
-      {nodeType !== ConceptType.PACKAGE && nodeType !== ConceptType.PROPERTY && <div className="explorer__context-menu__item" onClick={move}>Move</div>}
-      {nodeType === ConceptType.FUNCTION && <div className="explorer__context-menu__item" onClick={serviceJSON}>Service (JSON)</div>}
-      {nodeType !== ConceptType.PACKAGE && <div className="explorer__context-menu__item" onClick={viewSource}>View Source</div>}
-    </div>
-  );
-}, { forwardRef: true });
+    return (
+      <div ref={ref} className="explorer__context-menu">
+        {nodeType === ConceptType.PACKAGE && (
+          <div className="explorer__context-menu__item" onClick={renamePackage}>
+            Rename
+          </div>
+        )}
+        {nodeType === ConceptType.PROPERTY && (
+          <div
+            className="explorer__context-menu__item"
+            onClick={renameProperty}
+          >
+            Rename
+          </div>
+        )}
+        {nodeType !== ConceptType.PACKAGE && nodeType !== ConceptType.PROPERTY && (
+          <div className="explorer__context-menu__item" onClick={rename}>
+            Rename
+          </div>
+        )}
+        {nodeType === ConceptType.PACKAGE && (
+          <div className="explorer__context-menu__item" onClick={runTests}>
+            Run tests
+          </div>
+        )}
+        {nodeType !== ConceptType.PACKAGE && nodeType !== ConceptType.PROPERTY && (
+          <div className="explorer__context-menu__item" onClick={move}>
+            Move
+          </div>
+        )}
+        {nodeType === ConceptType.FUNCTION && (
+          <div className="explorer__context-menu__item" onClick={serviceJSON}>
+            Service (JSON)
+          </div>
+        )}
+        {nodeType !== ConceptType.PACKAGE && (
+          <div className="explorer__context-menu__item" onClick={viewSource}>
+            View Source
+          </div>
+        )}
+      </div>
+    );
+  },
+  { forwardRef: true },
+);
 
-const ConceptTreeNodeContainer: React.FC<TreeNodeContainerProps<ConceptTreeNode, {
-  onNodeOpen: (node: ConceptTreeNode) => void;
-  onNodeExpand: (node: ConceptTreeNode) => void;
-  onNodeCompress: (node: ConceptTreeNode) => void;
-  viewConceptSource: (node: ConceptTreeNode) => void;
-}>> = props => {
+const ConceptTreeNodeContainer: React.FC<
+  TreeNodeContainerProps<
+    ConceptTreeNode,
+    {
+      onNodeOpen: (node: ConceptTreeNode) => void;
+      onNodeExpand: (node: ConceptTreeNode) => void;
+      onNodeCompress: (node: ConceptTreeNode) => void;
+      viewConceptSource: (node: ConceptTreeNode) => void;
+    }
+  >
+> = (props) => {
   const { node, level, stepPaddingInRem, onNodeSelect, innerProps } = props;
-  const [isSelectedFromContextMenu, setIsSelectedFromContextMenu] = useState(false);
-  const { onNodeOpen, onNodeExpand, onNodeCompress, viewConceptSource } = innerProps;
+  const [isSelectedFromContextMenu, setIsSelectedFromContextMenu] =
+    useState(false);
+  const { onNodeOpen, onNodeExpand, onNodeCompress, viewConceptSource } =
+    innerProps;
   const isExpandable = [
     ConceptType.PACKAGE,
     ConceptType.CLASS,
     ConceptType.ASSOCIATION,
   ].includes(node.data.li_attr.pureType as ConceptType);
-  const selectNode: React.MouseEventHandler = event => {
+  const selectNode: React.MouseEventHandler = (event) => {
     event.stopPropagation();
     event.preventDefault();
     onNodeSelect?.(node);
@@ -105,30 +169,55 @@ const ConceptTreeNodeContainer: React.FC<TreeNodeContainerProps<ConceptTreeNode,
 
   return (
     <ContextMenu
-      content={<FileExplorerContextMenu node={node} viewConceptSource={viewConceptSource} />}
+      content={
+        <FileExplorerContextMenu
+          node={node}
+          viewConceptSource={viewConceptSource}
+        />
+      }
       menuProps={{ elevation: 7 }}
       onOpen={onContextMenuOpen}
       onClose={onContextMenuClose}
     >
-      <div className={clsx('tree-view__node__container explorer__package-tree__node__container',
-        { 'explorer__package-tree__node__container--selected-from-context-menu': !node.isSelected && isSelectedFromContextMenu },
-        { 'explorer__package-tree__node__container--selected': node.isSelected }
-      )}
+      <div
+        className={clsx(
+          'tree-view__node__container explorer__package-tree__node__container',
+          {
+            'explorer__package-tree__node__container--selected-from-context-menu':
+              !node.isSelected && isSelectedFromContextMenu,
+          },
+          {
+            'explorer__package-tree__node__container--selected':
+              node.isSelected,
+          },
+        )}
         onClick={selectNode}
         onDoubleClick={onDoubleClick}
-        style={{ paddingLeft: `${level * (stepPaddingInRem ?? 1)}rem`, display: 'flex' }}
+        style={{
+          paddingLeft: `${level * (stepPaddingInRem ?? 1)}rem`,
+          display: 'flex',
+        }}
       >
         <div className="tree-view__node__icon explorer__package-tree__node__icon">
-          {node.isLoading &&
+          {node.isLoading && (
             <div className="explorer__package-tree__node__icon__expand explorer__package-tree__node__icon__expand--is-loading">
               <FaCircleNotch />
             </div>
-          }
-          {!node.isLoading &&
-            <div className="explorer__package-tree__node__icon__expand" onClick={toggleExpansion}>
-              {!isExpandable ? <div /> : node.isOpen ? <FaChevronDown /> : <FaChevronRight />}
+          )}
+          {!node.isLoading && (
+            <div
+              className="explorer__package-tree__node__icon__expand"
+              onClick={toggleExpansion}
+            >
+              {!isExpandable ? (
+                <div />
+              ) : node.isOpen ? (
+                <FaChevronDown />
+              ) : (
+                <FaChevronRight />
+              )}
             </div>
-          }
+          )}
           <div className="explorer__package-tree__node__icon__type">
             {getConceptIcon(node.data.li_attr.pureType)}
           </div>
@@ -148,9 +237,16 @@ const FileExplorerTree = observer(() => {
   const applicationStore = useApplicationStore();
   const treeState = editorStore.conceptTreeState;
   const treeData = editorStore.conceptTreeState.getTreeData();
-  const onNodeSelect = (node: ConceptTreeNode): void => treeState.setSelectedNode(node);
-  const onNodeOpen = (node: ConceptTreeNode): Promise<void> => flowResult(treeState.openNode(node)).catch(applicationStore.alertIllegalUnhandledError);
-  const onNodeExpand = (node: ConceptTreeNode): Promise<void> => flowResult(treeState.expandNode(node)).catch(applicationStore.alertIllegalUnhandledError);
+  const onNodeSelect = (node: ConceptTreeNode): void =>
+    treeState.setSelectedNode(node);
+  const onNodeOpen = (node: ConceptTreeNode): Promise<void> =>
+    flowResult(treeState.openNode(node)).catch(
+      applicationStore.alertIllegalUnhandledError,
+    );
+  const onNodeExpand = (node: ConceptTreeNode): Promise<void> =>
+    flowResult(treeState.expandNode(node)).catch(
+      applicationStore.alertIllegalUnhandledError,
+    );
   const onNodeCompress = (node: ConceptTreeNode): void => {
     node.isOpen = false;
     treeState.refreshTree();
@@ -159,13 +255,26 @@ const FileExplorerTree = observer(() => {
     if (node.isLoading || !node.childrenIds) {
       return [];
     }
-    return node.childrenIds.map(childId => treeData.nodes.get(childId)).filter(isNonNullable);
+    return node.childrenIds
+      .map((childId) => treeData.nodes.get(childId))
+      .filter(isNonNullable);
   };
   const deselectTreeNode = (): void => treeState.setSelectedNode(undefined);
   const viewConceptSource = (node: ConceptTreeNode): void => {
     const nodeAttribute = node.data.li_attr;
-    if (nodeAttribute instanceof ElementConceptAttribute || nodeAttribute instanceof PropertyConceptAttribute) {
-      editorStore.directoryTreeState.revealPath(nodeAttribute.file, true, new FileCoordinate(nodeAttribute.file, Number.parseInt(nodeAttribute.line, 10), Number.parseInt(nodeAttribute.column, 10)));
+    if (
+      nodeAttribute instanceof ElementConceptAttribute ||
+      nodeAttribute instanceof PropertyConceptAttribute
+    ) {
+      editorStore.directoryTreeState.revealPath(
+        nodeAttribute.file,
+        true,
+        new FileCoordinate(
+          nodeAttribute.file,
+          Number.parseInt(nodeAttribute.line, 10),
+          Number.parseInt(nodeAttribute.column, 10),
+        ),
+      );
     }
   };
 
@@ -178,7 +287,7 @@ const FileExplorerTree = observer(() => {
       <div className="explorer__content__inner" onClick={deselectTreeNode}>
         <TreeView
           components={{
-            TreeNodeContainer: ConceptTreeNodeContainer
+            TreeNodeContainer: ConceptTreeNodeContainer,
           }}
           treeData={treeData}
           onNodeSelect={onNodeSelect}
@@ -199,10 +308,13 @@ export const ConceptTreeExplorer = observer(() => {
   const editorStore = useEditorStore();
   const applicationStore = useApplicationStore();
   const treeState = editorStore.conceptTreeState;
-  const refreshTree = (): Promise<void> => flowResult(treeState.refreshTreeData()).catch(applicationStore.alertIllegalUnhandledError);
+  const refreshTree = (): Promise<void> =>
+    flowResult(treeState.refreshTreeData()).catch(
+      applicationStore.alertIllegalUnhandledError,
+    );
   const collapseTree = (): void => {
     const treeData = treeState.getTreeData();
-    treeData.nodes.forEach(node => {
+    treeData.nodes.forEach((node) => {
       node.isOpen = false;
     });
     treeState.setSelectedNode(undefined);
@@ -213,7 +325,9 @@ export const ConceptTreeExplorer = observer(() => {
     <div className="panel explorer">
       <div className="panel__header side-bar__header">
         <div className="panel__header__title">
-          <div className="panel__header__title__content side-bar__header__title__content">CONCEPTS</div>
+          <div className="panel__header__title__content side-bar__header__title__content">
+            CONCEPTS
+          </div>
         </div>
       </div>
       <div className="panel__content side-bar__content">
@@ -221,23 +335,40 @@ export const ConceptTreeExplorer = observer(() => {
           <div className="panel__header explorer__header">
             <div className="panel__header__title" />
             <div className="panel__header__actions">
-              <button className="panel__header__action explorer__btn__refresh"
+              <button
+                className="panel__header__action explorer__btn__refresh"
                 onClick={refreshTree}
                 title="Refresh Tree"
-              ><MdRefresh /></button>
-              <button className="panel__header__action"
+              >
+                <MdRefresh />
+              </button>
+              <button
+                className="panel__header__action"
                 onClick={collapseTree}
                 title="Collapse All"
-              ><FaCompress /></button>
+              >
+                <FaCompress />
+              </button>
             </div>
           </div>
           <div className="panel__content explorer__content__container">
-            <PanelLoadingIndicator isLoading={treeState.loadInitialDataState.isInProgress} />
-            {treeState.loadInitialDataState.hasSucceeded && <FileExplorerTree />}
-            {!treeState.loadInitialDataState.hasSucceeded && treeState.statusText &&
-              <div className="explorer__content__container__message">{treeState.statusText}</div>
-            }
-            {treeState.loadInitialDataState.hasFailed && <BlankPanelContent>Failed to build concept tree</BlankPanelContent>}
+            <PanelLoadingIndicator
+              isLoading={treeState.loadInitialDataState.isInProgress}
+            />
+            {treeState.loadInitialDataState.hasSucceeded && (
+              <FileExplorerTree />
+            )}
+            {!treeState.loadInitialDataState.hasSucceeded &&
+              treeState.statusText && (
+                <div className="explorer__content__container__message">
+                  {treeState.statusText}
+                </div>
+              )}
+            {treeState.loadInitialDataState.hasFailed && (
+              <BlankPanelContent>
+                Failed to build concept tree
+              </BlankPanelContent>
+            )}
           </div>
         </div>
       </div>

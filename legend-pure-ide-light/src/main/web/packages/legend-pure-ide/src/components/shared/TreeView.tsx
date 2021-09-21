@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import { FaChevronDown, FaChevronRight } from 'react-icons/fa';
-import { isNonNullable } from 'Utilities/GeneralUtil';
+import { isNonNullable } from '../../utils/GeneralUtil';
 import clsx from 'clsx';
-import type { TreeNodeData, TreeData } from 'Utilities/TreeUtil';
+import type { TreeNodeData, TreeData } from '../../utils/TreeUtil';
 
 const DEFAULT_STEP_PADDING_IN_REM = 1;
 type InnerProps = Record<PropertyKey, unknown>;
@@ -26,26 +25,49 @@ type InnerProps = Record<PropertyKey, unknown>;
 /**
  * Tree Node Container
  */
-export interface TreeNodeContainerProps<T extends TreeNodeData, S extends InnerProps> {
+export interface TreeNodeContainerProps<
+  T extends TreeNodeData,
+  S extends InnerProps,
+> {
   node: T;
-  classPrefix?: string;
+  classPrefix?: string | undefined;
   level: number;
-  onNodeSelect?: (node: T) => void;
-  stepPaddingInRem?: number;
+  onNodeSelect?: ((node: T) => void) | undefined;
+  stepPaddingInRem?: number | undefined;
   innerProps: S;
 }
 
-const DefaultTreeNodeContainer = <T extends TreeNodeData, S extends InnerProps>(props: TreeNodeContainerProps<T, S>): React.ReactElement<TreeNodeContainerProps<T, S>> => {
+const DefaultTreeNodeContainer = <T extends TreeNodeData, S extends InnerProps>(
+  props: TreeNodeContainerProps<T, S>,
+): React.ReactElement<TreeNodeContainerProps<T, S>> => {
   const { node, level, stepPaddingInRem, classPrefix, onNodeSelect } = props;
   const selectNode = (): void => onNodeSelect?.(node);
   return (
-    <div className={clsx('tree-view__node__container', { [`${classPrefix}__tree-view__node__container`]: classPrefix })}
+    <div
+      className={clsx('tree-view__node__container', {
+        [`${classPrefix}__tree-view__node__container`]: classPrefix,
+      })}
       onClick={selectNode}
-      style={{ paddingLeft: `${(level - 1) * (stepPaddingInRem ?? DEFAULT_STEP_PADDING_IN_REM)}rem`, display: 'flex' }}>
-      <div className={clsx('tree-view__node__icon', { [`${classPrefix}__tree-view__node__icon`]: classPrefix })}>
-        {Boolean(node.childrenIds?.length) && (node.isOpen ? <FaChevronDown /> : <FaChevronRight />)}
+      style={{
+        paddingLeft: `${
+          (level - 1) * (stepPaddingInRem ?? DEFAULT_STEP_PADDING_IN_REM)
+        }rem`,
+        display: 'flex',
+      }}
+    >
+      <div
+        className={clsx('tree-view__node__icon', {
+          [`${classPrefix}__tree-view__node__icon`]: classPrefix,
+        })}
+      >
+        {Boolean(node.childrenIds?.length) &&
+          (node.isOpen ? <FaChevronDown /> : <FaChevronRight />)}
       </div>
-      <div className={clsx('tree-view__node__label', { [`${classPrefix}__tree-view__node__label`]: classPrefix })}>
+      <div
+        className={clsx('tree-view__node__label', {
+          [`${classPrefix}__tree-view__node__label`]: classPrefix,
+        })}
+      >
         {node.label}
       </div>
     </div>
@@ -55,22 +77,40 @@ const DefaultTreeNodeContainer = <T extends TreeNodeData, S extends InnerProps>(
 /**
  * Tree Node View
  */
-export interface TreeNodeViewProps<T extends TreeNodeData, S extends InnerProps> {
+export interface TreeNodeViewProps<
+  T extends TreeNodeData,
+  S extends InnerProps,
+> {
   node: T;
-  classPrefix?: string;
+  classPrefix?: string | undefined;
   level: number;
   components: TreeViewComponents<T, S>;
-  onNodeSelect?: (node: T) => void;
+  onNodeSelect?: ((node: T) => void) | undefined;
   getChildNodes: (node: T) => T[];
-  stepPaddingInRem?: number;
+  stepPaddingInRem?: number | undefined;
   innerProps: S;
 }
 
-const DefaultTreeNodeView = <T extends TreeNodeData, S extends InnerProps>(props: TreeNodeViewProps<T, S>): React.ReactElement<TreeNodeViewProps<T, S>> => {
-  const { node, level, onNodeSelect, getChildNodes, classPrefix, components, stepPaddingInRem, innerProps } = props;
+const DefaultTreeNodeView = <T extends TreeNodeData, S extends InnerProps>(
+  props: TreeNodeViewProps<T, S>,
+): React.ReactElement<TreeNodeViewProps<T, S>> => {
+  const {
+    node,
+    level,
+    onNodeSelect,
+    getChildNodes,
+    classPrefix,
+    components,
+    stepPaddingInRem,
+    innerProps,
+  } = props;
   return (
     // NOTE: if we want block-tree instead of padded tree, we can set the padding for it and zero out the step padding for each container
-    <div className={clsx('tree-view__node__block', { [`${classPrefix}__tree-view__node__block`]: classPrefix })}>
+    <div
+      className={clsx('tree-view__node__block', {
+        [`${classPrefix}__tree-view__node__block`]: classPrefix,
+      })}
+    >
       <components.TreeNodeContainer
         node={node}
         level={level + 1}
@@ -80,7 +120,7 @@ const DefaultTreeNodeView = <T extends TreeNodeData, S extends InnerProps>(props
         innerProps={innerProps}
       />
       {node.isOpen &&
-        getChildNodes(node).map(childNode => (
+        getChildNodes(node).map((childNode) => (
           <components.TreeNodeView
             key={childNode.id}
             node={childNode}
@@ -104,9 +144,12 @@ interface TreeViewComponents<T extends TreeNodeData, S extends InnerProps> {
   TreeNodeContainer: React.FC<TreeNodeContainerProps<T, S>>;
 }
 
-const getDefaultComponents = <T extends TreeNodeData, S extends InnerProps>(): TreeViewComponents<T, S> => ({
+const getDefaultComponents = <
+  T extends TreeNodeData,
+  S extends InnerProps,
+>(): TreeViewComponents<T, S> => ({
   TreeNodeView: DefaultTreeNodeView,
-  TreeNodeContainer: DefaultTreeNodeContainer
+  TreeNodeContainer: DefaultTreeNodeContainer,
 });
 
 /**
@@ -121,14 +164,31 @@ export interface TreeViewProps<T extends TreeNodeData, S extends InnerProps> {
   innerProps: S;
 }
 
-export const TreeView = <T extends TreeNodeData, S extends InnerProps>(props: TreeViewProps<T, S>): React.ReactElement<TreeViewProps<T, S>> => {
-  const { treeData, classPrefix, components, onNodeSelect, getChildNodes, innerProps } = props;
-  const rootNodes = treeData.rootIds.map(rootId => treeData.nodes.get(rootId)).filter(isNonNullable);
+export const TreeView = <T extends TreeNodeData, S extends InnerProps>(
+  props: TreeViewProps<T, S>,
+): React.ReactElement<TreeViewProps<T, S>> => {
+  const {
+    treeData,
+    classPrefix,
+    components,
+    onNodeSelect,
+    getChildNodes,
+    innerProps,
+  } = props;
+  const rootNodes = treeData.rootIds
+    .map((rootId) => treeData.nodes.get(rootId))
+    .filter(isNonNullable);
   const defaultTreeComponents = getDefaultComponents<T, S>();
-  const treeComponents = components ? { ...defaultTreeComponents, ...components } : defaultTreeComponents;
+  const treeComponents = components
+    ? { ...defaultTreeComponents, ...components }
+    : defaultTreeComponents;
   return (
-    <div className={clsx('tree-view__node__root', { [`${classPrefix}__tree-view__node__root`]: classPrefix })}>
-      {rootNodes.map(node => (
+    <div
+      className={clsx('tree-view__node__root', {
+        [`${classPrefix}__tree-view__node__root`]: classPrefix,
+      })}
+    >
+      {rootNodes.map((node) => (
         <treeComponents.TreeNodeView
           key={node.id}
           level={0}

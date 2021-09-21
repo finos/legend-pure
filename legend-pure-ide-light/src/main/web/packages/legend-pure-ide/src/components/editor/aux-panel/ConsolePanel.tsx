@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import { observer } from 'mobx-react-lite';
-import { useEditorStore } from 'Stores/EditorStore';
-import { BlankPanelContent } from 'Components/shared/BlankPanelContent';
+import { useEditorStore } from '../../../stores/EditorStore';
+import { BlankPanelContent } from '../../shared/BlankPanelContent';
 
 export const Console = observer(() => {
   const editorStore = useEditorStore();
 
   return (
     <div className="console-panel">
-      {editorStore.consoleText &&
+      {editorStore.consoleText && (
         <pre className="console-panel__content">
           {editorStore.consoleText.trim()}
         </pre>
-      }
-      {!editorStore.consoleText &&
+      )}
+      {!editorStore.consoleText && (
         <BlankPanelContent>
           <div className="auxiliary-panel__splash-screen">
             <div className="auxiliary-panel__splash-screen__content">
               <div className="auxiliary-panel__splash-screen__content__item">
-                <div className="auxiliary-panel__splash-screen__content__item__label">Execute to see output</div>
+                <div className="auxiliary-panel__splash-screen__content__item__label">
+                  Execute to see output
+                </div>
                 <div className="auxiliary-panel__splash-screen__content__item__hot-keys">
                   <div className="hotkey__key">F9</div>
                 </div>
@@ -42,7 +43,7 @@ export const Console = observer(() => {
             </div>
           </div>
         </BlankPanelContent>
-      }
+      )}
     </div>
   );
 });

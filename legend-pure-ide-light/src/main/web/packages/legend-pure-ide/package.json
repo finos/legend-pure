@@ -30,6 +30,7 @@
     "lint:js": "cross-env NODE_ENV=production eslint --cache --cache-location ./build/.eslintcache --report-unused-disable-directives --parser-options=project:\"./tsconfig.json\" \"./src/**/*.{js,ts,tsx}\""
   },
   "dependencies": {
+    "@finos/legend-application": "0.0.7",
     "@material-ui/core": "4.12.3",
     "@testing-library/react": "12.1.0",
     "@types/react": "17.0.21",

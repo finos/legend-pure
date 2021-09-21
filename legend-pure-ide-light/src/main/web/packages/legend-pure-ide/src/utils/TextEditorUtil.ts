@@ -14,21 +14,29 @@
  * limitations under the License.
  */
 
-import { editor as monacoEditorAPI, MarkerSeverity, KeyCode } from 'monaco-editor';
-import { noop } from 'Utilities/GeneralUtil';
-import type { SourceInformation } from 'Models/SourceInformation';
+import {
+  editor as monacoEditorAPI,
+  MarkerSeverity,
+  KeyCode,
+} from 'monaco-editor';
+import { noop } from '../utils/GeneralUtil';
+import type { SourceInformation } from '../models/SourceInformation';
 
 /**
  * Normally `monaco-editor` worker disposes after 5 minutes staying idle, but we fasten
  * this pace just in case the usage of the editor causes memory-leak somehow
  */
-export const disposeEditor = (editor: monacoEditorAPI.IStandaloneCodeEditor): void => {
+export const disposeEditor = (
+  editor: monacoEditorAPI.IStandaloneCodeEditor,
+): void => {
   editor.dispose();
   // NOTE: just to be sure, we dispose the model after disposing the editor
   editor.getModel()?.dispose();
 };
 
-export const disposeDiffEditor = (editor: monacoEditorAPI.IStandaloneDiffEditor): void => {
+export const disposeDiffEditor = (
+  editor: monacoEditorAPI.IStandaloneDiffEditor,
+): void => {
   editor.dispose();
   editor.getOriginalEditor().getModel()?.dispose();
   editor.getModifiedEditor().getModel()?.dispose();
@@ -37,29 +45,52 @@ export const disposeDiffEditor = (editor: monacoEditorAPI.IStandaloneDiffEditor)
 // There is currently no good way to `monaco-editor` to disable hotkeys as part of the settings or global state
 // See https://github.com/microsoft/monaco-editor/issues/287
 // See https://github.com/microsoft/monaco-editor/issues/102
-export const disableEditorHotKeys = (editor: monacoEditorAPI.IStandaloneCodeEditor | monacoEditorAPI.IStandaloneDiffEditor): void => {
+export const disableEditorHotKeys = (
+  editor:
+    | monacoEditorAPI.IStandaloneCodeEditor
+    | monacoEditorAPI.IStandaloneDiffEditor,
+): void => {
   editor.addCommand(KeyCode.F1, noop()); // disable command pallete
   editor.addCommand(KeyCode.F8, noop()); // disable show error command
 };
 
-export const moveToPosition = (editor: monacoEditorAPI.ICodeEditor, line: number, column: number): void => {
-  if (!editor.hasTextFocus()) { editor.focus() } // focus the editor first so that it can shows the cursor
+export const moveToPosition = (
+  editor: monacoEditorAPI.ICodeEditor,
+  line: number,
+  column: number,
+): void => {
+  if (!editor.hasTextFocus()) {
+    editor.focus();
+  } // focus the editor first so that it can shows the cursor
   editor.revealPositionInCenter({ lineNumber: line, column: column }, 0);
   editor.setPosition({ lineNumber: line, column: column });
 };
 
-export const revealError = (editor: monacoEditorAPI.ICodeEditor, sourceInformation: SourceInformation): void => {
-  moveToPosition(editor, sourceInformation.startLine, sourceInformation.startColumn);
+export const revealError = (
+  editor: monacoEditorAPI.ICodeEditor,
+  sourceInformation: SourceInformation,
+): void => {
+  moveToPosition(
+    editor,
+    sourceInformation.startLine,
+    sourceInformation.startColumn,
+  );
 };
 
-export const setErrorMarkers = (editorModel: monacoEditorAPI.ITextModel, sourceInformation: SourceInformation, message: string): void => {
+export const setErrorMarkers = (
+  editorModel: monacoEditorAPI.ITextModel,
+  sourceInformation: SourceInformation,
+  message: string,
+): void => {
   const { startLine, startColumn, endLine, endColumn } = sourceInformation;
-  monacoEditorAPI.setModelMarkers(editorModel, 'Error', [{
-    startLineNumber: startLine,
-    startColumn,
-    endColumn: endColumn + 1, // add a 1 to endColumn as monaco editor range is not inclusive
-    endLineNumber: endLine,
-    message,
-    severity: MarkerSeverity.Error
-  }]);
+  monacoEditorAPI.setModelMarkers(editorModel, 'Error', [
+    {
+      startLineNumber: startLine,
+      startColumn,
+      endColumn: endColumn + 1, // add a 1 to endColumn as monaco editor range is not inclusive
+      endLineNumber: endLine,
+      message,
+      severity: MarkerSeverity.Error,
+    },
+  ]);
 };

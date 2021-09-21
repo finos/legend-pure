@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import type { TreeData } from 'Utilities/TreeUtil';
+import type { TreeData } from '../utils/TreeUtil';
 import { deserialize } from 'serializr';
-import { TreeState } from 'Stores/TreeState';
-import type { DirectoryTreeNode } from 'Models/DirectoryTree';
-import { DirectoryNode } from 'Models/DirectoryTree';
+import { TreeState } from './TreeState';
+import type { DirectoryTreeNode } from '../models/DirectoryTree';
+import { DirectoryNode } from '../models/DirectoryTree';
 import { action, flow, flowResult, makeObservable, observable } from 'mobx';
-import type { EditorStore } from 'Stores/EditorStore';
-import { assertTrue, guaranteeNonNullable } from 'Utilities/GeneralUtil';
-import type { FileCoordinate } from 'Models/PureFile';
-import { ACTIVITY_MODE } from 'Stores/EditorConfig';
+import type { EditorStore } from './EditorStore';
+import { assertTrue, guaranteeNonNullable } from '../utils/GeneralUtil';
+import type { FileCoordinate } from '../models/PureFile';
+import { ACTIVITY_MODE } from './EditorConfig';
 
 const getParentPath = (path: string): string | undefined => {
   const trimmedPath = path.trim();
@@ -37,9 +37,12 @@ const getParentPath = (path: string): string | undefined => {
 const isFilePath = (path: string): boolean => path.endsWith('.pure');
 const pathToId = (path: string): string => `file_${path}`;
 
-export class DirectoryTreeState extends TreeState<DirectoryTreeNode, DirectoryNode> {
-  nodeForCreateNewFile?: DirectoryTreeNode;
-  nodeForCreateNewDirectory?: DirectoryTreeNode;
+export class DirectoryTreeState extends TreeState<
+  DirectoryTreeNode,
+  DirectoryNode
+> {
+  nodeForCreateNewFile?: DirectoryTreeNode | undefined;
+  nodeForCreateNewDirectory?: DirectoryTreeNode | undefined;
 
   constructor(editorStore: EditorStore) {
     super(editorStore);
@@ -48,28 +51,38 @@ export class DirectoryTreeState extends TreeState<DirectoryTreeNode, DirectoryNo
       nodeForCreateNewDirectory: observable,
       setNodeForCreateNewFile: action,
       setNodeForCreateNewDirectory: action,
-      revealPath: flow
+      revealPath: flow,
     });
   }
 
   setNodeForCreateNewFile = (value: DirectoryTreeNode | undefined): void => {
-    assertTrue(!value || value.data.isFolderNode, 'Node selected for creating a new file from must be a directory');
+    assertTrue(
+      !value || value.data.isFolderNode,
+      'Node selected for creating a new file from must be a directory',
+    );
     this.nodeForCreateNewFile = value;
-  }
+  };
 
-  setNodeForCreateNewDirectory = (value: DirectoryTreeNode | undefined): void => {
-    assertTrue(!value || value.data.isFolderNode, 'Node selected for creating a new directory from must be a directory');
+  setNodeForCreateNewDirectory = (
+    value: DirectoryTreeNode | undefined,
+  ): void => {
+    assertTrue(
+      !value || value.data.isFolderNode,
+      'Node selected for creating a new directory from must be a directory',
+    );
     this.nodeForCreateNewDirectory = value;
-  }
+  };
 
   async getRootNodes(): Promise<DirectoryNode[]> {
-    return (await this.editorStore.applicationStore.client.getDirectoryChildren()).map(node => deserialize(DirectoryNode, node));
+    return (
+      await this.editorStore.applicationStore.client.getDirectoryChildren()
+    ).map((node) => deserialize(DirectoryNode, node));
   }
 
   buildTreeData(rootNodes: DirectoryNode[]): TreeData<DirectoryTreeNode> {
     const rootIds: string[] = [];
     const nodes = new Map<string, DirectoryTreeNode>();
-    rootNodes.forEach(node => {
+    rootNodes.forEach((node) => {
       const id = node.li_attr.id;
       rootIds.push(id);
       nodes.set(id, {
@@ -82,13 +95,20 @@ export class DirectoryTreeState extends TreeState<DirectoryTreeNode, DirectoryNo
   }
 
   async getChildNodes(node: DirectoryTreeNode): Promise<DirectoryNode[]> {
-    return (await this.editorStore.applicationStore.client.getDirectoryChildren(node.data.li_attr.path)).map(node => deserialize(DirectoryNode, node));
+    return (
+      await this.editorStore.applicationStore.client.getDirectoryChildren(
+        node.data.li_attr.path,
+      )
+    ).map((node) => deserialize(DirectoryNode, node));
   }
 
-  processChildNodes(node: DirectoryTreeNode, childNodes: DirectoryNode[]): void {
+  processChildNodes(
+    node: DirectoryTreeNode,
+    childNodes: DirectoryNode[],
+  ): void {
     const treeData = this.getTreeData();
     const childrenIds: string[] = [];
-    childNodes.forEach(childNode => {
+    childNodes.forEach((childNode) => {
       const id = childNode.li_attr.id;
       childrenIds.push(id);
       treeData.nodes.set(id, {
@@ -100,15 +120,25 @@ export class DirectoryTreeState extends TreeState<DirectoryTreeNode, DirectoryNo
     node.childrenIds = childrenIds;
   }
 
-  *openNode(this: TreeState<DirectoryTreeNode, DirectoryNode>, node: DirectoryTreeNode): Generator<Promise<unknown>, void, unknown> {
+  *openNode(
+    this: TreeState<DirectoryTreeNode, DirectoryNode>,
+    node: DirectoryTreeNode,
+  ): Generator<Promise<unknown>, void, unknown> {
     if (node.data.isFileNode) {
       yield flowResult(this.editorStore.loadFile(node.data.li_attr.path));
     }
   }
 
-  *revealPath(this: DirectoryTreeState, path: string, forceOpenDirectoryTreePanel: boolean, coordinate?: FileCoordinate): Generator<Promise<unknown>, void, unknown> {
+  *revealPath(
+    this: DirectoryTreeState,
+    path: string,
+    forceOpenDirectoryTreePanel: boolean,
+    coordinate?: FileCoordinate,
+  ): Generator<Promise<unknown>, void, unknown> {
     if (forceOpenDirectoryTreePanel) {
-      this.editorStore.setActiveActivity(ACTIVITY_MODE.FILE, { keepShowingIfMatchedCurrent: true });
+      this.editorStore.setActiveActivity(ACTIVITY_MODE.FILE, {
+        keepShowingIfMatchedCurrent: true,
+      });
     }
     const paths: string[] = [];
     let currentPath: string | undefined = path;
@@ -118,13 +148,19 @@ export class DirectoryTreeState extends TreeState<DirectoryTreeNode, DirectoryNo
     }
     for (const _path of paths) {
       if (!isFilePath(_path)) {
-        const node = guaranteeNonNullable(this.getTreeData().nodes.get(pathToId(_path)), `Can't find directory node with path '${_path}'`);
+        const node = guaranteeNonNullable(
+          this.getTreeData().nodes.get(pathToId(_path)),
+          `Can't find directory node with path '${_path}'`,
+        );
         yield flowResult(this.expandNode(node));
       } else {
         yield flowResult(this.editorStore.loadFile(_path, coordinate));
       }
     }
-    const fileNode = guaranteeNonNullable(this.getTreeData().nodes.get(pathToId(path)), `Can't find file node with path '${path}'`);
+    const fileNode = guaranteeNonNullable(
+      this.getTreeData().nodes.get(pathToId(path)),
+      `Can't find file node with path '${path}'`,
+    );
     this.setSelectedNode(fileNode);
   }
 }

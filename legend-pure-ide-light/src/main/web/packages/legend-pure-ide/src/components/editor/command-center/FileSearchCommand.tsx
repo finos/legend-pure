@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-import React, { useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { VscRegex } from 'react-icons/vsc';
-import { compareLabelFn, debounce } from 'Utilities/GeneralUtil';
-import { useEditorStore } from 'Stores/EditorStore';
+import { compareLabelFn, debounce } from '../../../utils/GeneralUtil';
+import { useEditorStore } from '../../../stores/EditorStore';
 import Dialog from '@material-ui/core/Dialog';
-import type { SelectComponent, SelectOption } from 'Components/shared/CustomSelectorInput';
-import { CustomSelectorInput } from 'Components/shared/CustomSelectorInput';
+import type {
+  SelectComponent,
+  SelectOption,
+} from '../..//shared/CustomSelectorInput';
+import { CustomSelectorInput } from '../../shared/CustomSelectorInput';
 import clsx from 'clsx';
 import { flowResult } from 'mobx';
-import { useApplicationStore } from 'Stores/ApplicationStore';
+import { useApplicationStore } from '../../../stores/ApplicationStore';
 
 export const FileSearchCommand = observer(() => {
   const editorStore = useEditorStore();
@@ -35,7 +38,15 @@ export const FileSearchCommand = observer(() => {
   // configs
   const toggleRegExp = (): void => searchState.toggleRegExp();
   // actions
-  const debouncedSearch = useMemo(() => debounce((): void => { flowResult(editorStore.searchFile()).catch(applicationStore.alertIllegalUnhandledError) }, 500), [applicationStore, editorStore]);
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((): void => {
+        flowResult(editorStore.searchFile()).catch(
+          applicationStore.alertIllegalUnhandledError,
+        );
+      }, 500),
+    [applicationStore, editorStore],
+  );
   const closeModal = (): void => editorStore.setOpenFileSearchCommand(false);
   const onSearchTextChange = (val: string): void => {
     searchState.setText(val);
@@ -46,7 +57,9 @@ export const FileSearchCommand = observer(() => {
     if (val?.value) {
       closeModal();
       searchState.reset();
-      flowResult(editorStore.loadFile(val.value)).catch(applicationStore.alertIllegalUnhandledError);
+      flowResult(editorStore.loadFile(val.value)).catch(
+        applicationStore.alertIllegalUnhandledError,
+      );
     }
   };
   const handleEnter = (): void => {
@@ -67,7 +80,9 @@ export const FileSearchCommand = observer(() => {
           <CustomSelectorInput
             ref={selectorRef}
             className="command-modal__content__input"
-            options={editorStore.fileSearchCommandResults.map(option => ({ label: option, value: option })).sort(compareLabelFn)}
+            options={editorStore.fileSearchCommandResults
+              .map((option) => ({ label: option, value: option }))
+              .sort(compareLabelFn)}
             onChange={openFile}
             onInputChange={onSearchTextChange}
             placeholder="Enter file name or path"
@@ -75,12 +90,18 @@ export const FileSearchCommand = observer(() => {
             darkMode={true}
             isLoading={loadingOptionsState.isInProgress}
           />
-          <button className={clsx('command-modal__content__config-btn btn--sm', {
-            'command-modal__content__config-btn--toggled': searchState.isRegExp
-          })}
-            title={`Use Regular Expression (${searchState.isRegExp ? 'on' : 'off'})`}
+          <button
+            className={clsx('command-modal__content__config-btn btn--sm', {
+              'command-modal__content__config-btn--toggled':
+                searchState.isRegExp,
+            })}
+            title={`Use Regular Expression (${
+              searchState.isRegExp ? 'on' : 'off'
+            })`}
             onClick={toggleRegExp}
-          ><VscRegex /></button>
+          >
+            <VscRegex />
+          </button>
         </div>
       </div>
     </Dialog>
