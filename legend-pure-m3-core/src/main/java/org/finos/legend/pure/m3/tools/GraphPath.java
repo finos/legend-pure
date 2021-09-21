@@ -19,7 +19,6 @@ import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.block.factory.Predicates;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 import org.eclipse.collections.impl.utility.ArrayIterate;
@@ -30,6 +29,7 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -119,28 +119,22 @@ public class GraphPath
 
     public String getDescription()
     {
-        StringBuilder builder = new StringBuilder(this.startNodePath.length() + (16 * this.edges.size()));
-        writeDescription(builder);
-        return builder.toString();
+        return getDescription(this.startNodePath, this.edges);
     }
 
-    public void writeDescription(StringBuilder builder)
+    public StringBuilder writeDescription(StringBuilder builder)
     {
-        builder.append(this.startNodePath);
-        this.edges.forEachWith(Edge::writeMessage, builder);
+        return writeDescription(builder, this.startNodePath, this.edges);
     }
 
     public String getPureExpression()
     {
-        StringBuilder builder = new StringBuilder(this.startNodePath.length() + (16 * this.edges.size()));
-        writePureExpression(builder);
-        return builder.toString();
+        return getPureExpression(this.startNodePath, this.edges);
     }
 
-    public void writePureExpression(StringBuilder builder)
+    public StringBuilder writePureExpression(StringBuilder builder)
     {
-        builder.append(this.startNodePath);
-        this.edges.forEachWith(Edge::writePureExpression, builder);
+        return writeDescription(builder, this.startNodePath, this.edges);
     }
 
     public boolean startsWith(GraphPath other)
@@ -202,7 +196,7 @@ public class GraphPath
             return false;
         }
 
-        GraphPath that = (GraphPath)other;
+        GraphPath that = (GraphPath) other;
         return this.startNodePath.equals(that.startNodePath) && this.edges.equals(that.edges);
     }
 
@@ -237,35 +231,29 @@ public class GraphPath
         }
         catch (Exception e)
         {
-            StringBuilder message = new StringBuilder("Error accessing ");
-            writeMessageUpTo(message, index);
-            message.append(" (final node: ");
-            message.append(previousNode);
-            message.append(')');
+            StringBuilder message = writeMessageUpTo(new StringBuilder("Error accessing "), index).append(" (final node: ").append(previousNode).append(')');
             String errorMessage = e.getMessage();
             if (errorMessage != null)
             {
-                message.append(": ");
-                message.append(errorMessage);
+                message.append(": ").append(errorMessage);
             }
             throw new RuntimeException(message.toString(), e);
         }
         if (result == null)
         {
-            StringBuilder message = new StringBuilder("Could not find ");
-            writeMessageUpTo(message, index);
-            throw new RuntimeException(message.toString());
+            throw new RuntimeException(writeMessageUpTo(new StringBuilder("Could not find "), index).toString());
         }
         return result;
     }
 
-    private void writeMessageUpTo(StringBuilder message, int index)
+    private StringBuilder writeMessageUpTo(StringBuilder message, int index)
     {
         message.append(this.startNodePath);
         for (int i = 0; i <= index; i++)
         {
             this.edges.get(i).writeMessage(message);
         }
+        return message;
     }
 
     private class GraphPathNodeIterable extends AbstractLazyIterable<CoreInstance>
@@ -373,12 +361,7 @@ public class GraphPath
 
     public static GraphPath buildPath(String startNodePath, String... toOneProperties)
     {
-        Builder builder = newPathBuilder(startNodePath);
-        for (String toOneProperty : toOneProperties)
-        {
-            builder.addToOneProperty(toOneProperty);
-        }
-        return builder.build();
+        return newPathBuilder(startNodePath).addToOneProperties(toOneProperties).build();
     }
 
     public static GraphPath parseDescription(String description)
@@ -397,52 +380,62 @@ public class GraphPath
         end = description.indexOf('.', start);
         while (end != -1)
         {
-            parseEdge(builder, description, start, end);
+            builder.addEdge(parseEdge(description, start, end));
             start = end + 1;
             end = description.indexOf('.', start);
         }
-        parseEdge(builder, description, start, description.length());
+        builder.addEdge(parseEdge(description, start, description.length()));
         return builder.build();
     }
 
-    private static void parseEdge(Builder builder, String description, int start, int end)
+    private static Edge parseEdge(String description, int start, int end)
     {
-        Matcher matcher = ToOnePropertyEdge.PATTERN.matcher(description).region(start, end);
-        if (matcher.matches())
+        Edge edge = ToOnePropertyEdge.tryParse(description, start, end);
+        if (edge == null)
         {
-            builder.addToOneProperty(description.substring(start, end));
-            return;
+            edge = ToManyPropertyAtIndexEdge.tryParse(description, start, end);
+            if (edge == null)
+            {
+                edge = ToManyPropertyAtIndexEdge.tryParse(description, start, end);
+                if (edge == null)
+                {
+                    edge = ToManyPropertyWithNameEdge.tryParse(description, start, end);
+                    if (edge == null)
+                    {
+                        edge = ToManyPropertyWithStringKeyEdge.tryParse(description, start, end);
+                        if (edge == null)
+                        {
+                            throw new RuntimeException("Invalid GraphPath description (cannot parse region from " + start + " to " + end + ": " + description);
+                        }
+                    }
+                }
+            }
         }
+        return edge;
+    }
 
-        matcher = ToManyPropertyAtIndexEdge.PATTERN.matcher(description).region(start, end);
-        if (matcher.matches())
-        {
-            String property = matcher.group(1);
-            int index = Integer.parseInt(matcher.group(2));
-            builder.addToManyPropertyValueAtIndex(property, index);
-            return;
-        }
+    private static String getDescription(String startNodePath, ListIterable<? extends Edge> edges)
+    {
+        return writeDescription(new StringBuilder(startNodePath.length() + (16 * edges.size())), startNodePath, edges).toString();
+    }
 
-        matcher = ToManyPropertyWithNameEdge.PATTERN.matcher(description).region(start, end);
-        if (matcher.matches())
-        {
-            String property = matcher.group(1);
-            String valueName = matcher.group(2);
-            builder.addToManyPropertyValueWithName(property, valueName);
-            return;
-        }
+    private static StringBuilder writeDescription(StringBuilder builder, String startNodePath, ListIterable<? extends Edge> edges)
+    {
+        builder.append(startNodePath);
+        edges.forEachWith(Edge::writeMessage, builder);
+        return builder;
+    }
 
-        matcher = ToManyPropertyWithStringKeyEdge.PATTERN.matcher(description).region(start, end);
-        if (matcher.matches())
-        {
-            String property = matcher.group(1);
-            String keyProperty = matcher.group(2);
-            String key = matcher.group(3);
-            builder.addToManyPropertyValueWithKey(property, keyProperty, key);
-            return;
-        }
+    private static String getPureExpression(String startNodePath, ListIterable<? extends Edge> edges)
+    {
+        return writePureExpression(new StringBuilder(startNodePath.length() + (16 * edges.size())), startNodePath, edges).toString();
+    }
 
-        throw new RuntimeException("Invalid GraphPath description (cannot parse region from " + start + " to " + end + ": " + description);
+    private static StringBuilder writePureExpression(StringBuilder builder, String startNodePath, ListIterable<? extends Edge> edges)
+    {
+        builder.append(startNodePath);
+        edges.forEachWith(Edge::writePureExpression, builder);
+        return builder;
     }
 
     public static class Builder
@@ -462,6 +455,26 @@ public class GraphPath
             this.pathElements = Lists.mutable.withAll(path.edges);
         }
 
+        public String getStartNodePath()
+        {
+            return this.startNodePath;
+        }
+
+        public ListIterable<Edge> getEdges()
+        {
+            return this.pathElements.asUnmodifiable();
+        }
+
+        public String getDescription()
+        {
+            return GraphPath.getDescription(this.startNodePath, this.pathElements);
+        }
+
+        public String getPureExpression()
+        {
+            return GraphPath.getPureExpression(this.startNodePath, this.pathElements);
+        }
+
         public GraphPath build()
         {
             return new GraphPath(this.startNodePath, this.pathElements);
@@ -478,14 +491,13 @@ public class GraphPath
 
         public Builder addToOneProperties(String... properties)
         {
-            if (!ArrayIterate.allSatisfy(properties, Predicates.notNull()))
-            {
-                throw new IllegalArgumentException("Properties may not be null");
-            }
-            for (int i = 0; i < properties.length; i++)
-            {
-                addEdge(new ToOnePropertyEdge(properties[i]));
-            }
+            ArrayIterate.forEach(properties, this::addToOneProperty);
+            return this;
+        }
+
+        public Builder addToOneProperties(List<String> properties)
+        {
+            properties.forEach(this::addToOneProperty);
             return this;
         }
 
@@ -556,32 +568,25 @@ public class GraphPath
         @Override
         public String toString()
         {
-            StringBuilder builder = new StringBuilder("<");
-            builder.append(getClass().getSimpleName());
-            builder.append("node");
-            writeMessage(builder);
-            builder.append('>');
-            return builder.toString();
+            return writeMessage(new StringBuilder("<").append(getClass().getSimpleName()).append(" ")).append('>').toString();
         }
 
         abstract CoreInstance apply(CoreInstance node);
 
-        void writeMessage(StringBuilder message)
+        StringBuilder writeMessage(StringBuilder message)
         {
-            message.append('.');
-            message.append(this.property);
+            return message.append('.').append(this.property);
         }
 
-        void writePureExpression(StringBuilder expression)
+        StringBuilder writePureExpression(StringBuilder expression)
         {
-            expression.append('.');
-            expression.append(this.property);
+            return expression.append('.').append(this.property);
         }
     }
 
     private static class ToOnePropertyEdge extends Edge
     {
-        private static final Pattern PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*+");
+        private static final Pattern PATTERN = Pattern.compile("[a-zA-Z_]\\w*+");
 
         private ToOnePropertyEdge(String property)
         {
@@ -591,7 +596,7 @@ public class GraphPath
         @Override
         public boolean equals(Object other)
         {
-            return (this == other) || ((other instanceof ToOnePropertyEdge) && this.property.equals(((ToOnePropertyEdge)other).property));
+            return (this == other) || ((other instanceof ToOnePropertyEdge) && this.property.equals(((ToOnePropertyEdge) other).property));
         }
 
         @Override
@@ -605,6 +610,18 @@ public class GraphPath
         {
             return node.getValueForMetaPropertyToOne(this.property);
         }
+
+        static ToOnePropertyEdge tryParse(String string, int start, int end)
+        {
+            Matcher matcher = PATTERN.matcher(string).region(start, end);
+            if (!matcher.matches())
+            {
+                return null;
+            }
+
+            String property = string.substring(start, end);
+            return new ToOnePropertyEdge(property);
+        }
     }
 
     private abstract static class ToManyPropertyEdge extends Edge
@@ -615,29 +632,25 @@ public class GraphPath
         }
 
         @Override
-        final void writeMessage(StringBuilder message)
+        final StringBuilder writeMessage(StringBuilder message)
         {
-            super.writeMessage(message);
-            message.append('[');
-            writeToManySelectMessage(message);
-            message.append(']');
+            return writeToManySelectMessage(super.writeMessage(message).append('[')).append(']');
         }
 
         @Override
-        final void writePureExpression(StringBuilder expression)
+        final StringBuilder writePureExpression(StringBuilder expression)
         {
-            super.writePureExpression(expression);
-            writePureSelectExpression(expression);
+            return writePureSelectExpression(super.writePureExpression(expression));
         }
 
-        abstract void writeToManySelectMessage(StringBuilder message);
+        abstract StringBuilder writeToManySelectMessage(StringBuilder message);
 
-        abstract void writePureSelectExpression(StringBuilder expression);
+        abstract StringBuilder writePureSelectExpression(StringBuilder expression);
     }
 
     private static class ToManyPropertyAtIndexEdge extends ToManyPropertyEdge
     {
-        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*+)\\[([0-9]++)\\]");
+        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_]\\w*+)\\[([0-9]++)]");
 
         private final int index;
 
@@ -658,7 +671,7 @@ public class GraphPath
             {
                 return false;
             }
-            ToManyPropertyAtIndexEdge that = (ToManyPropertyAtIndexEdge)other;
+            ToManyPropertyAtIndexEdge that = (ToManyPropertyAtIndexEdge) other;
             return this.property.equals(that.property) && (this.index == that.index);
         }
 
@@ -676,23 +689,34 @@ public class GraphPath
         }
 
         @Override
-        void writeToManySelectMessage(StringBuilder message)
+        StringBuilder writeToManySelectMessage(StringBuilder message)
         {
-            message.append(this.index);
+            return message.append(this.index);
         }
 
         @Override
-        void writePureSelectExpression(StringBuilder expression)
+        StringBuilder writePureSelectExpression(StringBuilder expression)
         {
-            expression.append("->at(");
-            expression.append(this.index);
-            expression.append(')');
+            return expression.append("->at(").append(this.index).append(')');
+        }
+
+        static ToManyPropertyAtIndexEdge tryParse(String string, int start, int end)
+        {
+            Matcher matcher = PATTERN.matcher(string).region(start, end);
+            if (!matcher.matches())
+            {
+                return null;
+            }
+
+            String property = matcher.group(1);
+            int index = Integer.parseInt(matcher.group(2));
+            return new ToManyPropertyAtIndexEdge(property, index);
         }
     }
 
     private static class ToManyPropertyWithNameEdge extends ToManyPropertyEdge
     {
-        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*+)\\['(.*)'\\]");
+        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_]\\w*+)\\['(.*)']");
 
         private final String valueName;
 
@@ -713,7 +737,7 @@ public class GraphPath
             {
                 return false;
             }
-            ToManyPropertyWithNameEdge that = (ToManyPropertyWithNameEdge)other;
+            ToManyPropertyWithNameEdge that = (ToManyPropertyWithNameEdge) other;
             return this.property.equals(that.property) && this.valueName.equals(that.valueName);
         }
 
@@ -730,25 +754,34 @@ public class GraphPath
         }
 
         @Override
-        void writeToManySelectMessage(StringBuilder message)
+        StringBuilder writeToManySelectMessage(StringBuilder message)
         {
-            message.append('\'');
-            message.append(this.valueName);
-            message.append('\'');
+            return message.append('\'').append(this.valueName).append('\'');
         }
 
         @Override
-        void writePureSelectExpression(StringBuilder expression)
+        StringBuilder writePureSelectExpression(StringBuilder expression)
         {
-            expression.append("->get('");
-            expression.append(this.valueName);
-            expression.append("')->toOne()");
+            return expression.append("->get('").append(this.valueName).append("')->toOne()");
+        }
+
+        static ToManyPropertyWithNameEdge tryParse(String string, int start, int end)
+        {
+            Matcher matcher = PATTERN.matcher(string).region(start, end);
+            if (!matcher.matches())
+            {
+                return null;
+            }
+
+            String property = matcher.group(1);
+            String valueName = matcher.group(2);
+            return new ToManyPropertyWithNameEdge(property, valueName);
         }
     }
 
     private static class ToManyPropertyWithStringKeyEdge extends ToManyPropertyEdge
     {
-        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_][a-zA-Z0-9_]*+)\\[([a-zA-Z_][a-zA-Z0-9_]*+)='(.*)'\\]");
+        private static final Pattern PATTERN = Pattern.compile("([a-zA-Z_]\\w*+)\\[([a-zA-Z_]\\w*+)='(.*)']");
 
         private final String keyProperty;
         private final String key;
@@ -771,7 +804,7 @@ public class GraphPath
             {
                 return false;
             }
-            ToManyPropertyWithStringKeyEdge that = (ToManyPropertyWithStringKeyEdge)other;
+            ToManyPropertyWithStringKeyEdge that = (ToManyPropertyWithStringKeyEdge) other;
             return this.property.equals(that.property) && this.keyProperty.equals(that.keyProperty) && this.key.equals(that.key);
         }
 
@@ -788,22 +821,29 @@ public class GraphPath
         }
 
         @Override
-        void writeToManySelectMessage(StringBuilder message)
+        StringBuilder writeToManySelectMessage(StringBuilder message)
         {
-            message.append(this.keyProperty);
-            message.append("='");
-            message.append(this.key);
-            message.append('\'');
+            return message.append(this.keyProperty).append("='").append(this.key).append('\'');
         }
 
         @Override
-        void writePureSelectExpression(StringBuilder expression)
+        StringBuilder writePureSelectExpression(StringBuilder expression)
         {
-            expression.append("->filter(x | $x.");
-            expression.append(this.keyProperty);
-            expression.append(" == '");
-            expression.append(this.key);
-            expression.append("')->toOne()");
+            return expression.append("->filter(x | $x.").append(this.keyProperty).append(" == '").append(this.key).append("')->toOne()");
+        }
+
+        static ToManyPropertyWithStringKeyEdge tryParse(String string, int start, int end)
+        {
+            Matcher matcher = PATTERN.matcher(string).region(start, end);
+            if (!matcher.matches())
+            {
+                return null;
+            }
+
+            String property = matcher.group(1);
+            String keyProperty = matcher.group(2);
+            String key = matcher.group(3);
+            return new ToManyPropertyWithStringKeyEdge(property, keyProperty, key);
         }
     }
 }
