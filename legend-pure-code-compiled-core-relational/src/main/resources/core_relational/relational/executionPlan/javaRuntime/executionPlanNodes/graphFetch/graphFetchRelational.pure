@@ -53,10 +53,17 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
 
    let pureType = $node->typeFromStoreLocalNode();
 
+   let simpleType = ^SimpleJavaType(pureType = $pureType, javaType = $context.conventions->className($pureType));
+
+   let returnType = $node->match([
+      r : RelationalRootQueryTempTableGraphFetchExecutionNode[1] | if($r.checked->isTrue(), | ^CheckedJavaType(checkedOf = $simpleType), | $simpleType),
+      p : RelationalClassQueryTempTableGraphFetchExecutionNode[1]| $simpleType
+   ]);
+
    ^$context
    (
       nodeInfos = $context.nodeInfos->concatenate(
-         ^NodeInfo(path = $path, returnType = ^SimpleJavaType(pureType = $pureType, javaType = $context.conventions->className($pureType)))
+         ^NodeInfo(path = $path, returnType = $returnType)
       )
    );
 }

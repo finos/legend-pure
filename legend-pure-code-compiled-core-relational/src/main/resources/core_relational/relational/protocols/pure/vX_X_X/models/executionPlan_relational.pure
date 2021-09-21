@@ -69,6 +69,7 @@ Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalPrimiti
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalRootQueryTempTableGraphFetchExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalClassQueryTempTableGraphFetchExecutionNode
 {
    batchSize : Integer[0..1];
+   checked : Boolean[0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalRootListTempTableGraphFetchExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalTempTableGraphFetchExecutionNode

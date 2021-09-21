@@ -153,10 +153,13 @@ function <<access.private>> meta::pure::executionPlan::engine::java::serialize::
    $javaType->match([
       {chk:CheckedJavaType[1] |
          let defectsTree = ^PropertyGraphFetchTree(property=checkedProperty('defects'), subTrees=$defectTree.subTrees);
-         let sourceTree  = prepareTree($data, $chk.source)->toPropertyTree(checkedProperty('source'));
          let valueTree   = prepareTree($data, $chk.checkedOf)->toPropertyTree(checkedProperty('value'));
 
-         ^RootGraphFetchTree<Any>(class=Checked, subTrees=[$defectsTree, $sourceTree, $valueTree]);
+         if($chk.source->isEmpty(),
+            | ^RootGraphFetchTree<Any>(class=Checked, subTrees=[$defectsTree, $valueTree]),
+            | let sourceTree  = prepareTree($data, $chk.source->toOne())->toPropertyTree(checkedProperty('source'));
+               ^RootGraphFetchTree<Any>(class=Checked, subTrees=[$defectsTree, $sourceTree, $valueTree]);
+            );
       },
       {simp:SimpleJavaType[1] | 
          let tree = $data->treeForClass($simp.pureType->cast(@meta::pure::metamodel::type::Class<Any>));

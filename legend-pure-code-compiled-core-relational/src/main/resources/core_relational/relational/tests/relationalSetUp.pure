@@ -490,6 +490,23 @@ Mapping meta::relational::tests::simpleRelationalMappingInc
                 manager : [dbInc]@Person_Manager
             }
 
+       PersonWithConstraints : Relational
+            {
+                scope([dbInc])
+                (
+                    firstName : personTable.FIRSTNAME,
+                    age : personTable.AGE
+                ),
+                scope([dbInc]default.personTable)
+                (
+                    lastName : LASTNAME
+                ),
+                firm : [dbInc]@Firm_Person,
+                address : [dbInc]@Address_Person,
+                locations : [dbInc]@Person_Location,
+                manager : [dbInc]@Person_Manager
+            }
+
    Firm : Relational
           {
              legalName : [dbInc]firmTable.LEGALNAME,
