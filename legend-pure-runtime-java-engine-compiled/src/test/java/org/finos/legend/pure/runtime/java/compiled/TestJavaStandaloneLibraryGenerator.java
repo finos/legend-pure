@@ -109,10 +109,10 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
                 VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER,
                 new ConsoleCompiled(),
                 new FunctionCache(),
-                new ClassCache(),
+                new ClassCache(classLoader),
                 null,
                 null
-                );
+        );
 
         String className = JavaPackageAndImportBuilder.getRootPackage() + ".test_standalone_tests";
         Class<?> testClass = classLoader.loadClass(className);
