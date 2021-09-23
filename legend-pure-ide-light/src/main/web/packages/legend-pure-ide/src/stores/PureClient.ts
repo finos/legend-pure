@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import type { NetworkClient } from '../utils/NetworkClient';
-import ServerConfig from 'ServerConfig';
 import type {
   ConceptActivity,
   InitializationResult,
@@ -31,18 +29,11 @@ import type {
   TestRunnerCancelResult,
 } from '../models/Test';
 import type { Usage, UsageConcept } from '../models/Usage';
-import type { PlainObject } from '../utils/GeneralUtil';
 import type { CommandResult } from '../models/Command';
-
-// roughly follow Dropwizard connector config
-interface ServerConnectorConfig {
-  type: string;
-  port: number;
-  bindHost?: string;
-}
+import type { NetworkClient, PlainObject } from '@finos/legend-shared';
+import { guaranteeNonNullable } from '@finos/legend-shared';
 
 export class PureClient {
-  readonly baseUrl: string;
   private networkClient: NetworkClient;
   // Pure IDE info
   userId = 'localuser';
@@ -52,10 +43,13 @@ export class PureClient {
 
   constructor(networkClient: NetworkClient) {
     this.networkClient = networkClient;
-    const connector = ServerConfig.server.connector as ServerConnectorConfig;
-    this.baseUrl = `${connector.type}://${connector.bindHost ?? 'localhost'}:${
-      connector.port
-    }`;
+  }
+
+  get baseUrl(): string {
+    return guaranteeNonNullable(
+      this.networkClient.baseUrl,
+      `Pure client has not been configured properly`,
+    );
   }
 
   initialize = (

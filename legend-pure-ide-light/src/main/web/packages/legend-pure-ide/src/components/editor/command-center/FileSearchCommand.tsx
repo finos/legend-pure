@@ -17,17 +17,13 @@
 import { useMemo, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { VscRegex } from 'react-icons/vsc';
-import { compareLabelFn, debounce } from '../../../utils/GeneralUtil';
 import { useEditorStore } from '../../../stores/EditorStore';
 import Dialog from '@material-ui/core/Dialog';
-import type {
-  SelectComponent,
-  SelectOption,
-} from '../..//shared/CustomSelectorInput';
-import { CustomSelectorInput } from '../../shared/CustomSelectorInput';
-import clsx from 'clsx';
 import { flowResult } from 'mobx';
-import { useApplicationStore } from '../../../stores/ApplicationStore';
+import type { SelectComponent, SelectOption } from '@finos/legend-art';
+import { clsx, compareLabelFn, CustomSelectorInput } from '@finos/legend-art';
+import { debounce } from '@finos/legend-shared';
+import { useApplicationStore } from '@finos/legend-application';
 
 export const FileSearchCommand = observer(() => {
   const editorStore = useEditorStore();
@@ -70,7 +66,9 @@ export const FileSearchCommand = observer(() => {
     <Dialog
       open={editorStore.openFileSearchCommand}
       onClose={closeModal}
-      onEnter={handleEnter}
+      TransitionProps={{
+        onEnter: handleEnter,
+      }}
       classes={{ container: 'command-modal__container' }}
       PaperProps={{ classes: { root: 'command-modal__inner-container' } }}
     >

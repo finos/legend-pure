@@ -16,7 +16,7 @@
 
 import { createModelSchema, deserialize, primitive } from 'serializr';
 
-export class CommandResult { }
+export class CommandResult {}
 
 export class CommandFailureResult extends CommandResult {
   error!: boolean;
@@ -30,7 +30,9 @@ createModelSchema(CommandFailureResult, {
   text: primitive(),
 });
 
-export const deserializeCommandResult = (value: Record<PropertyKey, unknown>): CommandResult => {
+export const deserializeCommandResult = (
+  value: Record<PropertyKey, unknown>,
+): CommandResult => {
   if (value.error) {
     return deserialize(CommandFailureResult, value);
   }

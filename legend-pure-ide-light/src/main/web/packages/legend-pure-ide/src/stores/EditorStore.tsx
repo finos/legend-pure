@@ -16,36 +16,11 @@
 
 import { createContext, useContext } from 'react';
 import { useLocalObservable } from 'mobx-react-lite';
-import { editor as monacoEditorAPI } from 'monaco-editor';
 import { action, flowResult, makeAutoObservable } from 'mobx';
-import type {
-  ApplicationStore,
-  ActionAlertInfo,
-  BlockingAlertInfo,
-} from './ApplicationStore';
-import {
-  ActionAlertType,
-  ActionAlertActionType,
-  useApplicationStore,
-} from './ApplicationStore';
-import {
-  ACTIVITY_MODE,
-  DEFAULT_SIDE_BAR_SIZE,
-  AUX_PANEL_MODE,
-  DEFAULT_AUX_PANEL_SIZE,
-  MONOSPACE_FONT_FAMILY,
-} from './EditorConfig';
-import type { Clazz, PlainObject } from '../utils/GeneralUtil';
-import {
-  guaranteeType,
-  guaranteeNonNullable,
-  assertNonNullable,
-  assertTrue,
-} from '../utils/GeneralUtil';
+import { ACTIVITY_MODE, AUX_PANEL_MODE } from './EditorConfig';
 import type { EditorState } from './EditorState';
 import { FileEditorState } from './EditorState';
 import { deserialize } from 'serializr';
-import { ActionState } from '../utils/ActionState';
 import {
   FileCoordinate,
   PureFile,
@@ -93,7 +68,29 @@ import {
   CommandFailureResult,
   deserializeCommandResult,
 } from '../models/Command';
-import { LOG_EVENT } from '../utils/Logger';
+import type {
+  ActionAlertInfo,
+  ApplicationStore,
+  BlockingAlertInfo,
+} from '@finos/legend-application';
+import {
+  ActionAlertActionType,
+  ActionAlertType,
+  useApplicationStore,
+} from '@finos/legend-application';
+import type { Clazz, PlainObject } from '@finos/legend-shared';
+import {
+  NetworkClient,
+  ActionState,
+  assertErrorThrown,
+  assertNonNullable,
+  assertTrue,
+  guaranteeNonNullable,
+  guaranteeType,
+} from '@finos/legend-shared';
+import type { PureIDEConfig } from '../application/PureIDEConfig';
+import { PureClient } from './PureClient';
+import { PanelDisplayState } from '@finos/legend-art';
 
 // FontFaceSet API is still experimental and has not been added to Typescript lib
 // See https://developer.mozilla.org/en-US/docs/Web/API/FontFaceSet
@@ -144,60 +141,63 @@ class SearchCommandState {
 }
 
 export class EditorStore {
-  applicationStore: ApplicationStore;
+  applicationStore: ApplicationStore<PureIDEConfig>;
   directoryTreeState: DirectoryTreeState;
   conceptTreeState: ConceptTreeState;
-  initState = new ActionState();
+  client: PureClient;
+  initState = ActionState.create();
   // Tabs
   currentEditorState?: EditorState | undefined;
   openedEditorStates: EditorState[] = [];
   showOpenedTabsMenu = false;
   // App states
   isInExpandedMode = true;
-  backdrop = false;
   blockGlobalHotkeys = false;
   // Aux Panel
   isMaxAuxPanelSizeSet = false;
   activeAuxPanelMode = AUX_PANEL_MODE.CONSOLE;
-  maxAuxPanelSize = DEFAULT_AUX_PANEL_SIZE;
-  auxPanelSize = DEFAULT_AUX_PANEL_SIZE;
-  previousAuxPanelSize = 0;
+  auxPanelDisplayState = new PanelDisplayState({
+    initial: 0,
+    default: 300,
+    snap: 100,
+  });
   // Side Bar
   activeActivity?: ACTIVITY_MODE = ACTIVITY_MODE.CONCEPT;
-  sideBarSize = DEFAULT_SIDE_BAR_SIZE;
-  sideBarSizeBeforeHidden = DEFAULT_SIDE_BAR_SIZE;
+  sideBarDisplayState = new PanelDisplayState({
+    initial: 300,
+    default: 300,
+    snap: 150,
+  });
   // Console
   consoleText?: string | undefined;
   // Execution
-  executionState = new ActionState();
+  executionState = ActionState.create();
   // Navigation
   navigationStack: FileCoordinate[] = []; // TODO?: we might want to limit the number of items in this stack
   // File search
   openFileSearchCommand = false;
-  fileSearchCommandLoadingState = new ActionState();
+  fileSearchCommandLoadingState = ActionState.create();
   fileSearchCommandResults: string[] = [];
   fileSearchCommandState = new SearchCommandState();
   // Text search
   openTextSearchCommand = false;
-  textSearchCommandLoadingState = new ActionState();
+  textSearchCommandLoadingState = ActionState.create();
   textSearchCommandState = new SearchCommandState();
   // Search Panel
   searchState?: SearchState | undefined;
   // Test
-  testRunState = new ActionState();
+  testRunState = ActionState.create();
   testRunnerState?: TestRunnerState | undefined;
 
-  constructor(applicationStore: ApplicationStore) {
+  constructor(applicationStore: ApplicationStore<PureIDEConfig>) {
     makeAutoObservable(this, {
       setShowOpenedTabsMenu: action,
       setBlockGlobalHotkeys: action,
-      setBackdrop: action,
       setExpandedMode: action,
       setOpenFileSearchCommand: action,
       setOpenTextSearchCommand: action,
-      setAuxPanelSize: action,
       setActiveAuxPanelMode: action,
-      setSideBarSize: action,
+      setActiveActivity: action,
       setActionAltertInfo: action,
       setConsoleText: action,
       setSearchState: action,
@@ -208,10 +208,11 @@ export class EditorStore {
     this.applicationStore = applicationStore;
     this.directoryTreeState = new DirectoryTreeState(this);
     this.conceptTreeState = new ConceptTreeState(this);
-  }
-
-  get isAuxPanelMaximized(): boolean {
-    return this.auxPanelSize === this.maxAuxPanelSize;
+    this.client = new PureClient(
+      new NetworkClient({
+        baseUrl: this.applicationStore.config.pureUrl,
+      }),
+    );
   }
 
   setShowOpenedTabsMenu(val: boolean): void {
@@ -223,9 +224,6 @@ export class EditorStore {
   setCurrentEditorState(val: EditorState | undefined): void {
     this.currentEditorState = val;
   }
-  setBackdrop(val: boolean): void {
-    this.backdrop = val;
-  }
   setExpandedMode(val: boolean): void {
     this.isInExpandedMode = val;
   }
@@ -235,14 +233,8 @@ export class EditorStore {
   setOpenTextSearchCommand(val: boolean): void {
     this.openTextSearchCommand = val;
   }
-  setAuxPanelSize(val: number): void {
-    this.auxPanelSize = val;
-  }
   setActiveAuxPanelMode(val: AUX_PANEL_MODE): void {
     this.activeAuxPanelMode = val;
-  }
-  setSideBarSize(val: number): void {
-    this.sideBarSize = val;
   }
   setActionAltertInfo(alertInfo: ActionAlertInfo | undefined): void {
     this.applicationStore.setActionAltertInfo(alertInfo);
@@ -289,14 +281,12 @@ export class EditorStore {
       return;
     }
     // set PURE IDE mode
-    this.applicationStore.client.mode = mode;
-    this.applicationStore.client.compilerMode = fastCompile;
+    this.client.mode = mode;
+    this.client.compilerMode = fastCompile;
     // initialize editor
     this.initState.inProgress();
     try {
-      const initializationPromise = this.applicationStore.client.initialize(
-        !fullInit,
-      );
+      const initializationPromise = this.client.initialize(!fullInit);
       this.setBlockingAlert({
         message: 'Loading Pure IDE...',
         prompt:
@@ -313,7 +303,8 @@ export class EditorStore {
       );
       if (result.text) {
         this.setConsoleText(result.text);
-        this.openAuxPanel(AUX_PANEL_MODE.CONSOLE, true);
+        this.setActiveAuxPanelMode(AUX_PANEL_MODE.CONSOLE);
+        this.auxPanelDisplayState.open();
       }
       if (result instanceof InitializationFailureResult) {
         if (result.sessionError) {
@@ -339,15 +330,15 @@ export class EditorStore {
           yield func();
         }
         yield Promise.all([
-          this.preloadTextEditorFont(),
           openWelcomeFilePromise,
           directoryTreeInitPromise,
           conceptTreeInitPromise,
         ]);
       }
-    } catch (e) {
-      this.applicationStore.notifyError(e);
-      this.initState.conclude(false);
+    } catch (error) {
+      assertErrorThrown(error);
+      this.applicationStore.notifyError(error);
+      this.initState.fail();
       this.setBlockingAlert({
         message: 'Failed to initialize IDE',
         prompt:
@@ -355,7 +346,7 @@ export class EditorStore {
       });
       return;
     }
-    this.initState.conclude(true);
+    this.initState.pass();
   }
 
   *checkIfSessionWakingUp(
@@ -384,14 +375,14 @@ export class EditorStore {
     fn?: (activity: InitializationActivity) => void,
   ): Promise<void> {
     const result =
-      (await this.applicationStore.client.getInitializationActivity()) as unknown as InitializationActivity;
+      (await this.client.getInitializationActivity()) as unknown as InitializationActivity;
     if (result.initializing) {
       return new Promise((resolve, reject) =>
         setTimeout(() => {
           try {
             resolve(this.pullInitializationActivity());
-          } catch (e) {
-            reject(e);
+          } catch (error) {
+            reject(error);
           }
         }, 1000),
       );
@@ -407,67 +398,17 @@ export class EditorStore {
     );
   }
 
-  openAuxPanel(
-    auxPanelMode: AUX_PANEL_MODE,
-    resetHeightIfTooSmall: boolean,
-  ): void {
-    this.activeAuxPanelMode = auxPanelMode;
-    if (this.auxPanelSize === 0) {
-      this.toggleAuxPanel();
-    } else if (
-      this.auxPanelSize < DEFAULT_AUX_PANEL_SIZE &&
-      resetHeightIfTooSmall
-    ) {
-      this.auxPanelSize = DEFAULT_AUX_PANEL_SIZE;
-    }
-  }
-
-  toggleAuxPanel(): void {
-    if (this.auxPanelSize === 0) {
-      this.auxPanelSize = this.previousAuxPanelSize;
-    } else {
-      this.previousAuxPanelSize = this.auxPanelSize || DEFAULT_AUX_PANEL_SIZE;
-      this.auxPanelSize = 0;
-    }
-  }
-
-  toggleExpandAuxPanel(): void {
-    if (this.auxPanelSize === this.maxAuxPanelSize) {
-      this.auxPanelSize =
-        this.previousAuxPanelSize === this.maxAuxPanelSize
-          ? DEFAULT_AUX_PANEL_SIZE
-          : this.previousAuxPanelSize;
-    } else {
-      this.previousAuxPanelSize = this.auxPanelSize;
-      this.auxPanelSize = this.maxAuxPanelSize;
-    }
-  }
-
-  setMaxAuxPanelSize(val: number): void {
-    if (this.isMaxAuxPanelSizeSet) {
-      if (this.previousAuxPanelSize === this.maxAuxPanelSize) {
-        this.previousAuxPanelSize = val;
-      }
-      if (this.auxPanelSize === this.maxAuxPanelSize) {
-        this.auxPanelSize = val;
-      }
-    }
-    this.maxAuxPanelSize = val;
-    this.isMaxAuxPanelSizeSet = true;
-  }
-
   setActiveActivity(
     activity: ACTIVITY_MODE,
     options?: { keepShowingIfMatchedCurrent?: boolean },
   ): void {
-    if (this.sideBarSize === 0) {
-      this.sideBarSize = this.sideBarSizeBeforeHidden;
+    if (!this.sideBarDisplayState.isOpen) {
+      this.sideBarDisplayState.open();
     } else if (
       activity === this.activeActivity &&
       !options?.keepShowingIfMatchedCurrent
     ) {
-      this.sideBarSizeBeforeHidden = this.sideBarSize || DEFAULT_SIDE_BAR_SIZE;
-      this.sideBarSize = 0;
+      this.sideBarDisplayState.close();
     }
     this.activeActivity = activity;
   }
@@ -526,10 +467,7 @@ export class EditorStore {
       }
       this.openFile(existingFileState.file, existingFileState.path);
     } else {
-      const file = deserialize(
-        PureFile,
-        yield this.applicationStore.client.getFile(path),
-      );
+      const file = deserialize(PureFile, yield this.client.getFile(path));
       yield flowResult(this.checkIfSessionWakingUp());
       this.openFile(file, path, coordinate);
     }
@@ -554,10 +492,7 @@ export class EditorStore {
         editorState instanceof FileEditorState && editorState.path === path,
     );
     if (existingFileState instanceof FileEditorState) {
-      const file = deserialize(
-        PureFile,
-        yield this.applicationStore.client.getFile(path),
-      );
+      const file = deserialize(PureFile, yield this.client.getFile(path));
       existingFileState.setFile(file);
       existingFileState.setCoordinate(undefined);
     }
@@ -598,7 +533,7 @@ export class EditorStore {
           // TODO: investigate why if we send `\r\n` the server will duplicate the new line character
           code: fileEditorState.file.content.replace(/\r\n/g, '\n'),
         }));
-      const executionPromise = this.applicationStore.client.execute(
+      const executionPromise = this.client.execute(
         openedFiles,
         url,
         extraParams,
@@ -656,7 +591,7 @@ export class EditorStore {
             prompt: 'Please do not refresh the application',
             showLoading: true,
           });
-          this.initState.initial();
+          this.initState.reset();
           yield flowResult(
             this.initialize(
               false,
@@ -669,8 +604,8 @@ export class EditorStore {
                     manageResult,
                   ),
                 ),
-              this.applicationStore.client.mode,
-              this.applicationStore.client.compilerMode,
+              this.client.mode,
+              this.client.compilerMode,
             ),
           );
         } else {
@@ -681,7 +616,7 @@ export class EditorStore {
       }
     } finally {
       this.setBlockingAlert(undefined);
-      this.executionState.initial();
+      this.executionState.reset();
     }
   }
 
@@ -689,7 +624,7 @@ export class EditorStore {
   // in theory, this will pull up a blocking modal to show the execution status to user
   async pullExecutionStatus(): Promise<void> {
     const result =
-      (await this.applicationStore.client.getExecutionActivity()) as unknown as ExecutionActivity;
+      (await this.client.getExecutionActivity()) as unknown as ExecutionActivity;
     this.setBlockingAlert({
       message: 'Executing...',
       prompt: result.text
@@ -702,8 +637,8 @@ export class EditorStore {
         setTimeout(() => {
           try {
             resolve(this.pullExecutionStatus());
-          } catch (e) {
-            reject(e);
+          } catch (error) {
+            reject(error);
           }
           // NOTE: tune this slightly lower for better experience, also for sub-second execution, setting a high number
           // might create the illusion that the system is slow
@@ -746,10 +681,12 @@ export class EditorStore {
         this.setSearchState(
           new UnmatchedFunctionExecutionResultState(this, result),
         );
-        this.openAuxPanel(AUX_PANEL_MODE.SEARCH_RESULT, true);
+        this.setActiveAuxPanelMode(AUX_PANEL_MODE.SEARCH_RESULT);
+        this.auxPanelDisplayState.open();
       } else if (result instanceof UnmatchedResult) {
         this.setSearchState(new UnmatchExecutionResultState(this, result));
-        this.openAuxPanel(AUX_PANEL_MODE.SEARCH_RESULT, true);
+        this.setActiveAuxPanelMode(AUX_PANEL_MODE.SEARCH_RESULT);
+        this.auxPanelDisplayState.open();
       }
     } else if (result instanceof ExecutionSuccessResult) {
       if (result.modifiedFiles.length) {
@@ -794,10 +731,12 @@ export class EditorStore {
                 ),
               ),
             );
-            this.openAuxPanel(AUX_PANEL_MODE.CONSOLE, true);
-            this.testRunState.conclude(false);
+            this.setActiveAuxPanelMode(AUX_PANEL_MODE.CONSOLE);
+            this.auxPanelDisplayState.open();
+            this.testRunState.fail();
           } else if (result instanceof TestExecutionResult) {
-            this.openAuxPanel(AUX_PANEL_MODE.TEST_RUNNER, true);
+            this.setActiveAuxPanelMode(AUX_PANEL_MODE.TEST_RUNNER);
+            this.auxPanelDisplayState.open();
             const testRunnerState = new TestRunnerState(this, result);
             this.setTestRunnerState(testRunnerState);
             await flowResult(testRunnerState.buildTestTreeData());
@@ -806,7 +745,7 @@ export class EditorStore {
             // so it will lag the UI if we have too many nodes open
             testRunnerState.refreshTree();
             await flowResult(testRunnerState.pollTestRunnerResult());
-            this.testRunState.conclude(true);
+            this.testRunState.pass();
           }
           // do nothing?
           await refreshTreesPromise;
@@ -878,13 +817,13 @@ export class EditorStore {
         {},
         true,
         async (result: ExecutionResult) => {
-          this.initState.initial();
+          this.initState.reset();
           await flowResult(
             this.initialize(
               fullInit,
               undefined,
-              this.applicationStore.client.mode,
-              this.applicationStore.client.compilerMode,
+              this.client.mode,
+              this.client.compilerMode,
             ),
           );
           this.setActiveActivity(ACTIVITY_MODE.CONCEPT, {
@@ -942,7 +881,8 @@ export class EditorStore {
         candidate.messageToBeModified,
       ),
     );
-    this.openAuxPanel(AUX_PANEL_MODE.CONSOLE, true);
+    this.setActiveAuxPanelMode(AUX_PANEL_MODE.CONSOLE);
+    this.auxPanelDisplayState.open();
   }
 
   *updateFile(
@@ -980,12 +920,11 @@ export class EditorStore {
       return;
     }
     this.fileSearchCommandLoadingState.inProgress();
-    this.fileSearchCommandResults =
-      (yield this.applicationStore.client.findFiles(
-        this.fileSearchCommandState.text,
-        this.fileSearchCommandState.isRegExp,
-      )) as string[];
-    this.fileSearchCommandLoadingState.conclude(true);
+    this.fileSearchCommandResults = (yield this.client.findFiles(
+      this.fileSearchCommandState.text,
+      this.fileSearchCommandState.isRegExp,
+    )) as string[];
+    this.fileSearchCommandLoadingState.pass();
   }
 
   *searchText(this: EditorStore): Generator<Promise<unknown>, void, unknown> {
@@ -993,20 +932,22 @@ export class EditorStore {
       return;
     }
     this.textSearchCommandLoadingState.inProgress();
-    this.openAuxPanel(AUX_PANEL_MODE.SEARCH_RESULT, true);
+    this.setActiveAuxPanelMode(AUX_PANEL_MODE.SEARCH_RESULT);
+    this.auxPanelDisplayState.open();
     try {
       const results = (
-        (yield this.applicationStore.client.searchText(
+        (yield this.client.searchText(
           this.textSearchCommandState.text,
           this.textSearchCommandState.isCaseSensitive,
           this.textSearchCommandState.isRegExp,
         )) as PlainObject<SearchResultEntry>[]
       ).map((result) => getSearchResultEntry(result));
       this.setSearchState(new SearchResultState(this, results));
-      this.textSearchCommandLoadingState.conclude(true);
-    } catch (e) {
-      this.applicationStore.notifyError(e);
-      this.textSearchCommandLoadingState.conclude(false);
+      this.textSearchCommandLoadingState.pass();
+    } catch (error) {
+      assertErrorThrown(error);
+      this.applicationStore.notifyError(error);
+      this.textSearchCommandLoadingState.fail();
     }
   }
 
@@ -1018,7 +959,7 @@ export class EditorStore {
       'Error finding references. Please make sure that the code compiles and that you are looking for references of non primitive types!';
     let concept: UsageConcept;
     try {
-      concept = (yield this.applicationStore.client.getConceptPath(
+      concept = (yield this.client.getConceptPath(
         coordinate.file,
         coordinate.line,
         coordinate.column,
@@ -1034,7 +975,7 @@ export class EditorStore {
         showLoading: true,
       });
       const usages = (
-        (yield this.applicationStore.client.getUsages(
+        (yield this.client.getUsages(
           concept.owner
             ? concept.type
               ? 'meta::pure::ide::findusages::findUsagesForEnum_String_1__String_1__SourceInformation_MANY_'
@@ -1046,7 +987,8 @@ export class EditorStore {
         )) as PlainObject<Usage>[]
       ).map((usage) => deserialize(Usage, usage));
       this.setSearchState(new UsageResultState(this, concept, usages));
-      this.openAuxPanel(AUX_PANEL_MODE.SEARCH_RESULT, true);
+      this.setActiveAuxPanelMode(AUX_PANEL_MODE.SEARCH_RESULT);
+      this.auxPanelDisplayState.open();
     } catch {
       this.applicationStore.notifyWarning(errorMessage);
     } finally {
@@ -1071,8 +1013,9 @@ export class EditorStore {
         return false;
       }
       return true;
-    } catch (e) {
-      this.applicationStore.notifyError(e);
+    } catch (error) {
+      assertErrorThrown(error);
+      this.applicationStore.notifyError(error);
       return false;
     }
   }
@@ -1082,9 +1025,7 @@ export class EditorStore {
     path: string,
   ): Generator<Promise<unknown>, void, unknown> {
     yield flowResult(
-      this.command(() =>
-        this.applicationStore.client.createFolder(trimPathLeadingSlash(path)),
-      ),
+      this.command(() => this.client.createFolder(trimPathLeadingSlash(path))),
     );
     yield flowResult(this.directoryTreeState.refreshTreeData());
   }
@@ -1094,9 +1035,7 @@ export class EditorStore {
     path: string,
   ): Generator<Promise<unknown>, void, unknown> {
     const result = (yield flowResult(
-      this.command(() =>
-        this.applicationStore.client.createFile(trimPathLeadingSlash(path)),
-      ),
+      this.command(() => this.client.createFile(trimPathLeadingSlash(path))),
     )) as boolean;
     yield flowResult(this.directoryTreeState.refreshTreeData());
     if (result) {
@@ -1110,9 +1049,7 @@ export class EditorStore {
   ): Generator<Promise<unknown>, void, unknown> {
     yield flowResult(
       this.command(() =>
-        this.applicationStore.client.deleteDirectoryOrFile(
-          trimPathLeadingSlash(path),
-        ),
+        this.client.deleteDirectoryOrFile(trimPathLeadingSlash(path)),
       ),
     );
     const editorStatesToClose = this.openedEditorStates.filter(
@@ -1167,29 +1104,6 @@ export class EditorStore {
         handler(event);
       }
     };
-
-  // Since we use a custom monospaced font for `monaco-editor` we want to make sure we can load it before any rendering and measuring happens
-  *preloadTextEditorFont(
-    this: EditorStore,
-  ): Generator<Promise<unknown>, void, unknown> {
-    const fontLoadFailureErrorMessage = `Monospaced font '${MONOSPACE_FONT_FAMILY}' has not been loaded properly, text editor display problem might occur`;
-    yield document.fonts
-      .load(`1em ${MONOSPACE_FONT_FAMILY}`)
-      .then(() => {
-        if (document.fonts.check(`1em ${MONOSPACE_FONT_FAMILY}`)) {
-          monacoEditorAPI.remeasureFonts();
-          this.applicationStore.logger.info(
-            LOG_EVENT.EDITOR_FONT_LOADED,
-            `Monospaced font '${MONOSPACE_FONT_FAMILY}' has been loaded`,
-          );
-        } else {
-          this.applicationStore.notifyError(fontLoadFailureErrorMessage);
-        }
-      })
-      .catch(() =>
-        this.applicationStore.notifyError(fontLoadFailureErrorMessage),
-      );
-  }
 }
 
 const EditorStoreContext = createContext<EditorStore | undefined>(undefined);
@@ -1199,7 +1113,7 @@ export const EditorStoreProvider = ({
 }: {
   children: React.ReactNode;
 }): React.ReactElement => {
-  const applicationStore = useApplicationStore();
+  const applicationStore = useApplicationStore<PureIDEConfig>();
   const store = useLocalObservable(() => new EditorStore(applicationStore));
   return (
     <EditorStoreContext.Provider value={store}>

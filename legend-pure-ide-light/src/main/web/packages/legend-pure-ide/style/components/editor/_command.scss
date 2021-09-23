@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@use '../../mixins' as *;
+
 .command-modal {
   width: 60rem;
 
@@ -48,6 +50,7 @@
 
   &__type__label {
     @include flexCenter;
+
     height: 2.8rem;
     width: 3.5rem;
     background: var(--color-light-grey-100);
@@ -58,6 +61,7 @@
 
   &__type__selector {
     @include flexCenter;
+
     height: 2.8rem;
     background: var(--color-light-grey-100);
     border: 0.1rem solid var(--color-light-grey-200);
@@ -72,6 +76,7 @@
 
   &__option {
     @include flexCenter;
+
     height: 2.8rem;
     background: var(--color-light-grey-100);
     border: 0.1rem solid var(--color-light-grey-200);
@@ -85,6 +90,7 @@
 
   &__config-btn {
     @include flexCenter;
+
     margin-left: 0.5rem;
     border-radius: 0.1rem;
     background: var(--color-dark-grey-200);
@@ -112,6 +118,7 @@
 
   &__submit-btn {
     @include flexCenter;
+
     width: 10rem;
     margin-left: 0.5rem;
   }

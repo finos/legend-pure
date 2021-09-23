@@ -17,9 +17,8 @@
 import { observer } from 'mobx-react-lite';
 import { FaList, FaRegFile } from 'react-icons/fa';
 import { useEditorStore } from '../../stores/EditorStore';
-import clsx from 'clsx';
 import { ACTIVITY_MODE } from '../../stores/EditorConfig';
-import { Logo } from '../shared/Logo';
+import { clsx, LegendLogo } from '@finos/legend-art';
 
 interface ActivityDisplay {
   mode: ACTIVITY_MODE;
@@ -50,7 +49,7 @@ export const ActivityBar = observer(() => {
   return (
     <div className="activity-bar">
       <div className="activity-bar__logo">
-        <Logo />
+        <LegendLogo />
       </div>
       <div className="activity-bar__items">
         {activities.map((activity) => (
@@ -58,7 +57,7 @@ export const ActivityBar = observer(() => {
             key={activity.mode}
             className={clsx('activity-bar__item', {
               'activity-bar__item--active':
-                editorStore.sideBarSize &&
+                editorStore.sideBarDisplayState.isOpen &&
                 editorStore.activeActivity === activity.mode,
             })}
             onClick={changeActivity(activity.mode)}

@@ -18,23 +18,23 @@ import { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { editor as monacoEditorAPI, KeyCode } from 'monaco-editor';
 import { useEditorStore } from '../../../stores/EditorStore';
-import {
-  disposeEditor,
-  disableEditorHotKeys,
-  moveToPosition,
-  setErrorMarkers,
-} from '../../../utils/TextEditorUtil';
-import {
-  TAB_SIZE,
-  EDITOR_THEME,
-  EDITOR_LANGUAGE,
-  MONOSPACE_FONT_FAMILY,
-} from '../../../stores/EditorConfig';
 import ReactResizeDetector from 'react-resize-detector';
-import { useApplicationStore } from '../../../stores/ApplicationStore';
 import type { FileEditorState } from '../../../stores/EditorState';
 import { flowResult } from 'mobx';
 import { FileCoordinate } from '../../../models/PureFile';
+import {
+  EDITOR_LANGUAGE,
+  EDITOR_THEME,
+  MONOSPACED_FONT_FAMILY,
+  TAB_SIZE,
+  useApplicationStore,
+} from '@finos/legend-application';
+import {
+  disableEditorHotKeys,
+  disposeEditor,
+  moveToPosition,
+  setErrorMarkers,
+} from '@finos/legend-art';
 
 export const FileEditor = observer(
   (props: { editorState: FileEditorState }) => {
@@ -67,11 +67,11 @@ export const FileEditor = observer(
           fontSize: 14,
           // Enforce a fixed font-family to make cross platform display consistent (i.e. Mac defaults to use `Menlo` which is bigger than
           // `Consolas` on Windows, etc.)
-          fontFamily: MONOSPACE_FONT_FAMILY,
+          fontFamily: MONOSPACED_FONT_FAMILY,
           fontLigatures: true,
           fixedOverflowWidgets: true, // make sure hover or widget near boundary are not truncated
           language: EDITOR_LANGUAGE.PURE,
-          theme: EDITOR_THEME.NATIVE,
+          theme: EDITOR_THEME.LEGEND,
         });
         editor.onDidChangeModelContent(() => {
           const currentVal = editor.getValue();
@@ -155,16 +155,11 @@ export const FileEditor = observer(
         if (pos?.errorMessage) {
           setErrorMarkers(
             editorModel,
-            {
-              sourceId: '',
-              line: pos.line,
-              column: pos.column,
-              startLine: pos.line,
-              startColumn: pos.column,
-              endLine: pos.line,
-              endColumn: pos.column,
-            },
             pos.errorMessage,
+            pos.line,
+            pos.column,
+            pos.line,
+            pos.column,
           );
         } else {
           monacoEditorAPI.setModelMarkers(editorModel, 'Error', []);

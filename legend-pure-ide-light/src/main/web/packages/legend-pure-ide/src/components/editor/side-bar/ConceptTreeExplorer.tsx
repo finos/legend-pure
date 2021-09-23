@@ -23,11 +23,6 @@ import {
   FaCompress,
   FaCircleNotch,
 } from 'react-icons/fa';
-import { ContextMenu } from '../../shared/ContextMenu';
-import clsx from 'clsx';
-import { PanelLoadingIndicator } from '../../shared/PanelLoadingIndicator';
-import type { TreeNodeContainerProps } from '../../shared/TreeView';
-import { TreeView } from '../../shared/TreeView';
 import type { ConceptTreeNode } from '../../../models/ConceptTree';
 import {
   ElementConceptAttribute,
@@ -35,12 +30,19 @@ import {
   ConceptType,
   getConceptIcon,
 } from '../../../models/ConceptTree';
-import { useApplicationStore } from '../../../stores/ApplicationStore';
 import { flowResult } from 'mobx';
-import { isNonNullable } from '../../../utils/GeneralUtil';
-import { BlankPanelContent } from '../../shared/BlankPanelContent';
 import { FileCoordinate } from '../../../models/PureFile';
 import { MdRefresh } from 'react-icons/md';
+import { useApplicationStore } from '@finos/legend-application';
+import type { TreeNodeContainerProps } from '@finos/legend-art';
+import {
+  BlankPanelContent,
+  clsx,
+  ContextMenu,
+  PanelLoadingIndicator,
+  TreeView,
+} from '@finos/legend-art';
+import { isNonNullable } from '@finos/legend-shared';
 
 const FileExplorerContextMenu = observer(
   (
@@ -67,7 +69,7 @@ const FileExplorerContextMenu = observer(
     const viewSource = (): void => viewConceptSource(node);
     const serviceJSON = (): void => {
       window.open(
-        `${applicationStore.client.baseUrl}/execute?func=${node.data.li_attr.pureId}&mode=${applicationStore.client.mode}`,
+        `${editorStore.client.baseUrl}/execute?func=${node.data.li_attr.pureId}&mode=${editorStore.client.mode}`,
         '_blank',
       );
     };

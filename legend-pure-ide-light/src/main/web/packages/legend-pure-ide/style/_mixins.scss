@@ -33,6 +33,7 @@
 
 @mixin flexCenter {
   @include flexVCenter;
+
   justify-content: center;
 }
 

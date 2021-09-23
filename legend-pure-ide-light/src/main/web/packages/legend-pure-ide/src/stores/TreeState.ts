@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
+import type { TreeData, TreeNodeData } from '@finos/legend-art';
+import {
+  ActionState,
+  assertErrorThrown,
+  guaranteeNonNullable,
+} from '@finos/legend-shared';
 import { action, observable, makeObservable, flow, flowResult } from 'mobx';
 import type { EditorStore } from './EditorStore';
-import { guaranteeNonNullable } from '../utils/GeneralUtil';
-import type { TreeData, TreeNodeData } from '../utils/TreeUtil';
-import { ActionState } from '../utils/ActionState';
 
-export abstract class TreeState<T extends TreeNodeData, V> {
+export abstract class TreeState<
+  T extends TreeNodeData & { isLoading: boolean },
+  V,
+> {
   editorStore: EditorStore;
   treeData?: TreeData<T>;
   selectedNode?: T | undefined;
-  loadInitialDataState = new ActionState();
-  refreshDataState = new ActionState();
+  loadInitialDataState = ActionState.create();
+  refreshDataState = ActionState.create();
 
   constructor(editorStore: EditorStore) {
     makeObservable(this, {
@@ -66,10 +72,11 @@ export abstract class TreeState<T extends TreeNodeData, V> {
     this.loadInitialDataState.inProgress();
     try {
       this.treeData = this.buildTreeData((yield this.getRootNodes()) as V[]);
-      this.loadInitialDataState.conclude(true);
-    } catch (e) {
-      this.editorStore.applicationStore.notifyError(e);
-      this.loadInitialDataState.conclude(false);
+      this.loadInitialDataState.pass();
+    } catch (error) {
+      assertErrorThrown(error);
+      this.editorStore.applicationStore.notifyError(error);
+      this.loadInitialDataState.fail();
     }
   }
 
@@ -115,8 +122,9 @@ export abstract class TreeState<T extends TreeNodeData, V> {
         this.processChildNodes(node, childNodes);
         node.isOpen = true;
         this.refreshTree();
-      } catch (e) {
-        this.editorStore.applicationStore.notifyError(e);
+      } catch (error) {
+        assertErrorThrown(error);
+        this.editorStore.applicationStore.notifyError(error);
       } finally {
         node.isLoading = false;
       }
@@ -135,9 +143,10 @@ export abstract class TreeState<T extends TreeNodeData, V> {
     this.refreshDataState.inProgress();
     try {
       this.treeData = this.buildTreeData((yield this.getRootNodes()) as V[]);
-    } catch (e) {
-      this.editorStore.applicationStore.notifyError(e);
-      this.refreshDataState.conclude(false);
+    } catch (error) {
+      assertErrorThrown(error);
+      this.editorStore.applicationStore.notifyError(error);
+      this.refreshDataState.fail();
       return;
     }
     const nodesToOpen = this.getTreeData()

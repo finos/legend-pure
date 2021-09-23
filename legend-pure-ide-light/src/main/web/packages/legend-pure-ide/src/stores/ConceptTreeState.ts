@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import type { TreeData } from '../utils/TreeUtil';
 import { deserialize } from 'serializr';
 import { TreeState } from './TreeState';
 import type { ConceptTreeNode } from '../models/ConceptTree';
@@ -24,13 +23,14 @@ import {
   ConceptNode,
 } from '../models/ConceptTree';
 import { action, flow, flowResult, makeObservable, observable } from 'mobx';
-import { ActionState } from '../utils/ActionState';
 import type { EditorStore } from './EditorStore';
 import { FileCoordinate } from '../models/PureFile';
 import type { ConceptActivity } from '../models/Initialization';
+import { ActionState } from '@finos/legend-shared';
+import type { TreeData } from '@finos/legend-art';
 
 export class ConceptTreeState extends TreeState<ConceptTreeNode, ConceptNode> {
-  loadConceptActivity = new ActionState();
+  loadConceptActivity = ActionState.create();
   statusText?: string | undefined;
 
   constructor(editorStore: EditorStore) {
@@ -50,9 +50,9 @@ export class ConceptTreeState extends TreeState<ConceptTreeNode, ConceptNode> {
 
   async getRootNodes(): Promise<ConceptNode[]> {
     await flowResult(this.pollConceptsActivity());
-    return (
-      await this.editorStore.applicationStore.client.getConceptChildren()
-    ).map((node) => deserialize(ConceptNode, node));
+    return (await this.editorStore.client.getConceptChildren()).map((node) =>
+      deserialize(ConceptNode, node),
+    );
   }
 
   buildTreeData(rootNodes: ConceptNode[]): TreeData<ConceptTreeNode> {
@@ -65,6 +65,7 @@ export class ConceptTreeState extends TreeState<ConceptTreeNode, ConceptNode> {
         data: node,
         id,
         label: node.text,
+        isLoading: false,
       });
     });
     return { rootIds, nodes };
@@ -72,9 +73,7 @@ export class ConceptTreeState extends TreeState<ConceptTreeNode, ConceptNode> {
 
   async getChildNodes(node: ConceptTreeNode): Promise<ConceptNode[]> {
     return (
-      await this.editorStore.applicationStore.client.getConceptChildren(
-        node.data.li_attr.pureId,
-      )
+      await this.editorStore.client.getConceptChildren(node.data.li_attr.pureId)
     ).map((node) => deserialize(ConceptNode, node));
   }
 
@@ -88,6 +87,7 @@ export class ConceptTreeState extends TreeState<ConceptTreeNode, ConceptNode> {
         data: childNode,
         id,
         label: childNode.text,
+        isLoading: false,
       });
     });
     node.childrenIds = childrenIds;
@@ -126,13 +126,13 @@ export class ConceptTreeState extends TreeState<ConceptTreeNode, ConceptNode> {
       yield this.pullConceptsActivity();
     } finally {
       this.setStatusText(undefined);
-      this.loadConceptActivity.initial();
+      this.loadConceptActivity.reset();
     }
   }
 
   async pullConceptsActivity(): Promise<void> {
     const result =
-      (await this.editorStore.applicationStore.client.getConceptActivity()) as unknown as ConceptActivity;
+      (await this.editorStore.client.getConceptActivity()) as unknown as ConceptActivity;
     if (result.text) {
       this.setStatusText(`Preparing - ${result.text}`);
     }
@@ -141,8 +141,8 @@ export class ConceptTreeState extends TreeState<ConceptTreeNode, ConceptNode> {
         setTimeout(() => {
           try {
             resolve(this.pullConceptsActivity());
-          } catch (e) {
-            reject(e);
+          } catch (error) {
+            reject(error);
           }
         }, 1000),
       );

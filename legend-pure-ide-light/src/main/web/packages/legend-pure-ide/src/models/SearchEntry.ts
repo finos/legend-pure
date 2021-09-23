@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import type { PlainObject } from '@finos/legend-shared';
+import { deleteEntry, uuid } from '@finos/legend-shared';
 import { action, makeObservable, observable } from 'mobx';
 import {
   createModelSchema,
@@ -22,8 +24,6 @@ import {
   object,
   primitive,
 } from 'serializr';
-import type { PlainObject } from '../utils/GeneralUtil';
-import { deleteEntry, uuid } from '../utils/GeneralUtil';
 
 export abstract class SearchEntry {
   uuid = uuid();

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { uuid } from '@finos/legend-shared';
 import {
   createModelSchema,
   deserialize,
@@ -21,7 +22,6 @@ import {
   object,
   primitive,
 } from 'serializr';
-import { uuid } from '../utils/GeneralUtil';
 
 export interface ExecutionActivity {
   executing: boolean;

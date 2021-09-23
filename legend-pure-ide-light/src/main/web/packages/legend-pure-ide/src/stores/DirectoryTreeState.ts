@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import type { TreeData } from '../utils/TreeUtil';
 import { deserialize } from 'serializr';
 import { TreeState } from './TreeState';
 import type { DirectoryTreeNode } from '../models/DirectoryTree';
 import { DirectoryNode } from '../models/DirectoryTree';
 import { action, flow, flowResult, makeObservable, observable } from 'mobx';
 import type { EditorStore } from './EditorStore';
-import { assertTrue, guaranteeNonNullable } from '../utils/GeneralUtil';
 import type { FileCoordinate } from '../models/PureFile';
 import { ACTIVITY_MODE } from './EditorConfig';
+import { assertTrue, guaranteeNonNullable } from '@finos/legend-shared';
+import type { TreeData } from '@finos/legend-art';
 
 const getParentPath = (path: string): string | undefined => {
   const trimmedPath = path.trim();
@@ -74,9 +74,9 @@ export class DirectoryTreeState extends TreeState<
   };
 
   async getRootNodes(): Promise<DirectoryNode[]> {
-    return (
-      await this.editorStore.applicationStore.client.getDirectoryChildren()
-    ).map((node) => deserialize(DirectoryNode, node));
+    return (await this.editorStore.client.getDirectoryChildren()).map((node) =>
+      deserialize(DirectoryNode, node),
+    );
   }
 
   buildTreeData(rootNodes: DirectoryNode[]): TreeData<DirectoryTreeNode> {
@@ -89,6 +89,7 @@ export class DirectoryTreeState extends TreeState<
         data: node,
         id,
         label: node.text,
+        isLoading: false,
       });
     });
     return { rootIds, nodes };
@@ -96,9 +97,7 @@ export class DirectoryTreeState extends TreeState<
 
   async getChildNodes(node: DirectoryTreeNode): Promise<DirectoryNode[]> {
     return (
-      await this.editorStore.applicationStore.client.getDirectoryChildren(
-        node.data.li_attr.path,
-      )
+      await this.editorStore.client.getDirectoryChildren(node.data.li_attr.path)
     ).map((node) => deserialize(DirectoryNode, node));
   }
 
@@ -115,6 +114,7 @@ export class DirectoryTreeState extends TreeState<
         data: childNode,
         id,
         label: childNode.text,
+        isLoading: false,
       });
     });
     node.childrenIds = childrenIds;

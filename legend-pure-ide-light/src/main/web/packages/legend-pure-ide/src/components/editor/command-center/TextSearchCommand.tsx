@@ -19,9 +19,9 @@ import { observer } from 'mobx-react-lite';
 import { VscCaseSensitive, VscRegex } from 'react-icons/vsc';
 import { useEditorStore } from '../../../stores/EditorStore';
 import Dialog from '@material-ui/core/Dialog';
-import clsx from 'clsx';
-import { useApplicationStore } from '../../../stores/ApplicationStore';
 import { flowResult } from 'mobx';
+import { useApplicationStore } from '@finos/legend-application';
+import { clsx } from '@finos/legend-art';
 
 export const TextSearchCommand = observer(() => {
   const editorStore = useEditorStore();
@@ -53,7 +53,9 @@ export const TextSearchCommand = observer(() => {
     <Dialog
       open={editorStore.openTextSearchCommand}
       onClose={closeModal}
-      onEnter={handleEnter}
+      TransitionProps={{
+        onEnter: handleEnter,
+      }}
       classes={{ container: 'command-modal__container' }}
       PaperProps={{ classes: { root: 'command-modal__inner-container' } }}
     >

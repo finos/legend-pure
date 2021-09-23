@@ -16,15 +16,15 @@
 
 import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import clsx from 'clsx';
 import { Console } from './ConsolePanel';
 import { AUX_PANEL_MODE } from '../../../stores/EditorConfig';
 import { useEditorStore } from '../../../stores/EditorStore';
 import { GoChevronUp, GoChevronDown, GoX } from 'react-icons/go';
-import { isNonNullable } from '../../../utils/GeneralUtil';
 import { SearchPanel } from './SearchPanel';
 import { FaFlask, FaSearch } from 'react-icons/fa';
 import { TestRunnerPanel } from './TestRunnerPanel';
+import { isNonNullable } from '@finos/legend-shared';
+import { clsx } from '@finos/legend-art';
 
 export const AuxiliaryPanel = observer(() => {
   const editorStore = useEditorStore();
@@ -32,8 +32,9 @@ export const AuxiliaryPanel = observer(() => {
     (mode: AUX_PANEL_MODE): (() => void) =>
     (): void =>
       editorStore.setActiveAuxPanelMode(mode);
-  const closePanel = (): void => editorStore.toggleAuxPanel();
-  const toggleExpandAuxPanel = (): void => editorStore.toggleExpandAuxPanel();
+  const closePanel = (): void => editorStore.auxPanelDisplayState.toggle();
+  const toggleExpandAuxPanel = (): void =>
+    editorStore.auxPanelDisplayState.toggleMaximize();
 
   const auxTabMap = {
     [AUX_PANEL_MODE.CONSOLE]: {
@@ -111,7 +112,7 @@ export const AuxiliaryPanel = observer(() => {
             tabIndex={-1}
             title="Toggle Expand/Collapse"
           >
-            {editorStore.isAuxPanelMaximized ? (
+            {editorStore.auxPanelDisplayState.isMaximized ? (
               <GoChevronDown />
             ) : (
               <GoChevronUp />

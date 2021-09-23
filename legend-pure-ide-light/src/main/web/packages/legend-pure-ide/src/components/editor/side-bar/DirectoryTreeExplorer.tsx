@@ -27,20 +27,22 @@ import {
   FaCircleNotch,
   FaCrosshairs,
 } from 'react-icons/fa';
-import { ContextMenu } from '../../shared/ContextMenu';
-import clsx from 'clsx';
-import { PanelLoadingIndicator } from '../../shared/PanelLoadingIndicator';
-import type { TreeNodeContainerProps } from '../../shared/TreeView';
-import { TreeView } from '../../shared/TreeView';
 import type { DirectoryTreeNode } from '../../../models/DirectoryTree';
-import { useApplicationStore } from '../../../stores/ApplicationStore';
 import { flowResult } from 'mobx';
-import { isNonNullable } from '../../../utils/GeneralUtil';
 import { MdRefresh } from 'react-icons/md';
 import { FileEditorState } from '../../../stores/EditorState';
 import { CreateNewFileCommand } from '../command-center/CreateNewFileCommand';
 import { CreateNewDirectoryCommand } from '../command-center/CreateNewDirectoryCommand';
-import { BlankPanelContent } from '../../shared/BlankPanelContent';
+import { useApplicationStore } from '@finos/legend-application';
+import type { TreeNodeContainerProps } from '@finos/legend-art';
+import {
+  clsx,
+  BlankPanelContent,
+  ContextMenu,
+  PanelLoadingIndicator,
+  TreeView,
+} from '@finos/legend-art';
+import { isNonNullable } from '@finos/legend-shared';
 
 const FileExplorerContextMenu = observer(
   (

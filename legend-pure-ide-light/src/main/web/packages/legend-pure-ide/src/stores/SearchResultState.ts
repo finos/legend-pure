@@ -26,7 +26,7 @@ import {
 } from '../models/SearchEntry';
 import type { Usage, UsageConcept } from '../models/Usage';
 import type { EditorStore } from './EditorStore';
-import { deleteEntry, guaranteeNonNullable } from '../utils/GeneralUtil';
+import { deleteEntry, guaranteeNonNullable } from '@finos/legend-shared';
 
 export abstract class SearchState {
   editorStore: EditorStore;

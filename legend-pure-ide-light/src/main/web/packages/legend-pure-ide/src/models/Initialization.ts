@@ -79,7 +79,9 @@ createModelSchema(InitializationFailureWithSourceResult, {
   sessionError: primitive(),
 });
 
-export const deserializeInitializationnResult = (value: Record<PropertyKey, unknown>): InitializationResult => {
+export const deserializeInitializationnResult = (
+  value: Record<PropertyKey, unknown>,
+): InitializationResult => {
   if (value.error) {
     if (value.source) {
       return deserialize(InitializationFailureWithSourceResult, value);

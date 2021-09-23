@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import clsx from 'clsx';
 import { observer } from 'mobx-react-lite';
 import { useEditorStore } from '../../../stores/EditorStore';
 import { ACTIVITY_MODE } from '../../../stores/EditorConfig';
 import { ConceptTreeExplorer } from './ConceptTreeExplorer';
 import { DirectoryTreeExplorer } from './DirectoryTreeExplorer';
+import { clsx } from '@finos/legend-art';
 
 /**
  * Wrapper component around different implementations of sidebar, such as to view domain, to manage SDLC, etc.

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@use '../../../mixins' as *;
+
 .search-panel {
   height: 100%;
   width: 100%;
@@ -39,6 +41,7 @@
     &__header {
       @include flexVCenter;
       @include flexHSpaceBetween;
+
       background: var(--color-dark-grey-85);
       cursor: default;
       height: 2.8rem;
@@ -57,12 +60,14 @@
 
     &__header__title {
       @include flexVCenter;
+
       user-select: none;
       width: calc(100% - 5rem);
     }
 
     &__header__title__label {
       @include flexCenter;
+
       width: 2rem;
       min-width: 2rem;
       margin-right: 0.5rem;
@@ -79,6 +84,7 @@
 
     &__header__action {
       @include flexCenter;
+
       background: transparent;
       cursor: pointer;
       width: 2.8rem;
@@ -103,6 +109,7 @@
 
     &__header__action__counter {
       @include flexCenter;
+
       height: 1.8rem;
       min-width: 1.8rem;
       background: var(--color-dark-grey-300);
@@ -118,7 +125,7 @@
   &__entry__content__item {
     @include flexVCenter;
     @include flexHSpaceBetween;
-    cursor: default;
+
     height: 2rem;
     min-height: 2rem;
     padding-left: 0.5rem;
@@ -140,6 +147,7 @@
 
     &__label__candidate {
       @include flexHSpaceBetween;
+
       width: calc(100% - 5.6rem);
       height: 2rem;
       line-height: 2rem;
@@ -148,11 +156,13 @@
 
     &__label__candidate-name {
       @include ellipsisTextOverflow;
+
       width: 60%;
     }
 
     &__label__candidate-location {
       @include ellipsisTextOverflow;
+
       width: 40%;
       padding: 0 1rem;
       text-align: right;
@@ -166,6 +176,7 @@
 
     &__action {
       @include flexCenter;
+
       background: transparent;
       cursor: pointer;
       width: 2.8rem;

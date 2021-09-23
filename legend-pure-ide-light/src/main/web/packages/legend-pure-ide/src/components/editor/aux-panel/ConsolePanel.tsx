@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+import { BlankPanelContent } from '@finos/legend-art';
 import { observer } from 'mobx-react-lite';
 import { useEditorStore } from '../../../stores/EditorStore';
-import { BlankPanelContent } from '../../shared/BlankPanelContent';
 
 export const Console = observer(() => {
   const editorStore = useEditorStore();

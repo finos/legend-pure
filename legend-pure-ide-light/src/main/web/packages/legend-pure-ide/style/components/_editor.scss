@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-@import 'editor/activity-bar';
-@import 'editor/status-bar';
-@import 'editor/side-bar';
-@import 'editor/command';
-@import 'editor/auxiliary-panel';
-@import 'editor/edit-panel';
-@import 'editor/text-editor';
+@use '../mixins' as *;
+
+@forward 'editor/activity-bar';
+@forward 'editor/status-bar';
+@forward 'editor/side-bar';
+@forward 'editor/command';
+@forward 'editor/auxiliary-panel';
+@forward 'editor/edit-panel';
+@forward 'editor/text-editor';
 
 .editor {
   height: 100%;
@@ -34,6 +36,7 @@
 
   &__content-container {
     @include flexHCenter;
+
     background: var(--color-dark-grey-80);
     flex: 1 0 auto;
     width: calc(100% - 5rem);

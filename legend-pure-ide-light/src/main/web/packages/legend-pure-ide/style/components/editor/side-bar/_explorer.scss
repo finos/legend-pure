@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@use '../../../mixins' as *;
+
 .explorer {
   width: 100%;
 
@@ -35,6 +37,7 @@
 
   &__header {
     @include flexHSpaceBetween;
+
     min-width: 9rem;
     background: var(--color-dark-grey-200);
     color: var(--color-light-grey-200);
@@ -48,6 +51,7 @@
 
   &__content__container__message {
     @include ellipsisTextOverflow;
+
     height: 3rem;
     line-height: 3rem;
     padding: 0 1rem;
@@ -83,6 +87,7 @@
 
   &__content__failure-notice {
     @include flexVCenter;
+
     flex-direction: column;
 
     &__icon svg {
@@ -162,6 +167,7 @@
 
   &__context-menu__item {
     @include flexVCenter;
+
     cursor: default;
     color: var(--color-light-grey-400);
     height: 2.8rem;
@@ -171,6 +177,7 @@
 
   &__context-menu__item__icon {
     @include flexCenter;
+
     width: 2rem;
     min-width: 2rem;
   }
@@ -193,6 +200,7 @@
 
     &__btn {
       @include flexCenter;
+
       width: 100%;
       height: 3.4rem;
       padding: 0 1rem;

@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-@import 'aux-panel/console-panel';
-@import 'aux-panel/search-panel';
-@import 'aux-panel/test-runner-panel';
+@use '../../mixins' as *;
+
+@forward 'aux-panel/console-panel';
+@forward 'aux-panel/search-panel';
+@forward 'aux-panel/test-runner-panel';
 
 .auxiliary-panel {
   width: 100%;
@@ -45,6 +47,7 @@
 
   &__header__tab {
     @include flexVCenter;
+
     cursor: pointer;
     height: 3.4rem;
     font-size: 1.2rem;
@@ -84,6 +87,7 @@
 
   &__header__action {
     @include flexCenter;
+
     height: 3.6rem;
     width: 3.6rem;
     cursor: pointer;
@@ -96,6 +100,7 @@
 
   &__splash-screen {
     @include flexCenter;
+
     height: 100%;
     width: 100%;
     flex-direction: column;
@@ -109,11 +114,13 @@
 
     &__content__item {
       @include flexVCenter;
+
       height: 3.4rem;
     }
 
     &__content__item__label {
       @include flexVCenter;
+
       height: 2.8rem;
       font-weight: 500;
       width: 20rem;
@@ -124,6 +131,7 @@
 
     &__content__item__hot-keys {
       @include flexVCenter;
+
       height: 2.8rem;
     }
 

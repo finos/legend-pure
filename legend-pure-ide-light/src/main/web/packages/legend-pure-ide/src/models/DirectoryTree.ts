@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import type { TreeNodeData } from '@finos/legend-art';
+import type { Clazz } from '@finos/legend-shared';
+import { guaranteeType } from '@finos/legend-shared';
 import {
   custom,
   SKIP,
@@ -21,9 +24,6 @@ import {
   createModelSchema,
   primitive,
 } from 'serializr';
-import type { Clazz } from '../utils/GeneralUtil';
-import { guaranteeType } from '../utils/GeneralUtil';
-import type { TreeNodeData } from '../utils/TreeUtil';
 
 abstract class DirectoryAttribute {
   id!: string;
@@ -97,4 +97,5 @@ createModelSchema(DirectoryNode, {
 
 export interface DirectoryTreeNode extends TreeNodeData {
   data: DirectoryNode;
+  isLoading: boolean;
 }

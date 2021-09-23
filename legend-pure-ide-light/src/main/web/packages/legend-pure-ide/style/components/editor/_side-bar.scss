@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-@import 'side-bar/explorer';
+@use '../../mixins' as *;
+
+@forward 'side-bar/explorer';
 
 .side-bar {
   height: 100%;
@@ -35,6 +37,7 @@
 
   &__header__title__viewer-mode-badge {
     @include flexCenter;
+
     font-size: 1.2rem;
     color: var(--color-dark-grey-280);
     background: var(--color-yellow-200);
@@ -111,11 +114,13 @@
 
     &__title__info {
       @include flexVCenter;
+
       margin-left: 0.5rem;
     }
 
     &__header__changes-count {
       @include flexCenter;
+
       margin-right: 1rem;
       background: var(--color-dark-grey-300);
       border-radius: 0.8rem;
@@ -129,6 +134,7 @@
     &__item {
       @include flexHSpaceBetween;
       @include flexVCenter;
+
       height: 2.2rem;
       padding: 0 0.5rem 0 1rem;
       cursor: pointer;

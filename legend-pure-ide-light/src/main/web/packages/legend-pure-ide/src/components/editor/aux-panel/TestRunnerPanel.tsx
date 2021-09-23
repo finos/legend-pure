@@ -16,7 +16,6 @@
 
 import { observer } from 'mobx-react-lite';
 import { useEditorStore } from '../../../stores/EditorStore';
-import { BlankPanelContent } from '../../shared/BlankPanelContent';
 import {
   FaBan,
   FaCheckCircle,
@@ -30,7 +29,6 @@ import {
   FaPlus,
   FaTimesCircle,
 } from 'react-icons/fa';
-import { PanelLoadingIndicator } from '../../shared/PanelLoadingIndicator';
 import type {
   TestResultInfo,
   TestRunnerState,
@@ -42,19 +40,22 @@ import {
   TestSuiteStatus,
 } from '../../../stores/TestRunnerState';
 import { LinearProgress } from '@material-ui/core';
-import { ContextMenu } from '../../shared/ContextMenu';
-import type { TreeNodeContainerProps } from '../../shared/TreeView';
-import { TreeView } from '../../shared/TreeView';
-import {
-  guaranteeNonNullable,
-  isNonNullable,
-} from '../../../utils/GeneralUtil';
-import clsx from 'clsx';
-import { UnknownTypeIcon } from '../../shared/Icon';
 import { TestFailureResult, TestSuccessResult } from '../../../models/Test';
 import { flowResult } from 'mobx';
-import { useApplicationStore } from '../../../stores/ApplicationStore';
-import { ReflexContainer, ReflexElement, ReflexSplitter } from 'react-reflex';
+import type { TreeNodeContainerProps } from '@finos/legend-art';
+import {
+  clsx,
+  ResizablePanel,
+  ResizablePanelGroup,
+  ResizablePanelSplitter,
+  BlankPanelContent,
+  ContextMenu,
+  PanelLoadingIndicator,
+  TreeView,
+  UnknownTypeIcon,
+} from '@finos/legend-art';
+import { guaranteeNonNullable, isNonNullable } from '@finos/legend-shared';
+import { useApplicationStore } from '@finos/legend-application';
 
 const TestTreeNodeContainer = observer(
   (
@@ -296,8 +297,8 @@ const TestRunnerResultDisplay = observer(
 
     return (
       <div className="test-runner-panel__content">
-        <ReflexContainer orientation="vertical">
-          <ReflexElement minSize={400}>
+        <ResizablePanelGroup orientation="vertical">
+          <ResizablePanel minSize={400}>
             <div className="panel test-runner-panel__explorer">
               <PanelLoadingIndicator
                 isLoading={testRunnerState.treeBuildingState.isInProgress}
@@ -377,9 +378,9 @@ const TestRunnerResultDisplay = observer(
                 )}
               </div>
             </div>
-          </ReflexElement>
-          <ReflexSplitter />
-          <ReflexElement minSize={400}>
+          </ResizablePanel>
+          <ResizablePanelSplitter />
+          <ResizablePanel minSize={400}>
             {testRunnerState.selectedTestId && !testResultInfo && <div />}
             {testRunnerState.selectedTestId && testResultInfo && (
               <TestResultViewer
@@ -397,8 +398,8 @@ const TestRunnerResultDisplay = observer(
               </div>
             )}
             <div />
-          </ReflexElement>
-        </ReflexContainer>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     );
   },

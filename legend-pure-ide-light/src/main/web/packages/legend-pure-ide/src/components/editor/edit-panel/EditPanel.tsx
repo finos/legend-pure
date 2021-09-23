@@ -17,15 +17,13 @@
 import { useState } from 'react';
 import { FaTimes, FaPlus } from 'react-icons/fa';
 import { observer } from 'mobx-react-lite';
-import clsx from 'clsx';
 import { useEditorStore } from '../../../stores/EditorStore';
 import ReactResizeDetector from 'react-resize-detector';
 import type { EditorState } from '../../../stores/EditorState';
 import { FileEditorState } from '../../../stores/EditorState';
-import { ContextMenu } from '../../shared/ContextMenu';
 import { FileEditor } from './FileEditor';
-import { TabIcon } from '../../shared/Icon';
-import { DropdownMenu } from '../../shared/DropdownMenu';
+import { clsx, ContextMenu, DropdownMenu } from '@finos/legend-art';
+import { CgTab } from 'react-icons/cg';
 
 export const EditPanelSplashScreen: React.FC = () => {
   const commandListWidth = 300;
@@ -229,10 +227,10 @@ export const EditPanel = observer(() => {
             }}
           >
             <button
-              className="panel__header__action edit-panel__header__action"
+              className="panel__header__action edit-panel__header__action edit-panel__header__action--go-to-tab"
               title="Go to Tab... (Ctrl + Alt + Tab)"
             >
-              <TabIcon />
+              <CgTab />
             </button>
           </DropdownMenu>
         </div>

@@ -18,8 +18,8 @@ import { useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useEditorStore } from '../../../stores/EditorStore';
 import Dialog from '@material-ui/core/Dialog';
-import { useApplicationStore } from '../../../stores/ApplicationStore';
 import { flowResult } from 'mobx';
+import { useApplicationStore } from '@finos/legend-application';
 
 export const CreateNewDirectoryCommand = observer(() => {
   const editorStore = useEditorStore();
@@ -56,7 +56,9 @@ export const CreateNewDirectoryCommand = observer(() => {
     <Dialog
       open={Boolean(currentNode)}
       onClose={closeModal}
-      onEnter={handleEnter}
+      TransitionProps={{
+        onEnter: handleEnter,
+      }}
       classes={{ container: 'command-modal__container' }}
       PaperProps={{ classes: { root: 'command-modal__inner-container' } }}
     >

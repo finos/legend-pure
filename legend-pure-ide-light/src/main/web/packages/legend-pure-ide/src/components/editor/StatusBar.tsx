@@ -17,16 +17,16 @@
 import { observer } from 'mobx-react-lite';
 import { FaRegWindowMaximize, FaTerminal, FaHammer } from 'react-icons/fa';
 import { useEditorStore } from '../../stores/EditorStore';
-import clsx from 'clsx';
 import { flowResult } from 'mobx';
-import { useApplicationStore } from '../../stores/ApplicationStore';
+import { useApplicationStore } from '@finos/legend-application';
+import { clsx } from '@finos/legend-art';
 
 export const StatusBar = observer((props: { actionsDisabled: boolean }) => {
   const editorStore = useEditorStore();
   const applicationStore = useApplicationStore();
 
   // Other actions
-  const toggleAuxPanel = (): void => editorStore.toggleAuxPanel();
+  const toggleAuxPanel = (): void => editorStore.auxPanelDisplayState.toggle();
   const toggleExpandMode = (): void =>
     editorStore.setExpandedMode(!editorStore.isInExpandedMode);
   const executeGo = (): Promise<void> =>
@@ -74,7 +74,7 @@ export const StatusBar = observer((props: { actionsDisabled: boolean }) => {
             'editor__status-bar__action editor__status-bar__action__toggler',
             {
               'editor__status-bar__action__toggler--active': Boolean(
-                editorStore.auxPanelSize,
+                editorStore.auxPanelDisplayState.isOpen,
               ),
             },
           )}

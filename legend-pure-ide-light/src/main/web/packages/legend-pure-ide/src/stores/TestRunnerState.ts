@@ -14,6 +14,17 @@
  * limitations under the License.
  */
 
+import type { TreeData, TreeNodeData } from '@finos/legend-art';
+import {
+  ActionState,
+  addUniqueEntry,
+  assertErrorThrown,
+  assertTrue,
+  guaranteeNonNullable,
+  guaranteeType,
+  promisify,
+  UnsupportedOperationError,
+} from '@finos/legend-shared';
 import { action, flowResult, makeAutoObservable, observable } from 'mobx';
 import type { TestExecutionResult, TestInfo } from '../models/Execution';
 import type { TestResult } from '../models/Test';
@@ -24,16 +35,6 @@ import {
   TestRunnerCheckResult,
 } from '../models/Test';
 import type { EditorStore } from '../stores/EditorStore';
-import { ActionState } from '../utils/ActionState';
-import {
-  addUniqueEntry,
-  assertTrue,
-  guaranteeNonNullable,
-  guaranteeType,
-  promisify,
-  UnsupportedOperationError,
-} from '../utils/GeneralUtil';
-import type { TreeData, TreeNodeData } from '../utils/TreeUtil';
 
 const getFullParentId = (
   testInfo: TestInfo,
@@ -46,6 +47,7 @@ const getFullTestId = (
 
 export interface TestTreeNode extends TreeNodeData {
   data: TestInfo;
+  isLoading: boolean;
 }
 
 export enum TestSuiteStatus {
@@ -181,14 +183,14 @@ export class TestResultInfo {
 export class TestRunnerState {
   editorStore: EditorStore;
   testExecutionResult: TestExecutionResult;
-  checkTestRunnerState = new ActionState();
+  checkTestRunnerState = ActionState.create();
   testResultInfo?: TestResultInfo | undefined;
   allTests = new Map<string, TestInfo>();
   selectedTestId?: string | undefined;
   // explorer tree
   selectedNode?: TestTreeNode | undefined;
   treeData?: TreeData<TestTreeNode> | undefined;
-  treeBuildingState = new ActionState();
+  treeBuildingState = ActionState.create();
 
   constructor(
     editorStore: EditorStore,
@@ -258,7 +260,7 @@ export class TestRunnerState {
     const nodes = new Map<string, TestTreeNode>();
     this.treeData = { rootIds, nodes };
     yield this.buildTreeDataByLayer(this.testExecutionResult.tests);
-    this.treeBuildingState.initial();
+    this.treeBuildingState.reset();
   }
 
   collapseTree(): void {
@@ -293,6 +295,7 @@ export class TestRunnerState {
                 label: test.text,
                 data: test,
                 childrenIds: test.type ? undefined : [],
+                isLoading: false,
               };
               if (test.type) {
                 this.allTests.set(id, test);
@@ -311,8 +314,8 @@ export class TestRunnerState {
                   } else {
                     parentNode.childrenIds = [id];
                   }
-                } catch (e) {
-                  reject(e);
+                } catch (error) {
+                  reject(error);
                   return;
                 }
               }
@@ -344,13 +347,13 @@ export class TestRunnerState {
       this.testResultInfo = testResultInfo;
       yield this.pullTestRunnerResult(testResultInfo);
     } finally {
-      this.checkTestRunnerState.initial();
+      this.checkTestRunnerState.reset();
     }
   }
 
   async pullTestRunnerResult(testResultInfo: TestResultInfo): Promise<void> {
     const result = deserializeTestRunnerCheckResult(
-      await this.editorStore.applicationStore.client.checkTestRunner(
+      await this.editorStore.client.checkTestRunner(
         this.testExecutionResult.runnerId,
       ),
     );
@@ -370,11 +373,14 @@ export class TestRunnerState {
           setTimeout(() => {
             try {
               resolve(this.pullTestRunnerResult(testResultInfo));
-            } catch (e) {
+            } catch (error) {
+              assertErrorThrown(error);
               this.editorStore.applicationStore.notifyWarning(
-                `Failed to run test${e.message ? `: ${e.message}` : ''}`,
+                `Failed to run test${
+                  error.message ? `: ${error.message}` : ''
+                }`,
               );
-              reject(e);
+              reject(error);
             }
             // NOTE: this call might take a while so we need to tune this depending on the performance of the app
           }, 1000),
@@ -407,7 +413,7 @@ export class TestRunnerState {
     if (!this.editorStore.testRunState.isInProgress) {
       return;
     }
-    yield this.editorStore.applicationStore.client.cancelTestRunner(
+    yield this.editorStore.client.cancelTestRunner(
       this.testExecutionResult.runnerId,
     );
     this.editorStore.applicationStore.notifyWarning(

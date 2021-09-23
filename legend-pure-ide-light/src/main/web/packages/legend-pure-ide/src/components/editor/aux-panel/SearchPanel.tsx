@@ -16,20 +16,17 @@
 
 import { observer } from 'mobx-react-lite';
 import { useEditorStore } from '../../../stores/EditorStore';
-import { BlankPanelContent } from '../../shared/BlankPanelContent';
 import {
   FaFileAlt,
   FaPlus,
   FaTimes,
   FaArrowAltCircleRight,
 } from 'react-icons/fa';
-import { PanelLoadingIndicator } from '../../shared/PanelLoadingIndicator';
 import type {
   SearchResultCoordinate,
   SearchResultEntry,
 } from '../../../models/SearchEntry';
 import { FileCoordinate, trimPathLeadingSlash } from '../../../models/PureFile';
-import { useApplicationStore } from '../../../stores/ApplicationStore';
 import { flowResult } from 'mobx';
 import {
   SearchResultState,
@@ -42,6 +39,8 @@ import type {
   CandidateWithPackageNotImported,
 } from '../../../models/Execution';
 import { getUsageConceptLabel } from '../../../models/Usage';
+import { BlankPanelContent, PanelLoadingIndicator } from '@finos/legend-art';
+import { useApplicationStore } from '@finos/legend-application';
 
 const SearchResultEntryDisplay = observer(
   (props: {

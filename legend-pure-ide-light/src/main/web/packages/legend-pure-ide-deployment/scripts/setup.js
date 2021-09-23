@@ -14,9 +14,43 @@
  * limitations under the License.
  */
 
-import { setup } from '@finos/legend-query-app/scripts/setup.js';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
+
+const setup = (outputDir) => {
+  if (!existsSync(outputDir)) {
+    mkdirSync(outputDir);
+  }
+
+  writeFileSync(
+    resolve(outputDir, 'version.json'),
+    JSON.stringify(
+      {
+        buildTime: new Date().toISOString(),
+        version: '0.0.0-local',
+        commitSHA: 'local',
+      },
+      null,
+      2,
+    ),
+  );
+
+  writeFileSync(
+    resolve(outputDir, 'config.json'),
+    JSON.stringify(
+      {
+        appName: 'ide',
+        env: 'local',
+        pure: {
+          url: 'http://localhost:9010',
+        },
+      },
+      undefined,
+      2,
+    ),
+  );
+};
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

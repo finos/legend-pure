@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+@use '../../mixins' as *;
+
 .editor__status-bar {
   @include flexVCenter;
   @include flexHSpaceBetween;
+
   height: 2.2rem;
   background: var(--color-blue-100);
   color: var(--color-light-grey-0);
@@ -34,12 +37,14 @@
 
   &__workspace {
     @include flexVCenter;
+
     cursor: default;
     height: 100%;
   }
 
   &__workspace__status {
     @include flexCenter;
+
     height: 1.6rem;
     cursor: pointer;
     font-size: 1rem;
@@ -69,6 +74,7 @@
 
   &__action {
     @include flexCenter;
+
     cursor: pointer;
     background: none;
     height: 100%;
@@ -96,11 +102,13 @@
 
   &__sync__status {
     @include flexCenter;
+
     cursor: default;
   }
 
   &__sync__btn {
     @include flexCenter;
+
     background: none;
     color: var(--color-light-grey-0);
     cursor: pointer;
@@ -121,6 +129,7 @@
 
   &__generate-btn {
     @include flexCenter;
+
     background: none;
     color: var(--color-light-grey-0);
     cursor: pointer;
@@ -138,6 +147,7 @@
 
   &__clear__generation-btn {
     @include flexCenter;
+
     background: none;
     color: var(--color-light-grey-0);
     cursor: pointer;
@@ -155,6 +165,7 @@
 
   &__compile-btn {
     @include flexCenter;
+
     background: none;
     color: var(--color-light-grey-0);
     cursor: pointer;

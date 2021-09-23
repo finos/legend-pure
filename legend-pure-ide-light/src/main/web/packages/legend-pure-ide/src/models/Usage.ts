@@ -22,7 +22,10 @@ export interface UsageConcept {
   type?: string;
 }
 
-export const getUsageConceptLabel = (usageConcept: UsageConcept): string => `'${usageConcept.path}'${usageConcept.owner ? ` of '${usageConcept.owner}'` : ''}`;
+export const getUsageConceptLabel = (usageConcept: UsageConcept): string =>
+  `'${usageConcept.path}'${
+    usageConcept.owner ? ` of '${usageConcept.owner}'` : ''
+  }`;
 
 export class Usage {
   source!: string;

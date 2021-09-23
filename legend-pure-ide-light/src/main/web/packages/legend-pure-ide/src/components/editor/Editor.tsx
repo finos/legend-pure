@@ -14,25 +14,14 @@
  * limitations under the License.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import ReactResizeDetector from 'react-resize-detector';
 import { AuxiliaryPanel } from './aux-panel/AuxiliaryPanel';
 import { SideBar } from './side-bar/SideBar';
 import { GlobalHotKeys } from 'react-hotkeys';
 import { ActivityBar } from './ActivityBar';
-import {
-  SIDE_BAR_RESIZE_SNAP_THRESHOLD,
-  DEFAULT_SIDE_BAR_SIZE,
-  HOTKEY,
-  HOTKEY_MAP,
-  AUX_PANEL_RESIZE_BOTTOM_SNAP_THRESHOLD,
-  AUX_PANEL_RESIZE_TOP_SNAP_THRESHOLD,
-} from '../../stores/EditorConfig';
+import { IDE_HOTKEY, IDE_HOTKEY_MAP } from '../../stores/EditorConfig';
 import { EditorStoreProvider, useEditorStore } from '../../stores/EditorStore';
-import clsx from 'clsx';
-import Backdrop from '@material-ui/core/Backdrop';
-import { useApplicationStore } from '../../stores/ApplicationStore';
 import { StatusBar } from './StatusBar';
 import { EditPanel } from './edit-panel/EditPanel';
 import { flowResult } from 'mobx';
@@ -40,8 +29,17 @@ import { parse } from 'query-string';
 import { FileEditorState } from '../../stores/EditorState';
 import { FileSearchCommand } from './command-center/FileSearchCommand';
 import { TextSearchCommand } from './command-center/TextSearchCommand';
-import type { HandlerProps } from 'react-reflex';
-import { ReflexContainer, ReflexElement, ReflexSplitter } from 'react-reflex';
+import { useApplicationStore } from '@finos/legend-application';
+import type { ResizablePanelHandlerProps } from '@finos/legend-art';
+import {
+  clsx,
+  ResizablePanelSplitterLine,
+  ResizablePanel,
+  ResizablePanelGroup,
+  ResizablePanelSplitter,
+  getControlledResizablePanelProps,
+} from '@finos/legend-art';
+import { useResizeDetector } from 'react-resize-detector';
 
 interface EditorQueryParams {
   mode?: string;
@@ -51,79 +49,51 @@ interface EditorQueryParams {
 export const EditorInner = observer(() => {
   const editorStore = useEditorStore();
   const applicationStore = useApplicationStore();
+  const { ref, width, height } = useResizeDetector<HTMLDivElement>();
 
-  // Resize
-  const editorContainerRef = useRef<HTMLDivElement>(null);
-  // These create snapping effect on panel resizing
-  const handleResize = (): void => {
-    if (editorContainerRef.current) {
-      editorStore.setMaxAuxPanelSize(editorContainerRef.current.offsetHeight);
-    }
-  };
-  const snapSideBar = (handlerProps: HandlerProps): void => {
-    const newSize = (handlerProps.domElement as HTMLDivElement).offsetWidth;
-    editorStore.setSideBarSize(
-      newSize < SIDE_BAR_RESIZE_SNAP_THRESHOLD
-        ? editorStore.sideBarSize > 0
-          ? 0
-          : DEFAULT_SIDE_BAR_SIZE
-        : newSize,
+  const resizeSideBar = (handleProps: ResizablePanelHandlerProps): void =>
+    editorStore.sideBarDisplayState.setSize(
+      (handleProps.domElement as HTMLDivElement).getBoundingClientRect().width,
     );
-  };
-  const snapAuxPanel = (handlerProps: HandlerProps): void => {
-    const newSize = (handlerProps.domElement as HTMLDivElement).offsetHeight;
-    if (editorContainerRef.current) {
-      if (
-        newSize >=
-        editorContainerRef.current.offsetHeight -
-          AUX_PANEL_RESIZE_TOP_SNAP_THRESHOLD
-      ) {
-        editorStore.setAuxPanelSize(editorContainerRef.current.offsetHeight);
-      } else if (newSize <= AUX_PANEL_RESIZE_BOTTOM_SNAP_THRESHOLD) {
-        editorStore.setAuxPanelSize(
-          editorStore.auxPanelSize > 0
-            ? 0
-            : AUX_PANEL_RESIZE_BOTTOM_SNAP_THRESHOLD,
-        );
-      } else {
-        editorStore.setAuxPanelSize(newSize);
-      }
-    }
-  };
+  const resizeAuxPanel = (handleProps: ResizablePanelHandlerProps): void =>
+    editorStore.auxPanelDisplayState.setSize(
+      (handleProps.domElement as HTMLDivElement).getBoundingClientRect().height,
+    );
 
   useEffect(() => {
-    if (editorContainerRef.current) {
-      editorStore.setMaxAuxPanelSize(editorContainerRef.current.offsetHeight);
+    if (ref.current) {
+      editorStore.auxPanelDisplayState.setMaxSize(ref.current.offsetHeight);
     }
-  }, [editorStore]);
+  }, [editorStore, ref, height, width]);
 
   // Hotkeys
   const keyMap = {
-    [HOTKEY.SEARCH_FILE]: HOTKEY_MAP[HOTKEY.SEARCH_FILE],
-    [HOTKEY.SEARCH_TEXT]: HOTKEY_MAP[HOTKEY.SEARCH_TEXT],
-    [HOTKEY.EXECUTE]: HOTKEY_MAP[HOTKEY.EXECUTE],
-    [HOTKEY.TOGGLE_AUX_PANEL]: HOTKEY_MAP[HOTKEY.TOGGLE_AUX_PANEL],
-    [HOTKEY.GO_TO_FILE]: HOTKEY_MAP[HOTKEY.GO_TO_FILE],
-    [HOTKEY.FULL_RECOMPILE]: HOTKEY_MAP[HOTKEY.FULL_RECOMPILE],
-    [HOTKEY.RUN_TEST]: HOTKEY_MAP[HOTKEY.RUN_TEST],
-    [HOTKEY.TOGGLE_OPEN_TABS_MENU]: HOTKEY_MAP[HOTKEY.TOGGLE_OPEN_TABS_MENU],
+    [IDE_HOTKEY.SEARCH_FILE]: IDE_HOTKEY_MAP[IDE_HOTKEY.SEARCH_FILE],
+    [IDE_HOTKEY.SEARCH_TEXT]: IDE_HOTKEY_MAP[IDE_HOTKEY.SEARCH_TEXT],
+    [IDE_HOTKEY.EXECUTE]: IDE_HOTKEY_MAP[IDE_HOTKEY.EXECUTE],
+    [IDE_HOTKEY.TOGGLE_AUX_PANEL]: IDE_HOTKEY_MAP[IDE_HOTKEY.TOGGLE_AUX_PANEL],
+    [IDE_HOTKEY.GO_TO_FILE]: IDE_HOTKEY_MAP[IDE_HOTKEY.GO_TO_FILE],
+    [IDE_HOTKEY.FULL_RECOMPILE]: IDE_HOTKEY_MAP[IDE_HOTKEY.FULL_RECOMPILE],
+    [IDE_HOTKEY.RUN_TEST]: IDE_HOTKEY_MAP[IDE_HOTKEY.RUN_TEST],
+    [IDE_HOTKEY.TOGGLE_OPEN_TABS_MENU]:
+      IDE_HOTKEY_MAP[IDE_HOTKEY.TOGGLE_OPEN_TABS_MENU],
   };
   const handlers = {
-    [HOTKEY.SEARCH_FILE]: editorStore.createGlobalHotKeyAction(() => {
+    [IDE_HOTKEY.SEARCH_FILE]: editorStore.createGlobalHotKeyAction(() => {
       editorStore.setOpenFileSearchCommand(true);
     }),
-    [HOTKEY.SEARCH_TEXT]: editorStore.createGlobalHotKeyAction(() => {
+    [IDE_HOTKEY.SEARCH_TEXT]: editorStore.createGlobalHotKeyAction(() => {
       editorStore.setOpenTextSearchCommand(true);
     }),
-    [HOTKEY.EXECUTE]: editorStore.createGlobalHotKeyAction(() => {
+    [IDE_HOTKEY.EXECUTE]: editorStore.createGlobalHotKeyAction(() => {
       flowResult(editorStore.executeGo()).catch(
         applicationStore.alertIllegalUnhandledError,
       );
     }),
-    [HOTKEY.TOGGLE_AUX_PANEL]: editorStore.createGlobalHotKeyAction(() =>
-      editorStore.toggleAuxPanel(),
+    [IDE_HOTKEY.TOGGLE_AUX_PANEL]: editorStore.createGlobalHotKeyAction(() =>
+      editorStore.auxPanelDisplayState.toggle(),
     ),
-    [HOTKEY.GO_TO_FILE]: editorStore.createGlobalHotKeyAction(() => {
+    [IDE_HOTKEY.GO_TO_FILE]: editorStore.createGlobalHotKeyAction(() => {
       const currentEditorState = editorStore.currentEditorState;
       if (currentEditorState instanceof FileEditorState) {
         editorStore.directoryTreeState.revealPath(
@@ -132,14 +102,14 @@ export const EditorInner = observer(() => {
         );
       }
     }),
-    [HOTKEY.FULL_RECOMPILE]: editorStore.createGlobalHotKeyAction(
+    [IDE_HOTKEY.FULL_RECOMPILE]: editorStore.createGlobalHotKeyAction(
       (event: KeyboardEvent | undefined) => {
         flowResult(
           editorStore.fullReCompile(Boolean(event?.shiftKey ?? event?.ctrlKey)),
         ).catch(applicationStore.alertIllegalUnhandledError);
       },
     ),
-    [HOTKEY.RUN_TEST]: editorStore.createGlobalHotKeyAction(
+    [IDE_HOTKEY.RUN_TEST]: editorStore.createGlobalHotKeyAction(
       (event: KeyboardEvent | undefined) => {
         flowResult(editorStore.executeFullTestSuite(event?.shiftKey)).catch(
           applicationStore.alertIllegalUnhandledError,
@@ -148,9 +118,11 @@ export const EditorInner = observer(() => {
     ),
     // NOTE: right now this is fairly simplistic, we can create it to navigate in 2 directions like `Tab` and `Shift + Tab`.
     // in VSCode for example, they always show the current tab on top/bottom based on the navigation direction
-    [HOTKEY.TOGGLE_OPEN_TABS_MENU]: editorStore.createGlobalHotKeyAction(() => {
-      editorStore.setShowOpenedTabsMenu(!editorStore.showOpenedTabsMenu);
-    }),
+    [IDE_HOTKEY.TOGGLE_OPEN_TABS_MENU]: editorStore.createGlobalHotKeyAction(
+      () => {
+        editorStore.setShowOpenedTabsMenu(!editorStore.showOpenedTabsMenu);
+      },
+    ),
   };
 
   // Cleanup the editor
@@ -181,47 +153,62 @@ export const EditorInner = observer(() => {
       <GlobalHotKeys keyMap={keyMap} handlers={handlers}>
         <div className="editor__body">
           <ActivityBar />
-          <Backdrop className="backdrop" open={editorStore.backdrop} />
-          <ReactResizeDetector
-            handleHeight={true}
-            handleWidth={true}
-            onResize={handleResize}
-          >
-            <div className="editor__content-container" ref={editorContainerRef}>
-              <div
-                className={clsx('editor__content', {
-                  'editor__content--expanded': editorStore.isInExpandedMode,
-                })}
-              >
-                <ReflexContainer orientation="vertical">
-                  <ReflexElement
-                    size={editorStore.sideBarSize}
-                    minSize={0}
-                    onStopResize={snapSideBar}
-                  >
-                    <SideBar />
-                  </ReflexElement>
-                  <ReflexSplitter />
-                  <ReflexElement minSize={100}>
-                    <ReflexContainer orientation="horizontal">
-                      <ReflexElement minSize={0}>
-                        <EditPanel />
-                      </ReflexElement>
-                      <ReflexSplitter />
-                      <ReflexElement
-                        size={editorStore.auxPanelSize}
-                        direction={-1}
-                        minSize={0}
-                        onStopResize={snapAuxPanel}
-                      >
-                        <AuxiliaryPanel />
-                      </ReflexElement>
-                    </ReflexContainer>
-                  </ReflexElement>
-                </ReflexContainer>
-              </div>
+          <div className="editor__content-container" ref={ref}>
+            <div
+              className={clsx('editor__content', {
+                'editor__content--expanded': editorStore.isInExpandedMode,
+              })}
+            >
+              <ResizablePanelGroup orientation="vertical">
+                <ResizablePanel
+                  {...getControlledResizablePanelProps(
+                    editorStore.sideBarDisplayState.size === 0,
+                    {
+                      onStopResize: resizeSideBar,
+                    },
+                  )}
+                  size={editorStore.sideBarDisplayState.size}
+                  direction={1}
+                >
+                  <SideBar />
+                </ResizablePanel>
+                <ResizablePanelSplitter />
+                <ResizablePanel minSize={100}>
+                  <ResizablePanelGroup orientation="horizontal">
+                    <ResizablePanel
+                      {...getControlledResizablePanelProps(
+                        editorStore.auxPanelDisplayState.isMaximized,
+                      )}
+                    >
+                      <EditPanel />
+                    </ResizablePanel>
+                    <ResizablePanelSplitter>
+                      <ResizablePanelSplitterLine
+                        color={
+                          editorStore.auxPanelDisplayState.isMaximized
+                            ? 'transparent'
+                            : 'var(--color-dark-grey-250)'
+                        }
+                      />
+                    </ResizablePanelSplitter>
+                    <ResizablePanel
+                      {...getControlledResizablePanelProps(
+                        editorStore.auxPanelDisplayState.size === 0,
+                        {
+                          onStopResize: resizeAuxPanel,
+                        },
+                      )}
+                      flex={0}
+                      direction={-1}
+                      size={editorStore.auxPanelDisplayState.size}
+                    >
+                      <AuxiliaryPanel />
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                </ResizablePanel>
+              </ResizablePanelGroup>
             </div>
-          </ReactResizeDetector>
+          </div>
         </div>
         <StatusBar actionsDisabled={!editable} />
         {editable && <FileSearchCommand />}

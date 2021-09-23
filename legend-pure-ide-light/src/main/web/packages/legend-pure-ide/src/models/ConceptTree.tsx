@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
+import type { TreeNodeData } from '@finos/legend-art';
 import {
   AssociationIcon,
   ClassIcon,
-  DiagramIcon,
-  ElementIcon,
   EnumerationIcon,
   FunctionIcon,
-  NativeFunctionIcon,
   MeasureIcon,
   PackageIcon,
   ProfileIcon,
   UnitIcon,
   UnknownTypeIcon,
-} from '../components/shared/Icon';
+} from '@finos/legend-art';
+import { guaranteeType } from '@finos/legend-shared';
+import { FaShapes } from 'react-icons/fa';
+import { BiAtom } from 'react-icons/bi';
 import type { Clazz } from 'serializr';
 import {
   createModelSchema,
@@ -36,9 +37,6 @@ import {
   SKIP,
   deserialize,
 } from 'serializr';
-
-import { guaranteeType } from '../utils/GeneralUtil';
-import type { TreeNodeData } from '../utils/TreeUtil';
 
 export enum ConceptType {
   // PRIMITIVE = 'Primitive',
@@ -55,6 +53,22 @@ export enum ConceptType {
   NATIVE_FUNCTION = 'NativeFunction',
   DIAGRAM = 'Diagram',
 }
+
+const NativeFunctionIcon: React.FC = () => (
+  <div className="icon icon--function color--native-function">(x)</div>
+);
+
+const ElementIcon: React.FC = () => (
+  <div className="icon icon--property color--property">
+    <BiAtom />
+  </div>
+);
+
+const DiagramIcon: React.FC = () => (
+  <div className="icon color--diagram">
+    <FaShapes />
+  </div>
+);
 
 export const getConceptIcon = (type: string): React.ReactNode => {
   switch (type) {
@@ -192,4 +206,5 @@ createModelSchema(ConceptNode, {
 
 export interface ConceptTreeNode extends TreeNodeData {
   data: ConceptNode;
+  isLoading: boolean;
 }
