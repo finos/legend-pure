@@ -30,7 +30,6 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphDeserializer;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.Enum;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
@@ -306,7 +305,7 @@ public class MetadataLazy implements Metadata
 
     private Constructor<? extends CoreInstance> getConstructor(String classifier, Obj obj)
     {
-        if (obj instanceof Enum)
+        if (obj.isEnum())
         {
             Constructor<? extends CoreInstance> constructor = this.enumConstructor;
             if (constructor == null)

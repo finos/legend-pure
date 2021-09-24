@@ -20,8 +20,14 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class Enum extends Obj
 {
-    public Enum(SourceInformation sourceInformation, String identifier, String classifier, String name, ListIterable<PropertyValue> propertiesList)
+    Enum(SourceInformation sourceInformation, String identifier, String classifier, String name, ListIterable<PropertyValue> propertiesList)
     {
         super(sourceInformation, identifier, classifier, name, propertiesList);
+    }
+
+    @Override
+    public boolean isEnum()
+    {
+        return true;
     }
 }

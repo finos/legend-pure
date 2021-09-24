@@ -21,7 +21,6 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.serialization.Reader;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.Enum;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
@@ -44,7 +43,7 @@ abstract class AbstractBinaryObjDeserializer implements BinaryObjDeserializer
         String classifier = readClassifier(reader);
         String name = readName(reader);
         ListIterable<PropertyValue> propertiesList = readPropertyValues(reader);
-        return isEnum ? new Enum(sourceInformation, identifier, classifier, name, propertiesList) : new Obj(sourceInformation, identifier, classifier, name, propertiesList);
+        return Obj.newObj(sourceInformation, identifier, classifier, name, propertiesList, isEnum);
     }
 
     protected SourceInformation readSourceInformation(Reader reader)

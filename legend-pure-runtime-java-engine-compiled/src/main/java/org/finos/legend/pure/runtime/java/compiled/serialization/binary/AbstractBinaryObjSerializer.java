@@ -18,7 +18,6 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.serialization.Writer;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.Enum;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
@@ -35,7 +34,7 @@ abstract class AbstractBinaryObjSerializer implements BinaryObjSerializer
     @Override
     public void serializeObj(Writer writer, Obj obj)
     {
-        writer.writeBoolean(obj instanceof Enum);
+        writer.writeBoolean(obj.isEnum());
         writeSourceInformation(writer, obj.getSourceInformation());
         writeIdentifier(writer, obj.getIdentifier());
         writeClassifier(writer, obj.getClassifier());
