@@ -154,6 +154,11 @@ function <<access.private>> meta::pure::graphFetch::addSubTree(onto:GraphFetchTr
       stree0: PropertyGraphFetchTree[0] | ^$onto(subTrees=$onto.subTrees->concatenate($subTree)),
       stree : PropertyGraphFetchTree[1] | ^$onto(subTrees=$onto.subTrees->filter(st|$st != $existingSubTree)->concatenate($stree->addSubTrees($subTree.subTrees)))
    ]);
+  // if($existingSubTree->isEmpty(),
+  //   | ^$onto(subTrees=$onto.subTrees->concatenate($subTree)),
+  //   | $existingSubTree->fold({stree, newTree | ^$newTree(subTrees=$newTree.subTrees->filter(st|$st != $existingSubTree)->concatenate($stree->addSubTrees($subTree.subTrees)))},
+  //                            $onto)
+  // );
 }
 
 function meta::pure::graphFetch::printTree(root:GraphFetchTree[1]): Any[*]
