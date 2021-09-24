@@ -16,7 +16,7 @@
 import meta::pure::metamodel::serialization::grammar::*;
 import meta::pure::router::printer::*;
 import meta::pure::router::extension::*;
-import meta::alloy::runtime::java::*;
+import meta::pure::executionPlan::engine::java::*;
 import meta::pure::executionPlan::*;
 import meta::alloy::service::metamodel::*;
 import meta::json::*;

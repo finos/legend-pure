@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::functions::assert::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::serialization::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::executionPlan::engine::*;
 
-function meta::java::generation::functions::assert::register(conventions: Conventions[1]): Conventions[1]
+function meta::pure::executionPlan::engine::java::registerAssertLibrary(conventions: Conventions[1]): Conventions[1]
 {
    let library  = $conventions->className(Library);
    let noParams = []->cast(@Code);

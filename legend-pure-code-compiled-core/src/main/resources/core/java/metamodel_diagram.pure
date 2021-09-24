@@ -13,10 +13,10 @@
 // limitations under the License.
 
 ###Diagram
-Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
+Diagram meta::external::language::java::JavaDiagram(width=1451.33333, height=718.00000)
 {
     TypeView Type_10_7_8_3_1_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_$_0(
-        type=meta::java::metamodel::Type,
+        type=meta::external::language::java::metamodel::Type,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -28,7 +28,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=168.00000)
 
     TypeView Class_9_6_13_8_4_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_$_1(
-        type=meta::java::metamodel::Class,
+        type=meta::external::language::java::metamodel::Class,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -40,7 +40,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=270.00000)
 
     TypeView Field_6_3_0_0_0_9_9_9_9_9_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_$_2(
-        type=meta::java::metamodel::Field,
+        type=meta::external::language::java::metamodel::Field,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -52,7 +52,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=60.00000)
 
     TypeView WildcardType_11_7_11_6_11_11_11_11_11_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_3_$_3(
-        type=meta::java::metamodel::WildcardType,
+        type=meta::external::language::java::metamodel::WildcardType,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -64,7 +64,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=75.75000)
 
     TypeView TypeVariable_8_5_9_4_9_13_13_13_12_12_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_4_$_4(
-        type=meta::java::metamodel::TypeVariable,
+        type=meta::external::language::java::metamodel::TypeVariable,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -76,7 +76,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=48.00000)
 
     TypeView Type_10_5_2_14_14_14_13_13_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_5_$_5(
-        type=meta::java::metamodel::Type,
+        type=meta::external::language::java::metamodel::Type,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -88,7 +88,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=36.00000)
 
     TypeView GenericDeclaration_7_4_11_6_10_12_12_12_14_14_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_6_$_6(
-        type=meta::java::metamodel::GenericDeclaration,
+        type=meta::external::language::java::metamodel::GenericDeclaration,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -100,7 +100,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=36.00000)
 
     TypeView AnnotatedElement_9_9_9_9_9_9_9_9_9_9_9_9_9_9_9_9_9_9_9_8_7_$_7(
-        type=meta::java::metamodel::AnnotatedElement,
+        type=meta::external::language::java::metamodel::AnnotatedElement,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -112,7 +112,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=48.00000)
 
     TypeView AnnotatedElement_10_10_10_10_10_10_10_10_10_10_10_10_10_10_10_10_10_10_10_9_8_$_8(
-        type=meta::java::metamodel::AnnotatedElement,
+        type=meta::external::language::java::metamodel::AnnotatedElement,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -124,7 +124,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=48.00000)
 
     TypeView Member_2_8_1_1_14_7_7_7_7_7_11_11_11_11_11_11_11_11_11_11_11_11_11_11_11_11_11_11_11_10_9_$_9(
-        type=meta::java::metamodel::Member,
+        type=meta::external::language::java::metamodel::Member,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -136,7 +136,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=48.00000)
 
     TypeView GenericDeclaration_1_10_3_12_13_6_6_6_6_6_12_12_12_12_12_12_12_12_12_12_12_12_12_12_12_12_12_12_12_11_10_$_10(
-        type=meta::java::metamodel::GenericDeclaration,
+        type=meta::external::language::java::metamodel::GenericDeclaration,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -148,7 +148,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=36.00000)
 
     TypeView AnnotatedElement_13_13_13_13_13_13_13_13_13_13_13_13_13_13_13_13_13_13_13_12_11_$_11(
-        type=meta::java::metamodel::AnnotatedElement,
+        type=meta::external::language::java::metamodel::AnnotatedElement,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -160,7 +160,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=48.00000)
 
     TypeView Method_3_9_2_13_7_2_2_2_2_2_15_15_15_15_15_15_14_14_14_14_14_14_14_14_14_14_14_14_14_13_12_$_12(
-        type=meta::java::metamodel::Method,
+        type=meta::external::language::java::metamodel::Method,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -172,7 +172,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=72.00000)
 
     TypeView Parameter_6_14_8_3_3_3_3_3_16_16_16_16_16_16_15_15_15_15_15_15_15_15_15_15_15_15_15_14_13_$_13(
-        type=meta::java::metamodel::Parameter,
+        type=meta::external::language::java::metamodel::Parameter,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -184,7 +184,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=48.00000)
 
     TypeView Type_14_9_11_4_4_4_4_4_17_17_17_17_17_17_16_16_16_16_16_16_16_16_16_16_16_16_16_15_14_$_14(
-        type=meta::java::metamodel::Type,
+        type=meta::external::language::java::metamodel::Type,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -196,7 +196,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=36.00000)
 
     TypeView Annotation_18_18_18_18_18_17_17_17_17_17_17_17_17_17_17_17_17_17_16_15_$_15(
-        type=meta::java::metamodel::Annotation,
+        type=meta::external::language::java::metamodel::Annotation,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -208,7 +208,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=36.00000)
 
     TypeView JsonIgnoreProperties_19_19_19_19_18_18_18_18_18_18_18_18_18_18_18_18_18_17_16_$_16(
-        type=meta::java::metamodel::annotations::json::JsonIgnoreProperties,
+        type=meta::external::language::java::metamodel::annotations::json::JsonIgnoreProperties,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -220,7 +220,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=60.00000)
 
     TypeView AnnotatedElement_20_20_20_20_20_20_20_20_20_20_19_19_18_17_$_17(
-        type=meta::java::metamodel::AnnotatedElement,
+        type=meta::external::language::java::metamodel::AnnotatedElement,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -232,7 +232,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=48.00000)
 
     TypeView Constructor_0_0_4_2_12_5_5_5_5_5_14_14_14_14_14_14_19_19_19_19_19_19_19_19_19_19_19_20_20_19_18_$_18(
-        type=meta::java::metamodel::Constructor,
+        type=meta::external::language::java::metamodel::Constructor,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -244,7 +244,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=48.00000)
 
     TypeView Parameter_21_21_20_19_$_19(
-        type=meta::java::metamodel::Parameter,
+        type=meta::external::language::java::metamodel::Parameter,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -256,7 +256,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=48.00000)
 
     TypeView Package_4_1_12_7_3_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_21_20_$_20(
-        type=meta::java::metamodel::Package,
+        type=meta::external::language::java::metamodel::Package,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -268,7 +268,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=48.00000)
 
     TypeView ParameterizedType_5_2_5_10_5_10_10_10_10_10_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_21_$_21(
-        type=meta::java::metamodel::ParameterizedType,
+        type=meta::external::language::java::metamodel::ParameterizedType,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -280,7 +280,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         height=82.00000)
 
     TypeView PrimitiveType_22_$_22(
-        type=meta::java::metamodel::PrimitiveType,
+        type=meta::external::language::java::metamodel::PrimitiveType,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -291,7 +291,7 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         width=134.31836,
         height=48.00000)
 
-    AssociationView aview_23(association=meta::java::metamodel::PackageChildren,
+    AssociationView aview_23(association=meta::external::language::java::metamodel::PackageChildren,
         stereotypesVisible=true,
         nameVisible=false,
         color=#000000,
@@ -301,12 +301,12 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='PackageChildren',
         source=Package_4_1_12_7_3_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_21_20_$_20,
         target=Package_4_1_12_7_3_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_21_20_$_20,
-        sourcePropertyPosition=(816.15537, 921.37313),
-        sourceMultiplicityPosition=(836.46953, 890.92313),
-        targetPropertyPosition=(966.82941, 863.78631),
-        targetMultiplicityPosition=(931.05803, 863.78631))
+        sourcePropertyPosition=(615.56774, 686.13172),
+        sourceMultiplicityPosition=(629.57751, 665.13172),
+        targetPropertyPosition=(719.48088, 646.41667),
+        targetMultiplicityPosition=(694.81096, 646.41667))
 
-    PropertyView pview_24(property=meta::java::metamodel::Class.constructors,
+    PropertyView pview_24(property=meta::external::language::java::metamodel::Class.constructors,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -316,10 +316,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=Class_9_6_13_8_4_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_$_1,
         target=Constructor_0_0_4_2_12_5_5_5_5_5_14_14_14_14_14_14_19_19_19_19_19_19_19_19_19_19_19_20_20_19_18_$_18,
-        propertyPosition=(1599.92676, 804.86787),
-        multiplicityPosition=(1687.92080, 774.41787))
+        propertyPosition=(1156.09974, 605.78326),
+        multiplicityPosition=(1216.78528, 584.78326))
 
-    PropertyView pview_25(property=meta::java::metamodel::Class.fields,
+    PropertyView pview_25(property=meta::external::language::java::metamodel::Class.fields,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -329,10 +329,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=Class_9_6_13_8_4_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_$_1,
         target=Field_6_3_0_0_0_9_9_9_9_9_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_$_2,
-        propertyPosition=(1574.15986, 676.83332),
-        multiplicityPosition=(1608.00830, 646.38332))
+        propertyPosition=(1138.32946, 517.48357),
+        multiplicityPosition=(1161.67321, 496.48357))
 
-    PropertyView pview_26(property=meta::java::metamodel::Class.superType,
+    PropertyView pview_26(property=meta::external::language::java::metamodel::Class.superType,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -342,10 +342,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=Class_9_6_13_8_4_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_$_1,
         target=Type_10_7_8_3_1_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_$_0,
-        propertyPosition=(951.71904, 1.15714),
-        multiplicityPosition=(1003.94453, -29.29286))
+        propertyPosition=(709.05993, 51.50000),
+        multiplicityPosition=(745.07751, 30.50000))
 
-    PropertyView pview_27(property=meta::java::metamodel::Class.interfaces,
+    PropertyView pview_27(property=meta::external::language::java::metamodel::Class.interfaces,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -355,10 +355,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=Class_9_6_13_8_4_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_$_1,
         target=Type_10_7_8_3_1_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_$_0,
-        propertyPosition=(957.53037, 70.75714),
-        multiplicityPosition=(1026.19580, 40.30714))
+        propertyPosition=(713.06774, 99.50000),
+        multiplicityPosition=(760.42321, 78.50000))
 
-    PropertyView pview_28(property=meta::java::metamodel::Class.methods,
+    PropertyView pview_28(property=meta::external::language::java::metamodel::Class.methods,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -368,10 +368,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=Class_9_6_13_8_4_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_$_1,
         target=Method_3_9_2_13_7_2_2_2_2_2_15_15_15_15_15_15_14_14_14_14_14_14_14_14_14_14_14_14_14_13_12_$_12,
-        propertyPosition=(1951.50537, 906.28442),
-        multiplicityPosition=(2011.47080, 875.83442))
+        propertyPosition=(1398.56774, 675.72571),
+        multiplicityPosition=(1439.92321, 654.72571))
 
-    PropertyView pview_29(property=meta::java::metamodel::Class.package,
+    PropertyView pview_29(property=meta::external::language::java::metamodel::Class.package,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -381,10 +381,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=Class_9_6_13_8_4_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_1_$_1,
         target=Package_4_1_12_7_3_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_8_21_20_$_20,
-        propertyPosition=(1040.51596, 898.62340),
-        multiplicityPosition=(1040.51596, 929.07340))
+        propertyPosition=(770.29919, 670.44225),
+        multiplicityPosition=(770.29919, 691.44225))
 
-    PropertyView pview_30(property=meta::java::metamodel::ParameterizedType.rawType,
+    PropertyView pview_30(property=meta::external::language::java::metamodel::ParameterizedType.rawType,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -394,10 +394,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=ParameterizedType_5_2_5_10_5_10_10_10_10_10_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_21_$_21,
         target=Type_10_7_8_3_1_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_$_0,
-        propertyPosition=(967.20742, 156.30714),
-        multiplicityPosition=(1023.29014, 186.75714))
+        propertyPosition=(719.74157, 158.50000),
+        multiplicityPosition=(758.41931, 179.50000))
 
-    PropertyView pview_31(property=meta::java::metamodel::Method.returnType,
+    PropertyView pview_31(property=meta::external::language::java::metamodel::Method.returnType,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -407,10 +407,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=Method_3_9_2_13_7_2_2_2_2_2_15_15_15_15_15_15_14_14_14_14_14_14_14_14_14_14_14_14_14_13_12_$_12,
         target=Type_10_7_8_3_1_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_$_0,
-        propertyPosition=(1692.71719, 76.20379),
-        multiplicityPosition=(1692.71719, 45.75379))
+        propertyPosition=(1220.09314, 103.25631),
+        multiplicityPosition=(1220.09314, 82.25631))
 
-    PropertyView pview_32(property=meta::java::metamodel::ParameterizedType.typeArguments,
+    PropertyView pview_32(property=meta::external::language::java::metamodel::ParameterizedType.typeArguments,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -420,10 +420,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=ParameterizedType_5_2_5_10_5_10_10_10_10_10_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_3_21_$_21,
         target=Type_10_7_8_3_1_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_$_0,
-        propertyPosition=(915.94199, 114.25714),
-        multiplicityPosition=(1026.19580, 144.70714))
+        propertyPosition=(684.38610, 129.50000),
+        multiplicityPosition=(760.42321, 150.50000))
 
-    PropertyView pview_33(property=meta::java::metamodel::GenericDeclaration.typeParameters,
+    PropertyView pview_33(property=meta::external::language::java::metamodel::GenericDeclaration.typeParameters,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -433,10 +433,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=GenericDeclaration_7_4_11_6_10_12_12_12_14_14_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_7_6_$_6,
         target=TypeVariable_8_5_9_4_9_13_13_13_12_12_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_4_$_4,
-        propertyPosition=(1026.01596, 494.94004),
-        multiplicityPosition=(1026.01596, 525.39004))
+        propertyPosition=(760.29919, 392.03993),
+        multiplicityPosition=(760.29919, 413.03993))
 
-    PropertyView pview_34(property=meta::java::metamodel::WildcardType.lowerBounds,
+    PropertyView pview_34(property=meta::external::language::java::metamodel::WildcardType.lowerBounds,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -446,10 +446,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=WildcardType_11_7_11_6_11_11_11_11_11_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_3_$_3,
         target=Type_10_7_8_3_1_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_$_0,
-        propertyPosition=(1692.71719, 161.26850),
-        multiplicityPosition=(1692.71719, 191.71850))
+        propertyPosition=(1220.09314, 161.92162),
+        multiplicityPosition=(1220.09314, 182.92162))
 
-    PropertyView pview_35(property=meta::java::metamodel::WildcardType.upperBounds,
+    PropertyView pview_35(property=meta::external::language::java::metamodel::WildcardType.upperBounds,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -459,10 +459,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=WildcardType_11_7_11_6_11_11_11_11_11_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_4_3_$_3,
         target=Type_10_7_8_3_1_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_$_0,
-        propertyPosition=(1692.71719, 107.36964),
-        multiplicityPosition=(1692.71719, 137.81964))
+        propertyPosition=(1220.09314, 124.75000),
+        multiplicityPosition=(1220.09314, 145.75000))
 
-    PropertyView pview_36(property=meta::java::metamodel::Parameter.type,
+    PropertyView pview_36(property=meta::external::language::java::metamodel::Parameter.type,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -472,10 +472,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=Parameter_6_14_8_3_3_3_3_3_16_16_16_16_16_16_15_15_15_15_15_15_15_15_15_15_15_15_15_14_13_$_13,
         target=Type_10_7_8_3_1_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_0_$_0,
-        propertyPosition=(1692.71719, 9.12641),
-        multiplicityPosition=(1692.71719, -21.32359))
+        propertyPosition=(1220.09314, 56.99605),
+        multiplicityPosition=(1220.09314, 35.99605))
 
-    PropertyView pview_37(property=meta::java::metamodel::Method.parameters,
+    PropertyView pview_37(property=meta::external::language::java::metamodel::Method.parameters,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -485,10 +485,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=Method_3_9_2_13_7_2_2_2_2_2_15_15_15_15_15_15_14_14_14_14_14_14_14_14_14_14_14_14_14_13_12_$_12,
         target=Parameter_6_14_8_3_3_3_3_3_16_16_16_16_16_16_15_15_15_15_15_15_15_15_15_15_15_15_15_14_13_$_13,
-        propertyPosition=(2310.86465, 905.92153),
-        multiplicityPosition=(2392.09580, 936.37153))
+        propertyPosition=(1646.40173, 675.47544),
+        multiplicityPosition=(1702.42321, 696.47544))
 
-    PropertyView pview_38(property=meta::java::metamodel::TypeVariable.bounds,
+    PropertyView pview_38(property=meta::external::language::java::metamodel::TypeVariable.bounds,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -498,10 +498,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=TypeVariable_8_5_9_4_9_13_13_13_12_12_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_5_4_$_4,
         target=Type_10_5_2_14_14_14_13_13_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_6_5_$_5,
-        propertyPosition=(792.79961, 492.96198),
-        multiplicityPosition=(792.79961, 523.41198))
+        propertyPosition=(599.46033, 390.67575),
+        multiplicityPosition=(599.46033, 411.67575))
 
-    PropertyView pview_39(property=meta::java::metamodel::Field.type,
+    PropertyView pview_39(property=meta::external::language::java::metamodel::Field.type,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -511,10 +511,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=Field_6_3_0_0_0_9_9_9_9_9_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_2_$_2,
         target=Type_14_9_11_4_4_4_4_4_17_17_17_17_17_17_16_16_16_16_16_16_16_16_16_16_16_16_16_15_14_$_14,
-        propertyPosition=(1780.42048, 651.35991),
-        multiplicityPosition=(1803.63181, 681.80991))
+        propertyPosition=(1280.57816, 499.91570),
+        multiplicityPosition=(1296.58598, 520.91570))
 
-    PropertyView pview_40(property=meta::java::metamodel::AnnotatedElement.annotations,
+    PropertyView pview_40(property=meta::external::language::java::metamodel::AnnotatedElement.annotations,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -524,10 +524,10 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=AnnotatedElement_9_9_9_9_9_9_9_9_9_9_9_9_9_9_9_9_9_9_9_8_7_$_7,
         target=Annotation_18_18_18_18_18_17_17_17_17_17_17_17_17_17_17_17_17_17_16_15_$_15,
-        propertyPosition=(690.36593, 756.52363),
-        multiplicityPosition=(690.36593, 786.97363))
+        propertyPosition=(528.81641, 572.44240),
+        multiplicityPosition=(528.81641, 593.44240))
 
-    PropertyView pview_41(property=meta::java::metamodel::Constructor.parameters,
+    PropertyView pview_41(property=meta::external::language::java::metamodel::Constructor.parameters,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -537,8 +537,8 @@ Diagram meta::java::JavaDiagram(width=1451.33333, height=718.00000)
         label='',
         source=Constructor_0_0_4_2_12_5_5_5_5_5_14_14_14_14_14_14_19_19_19_19_19_19_19_19_19_19_19_20_20_19_18_$_18,
         target=Parameter_21_21_20_19_$_19,
-        propertyPosition=(1898.52960, 780.43848),
-        multiplicityPosition=(1979.76075, 810.88848))
+        propertyPosition=(1362.03273, 588.93541),
+        multiplicityPosition=(1418.05421, 609.93541))
 
    GeneralizationView gview_42(color=#000000,
        lineWidth=-1.0,

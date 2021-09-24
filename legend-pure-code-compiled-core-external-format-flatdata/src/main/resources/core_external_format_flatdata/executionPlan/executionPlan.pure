@@ -12,26 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::typeInfo::*;
 import meta::external::format::flatdata::binding::validation::*;
 import meta::external::format::flatdata::executionPlan::*;
 import meta::external::format::flatdata::executionPlan::engine::*;
 import meta::external::format::flatdata::metamodel::*;
 import meta::external::format::flatdata::runtime::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::transform::*;
 import meta::external::shared::format::binding::*;
 import meta::external::shared::format::binding::validation::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::executionPlan::engine::*;
 import meta::external::shared::format::metamodel::*;
 import meta::external::shared::runtime::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
 import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::executionPlan::toString::*;
 import meta::pure::graphFetch::*;
 import meta::pure::router::extension::*;
@@ -116,7 +117,7 @@ function meta::external::format::flatdata::executionPlan::planJavaGenerate(path:
 Class <<access.private>> meta::external::format::flatdata::executionPlan::SerializeData
 {
    bindingDetail : FlatDataBindingDetail[1];
-   classIn       : Class<Any>[1];
+   classIn       : meta::pure::metamodel::type::Class<Any>[1];
 }
 
 function <<access.private>> meta::external::format::flatdata::executionPlan::prepareForSerialize(node:FlatDataSerializeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): GenerationContext[1]
@@ -202,7 +203,7 @@ Class <<access.private>> meta::external::format::flatdata::executionPlan::Parsed
    getInstant         : Pair<Code,Code>[*];
 }
 
-function <<access.private>> meta::external::format::flatdata::executionPlan::createSerializeSpecificsClass(node:FlatDataSerializeExecutionNode[1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::external::format::flatdata::executionPlan::createSerializeSpecificsClass(node:FlatDataSerializeExecutionNode[1], path:String[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
 {   
    let conventions   = $context.conventions;
    let serializeData = $context->nodeInfosForPath($path).data->toOne()->cast(@SerializeData);
@@ -366,7 +367,7 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::gen
    $project->addClasses($specificsClass)->generatedCode($specificsClass);
 }
 
-function <<access.private>> meta::external::format::flatdata::executionPlan::createDeserializeSpecificsClass(node:FlatDataDeserializeExecutionNode[1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::external::format::flatdata::executionPlan::createDeserializeSpecificsClass(node:FlatDataDeserializeExecutionNode[1], path:String[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
 {   
    let conventions   = $context.conventions;
    let bindingDetail = $context->nodeInfosForPath($path).data->toOne()->cast(@FlatDataBindingDetail);
@@ -513,7 +514,7 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::cre
    });
 }
 
-function <<access.private>> meta::external::format::flatdata::executionPlan::createSchema(jClass:meta::java::metamodel::Class[1], flatData:FlatData[1], conventions:Conventions[1]): Code[1]
+function <<access.private>> meta::external::format::flatdata::executionPlan::createSchema(jClass:meta::external::language::java::metamodel::Class[1], flatData:FlatData[1], conventions:Conventions[1]): Code[1]
 {   
    $flatData.sections->fold(
       {section, code| 
@@ -533,7 +534,7 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::sec
    'flatDataSection_Factory_' + $section.name;
 }
 
-function <<access.private>> meta::external::format::flatdata::executionPlan::addSectionMethods(jClass:meta::java::metamodel::Class[1], flatData:FlatData[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::external::format::flatdata::executionPlan::addSectionMethods(jClass:meta::external::language::java::metamodel::Class[1], flatData:FlatData[1], conventions:Conventions[1]): meta::external::language::java::metamodel::Class[1]
 {   
    $jClass
       ->addMethods({cls|

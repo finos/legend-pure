@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::java::generation::tests::*;
-import meta::java::generation::tests::functions::lang::*;
-import meta::java::metamodel::factory::*;
+import meta::external::language::java::factory::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::tests::*;
 import meta::pure::runtime::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::runtime::testGenerateGuid() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testGenerateGuid() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('GenerateGuid', {|generateGuid()}, 'java.util.UUID.randomUUID().toString()', javaString())
         ->assert('%s instanceof String')
         ->runTests();

@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::pure::metamodel::constraint::*;
-import meta::pure::metamodel::serialization::grammar::*;
-import meta::pure::milestoning::*;
+import meta::pure::graphFetch::*;
 import meta::pure::graphFetch::routing::*;
 import meta::pure::lineage::scanProperties::*;
 import meta::pure::lineage::scanProperties::propertyTree::*;
+import meta::pure::mapping::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::mapping::modelToModel::inMemory::*;
-import meta::pure::mapping::*;
-import meta::pure::graphFetch::*;
-import meta::java::generation::deepFetch::*;
+import meta::pure::metamodel::constraint::*;
+import meta::pure::metamodel::serialization::grammar::*;
+import meta::pure::milestoning::*;
 
 
 Class meta::pure::graphFetch::ExtendedRootGraphFetchTree<T> extends RootGraphFetchTree<T>
@@ -488,7 +487,7 @@ function <<access.private>> meta::pure::graphFetch::propertyTreeToGraphFetchTree
        let childrenGroupedByDerivedClasses = $pTree.children->groupBy(c|$c.value->cast(@PropertyPathNode).class);
        $childrenGroupedByDerivedClasses->keyValues()->map(k|let propertyPathOwner = $k.first;
                                                             let children = $k.second.values;
-                                                            if($propertyPathOwner != $nodeClass && $propertyPathOwner->subTypeOf($nodeClass->toOne()),
+                                                            if($propertyPathOwner != $nodeClass && $propertyPathOwner->_subTypeOf($nodeClass->toOne()),
                                                                 |^PropertyGraphFetchTree(property = $node.property, subType = $propertyPathOwner, subTrees = $children->map(c| $c->propertyTreeToGraphFetchTree($propertyPathOwner))),
                                                                 |^PropertyGraphFetchTree(property = $node.property, subTrees = $children->map(c| $c->propertyTreeToGraphFetchTree($node.property->functionReturnType().rawType->cast(@Class<Any>)->toOne()))));
                                                          );

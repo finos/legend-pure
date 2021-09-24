@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::roadmap::*;
+import meta::pure::executionPlan::engine::java::roadmap::*;
 import meta::pure::mapping::modelToModel::test::alloy::units::*;
 import meta::json::*;
 import meta::pure::mapping::modelToModel::*;
@@ -105,7 +105,7 @@ meta::pure::mapping::modelToModel::test::alloy::units::testModelToModelMappingOf
 
 ###Mapping
 import meta::pure::mapping::modelToModel::test::units::src::*;
-import meta::java::generation::functions::unit::*;
+import meta::pure::executionPlan::engine::java::*;
 import meta::pure::unit::*;
 import meta::pure::unit::mass::*;
 import meta::pure::mapping::modelToModel::test::units::dest::*;

@@ -12,32 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::graphFetch::common::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::platform::*;
-import meta::alloy::runtime::java::typeInfo::*;
-import meta::pure::graphFetch::routing::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::dataQuality::*;
-import meta::pure::graphFetch::*;
-import meta::pure::metamodel::constraint::*;
-import meta::pure::mapping::*;
-import meta::pure::milestoning::*;
 import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::graphFetch::common::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::platform::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
+import meta::pure::graphFetch::*;
 import meta::pure::graphFetch::execution::*;
+import meta::pure::graphFetch::executionPlan::*;
+import meta::pure::graphFetch::routing::*;
+import meta::pure::mapping::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::mapping::modelToModel::inMemory::*;
-import meta::pure::graphFetch::executionPlan::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::convention::jackson::*;
-import meta::java::generation::expression::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::project::*;
-import meta::java::metamodel::factory::*;
-import meta::java::serialization::*;
+import meta::pure::metamodel::constraint::*;
+import meta::pure::milestoning::*;
 
-function <<access.private>> meta::alloy::runtime::java::generateInterfaceForUnit(typeInfo:UnitTypeInfo[1], unitIface:meta::java::metamodel::Class[1],conventions:Conventions[1], debug:DebugContext[1]): meta::java::metamodel::Class[*]
+function <<access.private>> meta::pure::executionPlan::engine::java::generateInterfaceForUnit(typeInfo:UnitTypeInfo[1], unitIface:meta::external::language::java::metamodel::Class[1],conventions:Conventions[1], debug:DebugContext[1]): meta::external::language::java::metamodel::Class[*]
 {
    print(if($debug.debug,|$debug.space+'generateInterfaceForUnit: \''+$typeInfo.type.name->toOne()+'\'\n', |''));
    let measure = $typeInfo.unit().measure->toOne();
@@ -46,12 +44,12 @@ function <<access.private>> meta::alloy::runtime::java::generateInterfaceForUnit
       ->concatenate($measureInterface);
 }
 
-function <<access.private>> meta::alloy::runtime::java::generateInterfaceForMeasure(measure: Type[1], conventions: Conventions[1], debug: DebugContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::generateInterfaceForMeasure(measure: meta::pure::metamodel::type::Type[1], conventions: Conventions[1], debug: DebugContext[1]): meta::external::language::java::metamodel::Class[1]
 {
    let result = $conventions->className($measure)->addModifiers(['public', 'interface']);
 }
 
-function meta::alloy::runtime::java::unitImplementationClasses(context:GenerationContext[1]): meta::java::metamodel::Class[*]
+function meta::pure::executionPlan::engine::java::unitImplementationClasses(context:GenerationContext[1]): meta::external::language::java::metamodel::Class[*]
 {
 
    $context.typeInfos->allUnitInfos()
@@ -60,15 +58,15 @@ function meta::alloy::runtime::java::unitImplementationClasses(context:Generatio
       ->map(uc| $context.baseProject->match([p0:Project[0]|$uc, p:Project[1]|$p->resolve($uc)]));
 }
 
-function <<access.private>> meta::alloy::runtime::java::createUnitClasses(context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::createUnitClasses(context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
     let conventions = $context.conventions;
     let unitTypesInMapping = $context.typeInfos->allUnitInfos()->map(uti | $uti.unit());
     let unitClassesUsed = $unitTypesInMapping->map(u| let conversionFunction = $u->cast(@Unit).conversionFunction->evaluateAndDeactivate()->toOne();
                                                       let inverseFunction = meta::pure::functions::math::calculateInverseFunction($conversionFunction)->evaluateAndDeactivate()->toOne();
-                                                      let generatedConversionFunction = $conversionFunction.expressionSequence->toOne()->cast(@ValueSpecification)->meta::java::generation::expression::generateJava($conventions, $debug)->codeToString($conventions);
-                                                      let generatedInverseFunction = $inverseFunction.expressionSequence->toOne()->cast(@ValueSpecification)->meta::java::generation::expression::generateJava($conventions, $debug)->codeToString($conventions);
-                                                      let variableCode = $conversionFunction->meta::java::generation::expression::getUnitConversionFunctionVariableName($conventions, $debug);
+                                                      let generatedConversionFunction = $conversionFunction.expressionSequence->toOne()->cast(@ValueSpecification)->generateJava($conventions, $debug);
+                                                      let generatedInverseFunction = $inverseFunction.expressionSequence->toOne()->cast(@ValueSpecification)->generateJava($conventions, $debug);
+                                                      let variableName = $conversionFunction->getUnitConversionFunctionVariableName($conventions, $debug);
 
                                                       $conventions->implClassName($u)
                                                                ->addModifiers('public')
@@ -86,8 +84,8 @@ function <<access.private>> meta::alloy::runtime::java::createUnitClasses(contex
                                                                      '    this.unitValue = unitValue;'
                                                                   )
                                                                )
-                                                               ->addMethod(^meta::java::metamodel::Method(
-                                                                                                     modifiers   = [meta::java::metamodel::Modifier.Public],
+                                                               ->addMethod(^meta::external::language::java::metamodel::Method(
+                                                                                                     modifiers   = [meta::external::language::java::metamodel::Modifier.Public],
                                                                                                      name        = 'createJsonObject',
                                                                                                      returnType  = javaClass('com.fasterxml.jackson.databind.JsonNode'),
                                                                                                      body        = 'ObjectMapper mapper = new ObjectMapper();\n' +
@@ -107,31 +105,18 @@ function <<access.private>> meta::alloy::runtime::java::createUnitClasses(contex
 
                                                                                                                     'return rootNode;'
                                                                                                   ))
-                                                               ->addMethod(^meta::java::metamodel::Method(
-                                                                                                     modifiers   = [meta::java::metamodel::Modifier.Public],
-                                                                                                     name        = 'getUnitType',
-                                                                                                     returnType  = javaString(),
-                                                                                                     body        = 'return this.unitType;'
-                                                                                                  ))
-                                                               ->addMethod(^meta::java::metamodel::Method(
-                                                                                                     modifiers   = [meta::java::metamodel::Modifier.Public],
-                                                                                                     name        = 'getUnitValue',
-                                                                                                     returnType  = javaNumber(),
-                                                                                                     body        = 'return this.unitValue;'
-                                                                                                  ))
-                                                               ->addMethod(^meta::java::metamodel::Method(
-                                                                                                     modifiers   = [meta::java::metamodel::Modifier.Public],
-                                                                                                     name        = 'convertToCanonical',
-                                                                                                     returnType  = javaNumber(),
-                                                                                                     body        = 'Number ' + $variableCode + '= this.unitValue;\n' + 'return ' + $generatedConversionFunction + ';'
-                                                                                                  ))
-                                                               ->addMethod(^meta::java::metamodel::Method(
-                                                                                                     modifiers   = [meta::java::metamodel::Modifier.Public, meta::java::metamodel::Modifier.Static],
-                                                                                                     parameters = ^meta::java::metamodel::Parameter(name='val', type=javaNumber()),
-                                                                                                     name        = 'inverse',
-                                                                                                     returnType  = javaNumber(),
-                                                                                                     body        = 'Number ' + $variableCode + '= val;\n' + 'return ' + $generatedInverseFunction + ';'
-                                                                                                  )););
+                                                               ->addMethod(cls| javaMethod('public', javaString(), 'getUnitType', [], j_return(j_this($cls)->j_field('unitType'))))
+                                                               ->addMethod(cls| javaMethod('public', javaNumber(), 'getUnitValue', [], j_return(j_this($cls)->j_field('unitValue'))))
+                                                               ->addMethod({cls|
+                                                                  let var = j_variable(javaNumber(), $variableName);
+                                                                  javaMethod('public', javaNumber(), 'convertToCanonical', [],
+                                                                             [
+                                                                                $var->j_declare(j_this($cls)->j_field('unitValue')),
+                                                                                j_return($generatedConversionFunction)
+                                                                             ]);
+                                                                 })
+                                                               ->addMethod(javaMethod(['public', 'static'], javaNumber(), 'inverse', j_parameter(javaNumber(), $variableName), j_return($generatedInverseFunction)));
+                                               );
 
    mergeProjects(
       newProject()->addClasses($unitClassesUsed)
@@ -140,14 +125,14 @@ function <<access.private>> meta::alloy::runtime::java::createUnitClasses(contex
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::createUnitDependencies(context:GenerationContext[1], debug:DebugContext[1]): meta::java::generation::code::Code[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::createUnitDependencies(context:GenerationContext[1], debug:DebugContext[1]): Code[1]
 {
    let conventions = $context.conventions;
    let unitTypesInMapping = $context.typeInfos->allUnitInfos()->map(uti | $uti.unit());
    if ($unitTypesInMapping->size() > 0,
        | let u = $unitTypesInMapping->first();
          let conversionFunction = $u->cast(@Unit).conversionFunction->evaluateAndDeactivate()->toOne();
-         let generatedConversionFunctionCode = $conversionFunction.expressionSequence->toOne()->cast(@ValueSpecification)->meta::java::generation::expression::generateJava($conventions, $debug);
+         let generatedConversionFunctionCode = $conversionFunction.expressionSequence->toOne()->cast(@ValueSpecification)->generateJava($conventions, $debug);
          let conversionFunctionCodeWithDependency = $generatedConversionFunctionCode;,
-       | ^Code(type=^meta::java::metamodel::Type()));
+       | ^Code(type=^meta::external::language::java::metamodel::Type()));
 }
