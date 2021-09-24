@@ -25,7 +25,6 @@ import { EditorStoreProvider, useEditorStore } from '../../stores/EditorStore';
 import { StatusBar } from './StatusBar';
 import { EditPanel } from './edit-panel/EditPanel';
 import { flowResult } from 'mobx';
-import { parse } from 'query-string';
 import { FileEditorState } from '../../stores/EditorState';
 import { FileSearchCommand } from './command-center/FileSearchCommand';
 import { TextSearchCommand } from './command-center/TextSearchCommand';
@@ -40,6 +39,7 @@ import {
   getControlledResizablePanelProps,
 } from '@finos/legend-art';
 import { useResizeDetector } from 'react-resize-detector';
+import { getQueryParameters } from '@finos/legend-shared';
 
 interface EditorQueryParams {
   mode?: string;
@@ -135,7 +135,9 @@ export const EditorInner = observer(() => {
 
   // Initialize the app
   useEffect(() => {
-    const queryParams = parse(window.location.search) as EditorQueryParams;
+    const queryParams = getQueryParameters<EditorQueryParams>(
+      window.location.search,
+    );
     flowResult(
       editorStore.initialize(
         false,
