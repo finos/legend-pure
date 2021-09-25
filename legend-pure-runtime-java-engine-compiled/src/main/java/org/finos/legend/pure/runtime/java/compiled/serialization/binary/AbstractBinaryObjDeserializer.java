@@ -37,23 +37,18 @@ abstract class AbstractBinaryObjDeserializer implements BinaryObjDeserializer
     @Override
     public Obj deserialize(Reader reader)
     {
-        boolean isEnum = reader.readBoolean();
-        SourceInformation sourceInformation = readSourceInformation(reader);
-        String identifier = readIdentifier(reader);
+        byte code = reader.readByte();
+        boolean isEnum = BinaryGraphSerializationTypes.isEnum(code);
         String classifier = readClassifier(reader);
-        String name = readName(reader);
+        String identifier = readIdentifier(reader);
+        String name = BinaryGraphSerializationTypes.hasName(code) ? readName(reader) : null;
+        SourceInformation sourceInformation = BinaryGraphSerializationTypes.hasSourceInfo(code) ? readSourceInformation(reader) : null;
         ListIterable<PropertyValue> propertiesList = readPropertyValues(reader);
-        return Obj.newObj(sourceInformation, identifier, classifier, name, propertiesList, isEnum);
+        return Obj.newObj(classifier, identifier, name, propertiesList, sourceInformation, isEnum);
     }
 
     protected SourceInformation readSourceInformation(Reader reader)
     {
-        boolean hasSourceInfo = reader.readBoolean();
-        if (!hasSourceInfo)
-        {
-            return null;
-        }
-
         String sourceId = readString(reader);
         int startLine = reader.readInt();
         int startColumn = reader.readInt();

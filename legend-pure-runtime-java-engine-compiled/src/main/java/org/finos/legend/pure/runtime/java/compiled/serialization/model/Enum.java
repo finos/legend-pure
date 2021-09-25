@@ -20,9 +20,9 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class Enum extends Obj
 {
-    Enum(SourceInformation sourceInformation, String identifier, String classifier, String name, ListIterable<PropertyValue> propertiesList)
+    Enum(String classifier, String identifier, String name, ListIterable<PropertyValue> propertiesList, SourceInformation sourceInformation)
     {
-        super(sourceInformation, identifier, classifier, name, propertiesList);
+        super(classifier, identifier, name, propertiesList, sourceInformation);
     }
 
     @Override

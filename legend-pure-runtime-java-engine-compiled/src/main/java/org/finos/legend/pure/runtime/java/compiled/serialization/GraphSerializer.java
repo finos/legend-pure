@@ -69,7 +69,7 @@ public class GraphSerializer
         String classifierString = classifierCaches.getClassifierId(instance.getClassifier());
         ListIterable<PropertyValue> propertyValues = collectProperties(instance, idBuilder, classifierCaches, processorSupport);
         boolean isEnum = classifierCaches.isEnum(instance);
-        return Obj.newObj(sourceInformation, identifier, classifierString, instance.getName(), propertyValues, isEnum);
+        return Obj.newObj(classifierString, identifier, instance.getName(), propertyValues, sourceInformation, isEnum);
     }
 
     private static ListIterable<PropertyValue> collectProperties(CoreInstance instance, IdBuilder idBuilder, ClassifierCaches classifierCaches, ProcessorSupport processorSupport)

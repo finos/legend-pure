@@ -22,34 +22,29 @@ import java.util.Objects;
 
 public class Obj
 {
-    private final SourceInformation sourceInformation;
-    private final String identifier;
     private final String classifier;
+    private final String identifier;
     private final String name;
     private final ListIterable<PropertyValue> properties;
+    private final SourceInformation sourceInformation;
 
-    protected Obj(SourceInformation sourceInformation, String identifier, String classifier, String name, ListIterable<PropertyValue> propertiesList)
+    protected Obj(String classifier, String identifier, String name, ListIterable<PropertyValue> propertiesList, SourceInformation sourceInformation)
     {
-        this.sourceInformation = sourceInformation;
-        this.identifier = identifier;
         this.classifier = classifier;
+        this.identifier = identifier;
         this.name = name;
         this.properties = (propertiesList == null) ? Lists.immutable.empty() : propertiesList;
-    }
-
-    public SourceInformation getSourceInformation()
-    {
-        return this.sourceInformation;
-    }
-
-    public String getIdentifier()
-    {
-        return this.identifier;
+        this.sourceInformation = sourceInformation;
     }
 
     public String getClassifier()
     {
         return this.classifier;
+    }
+
+    public String getIdentifier()
+    {
+        return this.identifier;
     }
 
     public String getName()
@@ -60,6 +55,11 @@ public class Obj
     public ListIterable<PropertyValue> getPropertyValues()
     {
         return this.properties;
+    }
+
+    public SourceInformation getSourceInformation()
+    {
+        return this.sourceInformation;
     }
 
     public boolean isEnum()
@@ -75,15 +75,15 @@ public class Obj
             return true;
         }
 
-        if (other == null || this.getClass() != other.getClass())
+        if (!(other instanceof Obj))
         {
             return false;
         }
 
         Obj that = (Obj) other;
         return (isEnum() == that.isEnum()) &&
-                this.identifier.equals(that.identifier) &&
                 this.classifier.equals(that.classifier) &&
+                this.identifier.equals(that.identifier) &&
                 Objects.equals(this.name, that.name) &&
                 Objects.equals(this.sourceInformation, that.sourceInformation) &&
                 this.properties.equals(that.properties);
@@ -114,10 +114,10 @@ public class Obj
         return builder.toString();
     }
 
-    public static Obj newObj(SourceInformation sourceInformation, String identifier, String classifier, String name, ListIterable<PropertyValue> propertiesList, boolean isEnum)
+    public static Obj newObj(String classifier, String identifier, String name, ListIterable<PropertyValue> propertiesList, SourceInformation sourceInformation, boolean isEnum)
     {
         return isEnum ?
-                new Enum(sourceInformation, identifier, classifier, name, propertiesList) :
-                new Obj(sourceInformation, identifier, classifier, name, propertiesList);
+                new Enum(classifier, identifier, name, propertiesList, sourceInformation) :
+                new Obj(classifier, identifier, name, propertiesList, sourceInformation);
     }
 }
