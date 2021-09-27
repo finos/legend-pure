@@ -1,0 +1,453 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+###Diagram
+Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.06055, height=678.00000)
+{
+    TypeView ServiceStore_$_0(
+        type=meta::servicestore::metamodel::ServiceStore,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(309.00000, 117.00000),
+        width=138.61523,
+        height=48.00000)
+
+    TypeView ServiceStoreElement_$_1(
+        type=meta::servicestore::metamodel::ServiceStoreElement,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(308.00000, 247.00000),
+        width=140.05859,
+        height=60.00000)
+
+    TypeView ServiceGroup_$_2(
+        type=meta::servicestore::metamodel::ServiceGroup,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(167.00000, 382.00000),
+        width=98.69727,
+        height=36.00000)
+
+    TypeView Service_$_3(
+        type=meta::servicestore::metamodel::Service,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(481.00000, 372.00000),
+        width=146.55371,
+        height=48.00000)
+
+    TypeView ServiceParameter_$_4(
+        type=meta::servicestore::metamodel::ServiceParameter,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(494.00000, 486.00000),
+        width=123.95752,
+        height=60.00000)
+
+    TypeView TypeReference_$_5(
+        type=meta::servicestore::metamodel::TypeReference,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(502.00000, 600.00000),
+        width=105.14844,
+        height=48.00000)
+
+    TypeView BooleanTypeReference_$_6(
+        type=meta::servicestore::metamodel::BooleanTypeReference,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(341.00000, 758.00000),
+        width=152.48633,
+        height=36.00000)
+
+    TypeView FloatTypeReference_$_7(
+        type=meta::servicestore::metamodel::FloatTypeReference,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(522.00000, 755.00000),
+        width=133.81250,
+        height=36.00000)
+
+    TypeView IntegerTypeReference_$_8(
+        type=meta::servicestore::metamodel::IntegerTypeReference,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(683.00000, 756.00000),
+        width=145.15625,
+        height=36.00000)
+
+    TypeView StringTypeReference_$_9(
+        type=meta::servicestore::metamodel::StringTypeReference,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(855.00000, 758.00000),
+        width=139.81250,
+        height=36.00000)
+
+    TypeView ComplexTypeReference_$_10(
+        type=meta::servicestore::metamodel::ComplexTypeReference,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(113.00000, 759.00000),
+        width=155.82617,
+        height=36.00000)
+
+    TypeView SecurityScheme_$_11(
+        type=meta::servicestore::metamodel::SecurityScheme,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(838.00000, 501.00000),
+        width=113.38086,
+        height=36.00000)
+
+    TypeView SerializationFormat_$_12(
+        type=meta::servicestore::metamodel::SerializationFormat,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(768.00000, 595.00000),
+        width=135.58594,
+        height=60.00000)
+
+    TypeView RootServiceInstanceSetImplementation_$_13(
+        type=meta::servicestore::metamodel::mapping::RootServiceInstanceSetImplementation,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(1658.00000, 163.00000),
+        width=246.06055,
+        height=36.00000)
+
+    TypeView ServiceMapping_$_14(
+        type=meta::servicestore::metamodel::mapping::ServiceMapping,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(1726.00000, 379.00000),
+        width=112.02734,
+        height=36.00000)
+
+
+    TypeView ServiceParameterMapping_$_16(
+        type=meta::servicestore::metamodel::mapping::ServiceParameterMapping,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0,
+        position=(1557.00000, 641.00000),
+        width=170.73242,
+        height=36.00000)
+
+
+
+    PropertyView pview_17(property=meta::servicestore::metamodel::ServiceStoreElement.owner,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(378.02930,277.00000),(378.30762,141.00000)],
+        label='',
+        source=ServiceStoreElement_$_1,
+        target=ServiceStore_$_0,
+        propertyPosition=(411.22823, 130.50000),
+        multiplicityPosition=(384.55440, 130.50000))
+
+    PropertyView pview_18(property=meta::servicestore::metamodel::ServiceStore.elements,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(378.30762,141.00000),(378.02930,277.00000)],
+        label='',
+        source=ServiceStore_$_0,
+        target=ServiceStoreElement_$_1,
+        propertyPosition=(342.36901, 196.50000),
+        multiplicityPosition=(411.06042, 196.50000))
+
+    PropertyView pview_19(property=meta::servicestore::metamodel::ServiceGroup.elements,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(216.34863,400.00000),(378.02930,277.00000)],
+        label='',
+        source=ServiceGroup_$_2,
+        target=ServiceStoreElement_$_1,
+        propertyPosition=(371.56472, 272.50000),
+        multiplicityPosition=(346.89479, 272.50000))
+
+    PropertyView pview_20(property=meta::servicestore::metamodel::ServiceStoreElement.parent,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(378.02930,277.00000),(216.34863,400.00000)],
+        label='',
+        source=ServiceStoreElement_$_1,
+        target=ServiceGroup_$_2,
+        propertyPosition=(218.95355, 331.50000),
+        multiplicityPosition=(272.97894, 331.50000))
+
+    PropertyView pview_21(property=meta::servicestore::metamodel::Service.parameters,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(554.27686,396.00000),(555.97876,516.00000)],
+        label='',
+        source=Service_$_3,
+        target=ServiceParameter_$_4,
+        propertyPosition=(588.52301, 435.50000),
+        multiplicityPosition=(563.85309, 435.50000))
+
+    PropertyView pview_22(property=meta::servicestore::metamodel::Service.requestBody,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(554.27686,396.00000),(554.57422,624.00000)],
+        label='',
+        source=Service_$_3,
+        target=TypeReference_$_5,
+        propertyPosition=(587.51264, 549.50000),
+        multiplicityPosition=(547.49702, 549.50000))
+
+    PropertyView pview_23(property=meta::servicestore::metamodel::ServiceParameter.type,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(555.97876,516.00000),(554.57422,624.00000)],
+        label='',
+        source=ServiceParameter_$_4,
+        target=TypeReference_$_5,
+        propertyPosition=(545.17442, 549.50000),
+        multiplicityPosition=(587.85607, 549.50000))
+
+    PropertyView pview_24(property=meta::servicestore::metamodel::Service.response,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(554.27686,396.00000),(190.91309,777.00000)],
+        label='',
+        source=Service_$_3,
+        target=ComplexTypeReference_$_10,
+        propertyPosition=(171.68437, 708.50000),
+        multiplicityPosition=(241.04961, 708.50000))
+
+    PropertyView pview_25(property=meta::servicestore::metamodel::Service.security,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(554.27686,396.00000),(894.69043,519.00000)],
+        label='',
+        source=Service_$_3,
+        target=SecurityScheme_$_11,
+        propertyPosition=(877.84354, 450.50000),
+        multiplicityPosition=(853.17361, 450.50000))
+
+    PropertyView pview_26(property=meta::servicestore::metamodel::ServiceParameter.serializationFormat,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(555.97876,516.00000),(835.79297,625.00000)],
+        label='',
+        source=ServiceParameter_$_4,
+        target=SerializationFormat_$_12,
+        propertyPosition=(679.60254, 564.09164),
+        multiplicityPosition=(760.95410, 543.09164))
+
+    PropertyView pview_27(property=meta::servicestore::metamodel::mapping::ServiceMapping.owner,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(1782.01367,397.00000),(1781.03027,181.00000)],
+        label='',
+        source=ServiceMapping_$_14,
+        target=RootServiceInstanceSetImplementation_$_13,
+        propertyPosition=(1761.39835, 164.50000),
+        multiplicityPosition=(1814.08194, 164.50000))
+
+    PropertyView pview_28(property=meta::servicestore::metamodel::mapping::ServiceMapping.service,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(1782.01367,397.00000),(554.27686,396.00000)],
+        label='',
+        source=ServiceMapping_$_14,
+        target=Service_$_3,
+        propertyPosition=(660.52344, 345.55968),
+        multiplicityPosition=(660.52344, 366.55968))
+
+    PropertyView pview_29(property=meta::servicestore::metamodel::mapping::RootServiceInstanceSetImplementation.servicesMapping,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(1781.03027,181.00000),(1782.01367,397.00000)],
+        label='',
+        source=RootServiceInstanceSetImplementation_$_13,
+        target=ServiceMapping_$_14,
+        propertyPosition=(1814.90144, 328.50000),
+        multiplicityPosition=(1790.23152, 328.50000))
+
+
+    PropertyView pview_31(property=meta::servicestore::metamodel::mapping::ServiceParameterMapping.serviceParameter,
+        stereotypesVisible=true,
+        nameVisible=true,
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE,
+        points=[(1642.36621,659.00000),(555.97876,516.00000)],
+        label='',
+        source=ServiceParameterMapping_$_16,
+        target=ServiceParameter_$_4,
+        propertyPosition=(650.92725, 473.65820),
+        multiplicityPosition=(650.92725, 494.65820))
+
+
+   GeneralizationView gview_33(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(378.02930,277.00000),(216.34863,400.00000)],
+       label='',
+       source=ServiceGroup_$_2,
+       target=ServiceStoreElement_$_1)
+
+   GeneralizationView gview_34(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(378.02930,277.00000),(554.27686,396.00000)],
+       label='',
+       source=Service_$_3,
+       target=ServiceStoreElement_$_1)
+
+   GeneralizationView gview_35(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(554.57422,624.00000),(417.24316,776.00000)],
+       label='',
+       source=BooleanTypeReference_$_6,
+       target=TypeReference_$_5)
+
+   GeneralizationView gview_36(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(554.57422,624.00000),(588.90625,773.00000)],
+       label='',
+       source=FloatTypeReference_$_7,
+       target=TypeReference_$_5)
+
+   GeneralizationView gview_37(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(554.57422,624.00000),(755.57813,774.00000)],
+       label='',
+       source=IntegerTypeReference_$_8,
+       target=TypeReference_$_5)
+
+   GeneralizationView gview_38(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(554.57422,624.00000),(924.90625,776.00000)],
+       label='',
+       source=StringTypeReference_$_9,
+       target=TypeReference_$_5)
+
+   GeneralizationView gview_39(color=#000000,
+       lineWidth=-1.0,
+       lineStyle=SIMPLE,
+       points=[(554.57422,624.00000),(190.91309,777.00000)],
+       label='',
+       source=ComplexTypeReference_$_10,
+       target=TypeReference_$_5)
+
+}
