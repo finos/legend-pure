@@ -15,6 +15,7 @@
  */
 
 import type { TreeData, TreeNodeData } from '@finos/legend-art';
+import type { GeneratorFn } from '@finos/legend-shared';
 import {
   ActionState,
   assertErrorThrown,
@@ -60,9 +61,7 @@ export abstract class TreeState<
   abstract getChildNodes(node: T): Promise<V[]>;
   abstract processChildNodes(node: T, childNodes: V[]): void;
 
-  *initialize(
-    this: TreeState<T, V>,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *initialize(): GeneratorFn<void> {
     if (this.loadInitialDataState.isInProgress) {
       this.editorStore.applicationStore.notifyWarning(
         'Tree state initialization is in progress',
@@ -99,15 +98,9 @@ export abstract class TreeState<
     this.setTreeData({ ...guaranteeNonNullable(this.treeData) });
   }
 
-  abstract openNode(
-    this: TreeState<T, V>,
-    node: T,
-  ): Generator<Promise<unknown>, void, unknown>;
+  abstract openNode(node: T): GeneratorFn<void>;
 
-  *expandNode(
-    this: TreeState<T, V>,
-    node: T,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *expandNode(node: T): GeneratorFn<void> {
     if (node.isLoading) {
       return;
     }
@@ -131,9 +124,7 @@ export abstract class TreeState<
     }
   }
 
-  *refreshTreeData(
-    this: TreeState<T, V>,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *refreshTreeData(): GeneratorFn<void> {
     const openingNodeIds = new Set(
       Array.from(this.getTreeData().nodes.values())
         .filter((node) => node.isOpen)

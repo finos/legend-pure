@@ -15,6 +15,7 @@
  */
 
 import type { TreeData, TreeNodeData } from '@finos/legend-art';
+import type { GeneratorFn } from '@finos/legend-shared';
 import {
   ActionState,
   addUniqueEntry,
@@ -245,7 +246,7 @@ export class TestRunnerState {
     }
   }
 
-  *buildTestTreeData(): Generator<Promise<unknown>, void, unknown> {
+  *buildTestTreeData(): GeneratorFn<void> {
     if (this.treeBuildingState.isInProgress) {
       return;
     }
@@ -331,9 +332,7 @@ export class TestRunnerState {
     return Promise.resolve();
   }
 
-  *pollTestRunnerResult(
-    this: TestRunnerState,
-  ): Generator<Promise<unknown> | undefined, void, unknown> {
+  *pollTestRunnerResult(): GeneratorFn<void> {
     if (!this.checkTestRunnerState.isInInitialState) {
       return;
     }
@@ -393,9 +392,7 @@ export class TestRunnerState {
     return Promise.resolve();
   }
 
-  *rerunTestSuite(
-    this: TestRunnerState,
-  ): Generator<Promise<unknown> | undefined, void, unknown> {
+  *rerunTestSuite(): GeneratorFn<void> {
     if (this.editorStore.testRunState.isInProgress) {
       return;
     }
@@ -407,9 +404,7 @@ export class TestRunnerState {
     );
   }
 
-  *cancelTestRun(
-    this: TestRunnerState,
-  ): Generator<Promise<unknown> | undefined, void, unknown> {
+  *cancelTestRun(): GeneratorFn<void> {
     if (!this.editorStore.testRunState.isInProgress) {
       return;
     }

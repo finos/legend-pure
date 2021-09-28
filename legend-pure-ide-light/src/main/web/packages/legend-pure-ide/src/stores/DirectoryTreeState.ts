@@ -22,6 +22,7 @@ import { action, flow, flowResult, makeObservable, observable } from 'mobx';
 import type { EditorStore } from './EditorStore';
 import type { FileCoordinate } from '../models/PureFile';
 import { ACTIVITY_MODE } from './EditorConfig';
+import type { GeneratorFn } from '@finos/legend-shared';
 import { assertTrue, guaranteeNonNullable } from '@finos/legend-shared';
 import type { TreeData } from '@finos/legend-art';
 
@@ -120,21 +121,17 @@ export class DirectoryTreeState extends TreeState<
     node.childrenIds = childrenIds;
   }
 
-  *openNode(
-    this: TreeState<DirectoryTreeNode, DirectoryNode>,
-    node: DirectoryTreeNode,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *openNode(node: DirectoryTreeNode): GeneratorFn<void> {
     if (node.data.isFileNode) {
       yield flowResult(this.editorStore.loadFile(node.data.li_attr.path));
     }
   }
 
   *revealPath(
-    this: DirectoryTreeState,
     path: string,
     forceOpenDirectoryTreePanel: boolean,
     coordinate?: FileCoordinate,
-  ): Generator<Promise<unknown>, void, unknown> {
+  ): GeneratorFn<void> {
     if (forceOpenDirectoryTreePanel) {
       this.editorStore.setActiveActivity(ACTIVITY_MODE.FILE, {
         keepShowingIfMatchedCurrent: true,

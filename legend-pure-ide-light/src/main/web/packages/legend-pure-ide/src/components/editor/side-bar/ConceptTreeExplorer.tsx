@@ -44,7 +44,7 @@ import {
 } from '@finos/legend-art';
 import { isNonNullable } from '@finos/legend-shared';
 
-const FileExplorerContextMenu = observer(
+const ConceptExplorerContextMenu = observer(
   (
     props: {
       node: ConceptTreeNode;
@@ -172,7 +172,7 @@ const ConceptTreeNodeContainer: React.FC<
   return (
     <ContextMenu
       content={
-        <FileExplorerContextMenu
+        <ConceptExplorerContextMenu
           node={node}
           viewConceptSource={viewConceptSource}
         />

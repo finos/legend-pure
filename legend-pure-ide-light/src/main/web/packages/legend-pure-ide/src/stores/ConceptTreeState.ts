@@ -26,6 +26,7 @@ import { action, flow, flowResult, makeObservable, observable } from 'mobx';
 import type { EditorStore } from './EditorStore';
 import { FileCoordinate } from '../models/PureFile';
 import type { ConceptActivity } from '../models/Initialization';
+import type { GeneratorFn } from '@finos/legend-shared';
 import { ActionState } from '@finos/legend-shared';
 import type { TreeData } from '@finos/legend-art';
 
@@ -93,30 +94,29 @@ export class ConceptTreeState extends TreeState<ConceptTreeNode, ConceptNode> {
     node.childrenIds = childrenIds;
   }
 
-  *openNode(
-    this: ConceptTreeState,
-    node: ConceptTreeNode,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *openNode(node: ConceptTreeNode): GeneratorFn<void> {
     if (
       node.data.li_attr instanceof PropertyConceptAttribute ||
       node.data.li_attr instanceof ElementConceptAttribute
     ) {
-      yield flowResult(
-        this.editorStore.loadFile(
-          node.data.li_attr.file,
-          new FileCoordinate(
+      if (node.data.li_attr.pureType === 'Diagram') {
+        alert('youyan');
+      } else {
+        yield flowResult(
+          this.editorStore.loadFile(
             node.data.li_attr.file,
-            Number.parseInt(node.data.li_attr.line, 10),
-            Number.parseInt(node.data.li_attr.column, 10),
+            new FileCoordinate(
+              node.data.li_attr.file,
+              Number.parseInt(node.data.li_attr.line, 10),
+              Number.parseInt(node.data.li_attr.column, 10),
+            ),
           ),
-        ),
-      );
+        );
+      }
     }
   }
 
-  *pollConceptsActivity(
-    this: ConceptTreeState,
-  ): Generator<Promise<unknown> | undefined, void, unknown> {
+  *pollConceptsActivity(): GeneratorFn<void> {
     if (!this.loadConceptActivity.isInInitialState) {
       return;
     }

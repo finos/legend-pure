@@ -78,7 +78,7 @@ import {
   ActionAlertType,
   useApplicationStore,
 } from '@finos/legend-application';
-import type { Clazz, PlainObject } from '@finos/legend-shared';
+import type { Clazz, GeneratorFn, PlainObject } from '@finos/legend-shared';
 import {
   NetworkClient,
   ActionState,
@@ -268,12 +268,11 @@ export class EditorStore {
    * If either of them does not exist, we cannot proceed.
    */
   *initialize(
-    this: EditorStore,
     fullInit: boolean,
     func: (() => Promise<void>) | undefined,
     mode: string | undefined,
     fastCompile: string | undefined,
-  ): Generator<Promise<unknown>, void, unknown> {
+  ): GeneratorFn<void> {
     if (!this.initState.isInInitialState) {
       this.applicationStore.notifyIllegalState(
         'Editor store is re-initialized',
@@ -349,10 +348,7 @@ export class EditorStore {
     this.initState.pass();
   }
 
-  *checkIfSessionWakingUp(
-    this: EditorStore,
-    message?: string,
-  ): Generator<Promise<unknown> | undefined, void, unknown> {
+  *checkIfSessionWakingUp(message?: string): GeneratorFn<void> {
     this.setBlockingAlert({
       message: message ?? 'Checking IDE session...',
       showLoading: true,
@@ -453,10 +449,7 @@ export class EditorStore {
     }
   }
 
-  *loadFile(
-    path: string,
-    coordinate?: FileCoordinate,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *loadFile(path: string, coordinate?: FileCoordinate): GeneratorFn<void> {
     const existingFileState = this.openedEditorStates.find(
       (editorState) =>
         editorState instanceof FileEditorState && editorState.path === path,
@@ -486,7 +479,7 @@ export class EditorStore {
     this.setCurrentEditorState(fileState);
   }
 
-  *reloadFile(path: string): Generator<Promise<unknown>, void, unknown> {
+  *reloadFile(path: string): GeneratorFn<void> {
     const existingFileState = this.openedEditorStates.find(
       (editorState) =>
         editorState instanceof FileEditorState && editorState.path === path,
@@ -499,12 +492,11 @@ export class EditorStore {
   }
 
   *execute(
-    this: EditorStore,
     url: string,
     extraParams: Record<PropertyKey, unknown>,
     checkExecutionStatus: boolean,
     manageResult: (result: ExecutionResult) => Promise<void>,
-  ): Generator<Promise<unknown>, void, unknown> {
+  ): GeneratorFn<void> {
     if (!this.initState.hasSucceeded) {
       this.applicationStore.notifyWarning(
         `Can't execute while initializing application`,
@@ -653,7 +645,7 @@ export class EditorStore {
     return Promise.resolve();
   }
 
-  *executeGo(this: EditorStore): Generator<Promise<unknown>, void, unknown> {
+  *executeGo(): GeneratorFn<void> {
     yield flowResult(
       this.execute('executeGo', {}, true, (result: ExecutionResult) =>
         flowResult(this.manageExecuteGoResult(result)),
@@ -661,9 +653,7 @@ export class EditorStore {
     );
   }
 
-  *manageExecuteGoResult(
-    result: ExecutionResult,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *manageExecuteGoResult(result: ExecutionResult): GeneratorFn<void> {
     const refreshTreesPromise = flowResult(this.refreshTrees());
     if (result instanceof ExecutionFailureResult) {
       yield flowResult(
@@ -698,10 +688,7 @@ export class EditorStore {
     yield refreshTreesPromise;
   }
 
-  *executeTests(
-    path: string,
-    relevantTestsOnly?: boolean,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *executeTests(path: string, relevantTestsOnly?: boolean): GeneratorFn<void> {
     if (this.testRunState.isInProgress) {
       this.applicationStore.notifyWarning(
         'Test runner is working. Please try again later',
@@ -754,16 +741,11 @@ export class EditorStore {
     );
   }
 
-  *executeFullTestSuite(
-    relevantTestsOnly?: boolean,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *executeFullTestSuite(relevantTestsOnly?: boolean): GeneratorFn<void> {
     yield flowResult(this.executeTests('::', relevantTestsOnly));
   }
 
-  *executeNavigation(
-    this: EditorStore,
-    coordinate: FileCoordinate,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *executeNavigation(coordinate: FileCoordinate): GeneratorFn<void> {
     this.navigationStack.push(coordinate);
     yield flowResult(
       this.execute(
@@ -792,7 +774,7 @@ export class EditorStore {
     );
   }
 
-  *navigateBack(this: EditorStore): Generator<Promise<unknown>, void, unknown> {
+  *navigateBack(): GeneratorFn<void> {
     if (this.navigationStack.length === 0) {
       this.applicationStore.notifyWarning(
         `Can't navigate back any further - navigation stack is empty`,
@@ -807,10 +789,7 @@ export class EditorStore {
     }
   }
 
-  *executeSaveAndReset(
-    this: EditorStore,
-    fullInit: boolean,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *executeSaveAndReset(fullInit: boolean): GeneratorFn<void> {
     yield flowResult(
       this.execute(
         'executeSaveAndReset',
@@ -834,10 +813,7 @@ export class EditorStore {
     );
   }
 
-  *fullReCompile(
-    this: EditorStore,
-    fullInit: boolean,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *fullReCompile(fullInit: boolean): GeneratorFn<void> {
     this.setActionAltertInfo({
       message: 'Are you sure you want to perform a full re-compile?',
       prompt: 'This may take a long time to complete',
@@ -860,7 +836,7 @@ export class EditorStore {
     });
   }
 
-  *refreshTrees(this: EditorStore): Generator<Promise<unknown>, void, unknown> {
+  *refreshTrees(): GeneratorFn<void> {
     yield Promise.all([
       this.directoryTreeState.refreshTreeData(),
       this.conceptTreeState.refreshTreeData(),
@@ -868,9 +844,8 @@ export class EditorStore {
   }
 
   *updateFileUsingSuggestionCandidate(
-    this: EditorStore,
     candidate: CandidateWithPackageNotImported,
-  ): Generator<Promise<unknown>, void, unknown> {
+  ): GeneratorFn<void> {
     this.setSearchState(undefined);
     yield flowResult(
       this.updateFile(
@@ -886,13 +861,12 @@ export class EditorStore {
   }
 
   *updateFile(
-    this: EditorStore,
     path: string,
     line: number,
     column: number,
     add: boolean,
     message: string,
-  ): Generator<Promise<unknown>, void, unknown> {
+  ): GeneratorFn<void> {
     yield flowResult(
       this.execute(
         'updateSource',
@@ -915,7 +889,7 @@ export class EditorStore {
     );
   }
 
-  *searchFile(this: EditorStore): Generator<Promise<unknown>, void, unknown> {
+  *searchFile(): GeneratorFn<void> {
     if (this.fileSearchCommandLoadingState.isInProgress) {
       return;
     }
@@ -927,7 +901,7 @@ export class EditorStore {
     this.fileSearchCommandLoadingState.pass();
   }
 
-  *searchText(this: EditorStore): Generator<Promise<unknown>, void, unknown> {
+  *searchText(): GeneratorFn<void> {
     if (this.textSearchCommandLoadingState.isInProgress) {
       return;
     }
@@ -951,10 +925,7 @@ export class EditorStore {
     }
   }
 
-  *findUsages(
-    this: EditorStore,
-    coordinate: FileCoordinate,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *findUsages(coordinate: FileCoordinate): GeneratorFn<void> {
     const errorMessage =
       'Error finding references. Please make sure that the code compiles and that you are looking for references of non primitive types!';
     let concept: UsageConcept;
@@ -997,9 +968,8 @@ export class EditorStore {
   }
 
   *command(
-    this: EditorStore,
     cmd: () => Promise<PlainObject<CommandResult>>,
-  ): Generator<Promise<unknown>, boolean, unknown> {
+  ): GeneratorFn<boolean> {
     try {
       const result = deserializeCommandResult(
         (yield cmd()) as PlainObject<CommandResult>,
@@ -1020,20 +990,14 @@ export class EditorStore {
     }
   }
 
-  *createNewDirectory(
-    this: EditorStore,
-    path: string,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *createNewDirectory(path: string): GeneratorFn<void> {
     yield flowResult(
       this.command(() => this.client.createFolder(trimPathLeadingSlash(path))),
     );
     yield flowResult(this.directoryTreeState.refreshTreeData());
   }
 
-  *createNewFile(
-    this: EditorStore,
-    path: string,
-  ): Generator<Promise<unknown>, void, unknown> {
+  *createNewFile(path: string): GeneratorFn<void> {
     const result = (yield flowResult(
       this.command(() => this.client.createFile(trimPathLeadingSlash(path))),
     )) as boolean;
@@ -1043,10 +1007,7 @@ export class EditorStore {
     }
   }
 
-  private *_deleteDirectoryOrFile(
-    this: EditorStore,
-    path: string,
-  ): Generator<Promise<unknown>, void, unknown> {
+  private *_deleteDirectoryOrFile(path: string): GeneratorFn<void> {
     yield flowResult(
       this.command(() =>
         this.client.deleteDirectoryOrFile(trimPathLeadingSlash(path)),
@@ -1061,11 +1022,10 @@ export class EditorStore {
   }
 
   *deleteDirectoryOrFile(
-    this: EditorStore,
     path: string,
     isDirectory: boolean,
     hasChildContent: boolean,
-  ): Generator<Promise<unknown>, void, unknown> {
+  ): GeneratorFn<void> {
     this.setActionAltertInfo({
       message: `Are you sure you would like to delete this ${
         isDirectory ? 'directory' : 'file'

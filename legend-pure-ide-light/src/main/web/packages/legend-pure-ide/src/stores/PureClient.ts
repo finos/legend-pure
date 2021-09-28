@@ -255,4 +255,16 @@ export class PureClient {
         sessionId: this.sessionId,
       },
     );
+
+  getDiagramInfo = (diagramPath: string): Promise<PlainObject<Usage>[]> =>
+    this.networkClient.get(`${this.baseUrl}/execute`, undefined, undefined, {
+      func: 'meta::pure::ide::diagram::getDiagramInfo_String_1__String_1_',
+      param: [`'${diagramPath}'`],
+    });
+
+  getDiagramClassInfo = (classPath: string): Promise<PlainObject<Usage>[]> =>
+    this.networkClient.get(`${this.baseUrl}/execute`, undefined, undefined, {
+      func: 'meta::pure::ide::diagram::getDiagramClassInfo_String_1__String_1_',
+      param: [`'${classPath}'`],
+    });
 }
