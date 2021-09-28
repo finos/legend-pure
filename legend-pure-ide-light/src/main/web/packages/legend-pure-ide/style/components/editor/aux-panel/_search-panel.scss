@@ -127,6 +127,7 @@
     @include flexHSpaceBetween;
 
     height: 2rem;
+    width: 100%;
     min-height: 2rem;
     padding-left: 0.5rem;
     cursor: pointer;
@@ -143,6 +144,10 @@
 
     &__label {
       user-select: none;
+    }
+
+    &__label--full {
+      width: calc(100% - 2.8rem);
     }
 
     &__label__candidate {

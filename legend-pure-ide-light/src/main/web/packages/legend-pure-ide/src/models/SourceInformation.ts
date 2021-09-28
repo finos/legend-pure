@@ -14,12 +14,24 @@
  * limitations under the License.
  */
 
-export interface SourceInformation {
-  sourceId: string;
-  line: number;
-  column: number;
-  startLine: number;
-  startColumn: number;
-  endLine: number;
-  endColumn: number;
+import { createModelSchema, primitive } from 'serializr';
+
+export class SourceInformation {
+  source!: string;
+  line!: number;
+  column!: number;
+  startLine!: number;
+  startColumn!: number;
+  endLine!: number;
+  endColumn!: number;
 }
+
+createModelSchema(SourceInformation, {
+  column: primitive(),
+  endLine: primitive(),
+  endColumn: primitive(),
+  line: primitive(),
+  source: primitive(),
+  startLine: primitive(),
+  startColumn: primitive(),
+});

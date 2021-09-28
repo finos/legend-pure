@@ -91,6 +91,8 @@ import {
 import type { PureIDEConfig } from '../application/PureIDEConfig';
 import { PureClient } from './PureClient';
 import { PanelDisplayState } from '@finos/legend-art';
+import { DiagramEditorState } from './DiagramEditorState';
+import { DiagramInfo } from '../models/DiagramInfo';
 
 // FontFaceSet API is still experimental and has not been added to Typescript lib
 // See https://developer.mozilla.org/en-US/docs/Web/API/FontFaceSet
@@ -444,39 +446,53 @@ export class EditorStore {
   }
 
   openState(editorState: EditorState): void {
-    if (editorState instanceof FileEditorState) {
-      this.openFile(editorState.file, editorState.path);
+    const existingEditorState = this.openedEditorStates.find(
+      (openedEditorState) => openedEditorState === editorState,
+    );
+    if (!existingEditorState) {
+      this.openedEditorStates.push(editorState);
+    }
+    this.setCurrentEditorState(editorState);
+  }
+
+  *loadDiagram(path: string): GeneratorFn<void> {
+    const existingDiagramEditorState = this.openedEditorStates.find(
+      (editorState): editorState is DiagramEditorState =>
+        editorState instanceof DiagramEditorState && editorState.path === path,
+    );
+    if (existingDiagramEditorState) {
+      this.openState(existingDiagramEditorState);
+    } else {
+      yield flowResult(this.checkIfSessionWakingUp());
+      const newDiagramEditorState = new DiagramEditorState(
+        this,
+        deserialize(DiagramInfo, yield this.client.getDiagramInfo(path)),
+        path,
+      );
+      this.openState(newDiagramEditorState);
     }
   }
 
   *loadFile(path: string, coordinate?: FileCoordinate): GeneratorFn<void> {
-    const existingFileState = this.openedEditorStates.find(
-      (editorState) =>
+    const existingFileEditorState = this.openedEditorStates.find(
+      (editorState): editorState is FileEditorState =>
         editorState instanceof FileEditorState && editorState.path === path,
     );
-    if (existingFileState instanceof FileEditorState) {
+    if (existingFileEditorState) {
       if (coordinate) {
-        existingFileState.setCoordinate(coordinate);
+        existingFileEditorState.setCoordinate(coordinate);
       }
-      this.openFile(existingFileState.file, existingFileState.path);
+      this.openState(existingFileEditorState);
     } else {
-      const file = deserialize(PureFile, yield this.client.getFile(path));
       yield flowResult(this.checkIfSessionWakingUp());
-      this.openFile(file, path, coordinate);
+      const newFileEditorState = new FileEditorState(
+        this,
+        deserialize(PureFile, yield this.client.getFile(path)),
+        path,
+        coordinate,
+      );
+      this.openState(newFileEditorState);
     }
-  }
-
-  openFile(file: PureFile, path: string, coordinate?: FileCoordinate): void {
-    const existingFileState = this.openedEditorStates.find(
-      (editorState) =>
-        editorState instanceof FileEditorState && editorState.path === path,
-    );
-    const fileState =
-      existingFileState ?? new FileEditorState(this, file, path, coordinate);
-    if (!existingFileState) {
-      this.openedEditorStates.push(fileState);
-    }
-    this.setCurrentEditorState(fileState);
   }
 
   *reloadFile(path: string): GeneratorFn<void> {
@@ -485,9 +501,14 @@ export class EditorStore {
         editorState instanceof FileEditorState && editorState.path === path,
     );
     if (existingFileState instanceof FileEditorState) {
-      const file = deserialize(PureFile, yield this.client.getFile(path));
-      existingFileState.setFile(file);
+      existingFileState.setFile(
+        deserialize(PureFile, yield this.client.getFile(path)),
+      );
       existingFileState.setCoordinate(undefined);
+    } else if (existingFileState instanceof DiagramEditorState) {
+      existingFileState.setDiagramInfo(
+        deserialize(DiagramInfo, yield this.client.getDiagramInfo(path)),
+      );
     }
   }
 

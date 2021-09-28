@@ -108,7 +108,7 @@ const SearchResultEntryDisplay = observer(
               className="search-panel__entry__content__item"
             >
               <div
-                className="search-panel__entry__content__item__label"
+                className="search-panel__entry__content__item__label search-panel__entry__content__item__label--full"
                 title="Go to Result"
                 onClick={goToResult(coordinate)}
               >

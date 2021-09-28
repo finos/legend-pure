@@ -100,7 +100,9 @@ export class ConceptTreeState extends TreeState<ConceptTreeNode, ConceptNode> {
       node.data.li_attr instanceof ElementConceptAttribute
     ) {
       if (node.data.li_attr.pureType === 'Diagram') {
-        alert('youyan');
+        yield flowResult(
+          this.editorStore.loadDiagram(node.data.li_attr.pureId),
+        );
       } else {
         yield flowResult(
           this.editorStore.loadFile(

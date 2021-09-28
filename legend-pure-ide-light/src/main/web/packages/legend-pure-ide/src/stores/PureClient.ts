@@ -32,6 +32,7 @@ import type { Usage, UsageConcept } from '../models/Usage';
 import type { CommandResult } from '../models/Command';
 import type { NetworkClient, PlainObject } from '@finos/legend-shared';
 import { guaranteeNonNullable } from '@finos/legend-shared';
+import type { DiagramClassInfo, DiagramInfo } from '../models/DiagramInfo';
 
 export class PureClient {
   private networkClient: NetworkClient;
@@ -256,15 +257,33 @@ export class PureClient {
       },
     );
 
-  getDiagramInfo = (diagramPath: string): Promise<PlainObject<Usage>[]> =>
-    this.networkClient.get(`${this.baseUrl}/execute`, undefined, undefined, {
-      func: 'meta::pure::ide::diagram::getDiagramInfo_String_1__String_1_',
-      param: [`'${diagramPath}'`],
-    });
+  getDiagramInfo = async (
+    diagramPath: string,
+  ): Promise<PlainObject<DiagramInfo>> =>
+    JSON.parse(
+      await this.networkClient.get(
+        `${this.baseUrl}/execute`,
+        undefined,
+        undefined,
+        {
+          func: 'meta::pure::ide::diagram::getDiagramInfo_String_1__String_1_',
+          param: [`'${diagramPath}'`],
+        },
+      ),
+    );
 
-  getDiagramClassInfo = (classPath: string): Promise<PlainObject<Usage>[]> =>
-    this.networkClient.get(`${this.baseUrl}/execute`, undefined, undefined, {
-      func: 'meta::pure::ide::diagram::getDiagramClassInfo_String_1__String_1_',
-      param: [`'${classPath}'`],
-    });
+  getDiagramClassInfo = async (
+    classPath: string,
+  ): Promise<PlainObject<DiagramClassInfo>> =>
+    JSON.parse(
+      await this.networkClient.get(
+        `${this.baseUrl}/execute`,
+        undefined,
+        undefined,
+        {
+          func: 'meta::pure::ide::diagram::getDiagramClassInfo_String_1__String_1_',
+          param: [`'${classPath}'`],
+        },
+      ),
+    );
 }
