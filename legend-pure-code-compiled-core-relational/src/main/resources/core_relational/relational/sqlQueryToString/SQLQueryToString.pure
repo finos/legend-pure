@@ -239,7 +239,6 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getLi
       pair(Date,           ^LiteralProcessor(format = '\'%s\'', transform = {d:Date[1] | $d->convertDateToSqlString($dbTimeZone)}))
    ]);
 
-
    let specific = if ($dbType == DatabaseType.SybaseIQ,
                       | getLiteralProcessorsForSybaseIQ($dbTimeZone),
                       | if($dbType == DatabaseType.Sybase,
@@ -283,12 +282,11 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getLi
    ])
 }
 
-//TODO: Unit test
 function <<access.private>> meta::relational::functions::sqlQueryToString::getLiteralProcessorsForDatabricks(dbTimeZone:String[0..1]):Map<Type,LiteralProcessor>[1]
 {
    newMap([
       pair(StrictDate,     ^LiteralProcessor(format = 'to_date(\'%s\')',    transform = {d:StrictDate[1] | $d->convertDateToSqlString($dbTimeZone)})),
-      pair(DateTime,       ^LiteralProcessor(format = 'to_timestamp\'%s\'', transform = {d:DateTime[1] | $d->convertDateToSqlString($dbTimeZone)})),
+      pair(DateTime,       ^LiteralProcessor(format = 'to_timestamp(\'%s\')', transform = {d:DateTime[1] | $d->convertDateToSqlString($dbTimeZone)})),
       pair(Date,           ^LiteralProcessor(format = 'to_date(\'%s\')',    transform = {d:Date[1] | $d->convertDateToSqlString($dbTimeZone)}))
    ])
 }
@@ -998,25 +996,22 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::mapTo
    ]->filter(p | $p.first == $day).second->toOne();
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::dateDiffDatabricks(p:String[2..3]):Date[1]
+function <<access.private>> meta::relational::functions::sqlQueryToString::dateDiffDatabricks(p:String[2..3]):String[1]
 {
     let interval = if($p->size() == 2, |'DAY', |$p->at(2)->mapToDBUnitType());
-    if ($interval == 'YEAR'
-        | year($p->at(0)) - year($p->at(1)),
+    let cmd = if ($interval == 'YEAR',
+        | 'year('+ $p->at(0) +') - year('+ $p->at(1) +')',
         | if ($interval == 'MONTH',
-             | months_between($p->at(0), $p->at(1)),
-             | if ($interval == 'WEEK',
-                  | datediff($p->at(0), $p->at(1)) / 7,
-                  | if ($interval == 'DAY',
-                       | datediff($p->at(0), $p->at(1)),
-                       | fail('The DurationUnit \''+$p->at(2)+'\' is not supported yet for date_diff');'';},
-                       )
-                   )
-              )
-         )
+             | 'months_between('+ $p->at(0) +', '+ $p->at(1) +')',
+             | if ($interval == 'DAY',
+                  | 'datediff('+ $p->at(0) +', '+ $p->at(1) +')',
+                  | ''
+             )
+        )
     );
+    if ($cmd == '',|fail('The DurationUnit \''+$p->at(2)+'\' is not supported yet for date_diff'),|'');
+    [$cmd];
 }
-
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::formatMostRecentMemSnowflake(p:String[1..2], defaultDay:String[1]):String[*]
 {
@@ -1100,7 +1095,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='adddate(%s)', transform={p:String[3] | $p->at(0) + ', INTERVAL ' + $p->at(1) + ' ' + $p->at(2)->mapToDBUnitType()})),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='dateadd(%s)', transform={p:String[3] | $p->at(2)->mapToDBUnitType() + ', ' + $p->at(1) + ', ' + $p->at(0)})),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='date_add(%s)', transform={p:String[3] | '\'' + $p->at(2)->mapToDBUnitType() + '\', ' + $p->at(1) + ', ' + $p->at(0)})),
-                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='%s', transform={p:String[3] | $p->at(0) + ' + INTERVAL ' + $p->at(1) + ' ' + $p->at(2)->mapToDBUnitType()})) ]),
+                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='%s', transform={p:String[3] | $p->at(0) + ' + INTERVAL ' + $p->at(1) + ' ' + $p->at(2)->mapToDBUnitType()})),
                                                  choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='date_add(%s)', transform={p:String[3] | $p->at(0) + ', INTERVAL ' + $p->at(1) + ' ' + $p->at(2)->mapToDBUnitType()})) ]),
       forDynafunction('and',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|$p->makeString(' and ')}))]),
       forDynafunction('asin',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='asin(%s)'))]),
@@ -1206,7 +1201,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='dateadd(DAY, -(dayofmonth(current_date()) - 1), current_date())')),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='subdate(curdate(), INTERVAL dayofmonth(current_date()) - 1 DAY) ')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='DATE_TRUNC(\'MONTH\', CURRENT_DATE)%s', transform={p:String[*] | ''})),
-                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='trunc(CURRENT_DATE, \'MONTH\')%s', transform={p:String[*] | ''})),
+                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='trunc(current_date(), \'MONTH\')%s', transform={p:String[*] | ''})),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='date_trunc(\'month\', current_date)%s', transform={p:String[*] | ''})),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='dateadd(day, -(day(cast(getdate() as date)) - 1), cast(getdate() as date))'))]),
       forDynafunction('firstDayOfThisQuarter', [ choice($aSybase,                  $allStates,            ^ToSql(format='dateadd(QUARTER, quarter(today()) - 1, dateadd(DAY, -(datepart(dayofyear, today()) - 1), today()))%s', transform={p:String[*] | ''})),
@@ -1362,7 +1357,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='%s + case when %s - dayofweek(%s) > 0 then %s - dayofweek(%s) - 7 else %s - dayofweek(%s) end DAY', transform={p:String[1..2] | $p->formatMostRecentMemDb2('current date')}, parametersWithinWhenClause = [false, false])),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='dateadd(DAY, case when %s - DAY_OF_WEEK(%s) > 0 then %s - DAY_OF_WEEK(%s) - 7 else %s - DAY_OF_WEEK(%s) end, %s)', transform={p:String[1..2] | $p->formatMostRecentH2Sybase('current_date()')}, parametersWithinWhenClause = [false, false])),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='adddate(%s, INTERVAL case when %s - dayofweek(%s) > 0 then %s - dayofweek(%s) - 7 else %s - dayofweek(%s) end DAY)', transform={p:String[1..2] | $p->formatMostRecentMemDb2('curdate()')}, parametersWithinWhenClause = [false, false])),
-                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='trunc(current_date, \'WEEK\')%s', transform={p:String[*] | ''})),
+                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='date_sub(%s, case when dayofweek(%s) = %s then 0 else dayofweek(%s) - %s end)', transform={p:String[1..2] | $p->formatMostRecentDatabricks('current_date()')}, parametersWithinWhenClause = [false, false])),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='DATE_TRUNC(\'WEEK\', CURRENT_DATE)%s', transform={p:String[*] | ''})),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='date_add(\'day\', case when %s - day_of_week(%s) > 0 then %s - day_of_week(%s) - 7 else %s - day_of_week(%s) end, %s)', transform={p:String[1..2] | $p->formatMostRecentPresto('current_date')}, parametersWithinWhenClause = [false, false]))]),
       forDynafunction('now',                   [ choice($aSybase,                  $allStates,            ^ToSql(format='now(%s)', transform={p:String[*] | ''})),
@@ -1438,7 +1433,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='quarter(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='quarter(%s)')),
                                                  choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='extract( quarter from %s)'))]),                                                         
-      forDynafunction('quarterNumber',          [ choice($aSybase ,                 $allStates,            ^ToSql(format='quarter(%s)')),                         
+      forDynafunction('quarterNumber',          [ choice($aSybase ,                $allStates,            ^ToSql(format='quarter(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='quarter(%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='quarter(%s)')),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='quarter(%s)')),
@@ -1456,7 +1451,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='mod(%s,%s)')),
                                                  choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='mod(%s,%s)')),
-                                                 choice(DatabaseType.BigQuery,    $allStates,             ^ToSql(format='mod(%s,%s)'))]),
+                                                 choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='mod(%s,%s)'))]),
       forDynafunction('replace',               [ choice($allTypes,                 $allStates,            ^ToSql(format='replace(%s, %s, %s)'))]),
       forDynafunction('right',                 [ choice($aSybase,                  $allStates,            ^ToSql(format='right(%s,%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='right(%s,%s)')),
@@ -1474,7 +1469,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='round(%s, %s)', transform=transformRound_String_MANY__String_MANY_)),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='round((%s)::numeric, %s)', transform=transformRound_String_MANY__String_MANY_)),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='round((%s)::numeric, %s)', transform=transformRound_String_MANY__String_MANY_)),
-                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='round((%s)::numeric, %s)', transform=transformRound_String_MANY__String_MANY_)),
+                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='round(%s, %s)', transform=transformRound_String_MANY__String_MANY_)),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='round(%s, 0)')),
                                                  choice(DatabaseType.BigQuery ,    $allStates,            ^ToSql(format='round(%s, 0)'))]),                                                 
       forDynafunction('rtrim',                 [ choice($aSybase,                  $allStates,            ^ToSql(format='rtrim(%s)')),
@@ -1485,7 +1480,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='rtrim(%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='rtrim(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='rtrim(%s)')),
-                                                 choice(DatabaseType.BigQuery,    $allStates,             ^ToSql(format='rtrim(%s)'))]),                                                 
+                                                 choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='rtrim(%s)'))]),
       forDynafunction('second',                [ choice($aSybase ,                 $allStates,            ^ToSql(format='second(%s)')),                         
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='second(%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='second(%s)')),
@@ -1524,7 +1519,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='stddev_pop(%s)')),
                                                  choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='stddev_pop(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='stdevp(%s)')),
-                                                 choice(DatabaseType.BigQuery,    $allStates,             ^ToSql(format='stddev_pop(%s)'))]),                                                 
+                                                 choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='stddev_pop(%s)'))]),
       forDynafunction('stdDevSample',          [ choice($aSybase,                  $allStates,            ^ToSql(format='stddev_samp(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='stddev_samp(%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='stddev_samp(%s)')),
@@ -1547,7 +1542,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='current_date')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='current_date')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='cast(getdate() as date)')),
-                                                 choice(DatabaseType.BigQuery,    $allStates,             ^ToSql(format='CURRENT_DATE()'))]),
+                                                 choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='CURRENT_DATE()'))]),
       forDynafunction('toLower',               [ choice($allTypes,                 $allStates,            ^ToSql(format='lower(%s)'))]),
       forDynafunction('toOne',                 [ choice($allTypes,                 $allStates,            ^ToSql(format='%s'))]),
       forDynafunction('toString',              [ choice($aSybase,                  $allStates,            ^ToSql(format='cast(%s as varchar)')),
@@ -1558,7 +1553,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='cast(%s as string)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='cast(%s as varchar)')),
-                                                 choice(DatabaseType.BigQuery,    $allStates,             ^ToSql(format='cast(%s as string)'))]),                                                 
+                                                 choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='cast(%s as string)'))]),
       forDynafunction('toUpper',               [ choice($allTypes,                 $allStates,            ^ToSql(format='upper(%s)'))]),
       forDynafunction('trim',                  [ choice($notASybaseAse,            $allStates,            ^ToSql(format='trim(%s)')),
                                                  choice($sybaseAse,                $allStates,            ^ToSql(format='rtrim(ltrim(%s))')) ]),
@@ -1569,7 +1564,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='WEEKOFYEAR(%s)')),
                                                  choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='WEEKOFYEAR(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='datepart(wk, %s)')),
-                                                 choice(DatabaseType.BigQuery  ,    $allStates,           ^ToSql(format='extract(week from %s)'))]),
+                                                 choice(DatabaseType.BigQuery  ,   $allStates,            ^ToSql(format='extract(week from %s)'))]),
       forDynafunction('year',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='year(%s)'))])
    ]);
 
@@ -2186,7 +2181,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
                                     )
                               );
 
-  if(($dbConfig.dbType == DatabaseType.MemSQL || $dbConfig.dbType == DatabaseType.BigQuery) && $processedIdentifier->startsWith('"') && $processedIdentifier->endsWith('"'),
+  if(($dbConfig.dbType == DatabaseType.MemSQL || $dbConfig.dbType == DatabaseType.BigQuery || $dbConfig.dbType == DatabaseType.Databricks) && $processedIdentifier->startsWith('"') && $processedIdentifier->endsWith('"'),
        | '`' + $processedIdentifier->substring(1, $processedIdentifier->length() - 1) + '`', 
        | $processedIdentifier);
 }
@@ -2274,7 +2269,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::conve
 function <<access.private>> meta::relational::functions::sqlQueryToString::convertToDateDatabricks(params:String[*]):String[1]
 {
    assert( 2 - $params->size()  >= 0,'Incorrect number of parameters for convertDate: convertDate(column,[dateformat])');
-   assert($params->size()==1 || dateFormatsDelta()->contains($params->at(1)->replace('\'', '')) , | $params->at(1) +' not supported ');
+   assert($params->size()==1 || dateFormatsDatabricks()->contains($params->at(1)->replace('\'', '')) , | $params->at(1) +' not supported ');
    let dateFormat = if( $params->size() == 1,|'\'%Y-%m-%d\'' ,| $params->at(1););
    'to_date('+$params->at(0)+','+$dateFormat +')';
 }
@@ -2402,7 +2397,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::dateF
    ['yyyy-MM-dd', 'MMMyyyy', 'yyyyMMdd'];
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::dateFormatsDelta():String[*]
+function <<access.private>> meta::relational::functions::sqlQueryToString::dateFormatsDatabricks():String[*]
 {
    ['yyyy-MM-dd', 'MMMyyyy', 'yyyyMMdd'];
 }
