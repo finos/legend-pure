@@ -18,14 +18,14 @@ import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { AuxiliaryPanel } from './aux-panel/AuxiliaryPanel';
 import { SideBar } from './side-bar/SideBar';
+import type { KeyMap } from 'react-hotkeys';
 import { GlobalHotKeys } from 'react-hotkeys';
 import { ActivityBar } from './ActivityBar';
-import { IDE_HOTKEY, IDE_HOTKEY_MAP } from '../../stores/EditorConfig';
+import type { EditorHotkey } from '../../stores/EditorStore';
 import { EditorStoreProvider, useEditorStore } from '../../stores/EditorStore';
 import { StatusBar } from './StatusBar';
 import { EditPanel } from './edit-panel/EditPanel';
 import { flowResult } from 'mobx';
-import { FileEditorState } from '../../stores/EditorState';
 import { FileSearchCommand } from './command-center/FileSearchCommand';
 import { TextSearchCommand } from './command-center/TextSearchCommand';
 import { useApplicationStore } from '@finos/legend-application';
@@ -43,6 +43,19 @@ import { getQueryParameters } from '@finos/legend-shared';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { DndProvider } from 'react-dnd';
 
+const buildHotkeySupport = (
+  hotkeys: EditorHotkey[],
+): [KeyMap, { [key: string]: (keyEvent?: KeyboardEvent) => void }] => {
+  const keyMap: Record<PropertyKey, string[]> = {};
+  hotkeys.forEach((hotkey) => {
+    keyMap[hotkey.name] = hotkey.keyBinds;
+  });
+  const handlers: Record<PropertyKey, (keyEvent?: KeyboardEvent) => void> = {};
+  hotkeys.forEach((hotkey) => {
+    handlers[hotkey.name] = hotkey.handler;
+  });
+  return [keyMap, handlers];
+};
 interface EditorQueryParams {
   mode?: string;
   fastCompile?: string;
@@ -69,63 +82,9 @@ export const EditorInner = observer(() => {
   }, [editorStore, ref, height, width]);
 
   // Hotkeys
-  const keyMap = {
-    [IDE_HOTKEY.SEARCH_FILE]: IDE_HOTKEY_MAP[IDE_HOTKEY.SEARCH_FILE],
-    [IDE_HOTKEY.SEARCH_TEXT]: IDE_HOTKEY_MAP[IDE_HOTKEY.SEARCH_TEXT],
-    [IDE_HOTKEY.EXECUTE]: IDE_HOTKEY_MAP[IDE_HOTKEY.EXECUTE],
-    [IDE_HOTKEY.TOGGLE_AUX_PANEL]: IDE_HOTKEY_MAP[IDE_HOTKEY.TOGGLE_AUX_PANEL],
-    [IDE_HOTKEY.GO_TO_FILE]: IDE_HOTKEY_MAP[IDE_HOTKEY.GO_TO_FILE],
-    [IDE_HOTKEY.FULL_RECOMPILE]: IDE_HOTKEY_MAP[IDE_HOTKEY.FULL_RECOMPILE],
-    [IDE_HOTKEY.RUN_TEST]: IDE_HOTKEY_MAP[IDE_HOTKEY.RUN_TEST],
-    [IDE_HOTKEY.TOGGLE_OPEN_TABS_MENU]:
-      IDE_HOTKEY_MAP[IDE_HOTKEY.TOGGLE_OPEN_TABS_MENU],
-  };
-  const handlers = {
-    [IDE_HOTKEY.SEARCH_FILE]: editorStore.createGlobalHotKeyAction(() => {
-      editorStore.setOpenFileSearchCommand(true);
-    }),
-    [IDE_HOTKEY.SEARCH_TEXT]: editorStore.createGlobalHotKeyAction(() => {
-      editorStore.setOpenTextSearchCommand(true);
-    }),
-    [IDE_HOTKEY.EXECUTE]: editorStore.createGlobalHotKeyAction(() => {
-      flowResult(editorStore.executeGo()).catch(
-        applicationStore.alertIllegalUnhandledError,
-      );
-    }),
-    [IDE_HOTKEY.TOGGLE_AUX_PANEL]: editorStore.createGlobalHotKeyAction(() =>
-      editorStore.auxPanelDisplayState.toggle(),
-    ),
-    [IDE_HOTKEY.GO_TO_FILE]: editorStore.createGlobalHotKeyAction(() => {
-      const currentEditorState = editorStore.currentEditorState;
-      if (currentEditorState instanceof FileEditorState) {
-        editorStore.directoryTreeState.revealPath(
-          currentEditorState.filePath,
-          true,
-        );
-      }
-    }),
-    [IDE_HOTKEY.FULL_RECOMPILE]: editorStore.createGlobalHotKeyAction(
-      (event: KeyboardEvent | undefined) => {
-        flowResult(
-          editorStore.fullReCompile(Boolean(event?.shiftKey ?? event?.ctrlKey)),
-        ).catch(applicationStore.alertIllegalUnhandledError);
-      },
-    ),
-    [IDE_HOTKEY.RUN_TEST]: editorStore.createGlobalHotKeyAction(
-      (event: KeyboardEvent | undefined) => {
-        flowResult(editorStore.executeFullTestSuite(event?.shiftKey)).catch(
-          applicationStore.alertIllegalUnhandledError,
-        );
-      },
-    ),
-    // NOTE: right now this is fairly simplistic, we can create it to navigate in 2 directions like `Tab` and `Shift + Tab`.
-    // in VSCode for example, they always show the current tab on top/bottom based on the navigation direction
-    [IDE_HOTKEY.TOGGLE_OPEN_TABS_MENU]: editorStore.createGlobalHotKeyAction(
-      () => {
-        editorStore.setShowOpenedTabsMenu(!editorStore.showOpenedTabsMenu);
-      },
-    ),
-  };
+  const [hotkeyMapping, hotkeyHandlers] = buildHotkeySupport(
+    editorStore.hotkeys,
+  );
 
   // Cleanup the editor
   useEffect(
@@ -154,7 +113,11 @@ export const EditorInner = observer(() => {
 
   return (
     <div className="editor">
-      <GlobalHotKeys keyMap={keyMap} handlers={handlers}>
+      <GlobalHotKeys
+        keyMap={hotkeyMapping}
+        handlers={hotkeyHandlers}
+        allowChanges={true}
+      >
         <div className="editor__body">
           <ActivityBar />
           <div className="editor__content-container" ref={ref}>

@@ -27,17 +27,11 @@ import { flowResult } from 'mobx';
 import { useApplicationStore } from '@finos/legend-application';
 
 const DiagramCanvas = observer(
-  (
-    props: {
-      diagramEditorState: DiagramEditorState;
-    },
-    ref: React.Ref<HTMLDivElement>,
-  ) => {
+  (props: { diagramEditorState: DiagramEditorState }) => {
     const { diagramEditorState } = props;
     const applicationStore = useApplicationStore();
     const diagram = diagramEditorState.diagram;
-    const diagramCanvasRef =
-      ref as React.MutableRefObject<HTMLDivElement | null>;
+    const diagramCanvasRef = useRef<HTMLDivElement>(null);
 
     const { width, height } = useResizeDetector<HTMLDivElement>({
       refreshMode: 'debounce',
@@ -98,26 +92,16 @@ const DiagramCanvas = observer(
       />
     );
   },
-  { forwardRef: true },
 );
 
 export const DiagramEditor = observer(
   (props: { editorState: DiagramEditorState }) => {
     const { editorState } = props;
-    const diagramInfo = editorState.diagramInfo;
-    const diagramCanvasRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-      editorState.rebuild(diagramInfo);
-    }, [editorState, diagramInfo]);
 
     return (
       <div className="panel edit-panel">
         <div className="panel__content edit-panel__content edit-panel__content--headless">
-          <DiagramCanvas
-            ref={diagramCanvasRef}
-            diagramEditorState={editorState}
-          />
+          <DiagramCanvas diagramEditorState={editorState} />
         </div>
       </div>
     );

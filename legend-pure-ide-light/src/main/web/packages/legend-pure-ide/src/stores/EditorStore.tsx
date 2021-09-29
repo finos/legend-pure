@@ -17,7 +17,12 @@
 import { createContext, useContext } from 'react';
 import { useLocalObservable } from 'mobx-react-lite';
 import { action, flowResult, makeAutoObservable } from 'mobx';
-import { ACTIVITY_MODE, AUX_PANEL_MODE } from './EditorConfig';
+import {
+  ACTIVITY_MODE,
+  AUX_PANEL_MODE,
+  IDE_HOTKEY,
+  IDE_HOTKEY_MAP,
+} from './EditorConfig';
 import type { EditorState } from './EditorState';
 import { FileEditorState } from './EditorState';
 import { deserialize } from 'serializr';
@@ -143,12 +148,31 @@ class SearchCommandState {
   }
 }
 
+export class EditorHotkey {
+  name: string;
+  keyBinds: string[];
+  handler: (event?: KeyboardEvent) => void;
+
+  constructor(
+    name: string,
+    keyBinds: string[],
+    handler: (event?: KeyboardEvent) => void,
+  ) {
+    this.name = name;
+    this.keyBinds = keyBinds;
+    this.handler = handler;
+  }
+}
+
 export class EditorStore {
   applicationStore: ApplicationStore<PureIDEConfig>;
   directoryTreeState: DirectoryTreeState;
   conceptTreeState: ConceptTreeState;
   client: PureClient;
   initState = ActionState.create();
+  // Hotkeys
+  defaultHotkeys: EditorHotkey[] = [];
+  hotkeys: EditorHotkey[] = [];
   // Tabs
   currentEditorState?: EditorState | undefined;
   openedEditorStates: EditorState[] = [];
@@ -194,6 +218,7 @@ export class EditorStore {
 
   constructor(applicationStore: ApplicationStore<PureIDEConfig>) {
     makeAutoObservable(this, {
+      resetHotkeys: action,
       setShowOpenedTabsMenu: action,
       setBlockGlobalHotkeys: action,
       setExpandedMode: action,
@@ -216,8 +241,84 @@ export class EditorStore {
         baseUrl: this.applicationStore.config.pureUrl,
       }),
     );
+
+    // hotkeys
+    this.defaultHotkeys = [
+      new EditorHotkey(
+        IDE_HOTKEY.SEARCH_FILE,
+        IDE_HOTKEY_MAP.SEARCH_FILE,
+        this.createGlobalHotKeyAction(() => {
+          this.setOpenFileSearchCommand(true);
+        }),
+      ),
+      new EditorHotkey(
+        IDE_HOTKEY.SEARCH_TEXT,
+        IDE_HOTKEY_MAP.SEARCH_TEXT,
+        this.createGlobalHotKeyAction(() => {
+          this.setOpenTextSearchCommand(true);
+        }),
+      ),
+      new EditorHotkey(
+        IDE_HOTKEY.EXECUTE,
+        IDE_HOTKEY_MAP.EXECUTE,
+        this.createGlobalHotKeyAction(() => {
+          flowResult(this.executeGo()).catch(
+            this.applicationStore.alertIllegalUnhandledError,
+          );
+        }),
+      ),
+      new EditorHotkey(
+        IDE_HOTKEY.TOGGLE_AUX_PANEL,
+        IDE_HOTKEY_MAP.TOGGLE_AUX_PANEL,
+        this.createGlobalHotKeyAction(() => {
+          this.auxPanelDisplayState.toggle();
+        }),
+      ),
+      new EditorHotkey(
+        IDE_HOTKEY.GO_TO_FILE,
+        IDE_HOTKEY_MAP.GO_TO_FILE,
+        this.createGlobalHotKeyAction(() => {
+          const currentEditorState = this.currentEditorState;
+          if (currentEditorState instanceof FileEditorState) {
+            this.directoryTreeState.revealPath(
+              currentEditorState.filePath,
+              true,
+            );
+          }
+        }),
+      ),
+      new EditorHotkey(
+        IDE_HOTKEY.FULL_RECOMPILE,
+        IDE_HOTKEY_MAP.FULL_RECOMPILE,
+        this.createGlobalHotKeyAction((event: KeyboardEvent | undefined) => {
+          flowResult(
+            this.fullReCompile(Boolean(event?.shiftKey ?? event?.ctrlKey)),
+          ).catch(this.applicationStore.alertIllegalUnhandledError);
+        }),
+      ),
+      new EditorHotkey(
+        IDE_HOTKEY.RUN_TEST,
+        IDE_HOTKEY_MAP.RUN_TEST,
+        this.createGlobalHotKeyAction((event: KeyboardEvent | undefined) => {
+          flowResult(this.executeFullTestSuite(event?.shiftKey)).catch(
+            this.applicationStore.alertIllegalUnhandledError,
+          );
+        }),
+      ),
+      new EditorHotkey(
+        IDE_HOTKEY.TOGGLE_OPEN_TABS_MENU,
+        IDE_HOTKEY_MAP.TOGGLE_OPEN_TABS_MENU,
+        this.createGlobalHotKeyAction(() => {
+          this.setShowOpenedTabsMenu(!this.showOpenedTabsMenu);
+        }),
+      ),
+    ];
+    this.hotkeys = this.defaultHotkeys;
   }
 
+  resetHotkeys(): void {
+    this.hotkeys = this.defaultHotkeys;
+  }
   setShowOpenedTabsMenu(val: boolean): void {
     this.showOpenedTabsMenu = val;
   }
