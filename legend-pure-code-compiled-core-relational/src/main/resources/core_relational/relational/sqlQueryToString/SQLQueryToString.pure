@@ -2066,19 +2066,15 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::sybas
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processDateDiffDurationUnit(durationUnit:String[1], dbType:DatabaseType[1]):String[1]
 {
-
-  let enumList = [DurationUnit.YEARS,DurationUnit.MONTHS,DurationUnit.WEEKS,DurationUnit.DAYS,DurationUnit.HOURS,DurationUnit.MINUTES,DurationUnit.SECONDS,DurationUnit.MILLISECONDS]->map(e|$e->toString());
-  let h2DiffMapping = $enumList->zip(['year', 'month', 'week', 'day', 'hour', 'minute', 'second', 'millisecond']);
-  let prestoDiffMapping = $enumList->zip(['\'year\'', '\'month\'', '\'week\'', '\'day\'', '\'hour\'', '\'minute\'', '\'second\'', '\'millisecond\'']);
-  let iqDiffMapping = $enumList->zip(['yy', 'mm', 'wk', 'dd', 'hh', 'mi', 'ss', 'ms']);
-
-  let dbSpecificUnits = if ($dbType == DatabaseType.H2,
-                          | $h2DiffMapping,
-                          | if ($dbType == DatabaseType.SybaseIQ,
-                                | $iqDiffMapping,
-                                | if ($dbType == DatabaseType.Presto, |$prestoDiffMapping,|[])));
-
-  $dbSpecificUnits->filter(h | $h.first == $durationUnit).second->toOne();
+   let enumList = [DurationUnit.YEARS,DurationUnit.MONTHS,DurationUnit.WEEKS,DurationUnit.DAYS,DurationUnit.HOURS,DurationUnit.MINUTES,DurationUnit.SECONDS,DurationUnit.MILLISECONDS]->map(e|$e->toString());
+   let dbs = [pair(DatabaseType.H2, list(['year', 'month', 'week', 'day', 'hour', 'minute', 'second', 'millisecond'])),
+              pair(DatabaseType.SybaseIQ, list(['yy', 'mm', 'wk', 'dd', 'hh', 'mi', 'ss', 'ms'])),
+              pair(DatabaseType.Presto, list(['\'year\'', '\'month\'', '\'week\'', '\'day\'', '\'hour\'', '\'minute\'', '\'second\'', '\'millisecond\''])),
+              pair(DatabaseType.Snowflake, list(['year', 'month', 'week', 'day', 'hour', 'minute', 'second','']))]->newMap();
+   let dbTypeUnitPair = $dbs->get($dbType);
+   let dbUnitType = $enumList->zip($dbTypeUnitPair.values)->filter(h | $h.first == $durationUnit).second->toOne();
+   assert($dbUnitType->isNotEmpty(), $durationUnit + ' is not supported by ' + toString($dbType) + ' in the DateDiff Function.');
+   $dbUnitType;
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processIdentifier(originalIdentifier:String[1], dbConfig : DbConfig[1]):String[1]
