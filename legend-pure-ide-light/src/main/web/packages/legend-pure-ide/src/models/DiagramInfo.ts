@@ -14,7 +14,42 @@
  * limitations under the License.
  */
 
-import { usingConstantValueSchema } from '@finos/legend-shared';
+import {
+  ClassView,
+  Diagram,
+  GeneralizationView,
+  Point,
+  PropertyView,
+  Rectangle,
+} from '@finos/legend-extension-dsl-diagram';
+import {
+  Class,
+  CoreModel,
+  DerivedProperty,
+  ELEMENT_PATH_DELIMITER,
+  Enumeration,
+  GenericType,
+  GenericTypeExplicitReference,
+  Multiplicity,
+  Package,
+  PackageableElementExplicitReference,
+  Profile,
+  Property,
+  PropertyExplicitReference,
+  PureModel,
+  resolvePackagePathAndElementName,
+  Stereotype,
+  StereotypeExplicitReference,
+  SystemModel,
+  Tag,
+  TaggedValue,
+} from '@finos/legend-graph';
+// eslint-disable-next-line @finos/legend-studio/no-cross-workspace-non-export-usage
+import { TagExplicitReference } from '@finos/legend-graph/lib/models/metamodels/pure/packageableElements/domain/TagReference';
+import {
+  guaranteeNonNullable,
+  usingConstantValueSchema,
+} from '@finos/legend-shared';
 import {
   createModelSchema,
   primitive,
@@ -29,6 +64,20 @@ import { SourceInformation } from './SourceInformation';
 // We don't intend to build Pure graph from these serialization models, hence, we never really want to export them
 // to use outside of this file; their sole purpose is to get the result from the diagram info endpoints
 // to convert to Legend protocol model to use in Legend Studio diagram renderer
+
+class PURE__Profile {
+  package!: string;
+  name!: string;
+  tags: string[] = [];
+  stereotypes: string[] = [];
+}
+
+createModelSchema(PURE__Profile, {
+  name: primitive(),
+  package: primitive(),
+  stereotypes: list(primitive()),
+  tags: list(primitive()),
+});
 
 class PURE__Steoreotype {
   profile!: string;
@@ -88,9 +137,7 @@ createModelSchema(PURE__Property, {
   taggedValues: list(object(PURE__TaggedValue)),
 });
 
-// NOTE: technically this is Type, but here we hack it to Class for simplicity
-// because the only types supported in Diagram are classes
-class PURE__Type {
+class PURE__Class {
   package!: string;
   name!: string;
   sourceInformation!: SourceInformation;
@@ -100,13 +147,15 @@ class PURE__Type {
   // typeParameters: string[] = [];
   generalizations: PURE__GenericType[] = [];
   properties: PURE__Property[] = [];
+  qualifiedProperties: PURE__Property[] = [];
 }
 
-createModelSchema(PURE__Type, {
+createModelSchema(PURE__Class, {
   generalizations: list(object(PURE__GenericType)),
   name: primitive(),
   package: primitive(),
   properties: list(object(PURE__Property)),
+  qualifiedProperties: list(object(PURE__Property)),
   sourceInformation: object(SourceInformation),
   stereotypes: list(object(PURE__Steoreotype)),
   taggedValues: list(object(PURE__TaggedValue)),
@@ -120,7 +169,7 @@ class PURE__Enumeration {
   enumValues: string[] = [];
 }
 
-createModelSchema(PURE__Type, {
+createModelSchema(PURE__Enumeration, {
   name: primitive(),
   package: primitive(),
   enumValues: list(primitive()),
@@ -162,17 +211,14 @@ class PURE__GeneralizationView {
   id!: string;
   source!: string;
   target!: string;
-  label!: string; // unsupported: hardcoded for now
-
   geometry!: PURE__Geometry;
-  rendering!: object; // unsupported: hardcoded for now
+  // label!: string; // unsupported: hardcode value in serializer
+  // rendering!: object; // unsupported: hardcode value in serializer
 }
 
 createModelSchema(PURE__GeneralizationView, {
   geometry: object(PURE__Geometry),
   id: primitive(),
-  label: usingConstantValueSchema(''),
-  rendering: usingConstantValueSchema({ color: '#000000', lineWidth: -1.0 }),
   source: primitive(),
   target: primitive(),
 });
@@ -192,12 +238,8 @@ class PURE__PropertyView {
   source!: string;
   target!: string;
   label!: string;
-
   property!: PURE__PropertyViewPropertyPointer;
   geometry!: PURE__Geometry;
-  rendering!: object; // unsupported: hardcoded for now
-  visibility!: object; // unsupported: hardcoded for now
-  view!: object; // unsupported: hardcoded for now
 }
 
 createModelSchema(PURE__PropertyView, {
@@ -205,17 +247,8 @@ createModelSchema(PURE__PropertyView, {
   id: primitive(),
   label: usingConstantValueSchema(''),
   property: object(PURE__PropertyViewPropertyPointer),
-  rendering: usingConstantValueSchema({ color: '#000000', lineWidth: -1.0 }),
   source: primitive(),
   target: primitive(),
-  view: usingConstantValueSchema({
-    propertyLocation: { x: 0.0, y: 0.0 },
-    multiplicityLocation: { x: 0.0, y: 0.0 },
-  }),
-  visibility: usingConstantValueSchema({
-    visibleName: true,
-    visibleStereotype: true,
-  }),
 });
 
 class PURE__TypeView {
@@ -223,26 +256,13 @@ class PURE__TypeView {
   type!: string;
   position!: PURE__Point;
   rectangleGeometry!: PURE__Rectangle;
-
-  rendering!: object; // unsupported: hardcoded for now
-  typeVisibility!: object; // unsupported: hardcoded for now
-  attributeVisibility!: object; // unsupported: hardcoded for now
 }
 
 createModelSchema(PURE__TypeView, {
-  attributeVisibility: usingConstantValueSchema({
-    visibleTypes: true,
-    visibleStereotype: true,
-  }),
   id: primitive(),
   position: object(PURE__Point),
   rectangleGeometry: object(PURE__Rectangle),
-  rendering: usingConstantValueSchema({ color: '#FFFFCC', lineWidth: 1.0 }),
   type: primitive(),
-  typeVisibility: usingConstantValueSchema({
-    visibleAttributeCompartment: true,
-    visibleStereotype: true,
-  }),
 });
 
 class PURE__Diagram {
@@ -277,41 +297,329 @@ createModelSchema(PURE__Diagram, {
 // ----------------------------------- Diagram Info ---------------------------------------
 
 class DiagramDomainInfo {
-  types: PURE__Type[] = [];
   // associations // skip these for now as we don't support association views
+  classes: PURE__Class[] = [];
   enumerations: PURE__Enumeration[] = [];
+  profiles: PURE__Profile[] = [];
 }
 
 createModelSchema(DiagramDomainInfo, {
   // associations
+  classes: list(object(PURE__Class)),
   enumerations: list(object(PURE__Enumeration)),
-  types: list(object(PURE__Type)),
+  profiles: list(object(PURE__Profile)),
 });
 
 export class DiagramInfo {
   name!: string;
   diagram!: PURE__Diagram;
-  subDomain?: DiagramDomainInfo;
+  domainInfo?: DiagramDomainInfo;
 }
 
 createModelSchema(DiagramInfo, {
   diagram: object(PURE__Diagram),
   name: primitive(),
-  subDomain: optional(object(DiagramDomainInfo)),
+  domainInfo: optional(object(DiagramDomainInfo)),
 });
 
 export class DiagramClassInfo {
-  class!: PURE__Type;
   // associations
+  class!: PURE__Class;
   // specializations
   enumerations: PURE__Enumeration[] = [];
 }
 
 createModelSchema(DiagramClassInfo, {
   // associations
-  class: object(PURE__Type),
+  class: object(PURE__Class),
   enumerations: list(object(PURE__Enumeration)),
+  profiles: list(object(PURE__Profile)),
   // specializations
 });
 
-// ----------------------------------- Protocol converter ---------------------------------------
+// ----------------------------------------- Serializer --------------------------------------------
+
+/**
+ * Serialize the diagram in Studio to Pure grammar for M2 DSL Diagram
+ * so we can persist it.
+ */
+export const serializeDiagram = (diagram: Diagram): string => {
+  const typeViews = diagram.classViews.map(
+    (cv) =>
+      `    TypeView ${cv.id}(\n` +
+      `        type=${cv.class.value.path},\n` +
+      `        position=(${cv.position.x.toFixed(5)}, ${cv.position.y.toFixed(
+        5,
+      )}),\n` +
+      `        width=${cv.rectangle.width.toFixed(5)},\n` +
+      `        height=${cv.rectangle.height.toFixed(5)},\n` +
+      `        stereotypesVisible=true,\n` +
+      `        attributesVisible=true,\n` +
+      `        attributeStereotypesVisible=true,\n` +
+      `        attributeTypesVisible=true,\n` +
+      `        color=#FFFFCC,\n` +
+      `        lineWidth=1.0)`,
+  );
+
+  const generalizationViews = diagram.generalizationViews.map(
+    (gv, idx) =>
+      // NOTE: the relationship views in Diagram protocols don't have an ID
+      `    GeneralizationView gview_${idx}(\n` +
+      `        source=${gv.from.classView.value.id},\n` +
+      `        target=${gv.to.classView.value.id},\n` +
+      `        points=[${gv.fullPath
+        .map((pos) => `(${pos.x.toFixed(5)},${pos.y.toFixed(5)})`)
+        .join(',')}],\n` +
+      `        label='',\n` +
+      `        color=#000000,\n` +
+      `        lineWidth=-1.0,\n` +
+      `        lineStyle=SIMPLE)`,
+  );
+
+  const propertyViews = diagram.propertyViews.map(
+    (pv, idx) =>
+      `    PropertyView pview_${idx}(\n` +
+      `        property=${pv.property.value.owner.path}.${pv.property.value.name},\n` +
+      `        source=${pv.from.classView.value.id},\n` +
+      `        target=${pv.to.classView.value.id}\n` +
+      `        points=[${pv.fullPath
+        .map((pos) => `(${pos.x.toFixed(5)},${pos.y.toFixed(5)})`)
+        .join(',')}],\n` +
+      `        label='',\n` +
+      `        propertyPosition=(0.0,0.0),\n` +
+      `        multiplicityPosition=(0.0,0.0)\n` +
+      `        color=#000000,\n` +
+      `        lineWidth=-1.0\n` +
+      `        stereotypesVisible=true,\n` +
+      `        nameVisible=true,\n` +
+      `        lineStyle=SIMPLE)`,
+  );
+
+  return (
+    `Diagram ${diagram.path}(width=0.0, height=0.0)\n` +
+    `{\n` +
+    `${[...typeViews, ...generalizationViews, ...propertyViews].join(
+      '\n\n',
+    )}\n` +
+    `}`
+  );
+};
+
+// ------------------------------ Graph builder (for diagram renderer) ----------------------------------
+
+const getOrCreateClass = (path: string, graph: PureModel): Class => {
+  const existingClass = graph.getOwnClass(path);
+  if (!existingClass) {
+    const [_package, name] = resolvePackagePathAndElementName(path);
+    const _class = new Class(name);
+    Package.getOrCreatePackage(graph.root, _package, true).addElement(_class);
+    graph.setOwnType(path, _class);
+    return _class;
+  }
+  return existingClass;
+};
+
+const parseMultiplicty = (text: string): Multiplicity => {
+  if (text === '*') {
+    return new Multiplicity(0, undefined);
+  } else {
+    const parts = text.split('..');
+    if (parts.length === 1) {
+      return new Multiplicity(parseInt(parts[0], 10), parseInt(parts[0], 10));
+    } else if (parts.length === 2) {
+      return new Multiplicity(
+        parseInt(parts[0], 10),
+        parts[1] === '*' ? undefined : parseInt(parts[1], 10),
+      );
+    }
+    throw new Error(`Can't parse multiplicity value '${text}'`);
+  }
+};
+
+/**
+ * Since the diagram renderer uses Studio metamodel, here we build
+ * Studio metamodel graph and diagram from the Pure IDE diagram info
+ * to make use of the renderer.
+ */
+export const buildGraphFromDiagramInfo = (
+  diagramInfo: DiagramInfo,
+): [Diagram, PureModel] => {
+  const graph = new PureModel(new CoreModel([]), new SystemModel([]), []);
+
+  // domain
+  if (diagramInfo.domainInfo) {
+    const domain = diagramInfo.domainInfo;
+    // first pass: add all the listed types and do really basic processing
+    domain.classes.forEach((classData) => {
+      const _class = new Class(classData.name);
+      Package.getOrCreatePackage(
+        graph.root,
+        classData.package,
+        true,
+      ).addElement(_class);
+      graph.setOwnType(_class.path, _class);
+    });
+    domain.profiles.forEach((profileData) => {
+      const profile = new Profile(profileData.name);
+      Package.getOrCreatePackage(
+        graph.root,
+        profileData.package,
+        true,
+      ).addElement(profile);
+      graph.setOwnProfile(profile.path, profile);
+      profileData.tags.forEach((value) =>
+        profile.addTag(new Tag(profile, value)),
+      );
+      profileData.stereotypes.forEach((value) =>
+        profile.addStereotype(new Stereotype(profile, value)),
+      );
+    });
+    domain.enumerations.forEach((enumerationData) => {
+      const enumeration = new Enumeration(enumerationData.name);
+      Package.getOrCreatePackage(
+        graph.root,
+        enumerationData.package,
+        true,
+      ).addElement(enumeration);
+      graph.setOwnType(enumeration.path, enumeration);
+      // NOTE: there is no need to pocess enumeration enum values since diagram does not need them
+    });
+    // second pass
+    domain.classes.forEach((classData) => {
+      const fullPath = `${classData.package}${
+        classData.package === '' ? '' : ELEMENT_PATH_DELIMITER
+      }${classData.name}`;
+      const _class = graph.getClass(fullPath);
+      classData.taggedValues.forEach((taggedValueData) => {
+        _class.addTaggedValue(
+          new TaggedValue(
+            TagExplicitReference.create(
+              graph
+                .getProfile(taggedValueData.tag.profile)
+                .getTag(taggedValueData.tag.value),
+            ),
+            taggedValueData.value,
+          ),
+        );
+      });
+      classData.stereotypes.forEach((stereotypeData) => {
+        _class.addStereotype(
+          StereotypeExplicitReference.create(
+            graph
+              .getProfile(stereotypeData.profile)
+              .getStereotype(stereotypeData.value),
+          ),
+        );
+      });
+      classData.generalizations.forEach((superTypeData) => {
+        _class.addSuperType(
+          GenericTypeExplicitReference.create(
+            new GenericType(getOrCreateClass(superTypeData.rawType, graph)),
+          ),
+        );
+      });
+      classData.properties.forEach((propertyData) => {
+        _class.addProperty(
+          new Property(
+            propertyData.name,
+            parseMultiplicty(propertyData.multiplicity),
+            GenericTypeExplicitReference.create(
+              new GenericType(
+                graph.getOwnEnumeration(propertyData.genericType.rawType) ??
+                  getOrCreateClass(propertyData.genericType.rawType, graph),
+              ),
+            ),
+            _class,
+          ),
+        );
+      });
+      classData.qualifiedProperties.forEach((propertyData) => {
+        _class.addDerivedProperty(
+          new DerivedProperty(
+            propertyData.name,
+            parseMultiplicty(propertyData.multiplicity),
+            GenericTypeExplicitReference.create(
+              new GenericType(
+                graph.getOwnEnumeration(propertyData.genericType.rawType) ??
+                  getOrCreateClass(propertyData.genericType.rawType, graph),
+              ),
+            ),
+            _class,
+          ),
+        );
+      });
+    });
+  }
+
+  // diagram
+  const diagramData = diagramInfo.diagram;
+  const diagram = new Diagram(diagramData.name);
+  Package.getOrCreatePackage(graph.root, diagramData.package, true).addElement(
+    diagram,
+  );
+
+  diagramData.typeViews.forEach((typeViewData) => {
+    const classView = new ClassView(
+      diagram,
+      typeViewData.id,
+      PackageableElementExplicitReference.create(
+        graph.getClass(typeViewData.type),
+      ),
+    );
+    classView.setPosition(
+      new Point(typeViewData.position.x, typeViewData.position.y),
+    );
+    classView.setRectangle(
+      new Rectangle(
+        typeViewData.rectangleGeometry.width,
+        typeViewData.rectangleGeometry.height,
+      ),
+    );
+    diagram.addClassView(classView);
+  });
+
+  diagramData.propertyViews.forEach((propertyViewData) => {
+    const propertyView = new PropertyView(
+      diagram,
+      PropertyExplicitReference.create(
+        graph
+          .getClass(propertyViewData.property.owningType)
+          .getProperty(propertyViewData.property.name),
+      ),
+      guaranteeNonNullable(
+        diagram.classViews.find((cv) => cv.id === propertyViewData.source),
+      ),
+      guaranteeNonNullable(
+        diagram.classViews.find((cv) => cv.id === propertyViewData.target),
+      ),
+    );
+    propertyView.setPath(
+      propertyViewData.geometry.points.map(
+        (pointData) => new Point(pointData.x, pointData.y),
+      ),
+    );
+    propertyView.possiblyFlattenPath(); // transform the line because we store only 2 end points that are inside points and we will calculate the offset
+    return propertyView;
+  });
+
+  diagramData.generalizationViews.forEach((generationViewData) => {
+    const generalizationView = new GeneralizationView(
+      diagram,
+      guaranteeNonNullable(
+        diagram.classViews.find((cv) => cv.id === generationViewData.source),
+      ),
+      guaranteeNonNullable(
+        diagram.classViews.find((cv) => cv.id === generationViewData.target),
+      ),
+    );
+    generalizationView.setPath(
+      generationViewData.geometry.points.map(
+        (pointData) => new Point(pointData.x, pointData.y),
+      ),
+    );
+    generalizationView.possiblyFlattenPath(); // transform the line because we store only 2 end points that are inside points and we will calculate the offset
+    return generalizationView;
+  });
+
+  return [diagram, graph];
+};

@@ -74,10 +74,7 @@ export const FileEditor = observer(
           theme: EDITOR_THEME.LEGEND,
         });
         editor.onDidChangeModelContent(() => {
-          const currentVal =
-            editor
-              .getModel()
-              ?.getValue(monacoEditorAPI.EndOfLinePreference.LF) ?? '';
+          const currentVal = editor.getValue();
           if (currentVal !== editorState.file.content) {
             // the assertion above is to ensure we don't accidentally clear error on initialization of the editor
             editorState.clearError(); // clear error on content change/typing
@@ -147,9 +144,7 @@ export const FileEditor = observer(
 
     if (editor) {
       // Set the value of the editor
-      const currentValue =
-        editor.getModel()?.getValue(monacoEditorAPI.EndOfLinePreference.LF) ??
-        '';
+      const currentValue = editor.getValue();
       if (currentValue !== content) {
         editor.setValue(content);
       }

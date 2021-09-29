@@ -33,6 +33,7 @@
     "@finos/legend-application": "0.0.8",
     "@finos/legend-art": "0.0.5",
     "@finos/legend-extension-dsl-diagram": "0.0.8",
+    "@finos/legend-graph": "0.0.6",
     "@finos/legend-shared": "0.0.4",
     "@material-ui/core": "4.12.3",
     "@testing-library/react": "12.1.1",

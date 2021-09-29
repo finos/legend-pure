@@ -31,6 +31,7 @@ import { PureIDEPluginManager } from './PureIDEPluginManager';
 import { getRootElement } from '@finos/legend-art';
 import type { PureIDEConfigData } from './PureIDEConfig';
 import { PureIDEConfig } from './PureIDEConfig';
+import { DSLDiagram_GraphPreset } from '@finos/legend-extension-dsl-diagram';
 
 export const setupLegendPureIDEUILibrary = async (): Promise<void> => {
   configureReactHotkeys({
@@ -47,6 +48,7 @@ export class LegendPureIDE extends LegendApplication {
 
   static create(): LegendPureIDE {
     const application = new LegendPureIDE(PureIDEPluginManager.create());
+    application.withBasePresets([new DSLDiagram_GraphPreset()]);
     return application;
   }
 

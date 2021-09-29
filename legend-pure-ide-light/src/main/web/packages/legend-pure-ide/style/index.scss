@@ -16,6 +16,8 @@
 
 @use 'mixins' as *;
 
+@forward 'extensions';
+
 @forward 'components/app';
 @forward 'components/editor';
 

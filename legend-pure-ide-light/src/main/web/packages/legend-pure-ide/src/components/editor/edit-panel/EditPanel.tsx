@@ -24,6 +24,8 @@ import { FileEditorState } from '../../../stores/EditorState';
 import { FileEditor } from './FileEditor';
 import { clsx, ContextMenu, DropdownMenu } from '@finos/legend-art';
 import { CgTab } from 'react-icons/cg';
+import { DiagramEditorState } from '../../../stores/DiagramEditorState';
+import { DiagramEditor } from './DiagramEditor';
 
 export const EditPanelSplashScreen: React.FC = () => {
   const commandListWidth = 300;
@@ -131,6 +133,8 @@ export const EditPanel = observer(() => {
   const renderActiveEditorState = (): React.ReactNode => {
     if (currentEditorState instanceof FileEditorState) {
       return <FileEditor editorState={currentEditorState} />;
+    } else if (currentEditorState instanceof DiagramEditorState) {
+      return <DiagramEditor editorState={currentEditorState} />;
     }
     return null;
   };

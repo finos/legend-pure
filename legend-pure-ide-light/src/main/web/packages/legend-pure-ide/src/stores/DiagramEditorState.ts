@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
+import type {
+  Diagram,
+  DiagramRenderer,
+} from '@finos/legend-extension-dsl-diagram';
+import type { PureModel } from '@finos/legend-graph';
+import { guaranteeNonNullable } from '@finos/legend-shared';
 import { action, makeObservable, observable } from 'mobx';
 import type { DiagramInfo } from '../models/DiagramInfo';
+import { buildGraphFromDiagramInfo } from '../models/DiagramInfo';
 import { trimPathLeadingSlash } from '../models/PureFile';
 import { EditorState } from './EditorState';
 import type { EditorStore } from './EditorStore';
 
 export class DiagramEditorState extends EditorState {
   diagramInfo: DiagramInfo;
+  _renderer?: DiagramRenderer | undefined;
+  diagram: Diagram;
+  graph: PureModel;
   path: string;
 
   constructor(
@@ -32,16 +42,40 @@ export class DiagramEditorState extends EditorState {
     super(editorStore);
 
     makeObservable(this, {
+      _renderer: observable,
+      diagram: observable,
       diagramInfo: observable,
-      setDiagramInfo: action,
+      rebuild: action,
+      setRenderer: action,
     });
 
-    this.diagramInfo = diagramInfo;
     this.path = path;
+    this.diagramInfo = diagramInfo;
+    const [diagram, graph] = buildGraphFromDiagramInfo(diagramInfo);
+    this.diagram = diagram;
+    this.graph = graph;
   }
 
-  setDiagramInfo(value: DiagramInfo): void {
+  rebuild(value: DiagramInfo): void {
     this.diagramInfo = value;
+    const [diagram, graph] = buildGraphFromDiagramInfo(value);
+    this.diagram = diagram;
+    this.graph = graph;
+  }
+
+  get renderer(): DiagramRenderer {
+    return guaranteeNonNullable(
+      this._renderer,
+      `Diagram renderer must be initialized (this is likely caused by calling this method at the wrong place)`,
+    );
+  }
+
+  get isDiagramRendererInitialized(): boolean {
+    return Boolean(this._renderer);
+  }
+
+  setRenderer(val: DiagramRenderer): void {
+    this._renderer = val;
   }
 
   get headerName(): string {

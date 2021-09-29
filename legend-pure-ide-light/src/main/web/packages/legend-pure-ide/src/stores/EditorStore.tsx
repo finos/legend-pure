@@ -80,6 +80,7 @@ import {
 } from '@finos/legend-application';
 import type { Clazz, GeneratorFn, PlainObject } from '@finos/legend-shared';
 import {
+  isNonNullable,
   NetworkClient,
   ActionState,
   assertErrorThrown,
@@ -92,7 +93,7 @@ import type { PureIDEConfig } from '../application/PureIDEConfig';
 import { PureClient } from './PureClient';
 import { PanelDisplayState } from '@finos/legend-art';
 import { DiagramEditorState } from './DiagramEditorState';
-import { DiagramInfo } from '../models/DiagramInfo';
+import { DiagramInfo, serializeDiagram } from '../models/DiagramInfo';
 
 // FontFaceSet API is still experimental and has not been added to Typescript lib
 // See https://developer.mozilla.org/en-US/docs/Web/API/FontFaceSet
@@ -506,7 +507,7 @@ export class EditorStore {
       );
       existingFileState.setCoordinate(undefined);
     } else if (existingFileState instanceof DiagramEditorState) {
-      existingFileState.setDiagramInfo(
+      existingFileState.rebuild(
         deserialize(DiagramInfo, yield this.client.getDiagramInfo(path)),
       );
     }
@@ -537,15 +538,21 @@ export class EditorStore {
     this.executionState.inProgress();
     try {
       const openedFiles = this.openedEditorStates
-        .filter(
-          (editorState): editorState is FileEditorState =>
-            editorState instanceof FileEditorState,
-        )
-        .map((fileEditorState) => ({
-          path: fileEditorState.path,
-          // TODO: investigate why if we send `\r\n` the server will duplicate the new line character
-          code: fileEditorState.file.content.replace(/\r\n/g, '\n'),
-        }));
+        .map((editorState) => {
+          if (editorState instanceof FileEditorState) {
+            return {
+              path: editorState.path,
+              code: editorState.file.content,
+            };
+          } else if (editorState instanceof DiagramEditorState) {
+            return {
+              diagram: editorState.path,
+              code: serializeDiagram(editorState.diagram),
+            };
+          }
+          return undefined;
+        })
+        .filter(isNonNullable);
       const executionPromise = this.client.execute(
         openedFiles,
         url,

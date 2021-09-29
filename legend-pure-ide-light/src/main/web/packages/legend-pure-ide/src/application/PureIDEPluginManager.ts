@@ -26,34 +26,38 @@ export class PureIDEPluginManager
   extends AbstractPluginManager
   implements GraphPluginManager
 {
+  private pureProtocolProcessorPlugins: PureProtocolProcessorPlugin[] = [];
+  private pureGraphManagerPlugins: PureGraphManagerPlugin[] = [];
+  private pureGraphPlugins: PureGraphPlugin[] = [];
+
   private constructor() {
     super();
   }
 
   getPureGraphPlugins(): PureGraphPlugin[] {
-    return [];
+    return [...this.pureGraphPlugins];
   }
 
   registerPureGraphPlugins(plugin: PureGraphPlugin): void {
-    // do nothing
+    this.pureGraphPlugins.push(plugin);
   }
 
   getPureGraphManagerPlugins(): PureGraphManagerPlugin[] {
-    return [];
+    return [...this.pureGraphManagerPlugins];
   }
 
   registerPureGraphManagerPlugin(plugin: PureGraphManagerPlugin): void {
-    // do nothing
+    this.pureGraphManagerPlugins.push(plugin);
   }
 
   getPureProtocolProcessorPlugins(): PureProtocolProcessorPlugin[] {
-    return [];
+    return [...this.pureProtocolProcessorPlugins];
   }
 
   registerPureProtocolProcessorPlugin(
     plugin: PureProtocolProcessorPlugin,
   ): void {
-    // do nothing
+    this.pureProtocolProcessorPlugins.push(plugin);
   }
 
   static create(): PureIDEPluginManager {
