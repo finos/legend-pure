@@ -150,10 +150,12 @@ function <<access.private>> meta::pure::graphFetch::addSubTrees(onto:GraphFetchT
 function <<access.private>> meta::pure::graphFetch::addSubTree(onto:GraphFetchTree[1], subTree:GraphFetchTree[1]): GraphFetchTree[1]
 {
    let existingSubTree = $onto.subTrees->filter(st|$st->cast(@PropertyGraphFetchTree).property == $subTree->cast(@PropertyGraphFetchTree).property);
-   $existingSubTree->match([
-      stree0: PropertyGraphFetchTree[0] | ^$onto(subTrees=$onto.subTrees->concatenate($subTree)),
-      stree : PropertyGraphFetchTree[1] | ^$onto(subTrees=$onto.subTrees->filter(st|$st != $existingSubTree)->concatenate($stree->addSubTrees($subTree.subTrees)))
-   ]);
+
+   if($existingSubTree->isEmpty(),
+     | ^$onto(subTrees=$onto.subTrees->concatenate($subTree)),
+     | $existingSubTree->fold({stree, newTree | ^$newTree(subTrees=$newTree.subTrees->filter(st|$st != $existingSubTree)->concatenate($stree->addSubTrees($subTree.subTrees)))},
+                              $onto)
+   );
 }
 
 function meta::pure::graphFetch::printTree(root:GraphFetchTree[1]): Any[*]
