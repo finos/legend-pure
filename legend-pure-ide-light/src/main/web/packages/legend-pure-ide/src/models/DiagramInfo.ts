@@ -46,10 +46,7 @@ import {
 } from '@finos/legend-graph';
 // eslint-disable-next-line @finos/legend-studio/no-cross-workspace-non-export-usage
 import { TagExplicitReference } from '@finos/legend-graph/lib/models/metamodels/pure/packageableElements/domain/TagReference';
-import {
-  guaranteeNonNullable,
-  usingConstantValueSchema,
-} from '@finos/legend-shared';
+import { guaranteeNonNullable } from '@finos/legend-shared';
 import {
   createModelSchema,
   primitive,
@@ -198,13 +195,11 @@ createModelSchema(PURE__Rectangle, {
 });
 
 class PURE__Geometry {
-  style!: string; // unsupported: hardcoded for now
   points: PURE__Point[] = [];
 }
 
 createModelSchema(PURE__Geometry, {
   points: list(object(PURE__Point)),
-  style: usingConstantValueSchema('SIMPLE'),
 });
 
 class PURE__GeneralizationView {
@@ -212,8 +207,6 @@ class PURE__GeneralizationView {
   source!: string;
   target!: string;
   geometry!: PURE__Geometry;
-  // label!: string; // unsupported: hardcode value in serializer
-  // rendering!: object; // unsupported: hardcode value in serializer
 }
 
 createModelSchema(PURE__GeneralizationView, {
@@ -228,7 +221,7 @@ class PURE__PropertyViewPropertyPointer {
   owningType!: string;
 }
 
-createModelSchema(PURE__Rectangle, {
+createModelSchema(PURE__PropertyViewPropertyPointer, {
   name: primitive(),
   owningType: primitive(),
 });
@@ -237,7 +230,6 @@ class PURE__PropertyView {
   id!: string;
   source!: string;
   target!: string;
-  label!: string;
   property!: PURE__PropertyViewPropertyPointer;
   geometry!: PURE__Geometry;
 }
@@ -245,7 +237,6 @@ class PURE__PropertyView {
 createModelSchema(PURE__PropertyView, {
   geometry: object(PURE__Geometry),
   id: primitive(),
-  label: usingConstantValueSchema(''),
   property: object(PURE__PropertyViewPropertyPointer),
   source: primitive(),
   target: primitive(),
@@ -268,11 +259,9 @@ createModelSchema(PURE__TypeView, {
 class PURE__Diagram {
   package!: string;
   name!: string;
-  sourceInformation!: SourceInformation;
   stereotypes: PURE__Steoreotype[] = [];
   taggedValues: PURE__TaggedValue[] = [];
 
-  rectangleGeometry!: object; // unsupported: hardcoded for now
   // associationViews
   generalizationViews: PURE__GeneralizationView[] = [];
   propertyViews: PURE__PropertyView[] = [];
@@ -284,11 +273,6 @@ createModelSchema(PURE__Diagram, {
   generalizationViews: list(object(PURE__GeneralizationView)),
   package: primitive(),
   propertyViews: list(object(PURE__PropertyView)),
-  rectangleGeometry: usingConstantValueSchema({
-    height: 0.0,
-    width: 0.0,
-  }),
-  sourceInformation: object(SourceInformation),
   stereotypes: list(object(PURE__Steoreotype)),
   taggedValues: list(object(PURE__TaggedValue)),
   typeViews: list(object(PURE__TypeView)),
@@ -382,15 +366,15 @@ export const serializeDiagram = (diagram: Diagram): string => {
       `    PropertyView pview_${idx}(\n` +
       `        property=${pv.property.value.owner.path}.${pv.property.value.name},\n` +
       `        source=${pv.from.classView.value.id},\n` +
-      `        target=${pv.to.classView.value.id}\n` +
+      `        target=${pv.to.classView.value.id}\n,` +
       `        points=[${pv.fullPath
         .map((pos) => `(${pos.x.toFixed(5)},${pos.y.toFixed(5)})`)
         .join(',')}],\n` +
       `        label='',\n` +
       `        propertyPosition=(0.0,0.0),\n` +
-      `        multiplicityPosition=(0.0,0.0)\n` +
+      `        multiplicityPosition=(0.0,0.0),\n` +
       `        color=#000000,\n` +
-      `        lineWidth=-1.0\n` +
+      `        lineWidth=-1.0,\n` +
       `        stereotypesVisible=true,\n` +
       `        nameVisible=true,\n` +
       `        lineStyle=SIMPLE)`,
@@ -637,7 +621,7 @@ export const buildGraphFromDiagramInfo = (
       ),
     );
     propertyView.possiblyFlattenPath(); // transform the line because we store only 2 end points that are inside points and we will calculate the offset
-    return propertyView;
+    diagram.addPropertyView(propertyView);
   });
 
   diagramData.generalizationViews.forEach((generationViewData) => {
@@ -656,7 +640,7 @@ export const buildGraphFromDiagramInfo = (
       ),
     );
     generalizationView.possiblyFlattenPath(); // transform the line because we store only 2 end points that are inside points and we will calculate the offset
-    return generalizationView;
+    diagram.addGeneralizationView(generalizationView);
   });
 
   return [diagram, graph, diagramClasses];
