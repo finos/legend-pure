@@ -117,7 +117,7 @@ function <<access.private>> meta::pure::graphFetch::xstoreProperties(nodes:Graph
       ->cast(@meta::pure::mapping::xStore::XStorePropertyMapping)
       ->map({xpm |
          let allProperties = $xpm.crossExpression.expressionSequence->evaluateAndDeactivate()->toOne()->findPropertiesInValueSpecification();
-         let srcProperties = $allProperties->filter(x | $x.owner->cast(@Class<Any>)->subTypeOf($srcClass) || $srcClass->subTypeOf($x.owner->cast(@Class<Any>)));
+         let srcProperties = $allProperties->filter(x | $x.owner->cast(@Class<Any>)->_subTypeOf($srcClass) || $srcClass->_subTypeOf($x.owner->cast(@Class<Any>)));
          $srcProperties->filter(x | !$currentSubTreeProperties->contains($x));
       });
 }
