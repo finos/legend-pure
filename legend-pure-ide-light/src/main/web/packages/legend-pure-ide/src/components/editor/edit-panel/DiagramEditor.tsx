@@ -42,6 +42,7 @@ const DiagramCanvas = observer(
       if (diagramCanvasRef.current) {
         const renderer = new DiagramRenderer(diagramCanvasRef.current, diagram);
         diagramEditorState.setRenderer(renderer);
+        diagramEditorState.setupRenderer();
         renderer.render();
         renderer.autoRecenter();
       }

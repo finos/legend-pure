@@ -15,15 +15,16 @@
  */
 
 import type {
+  ClassView,
   Diagram,
   DiagramRenderer,
 } from '@finos/legend-extension-dsl-diagram';
 import type { PureModel } from '@finos/legend-graph';
 import { guaranteeNonNullable } from '@finos/legend-shared';
-import { action, makeObservable, observable } from 'mobx';
-import type { DiagramInfo } from '../models/DiagramInfo';
+import { action, flowResult, makeObservable, observable } from 'mobx';
+import type { DiagramInfo, DiagramMetadata } from '../models/DiagramInfo';
 import { buildGraphFromDiagramInfo } from '../models/DiagramInfo';
-import { trimPathLeadingSlash } from '../models/PureFile';
+import { FileCoordinate, trimPathLeadingSlash } from '../models/PureFile';
 import { EditorState } from './EditorState';
 import type { EditorStore } from './EditorStore';
 
@@ -31,6 +32,7 @@ export class DiagramEditorState extends EditorState {
   diagramInfo: DiagramInfo;
   _renderer?: DiagramRenderer | undefined;
   diagram: Diagram;
+  metadataMap: Map<string, DiagramMetadata>;
   graph: PureModel;
   path: string;
 
@@ -51,16 +53,19 @@ export class DiagramEditorState extends EditorState {
 
     this.path = path;
     this.diagramInfo = diagramInfo;
-    const [diagram, graph] = buildGraphFromDiagramInfo(diagramInfo);
+    const [diagram, graph, metadataMap] =
+      buildGraphFromDiagramInfo(diagramInfo);
     this.diagram = diagram;
     this.graph = graph;
+    this.metadataMap = metadataMap;
   }
 
   rebuild(value: DiagramInfo): void {
     this.diagramInfo = value;
-    const [diagram, graph] = buildGraphFromDiagramInfo(value);
+    const [diagram, graph, metadataMap] = buildGraphFromDiagramInfo(value);
     this.diagram = diagram;
     this.graph = graph;
+    this.metadataMap = metadataMap;
   }
 
   get renderer(): DiagramRenderer {
@@ -72,6 +77,24 @@ export class DiagramEditorState extends EditorState {
 
   get isDiagramRendererInitialized(): boolean {
     return Boolean(this._renderer);
+  }
+
+  setupRenderer(): void {
+    this.renderer.editClassView = (classView: ClassView): void => {
+      const sourceInformation = this.metadataMap.get(
+        classView.class.value.path,
+      )?.sourceInformation;
+      if (sourceInformation) {
+        const coordinate = new FileCoordinate(
+          sourceInformation.source,
+          sourceInformation.startLine,
+          sourceInformation.startColumn,
+        );
+        flowResult(this.editorStore.executeNavigation(coordinate)).catch(
+          this.editorStore.applicationStore.alertIllegalUnhandledError,
+        );
+      }
+    };
   }
 
   setRenderer(val: DiagramRenderer): void {

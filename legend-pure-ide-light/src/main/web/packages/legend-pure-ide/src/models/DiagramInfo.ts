@@ -407,13 +407,26 @@ export const serializeDiagram = (diagram: Diagram): string => {
 
 // ------------------------------ Graph builder (for diagram renderer) ----------------------------------
 
-const getOrCreateClass = (path: string, graph: PureModel): Class => {
+export interface DiagramMetadata {
+  isStubbed: boolean;
+  sourceInformation: SourceInformation | undefined;
+}
+
+const getOrCreateClass = (
+  path: string,
+  graph: PureModel,
+  metadataMap: Map<string, DiagramMetadata>,
+): Class => {
   const existingClass = graph.getOwnClass(path);
   if (!existingClass) {
     const [_package, name] = resolvePackagePathAndElementName(path);
     const _class = new Class(name);
     Package.getOrCreatePackage(graph.root, _package, true).addElement(_class);
     graph.setOwnType(path, _class);
+    metadataMap.set(path, {
+      isStubbed: true,
+      sourceInformation: undefined,
+    });
     return _class;
   }
   return existingClass;
@@ -443,8 +456,9 @@ const parseMultiplicty = (text: string): Multiplicity => {
  */
 export const buildGraphFromDiagramInfo = (
   diagramInfo: DiagramInfo,
-): [Diagram, PureModel] => {
+): [Diagram, PureModel, Map<string, DiagramMetadata>] => {
   const graph = new PureModel(new CoreModel([]), new SystemModel([]), []);
+  const metadataMap = new Map<string, DiagramMetadata>();
 
   // domain
   if (diagramInfo.domainInfo) {
@@ -458,6 +472,10 @@ export const buildGraphFromDiagramInfo = (
         true,
       ).addElement(_class);
       graph.setOwnType(_class.path, _class);
+      metadataMap.set(_class.path, {
+        sourceInformation: classData.sourceInformation,
+        isStubbed: false,
+      });
     });
     domain.profiles.forEach((profileData) => {
       const profile = new Profile(profileData.name);
@@ -514,7 +532,9 @@ export const buildGraphFromDiagramInfo = (
       classData.generalizations.forEach((superTypeData) => {
         _class.addSuperType(
           GenericTypeExplicitReference.create(
-            new GenericType(getOrCreateClass(superTypeData.rawType, graph)),
+            new GenericType(
+              getOrCreateClass(superTypeData.rawType, graph, metadataMap),
+            ),
           ),
         );
       });
@@ -526,7 +546,11 @@ export const buildGraphFromDiagramInfo = (
             GenericTypeExplicitReference.create(
               new GenericType(
                 graph.getOwnEnumeration(propertyData.genericType.rawType) ??
-                  getOrCreateClass(propertyData.genericType.rawType, graph),
+                  getOrCreateClass(
+                    propertyData.genericType.rawType,
+                    graph,
+                    metadataMap,
+                  ),
               ),
             ),
             _class,
@@ -541,7 +565,11 @@ export const buildGraphFromDiagramInfo = (
             GenericTypeExplicitReference.create(
               new GenericType(
                 graph.getOwnEnumeration(propertyData.genericType.rawType) ??
-                  getOrCreateClass(propertyData.genericType.rawType, graph),
+                  getOrCreateClass(
+                    propertyData.genericType.rawType,
+                    graph,
+                    metadataMap,
+                  ),
               ),
             ),
             _class,
@@ -621,5 +649,5 @@ export const buildGraphFromDiagramInfo = (
     return generalizationView;
   });
 
-  return [diagram, graph];
+  return [diagram, graph, metadataMap];
 };
