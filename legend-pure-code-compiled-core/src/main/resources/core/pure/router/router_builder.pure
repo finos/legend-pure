@@ -14,7 +14,7 @@
 
 import meta::pure::metamodel::serialization::grammar::*;
 import meta::pure::graphFetch::execution::*;
-import meta::alloy::runtime::java::*;
+import meta::pure::executionPlan::engine::java::*;
 import meta::pure::mapping::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::mapping::modelToModel::inMemory::*;

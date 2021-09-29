@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::java::generation::tests::*;
-import meta::java::metamodel::factory::*;
+import meta::external::language::java::factory::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::tests::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::multiplicity::testToOne() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testToOne() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('toOne from one', {|5->toOne()}, 'org.finos.legend.engine.plan.dependencies.util.Library.toOne(5L)', javaLong())
          ->assert('%s == 5L')
       ->addTest('toOne from many', {|[5, 2]->filter(n| $n > 3)->toOne()}, 'org.finos.legend.engine.plan.dependencies.util.Library.toOne(java.util.Arrays.asList(5L, 2L).stream().filter((Long n) -> n > 3L).collect(java.util.stream.Collectors.toList()))', javaLong())
@@ -30,9 +30,9 @@ meta::java::generation::tests::functions::multiplicity::testToOne() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::multiplicity::testToOneMany() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testToOneMany() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('toOneMany from one', {|5->toOneMany()}, 'org.finos.legend.engine.plan.dependencies.util.Library.toOneMany(5L)', javaLong()->javaList())
          ->assert('%s.contains(5L)')
       ->addTest('toOneMany from many filtered to one', {|[5, 2]->filter(n| $n > 3)->toOneMany()}, 'org.finos.legend.engine.plan.dependencies.util.Library.toOneMany(java.util.Arrays.asList(5L, 2L).stream().filter((Long n) -> n > 3L).collect(java.util.stream.Collectors.toList()))', javaLong()->javaList())

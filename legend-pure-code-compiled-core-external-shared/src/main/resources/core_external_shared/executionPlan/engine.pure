@@ -16,9 +16,9 @@
  * Generated extension externalShared class definitions: see org.finos.legend.engine.external.shared.ExternalFormatJavaCompilerExtension
  */
 
+import meta::external::language::java::factory::*;
+import meta::external::language::java::transform::*;
 import meta::external::shared::format::executionPlan::engine::*;
-import meta::java::generation::convention::*;
-import meta::java::metamodel::factory::*;
 
 Class meta::external::shared::format::executionPlan::engine::_ExternalDataAdder {}
 Class meta::external::shared::format::executionPlan::engine::_ExternalDataBooleanAdder {}

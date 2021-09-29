@@ -1191,3 +1191,79 @@ Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingW
    }
 )
 
+###Pure
+import meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::*;
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::A
+{
+  b:meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::B[*];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::C
+{
+  cid:String[1];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::B extends meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::C
+{
+  id:String[1];
+  id2:String[1];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Source
+{
+  a : meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::A[*];
+  accessClassBProperties() { $this.a->filter(a | $a.b.id->isEmpty()).b.id2} : String[*];
+  accessClassBAndCSuperTypeProperties() { $this.a->filter(a | $a.b.id->isNotEmpty() && $a.b->accessCid()).b.id} : String[*];
+}
+
+function meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::accessCid(c : C[*]) : Boolean[1]
+{
+  $c.cid->isNotEmpty();
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetForSubTypeAndSuperTypeAccesses
+{
+  id : String[*];
+}
+
+function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testNestedSubTypeAndSuperTypeAccesses():Boolean[1]
+{
+  let tree = #{
+      TargetForSubTypeAndSuperTypeAccesses {
+         id
+      }
+   }#;
+
+  let expectedString = 'Source [requires: accessClassBProperties,accessClassBAndCSuperTypeProperties]\n' +
+                        '(\n' +
+                        '  a\n' +
+                        '  (\n' +
+                        '    b\n' +
+                        '    (\n' +
+                        '      id\n' +
+                        '      id2\n' +
+                        '    )\n' +
+                        '  )\n' +
+                        ')';
+
+   let sourceTree = meta::pure::graphFetch::calculateSourceTree($tree, 
+                                                                meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceToTargetMappingWithSubtypeAndSuperTypeAccesses,
+                                                                meta::pure::router::extension::defaultExtensions())->meta::pure::graphFetch::sortTree();
+   assertEquals($expectedString, $sourceTree->meta::pure::graphFetch::sortTree()->meta::pure::graphFetch::treeToString());
+   
+  
+}
+
+###Mapping
+Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceToTargetMappingWithSubtypeAndSuperTypeAccesses
+(
+  meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetForSubTypeAndSuperTypeAccesses : Pure
+  {
+    ~src meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Source
+    id : if($src.a->size() == 1, | $src.accessClassBProperties, | $src.accessClassBAndCSuperTypeProperties)
+  }
+)
+
+
+
+

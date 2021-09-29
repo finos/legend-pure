@@ -27,7 +27,7 @@ import meta::pure::mapping::modelToModel::graphFetch::executionPlan::*;
 import meta::pure::runtime::*;
 import meta::pure::mapping::*;
 
-import meta::alloy::runtime::java::*;
+import meta::pure::executionPlan::engine::java::*;
 
 import meta::json::*;
 

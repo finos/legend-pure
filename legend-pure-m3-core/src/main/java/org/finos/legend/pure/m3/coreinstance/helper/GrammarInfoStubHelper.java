@@ -21,22 +21,24 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class GrammarInfoStubHelper
 {
-    public static final Function<CoreInstance, CoreInstance> FROM_STUB_FN = new Function<CoreInstance, CoreInstance>()
+    public static final Function<CoreInstance, CoreInstance> FROM_STUB_FN = GrammarInfoStubHelper::fromGrammarInfoStub;
+
+    public static CoreInstance fromGrammarInfoStub(CoreInstance instance)
     {
-        public CoreInstance valueOf(CoreInstance instance)
+        return (instance instanceof GrammarInfoStub) ? fromGrammarInfoStub((GrammarInfoStub) instance) : instance;
+    }
+
+    public static CoreInstance fromGrammarInfoStub(GrammarInfoStub grammarInfoStub)
+    {
+        if (grammarInfoStub._valueCoreInstance() == null)
         {
-            if (instance instanceof GrammarInfoStub)
-            {
-                if (((GrammarInfoStub)instance)._valueCoreInstance() == null)
-                {
-                    throw new PureCompilationException("Error, GrammarInfoStub needs to be resolved before it can be accessed");
-                }
-                return ((GrammarInfoStub)instance)._valueCoreInstance();
-            }
-            else
-            {
-                return instance;
-            }
+            throw new PureCompilationException("Error, GrammarInfoStub needs to be resolved before it can be accessed");
         }
-    };
+        return grammarInfoStub._valueCoreInstance();
+    }
+
+    public static boolean isUnresolved(GrammarInfoStub grammarInfoStub)
+    {
+        return grammarInfoStub._value() == null;
+    }
 }

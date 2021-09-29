@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::graphFetch::common::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::platform::*;
-import meta::alloy::runtime::java::typeInfo::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
-import meta::java::serialization::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::graphFetch::common::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::platform::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::mapping::*;
 import meta::pure::mapping::modelToModel::inMemory::*;
 import meta::pure::milestoning::*;
@@ -32,7 +32,7 @@ import meta::pure::graphFetch::routing::*;
 import meta::pure::graphFetch::executionPlan::*;
 import meta::pure::router::extension::*;
 
-function meta::alloy::runtime::java::graphFetch::common::prepareForGlobalGraphFetchNode(node: GlobalGraphFetchExecutionNode[1], path: String[1], context:GenerationContext[1], debug:DebugContext[1]):GenerationContext[1]
+function meta::pure::executionPlan::engine::java::graphFetch::common::prepareForGlobalGraphFetchNode(node: GlobalGraphFetchExecutionNode[1], path: String[1], context:GenerationContext[1], debug:DebugContext[1]):GenerationContext[1]
 {
    if ($node.parentIndex->isEmpty(),
        |
@@ -49,12 +49,12 @@ function meta::alloy::runtime::java::graphFetch::common::prepareForGlobalGraphFe
    )
 }
 
-function meta::alloy::runtime::java::graphFetch::common::generateCodeForLocalGraphFetchNode(node: LocalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
+function meta::pure::executionPlan::engine::java::graphFetch::common::generateCodeForLocalGraphFetchNode(node: LocalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
 {
    let implProject   = if($node.resultType->instanceOf(ClassResultType), | generateGraphNodeImplementation($node, $context, $path, $extensions, $debug), | []);
    let globalProject = generateTypes($context, $debug);
    let storeProject  = $node->match([
-      i : meta::pure::mapping::modelToModel::graphFetch::executionPlan::InMemoryGraphFetchExecutionNode[1] | $i->meta::alloy::runtime::java::graphFetch::inMemory::generateInMemoryStoreGraphFetchProject($path, $context, $extensions, $debug)
+      i : meta::pure::mapping::modelToModel::graphFetch::executionPlan::InMemoryGraphFetchExecutionNode[1] | $i->meta::pure::executionPlan::engine::java::graphFetch::inMemory::generateInMemoryStoreGraphFetchProject($path, $context, $extensions, $debug)
    ]->concatenate(
       $extensions.java_graphFetch_graphFetchCommon_generateCodeForLocalGraphFetchNode->map(f|$f->eval($path, $context, $extensions, $debug))
    )->toOneMany());
@@ -65,31 +65,31 @@ function meta::alloy::runtime::java::graphFetch::common::generateCodeForLocalGra
    );
 }
 
-function meta::alloy::runtime::java::graphFetch::common::classSizeIdentifier():String[1]
+function meta::pure::executionPlan::engine::java::graphFetch::common::classSizeIdentifier():String[1]
 {
    'classSize$'
 }
 
-function meta::alloy::runtime::java::graphFetch::common::instanceSizeIdentifier():String[1]
+function meta::pure::executionPlan::engine::java::graphFetch::common::instanceSizeIdentifier():String[1]
 {
    'instanceSize$'
 }
 
-function meta::alloy::runtime::java::graphFetch::common::typeFromStoreLocalNode(storeLocalNode: LocalGraphFetchExecutionNode[1]):Class<Any>[1]
+function meta::pure::executionPlan::engine::java::graphFetch::common::typeFromStoreLocalNode(storeLocalNode: LocalGraphFetchExecutionNode[1]):meta::pure::metamodel::type::Class<Any>[1]
 {
    if ($storeLocalNode.resultType->cast(@ClassResultType).setImplementations->size() > 1,
-       | $storeLocalNode.resultType->cast(@ClassResultType).type->cast(@Class<Any>),
+       | $storeLocalNode.resultType->cast(@ClassResultType).type->cast(@meta::pure::metamodel::type::Class<Any>),
        | let setImpl = $storeLocalNode.resultType->cast(@ClassResultType).setImplementations->toOne()->cast(@InstanceSetImplementation);
          $setImpl.mappingClass->isNotEmpty()->if(| $setImpl.mappingClass->toOne(), | $setImpl.class);
    )
 }
 
-function meta::alloy::runtime::java::graphFetch::common::graphImplClass(storeLocalNode: LocalGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1]):meta::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::graphFetch::common::graphImplClass(storeLocalNode: LocalGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1]):meta::external::language::java::metamodel::Class[1]
 {
    graphImplClass($storeLocalNode.nodeIndex, $context.conventions->className($storeLocalNode->typeFromStoreLocalNode()), $path, $context)
 }
 
-function meta::alloy::runtime::java::graphFetch::common::graphImplClass(nodeIndex: Integer[1], interface: meta::java::metamodel::Class[1], path: String[1], context: GenerationContext[1]):meta::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::graphFetch::common::graphImplClass(nodeIndex: Integer[1], interface: meta::external::language::java::metamodel::Class[1], path: String[1], context: GenerationContext[1]):meta::external::language::java::metamodel::Class[1]
 {
    $context.conventions
       ->planNodeClass('public', $path, 'GraphFetch_Node' + $nodeIndex->toString() + '_' + $interface.simpleName + '_Impl')
@@ -98,7 +98,7 @@ function meta::alloy::runtime::java::graphFetch::common::graphImplClass(nodeInde
       ->implements($interface);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::common::generateGraphNodeImplementation(node: LocalGraphFetchExecutionNode[1], context: GenerationContext[1], path: String[1], extensions:RouterExtension[*], debug: DebugContext[1]):Project[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::common::generateGraphNodeImplementation(node: LocalGraphFetchExecutionNode[1], context: GenerationContext[1], path: String[1], extensions:RouterExtension[*], debug: DebugContext[1]):Project[1]
 {
    let resultClass       = $node->typeFromStoreLocalNode();
    let implClass         = graphImplClass($node, $path, $context);
@@ -111,7 +111,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::common::gene
    mergeProjects([$mergedProject, $withSizeMethods]);
 }
 
-function meta::alloy::runtime::java::graphFetch::common::createGraphInstance(conventions: Conventions[1], impl: meta::java::metamodel::Class[1], value: Code[1]): Code[1]
+function meta::pure::executionPlan::engine::java::graphFetch::common::createGraphInstance(conventions: Conventions[1], impl: meta::external::language::java::metamodel::Class[1], value: Code[1]): Code[1]
 {
    j_newAnon(
       graphInstanceOf($impl, $conventions), [],
@@ -122,7 +122,7 @@ function meta::alloy::runtime::java::graphFetch::common::createGraphInstance(con
    )
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::common::updateImplementationClassWithProperties(implClass: meta::java::metamodel::Class[1], node: LocalGraphFetchExecutionNode[1], nodeType: Class<Any>[1], context: GenerationContext[1]): Project[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::common::updateImplementationClassWithProperties(implClass: meta::external::language::java::metamodel::Class[1], node: LocalGraphFetchExecutionNode[1], nodeType: meta::pure::metamodel::type::Class<Any>[1], context: GenerationContext[1]): Project[1]
 {
    let conventions   = $context.conventions;
    let allProperties = $context.typeInfos->allProperties($nodeType);
@@ -134,11 +134,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::common::upda
       let fieldType   = $conventions->pureTypeToJavaType($p);
 
       let noMappingDefaultToEmpty = ($fetchTree.sets->size() == 1) && $fetchTree.sets->toOne()->isNoMappingDefaultToEmpty($p);
-      let noMappingPassThru = $p.owner->instanceOf(Class) && ($fetchTree.sets->size() == 1) && $fetchTree.sets->toOne()->passThruProperty($p);
+      let noMappingPassThru = $p.owner->instanceOf(meta::pure::metamodel::type::Class) && ($fetchTree.sets->size() == 1) && $fetchTree.sets->toOne()->passThruProperty($p);
 
-      if ($p.owner->instanceOf(Class) && ($fetchTree.sets->size() == 1) && $fetchTree.sets->toOne()->cast(@InstanceSetImplementation).propertyMappingsByPropertyName($p.name->toOne())->isEmpty() && !($p->hasGeneratedMilestoningDatePropertyStereotype()) && !($noMappingDefaultToEmpty || $noMappingPassThru),
+      if ($p.owner->instanceOf(meta::pure::metamodel::type::Class) && ($fetchTree.sets->size() == 1) && $fetchTree.sets->toOne()->cast(@InstanceSetImplementation).propertyMappingsByPropertyName($p.name->toOne())->isEmpty() && !($p->hasGeneratedMilestoningDatePropertyStereotype()) && !($noMappingDefaultToEmpty || $noMappingPassThru),
          {|
-            $javaClass->addMethod(javaMethod(['public'], $fieldType, $getterName, [], javaUnsupportedOperationException()->j_new(j_string('No mapping for property \'' + $p.name->toOne() +'\''))->j_throw()->codeToString($javaClass)))
+            $javaClass->addMethod(javaMethod(['public'], $fieldType, $getterName, [], j_throw(javaUnsupportedOperationException()->j_new(j_string('No mapping for property \'' + $p.name->toOne() +'\'')))))
          },
          {|
             let field  = j_this($javaClass)->j_field($fieldName, $fieldType);
@@ -148,11 +148,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::common::upda
 
             let getter = javaMethod(
                ['public'], $fieldType, $getterName, [],
-               if($fieldType->isJavaList(),| j_conditional($field->j_eq(j_null()), j_emptyList($fieldType), $field),| $field)->j_return()->codeToString($javaClass)
+               j_return(if($fieldType->isJavaList(),| j_conditional($field->j_eq(j_null()), j_emptyList($fieldType), $field),| $field))
             );
             let setter = javaMethod(
                ['public'], javaVoid(), $conventions->setterName($p), $param, 
-               $field->j_assign($param)->codesToString($javaClass)
+               $field->j_assign($param)
             );
             let adder  = javaMethod(
                ['public'], javaVoid(), 'add' + $fieldName->toUpperFirstCharacter()->toOne(), [$object],
@@ -165,7 +165,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::common::upda
                         j_cast($field, javaObject())->j_ne(j_null())->j_if(javaIllegalStateException()->j_new(j_string('Found multiple objects for property \'' + $p.name->toOne() + '\' of multiplicity with bound 1'))->j_throw()),
                         $field->j_assign($object)
                      ]
-               )->codesToString($javaClass)
+               )
             );
 
             $javaClass->addField(javaField(['private'], $fieldType, $fieldName))->addMethods([$getter, $setter, $adder]);
@@ -176,27 +176,27 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::common::upda
    newProject()->addClasses($withProperties);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::common::updateImplementationClassWithStoreSpecificFieldsAndMethods(implClass: meta::java::metamodel::Class[1], node: LocalGraphFetchExecutionNode[1], context: GenerationContext[1], extensions: RouterExtension[*], debug: DebugContext[1]): Project[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::common::updateImplementationClassWithStoreSpecificFieldsAndMethods(implClass: meta::external::language::java::metamodel::Class[1], node: LocalGraphFetchExecutionNode[1], context: GenerationContext[1], extensions: RouterExtension[*], debug: DebugContext[1]): Project[1]
 {
    $node->match([
-      i : meta::pure::mapping::modelToModel::graphFetch::executionPlan::InMemoryGraphFetchExecutionNode[1] | $implClass->meta::alloy::runtime::java::graphFetch::inMemory::enrichForInMemoryGraphExecution($i, $context, $extensions, $debug)
+      i : meta::pure::mapping::modelToModel::graphFetch::executionPlan::InMemoryGraphFetchExecutionNode[1] | $implClass->meta::pure::executionPlan::engine::java::graphFetch::inMemory::enrichForInMemoryGraphExecution($i, $context, $extensions, $debug)
    ]->concatenate($extensions.java_graphFetch_graphFetchCommon_updateImplementationClassWithStoreSpecificFieldsAndMethods->map(f|$f->eval($implClass, $context, $extensions, $debug)))->toOneMany())
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::common::updateImplementationClassWithInstanceSizeMethods(implClass: meta::java::metamodel::Class[1], nodeType: Class<Any>[1], context: GenerationContext[1]): Project[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::common::updateImplementationClassWithInstanceSizeMethods(implClass: meta::external::language::java::metamodel::Class[1], nodeType: meta::pure::metamodel::type::Class<Any>[1], context: GenerationContext[1]): Project[1]
 {
    let conventions = $context.conventions;
 
    let typePathToSizeMap = newMap([
-      pair($conventions->pureTypeToJavaType(String, ZeroOne)->typePathToString(true), 24),
-      pair($conventions->pureTypeToJavaType(Integer, PureOne)->typePathToString(true), 8),
-      pair($conventions->pureTypeToJavaType(Integer, ZeroOne)->typePathToString(true), 24),
-      pair($conventions->pureTypeToJavaType(Float, PureOne)->typePathToString(true), 8),
-      pair($conventions->pureTypeToJavaType(Float, ZeroOne)->typePathToString(true), 24),
-      pair($conventions->pureTypeToJavaType(Boolean, PureOne)->typePathToString(true), 1),
-      pair($conventions->pureTypeToJavaType(Boolean, ZeroOne)->typePathToString(true), 17),
-      pair($conventions->pureTypeToJavaType(Decimal, ZeroOne)->typePathToString(true), 92),
-      pair($conventions->pureTypeToJavaType(Date, ZeroOne)->typePathToString(true), 64)
+      pair($conventions->pureTypeToJavaType(String, ZeroOne)->typeToString(), 24),
+      pair($conventions->pureTypeToJavaType(Integer, PureOne)->typeToString(), 8),
+      pair($conventions->pureTypeToJavaType(Integer, ZeroOne)->typeToString(), 24),
+      pair($conventions->pureTypeToJavaType(Float, PureOne)->typeToString(), 8),
+      pair($conventions->pureTypeToJavaType(Float, ZeroOne)->typeToString(), 24),
+      pair($conventions->pureTypeToJavaType(Boolean, PureOne)->typeToString(), 1),
+      pair($conventions->pureTypeToJavaType(Boolean, ZeroOne)->typeToString(), 17),
+      pair($conventions->pureTypeToJavaType(Decimal, ZeroOne)->typeToString(), 92),
+      pair($conventions->pureTypeToJavaType(Date, ZeroOne)->typeToString(), 64)
    ]);
 
    let jThis = j_this($implClass);
@@ -206,30 +206,30 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::common::upda
       ['private', 'static'], javaLong(), $conventions->getterName(classSizeIdentifier()), [],
       j_long(
          $implClass.fields
-            ->filter(x | !$x.modifiers->contains(meta::java::metamodel::Modifier.Static))
-            ->map(x | let size = $typePathToSizeMap->get($x.type->typePathToString(true));if($size->isEmpty(), | 24, | $size->toOne());)
+            ->filter(x | !$x.modifiers->contains(meta::external::language::java::metamodel::Modifier.Static))
+            ->map(x | let size = $typePathToSizeMap->get($x.type->typeToString());if($size->isEmpty(), | 24, | $size->toOne());)
             ->sum() + 12
-      )->j_return()->codesToString($implClass)
+      )->j_return()
    );
 
    let instanceSizeMethod = javaMethod(
       ['public'], javaLong(), $conventions->getterName(instanceSizeIdentifier()), [],
       $size->j_declare($implClass->j_invoke($conventions->getterName(classSizeIdentifier()), [], javaLong()))->concatenate(
          $implClass.fields
-            ->filter(x | !$x.modifiers->contains(meta::java::metamodel::Modifier.Static))
-            ->filter(x | $x.type->typePathToString(true) ==  $conventions->pureTypeToJavaType(String, ZeroOne)->typePathToString(true))
+            ->filter(x | !$x.modifiers->contains(meta::external::language::java::metamodel::Modifier.Static))
+            ->filter(x | $x.type->typeToString() ==  $conventions->pureTypeToJavaType(String, ZeroOne)->typeToString())
             ->map(x | j_if($jThis->j_field($x.name, javaString())->j_ne(j_null()), $size->j_assign($size->j_plus($jThis->j_field($x.name, javaString())->j_invoke('length', [], javaLong())))))
       )->concatenate(
          $implClass.fields
-            ->filter(x | !$x.modifiers->contains(meta::java::metamodel::Modifier.Static))
+            ->filter(x | !$x.modifiers->contains(meta::external::language::java::metamodel::Modifier.Static))
             ->filter(x | $x.type->isJavaList())
             ->map(x |
                let elType = $x.type->elementTypeOfJavaList();
                j_if($jThis->j_field($x.name, javaString())->j_ne(j_null()),
                   j_for(j_parameter($elType, 'i'), $jThis->j_field($x.name),
                      j_if(j_parameter($elType, 'i')->j_ne(j_null()),
-                        $size->j_assign($size->j_plus(if($typePathToSizeMap->get($elType->typePathToString(true))->isEmpty(), | j_long(20), | j_long($typePathToSizeMap->get($elType->typePathToString(true))->toOne() - 4))))->concatenate(
-                           if ($elType->typePathToString(true) == $conventions->pureTypeToJavaType(String, ZeroOne)->typePathToString(true),
+                        $size->j_assign($size->j_plus(if($typePathToSizeMap->get($elType->typeToString())->isEmpty(), | j_long(20), | j_long($typePathToSizeMap->get($elType->typeToString())->toOne() - 4))))->concatenate(
+                           if ($elType->typeToString() == $conventions->pureTypeToJavaType(String, ZeroOne)->typeToString(),
                                | $size->j_assign($size->j_plus(j_parameter($elType, 'i')->j_invoke('length', [], javaLong()))),
                                | []
                            )
@@ -240,13 +240,13 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::common::upda
             )
       )->concatenate(
          $size->j_return()
-      )->codesToString($implClass)
+      )
    );
 
    newProject()->addClasses($implClass->addMethods([$classSizeMethod, $instanceSizeMethod]));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::common::passThruProperty(setImpl:SetImplementation[1], property:AbstractProperty<Any>[1]):Boolean[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::common::passThruProperty(setImpl:SetImplementation[1], property:AbstractProperty<Any>[1]):Boolean[1]
 {
    $setImpl->meta::pure::mapping::modelToModel::inMemory::isNoMappingPassThru($property)
 }

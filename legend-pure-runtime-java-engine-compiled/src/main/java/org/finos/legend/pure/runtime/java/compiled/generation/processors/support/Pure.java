@@ -57,24 +57,33 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.Path;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PropertyPathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ConstraintsOverride;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ElementOverride;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.*;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Nil;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.router.RoutedValueSpecification;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.ChangeType;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.ChangedPath;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.Revision;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.*;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureDynamicReactivateException;
 import org.finos.legend.pure.runtime.java.compiled.delta.CodeBlockDeltaCompiler;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
@@ -97,19 +106,27 @@ import org.json.simple.JSONObject;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.lang.Class;
 
 public class Pure
 {
     private static final ExecutorService traceAsyncExecutor = Executors.newCachedThreadPool(new ThreadFactory()
     {
         private final ThreadGroup group = System.getSecurityManager() == null
-                ? Thread.currentThread().getThreadGroup()
-                : System.getSecurityManager().getThreadGroup();
+            ? Thread.currentThread().getThreadGroup()
+            : System.getSecurityManager().getThreadGroup();
         private final AtomicInteger threadNumber = new AtomicInteger(1);
 
         @Override
@@ -176,11 +193,11 @@ public class Pure
         {
             if (port == -1)
             {
-                throw new PureExecutionException("The system variable 'legend.test.server.host' is set to '"+host+"' however 'legend.test.server.port' has not been set!");
+                throw new PureExecutionException("The system variable 'legend.test.server.host' is set to '" + host + "' however 'legend.test.server.port' has not been set!");
             }
             if (serializationKind == null || !(serializationKind.equals("text") || serializationKind.equals("json")))
             {
-                serializationKind="json";
+                serializationKind = "json";
             }
             if (clientVersion == null)
             {
@@ -314,10 +331,12 @@ public class Pure
         try
         {
             return value.getClass().getField("_" + property._name()).get(value);
-        } catch (NoSuchFieldException e)
+        }
+        catch (NoSuchFieldException e)
         {
             throw new PureExecutionException(sourceInformation, "Can't find the property '" + property._name() + "' in the class " + CompiledSupport.getPureClassName(value));
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -427,7 +446,7 @@ public class Pure
                             try
                             {
                                 RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
-                                Class[] paramClasses = new Class[params.size() + 1];
+                                Class<?>[] paramClasses = new Class[params.size() + 1];
                                 int index = 0;
                                 for (VariableExpression o : params)
                                 {
@@ -451,7 +470,8 @@ public class Pure
         {
             Class myClass = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
             functions = (MutableMap<String, SharedPureFunction>) myClass.getDeclaredField("__functions").get(null);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -526,7 +546,8 @@ public class Pure
             {
                 Object o = ((RichIterable) paramInputs.getFirst()).getFirst();
                 return o.getClass().getMethod("_" + func.getName()).invoke(o);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new RuntimeException(e);
             }
@@ -553,7 +574,7 @@ public class Pure
             {
                 Object o = ((RichIterable) paramInputs.getFirst()).getFirst();
                 return CompiledSupport.executeMethod(o.getClass(), func._functionName(), func, Arrays.copyOfRange(paramClasses, 1, paramClasses.length),
-                        o, Arrays.copyOfRange(paramInstances, 1, paramInstances.length), es);
+                    o, Arrays.copyOfRange(paramInstances, 1, paramInstances.length), es);
             }
             if (func instanceof ConcreteFunctionDefinition)
             {
@@ -569,10 +590,12 @@ public class Pure
                 return foundFunc.execute(Lists.mutable.with(paramInstances), es);
             }
             throw new PureExecutionException("Unknown function type:" + func.getClass().getName());
-        } catch (RuntimeException e)
+        }
+        catch (RuntimeException e)
         {
             throw e;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -590,7 +613,8 @@ public class Pure
                     Class myClass = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
                     MutableMap<String, SharedPureFunction> functions = (MutableMap<String, SharedPureFunction>) myClass.getDeclaredField("__functions").get(null);
                     return functions.get(func.getName());
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     throw new RuntimeException(e);
                 }
@@ -604,7 +628,8 @@ public class Pure
         {
             SharedPureFunction spf = getNativeOrLambdaFunction(es, func);
             return spf != null;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             return false;
         }
@@ -758,7 +783,8 @@ public class Pure
             });
 
             return result;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -810,7 +836,7 @@ public class Pure
 
     public static void replaceTreeNodeCopy(TreeNode instance, TreeNode result, TreeNode targetNode, TreeNode subTree)
     {
-        result._childrenData(FastList.<TreeNode>newList());
+        result._childrenData(FastList.newList());
 
         for (TreeNode child : instance._childrenData())
         {
@@ -827,31 +853,6 @@ public class Pure
         }
     }
 
-    private static String extractHostName(String url)
-    {
-        String host = "";
-        if (url.contains("jdbc:sqlanywhere"))
-        {
-            String[] urlTokens = url.split(";");
-            for (String token : urlTokens)
-            {
-                if (token.startsWith("LINKS=TCPIP{host"))
-                {
-                    host += token.substring("LINKS=TCPIP{".length(), token.length() - 1) + ";";
-                }
-                else if (token.startsWith("ServerName"))
-                {
-                    host += token + ";";
-                }
-            }
-        }
-        else
-        {
-            host = url;
-        }
-        return host;
-    }
-
     public static boolean instanceOf(Object obj, Type type, ExecutionSupport es)
     {
         if (type instanceof Enumeration)
@@ -859,7 +860,18 @@ public class Pure
             return (obj instanceof Enum) && type.equals(((CompiledExecutionSupport) es).getMetadataAccessor().getEnumeration(((Enum) obj).getFullSystemPath()));
         }
 
-        Class<?> javaClass = pureTypeToJavaClass(type, es);
+        Class<?> javaClass;
+        try
+        {
+            javaClass = pureTypeToJavaClass(type, es);
+        }
+        catch (Exception e)
+        {
+            if (obj instanceof CoreInstance) {
+                return Instance.instanceOf((CoreInstance) obj, type, ((CompiledExecutionSupport) es).getProcessorSupport());
+            }
+            throw e;
+        }
         if (javaClass == Any.class)
         {
             return true;
@@ -952,7 +964,7 @@ public class Pure
         return (lowerBound <= number) && ((upperBound < 0) || (number <= upperBound));
     }
 
-    private static Class pureTypeToJavaClassForExecution(ValueSpecification vs, Bridge bridge, ExecutionSupport es)
+    private static Class<?> pureTypeToJavaClassForExecution(ValueSpecification vs, Bridge bridge, ExecutionSupport es)
     {
         org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gt = vs._genericType();
         Multiplicity m = vs._multiplicity();
@@ -985,71 +997,65 @@ public class Pure
 
     private static Class<?> pureTypeToJavaClass(Type type, boolean useJavaPrimitives, ExecutionSupport es)
     {
-        try
+        if (type instanceof Enumeration)
         {
-            if (type instanceof Enumeration)
+            return Enum.class;
+        }
+        if (type instanceof PrimitiveType)
+        {
+            switch (type.getName())
             {
-                return Enum.class;
-            }
-            if (type instanceof PrimitiveType)
-            {
-                switch (type.getName())
+                case "Integer":
                 {
-                    case "Integer":
-                    {
-                        return useJavaPrimitives ? long.class : Long.class;
-                    }
-                    case "Number":
-                    {
-                        return Number.class;
-                    }
-                    case "Float":
-                    {
-                        return useJavaPrimitives ? double.class : Double.class;
-                    }
-                    case "Decimal":
-                    {
-                        return BigDecimal.class;
-                    }
-                    case "Boolean":
-                    {
-                        return useJavaPrimitives ? boolean.class : Boolean.class;
-                    }
-                    case "String":
-                    {
-                        return String.class;
-                    }
-                    case "Date":
-                    {
-                        return PureDate.class;
-                    }
-                    case "StrictDate":
-                    {
-                        return StrictDate.class;
-                    }
-                    case "LatestDate":
-                    {
-                        return LatestDate.class;
-                    }
-                    case "DateTime":
-                    {
-                        return DateTime.class;
-                    }
-                    default:
-                    {
-                        CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
-                        return ces.getClassCache().getIfAbsentPutInterfaceForType(type, ces.getClassLoader());
-                    }
+                    return useJavaPrimitives ? long.class : Long.class;
+                }
+                case "Number":
+                {
+                    return Number.class;
+                }
+                case "Float":
+                {
+                    return useJavaPrimitives ? double.class : Double.class;
+                }
+                case "Decimal":
+                {
+                    return BigDecimal.class;
+                }
+                case "Boolean":
+                {
+                    return useJavaPrimitives ? boolean.class : Boolean.class;
+                }
+                case "String":
+                {
+                    return String.class;
+                }
+                case "Date":
+                {
+                    return PureDate.class;
+                }
+                case "StrictDate":
+                {
+                    return StrictDate.class;
+                }
+                case "LatestDate":
+                {
+                    return LatestDate.class;
+                }
+                case "DateTime":
+                {
+                    return DateTime.class;
+                }
+                default:
+                {
+                    CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
+                    return ces.getClassCache().getIfAbsentPutInterfaceForType(type);
                 }
             }
-
-            CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
-            Class<?> theClass = ces.getClassCache().getIfAbsentPutInterfaceForType(type, ces.getClassLoader());
-            return theClass.equals(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Map.class) ? PureMap.class : theClass;
-        } catch (Exception e)
-        {
-            throw new RuntimeException(e);
         }
+
+        CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
+        Class<?> theClass = ces.getClassCache().getIfAbsentPutInterfaceForType(type);
+        return theClass.equals(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Map.class) ? PureMap.class : theClass;
     }
 
     public static boolean subTypeOf(Type subType, Type superType, ExecutionSupport es)
@@ -1059,13 +1065,35 @@ public class Pure
             return true;
         }
 
-        Class<?> theSubTypeClass = pureTypeToJavaClass(subType, es);
+        // NOTE: ClassNotFoundException can occur when we use subTypeOf() in engine where some
+        // Java classes are not available during plan generation. There is a potentially
+        // less performant alternative which is to use type_subTypeOf() as this will use the
+        // metamodel graph instead of Java classes to test subtype; but this alternative is more reliable.
+        // As such, to be defensive, we should fallback to the latter when the former fails with ClassNotFoundException
+        // See https://github.com/finos/legend-pure/issues/324
+        Class<?> theSubTypeClass;
+        try
+        {
+            theSubTypeClass = pureTypeToJavaClass(subType, es);
+        }
+        catch (Exception e)
+        {
+            return ((CompiledExecutionSupport) es).getProcessorSupport().type_subTypeOf(subType, superType);
+        }
         if (theSubTypeClass == Nil.class)
         {
             return true;
         }
 
-        Class<?> theSuperTypeClass = pureTypeToJavaClass(superType, es);
+        Class<?> theSuperTypeClass;
+        try
+        {
+            theSuperTypeClass = pureTypeToJavaClass(superType, es);
+        }
+        catch (Exception e)
+        {
+            return ((CompiledExecutionSupport) es).getProcessorSupport().type_subTypeOf(subType, superType);
+        }
         return (theSuperTypeClass == Any.class) || theSuperTypeClass.isAssignableFrom(theSubTypeClass);
     }
 
@@ -1118,8 +1146,8 @@ public class Pure
         }
         else
         {
-            ConcreteFunctionDefinition cfd = (ConcreteFunctionDefinition) compilationResult.getResult();
-            result._result((ValueSpecification) cfd._expressionSequence().getFirst());
+            ConcreteFunctionDefinition<?> cfd = (ConcreteFunctionDefinition<?>) compilationResult.getResult();
+            result._result(cfd._expressionSequence().getFirst());
         }
         return result;
     }
@@ -1136,7 +1164,7 @@ public class Pure
 
     public static Object dynamicMatch(Object obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>> funcs, Object var, boolean isMatchWith, Bridge bridge, ExecutionSupport es)
     {
-        for (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function f : funcs)
+        for (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> f : funcs)
         {
             VariableExpression p = ((FunctionType) f._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters().getFirst();
             Multiplicity mul = p._multiplicity();
@@ -1150,12 +1178,12 @@ public class Pure
         return null;
     }
 
-    public static <T> RichIterable<T> removeDuplicates(T item, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function eqlFn)
+    public static <T> RichIterable<T> removeDuplicates(T item, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> eqlFn)
     {
-        return (item == null) ? Lists.immutable.<T>empty() : Lists.immutable.with(item);
+        return (item == null) ? Lists.immutable.empty() : Lists.immutable.with(item);
     }
 
-    public static <T, V> RichIterable<T> removeDuplicates(RichIterable<T> list, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function eqlFn, Bridge bridge, ExecutionSupport es)
+    public static <T, V> RichIterable<T> removeDuplicates(RichIterable<T> list, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> eqlFn, Bridge bridge, ExecutionSupport es)
     {
         if (list == null)
         {
@@ -1396,7 +1424,8 @@ public class Pure
             try
             {
                 return Reactivator.reactivateWithoutJavaCompilation(bridge, valueSpecification, lambdaOpenVariablesMap, es);
-            } catch (PureDynamicReactivateException e)
+            }
+            catch (PureDynamicReactivateException e)
             {
                 throw new RuntimeException("Out of sync state between can reactivate and actual reactive without Java source code", e);
             }
@@ -1408,19 +1437,19 @@ public class Pure
     }
 
     public static boolean canReactivateWithoutJavaCompilation(
-            final ValueSpecification valueSpecification,
-            final ExecutionSupport es,
-            Bridge bridge
+        final ValueSpecification valueSpecification,
+        final ExecutionSupport es,
+        Bridge bridge
     )
     {
         return canReactivateWithoutJavaCompilation(valueSpecification, es, new PureMap(UnifiedMap.newMap()), bridge);
     }
 
     public static boolean canReactivateWithoutJavaCompilation(
-            final ValueSpecification valueSpecification,
-            final ExecutionSupport es,
-            final PureMap lambdaOpenVariablesMap,
-            Bridge bridge
+        final ValueSpecification valueSpecification,
+        final ExecutionSupport es,
+        final PureMap lambdaOpenVariablesMap,
+        Bridge bridge
     )
     {
         return Reactivator.canReactivateWithoutJavaCompilation(valueSpecification, es, lambdaOpenVariablesMap, bridge);
@@ -1464,7 +1493,8 @@ public class Pure
                     try
                     {
                         return classLoader.loadClass(TypeProcessor.fullyQualifiedJavaInterfaceNameForType(type));
-                    } catch (ClassNotFoundException e)
+                    }
+                    catch (ClassNotFoundException e)
                     {
                         // Type specified is incorrect or problem with metadata. Return default.
                         return typeFromClassMetaData;
@@ -1531,7 +1561,8 @@ public class Pure
                         }
                     });
                     future.get(60, TimeUnit.SECONDS);
-                } catch (TimeoutException e)
+                }
+                catch (TimeoutException e)
                 {
                     if (span != null)
                     {
@@ -1555,7 +1586,8 @@ public class Pure
                 }
             }
             return evaluate(es, function, bridge, Lists.mutable.empty());
-        } finally
+        }
+        finally
         {
             if (span != null)
             {

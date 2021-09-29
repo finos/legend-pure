@@ -17,8 +17,8 @@
  */
 
 import meta::external::format::flatdata::executionPlan::engine::*;
-import meta::java::generation::convention::*;
-import meta::java::metamodel::factory::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::transform::*;
 
 Class meta::external::format::flatdata::executionPlan::engine::_IFlatDataSerializeExecutionNodeSpecifics {}
 Class meta::external::format::flatdata::executionPlan::engine::_IFlatDataDeserializeExecutionNodeSpecifics {}

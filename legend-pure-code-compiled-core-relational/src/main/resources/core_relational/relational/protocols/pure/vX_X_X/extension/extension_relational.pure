@@ -131,7 +131,8 @@ function meta::protocols::pure::vX_X_X::extension::getRelationalExtension():meta
                            children = $rel.children->map(c | $c->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformNode($mapping, $extensions))->cast(@meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalGraphFetchExecutionNode),
                            nodeIndex = $rel.nodeIndex,
                            parentIndex = $rel.parentIndex,
-                           graphFetchTree = $rel.graphFetchTree->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformGraphFetchTree([], newMap([]->cast(@Pair<String,List<Any>>)), $extensions)
+                           graphFetchTree = $rel.graphFetchTree->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformGraphFetchTree([], newMap([]->cast(@Pair<String,List<Any>>)), $extensions),
+                           checked = $rel.checked
                         ),
                      rel:meta::relational::graphFetch::executionPlan::RelationalCrossRootQueryTempTableGraphFetchExecutionNode[1]|
                         ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalCrossRootQueryTempTableGraphFetchExecutionNode(

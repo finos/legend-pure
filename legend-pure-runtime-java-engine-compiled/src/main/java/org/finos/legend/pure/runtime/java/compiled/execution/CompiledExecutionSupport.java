@@ -69,6 +69,7 @@ public class CompiledExecutionSupport implements ExecutionSupport
     {
         this(javaCompilerState, processorSupport, sourceRegistry, codeStorage, incrementalCompiler, executionActivityListener, console, functionCache, classCache, metadataProvider, extraSupportedTypes, null);
     }
+
     public CompiledExecutionSupport(JavaCompilerState javaCompilerState, CompiledProcessorSupport processorSupport, SourceRegistry sourceRegistry, CodeStorage codeStorage, IncrementalCompiler incrementalCompiler, ExecutionActivityListener executionActivityListener, ConsoleCompiled console, FunctionCache functionCache, ClassCache classCache, MetadataProvider metadataProvider, MutableSet<String> extraSupportedTypes, RuntimeOptions options)
     {
         this.javaCompilerState = javaCompilerState;
@@ -76,7 +77,7 @@ public class CompiledExecutionSupport implements ExecutionSupport
         this.codeStorage = codeStorage;
         this.incrementalCompiler = incrementalCompiler;
         this.functionCache = functionCache;
-        this.classCache = classCache;
+        this.classCache = (classCache == null) ? new ClassCache(javaCompilerState.getClassLoader()) : ClassCache.reconcileWithClassLoader(classCache, javaCompilerState.getClassLoader());
         this.metadataProvider = metadataProvider;
         this.executionActivityListener = (executionActivityListener == null) ? VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER : executionActivityListener;
         this.console = console;
@@ -144,13 +145,13 @@ public class CompiledExecutionSupport implements ExecutionSupport
     @Deprecated
     public MapIterable getMetadata(String classifier)
     {
-        return this.processorSupport.getMetadata().getMetadata(classifier);
+        return getMetadata().getMetadata(classifier);
     }
 
     @Deprecated
     public CoreInstance getMetadata(String classifier, String id)
     {
-        return this.getMetadata().getMetadata(classifier, id);
+        return getMetadata().getMetadata(classifier, id);
     }
 
     @Deprecated

@@ -102,15 +102,16 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpec
                                                        ,|   if($passToTransformAny->contains($fe.func),
                                                                        |$fe->reactivate($fe->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::scan()->map(o|pair($o,^List<Any>()))->newMap())->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformAny($inScope, $open, PureOne, 0, $fe, $extensions);,
                                                                        |let package = $fe.func.package->toOne();
-                                                                         if($fe.func->instanceOf(FunctionDefinition) && $useAppliedFunction && (!$package->isWithinPackage(meta) && !$package->meta::alloy::isMetaAlloyTestDependency() || $package->meta::alloy::isMetaAlloyTestDependencyForGeneration() ),
-                                                                           |
+                                                                        if($fe.func->instanceOf(FunctionDefinition) && $useAppliedFunction && (!$package->isWithinPackage(meta) && !$package->meta::alloy::isMetaAlloyTestDependency() || $package->meta::alloy::isMetaAlloyTestDependencyForGeneration() ),
+                                                                           |let functionName = $fe.functionName->toOne();
+                                                                            let packagePath = $package->elementToPath() + '::';
                                                                             ^meta::protocols::pure::vX_X_X::metamodel::valueSpecification::application::AppliedFunction
                                                                                   (
                                                                                       _type = 'func',
-                                                                                     function = $fe.functionName->toOne(),
+                                                                                     function = if($functionName->startsWith($packagePath),|$functionName,|$packagePath + $functionName),
                                                                                      parameters = $fe.parametersValues->evaluateAndDeactivate()->map(pm|$pm->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformValueSpecification($inScope, $open,false,$useAppliedFunction, $extensions))
                                                                                   )
-                                                                            ,|if ($fe.func->instanceOf(FunctionDefinition) && (!$package->isWithinPackage(meta) || $package->meta::alloy::isMetaAlloyTestDependency()),
+                                                                            ;,|if ($fe.func->instanceOf(FunctionDefinition) && (!$package->isWithinPackage(meta) || $package->meta::alloy::isMetaAlloyTestDependency()),
                                                                                  |
                                                                                   if($fe.func->cast(@FunctionDefinition<Any>).expressionSequence->size() == 1,
                                                                                      {|

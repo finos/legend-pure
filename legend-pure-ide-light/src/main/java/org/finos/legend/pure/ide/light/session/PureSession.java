@@ -28,13 +28,16 @@ import org.finos.legend.pure.m3.execution.test.TestCollection;
 import org.finos.legend.pure.m3.execution.test.TestRunner;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.MutableFSCodeStorage;
-import org.finos.legend.pure.m3.serialization.runtime.*;
+import org.finos.legend.pure.m3.serialization.runtime.ExecutedTestTracker;
+import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
+import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
+import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.statelistener.VoidExecutionActivityListener;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -43,14 +46,16 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.nio.file.Files;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation.buildExceptionMessage;
 
@@ -113,7 +118,7 @@ public class PureSession
         String resources = "legend-pure-code-compiled-core" + (suffix.equals("") ? "" : "-" + suffix) + "/src/main/resources";
         String module = "core" + (suffix.equals("") ? "" : "_" + suffix);
         return new MutableFSCodeStorage(
-                GenericCodeRepository.build(Files.newInputStream(Paths.get(resources + "/" + module.replace("-","_") + ".definition.json"))),
+                GenericCodeRepository.build(Paths.get(resources + "/" + module.replace("-", "_") + ".definition.json")),
                 Paths.get(resources + "/" + module.replace("-","_"))
         );
     }
@@ -360,6 +365,4 @@ public class PureSession
             this.callBack.clear();
         }
     }
-
-
 }

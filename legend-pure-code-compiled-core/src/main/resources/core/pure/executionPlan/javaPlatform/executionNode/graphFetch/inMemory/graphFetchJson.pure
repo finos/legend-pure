@@ -12,43 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::pure::graphFetch::execution::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::json::*;
-import meta::alloy::runtime::java::graphFetch::json::*;
-import meta::alloy::runtime::java::graphFetch::storeStreamReading::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::typeInfo::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::convention::jackson::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
-import meta::java::serialization::*;
 import meta::pure::dataQuality::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::graphFetch::json::*;
+import meta::pure::executionPlan::engine::java::graphFetch::storeStreamReading::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
+import meta::pure::graphFetch::execution::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::metamodel::serialization::grammar::*;
 
-function meta::alloy::runtime::java::graphFetch::json::jsonReaderClass(conventions:Conventions[1], path:String[1], srcTreeClass:Class<Any>[1]): meta::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::graphFetch::json::jsonReaderClass(conventions:Conventions[1], path:String[1], srcTreeClass:meta::pure::metamodel::type::Class<Any>[1]): meta::external::language::java::metamodel::Class[1]
 {
    $conventions->planNodeClass('public', $path, 'JsonDataReader_' + $conventions->identifier($srcTreeClass->elementToPath('_')));
 }
 
-function meta::alloy::runtime::java::graphFetch::json::createJsonReading(pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], readableClasses:Class<Any>[*], readableEnums:Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::pure::executionPlan::engine::java::graphFetch::json::createJsonReading(pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], readableClasses:meta::pure::metamodel::type::Class<Any>[*], readableEnums:meta::pure::metamodel::type::Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    newProject()
       ->addClasses(createJsonReadingClass($pureClass, $javaInterface, $path, $readableClasses, $readableEnums, $context, $debug))
       ->addMavenDependency('com.fasterxml.jackson.core', 'jackson-core', '2.10.3');
 }
 
-function meta::alloy::runtime::java::graphFetch::json::hasDecimal(typeInfos:TypeInfoSet[1]):Boolean[1]
+function meta::pure::executionPlan::engine::java::graphFetch::json::hasDecimal(typeInfos:TypeInfoSet[1]):Boolean[1]
 {
   $typeInfos.typeInfos->filter(ti | $ti->instanceOf(ClassTypeInfo))->cast(@ClassTypeInfo)->exists(cti| $cti.properties->exists(p | $p.genericType.rawType == Decimal));
 }
 
-function meta::alloy::runtime::java::graphFetch::json::createJsonReadingClass(pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], readableClasses:Class<Any>[*], readableEnums:Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): meta::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::graphFetch::json::createJsonReadingClass(pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], readableClasses:meta::pure::metamodel::type::Class<Any>[*], readableEnums:meta::pure::metamodel::type::Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): meta::external::language::java::metamodel::Class[1]
 {
    let proto = $context.conventions->jsonReaderClass($path, $pureClass)
       ->implements($context.conventions->className(StoreStreamReader))
@@ -71,8 +70,8 @@ function meta::alloy::runtime::java::graphFetch::json::createJsonReadingClass(pu
       ->imports(javaReflectMethod())
       ->imports(javaInvocationTargetException());
 
-   let conventions = $context.conventions->forClass($proto);
-   let jsonToken   = javaClass('com.fasterxml.jackson.core.JsonToken')->typePathToString($proto);
+   let conventions = $context.conventions;
+   let jsonToken   = javaClass('com.fasterxml.jackson.core.JsonToken')->typeToString($proto);
    let baos        = javaClass('java.io.ByteArrayOutputStream');
    let recordType  = $context.conventions->className(JsonDataRecord);
    let unitTypes   = $context.typeInfos->allUnitInfos()->map(uti | $uti.unit());
@@ -180,14 +179,14 @@ function meta::alloy::runtime::java::graphFetch::json::createJsonReadingClass(pu
                     ],
              'if (!expectedNodes.contains(currentNode))\n' +
              '{\n' +
-             '    throw new '+$conventions->codeType($conventions->className(meta::pure::executionPlan::engine::DataParsingException))->codeToString($conventions)+'(errorMessage);\n' +
+             '    throw new '+$conventions->codeType($conventions->className(meta::pure::executionPlan::engine::DataParsingException))->codeToString($proto)+'(errorMessage);\n' +
              '}'
          )
       )
       ->addReadCheckedObjects($pureClass, $javaInterface, $path, $context);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::acceptManyMethod(conventions:Conventions[1]): meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::acceptManyMethod(conventions:Conventions[1]): meta::external::language::java::metamodel::Method[1]
 {
    let jsonNode = j_parameter(jsonNode(), 'node');
    let result   = j_variable(javaList(javaTypeVar('T')), 'result');
@@ -213,11 +212,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::accept
                          ]
                        ),
                 $result->j_return()
-              ]->codesToString()
+              ]
             );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::createClassReadMethod(class:Class<Any>[1], proto:meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1], readableClasses:Class<Any>[*]): meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::createClassReadMethod(class:meta::pure::metamodel::type::Class<Any>[1], proto:meta::external::language::java::metamodel::Class[1], path:String[1], context:GenerationContext[1], readableClasses:meta::pure::metamodel::type::Class<Any>[*]): meta::external::language::java::metamodel::Method[1]
 {
    let conventions   = $context.conventions;
    let javaClass     = $conventions->className($class);
@@ -225,7 +224,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::create
    let checked       = $conventions->className(Checked);
    let checkedResult = javaParameterizedType($checked, $javaClass);
 
-   let jsonToken   = $conventions->codeType(javaClass('com.fasterxml.jackson.core.JsonToken'))->codeToString($conventions);
+   let jsonToken   = $conventions->codeType(javaClass('com.fasterxml.jackson.core.JsonToken'))->codeToString($proto);
 
    let specializations = $class->meta::pure::functions::meta::findAllSpecializations()->filter(x|$x->in($readableClasses));
    let nodeValueVariable = j_variable(javaString(), 'nodeValue');
@@ -234,17 +233,17 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::create
    let specializationsCode = if($specializations->isEmpty(), |'', |$specializationByName->keys()->toOneMany()->map(className|pair(
                                    $className->j_string()->j_invoke('equals', $nodeValueVariable),
                                    $specializationByName->get($className).values->match([
-                                       { specializationClass: Class<Any>[1] |$nodeValueVariable->j_assign(j_string($specializationClass->elementToPath('::'))) },
-                                       { specializationClasses: Class<Any>[*] |
+                                       { specializationClass: meta::pure::metamodel::type::Class<Any>[1] |$nodeValueVariable->j_assign(j_string($specializationClass->elementToPath('::'))) },
+                                       { specializationClasses: meta::pure::metamodel::type::Class<Any>[*] |
                                            let defectMsg = j_string('multiple class matches [' + $specializationClasses->map(c|$c->elementToPath('::'))->sort()->joinStrings(', ') + '] for ' + $className);
                                            $defectsVariable->j_invoke('add', j_invoke($conventions->className(DataQualityBasicDefectClass), 'newInvalidInputCriticalDefect', [$defectMsg, j_string($class->elementToPath())]));
                                        }
                                    ])
-                                ))->list()->j_if()->codeToString($conventions));
+                                ))->list()->j_if()->codeToString($proto));
 
    javaMethod(['public'], $checkedResult, $class->readMethodName($conventions), [j_parameter(jsonNode(), 'node')],
 
-      $conventions->codeType(javaList($conventions->defectClass()))->codeToString($conventions)+' defects = new '+$conventions->codeType(javaType('java.util.ArrayList'))->codeToString($conventions)+'<>();\n' +
+      $conventions->codeType(javaList($conventions->defectClass()))->codeToString($proto)+' defects = new '+$conventions->codeType(javaType('java.util.ArrayList'))->codeToString($proto)+'<>();\n' +
       '\n' +
       'if (!node.path("'+defaultAlloyConfig().typeKeyName+'").getNodeType().equals(JsonNodeType.MISSING)){\n' +
       ' String nodeValue = node.path("'+defaultAlloyConfig().typeKeyName+'").textValue();\n' +
@@ -267,7 +266,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::create
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::defineClassPreParseVariables(class:Class<Any>[1], proto:meta::java::metamodel::Class[1], context:GenerationContext[1]): String[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::defineClassPreParseVariables(class:meta::pure::metamodel::type::Class<Any>[1], proto:meta::external::language::java::metamodel::Class[1], context:GenerationContext[1]): String[1]
 {
    let conventions = $context.conventions;
    $context.typeInfos->allProperties($class)->map({p|
@@ -275,10 +274,10 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::define
       let listType = if(isJavaList($javaType), |$javaType, |javaList($javaType));
       let variable = '_'+$conventions->fieldName($p);
 
-      let declare = $conventions->codeType($listType)->codeToString($conventions)+' '+$variable+' = new '+$conventions->codeType(javaClass('java.util.ArrayList'))->codeToString($conventions)+'<>();\n';
+      let declare = $conventions->codeType($listType)->codeToString($proto)+' '+$variable+' = new '+$conventions->codeType(javaClass('java.util.ArrayList'))->codeToString($proto)+'<>();\n';
       if($p.owner->instanceOf(Association),
          {|
-            let elementType = $conventions->codeType($listType->cast(@meta::java::metamodel::ParameterizedType).typeArguments->at(0))->codeToString($conventions);
+            let elementType = $conventions->codeType($listType->cast(@meta::external::language::java::metamodel::ParameterizedType).typeArguments->at(0))->codeToString($proto);
             $declare+
             'if (!this.stack.empty() && this.stack.peek() instanceof '+$elementType+')\n' +
             '{\n' +
@@ -290,43 +289,43 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::define
    })->joinStrings('');
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::acceptProperties(class:Class<Any>[1], proto:meta::java::metamodel::Class[1], context:GenerationContext[1]): String[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::acceptProperties(class:meta::pure::metamodel::type::Class<Any>[1], proto:meta::external::language::java::metamodel::Class[1], context:GenerationContext[1]): String[1]
 {
    let conventions     = $context.conventions;
-   let jsonToken       = $conventions->codeType(javaClass('com.fasterxml.jackson.core.JsonToken'))->codeToString($conventions);
+   let jsonToken       = $conventions->codeType(javaClass('com.fasterxml.jackson.core.JsonToken'))->codeToString($proto);
 
    let propertyClauses   = $context.typeInfos->allProperties($class)->map({p|
       let variable       = '_'+$conventions->fieldName($p);
       let javaType       = $conventions->pureTypeToJavaType($p);
       let propertyType   = $p.genericType.rawType->toOne();
-      let defectRecorder = 'm -> defects.add('+$conventions->codeType($conventions->className(DataQualityBasicDefectClass))->codeToString($conventions)+'.newInvalidInputErrorDefect('+escapedString($p.name->toOne())+'+": "+m,'+escapedString($class->elementToPath())+'))';
+      let defectRecorder = 'm -> defects.add('+$conventions->codeType($conventions->className(DataQualityBasicDefectClass))->codeToString($proto)+'.newInvalidInputErrorDefect('+escapedString($p.name->toOne())+'+": "+m,'+escapedString($class->elementToPath())+'))';
 
       'if (node.path('+escapedString($p.name->toOne())+').getNodeType() != JsonNodeType.MISSING){\n' +
       $propertyType->match([
-         {c: Class<Any>[1] |
+         {c: meta::pure::metamodel::type::Class<Any>[1] |
             let checked     = $conventions->className(Checked);
             let elementType = if(isJavaList($javaType), |elementTypeOfJavaList($javaType), |$javaType);
             let checkedType = javaParameterizedType($checked, $elementType);
 
-            $conventions->codeType(javaList($checkedType))->codeToString($conventions)+' checked = acceptMany(node.path('+escapedString($p.name->toOne())+'), this::'+$c->readMethodName($conventions)+','+$defectRecorder+');\n' +
+            $conventions->codeType(javaList($checkedType))->codeToString($proto)+' checked = acceptMany(node.path('+escapedString($p.name->toOne())+'), this::'+$c->readMethodName($conventions)+','+$defectRecorder+');\n' +
             '        for (int i=0; i<checked.size(); i++)\n' +
             '        {\n' +
-            '            '+$conventions->codeType(javaList($conventions->defectClass()))->codeToString($conventions)+' propertyDefects = '++$conventions->accessCheckedDefects('checked.get(i)')+';\n' +
+            '            '+$conventions->codeType(javaList($conventions->defectClass()))->codeToString($proto)+' propertyDefects = '++$conventions->accessCheckedDefects('checked.get(i)')+';\n' +
             if($p.multiplicity->isToOne() || $p.multiplicity->isZeroOne(),
                {|
-                  '            '+$conventions->codeType($conventions->relativePathNodeClass())->codeToString($conventions)+' pathNode = i == 0\n'+
-                  '                    ? '+$conventions->codeType($conventions->className(DataQualityBasicRelativePathNodeClass))->codeToString($conventions)+'.newRelativePathNode('+escapedString($p.name->toOne())+')\n' +
-                  '                    : '+$conventions->codeType($conventions->className(DataQualityBasicRelativePathNodeClass))->codeToString($conventions)+'.newRelativePathNode('+escapedString($p.name->toOne())+', i);\n'
+                  '            '+$conventions->codeType($conventions->relativePathNodeClass())->codeToString($proto)+' pathNode = i == 0\n'+
+                  '                    ? '+$conventions->codeType($conventions->className(DataQualityBasicRelativePathNodeClass))->codeToString($proto)+'.newRelativePathNode('+escapedString($p.name->toOne())+')\n' +
+                  '                    : '+$conventions->codeType($conventions->className(DataQualityBasicRelativePathNodeClass))->codeToString($proto)+'.newRelativePathNode('+escapedString($p.name->toOne())+', i);\n'
                },
                {|
-                  '            '+$conventions->codeType($conventions->relativePathNodeClass())->codeToString($conventions)+' pathNode = '+$conventions->codeType($conventions->className(DataQualityBasicRelativePathNodeClass))->codeToString($conventions)+'.newRelativePathNode('+escapedString($p.name->toOne())+', i);\n'
+                  '            '+$conventions->codeType($conventions->relativePathNodeClass())->codeToString($proto)+' pathNode = '+$conventions->codeType($conventions->className(DataQualityBasicRelativePathNodeClass))->codeToString($proto)+'.newRelativePathNode('+escapedString($p.name->toOne())+', i);\n'
                }
             )+
-            '            defects.addAll(propertyDefects.stream().map(d -> '+$conventions->codeType($conventions->className(DataQualityBasicDefectClass))->codeToString($conventions)+'.prefixPath(d, pathNode)).collect('+$conventions->codeType(javaClass('java.util.stream.Collectors'))->codeToString($conventions)+'.toList()));\n' +
+            '            defects.addAll(propertyDefects.stream().map(d -> '+$conventions->codeType($conventions->className(DataQualityBasicDefectClass))->codeToString($proto)+'.prefixPath(d, pathNode)).collect('+$conventions->codeType(javaClass('java.util.stream.Collectors'))->codeToString($proto)+'.toList()));\n' +
             '        }\n' +
-            $variable+' = checked.stream().map(c -> '+$conventions->accessCheckedValue('c')+').filter(v -> v != null).collect('+$conventions->codeType(javaType('java.util.stream.Collectors'))->codeToString($conventions)+'.toList());\n';
+            $variable+' = checked.stream().map(c -> '+$conventions->accessCheckedValue('c')+').filter(v -> v != null).collect('+$conventions->codeType(javaType('java.util.stream.Collectors'))->codeToString($proto)+'.toList());\n';
          },
-         {e: Enumeration<Any>[1] |
+         {e: meta::pure::metamodel::type::Enumeration<Any>[1] |
             $variable+' = acceptMany(node.path('+escapedString($p.name->toOne())+'), this::'+$e->readMethodName($conventions)+','+$defectRecorder+');\n';
          },
          {u: Unit[1] |
@@ -342,7 +341,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::accept
    $propertyClauses->joinStrings('\n');
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::validateMultiplicities(class:Class<Any>[1], context:GenerationContext[1]): String[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::validateMultiplicities(class:meta::pure::metamodel::type::Class<Any>[1], context:GenerationContext[1]): String[1]
 {
    $context.typeInfos->allProperties($class)->map({p|
       let variable = '_'+$context.conventions->fieldName($p);
@@ -386,16 +385,16 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::valida
    })->joinStrings('');
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::createObject(class:Class<Any>[1], proto:meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1]): String[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::createObject(class:meta::pure::metamodel::type::Class<Any>[1], proto:meta::external::language::java::metamodel::Class[1], path:String[1], context:GenerationContext[1]): String[1]
 {
-   'this.stack.push(new '+$context.conventions->codeType($class->streamReadingDataClass($path, $context.conventions))->codeToString($context.conventions)+'());\n'
+   'this.stack.push(new '+$context.conventions->codeType($class->streamReadingDataClass($path, $context.conventions))->codeToString($proto)+'());\n'
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::returnCheckedObject(class:Class<Any>[1], proto:meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1]): String[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::returnCheckedObject(class:meta::pure::metamodel::type::Class<Any>[1], proto:meta::external::language::java::metamodel::Class[1], path:String[1], context:GenerationContext[1]): String[1]
 {
    let conventions            = $context.conventions;
    let dataClass              = $class->streamReadingDataClass($path, $conventions);
-   let objectAccess           = '(('+$conventions->codeType($dataClass)->codeToString($conventions)+') this.stack.peek())';
+   let objectAccess           = '(('+$conventions->codeType($dataClass)->codeToString($proto)+') this.stack.peek())';
    let javaClass              = $conventions->className($class);
    let checked                = $conventions->className(Checked);
    let checkedResult          = javaParameterizedType($checked, $javaClass);
@@ -407,25 +406,25 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::return
                         |
                      if($p.multiplicity->isZeroOne(),
                         | '_'+$variable+'.isEmpty() ? null : _'+$variable+'.get(0)',
-                        | $conventions->codeType(javaType('java.util.Collections'))->codeToString($conventions)+'.unmodifiableList(_'+$variable+')'
+                        | $conventions->codeType(javaType('java.util.Collections'))->codeToString($proto)+'.unmodifiableList(_'+$variable+')'
                      ));
 
          $objectAccess+'.'+$variable+' = '+$value+';\n';
    })->joinStrings('');
 
-   'if (defects.stream().anyMatch(d -> '+$conventions->accessDefectEnforcementLevel('d')+' == '+$conventions->enforcementLevelCritical()+'))\n'+
+   'if (defects.stream().anyMatch(d -> '+$conventions->accessDefectEnforcementLevel('d')+' == '+$conventions->elCritical()->codeToString($proto)+'))\n'+
    '{\n'+
    '    return '+$conventions->dynamicChecked($javaClass, 'defects', 'null', 'null')+';\n'+
    '}\n'+
    'else\n'+
    '{\n'+
    $declaresAndGetters+
-   '    '+$conventions->codeType($javaClass)->codeToString($conventions)+' value = ('+$conventions->codeType($javaClass)->codeToString($conventions)+') this.stack.pop();\n' +
+   '    '+$conventions->codeType($javaClass)->codeToString($proto)+' value = ('+$conventions->codeType($javaClass)->codeToString($proto)+') this.stack.pop();\n' +
    '    return '+$conventions->dynamicChecked($javaClass, 'defects', 'null', 'value')+';\n'+
    '}';
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::createAcceptMethod(type:Type[1], proto:meta::java::metamodel::Class[1], conventions:Conventions[1]): meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::createAcceptMethod(type:meta::pure::metamodel::type::Type[1], proto:meta::external::language::java::metamodel::Class[1], conventions:Conventions[1]): meta::external::language::java::metamodel::Method[1]
 {
    let javaType         = $conventions->pureTypeToJavaType($type, PureOne);
    let acceptableNodes  = $conventions->jsonNodeTypesFor($type);
@@ -440,12 +439,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::create
         $jThis->j_invoke('check', [javaArrays()->j_invoke('asList', $acceptableNodes, javaList(jsonNodeType())), $nodeParameter->j_invoke('getNodeType', [], jsonNodeType()), $errorMessage], javaVoid()),
 
         j_return($conventions->jsonNodeGetter($nodeParameter, $type))
-      ]->j_try(j_catch($exception, $conventions->className(meta::pure::executionPlan::engine::DataParsingException)->j_new($exception->j_invoke('getMessage', [], javaString()))->j_throw())
-   )->codesToString($proto)
+      ]->j_try(j_catch($exception, $conventions->className(meta::pure::executionPlan::engine::DataParsingException)->j_new($exception->j_invoke('getMessage', [], javaString()))->j_throw()))
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::createEnumReadMethod(enum:Enumeration<Any>[1], context:GenerationContext[1]): meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::createEnumReadMethod(enum:meta::pure::metamodel::type::Enumeration<Any>[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Method[1]
 {
    let conventions    = $context.conventions;
    let javaClass      = $conventions->className($enum);
@@ -453,17 +451,17 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::create
    let nodeParameter  = j_parameter(jsonNode(), 'node');
 
    javaMethod(['public'], $javaClass, $enum->readMethodName($conventions), $nodeParameter,
-      $conventions->codeType(javaString())->codeToString($conventions)+' text  = acceptString(node);\n' +
-      $conventions->codeType(javaString())->codeToString($conventions)+' value = text.startsWith('+escapedString($qualifier)+') ? text.substring('+$qualifier->length()->toString()+') : text;\n' +
-      'return '+$conventions->codeType($javaClass)->codeToString($conventions)+'.valueOf(value);'
+      $conventions->codeType(javaString())->codeToString()+' text  = acceptString(node);\n' +
+      $conventions->codeType(javaString())->codeToString()+' value = text.startsWith('+escapedString($qualifier)+') ? text.substring('+$qualifier->length()->toString()+') : text;\n' +
+      'return '+$conventions->codeType($javaClass)->codeToString()+'.valueOf(value);'
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::createUnitAcceptMethod(type:Type[1], conventions:Conventions[1]): meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::createUnitAcceptMethod(type:meta::pure::metamodel::type::Type[1], conventions:Conventions[1]): meta::external::language::java::metamodel::Method[1]
 {
     let javaType                = $conventions->pureTypeToJavaType($type, PureOne);
     let simpleJavaName          = $type.name->toOne()->sanitizeIdentifier();
-    let fullJavaName            = $javaType->meta::java::serialization::typePathToString(true)->sanitizeIdentifier();
+    let fullJavaName            = $javaType->meta::external::language::java::serialization::typeToString()->sanitizeIdentifier();
     let acceptibleTokens        = $conventions->jacksonTokenTypesFor($type);
     let getCurrentTokenErrorMsg = '"Unexpected " + parser.getCurrentToken() + " for PURE '+ $type.name->toOne()+'"';
     let getNextTokenErrorMsg    = '"Unexpected " + parser.nextToken() + " for PURE '+ $type.name->toOne()+'"';
@@ -485,7 +483,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::create
     );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addReadCheckedObjects(proto:meta::java::metamodel::Class[1], pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::addReadCheckedObjects(proto:meta::external::language::java::metamodel::Class[1], pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
 {
    let conv            = $context.conventions;
    let checkedClass    = $context.baseProject->toOne()->resolve($conv->className(Checked));
@@ -517,25 +515,25 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addRea
             ])),
 
             javaCollections()->j_invoke('singleton', $conv->dynamicChecked($conv->checkedGetDefects($checked), $source, $conv->checkedGetValue($checked)), javaCollection($checkedSource))->j_return()
-         ]->j_ioExTryCatch()->codesToString($proto)
+         ]->j_ioExTryCatch()
       )
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addConstructor(class:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::addConstructor(class:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
    let in = j_parameter(javaInputStream(),'in');
 
    $class->addConstructor(
-      javaConstructor([], [$in]->cast(@meta::java::metamodel::Parameter),
+      javaConstructor([], [$in]->cast(@meta::external::language::java::metamodel::Parameter),
          [
             j_this($class)->j_field('in')->j_assign($in)
-         ]->codesToString($class)
+         ]
       )
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addInitReading(class:meta::java::metamodel::Class[1], useBigDecimalForFloats:Boolean[0..1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::addInitReading(class:meta::external::language::java::metamodel::Class[1], useBigDecimalForFloats:Boolean[0..1]): meta::external::language::java::metamodel::Class[1]
 {
    let jThis  = j_this($class);
    let parser = $jThis->j_field('parser');
@@ -549,11 +547,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addIni
       [
          $parser->j_assign(jsonFactory()->j_new([])->j_invoke('createParser', $jThis->j_field('in'), jsonParser())),
          $objectMapperInstantiation
-      ]->j_ioExTryCatch()->codesToString($class)
+      ]->j_ioExTryCatch()
    ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addMethodExist(class:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::addMethodExist(class:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
    let methodName = j_parameter(javaString(), 'name');
    
@@ -567,7 +565,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addMet
    ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addMethodInvoke(class:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::addMethodInvoke(class:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
    let methodName = j_parameter(javaString(), 'name');
    let jsonNode   = j_parameter(jsonNode(), 'node');
@@ -585,4 +583,4 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::json::addMet
    ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::json::nextToken(parser:Code[1]): Code[1] { $parser->j_invoke('nextToken', [], jsonToken()); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::nextToken(parser:Code[1]): Code[1] { $parser->j_invoke('nextToken', [], jsonToken()); }

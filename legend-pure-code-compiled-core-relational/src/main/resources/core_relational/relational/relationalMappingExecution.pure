@@ -47,7 +47,6 @@ function meta::relational::mapping::planExecution(sq:meta::pure::mapping::StoreQ
    if($fe.func->in([meta::pure::graphFetch::execution::graphFetchFunctions()]),
       |
         // Graph Fetch Flow
-        assert($fe.func != meta::pure::graphFetch::execution::graphFetchChecked_T_MANY__RootGraphFetchTree_1__Checked_MANY_, | '\'graphFetchChecked\' functionality is not supported yet with relational mappings. Use \'graphFetch\' function instead');
         $sq->meta::pure::graphFetch::executionPlan::planGraphFetchExecution($ext, $m->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug);,
 
       |
