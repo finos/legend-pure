@@ -183,29 +183,49 @@ Class <<access.private>> meta::pure::ide::diagram::DiagramInfo
 {
   name: String[1];
   diagram: Diagram[1];
-  subDomain: DiagramDomainInfo[1];
+  domainInfo: DiagramDomainInfo[1];
 }
 
 Class <<access.private>> meta::pure::ide::diagram::DiagramDomainInfo
 {
-  types: Type[*];
-  associations: Association[*];
+  // types: Type[*];
+  classes: Class<Any>[*];
+  enumerations: Enumeration<Any>[*];
+  profiles: Profile[*];
+  // associations: Association[*];
+}
+
+function meta::pure::ide::diagram::profileToJSON(profile:meta::pure::metamodel::extension::Profile[1]):JSONElement[1]
+{
+  newJSONObject
+  ([
+    newJSONKeyValue('package', ^JSONString(value=$profile.package->toOne()->elementToPath())),
+    newJSONKeyValue('name', ^JSONString(value=$profile.name->toOne())),
+    newJSONKeyValue('tags', ^JSONArray(values=$profile.p_tags->map(st|^JSONString(value=$st.value)))),
+    newJSONKeyValue('stereotypes', ^JSONArray(values=$profile.p_stereotypes->map(st|^JSONString(value=$st.value))))
+  ])
 }
 
 function meta::pure::ide::diagram::getDiagramInfo(diagramPath:String[1]):String[1]
 {
   let diagram = $diagramPath->pathToElement()->cast(@meta::pure::diagram::Diagram);
-  let types = $diagram.typeViews.type;
-  let classProperties = $types->filter(t|$t->instanceOf(Class))->map(t|$t->cast(@Class<Any>).properties->cast(@Property<Nil,Any|*>));
-  let allTypes = $types->concatenate($classProperties->map(p|$p.genericType.rawType))->filter(t|!$t->instanceOf(PrimitiveType))->removeDuplicates();
+  let classes = $diagram.typeViews.type->filter(t|$t->instanceOf(Class))->cast(@Class<Any>)->removeDuplicates();
+  // NOTE: we don't support showing tagged values and stereotypes for properties at the moment
+  let profiles = $classes->map(class|$class.taggedValues->map(tv|$tv.tag.profile)->concatenate($class.stereotypes->map(st|$st.profile)))
+    ->cast(@Profile)->removeDuplicates();
+  let allProperties = $classes->filter(t|$t->instanceOf(Class))->map(t|$t->cast(@Class<Any>).properties->cast(@Property<Nil,Any|*>));
+  let allQualifiedProperties = $classes->filter(t|$t->instanceOf(Class))->map(t|$t->cast(@Class<Any>).qualifiedProperties->cast(@QualifiedProperty<Any>));
+  let enumerations = $allProperties->map(p|$p.genericType.rawType)->concatenate($allQualifiedProperties->map(p|$p.genericType.rawType))->filter(t|$t->instanceOf(Enumeration))->cast(@Enumeration<Any>)->removeDuplicates();
 
   let value = ^DiagramInfo
   (
     name = $diagramPath,
-    subDomain = ^DiagramDomainInfo
+    domainInfo = ^DiagramDomainInfo
                 (
-                  types = $allTypes,
-                  associations = $diagram.associationViews.association->removeDuplicates()
+                  classes = $classes,
+                  profiles = $profiles,
+                  enumerations = $enumerations
+                  // associations = $diagram.associationViews.association->removeDuplicates()
                 ),
     diagram = $diagram
   );
@@ -213,7 +233,10 @@ function meta::pure::ide::diagram::getDiagramInfo(diagramPath:String[1]):String[
   toJSON
   (
     $value,
-    [{d:Diagram[1],j:JSONState[1]|$d->diagramToJSON()}],
+    [
+      {d:Diagram[1],j:JSONState[1]|$d->diagramToJSON()},
+      {p:Profile[1],j:JSONState[1]|$p->profileToJSON()}
+    ],
     1000
   );
 }
@@ -221,26 +244,37 @@ function meta::pure::ide::diagram::getDiagramInfo(diagramPath:String[1]):String[
 Class <<access.private>> meta::pure::ide::diagram::DiagramClassInfo
 {
    class: Class<Any>[1];
-   associations: Association[*];
+  //  associations: Association[*];
    specializations: ShallowPackageableElement<Class<Any>>[*];
+   profiles: Profile[*];
    enumerations: Enumeration<Any>[*];
 }
 
 function meta::pure::ide::diagram::getDiagramClassInfo(classPath:String[1]):String[1]
 {
   let class = $classPath->pathToElement()->cast(@Class<Any>);
-  let associations = $class.propertiesFromAssociations->map(p|$p.owner)->cast(@Association)->removeDuplicates();
+  // let associations = $class.propertiesFromAssociations->map(p|$p.owner)->cast(@Association)->removeDuplicates();
+  // NOTE: we don't support showing tagged values and stereotypes for properties at the moment
+  let profiles = $class.taggedValues->map(tv|$tv.tag.profile)
+    ->concatenate($class.stereotypes->map(st|$st.profile))
+    ->cast(@Profile)->removeDuplicates();
   let specializations = $class.specializations->map(g|$g.specific)->filter(s|!$s->instanceOf(meta::pure::mapping::MappingClass))->map(s|$s->packageableElementPointer())->cast(@ShallowPackageableElement<Class<Any>>);
-  let enumerations = $class.properties->map(p|$p.genericType.rawType)->filter(t|$t->instanceOf(Enumeration))->cast(@Enumeration<Any>)->removeDuplicates();
+  let enumerations = $class.properties->map(p|$p.genericType.rawType)->filter(t|$t->instanceOf(Enumeration))
+    ->concatenate($class.qualifiedProperties->map(p|$p.genericType.rawType)->filter(t|$t->instanceOf(Enumeration)))->cast(@Enumeration<Any>)->removeDuplicates();
   
   toJSON
   (
     ^DiagramClassInfo
     (
         class = $class,
-        associations = $associations,
+        // associations = $associations,
+        profiles = $profiles,
         specializations = $specializations,
         enumerations = $enumerations
-    )
+    ),
+    [
+      {p:Profile[1],j:JSONState[1]|$p->profileToJSON()}
+    ],
+    1000
   );   
 }
