@@ -21,22 +21,24 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class PropertyStubHelper
 {
-    public static final Function<CoreInstance, CoreInstance> FROM_STUB_FN = new Function<CoreInstance, CoreInstance>()
+    public static final Function<CoreInstance, CoreInstance> FROM_STUB_FN = PropertyStubHelper::fromPropertyStub;
+
+    public static CoreInstance fromPropertyStub(CoreInstance instance)
     {
-        public CoreInstance valueOf(CoreInstance instance)
+        return (instance instanceof PropertyStub) ? fromPropertyStub((PropertyStub) instance) : instance;
+    }
+
+    public static CoreInstance fromPropertyStub(PropertyStub propertyStub)
+    {
+        if (propertyStub._resolvedPropertyCoreInstance() == null)
         {
-            if (instance instanceof PropertyStub)
-            {
-                if (((PropertyStub)instance)._resolvedPropertyCoreInstance() == null)
-                {
-                    throw new PureCompilationException("Error, PropertyStub needs to be resolved before it can be accessed");
-                }
-                return ((PropertyStub)instance)._resolvedPropertyCoreInstance();
-            }
-            else
-            {
-                return instance;
-            }
+            throw new PureCompilationException("Error, PropertyStub needs to be resolved before it can be accessed");
         }
-    };
+        return propertyStub._resolvedPropertyCoreInstance();
+    }
+
+    public static boolean isUnresolved(PropertyStub propertyStub)
+    {
+        return propertyStub._resolvedProperty() == null;
+    }
 }

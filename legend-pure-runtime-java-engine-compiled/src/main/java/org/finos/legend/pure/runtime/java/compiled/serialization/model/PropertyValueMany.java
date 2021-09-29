@@ -71,6 +71,6 @@ public class PropertyValueMany implements PropertyValue
     @Override
     public <T> T visit(PropertyValueVisitor<T> visitor)
     {
-        return visitor.accept(this);
+        return visitor.visit(this);
     }
 }

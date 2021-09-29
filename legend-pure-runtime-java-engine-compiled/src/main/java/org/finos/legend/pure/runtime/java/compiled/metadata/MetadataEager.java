@@ -15,8 +15,6 @@
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function0;
-import org.eclipse.collections.api.block.procedure.Procedure2;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Maps;
@@ -76,7 +74,7 @@ public final class MetadataEager implements Metadata
             if (this.added.get().getMetadata(packageClassifier, packageId) == null)
             {
                 CoreInstance packageInstance = Objects.requireNonNull(this.metamodelByClassifier.getMetadata(packageClassifier, packageId));
-                CoreInstance copy = ((ReflectiveCoreInstance)packageInstance).copy();
+                CoreInstance copy = ((ReflectiveCoreInstance) packageInstance).copy();
 
                 this.added.get().add(packageClassifier, packageId, copy);
             }
@@ -91,18 +89,19 @@ public final class MetadataEager implements Metadata
         return this.getMetadata(enumerationName, enumName);
     }
 
-
+    @Deprecated
     public void invalidateCoreInstances(RichIterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
     {
+        IdBuilder idBuilder = IdBuilder.newIdBuilder(processorSupport);
         for (CoreInstance coreInstance : instances)
         {
-            String identifier = IdBuilder.buildId(coreInstance, processorSupport);
+            String identifier = idBuilder.buildId(coreInstance);
             String classifier = MetadataJavaPaths.buildMetadataKeyFromType(coreInstance.getClassifier()).intern();
 
             CoreInstance pack = coreInstance.getValueForMetaPropertyToOne(M3Properties._package);
             if (pack != null)
             {
-                String packIdentifier = IdBuilder.buildId(pack, processorSupport);
+                String packIdentifier = idBuilder.buildId(pack);
                 String packClassifier = MetadataJavaPaths.buildMetadataKeyFromType(pack.getClassifier()).intern();
 
                 this.getMetamodel().remove(classifier, identifier, packClassifier, packIdentifier);
@@ -139,8 +138,8 @@ public final class MetadataEager implements Metadata
         MapIterable<String, CoreInstance> instances = this.metamodelByClassifier.getMetadata(classifier);
         if (this.isInTransaction())
         {
-            MutableMap<String, CoreInstance> allClassifierInstances = new UnifiedMap<>((Map<? extends String, ? extends CoreInstance>)instances);
-            allClassifierInstances.putAll((Map<? extends String, ? extends CoreInstance>)this.added.get().getMetadata(classifier));
+            MutableMap<String, CoreInstance> allClassifierInstances = new UnifiedMap<>((Map<? extends String, ? extends CoreInstance>) instances);
+            allClassifierInstances.putAll((Map<? extends String, ? extends CoreInstance>) this.added.get().getMetadata(classifier));
             return allClassifierInstances;
         }
         else
@@ -167,15 +166,6 @@ public final class MetadataEager implements Metadata
 
     private static class MetamodelByClassifier
     {
-        private static final Function0<MutableMap<String, CoreInstance>> NEW_MAP_BY_ID = new Function0<MutableMap<String, CoreInstance>>()
-        {
-            @Override
-            public MutableMap<String, CoreInstance> value()
-            {
-                return Maps.mutable.empty();
-            }
-        };
-
         private final MutableMap<String, MutableMap<String, CoreInstance>> metadata = UnifiedMap.newMap();
 
         private void clear()
@@ -185,19 +175,12 @@ public final class MetadataEager implements Metadata
 
         private void add(String classifier, String id, CoreInstance coreInstance)
         {
-            this.metadata.getIfAbsentPut(classifier, NEW_MAP_BY_ID).put(id, coreInstance);
+            this.metadata.getIfAbsentPut(classifier, Maps.mutable::empty).put(id, coreInstance);
         }
 
         private void commitChanges(MetamodelByClassifier toBeAdded)
         {
-            toBeAdded.metadata.forEachKeyValue(new Procedure2<String, MutableMap<String, CoreInstance>>()
-            {
-                @Override
-                public void value(String classifer, MutableMap<String, CoreInstance> instancesById)
-                {
-                    MetamodelByClassifier.this.metadata.getIfAbsentPut(classifer, NEW_MAP_BY_ID).putAll(instancesById);
-                }
-            });
+            toBeAdded.metadata.forEachKeyValue((classifer, instancesById) -> this.metadata.getIfAbsentPut(classifer, Maps.mutable::empty).putAll(instancesById));
         }
 
         private CoreInstance getMetadata(String classifier, String id)
@@ -209,15 +192,15 @@ public final class MetadataEager implements Metadata
         private MapIterable<String, CoreInstance> getMetadata(String classifier)
         {
             MapIterable<String, CoreInstance> result = this.metadata.get(classifier);
-            return result == null ? Maps.fixedSize.<String, CoreInstance>empty() : this.metadata.get(classifier);
+            return result == null ? Maps.fixedSize.empty() : this.metadata.get(classifier);
         }
 
         private void addChild(String packageClassifier, String packageId, String objectClassifier, String instanceId)
         {
             try
             {
-                Package _package = (Package)Objects.requireNonNull(this.getMetadata(packageClassifier, packageId));
-                _package._childrenAdd((PackageableElement)this.getMetadata(objectClassifier, instanceId));
+                Package _package = (Package) Objects.requireNonNull(this.getMetadata(packageClassifier, packageId));
+                _package._childrenAdd((PackageableElement) this.getMetadata(objectClassifier, instanceId));
             }
             catch (Exception ex)
             {
@@ -233,13 +216,11 @@ public final class MetadataEager implements Metadata
                 CoreInstance o = classifierMetaData.remove(identifier);
                 if (o != null && o instanceof PackageableElement)
                 {
-                    Package _package = (Package)Objects.requireNonNull(this.getMetadata(packClassifier, packIdentifier));
-                    _package._childrenRemove((PackageableElement)o);
+                    Package _package = (Package) Objects.requireNonNull(this.getMetadata(packClassifier, packIdentifier));
+                    _package._childrenRemove((PackageableElement) o);
                 }
             }
         }
 
     }
-
-
 }

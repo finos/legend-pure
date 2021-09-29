@@ -75,10 +75,10 @@ public class Obj
             return false;
         }
 
-        Obj that = (Obj)other;
+        Obj that = (Obj) other;
         return this.identifier.equals(that.identifier) &&
                 this.classifier.equals(that.classifier) &&
-                this.name.equals(that.name) &&
+                Objects.equals(this.name, that.name) &&
                 Objects.equals(this.sourceInformation, that.sourceInformation) &&
                 this.properties.equals(that.properties);
     }
@@ -93,21 +93,18 @@ public class Obj
     public String toString()
     {
         StringBuilder builder = new StringBuilder(getClass().getSimpleName());
-        builder.append('{');
+        builder.append("{classifier='").append(this.classifier).append("'");
+        builder.append(", identifier='").append(this.identifier).append("'");
+        if (this.name != null)
+        {
+            builder.append(", name='").append(this.name).append("'");
+        }
+        this.properties.appendString(builder, ", properties=[", ", ", "]");
         if (this.sourceInformation != null)
         {
-            builder.append("sourceInformation=");
+            builder.append(", sourceInformation=");
             this.sourceInformation.writeMessage(builder);
-            builder.append(", ");
         }
-        builder.append("classifier='");
-        builder.append(this.classifier);
-        builder.append("', identifier='");
-        builder.append(this.identifier);
-        builder.append("', name='");
-        builder.append(this.name);
-        builder.append("', properties=");
-        this.properties.appendString(builder);
         builder.append('}');
         return builder.toString();
     }

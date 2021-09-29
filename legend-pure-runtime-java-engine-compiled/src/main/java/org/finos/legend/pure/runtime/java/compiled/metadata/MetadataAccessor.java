@@ -37,7 +37,17 @@ public interface MetadataAccessor
     ConcreteFunctionDefinition<?> getConcreteFunctionDefinition(String name);
     LambdaFunction<?> getLambdaFunction(String id);
     org.finos.legend.pure.m3.coreinstance.Package getPackage(String path);
-    Class<Any> getTopType();
-    Class<Nil> getBottomType();
     org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum getEnum(String enumerationName, String enumName);
+
+    @SuppressWarnings("unchecked")
+    default Class<Any> getTopType()
+    {
+        return (Class<Any>) getClass("Root::meta::pure::metamodel::type::Any");
+    }
+
+    @SuppressWarnings("unchecked")
+    default Class<Nil> getBottomType()
+    {
+        return (Class<Nil>) getClass("Root::meta::pure::metamodel::type::Nil");
+    }
 }

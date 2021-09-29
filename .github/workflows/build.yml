@@ -65,7 +65,7 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
       - name: Build + Test
         if: (github.repository != 'finos/legend-pure') || (github.ref != 'refs/heads/master')
-        run: mvn install javadoc:javadoc
+        run: mvn -B -e install javadoc:javadoc
       - name: Build + Test + Sonar + Maven Deploy
         if: (github.repository == 'finos/legend-pure') && (github.ref == 'refs/heads/master')
-        run: mvn deploy javadoc:javadoc -Psonar
+        run: mvn -B -e deploy javadoc:javadoc -Psonar
