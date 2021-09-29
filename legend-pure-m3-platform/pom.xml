@@ -50,7 +50,7 @@
                             <arguments>
                                 <argument>${project.build.directory}/generated-sources/pure/</argument>
                                 <argument>Platform</argument>
-                                <argument>/platform/pure/corefunctions/alloy.pure,/platform/pure/out/executionPlan.pure,/platform/pure/collection.pure,/platform/pure/corefunctions/lang.pure,/platform/pure/corefunctions/meta.pure,/platform/pure/corefunctions/io.pure,/platform/pure/corefunctions/date.pure,/platform/pure/milestoning.pure,/platform/pure/corefunctions/profile.pure,/platform/pure/corefunctions/vcs.pure,/platform/pure/out/tools.pure,/platform/pure/service.pure,/platform/pure/routing.pure,/platform/pure/corefunctions/hash.pure,/platform/pure/graph.pure,/platform/pure/corefunctions/tracing.pure</argument>
+                                <argument>/platform/pure/corefunctions/alloy.pure,/platform/pure/out/executionPlan.pure,/platform/pure/collection.pure,/platform/pure/corefunctions/lang.pure,/platform/pure/corefunctions/meta.pure,/platform/pure/corefunctions/io.pure,/platform/pure/corefunctions/date.pure,/platform/pure/milestoning.pure,/platform/pure/corefunctions/profile.pure,/platform/pure/corefunctions/vcs.pure,/platform/pure/out/tools.pure,/platform/pure/service.pure,/platform/pure/routing.pure,/platform/pure/corefunctions/hash.pure,/platform/pure/graph.pure,/platform/pure/corefunctions/tracing.pure,/platform/pure/authorizer.pure</argument>
                             </arguments>
                         </configuration>
                     </execution>

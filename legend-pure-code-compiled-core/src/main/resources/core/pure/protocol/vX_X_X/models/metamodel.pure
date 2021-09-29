@@ -117,6 +117,11 @@ Class meta::protocols::pure::vX_X_X::metamodel::IdentifiedConnection
    connection: meta::protocols::pure::vX_X_X::metamodel::runtime::Connection[1];
 }
 
+Class <<typemodifiers.abstract>> meta::protocols::pure::vX_X_X::metamodel::service::Authorizer
+{
+   _type: String[1];
+}
+
 
 Class meta::protocols::pure::vX_X_X::metamodel::domain::AnnotatedElement
 {
