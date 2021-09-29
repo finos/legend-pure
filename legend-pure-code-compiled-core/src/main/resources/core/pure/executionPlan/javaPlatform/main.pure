@@ -107,7 +107,7 @@ Class meta::pure::executionPlan::engine::java::typeInfo::ClassTypeInfo extends T
    qualifiedProperties : QualifiedProperty<Any>[*];
    constraints         : ConstraintInfo[*];
    isNewInstanceAllowed        : Boolean[1];
-
+   
    class() { $this.type->cast(@meta::pure::metamodel::type::Class<Any>) }: meta::pure::metamodel::type::Class<Any>[1];
 }
 
@@ -140,18 +140,18 @@ Class meta::pure::executionPlan::engine::java::GeneratedNode
 function meta::pure::executionPlan::engine::java::generatePlatformCode(e:ExecutionPlan[1], config:PlatformCodeGenerationConfig[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):ExecutionPlan[1]
 {
    let conventions     = engineConventions($extensions);
-   let pathAdjusted    = if($config.planId->isEmpty(),
-                            |$conventions,
+   let pathAdjusted    = if($config.planId->isEmpty(), 
+                            |$conventions, 
                             |$conventions->setBasePackageName($conventions.basePackageName+'.'+$conventions->identifier('plan_'+$config.planId->toOne()))
                          );
    let initialContext  = ^GenerationContext(typeInfos=newTypeInfoSet(), conventions=$pathAdjusted, graphFetchWithCachingFlow=$config.graphFetchWithCachingFlow);
    let preparedContext = $e.rootExecutionNode->prepare('root', $initialContext, $extensions, $debug)->meta::pure::executionPlan::engine::java::fillNewFunctionProhibitedList();
-
+   
    // TODO Move Interface/Enum/Unit generation to here
    let context = ^$preparedContext(baseProject=$preparedContext.conventions->fundamentals($debug));
-
+   
    let generated     = $e.rootExecutionNode->generatePlatformCode('root', $e.mapping, $context, $extensions, $debug);
-
+   
    ^$e
    (
       rootExecutionNode = $generated.node,
@@ -163,9 +163,9 @@ function meta::pure::executionPlan::engine::java::generatePlatformCode(e:Executi
 }
 
 function meta::pure::executionPlan::engine::java::projectToImplementation(project:Project[1]):JavaPlatformImplementation[1]
-{
+{   
    let sfer = newStringifier($project);
-
+   
    ^JavaPlatformImplementation
     (
        classes = $project->allClasses()->map({cl |
@@ -181,17 +181,17 @@ function meta::pure::executionPlan::engine::java::projectToImplementation(projec
 
 
 function meta::pure::executionPlan::engine::java::prepare(node:ExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
-{
+{    
    let contextFromChildren = $node.executionNodes->prepareChildNodes(1, $path, $context, $extensions, $debug);
-
+   
    let contextFromOtherNodes = $node->match($extensions.plan_javaRuntime_main_prepare1->map(x|$x->eval($path, $contextFromChildren, $extensions, $debug))->concatenate([
       f:FreeMarkerConditionalExecutionNode[1] |
          let contextFromTrueBlock = $f.trueBlock->prepare($path+'.trueBlock', $contextFromChildren, $extensions, $debug);
          if($f.falseBlock->isEmpty(), |$contextFromTrueBlock, |$f.falseBlock->toOne()->prepare($path+'.falseBlock', $contextFromTrueBlock, $extensions, $debug));,
-      g:GlobalGraphFetchExecutionNode[1] |
+      g:GlobalGraphFetchExecutionNode[1] | 
          let contextFromGlobalChildren = $g.children->size()->range()->fold({x, ctx | $g.children->at($x)->prepare($path+'.globalChild' + $x->toString(), $ctx, $extensions, $debug)}, $contextFromChildren);
          $g.localGraphFetchExecutionNode->prepare($path+'.localGraph', $contextFromGlobalChildren, $extensions, $debug);,
-      g:InMemoryGraphFetchExecutionNode[1] |
+      g:InMemoryGraphFetchExecutionNode[1] | 
          $g.children->size()->range()->fold({x, ctx | $g.children->at($x)->prepare($path+'.localChild' + $x->toString(), $ctx, $extensions, $debug)}, $contextFromChildren),
       e:ExecutionNode[1] | $contextFromChildren
    ])->toOneMany());
@@ -200,7 +200,7 @@ function meta::pure::executionPlan::engine::java::prepare(node:ExecutionNode[1],
       g:GlobalGraphFetchExecutionNode[1]             | $g->prepareForGlobalGraphFetchNode($path, $contextFromOtherNodes, $debug),
       g:InMemoryGraphFetchExecutionNode[1]           | $g->prepareForInMemoryGraphFetch($path, $contextFromOtherNodes, $debug),
       g:StoreStreamReadingExecutionNode[1]           | $g->prepareForStoreStreamReading($path, $contextFromOtherNodes, $extensions, $debug),
-      p:PureExpressionPlatformExecutionNode[1]       | $p->prepareForPlatformNode($path, $contextFromOtherNodes, $extensions, $debug),
+      p:PureExpressionPlatformExecutionNode[1]       | $p->prepareForPlatformNode($path, $contextFromOtherNodes, $extensions, $debug),      
       e:ExecutionNode[1]                             |  $contextFromOtherNodes
    ])->toOneMany());
 }
@@ -208,7 +208,7 @@ function meta::pure::executionPlan::engine::java::prepare(node:ExecutionNode[1],
 function <<access.private>> meta::pure::executionPlan::engine::java::fillNewFunctionProhibitedList(context:GenerationContext[1]):GenerationContext[1]
 {
    let cls = $context.typeInfos.typeInfos->filter(t|$t->instanceOf(ClassTypeInfo))->cast(@ClassTypeInfo)->filter(c| !$c.isNewInstanceAllowed); //TODO: remove the not in the last filter
-   let oldConventions = $context.conventions;
+   let oldConventions = $context.conventions; 
    ^$context(conventions = ^$oldConventions(newFunctionProhibitedList = $cls->map(c|$c.class())));
 }
 
@@ -247,7 +247,7 @@ function meta::pure::executionPlan::engine::java::generatePlatformCode(node:Exec
          let transformedLocal = $g.localGraphFetchExecutionNode->generatePlatformCode($path+'.localGraph', $mapping, $context, $extensions, $debug);
          let transformedLocalNode = $transformedLocal.node->cast(@LocalGraphFetchExecutionNode);
          ^GeneratedNode(node=^$g(children = $transformedChildren.node->cast(@GlobalGraphFetchExecutionNode), localGraphFetchExecutionNode = $transformedLocalNode), project = mergeProjectsNullable($fullProject->concatenate($transformedChildren.project)->concatenate($transformedLocal.project)));,
-      g:InMemoryGraphFetchExecutionNode[1] |
+      g:InMemoryGraphFetchExecutionNode[1] | 
          let transformedChildren = $g.children->size()->range()->map(x | $g.children->at($x)->generatePlatformCode($path+'.localChild' + $x->toString(), $mapping, $context, $extensions, $debug));
          ^GeneratedNode(node=^$g(children = $transformedChildren.node->cast(@InMemoryGraphFetchExecutionNode)), project = mergeProjectsNullable($fullProject->concatenate($transformedChildren.project)));,
       f:FreeMarkerConditionalExecutionNode[1] |
@@ -281,7 +281,7 @@ function meta::pure::executionPlan::engine::java::generatedCode(project:Project[
 
 function meta::pure::executionPlan::engine::java::addNodeInfo(context:GenerationContext[1], nodeInfo:NodeInfo[1]): GenerationContext[1]
 {
-   ^$context(nodeInfos=$context.nodeInfos->concatenate($nodeInfo));
+   ^$context(nodeInfos=$context.nodeInfos->concatenate($nodeInfo));   
 }
 
 function meta::pure::executionPlan::engine::java::nodeInfosForPath(context:GenerationContext[1], path:String[1]): NodeInfo[*]
@@ -296,7 +296,7 @@ function meta::pure::executionPlan::engine::java::childNodeInfosForPath(context:
 
 function meta::pure::executionPlan::engine::java::setTypeInfos(context:GenerationContext[1], typeInfos:TypeInfoSet[1]): GenerationContext[1]
 {
-   ^$context(typeInfos=$typeInfos);
+   ^$context(typeInfos=$typeInfos);   
 }
 
 function meta::pure::executionPlan::engine::java::setConventions(context:GenerationContext[1], conventions:Conventions[1]): GenerationContext[1]
