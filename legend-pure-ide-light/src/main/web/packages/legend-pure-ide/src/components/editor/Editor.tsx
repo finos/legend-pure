@@ -99,7 +99,7 @@ export const EditorInner = observer(() => {
       const currentEditorState = editorStore.currentEditorState;
       if (currentEditorState instanceof FileEditorState) {
         editorStore.directoryTreeState.revealPath(
-          currentEditorState.path,
+          currentEditorState.filePath,
           true,
         );
       }

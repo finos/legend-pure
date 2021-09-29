@@ -99,7 +99,7 @@ export const FileEditor = observer(
             const currentPosition = editor.getPosition();
             if (currentPosition) {
               const coordinate = new FileCoordinate(
-                editorState.path,
+                editorState.filePath,
                 currentPosition.lineNumber,
                 currentPosition.column,
               );
@@ -125,7 +125,7 @@ export const FileEditor = observer(
             const currentPosition = editor.getPosition();
             if (currentPosition) {
               const coordinate = new FileCoordinate(
-                editorState.path,
+                editorState.filePath,
                 currentPosition.lineNumber,
                 currentPosition.column,
               );

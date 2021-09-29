@@ -44,12 +44,14 @@ export class DiagramEditorState extends EditorState {
   diagram: Diagram;
   diagramClasses: Map<string, DiagramClassMetadata>;
   graph: PureModel;
-  path: string;
+  diagramPath: string;
+  filePath: string;
 
   constructor(
     editorStore: EditorStore,
     diagramInfo: DiagramInfo,
-    path: string,
+    diagramPath: string,
+    filePath: string,
   ) {
     super(editorStore);
 
@@ -62,7 +64,8 @@ export class DiagramEditorState extends EditorState {
       setRenderer: action,
     });
 
-    this.path = path;
+    this.diagramPath = diagramPath;
+    this.filePath = filePath;
     this.diagramInfo = diagramInfo;
     const [diagram, graph, diagramClasses] =
       buildGraphFromDiagramInfo(diagramInfo);
@@ -113,7 +116,7 @@ export class DiagramEditorState extends EditorState {
   }
 
   get headerName(): string {
-    return trimPathLeadingSlash(this.path);
+    return trimPathLeadingSlash(this.diagramPath);
   }
 
   *addClassView(path: string, position: Point | undefined): GeneratorFn<void> {

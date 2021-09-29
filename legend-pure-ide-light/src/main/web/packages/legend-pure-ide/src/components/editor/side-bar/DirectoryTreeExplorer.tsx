@@ -294,9 +294,9 @@ export const DirectoryTreeExplorer = observer(() => {
   const focus = (): void => {
     const currentEditorState = editorStore.currentEditorState;
     if (currentEditorState instanceof FileEditorState) {
-      flowResult(treeState.revealPath(currentEditorState.path, false)).catch(
-        applicationStore.alertIllegalUnhandledError,
-      );
+      flowResult(
+        treeState.revealPath(currentEditorState.filePath, false),
+      ).catch(applicationStore.alertIllegalUnhandledError);
     }
   };
   const collapseTree = (): void => {

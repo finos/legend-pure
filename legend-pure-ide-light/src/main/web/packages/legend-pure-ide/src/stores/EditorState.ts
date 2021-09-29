@@ -33,13 +33,13 @@ export abstract class EditorState {
 
 export class FileEditorState extends EditorState {
   file: PureFile;
-  path: string;
+  filePath: string;
   coordinate?: FileCoordinate | undefined;
 
   constructor(
     editorStore: EditorStore,
     file: PureFile,
-    path: string,
+    filePath: string,
     coordinate?: FileCoordinate,
   ) {
     super(editorStore);
@@ -50,7 +50,7 @@ export class FileEditorState extends EditorState {
       setCoordinate: action,
     });
     this.file = file;
-    this.path = path;
+    this.filePath = filePath;
     this.coordinate = coordinate;
   }
 
@@ -65,6 +65,6 @@ export class FileEditorState extends EditorState {
   }
 
   get headerName(): string {
-    return trimPathLeadingSlash(this.path);
+    return trimPathLeadingSlash(this.filePath);
   }
 }

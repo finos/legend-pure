@@ -456,10 +456,11 @@ export class EditorStore {
     this.setCurrentEditorState(editorState);
   }
 
-  *loadDiagram(path: string): GeneratorFn<void> {
+  *loadDiagram(filePath: string, diagramPath: string): GeneratorFn<void> {
     const existingDiagramEditorState = this.openedEditorStates.find(
       (editorState): editorState is DiagramEditorState =>
-        editorState instanceof DiagramEditorState && editorState.path === path,
+        editorState instanceof DiagramEditorState &&
+        editorState.filePath === filePath,
     );
     if (existingDiagramEditorState) {
       this.openState(existingDiagramEditorState);
@@ -467,8 +468,9 @@ export class EditorStore {
       yield flowResult(this.checkIfSessionWakingUp());
       const newDiagramEditorState = new DiagramEditorState(
         this,
-        deserialize(DiagramInfo, yield this.client.getDiagramInfo(path)),
-        path,
+        deserialize(DiagramInfo, yield this.client.getDiagramInfo(diagramPath)),
+        diagramPath,
+        filePath,
       );
       this.openState(newDiagramEditorState);
     }
@@ -477,7 +479,7 @@ export class EditorStore {
   *loadFile(path: string, coordinate?: FileCoordinate): GeneratorFn<void> {
     const existingFileEditorState = this.openedEditorStates.find(
       (editorState): editorState is FileEditorState =>
-        editorState instanceof FileEditorState && editorState.path === path,
+        editorState instanceof FileEditorState && editorState.filePath === path,
     );
     if (existingFileEditorState) {
       if (coordinate) {
@@ -496,21 +498,30 @@ export class EditorStore {
     }
   }
 
-  *reloadFile(path: string): GeneratorFn<void> {
-    const existingFileState = this.openedEditorStates.find(
-      (editorState) =>
-        editorState instanceof FileEditorState && editorState.path === path,
+  *reloadFile(filePath: string): GeneratorFn<void> {
+    yield Promise.all(
+      this.openedEditorStates.map(async (editorState) => {
+        if (
+          editorState instanceof FileEditorState &&
+          editorState.filePath === filePath
+        ) {
+          editorState.setFile(
+            deserialize(PureFile, await this.client.getFile(filePath)),
+          );
+          editorState.setCoordinate(undefined);
+        } else if (
+          editorState instanceof DiagramEditorState &&
+          editorState.filePath === filePath
+        ) {
+          editorState.rebuild(
+            deserialize(
+              DiagramInfo,
+              await this.client.getDiagramInfo(editorState.diagramPath),
+            ),
+          );
+        }
+      }),
     );
-    if (existingFileState instanceof FileEditorState) {
-      existingFileState.setFile(
-        deserialize(PureFile, yield this.client.getFile(path)),
-      );
-      existingFileState.setCoordinate(undefined);
-    } else if (existingFileState instanceof DiagramEditorState) {
-      existingFileState.rebuild(
-        deserialize(DiagramInfo, yield this.client.getDiagramInfo(path)),
-      );
-    }
   }
 
   *execute(
@@ -541,12 +552,12 @@ export class EditorStore {
         .map((editorState) => {
           if (editorState instanceof FileEditorState) {
             return {
-              path: editorState.path,
+              path: editorState.filePath,
               code: editorState.file.content,
             };
           } else if (editorState instanceof DiagramEditorState) {
             return {
-              diagram: editorState.path,
+              diagram: editorState.diagramPath,
               code: serializeDiagram(editorState.diagram),
             };
           }
@@ -1043,7 +1054,7 @@ export class EditorStore {
     );
     const editorStatesToClose = this.openedEditorStates.filter(
       (state) =>
-        state instanceof FileEditorState && state.path.startsWith(path),
+        state instanceof FileEditorState && state.filePath.startsWith(path),
     );
     editorStatesToClose.forEach((state) => this.closeState(state));
     yield flowResult(this.directoryTreeState.refreshTreeData());
