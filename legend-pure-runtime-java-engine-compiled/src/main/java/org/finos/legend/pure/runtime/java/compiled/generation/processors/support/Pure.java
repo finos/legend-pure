@@ -1065,6 +1065,12 @@ public class Pure
             return true;
         }
 
+        // NOTE: ClassNotFoundException can occur when we use subTypeOf() in engine where some
+        // Java classes are not available during plan generation. There is a potentially
+        // less performant alternative which is to use type_subTypeOf() as this will use the
+        // metamodel graph instead of Java classes to test subtype; but this alternative is more reliable.
+        // As such, to be defensive, we should fallback to the latter when the former fails with ClassNotFoundException
+        // See https://github.com/finos/legend-pure/issues/324
         Class<?> theSubTypeClass;
         try
         {
