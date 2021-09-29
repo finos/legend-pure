@@ -43,6 +43,7 @@ import {
   TreeView,
 } from '@finos/legend-art';
 import { isNonNullable } from '@finos/legend-shared';
+import { useDrag } from 'react-dnd';
 
 const ConceptExplorerContextMenu = observer(
   (
@@ -120,6 +121,11 @@ const ConceptExplorerContextMenu = observer(
   { forwardRef: true },
 );
 
+export enum CONCEPT_TREE_DND_TYPE {
+  UNSUPPORTED = 'UNSUPPORTED',
+  CLASS = 'CLASS',
+}
+
 const ConceptTreeNodeContainer: React.FC<
   TreeNodeContainerProps<
     ConceptTreeNode,
@@ -168,6 +174,16 @@ const ConceptTreeNodeContainer: React.FC<
       onNodeOpen(node);
     }
   };
+  const [, dragRef] = useDrag(
+    () => ({
+      type:
+        node.data.li_attr.pureType === 'Class'
+          ? CONCEPT_TREE_DND_TYPE.CLASS
+          : CONCEPT_TREE_DND_TYPE.UNSUPPORTED,
+      item: node.data,
+    }),
+    [node],
+  );
 
   return (
     <ContextMenu
@@ -194,6 +210,7 @@ const ConceptTreeNodeContainer: React.FC<
           },
         )}
         onClick={selectNode}
+        ref={dragRef}
         onDoubleClick={onDoubleClick}
         style={{
           paddingLeft: `${level * (stepPaddingInRem ?? 1)}rem`,

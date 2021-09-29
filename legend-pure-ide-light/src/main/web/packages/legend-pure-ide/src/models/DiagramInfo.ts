@@ -325,8 +325,9 @@ createModelSchema(DiagramInfo, {
 export class DiagramClassInfo {
   // associations
   class!: PURE__Class;
-  // specializations
   enumerations: PURE__Enumeration[] = [];
+  profiles: PURE__Profile[] = [];
+  // specializations
 }
 
 createModelSchema(DiagramClassInfo, {
@@ -407,7 +408,7 @@ export const serializeDiagram = (diagram: Diagram): string => {
 
 // ------------------------------ Graph builder (for diagram renderer) ----------------------------------
 
-export interface DiagramMetadata {
+export interface DiagramClassMetadata {
   isStubbed: boolean;
   sourceInformation: SourceInformation | undefined;
 }
@@ -415,7 +416,7 @@ export interface DiagramMetadata {
 const getOrCreateClass = (
   path: string,
   graph: PureModel,
-  metadataMap: Map<string, DiagramMetadata>,
+  diagramClasses: Map<string, DiagramClassMetadata>,
 ): Class => {
   const existingClass = graph.getOwnClass(path);
   if (!existingClass) {
@@ -423,7 +424,7 @@ const getOrCreateClass = (
     const _class = new Class(name);
     Package.getOrCreatePackage(graph.root, _package, true).addElement(_class);
     graph.setOwnType(path, _class);
-    metadataMap.set(path, {
+    diagramClasses.set(path, {
       isStubbed: true,
       sourceInformation: undefined,
     });
@@ -449,6 +450,82 @@ const parseMultiplicty = (text: string): Multiplicity => {
   }
 };
 
+const buildClass = (
+  _class: Class,
+  classData: PURE__Class,
+  graph: PureModel,
+  diagramClasses: Map<string, DiagramClassMetadata>,
+): void => {
+  classData.taggedValues.forEach((taggedValueData) => {
+    _class.addTaggedValue(
+      new TaggedValue(
+        TagExplicitReference.create(
+          graph
+            .getProfile(taggedValueData.tag.profile)
+            .getTag(taggedValueData.tag.value),
+        ),
+        taggedValueData.value,
+      ),
+    );
+  });
+  classData.stereotypes.forEach((stereotypeData) => {
+    _class.addStereotype(
+      StereotypeExplicitReference.create(
+        graph
+          .getProfile(stereotypeData.profile)
+          .getStereotype(stereotypeData.value),
+      ),
+    );
+  });
+  classData.generalizations.forEach((superTypeData) => {
+    _class.addSuperType(
+      GenericTypeExplicitReference.create(
+        new GenericType(
+          getOrCreateClass(superTypeData.rawType, graph, diagramClasses),
+        ),
+      ),
+    );
+  });
+  classData.properties.forEach((propertyData) => {
+    _class.addProperty(
+      new Property(
+        propertyData.name,
+        parseMultiplicty(propertyData.multiplicity),
+        GenericTypeExplicitReference.create(
+          new GenericType(
+            graph.getOwnEnumeration(propertyData.genericType.rawType) ??
+              getOrCreateClass(
+                propertyData.genericType.rawType,
+                graph,
+                diagramClasses,
+              ),
+          ),
+        ),
+        _class,
+      ),
+    );
+  });
+  classData.qualifiedProperties.forEach((propertyData) => {
+    _class.addDerivedProperty(
+      new DerivedProperty(
+        propertyData.name,
+        parseMultiplicty(propertyData.multiplicity),
+        GenericTypeExplicitReference.create(
+          new GenericType(
+            graph.getOwnEnumeration(propertyData.genericType.rawType) ??
+              getOrCreateClass(
+                propertyData.genericType.rawType,
+                graph,
+                diagramClasses,
+              ),
+          ),
+        ),
+        _class,
+      ),
+    );
+  });
+};
+
 /**
  * Since the diagram renderer uses Studio metamodel, here we build
  * Studio metamodel graph and diagram from the Pure IDE diagram info
@@ -456,9 +533,9 @@ const parseMultiplicty = (text: string): Multiplicity => {
  */
 export const buildGraphFromDiagramInfo = (
   diagramInfo: DiagramInfo,
-): [Diagram, PureModel, Map<string, DiagramMetadata>] => {
+): [Diagram, PureModel, Map<string, DiagramClassMetadata>] => {
   const graph = new PureModel(new CoreModel([]), new SystemModel([]), []);
-  const metadataMap = new Map<string, DiagramMetadata>();
+  const diagramClasses = new Map<string, DiagramClassMetadata>();
 
   // domain
   if (diagramInfo.domainInfo) {
@@ -472,7 +549,7 @@ export const buildGraphFromDiagramInfo = (
         true,
       ).addElement(_class);
       graph.setOwnType(_class.path, _class);
-      metadataMap.set(_class.path, {
+      diagramClasses.set(_class.path, {
         sourceInformation: classData.sourceInformation,
         isStubbed: false,
       });
@@ -508,74 +585,7 @@ export const buildGraphFromDiagramInfo = (
         classData.package === '' ? '' : ELEMENT_PATH_DELIMITER
       }${classData.name}`;
       const _class = graph.getClass(fullPath);
-      classData.taggedValues.forEach((taggedValueData) => {
-        _class.addTaggedValue(
-          new TaggedValue(
-            TagExplicitReference.create(
-              graph
-                .getProfile(taggedValueData.tag.profile)
-                .getTag(taggedValueData.tag.value),
-            ),
-            taggedValueData.value,
-          ),
-        );
-      });
-      classData.stereotypes.forEach((stereotypeData) => {
-        _class.addStereotype(
-          StereotypeExplicitReference.create(
-            graph
-              .getProfile(stereotypeData.profile)
-              .getStereotype(stereotypeData.value),
-          ),
-        );
-      });
-      classData.generalizations.forEach((superTypeData) => {
-        _class.addSuperType(
-          GenericTypeExplicitReference.create(
-            new GenericType(
-              getOrCreateClass(superTypeData.rawType, graph, metadataMap),
-            ),
-          ),
-        );
-      });
-      classData.properties.forEach((propertyData) => {
-        _class.addProperty(
-          new Property(
-            propertyData.name,
-            parseMultiplicty(propertyData.multiplicity),
-            GenericTypeExplicitReference.create(
-              new GenericType(
-                graph.getOwnEnumeration(propertyData.genericType.rawType) ??
-                  getOrCreateClass(
-                    propertyData.genericType.rawType,
-                    graph,
-                    metadataMap,
-                  ),
-              ),
-            ),
-            _class,
-          ),
-        );
-      });
-      classData.qualifiedProperties.forEach((propertyData) => {
-        _class.addDerivedProperty(
-          new DerivedProperty(
-            propertyData.name,
-            parseMultiplicty(propertyData.multiplicity),
-            GenericTypeExplicitReference.create(
-              new GenericType(
-                graph.getOwnEnumeration(propertyData.genericType.rawType) ??
-                  getOrCreateClass(
-                    propertyData.genericType.rawType,
-                    graph,
-                    metadataMap,
-                  ),
-              ),
-            ),
-            _class,
-          ),
-        );
-      });
+      buildClass(_class, classData, graph, diagramClasses);
     });
   }
 
@@ -649,5 +659,69 @@ export const buildGraphFromDiagramInfo = (
     return generalizationView;
   });
 
-  return [diagram, graph, metadataMap];
+  return [diagram, graph, diagramClasses];
+};
+
+export const addClassToGraph = (
+  diagramClassInfo: DiagramClassInfo,
+  graph: PureModel,
+  diagramClasses: Map<string, DiagramClassMetadata>,
+): Class => {
+  // profiles
+  diagramClassInfo.profiles.forEach((profileData) => {
+    const fullPath = `${profileData.package}${
+      profileData.package === '' ? '' : ELEMENT_PATH_DELIMITER
+    }${profileData.name}`;
+    if (!graph.getOwnProfile(fullPath)) {
+      const profile = new Profile(profileData.name);
+      Package.getOrCreatePackage(
+        graph.root,
+        profileData.package,
+        true,
+      ).addElement(profile);
+      graph.setOwnProfile(profile.path, profile);
+      profileData.tags.forEach((value) =>
+        profile.addTag(new Tag(profile, value)),
+      );
+      profileData.stereotypes.forEach((value) =>
+        profile.addStereotype(new Stereotype(profile, value)),
+      );
+    }
+  });
+
+  // enumerations
+  diagramClassInfo.enumerations.forEach((enumerationData) => {
+    const fullPath = `${enumerationData.package}${
+      enumerationData.package === '' ? '' : ELEMENT_PATH_DELIMITER
+    }${enumerationData.name}`;
+    if (!graph.getOwnEnumeration(fullPath)) {
+      const enumeration = new Enumeration(enumerationData.name);
+      Package.getOrCreatePackage(
+        graph.root,
+        enumerationData.package,
+        true,
+      ).addElement(enumeration);
+      graph.setOwnType(enumeration.path, enumeration);
+      // NOTE: there is no need to pocess enumeration enum values since diagram does not need them
+    }
+  });
+
+  const classData = diagramClassInfo.class;
+  const fullPath = `${classData.package}${
+    classData.package === '' ? '' : ELEMENT_PATH_DELIMITER
+  }${classData.name}`;
+  let _class = graph.getOwnClass(fullPath);
+  if (!_class) {
+    _class = new Class(classData.name);
+    Package.getOrCreatePackage(graph.root, classData.package, true).addElement(
+      _class,
+    );
+    graph.setOwnType(_class.path, _class);
+  }
+  diagramClasses.set(_class.path, {
+    sourceInformation: classData.sourceInformation,
+    isStubbed: false,
+  });
+  buildClass(_class, classData, graph, diagramClasses);
+  return _class;
 };

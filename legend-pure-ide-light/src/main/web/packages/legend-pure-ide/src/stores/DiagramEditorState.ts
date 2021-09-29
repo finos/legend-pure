@@ -18,12 +18,22 @@ import type {
   ClassView,
   Diagram,
   DiagramRenderer,
+  Point,
 } from '@finos/legend-extension-dsl-diagram';
 import type { PureModel } from '@finos/legend-graph';
-import { guaranteeNonNullable } from '@finos/legend-shared';
-import { action, flowResult, makeObservable, observable } from 'mobx';
-import type { DiagramInfo, DiagramMetadata } from '../models/DiagramInfo';
-import { buildGraphFromDiagramInfo } from '../models/DiagramInfo';
+import type { GeneratorFn } from '@finos/legend-shared';
+import {
+  generateEnumerableNameFromToken,
+  guaranteeNonNullable,
+} from '@finos/legend-shared';
+import { action, flow, flowResult, makeObservable, observable } from 'mobx';
+import { deserialize } from 'serializr';
+import type { DiagramInfo, DiagramClassMetadata } from '../models/DiagramInfo';
+import {
+  DiagramClassInfo,
+  addClassToGraph,
+  buildGraphFromDiagramInfo,
+} from '../models/DiagramInfo';
 import { FileCoordinate, trimPathLeadingSlash } from '../models/PureFile';
 import { EditorState } from './EditorState';
 import type { EditorStore } from './EditorStore';
@@ -32,7 +42,7 @@ export class DiagramEditorState extends EditorState {
   diagramInfo: DiagramInfo;
   _renderer?: DiagramRenderer | undefined;
   diagram: Diagram;
-  metadataMap: Map<string, DiagramMetadata>;
+  diagramClasses: Map<string, DiagramClassMetadata>;
   graph: PureModel;
   path: string;
 
@@ -47,25 +57,26 @@ export class DiagramEditorState extends EditorState {
       _renderer: observable,
       diagram: observable,
       diagramInfo: observable,
+      addClassView: flow,
       rebuild: action,
       setRenderer: action,
     });
 
     this.path = path;
     this.diagramInfo = diagramInfo;
-    const [diagram, graph, metadataMap] =
+    const [diagram, graph, diagramClasses] =
       buildGraphFromDiagramInfo(diagramInfo);
     this.diagram = diagram;
     this.graph = graph;
-    this.metadataMap = metadataMap;
+    this.diagramClasses = diagramClasses;
   }
 
   rebuild(value: DiagramInfo): void {
     this.diagramInfo = value;
-    const [diagram, graph, metadataMap] = buildGraphFromDiagramInfo(value);
+    const [diagram, graph, diagramClasses] = buildGraphFromDiagramInfo(value);
     this.diagram = diagram;
     this.graph = graph;
-    this.metadataMap = metadataMap;
+    this.diagramClasses = diagramClasses;
   }
 
   get renderer(): DiagramRenderer {
@@ -81,7 +92,7 @@ export class DiagramEditorState extends EditorState {
 
   setupRenderer(): void {
     this.renderer.editClassView = (classView: ClassView): void => {
-      const sourceInformation = this.metadataMap.get(
+      const sourceInformation = this.diagramClasses.get(
         classView.class.value.path,
       )?.sourceInformation;
       if (sourceInformation) {
@@ -103,5 +114,26 @@ export class DiagramEditorState extends EditorState {
 
   get headerName(): string {
     return trimPathLeadingSlash(this.path);
+  }
+
+  *addClassView(path: string, position: Point | undefined): GeneratorFn<void> {
+    const diagramClassInfo = deserialize(
+      DiagramClassInfo,
+      yield this.editorStore.client.getDiagramClassInfo(path),
+    );
+    const _class = addClassToGraph(
+      diagramClassInfo,
+      this.graph,
+      this.diagramClasses,
+    );
+    const classView = this.renderer.addClassView(_class, position);
+    // NOTE: The auto-generated ID by diagram renderer will cause a parser error in Pure
+    // so we need to rewrite it accordingly
+    if (classView) {
+      classView.id = generateEnumerableNameFromToken(
+        this.diagram.classViews.map((cv) => cv.id),
+        'cview',
+      );
+    }
   }
 }

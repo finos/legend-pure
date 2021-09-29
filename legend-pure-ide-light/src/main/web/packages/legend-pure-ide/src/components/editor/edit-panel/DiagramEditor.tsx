@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import { useResizeDetector } from 'react-resize-detector';
 import type { DiagramEditorState } from '../../../stores/DiagramEditorState';
-import { DiagramRenderer } from '@finos/legend-extension-dsl-diagram';
+import { DiagramRenderer, Point } from '@finos/legend-extension-dsl-diagram';
+import type { DropTargetMonitor } from 'react-dnd';
+import { useDrop } from 'react-dnd';
+import { CONCEPT_TREE_DND_TYPE } from '../side-bar/ConceptTreeExplorer';
+import { ConceptNode } from '../../../models/ConceptTree';
+import { flowResult } from 'mobx';
+import { useApplicationStore } from '@finos/legend-application';
 
 const DiagramCanvas = observer(
   (
@@ -28,6 +34,7 @@ const DiagramCanvas = observer(
     ref: React.Ref<HTMLDivElement>,
   ) => {
     const { diagramEditorState } = props;
+    const applicationStore = useApplicationStore();
     const diagram = diagramEditorState.diagram;
     const diagramCanvasRef =
       ref as React.MutableRefObject<HTMLDivElement | null>;
@@ -37,6 +44,34 @@ const DiagramCanvas = observer(
       refreshRate: 50,
       targetRef: diagramCanvasRef,
     });
+
+    // Drag and Drop
+    const handleDrop = useCallback(
+      (item: ConceptNode, monitor: DropTargetMonitor): void => {
+        if (item instanceof ConceptNode) {
+          const dropPosition = monitor.getClientOffset();
+          const position = dropPosition
+            ? diagramEditorState.renderer.canvasCoordinateToModelCoordinate(
+                diagramEditorState.renderer.eventCoordinateToCanvasCoordinate(
+                  new Point(dropPosition.x, dropPosition.y),
+                ),
+              )
+            : undefined;
+          flowResult(
+            diagramEditorState.addClassView(item.li_attr.pureId, position),
+          ).catch(applicationStore.alertIllegalUnhandledError);
+        }
+      },
+      [applicationStore, diagramEditorState],
+    );
+    const [, dropConnector] = useDrop(
+      () => ({
+        accept: CONCEPT_TREE_DND_TYPE.CLASS,
+        drop: (item: ConceptNode, monitor): void => handleDrop(item, monitor),
+      }),
+      [handleDrop],
+    );
+    dropConnector(diagramCanvasRef);
 
     useEffect(() => {
       if (diagramCanvasRef.current) {

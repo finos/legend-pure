@@ -40,6 +40,8 @@ import {
 } from '@finos/legend-art';
 import { useResizeDetector } from 'react-resize-detector';
 import { getQueryParameters } from '@finos/legend-shared';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { DndProvider } from 'react-dnd';
 
 interface EditorQueryParams {
   mode?: string;
@@ -222,6 +224,8 @@ export const EditorInner = observer(() => {
 
 export const Editor: React.FC = () => (
   <EditorStoreProvider>
-    <EditorInner />
+    <DndProvider backend={HTML5Backend}>
+      <EditorInner />
+    </DndProvider>
   </EditorStoreProvider>
 );
