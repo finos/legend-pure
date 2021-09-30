@@ -39,6 +39,16 @@ export const setupLegendPureIDEUILibrary = async (): Promise<void> => {
     // We want to listen to hotkey from every where in the app so we disable that
     // See https://github.com/greena13/react-hotkeys#ignoring-events
     ignoreTags: [],
+    ignoreEventsCondition: (event) =>
+      // This is a hack to solve an issue in react-hotkeys.
+      // Sometimes it thinks that a letter is still pressed.
+      // It happens when you type shift+letter and it registers
+      // the keydown event of the letter as upper case, but it
+      // registers the keyup event as lower case. Since there's
+      // no keyup event for the upper case letter it thinks
+      // that it's still pressed
+      // See https://github.com/greena13/react-hotkeys/issues/294
+      !event.altKey && !event.ctrlKey && !event.metaKey && event.shiftKey,
   });
 };
 
