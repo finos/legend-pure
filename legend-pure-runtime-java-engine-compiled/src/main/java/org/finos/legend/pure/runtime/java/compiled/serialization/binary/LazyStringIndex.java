@@ -45,7 +45,7 @@ class LazyStringIndex extends AbstractStringIndex
     private void loadPartition(int index)
     {
         int partitionStart = DistributedStringCache.getStartOfPartition(index);
-        String filePath = DistributedMetadataHelper.getOtherStringsIndexPartitionFilePath(this.metadataName, partitionStart);
+        String filePath = DistributedMetadataFiles.getOtherStringsIndexPartitionFilePath(this.metadataName, partitionStart);
         String[] partition;
         try (Reader reader = this.fileReader.getReader(filePath))
         {
@@ -69,7 +69,7 @@ class LazyStringIndex extends AbstractStringIndex
 
     private static String[] readClassifierIds(String metadataName, FileReader fileReader)
     {
-        try (Reader reader = fileReader.getReader(DistributedMetadataHelper.getClassifierIdStringsIndexFilePath(metadataName)))
+        try (Reader reader = fileReader.getReader(DistributedMetadataFiles.getClassifierIdStringsIndexFilePath(metadataName)))
         {
             return readClassifierIds(reader);
         }
@@ -77,7 +77,7 @@ class LazyStringIndex extends AbstractStringIndex
 
     private static int readOtherStringCount(String metadataName, FileReader fileReader)
     {
-        try (Reader reader = fileReader.getReader(DistributedMetadataHelper.getOtherStringsIndexFilePath(metadataName)))
+        try (Reader reader = fileReader.getReader(DistributedMetadataFiles.getOtherStringsIndexFilePath(metadataName)))
         {
             return reader.readInt();
         }

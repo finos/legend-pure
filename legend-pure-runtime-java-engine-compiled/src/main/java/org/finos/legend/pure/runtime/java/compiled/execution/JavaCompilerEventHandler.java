@@ -15,6 +15,7 @@
 package org.finos.legend.pure.runtime.java.compiled.execution;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
@@ -49,27 +50,26 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
 
     //Lifecycle of the compiled graph - clear each time we recompile
     private FunctionCache sharedFunctionCache = new FunctionCache();
-    private ClassCache classCache;
+    private ClassCache classCache = new ClassCache();
 
     private final JavaCompilerEventObserver observer;
 
     private GenerateAndCompile generateAndCompile;
 
-    private final Iterable<? extends CompiledExtension> extensions;
+    private MutableList<CompiledExtension> extensions;
 
-    private JavaCompilerEventHandler(ProcessorSupport processorSupport, CodeStorage codeStorage, Message message, boolean includePureStackTrace, JavaCompilerEventObserver observer, Iterable<? extends CompiledExtension> extensions)
+    private JavaCompilerEventHandler(ProcessorSupport processorSupport, CodeStorage codeStorage, Message message, boolean includePureStackTrace, JavaCompilerEventObserver observer, MutableList<CompiledExtension> extensions)
     {
         this.processorSupport = processorSupport;
         this.codeStorage = codeStorage;
         this.message = message;
         this.observer = observer;
         this.generateAndCompile = new GenerateAndCompile(this.message, this.observer);
-        this.classCache = new ClassCache(this.generateAndCompile.getPureJavaCompiler().getClassLoader());
         this.includePureStackTrace = includePureStackTrace;
         this.extensions = extensions;
     }
 
-    public JavaCompilerEventHandler(PureRuntime pureRuntime, Message message, boolean includePureStackTrace, JavaCompilerEventObserver observer, Iterable<? extends CompiledExtension> extensions)
+    public JavaCompilerEventHandler(PureRuntime pureRuntime, Message message, boolean includePureStackTrace, JavaCompilerEventObserver observer, MutableList<CompiledExtension> extensions)
     {
         this(pureRuntime.getProcessorSupport(), pureRuntime.getCodeStorage(), message, includePureStackTrace, observer, extensions);
         if (pureRuntime.getCache() instanceof PreCompiledPureGraphCache)
@@ -93,8 +93,24 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
     @Override
     public void invalidate(RichIterable<? extends CoreInstance> consolidatedCoreInstances)
     {
-        consolidatedCoreInstances.asLazy().selectInstancesOf(Type.class).forEach(this.classCache::remove);
-        this.sharedFunctionCache = new FunctionCache();
+        try
+        {
+
+            for (CoreInstance instance: consolidatedCoreInstances)
+            {
+
+                if (Type.class.isInstance(instance))
+                {
+                    this.classCache.remove((Type)instance);
+                }
+            }
+
+            this.sharedFunctionCache = new FunctionCache();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public void generateAndCompileJavaCode(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo)
@@ -103,7 +119,7 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
         this.javaGeneratedAndCompiled = true;
 
         this.sharedFunctionCache = new FunctionCache();
-        this.classCache = new ClassCache(getJavaCompiler().getClassLoader());
+        this.classCache = new ClassCache();
     }
 
     @Override
@@ -112,7 +128,7 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
         this.javaGeneratedAndCompiled = false;
         this.generateAndCompile = new GenerateAndCompile(this.message, this.observer);
         this.sharedFunctionCache = new FunctionCache();
-        this.classCache = new ClassCache(getJavaCompiler().getClassLoader());
+        this.classCache = new ClassCache();
     }
 
 
@@ -149,4 +165,5 @@ public class JavaCompilerEventHandler implements CompilerEventHandler
     {
         return new JavaSourceCodeGenerator(this.processorSupport, this.codeStorage, false, null, this.includePureStackTrace, this.extensions, "Dyna", JavaPackageAndImportBuilder.externalizablePackage());
     }
+
 }

@@ -21,24 +21,22 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class ImportStubHelper
 {
-    public static final Function<CoreInstance, CoreInstance> FROM_STUB_FN = ImportStubHelper::fromImportStub;
-
-    public static CoreInstance fromImportStub(CoreInstance instance)
+    public static final Function<CoreInstance, CoreInstance> FROM_STUB_FN = new Function<CoreInstance, CoreInstance>()
     {
-        return (instance instanceof ImportStub) ? fromImportStub((ImportStub) instance) : instance;
-    }
-
-    public static CoreInstance fromImportStub(ImportStub importStub)
-    {
-        if ((importStub._idOrPath() != null) && (importStub._resolvedNodeCoreInstance() == null))
+        public CoreInstance valueOf(CoreInstance instance)
         {
-            throw new PureCompilationException("Error, ImportStub needs to be resolved before it can be accessed");
+            if (instance instanceof ImportStub)
+            {
+                if (((ImportStub)instance)._idOrPath() != null && ((ImportStub)instance)._resolvedNodeCoreInstance() == null)
+                {
+                    throw new PureCompilationException("Error, ImportStub needs to be resolved before it can be accessed");
+                }
+                return ((ImportStub)instance)._resolvedNodeCoreInstance();
+            }
+            else
+            {
+                return instance;
+            }
         }
-        return importStub._resolvedNodeCoreInstance();
-    }
-
-    public static boolean isUnresolved(ImportStub importStub)
-    {
-        return importStub._resolvedNode() == null;
-    }
+    };
 }

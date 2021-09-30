@@ -24,13 +24,11 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecificationCoreInstanceWrapper;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -63,14 +61,13 @@ public class CompiledProcessorSupport implements ProcessorSupport
     private final ClassLoader globalClassLoader;
     private final Context context = new Context();
     private final MetadataAccessor metadataAccessor;
-    private final ClassCache classCache;
+    private final ClassCache classCache = new ClassCache();
     private final Metadata metadata;
     private final SetIterable<String> extraSupportedTypes;
 
     public CompiledProcessorSupport(ClassLoader globalClassLoader, Metadata metadata, SetIterable<String> extraSupportedTypes)
     {
         this.globalClassLoader = globalClassLoader;
-        this.classCache = new ClassCache(this.globalClassLoader);
         this.metadata = metadata;
         this.metadataAccessor = new MetadataHolder(metadata);
         this.extraSupportedTypes = extraSupportedTypes;
@@ -79,43 +76,44 @@ public class CompiledProcessorSupport implements ProcessorSupport
     @Override
     public boolean instance_instanceOf(CoreInstance object, String typeName)
     {
-        if (object instanceof ReflectiveCoreInstance)
+        try
         {
-            if (ModelRepository.PRIMITIVE_TYPE_NAMES.contains(typeName))
+            if (object instanceof ReflectiveCoreInstance)
             {
-                return false;
+                if (ModelRepository.PRIMITIVE_TYPE_NAMES.contains(typeName))
+                {
+                    return false;
+                }
+                Class<?> cl = null;
+                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type type = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type) this.package_getByUserPath(typeName);
+                if (type != null)
+                {
+                    cl = this.classCache.getIfAbsentPutInterfaceForType(type, this.globalClassLoader);
+                }
+
+                if (cl == null)
+                {
+                    cl = object.getClass().getClassLoader().loadClass(JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(typeName, this.extraSupportedTypes));
+                }
+                return cl.isInstance(object);
             }
-            Class<?> cl;
-            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type type = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type) this.package_getByUserPath(typeName);
-            if (type == null)
+            else if (object instanceof ValCoreInstance)
             {
-                String javaInterfaceName = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath(typeName, this.extraSupportedTypes);
-                try
-                {
-                    cl = object.getClass().getClassLoader().loadClass(javaInterfaceName);
-                }
-                catch (ClassNotFoundException e)
-                {
-                    throw new RuntimeException("Could not find Java interface for " + typeName + " (" + javaInterfaceName + ")", e);
-                }
+                String valType = ((ValCoreInstance) object).getType();
+                return typeName.equals(valType) ||
+                        (M3Paths.Date.equals(typeName) && (valType.equals(M3Paths.DateTime) || valType.equals(M3Paths.StrictDate) || valType.equals(M3Paths.LatestDate)));
             }
             else
             {
-                cl = this.classCache.getIfAbsentPutInterfaceForType(type);
+                return Instance.instanceOf(object, typeName, this);
+                //todo: enable this once we fix ExecutionManager
+                //throw new UnsupportedOperationException("Unable to calculate instance of. Unexpected Core Instance type" + object.getClass().getName());
             }
-            return cl.isInstance(object);
         }
-
-        if (object instanceof ValCoreInstance)
+        catch (Exception e)
         {
-            String valType = ((ValCoreInstance) object).getType();
-            return typeName.equals(valType) ||
-                    (M3Paths.Date.equals(typeName) && (valType.equals(M3Paths.DateTime) || valType.equals(M3Paths.StrictDate) || valType.equals(M3Paths.LatestDate)));
+            throw new RuntimeException(e);
         }
-
-        return Instance.instanceOf(object, typeName, this);
-        //todo: enable this once we fix ExecutionManager
-        //throw new UnsupportedOperationException("Unable to calculate instance of. Unexpected Core Instance type" + object.getClass().getName());
     }
 
     @Override
@@ -204,7 +202,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
     {
         CoreInstance parent = pureClass.getValueForMetaPropertyToOne(M3Properties._package);
         MutableList<String> names = Lists.mutable.with(pureClass.getName());
-        while (parent != null && !M3Paths.Root.equals(parent.getName()))
+        while (parent != null && !"Root".equals(parent.getName()))
         {
             names.add(parent.getName());
             parent = parent.getValueForMetaPropertyToOne(M3Properties._package);
@@ -244,8 +242,8 @@ public class CompiledProcessorSupport implements ProcessorSupport
         try
         {
             return (CoreInstance) this.globalClassLoader.loadClass(
-                            inferred ? FullJavaPaths.InferredGenericType_Impl :
-                                    FullJavaPaths.GenericType_Impl)
+                    inferred ? FullJavaPaths.InferredGenericType_Impl :
+                            FullJavaPaths.GenericType_Impl)
                     .getConstructor(String.class).newInstance("id");
         }
         catch (ReflectiveOperationException e)
@@ -369,8 +367,19 @@ public class CompiledProcessorSupport implements ProcessorSupport
     {
         //TODO Iterate over ConcreteFunctionDefinition and FunctionDefinition along with NativeFunction.
         return this.metadata.getMetadata(MetadataJavaPaths.NativeFunction).valuesView().asLazy()
-                .concatenate(this.metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition).valuesView())
-                .select(f -> (f instanceof FunctionAccessor) && functionName.equals(((FunctionAccessor<?>) f)._functionName()), Sets.mutable.empty());
+                .concatenate(this.metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition))
+                .select(f ->
+                {
+                    try
+                    {
+                        Object fName = f.getClass().getMethod("_functionName").invoke(f);
+                        return functionName.equals(fName);
+                    }
+                    catch (Exception ignore)
+                    {
+                        return false;
+                    }
+                }, Sets.mutable.empty());
     }
 
     @Override
@@ -442,18 +451,21 @@ public class CompiledProcessorSupport implements ProcessorSupport
         {
             Any any = (Any) instance;
             GenericType genericType = any._classifierGenericType();
-            if (genericType != null)
-            {
-                org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type type = genericType._rawType();
-                if (type != null)
-                {
-                    return type;
-                }
-            }
-            return CompiledSupport.getType(any, this.metadataAccessor);
+            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type type = genericType != null ? genericType._rawType() : null;
+            return type == null ? CompiledSupport.getType((Any) instance, this.metadataAccessor) : type;
         }
 
-        throw new PureExecutionException("ERROR unhandled type for value: " + instance + " (instance of " + instance.getClass() + ")");
+        try
+        {
+            Class<?> pure = this.globalClassLoader.loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + "Pure");
+            Method m = pure.getMethod("safeGetGenericType", Object.class, MetadataAccessor.class, ProcessorSupport.class);
+            GenericType genericType = (GenericType) m.invoke(null, instance, this.metadataAccessor, this);
+            return genericType._rawType();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

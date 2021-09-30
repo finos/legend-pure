@@ -15,10 +15,11 @@
 package org.finos.legend.pure.m3.navigation;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.set.ImmutableSet;
-import org.finos.legend.pure.m4.ModelRepository;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DecimalCoreInstance;
@@ -29,12 +30,9 @@ import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.function.Function;
 
 public class PrimitiveUtilities
 {
-    private static final ImmutableSet<String> PRIMITIVE_TYPE_NAMES = ModelRepository.PRIMITIVE_TYPE_NAMES.newWith(M3Paths.Number);
-
     private PrimitiveUtilities()
     {
         // Utility class
@@ -130,31 +128,35 @@ public class PrimitiveUtilities
         return (instance == null) ? defaultIfNull : getStringValue(instance);
     }
 
-    public static ImmutableSet<String> getPrimitiveTypeNames()
-    {
-        return PRIMITIVE_TYPE_NAMES;
-    }
-
     public static RichIterable<CoreInstance> getPrimitiveTypes(ModelRepository repository)
     {
-        return getPrimitiveTypes(repository::getTopLevel);
+        SetIterable<String> primitiveTypeNames = ModelRepository.PRIMITIVE_TYPE_NAMES.newWith(M3Paths.Number);
+        MutableList<CoreInstance> primitiveTypes = FastList.newList(primitiveTypeNames.size());
+        for (String primitiveTypeName : primitiveTypeNames)
+        {
+            CoreInstance primitiveType = repository.getTopLevel(primitiveTypeName);
+            if (primitiveType == null)
+            {
+                throw new RuntimeException("Cannot find primitive type: " + primitiveTypeName);
+            }
+            primitiveTypes.add(primitiveType);
+        }
+        return primitiveTypes;
     }
 
     public static RichIterable<CoreInstance> getPrimitiveTypes(ProcessorSupport processorSupport)
     {
-        return getPrimitiveTypes(processorSupport::repository_getTopLevel);
-    }
-
-    private static RichIterable<CoreInstance> getPrimitiveTypes(Function<String, CoreInstance> getTopLevel)
-    {
-        return PRIMITIVE_TYPE_NAMES.collect(n ->
+        SetIterable<String> primitiveTypeNames = ModelRepository.PRIMITIVE_TYPE_NAMES.newWith(M3Paths.Number);
+        MutableList<CoreInstance> primitiveTypes = FastList.newList(primitiveTypeNames.size());
+        for (String primitiveTypeName : primitiveTypeNames)
         {
-            CoreInstance primitiveType = getTopLevel.apply(n);
+            CoreInstance primitiveType = processorSupport.repository_getTopLevel(primitiveTypeName);
             if (primitiveType == null)
             {
-                throw new RuntimeException("Cannot find primitive type: " + n);
+                throw new RuntimeException("Cannot find primitive type: " + primitiveTypeName);
             }
-            return primitiveType;
-        }, Lists.mutable.ofInitialCapacity(PRIMITIVE_TYPE_NAMES.size()));
+            primitiveTypes.add(primitiveType);
+        }
+        return primitiveTypes;
     }
 }

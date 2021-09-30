@@ -61,7 +61,7 @@ public class JsonExtensionCompiled extends BaseCompiledExtension
                                 "    @Deprecated\n" +
                                 "    public static <T> T fromJsonDeprecated(String json, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<T> clazz, Root_meta_json_JSONDeserializationConfig config, SourceInformation si, ExecutionSupport es)\n" +
                                 "    {\n" +
-                                "        java.lang.Class c = ((CompiledExecutionSupport)es).getClassCache().getIfAbsentPutInterfaceForType(clazz);\n" +
+                                "        java.lang.Class c = ((CompiledExecutionSupport)es).getClassCache().getIfAbsentPutInterfaceForType(clazz, ((CompiledExecutionSupport)es).getClassLoader());\n" +
                                 "        T obj = (T)JsonParserHelper.fromJson(json, c, \"\", \"\", ((CompiledExecutionSupport)es).getMetadataAccessor(), ((CompiledExecutionSupport)es).getClassLoader(), si, config._typeKeyName(), config._failOnUnknownProperties(), config._constraintsHandler(), es);\n" +
                                 "        return (T)handleValidation(true, obj, si, es);\n" +
                                 "    }\n" +

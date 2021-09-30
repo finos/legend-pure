@@ -15,111 +15,58 @@
 package org.finos.legend.pure.m4.tools;
 
 import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.stack.MutableStack;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.impl.factory.Stacks;
 import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
-import org.eclipse.collections.impl.utility.Iterate;
-import org.finos.legend.pure.m4.ModelRepository;
+import org.eclipse.collections.impl.utility.internal.IteratorIterate;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.ModelRepository;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
-/**
- * An iterable that iterates through the nodes of a graph, starting from a given set of nodes and traversing to
- * connected nodes. The traversal of the graph can be controlled by providing a
- * {@link java.util.function.Function function} from nodes to {@link NodeFilterResult NodeFilterResults}.
- */
 public class GraphNodeIterable extends AbstractLazyIterable<CoreInstance>
 {
     private final ImmutableList<CoreInstance> startingNodes;
-    private final Function<? super CoreInstance, NodeFilterResult> filter;
 
-    private GraphNodeIterable(Iterable<? extends CoreInstance> startingNodes, Function<? super CoreInstance, NodeFilterResult> filter)
+    private GraphNodeIterable(Iterable<? extends CoreInstance> startingNodes)
     {
         this.startingNodes = Lists.immutable.withAll(startingNodes);
-        this.filter = filter;
     }
 
     @Override
     public Iterator<CoreInstance> iterator()
     {
-        return new GraphNodeIterator(this.startingNodes, this.filter);
+        return new GraphNodeIterator(this.startingNodes);
     }
 
     @Override
     public void each(Procedure<? super CoreInstance> procedure)
     {
-        for (CoreInstance node : this)
-        {
-            procedure.value(node);
-        }
-    }
-
-    @Override
-    public void forEach(Consumer<? super CoreInstance> consumer)
-    {
-        for (CoreInstance node : this)
-        {
-            consumer.accept(node);
-        }
-    }
-
-    public static GraphNodeIterable fromNode(CoreInstance startingNode)
-    {
-        return fromNodes(startingNode, null);
-    }
-
-    public static GraphNodeIterable fromNode(CoreInstance startingNode, Function<? super CoreInstance, NodeFilterResult> filter)
-    {
-        return fromNodes(Lists.immutable.with(startingNode), filter);
-    }
-
-    public static GraphNodeIterable fromNodes(CoreInstance... startingNodes)
-    {
-        return fromNodes(Lists.immutable.with(startingNodes));
+        IteratorIterate.forEach(iterator(), procedure);
     }
 
     public static GraphNodeIterable fromNodes(Iterable<? extends CoreInstance> startingNodes)
     {
-        return fromNodes(startingNodes, null);
-    }
-
-    public static GraphNodeIterable fromNodes(Iterable<? extends CoreInstance> startingNodes, Function<? super CoreInstance, NodeFilterResult> filter)
-    {
-        return new GraphNodeIterable(Objects.requireNonNull(startingNodes, "Starting nodes may not be null"), filter);
+        if (startingNodes == null)
+        {
+            throw new IllegalArgumentException("Starting nodes may not be null");
+        }
+        return new GraphNodeIterable(startingNodes);
     }
 
     public static GraphNodeIterable fromModelRepository(ModelRepository repository)
     {
-        return fromModelRepository(repository, null);
-    }
-
-    public static GraphNodeIterable fromModelRepository(ModelRepository repository, Function<? super CoreInstance, NodeFilterResult> filter)
-    {
-        return fromNodes(repository.getTopLevels(), filter);
+        return fromNodes(repository.getTopLevels());
     }
 
     public static MutableSet<CoreInstance> allInstancesFromRepository(ModelRepository repository)
     {
-        return allConnectedInstances(repository.getTopLevels());
-    }
-
-    public static MutableSet<CoreInstance> allConnectedInstances(Iterable<? extends CoreInstance> startingNodes)
-    {
-        return allConnectedInstances(startingNodes, null);
-    }
-
-    public static MutableSet<CoreInstance> allConnectedInstances(Iterable<? extends CoreInstance> startingNodes, Function<? super CoreInstance, NodeFilterResult> filter)
-    {
-        GraphNodeIterator iterator = new GraphNodeIterator(startingNodes, filter);
+        GraphNodeIterator iterator = new GraphNodeIterator(repository.getTopLevels());
         while (iterator.hasNext())
         {
             iterator.next();
@@ -129,17 +76,15 @@ public class GraphNodeIterable extends AbstractLazyIterable<CoreInstance>
 
     private static class GraphNodeIterator implements Iterator<CoreInstance>
     {
-        private final Deque<CoreInstance> deque;
+        private final MutableStack<CoreInstance> stack;
         private final MutableSet<CoreInstance> visited;
-        private final Function<? super CoreInstance, NodeFilterResult> filter;
-        private CoreInstance next;
+        private CoreInstance next = null;
 
-        private GraphNodeIterator(Iterable<? extends CoreInstance> startingNodes, Function<? super CoreInstance, NodeFilterResult> filter)
+        private GraphNodeIterator(Iterable<? extends CoreInstance> startingNodes)
         {
-            this.deque = Iterate.addAllTo(startingNodes, new ArrayDeque<>());
-            this.visited = Sets.mutable.ofInitialCapacity(Math.max(this.deque.size(), 16));
-            this.filter = filter;
-            this.next = findNextNode();
+            this.stack = Stacks.mutable.withAll(startingNodes);
+            this.visited = Sets.mutable.empty();
+            update();
         }
 
         @Override
@@ -156,70 +101,43 @@ public class GraphNodeIterable extends AbstractLazyIterable<CoreInstance>
             {
                 throw new NoSuchElementException();
             }
-            this.next = findNextNode();
+            update();
             return node;
         }
 
-        private CoreInstance findNextNode()
+        @Override
+        public void remove()
         {
-            while (!this.deque.isEmpty())
+            throw new UnsupportedOperationException();
+        }
+
+        private void update()
+        {
+            CoreInstance node = getNextUnvisitedFromStack();
+            if (node != null)
             {
-                CoreInstance node = this.deque.pollFirst();
+                for (String key : node.getKeys())
+                {
+                    for (CoreInstance value : node.getValueForMetaPropertyToMany(key))
+                    {
+                        this.stack.push(value);
+                    }
+                }
+            }
+            this.next = node;
+        }
+
+        private CoreInstance getNextUnvisitedFromStack()
+        {
+            while (this.stack.notEmpty())
+            {
+                CoreInstance node = this.stack.pop();
                 if (this.visited.add(node))
                 {
-                    switch (filter(node))
-                    {
-                        case ACCEPT_AND_CONTINUE:
-                        {
-                            node.getKeys().forEach(key -> Iterate.addAllIterable(node.getValueForMetaPropertyToMany(key), this.deque));
-                            return node;
-                        }
-                        case ACCEPT_AND_STOP:
-                        {
-                            return node;
-                        }
-                    }
+                    return node;
                 }
             }
             return null;
         }
-
-        private NodeFilterResult filter(CoreInstance node)
-        {
-            if (this.filter != null)
-            {
-                NodeFilterResult result = this.filter.apply(node);
-                if (result != null)
-                {
-                    return result;
-                }
-            }
-            return NodeFilterResult.ACCEPT_AND_CONTINUE;
-        }
-    }
-
-    /**
-     * Node filter result, which controls which nodes are returned during iteration and how graph traversal proceeds.
-     * The default behavior is {@link #ACCEPT_AND_CONTINUE}.
-     */
-    public enum NodeFilterResult
-    {
-        /**
-         * Accept the node for iteration, and continue on to connected nodes.
-         */
-        ACCEPT_AND_CONTINUE,
-
-        /**
-         * Accept the node for iteration, but do not continue on to connected nodes. Note that connected nodes may still
-         * be reached by other paths.
-         */
-        ACCEPT_AND_STOP,
-
-        /**
-         * Reject the node for iteration. This means both that the node will not be returned as part of iteration and
-         * that graph traversal will not continue on to connected nodes (though they may still be reached by other
-         * paths). Note that the rejection is persistent, even if the node is reached by other paths.
-         */
-        REJECT
     }
 }

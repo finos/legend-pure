@@ -15,7 +15,6 @@
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 
 public class TestDistributedStringCaching extends TestStringCaching<DistributedStringCache>
 {
@@ -24,7 +23,7 @@ public class TestDistributedStringCaching extends TestStringCaching<DistributedS
     @Override
     protected DistributedStringCache buildCache()
     {
-        return DistributedStringCache.fromNodes(GraphNodeIterable.allInstancesFromRepository(repository), IdBuilder.newIdBuilder(processorSupport), processorSupport);
+        return DistributedStringCache.fromNodes(GraphNodeIterable.allInstancesFromRepository(repository), processorSupport);
     }
 
     @Override

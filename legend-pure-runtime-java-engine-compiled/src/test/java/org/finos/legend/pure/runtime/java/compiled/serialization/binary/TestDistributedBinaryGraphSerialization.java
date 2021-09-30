@@ -25,9 +25,9 @@ import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
+import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialized;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -44,6 +44,29 @@ public abstract class TestDistributedBinaryGraphSerialization extends AbstractPu
     }
 
     @Test
+    public void testFromSerialized() throws IOException
+    {
+        testFromSerialized(null);
+    }
+
+    @Test
+    public void testFromSerializedWithMetadataName() throws IOException
+    {
+        testFromSerialized("with_serialized");
+    }
+
+    private void testFromSerialized(String metadataName) throws IOException
+    {
+        Serialized serialized = getSerialized();
+        testSerialization(serialized.getObjects(), metadataName, m -> DistributedBinaryGraphSerializer.newSerializer(m, serialized));
+    }
+
+    private Serialized getSerialized()
+    {
+        return GraphSerializer.serializeAll(repository.getTopLevels(), processorSupport);
+    }
+
+    @Test
     public void testFromRuntime() throws IOException
     {
         testFromRuntime(null);
@@ -55,21 +78,34 @@ public abstract class TestDistributedBinaryGraphSerialization extends AbstractPu
         testFromRuntime("withRuntime");
     }
 
+    @Test
+    public void testFromRuntimeComparedToSerialized() throws IOException
+    {
+        Serialized serialized = getSerialized();
+        testSerialization(serialized.getObjects(), null, m -> DistributedBinaryGraphSerializer.newSerializer(m, runtime));
+    }
+
+    @Test
+    public void testFromSerializedComparedToRuntime() throws IOException
+    {
+        Serialized serialized = getSerialized();
+        testSerialization(getExpectedObjsFromRuntime(), null, m -> DistributedBinaryGraphSerializer.newSerializer(m, serialized));
+    }
+
     private void testFromRuntime(String metadataName) throws IOException
     {
-        ListIterable<Obj> expectedObjs = getExpectedObjsFromRuntime(metadataName);
+        ListIterable<Obj> expectedObjs = getExpectedObjsFromRuntime();
         testSerialization(expectedObjs, metadataName, m -> DistributedBinaryGraphSerializer.newSerializer(m, runtime));
     }
 
-    private ListIterable<Obj> getExpectedObjsFromRuntime(String metadataName)
+    private ListIterable<Obj> getExpectedObjsFromRuntime()
     {
         MutableSet<CoreInstance> ignoredClassifiers = PrimitiveUtilities.getPrimitiveTypes(repository).toSet();
         ArrayAdapter.adapt(M3Paths.EnumStub, M3Paths.ImportStub, M3Paths.PropertyStub, M3Paths.RouteNodePropertyStub).collect(processorSupport::package_getByUserPath, ignoredClassifiers);
-        IdBuilder idBuilder = IdBuilder.newIdBuilder(DistributedMetadataHelper.getMetadataIdPrefix(metadataName), processorSupport);
         GraphSerializer.ClassifierCaches classifierCaches = new GraphSerializer.ClassifierCaches(processorSupport);
         return GraphNodeIterable.fromModelRepository(repository)
                 .reject(i -> ignoredClassifiers.contains(i.getClassifier()))
-                .collect(i -> GraphSerializer.buildObj(i, idBuilder, classifierCaches, processorSupport), Lists.mutable.empty());
+                .collect(i -> GraphSerializer.buildObjWithProperties(i, classifierCaches, processorSupport), Lists.mutable.empty());
     }
 
     private void testSerialization(ListIterable<Obj> expectedObjs, String metadataName, Function<String, DistributedBinaryGraphSerializer> serializerFn) throws IOException

@@ -70,6 +70,6 @@ public class PropertyValueOne implements PropertyValue
     @Override
     public <T> T visit(PropertyValueVisitor<T> visitor)
     {
-        return visitor.visit(this);
+        return visitor.accept(this);
     }
 }

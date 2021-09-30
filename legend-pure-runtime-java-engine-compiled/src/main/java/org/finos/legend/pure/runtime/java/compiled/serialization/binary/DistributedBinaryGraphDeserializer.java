@@ -27,6 +27,7 @@ import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.Map;
@@ -43,7 +44,7 @@ public class DistributedBinaryGraphDeserializer
 
     private DistributedBinaryGraphDeserializer(String metadataName, FileReader fileReader)
     {
-        this.metadataName = DistributedMetadataHelper.validateMetadataNameIfPresent(metadataName);
+        this.metadataName = metadataName;
         this.fileReader = fileReader;
         this.stringIndex = LazyStringIndex.fromFileReader(this.metadataName, fileReader);
         RichIterable<String> classifierIds = this.stringIndex.getClassifierIds();
@@ -70,7 +71,7 @@ public class DistributedBinaryGraphDeserializer
         return hasClassifier(classifierId) ? getClassifierIndex(classifierId).getInstanceIds() : Lists.immutable.empty();
     }
 
-    public Obj getInstance(String classifierId, String instanceId)
+    public Obj getInstance(String classifierId, String instanceId) throws IOException
     {
         if (!hasClassifier(classifierId))
         {
@@ -85,7 +86,7 @@ public class DistributedBinaryGraphDeserializer
         return sourceCoordinates.getObj(this.fileReader, this.stringIndex, classifierIndex);
     }
 
-    public ListIterable<Obj> getInstances(String classifierId, Iterable<String> instanceIds)
+    public ListIterable<Obj> getInstances(String classifierId, Iterable<String> instanceIds) throws IOException
     {
         if (!hasClassifier(classifierId))
         {
@@ -134,7 +135,7 @@ public class DistributedBinaryGraphDeserializer
 
     private MapIterable<String, SourceCoordinates> readInstanceIndex(String classifier)
     {
-        String indexFilePath = DistributedMetadataHelper.getMetadataClassifierIndexFilePath(this.metadataName, classifier);
+        String indexFilePath = DistributedMetadataFiles.getMetadataClassifierIndexFilePath(this.metadataName, classifier);
         try (Reader reader = this.fileReader.getReader(indexFilePath))
         {
             int instanceCount = reader.readInt();
@@ -142,7 +143,7 @@ public class DistributedBinaryGraphDeserializer
 
             int instancePartition = reader.readInt();
             int offset = reader.readInt();
-            String filePath = DistributedMetadataHelper.getMetadataPartitionBinFilePath(this.metadataName, instancePartition);
+            String filePath = DistributedMetadataFiles.getMetadataPartitionBinFilePath(this.metadataName, instancePartition);
 
             int instancesRead = 0;
             while (instancesRead < instanceCount)
@@ -158,7 +159,7 @@ public class DistributedBinaryGraphDeserializer
                 instancesRead += partitionInstanceCount;
                 instancePartition++;
                 offset = 0;
-                filePath = DistributedMetadataHelper.getMetadataPartitionBinFilePath(this.metadataName, instancePartition);
+                filePath = DistributedMetadataFiles.getMetadataPartitionBinFilePath(this.metadataName, instancePartition);
             }
 
             return index;

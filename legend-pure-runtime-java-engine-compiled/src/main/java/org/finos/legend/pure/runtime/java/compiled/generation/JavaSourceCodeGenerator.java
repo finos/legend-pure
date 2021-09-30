@@ -15,12 +15,13 @@
 package org.finos.legend.pure.runtime.java.compiled.generation;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
@@ -41,7 +42,6 @@ import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.ClassJsonFactoryProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.FunctionProcessor;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CoreExtensionCompiled;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
@@ -51,7 +51,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type._c
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.MeasureProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit.UnitProcessor;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -116,8 +115,8 @@ public final class JavaSourceCodeGenerator
                     "import org.finos.legend.pure.runtime.java.compiled.*;\n" +
                     "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
                     "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
-                    "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n" +
+                    "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n"+
+                    "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n"+
                     "import org.finos.legend.pure.runtime.java.compiled.serialization.model.*;\n" +
                     "import org.finos.legend.pure.runtime.java.compiled.metadata.*;\n" +
 
@@ -137,7 +136,6 @@ public final class JavaSourceCodeGenerator
                     "\n";
 
     private final ProcessorSupport processorSupport;
-    private final IdBuilder idBuilder;
     private final CodeStorage codeStorage;
     private final boolean writeFilesToDisk;
     private final Path directoryToWriteFilesTo;
@@ -153,11 +151,10 @@ public final class JavaSourceCodeGenerator
 
     private final String name;
 
-    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, IdBuilder idBuilder, CodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> extensions, String name, String externalAPIPackage)
+    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, CodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> extensions, String name, String externalAPIPackage)
     {
         this.name = name;
         this.processorSupport = processorSupport;
-        this.idBuilder = (idBuilder == null) ? IdBuilder.newIdBuilder(this.processorSupport) : idBuilder;
         this.codeStorage = codeStorage;
         this.writeFilesToDisk = writeFilesToDisk;
         this.directoryToWriteFilesTo = directoryToWriteFilesTo;
@@ -168,11 +165,6 @@ public final class JavaSourceCodeGenerator
         {
             this.javaClassesToDisk(this.extensions.flatCollect(CompiledExtension::getExtraJavaSources));
         }
-    }
-
-    public JavaSourceCodeGenerator(ProcessorSupport processorSupport, CodeStorage codeStorage, boolean writeFilesToDisk, Path directoryToWriteFilesTo, boolean includePureStackTrace, Iterable<? extends CompiledExtension> extensions, String name, String externalAPIPackage)
-    {
-        this(processorSupport, null, codeStorage, writeFilesToDisk, directoryToWriteFilesTo, includePureStackTrace, extensions, name, externalAPIPackage);
     }
 
     public ProcessorSupport getProcessorSupport()
@@ -186,7 +178,7 @@ public final class JavaSourceCodeGenerator
         {
             try
             {
-                ProcessorContext processorContext = new ProcessorContext(this.processorSupport, this.extensions, this.idBuilder, this.includePureStackTrace);
+                ProcessorContext processorContext = new ProcessorContext(this.processorSupport, this.extensions, this.includePureStackTrace);
 
                 for (CoreInstance coreInstance : source.getNewInstances())
                 {
@@ -216,11 +208,18 @@ public final class JavaSourceCodeGenerator
     {
         CoreInstance root = this.processorSupport.package_getByUserPath("::");
 
-        ProcessorContext processorContext = new ProcessorContext(this.processorSupport, this.extensions, this.idBuilder, this.includePureStackTrace);
-        toJava(this.processorSupport.repository_getTopLevel(M3Paths.Package), processorContext);
-        toJava(root, processorContext);
+        ProcessorContext processorContext = new ProcessorContext(this.processorSupport, this.extensions, this.includePureStackTrace);
+        try
+        {
+            this.toJava(this.processorSupport.repository_getTopLevel(M3Paths.Package), processorContext);
+            this.toJava(root, processorContext);
+        }
+        catch (PureCompilationException e)
+        {
+            throw new RuntimeException(e);
+        }
 
-        MutableList<StringJavaSource> javaClasses = Lists.mutable.empty();
+        MutableList<StringJavaSource> javaClasses = FastList.newList();
         javaClasses.addAll(this.buildJavaClasses(processorContext));
         if (this.writeFilesToDisk)
         {
@@ -250,7 +249,7 @@ public final class JavaSourceCodeGenerator
     void collectClassesToSerialize()
     {
         CoreInstance externalizableStereotype = AccessLevel.EXTERNALIZABLE.getStereotype(this.processorSupport);
-        ProcessorContext processorContext = new ProcessorContext(this.processorSupport, this.extensions, this.idBuilder, this.includePureStackTrace);
+        ProcessorContext processorContext = new ProcessorContext(this.processorSupport, this.extensions, this.includePureStackTrace);
         ProcessorSupport processorSupport = processorContext.getSupport();
 
         for (CoreInstance element : externalizableStereotype.getValueForMetaPropertyToMany(M3Properties.modelElements))
@@ -283,10 +282,11 @@ public final class JavaSourceCodeGenerator
 
     private void addClassToSerialize(CoreInstance coreInstanceClass, MutableSet<CoreInstance> set)
     {
-        if (!set.add(coreInstanceClass))
+        if (set.contains(coreInstanceClass))
         {
             return;
         }
+        set.add(coreInstanceClass);
 
         boolean isInherit = !coreInstanceClass.getValueForMetaPropertyToMany(M3Properties.generalizations).isEmpty();
 
@@ -326,6 +326,7 @@ public final class JavaSourceCodeGenerator
                 addClassToSerialize(rawType, set);
             }
         });
+
     }
 
     ListIterable<StringJavaSource> generateExternalizableAPI(String pack)
@@ -334,7 +335,7 @@ public final class JavaSourceCodeGenerator
 
         MutableList<String> externalizableFunctionCode = Lists.mutable.empty();
         CoreInstance functionClass = this.processorSupport.package_getByUserPath(M3Paths.Function);
-        ProcessorContext processorContext = new ProcessorContext(this.processorSupport, this.extensions, this.idBuilder, this.includePureStackTrace);
+        ProcessorContext processorContext = new ProcessorContext(this.processorSupport, this.extensions, this.includePureStackTrace);
         for (CoreInstance element : externalizableStereotype.getValueForMetaPropertyToMany(M3Properties.modelElements))
         {
             if (Instance.instanceOf(element, functionClass, this.processorSupport))
@@ -354,12 +355,12 @@ public final class JavaSourceCodeGenerator
             for (StringJavaSource source : javaClasses)
             {
                 //String fileUri = "file://" + source.toUri().getPath();
-                Path file = Paths.get(this.directoryToWriteFilesTo + source.toUri().getPath());
+                Path file = Paths.get(this.directoryToWriteFilesTo.toString() + source.toUri().getPath());
                 Files.createDirectories(file.getParent());
                 Files.write(file, source.getCode().getBytes(StandardCharsets.UTF_8));
             }
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -367,7 +368,7 @@ public final class JavaSourceCodeGenerator
 
     private MutableList<StringJavaSource> buildJavaClasses(ProcessorContext processorContext)
     {
-        MutableList<StringJavaSource> javaClasses = Lists.mutable.empty();
+        MutableList<StringJavaSource> javaClasses = FastList.newList();
         javaClasses.addAll(processorContext.getClasses());
 
         MutableSet<String> processedSources = Sets.mutable.empty();
@@ -492,9 +493,9 @@ public final class JavaSourceCodeGenerator
         {
             java.lang.Class<?> externalClass = Thread.currentThread().getContextClassLoader().loadClass("org.finos.legend.pure.runtime.java.compiled.generation.ExternalClassBuilder");
             Method method = externalClass.getMethod("buildExternalizableFunctionClass", RichIterable.class, String.class, RichIterable.class);
-            return (String) method.invoke(null, functionDefinitions, EXTERNAL_FUNCTIONS_CLASS_NAME, this.codeStorage.getAllRepoNames());
+            return (String)method.invoke(null, functionDefinitions, EXTERNAL_FUNCTIONS_CLASS_NAME, this.codeStorage.getAllRepoNames());
         }
-        catch (ReflectiveOperationException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }

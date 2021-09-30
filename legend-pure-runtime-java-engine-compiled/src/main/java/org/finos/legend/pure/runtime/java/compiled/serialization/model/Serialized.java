@@ -14,8 +14,27 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.model;
 
-public interface PropertyValueVisitor<T>
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.tuple.Pair;
+
+public class Serialized
 {
-    T accept(PropertyValueMany many);
-    T accept(PropertyValueOne one);
+    private final ListIterable<Obj> objects;
+    private final ListIterable<Pair<Obj, Obj>> packageLinks;
+
+    public Serialized(ListIterable<Obj> objects, ListIterable<Pair<Obj, Obj>> packageLinks)
+    {
+        this.objects = objects;
+        this.packageLinks = packageLinks;
+    }
+
+    public ListIterable<Obj> getObjects()
+    {
+        return this.objects;
+    }
+
+    public ListIterable<Pair<Obj, Obj>> getPackageLinks()
+    {
+        return this.packageLinks;
+    }
 }
