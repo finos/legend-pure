@@ -46,6 +46,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -54,8 +56,6 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import static org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation.buildExceptionMessage;
 
@@ -81,25 +81,25 @@ public class PureSession
     private FunctionExecution initialize()
     {
         String rootPath = Optional.ofNullable(sourceLocationConfiguration)
-                .flatMap(s -> Optional.ofNullable(s.welcomeFileDirectory))
-                .orElse(System.getProperty("java.io.tmpdir"));
+            .flatMap(s -> Optional.ofNullable(s.welcomeFileDirectory))
+            .orElse(System.getProperty("java.io.tmpdir"));
 
         String ideFilesLocation = Optional.ofNullable(sourceLocationConfiguration)
-                .flatMap(s -> Optional.ofNullable(s.ideFilesLocation))
-                .orElse("legend-pure-ide-light/src/main/resources/pure_ide");
+            .flatMap(s -> Optional.ofNullable(s.ideFilesLocation))
+            .orElse("legend-pure-ide-light/src/main/resources/pure_ide");
 
         this.functionExecution = new FunctionExecutionInterpreted(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
 
         try
         {
             MutableList<RepositoryCodeStorage> repos = Lists.mutable
-                    .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
-                    .with(this.buildCore(""))
-                    .with(this.buildCore("relational"))
-                    .with(this.buildCore("external-shared"))
-                    .with(this.buildCore("external-format-flatdata"))
-                    .with(this.buildCore("external-format-xml"))
-                    .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
+                .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
+                .with(this.buildCore(""))
+                .with(this.buildCore("relational"))
+                .with(this.buildCore("external-shared"))
+                .with(this.buildCore("external-format-flatdata"))
+                .with(this.buildCore("external-format-xml"))
+                .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
 
             this.codeStorage = new PureCodeStorage(Paths.get(rootPath), repos.toArray(new RepositoryCodeStorage[0]));
             this.pureRuntime = new PureRuntimeBuilder(this.codeStorage).withMessage(this.message).setUseFastCompiler(true).build();
@@ -118,8 +118,8 @@ public class PureSession
         String resources = "legend-pure-code-compiled-core" + (suffix.equals("") ? "" : "-" + suffix) + "/src/main/resources";
         String module = "core" + (suffix.equals("") ? "" : "_" + suffix);
         return new MutableFSCodeStorage(
-                GenericCodeRepository.build(Paths.get(resources + "/" + module.replace("-", "_") + ".definition.json")),
-                Paths.get(resources + "/" + module.replace("-","_"))
+            GenericCodeRepository.build(Paths.get(resources + "/" + module.replace("-", "_") + ".definition.json")),
+            Paths.get(resources + "/" + module.replace("-", "_"))
         );
     }
 
@@ -257,7 +257,6 @@ public class PureSession
                     {
                         String path = (String) openFile.get("path");
                         String code = (String) openFile.get("code");
-                        code = code.replace("\n", "\r\n");
                         if (null == pureRuntime.getSourceById(path))
                         {
                             pureRuntime.loadSourceIfLoadable(path);

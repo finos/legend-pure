@@ -1,8 +1,15 @@
-# Third party
+# Dependencies
 **/node_modules
 
-# Build products
-**/target
+# Build
+/build/
+/packages/*/build/
+/packages/*/dist/
+/packages/*/lib/
 
-# Development
-**/temp
+# Yarn
+.yarn/*
+.pnp.*
+
+# Exceptions
+/packages/legend-dev-utils/__tests__/fixtures/src/dummy.ts
