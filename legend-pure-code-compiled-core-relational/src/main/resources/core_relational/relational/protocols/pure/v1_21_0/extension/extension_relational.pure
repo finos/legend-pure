@@ -61,11 +61,10 @@ function meta::protocols::pure::v1_21_0::extension::getRelationalExtension():met
                      executionContext = $e->meta::protocols::pure::v1_21_0::transformation::fromPureGraph::context::transformContext($extensions)
                   ),
                 d:meta::relational::metamodel::Database[1]|
-                 ^meta::protocols::pure::v1_21_0::metamodel::valueSpecification::raw::DatabaseInstance
+                 ^meta::protocols::pure::v1_21_0::metamodel::valueSpecification::raw::PackageableElementPtr
                   (
-
-                     _type = 'databaseInstance',
-                     fullPath = $d->elementToPath()->toOne()
+                     _type = 'packageableElementPtr',
+                     fullPath = $d->elementToPath()
                   )
           ]
        },
