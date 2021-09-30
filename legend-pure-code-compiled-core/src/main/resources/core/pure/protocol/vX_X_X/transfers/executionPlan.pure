@@ -105,7 +105,20 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::execution
                parentIndex = $g.parentIndex,
                xStorePropertyMapping = $g.xStorePropertyMapping->map(x | $x->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::xStore::transformXStorePropertyMapping($mapping, $extensions)),
                enableConstraints = $g.enableConstraints,
-               checked = $g.checked
+               checked = $g.checked,
+               xStorePropertyFetchDetails = $g.xStorePropertyFetchDetails->map(x |
+                  ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::XStorePropertyFetchDetails
+                  (
+                     supportsCaching = $x.supportsCaching,
+                     propertyPath = $x.propertyPath,
+                     sourceMappingId = $x.sourceMappingId,
+                     sourceSetId = $x.sourceSetId,
+                     targetMappingId = $x.targetMappingId,
+                     targetSetId = $x.targetSetId,
+                     targetPropertiesOrdered = $x.targetPropertiesOrdered,
+                     subTree = $x.subTree
+                  )
+               )
             ),
          e:meta::pure::executionPlan::ErrorExecutionNode[1]|
             ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::ErrorExecutionNode

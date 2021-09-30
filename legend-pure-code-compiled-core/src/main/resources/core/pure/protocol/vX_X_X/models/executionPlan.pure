@@ -126,6 +126,19 @@ Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::Globa
    xStorePropertyMapping : meta::protocols::pure::vX_X_X::metamodel::mapping::xStore::XStorePropertyMapping[0..1];
    enableConstraints : Boolean[0..1];
    checked           : Boolean[0..1];
+   xStorePropertyFetchDetails : meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::XStorePropertyFetchDetails[0..1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::XStorePropertyFetchDetails
+{
+   supportsCaching         : Boolean[1];
+   propertyPath            : String[1];
+   sourceMappingId         : String[1];
+   sourceSetId             : String[1];
+   targetMappingId         : String[1];
+   targetSetId             : String[1];
+   targetPropertiesOrdered : String[*];
+   subTree                 : String[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::LocalGraphFetchExecutionNode extends ExecutionNode
