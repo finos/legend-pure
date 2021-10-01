@@ -43,9 +43,8 @@ import {
   SystemModel,
   Tag,
   TaggedValue,
+  TagExplicitReference,
 } from '@finos/legend-graph';
-// eslint-disable-next-line @finos/legend-studio/no-cross-workspace-non-export-usage
-import { TagExplicitReference } from '@finos/legend-graph/lib/models/metamodels/pure/packageableElements/domain/TagReference';
 import { guaranteeNonNullable } from '@finos/legend-shared';
 import {
   createModelSchema,
