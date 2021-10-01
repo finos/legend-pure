@@ -17,19 +17,28 @@ package org.finos.legend.pure.m3.tools;
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.bag.Bag;
-import org.eclipse.collections.api.factory.Bags;
-import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.block.function.primitive.IntFunction;
+import org.eclipse.collections.api.block.function.primitive.IntToIntFunction;
+import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.block.procedure.primitive.ObjectIntProcedure;
 import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
 import org.eclipse.collections.api.map.primitive.ObjectIntMap;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.MutableMultimap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.impl.block.factory.Functions;
+import org.eclipse.collections.impl.block.factory.Predicates;
+import org.eclipse.collections.impl.block.factory.primitive.IntToIntFunctions;
+import org.eclipse.collections.impl.factory.Bags;
 import org.eclipse.collections.impl.factory.Multimaps;
+import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
-import org.eclipse.collections.impl.set.mutable.SetAdapter;
 import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m3.coreinstance.helper.AnyStubHelper;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStub;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStub;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
@@ -39,9 +48,6 @@ import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 
 import java.util.Formatter;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.ToIntFunction;
 
 public class GraphStatistics
 {
@@ -57,7 +63,7 @@ public class GraphStatistics
 
     public static <T extends MutableMultimap<CoreInstance, CoreInstance>> T allInstancesByClassifier(ModelRepository repository, T target)
     {
-        return GraphNodeIterable.fromModelRepository(repository).groupBy(CoreInstance::getClassifier, target);
+        return GraphNodeIterable.fromModelRepository(repository).groupBy(CoreInstance.GET_CLASSIFIER, target);
     }
 
     public static Multimap<String, CoreInstance> allInstancesByClassifierPath(ModelRepository repository)
@@ -67,38 +73,45 @@ public class GraphStatistics
 
     public static <T extends MutableMultimap<String, CoreInstance>> T allInstancesByClassifierPath(ModelRepository repository, T target)
     {
-        return GraphNodeIterable.fromModelRepository(repository).groupBy(n -> PackageableElement.getUserPathForPackageableElement(n.getClassifier()), target);
+        return GraphNodeIterable.fromModelRepository(repository).groupBy(Functions.chain(CoreInstance.GET_CLASSIFIER, PackageableElement.GET_USER_PATH), target);
     }
 
     public static Bag<CoreInstance> instanceCountByClassifier(ModelRepository repository)
     {
-        return GraphNodeIterable.fromModelRepository(repository).collect(CoreInstance::getClassifier, Bags.mutable.empty());
+        return GraphNodeIterable.fromModelRepository(repository).collect(CoreInstance.GET_CLASSIFIER, Bags.mutable.empty());
     }
 
     public static Bag<String> instanceCountByClassifierPath(ModelRepository repository)
     {
-        return GraphNodeIterable.fromModelRepository(repository).collect(n -> PackageableElement.getUserPathForPackageableElement(n.getClassifier()), Bags.mutable.empty());
+        return GraphNodeIterable.fromModelRepository(repository).collect(Functions.chain(CoreInstance.GET_CLASSIFIER, PackageableElement.GET_USER_PATH), Bags.mutable.empty());
     }
 
     public static ObjectIntMap<CoreInstance> instanceCountByClassifierAsMap(ModelRepository repository)
     {
-        return instanceCountAsMap(repository, CoreInstance::getClassifier);
+        return instanceCountAsMap(repository, CoreInstance.GET_CLASSIFIER);
     }
 
     public static ObjectIntMap<String> instanceCountByClassifierPathAsMap(ModelRepository repository)
     {
-        return instanceCountAsMap(repository, n -> PackageableElement.getUserPathForPackageableElement(n.getClassifier()));
+        return instanceCountAsMap(repository, Functions.chain(CoreInstance.GET_CLASSIFIER, PackageableElement.GET_USER_PATH));
     }
 
     public static RichIterable<CoreInstance> findUnresolvedStubs(ModelRepository repository)
     {
-        return GraphNodeIterable.fromModelRepository(repository).select(AnyStubHelper::isUnresolvedStub);
+        return GraphNodeIterable.fromModelRepository(repository).select(instance ->
+                ((instance instanceof ImportStub) && (((ImportStub)instance)._resolvedNode() == null)) ||
+                ((instance instanceof PropertyStub) && (((PropertyStub)instance)._resolvedPropertyCoreInstance() == null)) ||
+                ((instance instanceof EnumStub) && (((EnumStub)instance)._resolvedEnumCoreInstance() == null)));
     }
 
     private static <T> ObjectIntMap<T> instanceCountAsMap(ModelRepository repository, Function<CoreInstance, T> keyFn)
     {
         MutableObjectIntMap<T> map = ObjectIntMaps.mutable.empty();
-        GraphNodeIterable.fromModelRepository(repository).forEach(node -> map.addToValue(keyFn.apply(node), 1));
+        IntToIntFunction increment = IntToIntFunctions.increment();
+        for (CoreInstance node : GraphNodeIterable.fromModelRepository(repository))
+        {
+            map.updateValue(keyFn.valueOf(node), 0, increment);
+        }
         return map;
     }
 
@@ -109,10 +122,13 @@ public class GraphStatistics
 
     public static void writeInstanceCountsByClassifierPathDeltas(Appendable appendable, String formatString, Bag<String> instanceCountsByClassifierPath1, Bag<String> instanceCountsByClassifierPath2)
     {
-        MutableSet<String> classifierPaths = Sets.mutable.empty();
-        instanceCountsByClassifierPath1.forEachWithOccurrences((classifierPath, count) -> classifierPaths.add(classifierPath));
-        instanceCountsByClassifierPath2.forEachWithOccurrences((classifierPath, count) -> classifierPaths.add(classifierPath));
-        writeInstanceCountsByClassifierPathDeltas(appendable, formatString, classifierPaths, instanceCountsByClassifierPath1::occurrencesOf, instanceCountsByClassifierPath2::occurrencesOf);
+        final MutableSet<String> classifierPaths = Sets.mutable.empty();
+        ObjectIntProcedure<String> collectClassifierPath = (classifierPath, count) -> classifierPaths.add(classifierPath);
+        instanceCountsByClassifierPath1.forEachWithOccurrences(collectClassifierPath);
+        instanceCountsByClassifierPath2.forEachWithOccurrences(collectClassifierPath);
+        IntFunction<String> countFn1 = new BagCountFunction<>(instanceCountsByClassifierPath1);
+        IntFunction<String> countFn2 = new BagCountFunction<>(instanceCountsByClassifierPath2);
+        writeInstanceCountsByClassifierPathDeltas(appendable, formatString, classifierPaths, countFn1, countFn2);
     }
 
     public static void writeInstanceCountsByClassifierPathDeltas(Appendable appendable, String indent, String description1, ObjectIntMap<String> instanceCountsByClassifierPath1, String description2, ObjectIntMap<String> instanceCountsByClassifierPath2)
@@ -123,7 +139,9 @@ public class GraphStatistics
     public static void writeInstanceCountsByClassifierPathDeltas(Appendable appendable, String formatString, ObjectIntMap<String> instanceCountsByClassifierPath1, ObjectIntMap<String> instanceCountsByClassifierPath2)
     {
         SetIterable<String> classifierPaths = instanceCountsByClassifierPath1.keysView().toSet().withAll(instanceCountsByClassifierPath2.keysView());
-        writeInstanceCountsByClassifierPathDeltas(appendable, formatString, classifierPaths, instanceCountsByClassifierPath1::get, instanceCountsByClassifierPath2::get);
+        IntFunction<String> countFn1 = new ObjectIntMapCountFunction<>(instanceCountsByClassifierPath1);
+        IntFunction<String> countFn2 = new ObjectIntMapCountFunction<>(instanceCountsByClassifierPath2);
+        writeInstanceCountsByClassifierPathDeltas(appendable, formatString, classifierPaths, countFn1, countFn2);
     }
 
     private static String getDefaultFormatString(String indent, String description1, String description2)
@@ -131,19 +149,19 @@ public class GraphStatistics
         return String.format("%s%%s - %s: %%,d; %s: %%,d; delta: %%,d%%n", (indent == null) ? "" : indent, (description1 == null) ? "first" : description1, (description2 == null) ? "second" : description2);
     }
 
-    private static void writeInstanceCountsByClassifierPathDeltas(Appendable appendable, String formatString, SetIterable<String> classifierPaths, ToIntFunction<String> countFn1, ToIntFunction<String> countFn2)
+    private static void writeInstanceCountsByClassifierPathDeltas(Appendable appendable, String formatString, SetIterable<String> classifierPaths, IntFunction<String> countFn1, IntFunction<String> countFn2)
     {
         try (Formatter formatter = new Formatter(appendable))
         {
-            classifierPaths.toSortedList().forEach(classifier ->
+            for (String classifier : classifierPaths.toSortedList())
             {
-                int count1 = countFn1.applyAsInt(classifier);
-                int count2 = countFn2.applyAsInt(classifier);
+                int count1 = countFn1.intValueOf(classifier);
+                int count2 = countFn2.intValueOf(classifier);
                 if (count1 != count2)
                 {
                     formatter.format(formatString, classifier, count1, count2, (count2 - count1));
                 }
-            });
+            }
         }
     }
 
@@ -164,7 +182,7 @@ public class GraphStatistics
 
     public static LazyIterable<GraphPath> allPathsBetween(Iterable<String> startNodePaths, CoreInstance endNode, int maxPathLength, ProcessorSupport processorSupport)
     {
-        return allPathsBetween(startNodePaths, endNode::equals, maxPathLength, processorSupport);
+        return allPathsBetween(startNodePaths, Predicates.equal(endNode), maxPathLength, processorSupport);
     }
 
     public static LazyIterable<GraphPath> allPathsBetween(String startNodePath, Iterable<? extends CoreInstance> endNodes, ProcessorSupport processorSupport)
@@ -184,16 +202,13 @@ public class GraphStatistics
 
     public static LazyIterable<GraphPath> allPathsBetween(Iterable<String> startNodePaths, Iterable<? extends CoreInstance> endNodes, int maxPathLength, ProcessorSupport processorSupport)
     {
-        Set<?> endNodesSet = (endNodes instanceof Set) ? (Set<?>) endNodes : Sets.mutable.withAll(endNodes);
-        return allPathsBetween(startNodePaths, endNodesSet::contains, maxPathLength, processorSupport);
+        return allPathsBetween(startNodePaths, Predicates.in((endNodes instanceof Set) ? endNodes : Sets.mutable.withAll(endNodes)), maxPathLength, processorSupport);
     }
 
     private static LazyIterable<GraphPath> allPathsBetween(Iterable<String> startNodePaths, Predicate<? super CoreInstance> isEndNode, int maxPathLength, ProcessorSupport processorSupport)
     {
-        return GraphPathIterable.newGraphPathIterable(startNodePaths, isEndNode, maxPathLength, processorSupport)
-                .asResolvedGraphPathIterable()
-                .select(path -> isEndNode.test(path.getLastResolvedNode()))
-                .collect(GraphPathIterable.ResolvedGraphPath::getGraphPath);
+        GraphPathIterable graphPathIterable = GraphPathIterable.newGraphPathIterable(startNodePaths, isEndNode, maxPathLength, processorSupport);
+        return graphPathIterable.select(Predicates.attributePredicate(Functions.bind(GraphPath::resolve, processorSupport), isEndNode));
     }
 
     public static LazyIterable<String> allTopLevelAndPackagedElementPaths(ProcessorSupport processorSupport)
@@ -203,5 +218,37 @@ public class GraphStatistics
                 .reject(c -> c instanceof Package)
                 .collect(PackageableElement::getUserPathForPackageableElement);
         return _Package.SPECIAL_TYPES.asLazy().concatenate(packagedElements);
+    }
+
+    private static class ObjectIntMapCountFunction<T> implements IntFunction<T>
+    {
+        private final ObjectIntMap<T> map;
+
+        private ObjectIntMapCountFunction(ObjectIntMap<T> map)
+        {
+            this.map = map;
+        }
+
+        @Override
+        public int intValueOf(T key)
+        {
+            return this.map.getIfAbsent(key, 0);
+        }
+    }
+
+    private static class BagCountFunction<T> implements IntFunction<T>
+    {
+        private final Bag<T> bag;
+
+        private BagCountFunction(Bag<T> bag)
+        {
+            this.bag = bag;
+        }
+
+        @Override
+        public int intValueOf(T key)
+        {
+            return this.bag.occurrencesOf(key);
+        }
     }
 }

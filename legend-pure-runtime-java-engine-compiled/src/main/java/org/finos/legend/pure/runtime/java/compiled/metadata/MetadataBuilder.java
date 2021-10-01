@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
+import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
@@ -26,48 +27,35 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
+import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
 
 /**
  * Creates the metadata index
  */
 public class MetadataBuilder
 {
-    public static final CompileState SERIALIZED = CompileState.COMPILE_EVENT_EXTRA_STATE_1;
 
     private MetadataBuilder()
     {
     }
 
-    @Deprecated
-    public static MetadataEager indexAll(Iterable<? extends CoreInstance> startingNodes, ProcessorSupport processorSupport)
-    {
-        return indexAll(startingNodes, IdBuilder.newIdBuilder(processorSupport), processorSupport);
-    }
-
-    public static MetadataEager indexAll(Iterable<? extends CoreInstance> startingNodes, IdBuilder idBuilder, ProcessorSupport processorSupport)
+    public static MetadataEager indexAll(Iterable<? extends CoreInstance> startingNodes, final ProcessorSupport processorSupport)
     {
         MetadataEager metadataEager = new MetadataEager();
         PrivateSetSearchStateWithCompileStateMarking state = new PrivateSetSearchStateWithCompileStateMarking(Stacks.mutable.withAll(startingNodes), processorSupport);
-        indexNodes(state, metadataEager, idBuilder, processorSupport);
+        indexNodes(state, metadataEager, processorSupport);
         return metadataEager;
     }
 
-    @Deprecated
-    public static MetadataEager indexNew(MetadataEager metadataEager, Iterable<? extends CoreInstance> startingNodes, ProcessorSupport processorSupport)
-    {
-        return indexNew(metadataEager, startingNodes, IdBuilder.newIdBuilder(processorSupport), processorSupport);
-    }
-
-    public static MetadataEager indexNew(MetadataEager metadataEager, Iterable<? extends CoreInstance> startingNodes, IdBuilder idBuilder, ProcessorSupport processorSupport)
+    public static MetadataEager indexNew(MetadataEager metadataEager, Iterable<? extends CoreInstance> startingNodes, final ProcessorSupport processorSupport)
     {
         CompiledStateSearchState state = new CompiledStateSearchState(Stacks.mutable.withAll(startingNodes), processorSupport);
-        return indexNodes(state, metadataEager, idBuilder, processorSupport);
+        return indexNodes(state, metadataEager, processorSupport);
     }
 
-    private static MetadataEager indexNodes(SearchState state, MetadataEager metadataEager, IdBuilder idBuilder, ProcessorSupport processorSupport)
+    private static MetadataEager indexNodes(SearchState state, MetadataEager metadataEager, final ProcessorSupport processorSupport)
     {
         while (state.hasNodes())
         {
@@ -76,8 +64,9 @@ public class MetadataBuilder
             {
                 state.noteVisited(instance);
 
-                String id = idBuilder.buildId(instance);
+                String id = IdBuilder.buildId(instance, processorSupport);
                 CoreInstance classifier = instance.getClassifier();
+                CoreInstance instanceToAdd = instance;
 
                 for (String key : instance.getKeys())
                 {
@@ -92,11 +81,11 @@ public class MetadataBuilder
 
                 if (classifier instanceof Enumeration)
                 {
-                    metadataEager.add(state.getClassifierId(classifier), instance.getName(), instance);
+                    metadataEager.add(state.getClassifierId(classifier), instanceToAdd.getName(), instanceToAdd);
                 }
                 else
                 {
-                    metadataEager.add(state.getClassifierId(classifier), id, instance);
+                    metadataEager.add(state.getClassifierId(classifier), id, instanceToAdd);
                 }
             }
         }
@@ -106,6 +95,15 @@ public class MetadataBuilder
 
     private static class ClassifierCaches
     {
+        private final Function<CoreInstance, String> newClassifierId = new Function<CoreInstance, String>()
+        {
+            @Override
+            public String valueOf(CoreInstance classifier)
+            {
+                return MetadataJavaPaths.buildMetadataKeyFromType(classifier).intern();
+            }
+        };
+
         private final SetIterable<CoreInstance> primitiveTypes;
         private final MutableMap<CoreInstance, String> classifierIdCache = Maps.mutable.empty();
 
@@ -121,12 +119,7 @@ public class MetadataBuilder
 
         String getClassifierId(CoreInstance classifier)
         {
-            return this.classifierIdCache.getIfAbsentPutWithKey(classifier, ClassifierCaches::newClassifierId);
-        }
-
-        private static String newClassifierId(CoreInstance classifier)
-        {
-            return MetadataJavaPaths.buildMetadataKeyFromType(classifier).intern();
+            return this.classifierIdCache.getIfAbsentPutWithKey(classifier, this.newClassifierId);
         }
     }
 
@@ -175,13 +168,13 @@ public class MetadataBuilder
         @Override
         boolean hasVisited(CoreInstance node)
         {
-            return node.hasCompileState(SERIALIZED);
+            return node.hasCompileState(GraphSerializer.SERIALIZED);
         }
 
         @Override
         void noteVisited(CoreInstance node)
         {
-            node.addCompileState(SERIALIZED);
+            node.addCompileState(GraphSerializer.SERIALIZED);
         }
     }
 
@@ -218,7 +211,9 @@ public class MetadataBuilder
         void noteVisited(CoreInstance node)
         {
             super.noteVisited(node);
-            node.addCompileState(SERIALIZED);
+            node.addCompileState(GraphSerializer.SERIALIZED);
         }
     }
+
+
 }

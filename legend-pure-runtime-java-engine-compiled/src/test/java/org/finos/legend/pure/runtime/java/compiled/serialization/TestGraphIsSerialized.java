@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization;
 
+import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
@@ -34,7 +35,6 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
-import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -85,9 +85,23 @@ public class TestGraphIsSerialized
 
     private void assertAllInstancesMarkedSerialized(final PureRuntime runtime)
     {
-        SetIterable<CoreInstance> ignoredClassifiers = ModelRepository.PRIMITIVE_TYPE_NAMES.newWithAll(Lists.immutable.with(M3Paths.ImportStub, M3Paths.EnumStub, M3Paths.PropertyStub)).collect(runtime::getCoreInstance);
-        Predicate<CoreInstance> isAppropriatelySerialized = instance -> instance.hasCompileState(MetadataBuilder.SERIALIZED) || ignoredClassifiers.contains(instance.getClassifier());
-        MutableList<CoreInstance> missing = Iterate.reject(GraphNodeIterable.fromModelRepository(runtime.getModelRepository()), isAppropriatelySerialized, Lists.mutable.empty());
+        final SetIterable<CoreInstance> ignoredClassifiers = ModelRepository.PRIMITIVE_TYPE_NAMES.newWithAll(Lists.immutable.with(M3Paths.ImportStub, M3Paths.EnumStub, M3Paths.PropertyStub)).collect(new Function<String, CoreInstance>()
+        {
+            @Override
+            public CoreInstance valueOf(String path)
+            {
+                return runtime.getCoreInstance(path);
+            }
+        });
+        Predicate<CoreInstance> isAppropriatelySerialized = new Predicate<CoreInstance>()
+        {
+            @Override
+            public boolean accept(CoreInstance instance)
+            {
+                return instance.hasCompileState(GraphSerializer.SERIALIZED) || ignoredClassifiers.contains(instance.getClassifier());
+            }
+        };
+        MutableList<CoreInstance> missing = Iterate.reject(GraphNodeIterable.fromModelRepository(runtime.getModelRepository()), isAppropriatelySerialized, Lists.mutable.<CoreInstance>empty());
         int missingSize = missing.size();
         if (missingSize > 0)
         {

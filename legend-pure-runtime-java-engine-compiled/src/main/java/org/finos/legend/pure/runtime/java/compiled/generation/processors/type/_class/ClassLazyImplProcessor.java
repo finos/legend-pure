@@ -19,6 +19,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
@@ -78,49 +79,50 @@ public class ClassLazyImplProcessor
         String classNamePlusTypeParams = className + typeParamsString;
         String interfaceNamePlusTypeParams = classInterfaceName + typeParamsString;
         boolean hasQualifiers = !_Class.getQualifiedProperties(_class, processorContext.getSupport()).isEmpty();
+        String systemPath = PackageableElement.getSystemPathForPackageableElement(_class, "::");
 
         boolean instanceOfGetterOverride = processorSupport.instance_instanceOf(_class, M3Paths.GetterOverride);
 
         processorContext.setClassImplSuffix(CLASS_LAZYIMPL_SUFFIX);
         return StringJavaSource.newStringJavaSource(_package, className, IMPORTS  + (hasQualifiers ? QUALIFIER_IMPORTS : "") + imports +
-                "public class " + classNamePlusTypeParams + " extends AbstractLazyReflectiveCoreInstance implements " + interfaceNamePlusTypeParams + "\n" +
-                "{\n" +
-                ClassImplProcessor.buildMetaInfo(classGenericType, processorSupport, true) + "\n" +
-                buildLazyConstructor(className) +
-                (ClassProcessor.isPlatformClass(_class) ? buildFactory(className) : "") +
-                ClassImplProcessor.buildGetKeys(_class, processorSupport) +
-                (instanceOfGetterOverride ? lazyGetterOverride(interfaceNamePlusTypeParams) : "") +
-                ClassImplProcessor.buildGetValueForMetaPropertyToOne(classGenericType, processorSupport) +
-                ClassImplProcessor.buildGetValueForMetaPropertyToMany(classGenericType, processorSupport) +
-                ClassImplProcessor.buildSimpleProperties(classGenericType, new ClassImplProcessor.FullPropertyImplementation()
-                {
-                    @Override
-                    public String build(CoreInstance property, String name, CoreInstance unresolvedReturnType, CoreInstance returnType, CoreInstance returnMultiplicity, String returnTypeJava, String classOwnerFullId, String ownerClassName, String ownerTypeParams, ProcessorContext processorContext)
-                    {
-                        return "    public final AtomicBoolean _" + name + LAZY_INITIALIZED_SUFFIX + " = new AtomicBoolean(false);\n"+
-                                (Multiplicity.isToOne(returnMultiplicity, false) ?
+                "public class " + classNamePlusTypeParams + " extends PersistentReflectiveCoreInstance implements " + interfaceNamePlusTypeParams + "\n" +
+                        "{\n" +
+                        ClassImplProcessor.buildMetaInfo(classGenericType, processorSupport, true) +
+                        buildLazyConstructor(className, processorSupport) +
+                        lazyGetClassifier() +
+                        (ClassProcessor.isPlatformClass(_class) ? buildFactory(className, systemPath) : "") +
+                        (instanceOfGetterOverride ? lazyGetterOverride(interfaceNamePlusTypeParams) : "") +
+                        ClassImplProcessor.buildGetValueForMetaPropertyToOne(classGenericType, processorSupport) +
+                        ClassImplProcessor.buildSimpleProperties(classGenericType, new ClassImplProcessor.FullPropertyImplementation()
+                        {
+                            @Override
+                            public String build(CoreInstance property, String name, CoreInstance unresolvedReturnType, CoreInstance returnType, CoreInstance returnMultiplicity, String returnTypeJava, String classOwnerFullId, String ownerClassName, String ownerTypeParams, ProcessorContext processorContext)
+                            {
+                                return "    public final AtomicBoolean _" + name + LAZY_INITIALIZED_SUFFIX + " = new AtomicBoolean(false);\n"+
+                                        (Multiplicity.isToOne(returnMultiplicity, false) ?
                                         "    public " + returnTypeJava + " _" + name + ";\n" :
                                         "    public RichIterable _" + name + " = Lists.mutable.with();\n") +
-                                buildLazyProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", classOwnerFullId, name, returnType, unresolvedReturnType, returnMultiplicity, processorContext.getSupport(), processorContext);
-                    }
-                }, processorContext, processorSupport)+
-                ClassImplProcessor.buildQualifiedProperties(classGenericType, processorContext, processorSupport)+
-                buildLazyCopy(classGenericType, classInterfaceName, className, false, processorSupport)+
-                ClassImplProcessor.buildEquality(classGenericType, CLASS_LAZYIMPL_SUFFIX, true, false, true, processorContext, processorSupport)+
-                ClassImplProcessor.buildGetFullSystemPath() +
-                //Not supported on platform classes yet
-                (ClassProcessor.isPlatformClass(_class) ? "" : ClassImplProcessor.validate(_class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class))) +
-                "}");
+                                        buildLazyProperty(property, ownerClassName + (ownerTypeParams.isEmpty() ? "" : "<" + ownerTypeParams + ">"), "this", classOwnerFullId, name, returnType, unresolvedReturnType, returnMultiplicity, processorContext.getSupport(), processorContext);
+                            }
+                        }, processorContext, processorSupport)+
+                        ClassImplProcessor.buildQualifiedProperties(classGenericType, processorContext, processorSupport)+
+                        buildLazyCopy(classGenericType, classInterfaceName, className, false, processorSupport)+
+                        ClassImplProcessor.buildEquality(classGenericType, CLASS_LAZYIMPL_SUFFIX, true, false, true, processorContext, processorSupport)+
+                        ClassImplProcessor.buildGetFullSystemPath() +
+                        //Not supported on platform classes yet
+                        (ClassProcessor.isPlatformClass(_class) ? "" : ClassImplProcessor.validate(_class, className, classGenericType, processorContext, processorSupport.class_getSimpleProperties(_class))) +
+                        "}");
     }
 
-    static String buildFactory(String className)
+    static String buildFactory(String className, String systemPath)
     {
-        return "\n" + buildFactoryConstructor(className) +
+
+        return buildFactoryConstructor(className) +
                 "    public static final CoreInstanceFactory FACTORY = new BaseJavaModelCoreInstanceFactory()\n" +
                 "    {\n" +
                 ClassImplProcessor.buildFactoryMethods(className) +
-                ClassImplProcessor.buildFactorySupports() +
-                "    };\n" +
+                ClassImplProcessor.buildFactorySupports(systemPath) +
+                "   };\n" +
                 "\n";
     }
 
@@ -128,29 +130,54 @@ public class ClassLazyImplProcessor
     {
         return "    public " + className + "(String name, SourceInformation sourceInformation, CoreInstance classifier)\n" +
                 "    {\n" +
-                "        super(name, sourceInformation, classifier);\n" +
-                "    }\n" +
-                "\n";
+                "        super(name);\n" +
+                "        this.setSourceInformation(sourceInformation);\n" +
+                "        this.setClassifier(classifier);\n" +
+                "        this.vals = Maps.immutable.empty();\n" +
+                "    }\n";
     }
 
 
-    private static String buildLazyConstructor(String className)
+    private static String buildLazyConstructor(String className, ProcessorSupport processorSupport)
     {
-        return "    public " + className + "(Obj instance, MetadataLazy metadataLazy)\n" +
+        return "    MetadataLazy metadataLazy;\n" +
+                "    final ImmutableMap<String, Object> vals;\n" +
+                "    private String classifierId;\n" +
+                "\n" +
+                "    public " + className + "(Obj instance, MetadataLazy metadataLazy)\n" +
                 "    {\n" +
-                "        super(instance, metadataLazy);\n" +
+                "        this(instance.getName(),instance.getSourceInformation(), metadataLazy.buildMap(instance), metadataLazy, instance.getClassifier());\n" +
                 "    }\n" +
                 "\n"+
-                "    public " + className + "(String id, org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, ImmutableMap<String, Object> vals, MetadataLazy metadataLazy)\n" +
+                "    public " + className + "(String id, org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, ImmutableMap<String, Object> vals, MetadataLazy metadataLazy, String classifierId)\n" +
                 "    {\n" +
-                "        super(id, sourceInformation, metadataLazy, vals);\n" +
+                "        super(id);\n" +
+                "        this.setSourceInformation(sourceInformation);\n" +
+                "        this.metadataLazy = metadataLazy;\n" +
+                "        this.vals = vals;\n" +
+                "        this.classifierId = classifierId;\n" +
                 "    }\n"+
                 "\n" +
-                "    public " + className + "(String id, org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, ImmutableMap<String, Object> vals, MetadataLazy metadataLazy, CoreInstance classifier)\n" +
+                "    public " + className + "(String id, org.finos.legend.pure.m4.coreinstance.SourceInformation sourceInformation, ImmutableMap<String, Object> vals, MetadataLazy metadataLazy, String classifierId, CoreInstance classifier)\n" +
                 "    {\n" +
-                "        super(id, sourceInformation, metadataLazy, vals, classifier);\n" +
+                "        this(id, sourceInformation, vals, metadataLazy, classifierId);\n" +
+                "        this.classifier = classifier;\n" +
                 "    }"+
                 "\n";
+    }
+
+    private static String lazyGetClassifier()
+    {
+        return "    @Override\n" +
+                "    public CoreInstance getClassifier()\n" +
+                "    {\n" +
+                "        CoreInstance result = this.classifier;\n" +
+                "        if (result == null)\n" +
+                "        {\n" +
+                "            this.classifier = result = this.metadataLazy.getMetadata(\"meta::pure::metamodel::type::Class\", \"Root::\"+this.classifierId);\n" +
+                "        }\n" +
+                "        return result;\n" +
+                "    }\n";
     }
 
     private static String lazyGetterOverride(String classNamePlusTypeParams)
@@ -199,7 +226,7 @@ public class ClassLazyImplProcessor
                     "            {\n" +
                     "                if (!" + owner + "._" + name + LAZY_INITIALIZED_SUFFIX + ".get())\n" +
                     "                {\n" +
-                    "                    " + owner + "._" + name + " = loadValueFromMetadata(\""+name+"\");\n" +
+                    "                    " + owner + "._" + name + " = (" + typePrimitive + ")" + owner + ".metadataLazy.valueToObject((RValue)this.vals.get(\""+name+"\"));\n" +
                     "                    " + owner + "._" + name + LAZY_INITIALIZED_SUFFIX + ".set(true);\n" +
                     "                }\n" +
                     "            }\n" +
@@ -220,7 +247,7 @@ public class ClassLazyImplProcessor
                     "            {\n" +
                     "                if (!" + owner + "._" + name + LAZY_INITIALIZED_SUFFIX + ".get())\n" +
                     "                {\n" +
-                    "                    " + owner + "._" + name + " = loadValuesFromMetadata(\""+name+"\");\n" +
+                    "                    " + owner + "._" + name + " = (RichIterable<? extends " + typeObject + ">)(Object)" + owner + ".metadataLazy.valuesToObjects((ListIterable<RValue>)this.vals.get(\""+name+"\"));\n" +
                     "                    " + owner + "._" + name + LAZY_INITIALIZED_SUFFIX + ".set(true);\n" +
                     "                }\n" +
                     "            }\n" +
@@ -259,10 +286,10 @@ public class ClassLazyImplProcessor
 
                 boolean isToOne = Multiplicity.isToOne(multiplicity, false);
                 return "        synchronized (((" +  classImplName + ")src)._" + name + LAZY_INITIALIZED_SUFFIX + ")\n" +
-                        "        {\n" +
-                        "            this._" + name + " = " + (isToOne ? "(" + typeObject + ")((" + classImplName + ")src)._" + name : "FastList.newList(((" + classImplName + ")src)._" + name + ")") + ";\n" +
-                        "            this._" + name + LAZY_INITIALIZED_SUFFIX + ".set(((" +  classImplName + ")src)._" + name + LAZY_INITIALIZED_SUFFIX + ".get());\n" +
-                        "        }\n" +
+                       "        {\n" +
+                       "            this._" + name + " = " + (isToOne ? "(" + typeObject + ")((" + classImplName + ")src)._" + name : "FastList.newList(((" + classImplName + ")src)._" + name + ")") + ";\n" +
+                       "            this._" + name + LAZY_INITIALIZED_SUFFIX + ".set(((" +  classImplName + ")src)._" + name + LAZY_INITIALIZED_SUFFIX + ".get());\n" +
+                       "        }\n" +
                         (reversePropertyName == null ? "" :
                                 (isToOne ?
                                         "        if (this._" + name + " != null)\n" +
@@ -277,15 +304,19 @@ public class ClassLazyImplProcessor
             }
         }).makeString("");
 
+
         return  "    public " + classNamePlusTypeParams + " copy()\n" +
                 "    {\n" +
                 "        return new " + classImplName + "(this);\n" +
                 "    }\n" +
-                "\n" +
+
                 "    public " + classImplName +"(" + classInterfaceName + (typeParams.isEmpty() ? "" : "<" + typeParams + ">") + " src)\n" +
                 "    {\n" +
-                "        super((" + classImplName + ")src);\n" +
-                propertyCopy +
+                "        this(((" + classImplName + ")src).getName(), src.getSourceInformation(), ((" + classImplName + ")src).vals, ((" + classImplName + ")src).metadataLazy, (("+ classImplName + ")src).classifierId, ((" + classImplName + ")src).classifier );\n" +
+                         propertyCopy +
                 "    }\n";
+
     }
+
+
 }

@@ -20,14 +20,14 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
 public class Deactivate extends AbstractNative
 {
-    public Deactivate()
-    {
+    public Deactivate() {
         super("deactivate_Any_MANY__ValueSpecification_1_");
     }
 
@@ -39,6 +39,6 @@ public class Deactivate extends AbstractNative
 
         CoreInstance valueSpecification = parametersValues.get(0);
         String type = TypeProcessor.javaInterfaceForType(processorSupport.getClassifier(valueSpecification));
-        return "((" + type + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(valueSpecification)) + "\",\"" + processorContext.getIdBuilder().buildId(valueSpecification) + "\"))";
+        return "((" + type + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(valueSpecification)) + "\",\"" + IdBuilder.buildId(valueSpecification, processorContext.getSupport()) + "\"))";
     }
 }

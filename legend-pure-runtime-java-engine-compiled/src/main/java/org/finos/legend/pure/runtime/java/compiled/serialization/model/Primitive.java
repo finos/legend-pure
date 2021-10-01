@@ -51,6 +51,6 @@ public class Primitive implements RValue
     @Override
     public <T> T visit(RValueVisitor<T> visitor)
     {
-        return visitor.visit(this);
+        return visitor.accept(this);
     }
 }

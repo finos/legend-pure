@@ -24,9 +24,9 @@ import org.eclipse.collections.impl.factory.Multimaps;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.Writer;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
-
-import java.util.Objects;
+import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
+import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
+import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialized;
 
 class DistributedStringCache extends AbstractStringCache
 {
@@ -41,7 +41,7 @@ class DistributedStringCache extends AbstractStringCache
     public void write(String metadataName, FileWriter fileWriter)
     {
         // Write classifier strings
-        try (Writer writer = fileWriter.getWriter(DistributedMetadataHelper.getClassifierIdStringsIndexFilePath(metadataName)))
+        try (Writer writer = fileWriter.getWriter(DistributedMetadataFiles.getClassifierIdStringsIndexFilePath(metadataName)))
         {
             writer.writeStringArray(getClassifierStringArray());
         }
@@ -49,7 +49,7 @@ class DistributedStringCache extends AbstractStringCache
         // Write other strings index
         String[] otherStrings = getOtherStringsArray();
         int otherStringsCount = otherStrings.length;
-        try (Writer writer = fileWriter.getWriter(DistributedMetadataHelper.getOtherStringsIndexFilePath(metadataName)))
+        try (Writer writer = fileWriter.getWriter(DistributedMetadataFiles.getOtherStringsIndexFilePath(metadataName)))
         {
             writer.writeInt(otherStringsCount);
         }
@@ -57,7 +57,7 @@ class DistributedStringCache extends AbstractStringCache
         // Write other strings partitions
         for (int partitionStart = 0; partitionStart < otherStringsCount; partitionStart += PARTITION_SIZE)
         {
-            try (Writer writer = fileWriter.getWriter(DistributedMetadataHelper.getOtherStringsIndexPartitionFilePath(metadataName, partitionStart)))
+            try (Writer writer = fileWriter.getWriter(DistributedMetadataFiles.getOtherStringsIndexPartitionFilePath(metadataName, partitionStart)))
             {
                 int partitionEnd = Math.min(partitionStart + PARTITION_SIZE, otherStringsCount);
                 writer.writeInt(partitionEnd - partitionStart);
@@ -69,11 +69,33 @@ class DistributedStringCache extends AbstractStringCache
         }
     }
 
-    static DistributedStringCache fromNodes(Iterable<? extends CoreInstance> nodes, IdBuilder idBuilder, ProcessorSupport processorSupport)
+    static DistributedStringCache fromSerialized(Serialized serialized)
     {
         DistributedStringCollector collector = new DistributedStringCollector();
-        collectStrings(collector, nodes, idBuilder, processorSupport);
+        collectStrings(collector, serialized);
+        return fromStringCollector(collector);
+    }
 
+    static DistributedStringCache fromNodes(Iterable<? extends CoreInstance> nodes, ProcessorSupport processorSupport)
+    {
+        DistributedStringCollector collector = new DistributedStringCollector();
+        collectStrings(collector, nodes, processorSupport);
+        return fromStringCollector(collector);
+    }
+
+    static void collectStrings(DistributedStringCollector collector, Iterable<? extends CoreInstance> nodes, ProcessorSupport processorSupport)
+    {
+        AbstractStringCache.PropertyValueCollectorVisitor propertyValueVisitor = new AbstractStringCache.PropertyValueCollectorVisitor(collector);
+        GraphSerializer.ClassifierCaches classifierCaches = new GraphSerializer.ClassifierCaches(processorSupport);
+        for (CoreInstance instance : nodes)
+        {
+            Obj obj = GraphSerializer.buildObjWithProperties(instance, classifierCaches, processorSupport);
+            collectStringsFromObj(collector, propertyValueVisitor, obj);
+        }
+    }
+
+    static DistributedStringCache fromStringCollector(DistributedStringCollector collector)
+    {
         MutableSet<String> allStrings = Sets.mutable.ofInitialCapacity(collector.classifierIds.size() + collector.identifiers.size() + collector.otherStrings.size());
 
         MutableList<String> classifierIdList = Lists.mutable.withAll(collector.classifierIds).sortThis();
@@ -106,52 +128,34 @@ class DistributedStringCache extends AbstractStringCache
         @Override
         public void collectObj(String classifierId, String identifier, String name)
         {
-            addClassifierId(classifierId);
-            addIdentifier(classifierId, identifier);
-            addOtherString(name);
+            this.classifierIds.add(classifierId);
+            this.identifiers.put(classifierId, identifier);
+            this.otherStrings.add(name);
         }
 
         @Override
         public void collectSourceId(String sourceId)
         {
-            addOtherString(sourceId);
+            this.otherStrings.add(sourceId);
         }
 
         @Override
         public void collectProperty(String property)
         {
-            addOtherString(property);
+            this.otherStrings.add(property);
         }
 
         @Override
         public void collectRef(String classifierId, String identifier)
         {
-            addClassifierId(classifierId);
-            addIdentifier(classifierId, identifier);
+            this.classifierIds.add(classifierId);
+            this.identifiers.put(classifierId, identifier);
         }
 
         @Override
         public void collectPrimitiveString(String string)
         {
-            addOtherString(string);
-        }
-
-        private void addClassifierId(String classifierId)
-        {
-            this.classifierIds.add(Objects.requireNonNull(classifierId));
-        }
-
-        private void addIdentifier(String classifierId, String identifier)
-        {
-            this.identifiers.put(Objects.requireNonNull(classifierId), Objects.requireNonNull(identifier));
-        }
-
-        private void addOtherString(String string)
-        {
-            if (string != null)
-            {
-                this.otherStrings.add(string);
-            }
+            this.otherStrings.add(string);
         }
     }
 }

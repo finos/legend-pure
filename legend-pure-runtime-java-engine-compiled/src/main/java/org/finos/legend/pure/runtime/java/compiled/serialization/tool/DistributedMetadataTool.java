@@ -42,6 +42,7 @@ public class DistributedMetadataTool implements Closeable
 
     private String prefix = "";
 
+
     public static void main(String[] args) throws IOException
     {
         String zipPath = args[0];
@@ -129,14 +130,21 @@ public class DistributedMetadataTool implements Closeable
 
     private void instance(String classifier, String id)
     {
-        if (this.deserializer.hasInstance(classifier, id))
+        try
         {
-            Obj instance = this.deserializer.getInstance(classifier, id);
-            new ObjPrinter(instance).printObj();
+            if (this.deserializer.hasInstance(classifier, id))
+            {
+                Obj instance = this.deserializer.getInstance(classifier, id);
+                new ObjPrinter(instance).printObj();
+            }
+            else
+            {
+                this.out.println("Instance not found");
+            }
         }
-        else
+        catch (IOException e)
         {
-            this.out.println("Instance not found");
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -172,7 +180,7 @@ public class DistributedMetadataTool implements Closeable
         }
 
         @Override
-        public Void visit(PropertyValueMany many)
+        public Void accept(PropertyValueMany many)
         {
             indent();
             print(many.getProperty());
@@ -184,7 +192,7 @@ public class DistributedMetadataTool implements Closeable
         }
 
         @Override
-        public Void visit(PropertyValueOne one)
+        public Void accept(PropertyValueOne one)
         {
             indent();
             print(one.getProperty());
@@ -196,21 +204,21 @@ public class DistributedMetadataTool implements Closeable
         }
 
         @Override
-        public Void visit(Primitive primitive)
+        public Void accept(Primitive primitive)
         {
             print(primitive.toString());
             return null;
         }
 
         @Override
-        public Void visit(ObjRef objRef)
+        public Void accept(ObjRef objRef)
         {
             printf("instance %s %s", objRef.getClassifierId(), objRef.getId());
             return null;
         }
 
         @Override
-        public Void visit(EnumRef enumRef)
+        public Void accept(EnumRef enumRef)
         {
             printf("enum %s %s", enumRef.getEnumerationId(), enumRef.getEnumerationId());
             return null;

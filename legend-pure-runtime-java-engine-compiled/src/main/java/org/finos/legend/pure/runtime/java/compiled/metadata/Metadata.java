@@ -26,4 +26,5 @@ public interface Metadata
     CoreInstance getMetadata(String classifier, String id);
     MapIterable<String, CoreInstance> getMetadata(String classifier);
     CoreInstance getEnum(String enumerationName, String enumName);
+
 }

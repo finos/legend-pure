@@ -14,194 +14,145 @@
 
 package org.finos.legend.pure.m3.tools;
 
-import org.eclipse.collections.api.LazyIterable;
+import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.primitive.ObjectBooleanPair;
+import org.eclipse.collections.impl.block.factory.Predicates;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.tuple.primitive.PrimitiveTuples;
+import org.eclipse.collections.impl.utility.internal.IteratorIterate;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.tools.GraphPath.Edge;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
 {
-    private final ResolvedGraphPathIterable delegate;
+    private final ImmutableSet<String> startNodePaths;
+    private final ImmutableSet<CoreInstance> startNodes;
+    private final SearchFilter searchFilter;
+    private final ProcessorSupport processorSupport;
 
     private GraphPathIterable(Iterable<String> startNodePaths, SearchFilter searchFilter, ProcessorSupport processorSupport)
     {
-        this.delegate = new ResolvedGraphPathIterable(startNodePaths, searchFilter, processorSupport);
+        this.startNodePaths = Sets.immutable.withAll(startNodePaths);
+        this.startNodes = this.startNodePaths.collectWith(GraphPathIterable::getByUserPath, processorSupport);
+        this.searchFilter = (searchFilter == null) ? getDefaultSearchFilter() : searchFilter;
+        this.processorSupport = processorSupport;
     }
 
     @Override
     public void each(Procedure<? super GraphPath> procedure)
     {
-        for (ResolvedGraphPath resolvedGraphPath : this.delegate)
-        {
-            procedure.value(resolvedGraphPath.getGraphPath());
-        }
-    }
-
-    @Override
-    public void forEach(Consumer<? super GraphPath> consumer)
-    {
-        for (ResolvedGraphPath resolvedGraphPath : this.delegate)
-        {
-            consumer.accept(resolvedGraphPath.getGraphPath());
-        }
+        IteratorIterate.forEach(iterator(), procedure);
     }
 
     @Override
     public Iterator<GraphPath> iterator()
     {
-        Iterator<ResolvedGraphPath> iterator = this.delegate.iterator();
-        return new Iterator<GraphPath>()
-        {
-            @Override
-            public boolean hasNext()
-            {
-                return iterator.hasNext();
-            }
-
-            @Override
-            public GraphPath next()
-            {
-                return iterator.next().getGraphPath();
-            }
-        };
+        return new GraphPathIterator();
     }
 
-    public LazyIterable<ResolvedGraphPath> asResolvedGraphPathIterable()
+    private boolean isStartPath(GraphPath path)
     {
-        return this.delegate;
+        return (path.getEdgeCount() == 0) && this.startNodePaths.contains(path.getStartNodePath());
     }
 
-    private static class ResolvedGraphPathIterable extends AbstractLazyIterable<ResolvedGraphPath>
+    private boolean isStartNode(CoreInstance node)
     {
-        private final ImmutableSet<String> startNodePaths;
-        private final ImmutableSet<CoreInstance> startNodes;
-        private final SearchFilter searchFilter;
-        private final ProcessorSupport processorSupport;
+        return this.startNodes.contains(node);
+    }
 
-        private ResolvedGraphPathIterable(Iterable<String> startNodePaths, SearchFilter searchFilter, ProcessorSupport processorSupport)
+    private FilterResult filter(ResolvedGraphPath resolvedGraphPath)
+    {
+        return this.searchFilter.filter(resolvedGraphPath, this.processorSupport);
+    }
+
+    private CoreInstance getByUserPath(String path)
+    {
+        return getByUserPath(path, this.processorSupport);
+    }
+
+    private static CoreInstance getByUserPath(String path, ProcessorSupport processorSupport)
+    {
+        CoreInstance node = processorSupport.package_getByUserPath(path);
+        if (node == null)
         {
-            this.startNodePaths = Sets.immutable.withAll(startNodePaths);
-            this.startNodes = this.startNodePaths.collectWith(GraphPathIterable::getByUserPath, processorSupport);
-            this.searchFilter = (searchFilter == null) ? getDefaultSearchFilter() : searchFilter;
-            this.processorSupport = processorSupport;
+            throw new IllegalArgumentException("Unknown path: " + path);
+        }
+        return node;
+    }
+
+    private class GraphPathIterator implements Iterator<GraphPath>
+    {
+        private final MutableSet<GraphPath> visited = Sets.mutable.empty();
+        private final Deque<ResolvedGraphPath> deque = new ArrayDeque<>(GraphPathIterable.this.startNodePaths.size());
+        private GraphPath next = null;
+
+        private GraphPathIterator()
+        {
+            for (String startNodePath : GraphPathIterable.this.startNodePaths)
+            {
+                enqueue(GraphPath.buildPath(startNodePath), Lists.immutable.with(getByUserPath(startNodePath)));
+            }
+            update();
         }
 
         @Override
-        public void each(Procedure<? super ResolvedGraphPath> procedure)
+        public boolean hasNext()
         {
-            for (ResolvedGraphPath resolvedGraphPath : this)
-            {
-                procedure.accept(resolvedGraphPath);
-            }
+            return this.next != null;
         }
 
         @Override
-        public void forEach(Consumer<? super ResolvedGraphPath> consumer)
+        public GraphPath next()
         {
-            for (ResolvedGraphPath resolvedGraphPath : this)
+            GraphPath path = this.next;
+            if (path == null)
             {
-                consumer.accept(resolvedGraphPath);
+                throw new NoSuchElementException();
             }
+            update();
+            return path;
         }
 
         @Override
-        public Iterator<ResolvedGraphPath> iterator()
+        public void remove()
         {
-            return new ResolvedGraphPathIterator();
+            throw new UnsupportedOperationException();
         }
 
-        private boolean isStartPath(GraphPath path)
+        private void update()
         {
-            return (path.getEdgeCount() == 0) && this.startNodePaths.contains(path.getStartNodePath());
-        }
-
-        private boolean isStartNode(CoreInstance node)
-        {
-            return this.startNodes.contains(node);
-        }
-
-        private FilterResult filter(ResolvedGraphPath resolvedGraphPath)
-        {
-            return this.searchFilter.apply(resolvedGraphPath, this.processorSupport);
-        }
-
-        private CoreInstance getByUserPath(String path)
-        {
-            return GraphPathIterable.getByUserPath(path, this.processorSupport);
-        }
-
-        private class ResolvedGraphPathIterator implements Iterator<ResolvedGraphPath>
-        {
-            private final MutableSet<GraphPath> visited = Sets.mutable.empty();
-            private final Deque<ResolvedGraphPath> deque = new ArrayDeque<>(ResolvedGraphPathIterable.this.startNodePaths.size());
-            private ResolvedGraphPath next = null;
-
-            private ResolvedGraphPathIterator()
+            GraphPath path = null;
+            ObjectBooleanPair<ResolvedGraphPath> resolvedPathAndShouldContinue = getNextToVisit();
+            if (resolvedPathAndShouldContinue != null)
             {
-                ResolvedGraphPathIterable.this.startNodePaths.forEach(startNodePath -> enqueue(GraphPath.buildPath(startNodePath), Lists.immutable.with(getByUserPath(startNodePath))));
-                update();
-            }
-
-            @Override
-            public boolean hasNext()
-            {
-                return this.next != null;
-            }
-
-            @Override
-            public ResolvedGraphPath next()
-            {
-                ResolvedGraphPath path = this.next;
-                if (path == null)
-                {
-                    throw new NoSuchElementException();
-                }
-                update();
-                return path;
-            }
-
-            private void update()
-            {
-                ObjectBooleanPair<ResolvedGraphPath> resolvedPathAndShouldContinue = getNextToVisit();
-                if (resolvedPathAndShouldContinue == null)
-                {
-                    this.next = null;
-                    return;
-                }
-
                 ResolvedGraphPath resolvedPath = resolvedPathAndShouldContinue.getOne();
+                path = resolvedPath.getGraphPath();
                 boolean shouldContinue = resolvedPathAndShouldContinue.getTwo();
                 if (shouldContinue)
                 {
-                    GraphPath path = resolvedPath.getGraphPath();
                     ImmutableList<CoreInstance> pathNodeList = resolvedPath.getResolvedNodes();
                     CoreInstance finalNode = pathNodeList.getLast();
                     if ((pathNodeList.size() == 1) || !isStartNode(finalNode))
                     {
                         MutableSet<CoreInstance> pathNodeSet = pathNodeList.toSet();
-                        finalNode.getKeys().forEach(key ->
+                        for (String key : finalNode.getKeys())
                         {
                             ListIterable<? extends CoreInstance> values = finalNode.getValueForMetaPropertyToMany(key);
                             if (values.size() == 1)
@@ -224,48 +175,48 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
                                     i++;
                                 }
                             }
-                        });
+                        }
                     }
                 }
-                this.next = resolvedPath;
             }
+            this.next = path;
+        }
 
-            private void enqueue(GraphPath path, ImmutableList<CoreInstance> resolvedNodes)
-            {
-                enqueue(new ResolvedGraphPath(path, resolvedNodes));
-            }
+        private void enqueue(GraphPath path, ImmutableList<CoreInstance> resolvedNodes)
+        {
+            enqueue(new ResolvedGraphPath(path, resolvedNodes));
+        }
 
-            private void enqueue(ResolvedGraphPath resolvedGraphPath)
-            {
-                this.deque.addLast(resolvedGraphPath);
-            }
+        private void enqueue(ResolvedGraphPath resolvedGraphPath)
+        {
+            this.deque.addLast(resolvedGraphPath);
+        }
 
-            private ObjectBooleanPair<ResolvedGraphPath> getNextToVisit()
+        private ObjectBooleanPair<ResolvedGraphPath> getNextToVisit()
+        {
+            while (!this.deque.isEmpty())
             {
-                while (!this.deque.isEmpty())
+                ResolvedGraphPath resolvedPath = this.deque.remove();
+                if (this.visited.add(resolvedPath.getGraphPath()))
                 {
-                    ResolvedGraphPath resolvedPath = this.deque.remove();
-                    if (this.visited.add(resolvedPath.getGraphPath()))
+                    if (isStartPath(resolvedPath.getGraphPath()))
                     {
-                        if (isStartPath(resolvedPath.getGraphPath()))
+                        return PrimitiveTuples.pair(resolvedPath, true);
+                    }
+                    switch (filter(resolvedPath))
+                    {
+                        case ACCEPT_AND_CONTINUE:
                         {
                             return PrimitiveTuples.pair(resolvedPath, true);
                         }
-                        switch (filter(resolvedPath))
+                        case ACCEPT_AND_STOP:
                         {
-                            case ACCEPT_AND_CONTINUE:
-                            {
-                                return PrimitiveTuples.pair(resolvedPath, true);
-                            }
-                            case ACCEPT_AND_STOP:
-                            {
-                                return PrimitiveTuples.pair(resolvedPath, false);
-                            }
+                            return PrimitiveTuples.pair(resolvedPath, false);
                         }
                     }
                 }
-                return null;
             }
+            return null;
         }
     }
 
@@ -304,35 +255,51 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
         return newGraphPathIterable(startNodePaths, getMaxPathLengthFilter(maxPathLength), processorSupport);
     }
 
-    public static SearchFilter getStopAtNodeFilter(Predicate<? super CoreInstance> shouldStopAtNode)
+    public static SearchFilter getStopAtNodeFilter(final Predicate<? super CoreInstance> shouldStopAtNode)
     {
-        return (resolvedGraphPath, processorSupport) -> shouldStopAtNode.test(resolvedGraphPath.getLastResolvedNode()) ? FilterResult.ACCEPT_AND_STOP : FilterResult.ACCEPT_AND_CONTINUE;
+        return new SearchFilter()
+        {
+            @Override
+            public FilterResult filter(ResolvedGraphPath resolvedGraphPath, ProcessorSupport processorSupport)
+            {
+                return accept(shouldStopAtNode.accept(resolvedGraphPath.getLastResolvedNode()));
+            }
+        };
     }
 
-    public static SearchFilter getMaxPathLengthFilter(int maxPathLength)
+    public static SearchFilter getMaxPathLengthFilter(final int maxPathLength)
     {
-        return (resolvedGraphPath, processorSupport) ->
+        return new SearchFilter()
         {
-            int pathLength = resolvedGraphPath.getGraphPath().getEdgeCount();
-            return (pathLength > maxPathLength) ? FilterResult.REJECT : ((pathLength == maxPathLength) ? FilterResult.ACCEPT_AND_STOP : FilterResult.ACCEPT_AND_CONTINUE);
+            @Override
+            public FilterResult filter(ResolvedGraphPath resolvedGraphPath, ProcessorSupport processorSupport)
+            {
+                int pathLength = resolvedGraphPath.getGraphPath().getEdgeCount();
+                return (pathLength > maxPathLength) ? reject() : accept(pathLength == maxPathLength);
+            }
         };
     }
 
     public static SearchFilter getIncludePropertiesFilter(Iterable<String> includedProperties)
     {
-        Set<String> includedPropertiesSet = (includedProperties instanceof Set) ? (Set<String>) includedProperties : Sets.mutable.withAll(includedProperties);
-        return getPropertiesFilter(includedPropertiesSet::contains);
+        return getPropertiesFilter(Predicates.in(Sets.mutable.withAll(includedProperties)));
     }
 
     public static SearchFilter getExcludePropertiesFilter(Iterable<String> excludedProperties)
     {
-        Set<String> excludedPropertiesSet = (excludedProperties instanceof Set) ? (Set<String>) excludedProperties : Sets.mutable.withAll(excludedProperties);
-        return getPropertiesFilter(p -> !excludedPropertiesSet.contains(p));
+        return getPropertiesFilter(Predicates.notIn(Sets.mutable.withAll(excludedProperties)));
     }
 
-    public static SearchFilter getPropertiesFilter(Predicate<? super String> propertyPredicate)
+    public static SearchFilter getPropertiesFilter(final Predicate<? super String> propertyPredicate)
     {
-        return (resolvedGraphPath, processorSupport) -> resolvedGraphPath.getGraphPath().getEdges().allSatisfy(e -> propertyPredicate.test(e.getProperty())) ? FilterResult.ACCEPT_AND_CONTINUE : FilterResult.REJECT;
+        return new SearchFilter()
+        {
+            @Override
+            public FilterResult filter(ResolvedGraphPath resolvedGraphPath, ProcessorSupport processorSupport)
+            {
+                return allEdgePropertiesSatisfy(resolvedGraphPath.getGraphPath(), propertyPredicate) ? acceptAndContinue() : reject();
+            }
+        };
     }
 
     public static SearchFilter joinFilters(SearchFilter... filters)
@@ -342,35 +309,31 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
 
     public static SearchFilter joinFilters(Iterable<? extends SearchFilter> filters)
     {
-        MutableList<SearchFilter> flattenedFilters = flattenFilters(filters);
-        return (flattenedFilters.size() == 1) ? flattenedFilters.get(0) : new JoinSearchFilter(flattenedFilters.toImmutable());
+        return new JoinSearchFilter(filters);
     }
 
     public static SearchFilter getDefaultSearchFilter()
     {
-        return GraphPathIterable::defaultSearchFilter;
+        final Predicate<Object> excludePackage = Predicates.notEqual(M3Properties._package);
+        return new SearchFilter()
+        {
+            @Override
+            public FilterResult filter(ResolvedGraphPath resolvedGraphPath, ProcessorSupport processorSupport)
+            {
+                // Don't traverse to an element's package
+                if (!allEdgePropertiesSatisfy(resolvedGraphPath.getGraphPath(), excludePackage))
+                {
+                    return reject();
+                }
+
+                // Stop at packaged or top level nodes
+                CoreInstance lastNode = resolvedGraphPath.getLastResolvedNode();
+                return accept(isPackagedNode(lastNode) || isTopLevelNode(lastNode, processorSupport));
+            }
+        };
     }
 
-    private static FilterResult defaultSearchFilter(ResolvedGraphPath resolvedGraphPath, ProcessorSupport processorSupport)
-    {
-        // Don't traverse to an element's package
-        if (resolvedGraphPath.getGraphPath().getEdges().anySatisfy(e -> M3Properties._package.equals(e.getProperty())))
-        {
-            return FilterResult.REJECT;
-        }
-
-        // Stop at packaged or top level nodes
-        CoreInstance lastNode = resolvedGraphPath.getLastResolvedNode();
-        if ((lastNode.getValueForMetaPropertyToOne(M3Properties._package) instanceof Package) || (lastNode == processorSupport.repository_getTopLevel(lastNode.getName())))
-        {
-            return FilterResult.ACCEPT_AND_STOP;
-        }
-
-        // Otherwise continue
-        return FilterResult.ACCEPT_AND_CONTINUE;
-    }
-
-    public static final class ResolvedGraphPath
+    public static class ResolvedGraphPath
     {
         private final GraphPath path;
         private final ImmutableList<CoreInstance> resolvedNodes;
@@ -395,37 +358,46 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
         {
             return this.resolvedNodes.getLast();
         }
-
-        @Override
-        public boolean equals(Object other)
-        {
-            if (this == other)
-            {
-                return true;
-            }
-            if (!(other instanceof ResolvedGraphPath))
-            {
-                return false;
-            }
-            ResolvedGraphPath that = (ResolvedGraphPath) other;
-            return this.path.equals(that.path) && this.resolvedNodes.equals(that.resolvedNodes);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return this.path.hashCode();
-        }
-
-        @Override
-        public String toString()
-        {
-            return this.path.writeDescription(new StringBuilder("<ResolvedGraphPath path=")).append('>').toString();
-        }
     }
 
-    public interface SearchFilter extends BiFunction<ResolvedGraphPath, ProcessorSupport, FilterResult>
+    public abstract static class SearchFilter
     {
+        public abstract FilterResult filter(ResolvedGraphPath resolvedGraphPath, ProcessorSupport processorSupport);
+
+        protected FilterResult reject()
+        {
+            return FilterResult.REJECT;
+        }
+
+        protected FilterResult accept(boolean stop)
+        {
+            return stop ? acceptAndStop() : acceptAndContinue();
+        }
+
+        protected FilterResult acceptAndStop()
+        {
+            return FilterResult.ACCEPT_AND_STOP;
+        }
+
+        protected FilterResult acceptAndContinue()
+        {
+            return FilterResult.ACCEPT_AND_CONTINUE;
+        }
+
+        protected boolean isPackagedNode(CoreInstance node)
+        {
+            return node.getValueForMetaPropertyToOne(M3Properties._package) instanceof Package;
+        }
+
+        protected boolean isTopLevelNode(CoreInstance node, ProcessorSupport processorSupport)
+        {
+            return node == processorSupport.repository_getTopLevel(node.getName());
+        }
+
+        protected boolean allEdgePropertiesSatisfy(GraphPath path, Predicate<? super String> predicate)
+        {
+            return path.getEdges().allSatisfy(Predicates.attributePredicate(Edge::getProperty, predicate));
+        }
     }
 
     public enum FilterResult
@@ -435,39 +407,22 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
         REJECT
     }
 
-    private static MutableList<SearchFilter> flattenFilters(Iterable<? extends SearchFilter> searchFilters)
-    {
-        MutableList<SearchFilter> result = Lists.mutable.empty();
-        searchFilters.forEach(filter ->
-        {
-            if (filter instanceof JoinSearchFilter)
-            {
-                result.addAll(((JoinSearchFilter) filter).searchFilters.castToList());
-            }
-            else
-            {
-                result.add(filter);
-            }
-        });
-        return result;
-    }
-
-    private static class JoinSearchFilter implements SearchFilter
+    private static class JoinSearchFilter extends SearchFilter
     {
         private final ImmutableList<SearchFilter> searchFilters;
 
-        private JoinSearchFilter(ImmutableList<SearchFilter> searchFilters)
+        private JoinSearchFilter(Iterable<? extends SearchFilter> searchFilters)
         {
-            this.searchFilters = searchFilters;
+            this.searchFilters = buildFilterList(searchFilters);
         }
 
         @Override
-        public FilterResult apply(ResolvedGraphPath resolvedGraphPath, ProcessorSupport processorSupport)
+        public FilterResult filter(ResolvedGraphPath resolvedGraphPath, ProcessorSupport processorSupport)
         {
             FilterResult result = FilterResult.ACCEPT_AND_CONTINUE;
             for (SearchFilter searchFilter : this.searchFilters)
             {
-                switch (searchFilter.apply(resolvedGraphPath, processorSupport))
+                switch (searchFilter.filter(resolvedGraphPath, processorSupport))
                 {
                     case REJECT:
                     {
@@ -482,15 +437,22 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
             }
             return result;
         }
-    }
 
-    private static CoreInstance getByUserPath(String path, ProcessorSupport processorSupport)
-    {
-        CoreInstance node = processorSupport.package_getByUserPath(path);
-        if (node == null)
+        private static ImmutableList<SearchFilter> buildFilterList(Iterable<? extends SearchFilter> searchFilters)
         {
-            throw new IllegalArgumentException("Unknown path: " + path);
+            MutableList<SearchFilter> searchFilterList = Lists.mutable.empty();
+            for (SearchFilter searchFilter : searchFilters)
+            {
+                if (searchFilter instanceof JoinSearchFilter)
+                {
+                    searchFilterList.addAll(((JoinSearchFilter)searchFilter).searchFilters.castToList());
+                }
+                else
+                {
+                    searchFilterList.add(searchFilter);
+                }
+            }
+            return searchFilterList.toImmutable();
         }
-        return node;
     }
 }

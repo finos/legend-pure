@@ -326,13 +326,9 @@ public class ValCoreInstance extends AbstractCompiledCoreInstance
         {
             type = M3Paths.Integer;
         }
-        else if ((value instanceof Double) || (value instanceof Float))
+        else if ((value instanceof Double) || (value instanceof Float) || (value instanceof BigDecimal))
         {
             type = M3Paths.Float;
-        }
-        else if (value instanceof BigDecimal)
-        {
-            type = M3Paths.Decimal;
         }
         else if (value instanceof String)
         {
@@ -343,10 +339,5 @@ public class ValCoreInstance extends AbstractCompiledCoreInstance
             throw new RuntimeException("TODO " + value.getClass());
         }
         return new ValCoreInstance(CompiledSupport.primitiveToString(value), type);
-    }
-
-    public static ListIterable<CoreInstance> toCoreInstances(RichIterable<?> values)
-    {
-        return ((values == null) || values.isEmpty()) ? Lists.immutable.empty() : values.collect(ValCoreInstance::toCoreInstance, Lists.mutable.ofInitialCapacity(values.size()));
     }
 }

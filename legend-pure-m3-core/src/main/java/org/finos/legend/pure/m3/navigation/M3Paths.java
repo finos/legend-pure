@@ -66,7 +66,6 @@ public class M3Paths
     public static final String GeneralizationView = "meta::pure::diagram::GeneralizationView";
     public static final String GenericType = "meta::pure::metamodel::type::generics::GenericType";
     public static final String GetterOverride = "meta::pure::metamodel::type::GetterOverride" ;
-    public static final String GrammarInfoStub = "meta::pure::tools::GrammarInfoStub";
     public static final String ImportGroup = "meta::pure::metamodel::import::ImportGroup";
     public static final String ImportStub = "meta::pure::metamodel::import::ImportStub";
     public static final String InferredGenericType = "meta::pure::metamodel::type::generics::InferredGenericType";
