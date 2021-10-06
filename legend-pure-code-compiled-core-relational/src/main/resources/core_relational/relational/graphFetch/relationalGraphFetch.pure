@@ -130,8 +130,8 @@ function meta::relational::graphFetch::executionPlan::planRootGraphFetchExecutio
       columns        = $sqlNode.resultColumns->filter(x | $x.label->startsWith('"pk_'))->map(x | ^SQLResultColumn(label = $x.label->substring(1, $x.label->length() - 1), dataType = $x.dataType->toOne())),
       children       = $rootTree->generateRelationalChildGraphNodes($rootTree->nodePathName(), $setImpls, $simplePrimitiveProperties, $orderedPaths, $store, $mapping, $oneRuntime, $sq.inScopeVars, $selectWithCursor.milestoningContext, $exeCtx, $extensions, $debug),
       executionNodes = $wrappedNode,
-      enableConstraints = false,
-      checked = false
+      enableConstraints = $enableConstraints,
+      checked = $checked
    );
 }
 

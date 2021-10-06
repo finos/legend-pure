@@ -76,25 +76,25 @@ public class PureSession
     private FunctionExecution initialize()
     {
         String rootPath = Optional.ofNullable(sourceLocationConfiguration)
-                .flatMap(s -> Optional.ofNullable(s.welcomeFileDirectory))
-                .orElse(System.getProperty("java.io.tmpdir"));
+            .flatMap(s -> Optional.ofNullable(s.welcomeFileDirectory))
+            .orElse(System.getProperty("java.io.tmpdir"));
 
         String ideFilesLocation = Optional.ofNullable(sourceLocationConfiguration)
-                .flatMap(s -> Optional.ofNullable(s.ideFilesLocation))
-                .orElse("legend-pure-ide-light/src/main/resources/pure_ide");
+            .flatMap(s -> Optional.ofNullable(s.ideFilesLocation))
+            .orElse("legend-pure-ide-light/src/main/resources/pure_ide");
 
         this.functionExecution = new FunctionExecutionInterpreted(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
 
         try
         {
             MutableList<RepositoryCodeStorage> repos = Lists.mutable
-                    .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
-                    .with(this.buildCore(""))
-                    .with(this.buildCore("relational"))
-                    .with(this.buildCore("external-shared"))
-                    .with(this.buildCore("external-format-flatdata"))
-                    .with(this.buildCore("external-format-xml"))
-                    .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
+                .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
+                .with(this.buildCore(""))
+                .with(this.buildCore("relational"))
+                .with(this.buildCore("external-shared"))
+                .with(this.buildCore("external-format-flatdata"))
+                .with(this.buildCore("external-format-xml"))
+                .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
 
             this.codeStorage = new PureCodeStorage(Paths.get(rootPath), repos.toArray(new RepositoryCodeStorage[0]));
             this.pureRuntime = new PureRuntimeBuilder(this.codeStorage).withMessage(this.message).setUseFastCompiler(true).build();
@@ -252,7 +252,6 @@ public class PureSession
                     {
                         String path = (String) openFile.get("path");
                         String code = (String) openFile.get("code");
-                        code = code.replace("\n", "\r\n");
                         if (null == pureRuntime.getSourceById(path))
                         {
                             pureRuntime.loadSourceIfLoadable(path);

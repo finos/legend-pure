@@ -67,7 +67,7 @@ Class meta::pure::executionPlan::engine::java::SimpleJavaType extends JavaType
 Class meta::pure::executionPlan::engine::java::CheckedJavaType extends JavaType
 {
    checkedOf  : SimpleJavaType[1];
-   source     : JavaType[1];
+   source     : JavaType[0..1];
 }
 
 

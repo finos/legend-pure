@@ -367,11 +367,6 @@ Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::List ex
    values : Any[*];
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::DatabaseInstance extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RawValue
-{
-   fullPath : String[1];
-}
-
 Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::PackageableElementPtr extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RawValue
 {
    fullPath : String[1];
