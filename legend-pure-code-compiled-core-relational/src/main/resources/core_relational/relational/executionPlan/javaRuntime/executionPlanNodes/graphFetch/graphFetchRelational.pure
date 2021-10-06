@@ -905,51 +905,6 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
    });
 }
 
-function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::isExpressionMultiEqual(v : ValueSpecification[1]):Boolean[1]
-{
-   $v->evaluateAndDeactivate()->match([
-      f: FunctionExpression[1] | let params = $f.parametersValues->evaluateAndDeactivate()->map(x| $x->byPassRouterInfo());
-                                 if($f.func->in([meta::pure::functions::boolean::equal_Any_MANY__Any_MANY__Boolean_1_, meta::pure::functions::boolean::eq_Any_1__Any_1__Boolean_1_]) ,
-                                    | $params->match([
-                                       sfes: SimpleFunctionExpression[*] | $sfes->at(0).func->instanceOf(Property) && $sfes->at(1).func->instanceOf(Property),
-                                       a: Any[*] | false
-                                      ]),
-                                    | if($f.functionName == 'and',
-                                         | $params->at(0)->isExpressionMultiEqual() && $params->at(1)->isExpressionMultiEqual(),
-                                         | false
-                                      );
-                                 );
-   ])
-}
-
-function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::propertyPairsInMultiEqual(v : ValueSpecification[1]):Pair<Property<Nil,Any|*>, Property<Nil,Any|*>>[*]
-{
-   $v->evaluateAndDeactivate()->match([
-      f: FunctionExpression[1] | let params = $f.parametersValues->evaluateAndDeactivate()->map(x| $x->byPassRouterInfo());
-                                 if($f.func->in([meta::pure::functions::boolean::equal_Any_MANY__Any_MANY__Boolean_1_, meta::pure::functions::boolean::eq_Any_1__Any_1__Boolean_1_]) ,
-                                    | $params->match([
-                                       sfes: SimpleFunctionExpression[*] | assert($sfes->at(0).func->instanceOf(Property) && $sfes->at(1).func->instanceOf(Property));
-                                                                           if($sfes->at(0).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'this' &&
-                                                                              $sfes->at(1).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'that',
-                                                                              | pair($sfes->at(0).func->cast(@Property<Nil,Any|*>), $sfes->at(1).func->cast(@Property<Nil,Any|*>)),
-                                                                              | if($sfes->at(0).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'that' &&
-                                                                                   $sfes->at(1).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'this',
-                                                                                   | pair($sfes->at(1).func->cast(@Property<Nil,Any|*>), $sfes->at(0).func->cast(@Property<Nil,Any|*>)),
-                                                                                   | assert(false, 'Complex cross expressions not supported yet!'); [];
-                                                                                )
-                                                                           );,
-                                       a: Any[*] | assert(false, 'Complex cross expressions not supported yet!'); [];
-                                      ]),
-                                    | if($f.functionName == 'and',
-                                         | $params->at(0)->propertyPairsInMultiEqual()->concatenate($params->at(1)->propertyPairsInMultiEqual()),
-                                         | assert(false, 'Complex cross expressions not supported yet!'); [];
-                                      );
-                                 );
-   ])
-}
-
-
-
 function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::objectCreationCodes(specificsClass: meta::external::language::java::metamodel::Class[1], implClass: meta::external::language::java::metamodel::Class[1], set: RelationalInstanceSetImplementation[1], allSets: RelationalInstanceSetImplementation[*], properties: Property<Nil,Any|*>[*], index: Integer[1], context:GenerationContext[1]):Code[*]
 {
    let conventions = $context.conventions;
