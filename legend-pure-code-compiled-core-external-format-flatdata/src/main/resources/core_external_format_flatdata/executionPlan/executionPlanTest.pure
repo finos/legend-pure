@@ -86,56 +86,64 @@ function <<meta::pure::profiles::test.Test>> meta::external::format::flatdata::e
    
    let planString = $plan->planToString(false, $extensions);
    
-   let expected = 'FlatData_Serialize\n' +
-      '(\n' +
-      '  type = String\n' +
-      '  resultSizeRange = 1\n' +
-      '  checked = true\n' +
-      '  binding = meta::external::format::flatdata::executionPlan::test::TestBinding\n' +
-      '\n' +
-      '  (\n' +
-      '    GlobalGraphFetch\n' +
-      '    (\n' +
-      '      type = PartialClass[impls=[(meta::external::format::flatdata::executionPlan::test::Person | SelfMapping.meta_external_format_flatdata_executionPlan_test_Person)], propertiesWithParameters = [firstName, lastName]]\n' +
-      '      resultSizeRange = *\n' +
-      '      store = MODEL\n' +
-      '      localGraphFetchExecutionNode = \n' +
-      '         InMemoryRootGraphFetch\n' +
-      '         (\n' +
-      '           type = PartialClass[impls=[(meta::external::format::flatdata::executionPlan::test::Person | SelfMapping.meta_external_format_flatdata_executionPlan_test_Person)], propertiesWithParameters = [firstName, lastName]]\n' +
-      '           graphFetchTree = [meta_external_format_flatdata_executionPlan_test_Person/meta::external::format::flatdata::executionPlan::test::Person]{@(meta_external_format_flatdata_executionPlan_test_Person->)@[/firstName],@(meta_external_format_flatdata_executionPlan_test_Person->)@[/lastName]}\n' +
-      '           nodeIndex = 0\n' +
-      '           batchSize = 1\n' +
-      '           checked = true\n' +
-      '           (\n' +
-      '             DataQuality\n' +
-      '             (\n' +
-      '               type = PartialClass[impls=[], propertiesWithParameters = [firstName, lastName]]\n' +
-      '               resultSizeRange = *\n' +
-      '               enableConstraints = true\n' +
-      '               checked = true\n' +
-      '\n' +
-      '               (\n' +
-      '                 FlatData_Deserialize\n' +
-      '                 (\n' +
-      '                   type = PartialClass[impls=[], propertiesWithParameters = [firstName, lastName]]\n' +
-      '                   resultSizeRange = *\n' +
-      '                   connection = ExternalFormatConnection(binding="meta::external::format::flatdata::executionPlan::test::TestBinding", source=(url="executor:default"))\n' +
-      '\n' +
-      '                 )\n' +
-      '               )\n' +
-      '             )\n' +
-      '           )\n' +
-      '           children = [\n' +
-      '              \n' +              
-      '           ]\n' +
-      '         )\n' +
-      '      children = [\n' +
-      '         \n' +         
-      '      ]\n' +
-      '    )\n' +
-      '  )\n' +
-      ')\n';
+   let expected = 'FlatData_Serialize\n'+
+                  '(\n'+
+                  '  type = String\n'+
+                  '  resultSizeRange = 1\n'+
+                  '  checked = true\n'+
+                  '  binding = meta::external::format::flatdata::executionPlan::test::TestBinding\n'+
+                  '\n'+
+                  '  (\n'+
+                  '    GlobalGraphFetch\n'+
+                  '    (\n'+
+                  '      type = PartialClass[impls=[(meta::external::format::flatdata::executionPlan::test::Person | SelfMapping.meta_external_format_flatdata_executionPlan_test_Person)], propertiesWithParameters = [firstName, lastName]]\n'+
+                  '      resultSizeRange = *\n'+
+                  '      store = MODEL\n'+
+                  '      localGraphFetchExecutionNode = \n'+
+                  '         InMemoryRootGraphFetch\n'+
+                  '         (\n'+
+                  '           type = PartialClass[impls=[(meta::external::format::flatdata::executionPlan::test::Person | SelfMapping.meta_external_format_flatdata_executionPlan_test_Person)], propertiesWithParameters = [firstName, lastName]]\n'+
+                  '           graphFetchTree = [meta_external_format_flatdata_executionPlan_test_Person/meta::external::format::flatdata::executionPlan::test::Person]{@(meta_external_format_flatdata_executionPlan_test_Person->)@[/firstName],@(meta_external_format_flatdata_executionPlan_test_Person->)@[/lastName]}\n'+
+                  '           nodeIndex = 0\n'+
+                  '           batchSize = 1\n'+
+                  '           checked = true\n'+
+                  '           (\n'+
+                  '             DataQuality\n'+
+                  '             (\n'+
+                  '               type = PartialClass[impls=[], propertiesWithParameters = [firstName, lastName]]\n'+
+                  '               resultSizeRange = *\n'+
+                  '               enableConstraints = true\n'+
+                  '               checked = true\n'+
+                  '\n'+
+                  '               (\n'+
+                  '                 FlatData_Deserialize\n'+
+                  '                 (\n'+
+                  '                   type = PartialClass[impls=[], propertiesWithParameters = [firstName, lastName]]\n'+
+                  '                   resultSizeRange = *\n'+
+                  '                   binding = meta::external::format::flatdata::executionPlan::test::TestBinding\n'+
+                  '\n'+
+                  '                   (\n'+
+                  '                     UrlStream\n'+
+                  '                     (\n'+
+                  '                       type = String\n'+
+                  '                       url = executor:default\n'+
+                  '\n'+
+                  '                     )\n'+
+                  '                   )\n'+
+                  '                 )\n'+
+                  '               )\n'+
+                  '             )\n'+
+                  '           )\n'+
+                  '           children = [\n'+
+                  '              \n'+
+                  '           ]\n'+
+                  '         )\n'+
+                  '      children = [\n'+
+                  '         \n'+
+                  '      ]\n'+
+                  '    )\n'+
+                  '  )\n'+
+                  ')\n';
 
    assertEquals($expected, $planString);   
 }

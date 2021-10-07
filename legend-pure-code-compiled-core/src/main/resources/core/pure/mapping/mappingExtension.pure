@@ -118,6 +118,12 @@ function meta::pure::mapping::mergeMappings(mappings: Mapping[1..*]):Mapping[1]
   );
 }
 
+function meta::pure::mapping::propertyMappingsByPropertyName(i:InstanceSetImplementation[1], propertyName:String[1]):meta::pure::mapping::PropertyMapping[*]
+{
+   $i->match([ e:EmbeddedSetImplementation[1]| $e->propertyMappingsByPropertyName($propertyName),
+               a:InstanceSetImplementation[1]| $i.propertyMappingsByPropertyName($propertyName)
+             ]);
+}
 
 function meta::pure::mapping::propertyMappingByPropertyNameAndTargetIdWithInlineResolution(i:InstanceSetImplementation[1], s:String[1], targetId:String[1]):meta::pure::mapping::PropertyMapping[0..1]
 {

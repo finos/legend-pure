@@ -168,6 +168,12 @@ Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store
    checked : Boolean[1];
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryCrossStoreGraphFetchExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryRootGraphFetchExecutionNode
+{
+   supportsBatching      : Boolean[1];
+   xStorePropertyMapping : meta::protocols::pure::vX_X_X::metamodel::mapping::xStore::XStorePropertyMapping[1];
+}
+
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryPropertyGraphFetchExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode
 {
 }

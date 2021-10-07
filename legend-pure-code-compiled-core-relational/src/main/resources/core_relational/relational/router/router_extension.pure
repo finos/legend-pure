@@ -161,7 +161,7 @@ function <<access.private>> meta::pure::router::extension::relationalExtension(t
       },
       
       graphFetch_executionPlan_addCrossStoreChildren = {
-         clusteredTree: ClusteredGraphFetchTree[1], orderedPaths: String[*], parentPath: String[1], inScopeVars: Map<String, List<Any>>[1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions: RouterExtension[*], debug: DebugContext[1] |
+         clusteredTree: ClusteredGraphFetchTree[1], orderedPaths: String[*], parentPath: String[1], inScopeVars: Map<String, List<Any>>[1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], enableConstraints: Boolean[1], checked: Boolean[1], extensions: RouterExtension[*], debug: DebugContext[1] |
          {db : meta::relational::metamodel::Database[1] | meta::relational::graphFetch::executionPlan::planCrossRootGraphFetchExecutionRelational($clusteredTree, $orderedPaths, $parentPath, $inScopeVars, $mapping, $runtime, $exeCtx, $extensions, $debug)}
       },
       

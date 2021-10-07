@@ -150,6 +150,20 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::execution
                enableConstraints = $f.enableConstraints,
                checked = $f.checked
             ),
+         f:meta::pure::mapping::modelToModel::graphFetch::executionPlan::InMemoryCrossStoreGraphFetchExecutionNode[1]|
+            ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryCrossStoreGraphFetchExecutionNode(
+               _type = 'inMemoryCrossStoreGraphFetch',
+               resultType = $f.resultType->transformResultType($mapping, $extensions),
+               resultSizeRange = $f.resultSizeRange->isEmpty()->if(|[],|$f.resultSizeRange->toOne()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()),
+               nodeIndex = $f.nodeIndex,
+               parentIndex = $f.parentIndex,
+               graphFetchTree = $f.graphFetchTree->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformGraphFetchTree([], newMap([]->cast(@Pair<String,List<Any>>)), $extensions),
+               batchSize = $f.batchSize,
+               checked = $f.checked,
+               xStorePropertyMapping = $f.xStorePropertyMapping->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::xStore::transformXStorePropertyMapping($mapping, $extensions),
+               supportsBatching = $f.supportsBatching,
+               children = $f.children->map(x | $x->transformNode($mapping, $extensions))->cast(@meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode)
+            ),
          f:meta::pure::mapping::modelToModel::graphFetch::executionPlan::InMemoryRootGraphFetchExecutionNode[1]|
             ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryRootGraphFetchExecutionNode(
                _type = 'inMemoryRootGraphFetch',
