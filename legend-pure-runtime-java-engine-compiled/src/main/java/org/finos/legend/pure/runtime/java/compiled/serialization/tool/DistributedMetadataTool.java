@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.tool;
 
+import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphDeserializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
@@ -25,7 +26,6 @@ import org.finos.legend.pure.runtime.java.compiled.serialization.model.PropertyV
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValueVisitor;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -33,9 +33,8 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.util.zip.ZipFile;
 
-public class DistributedMetadataTool implements Closeable
+public class DistributedMetadataTool
 {
-    private final ZipFile zipFile;
     private final DistributedBinaryGraphDeserializer deserializer;
     private final BufferedReader in;
     private final PrintStream out;
@@ -44,24 +43,26 @@ public class DistributedMetadataTool implements Closeable
 
     public static void main(String[] args) throws IOException
     {
-        String zipPath = args[0];
-        try (DistributedMetadataTool tool = new DistributedMetadataTool(zipPath))
+        if (args.length < 1)
         {
-            tool.repl();
+            throw new RuntimeException("Expected at least 1 argument, got " + args.length);
+        }
+        String zipPath = args[0];
+        try (ZipFile zipFile = new ZipFile(new File(zipPath)))
+        {
+            DistributedBinaryGraphDeserializer.Builder builder = DistributedBinaryGraphDeserializer.newBuilder(zipFile).withoutObjValidation();
+            if (args.length > 1)
+            {
+                ArrayIterate.forEach(args, 1, args.length, builder::withMetadataNames);
+            }
+            DistributedBinaryGraphDeserializer deserializer = builder.build();
+            new DistributedMetadataTool(deserializer).repl();
         }
     }
 
-    private DistributedMetadataTool(String zipPath)
+    private DistributedMetadataTool(DistributedBinaryGraphDeserializer deserializer)
     {
-        try
-        {
-            this.zipFile = new ZipFile(new File(zipPath));
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Could not open zip file at: " + zipPath, e);
-        }
-        this.deserializer = DistributedBinaryGraphDeserializer.fromZip(this.zipFile);
+        this.deserializer = deserializer;
         this.in = new BufferedReader(new InputStreamReader(System.in));
         this.out = System.out;
     }
@@ -114,17 +115,17 @@ public class DistributedMetadataTool implements Closeable
 
     private void print(String line)
     {
-        this.out.println(this.prefix+line);
+        this.out.println(this.prefix + line);
     }
 
     private void printf(String format, Object... args)
     {
-        this.out.printf(this.prefix+format+'\n', args);
+        this.out.printf(this.prefix + format + "%n", args);
     }
 
     private void classifiers()
     {
-        this.deserializer.getClassifiers().toList().sortThis().forEach(this.out::println);
+        this.deserializer.getClassifiers().toSortedList().forEach(this.out::println);
     }
 
     private void instance(String classifier, String id)
@@ -138,12 +139,6 @@ public class DistributedMetadataTool implements Closeable
         {
             this.out.println("Instance not found");
         }
-    }
-
-    @Override
-    public void close() throws IOException
-    {
-        this.zipFile.close();
     }
 
     private class ObjPrinter implements PropertyValueVisitor<Void>, RValueVisitor<Void>
@@ -177,7 +172,7 @@ public class DistributedMetadataTool implements Closeable
             indent();
             print(many.getProperty());
             indent();
-            many.getValues().forEach(v->v.visit(this));
+            many.getValues().forEach(v -> v.visit(this));
             outdent();
             outdent();
             return null;

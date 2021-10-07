@@ -20,6 +20,7 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -106,20 +107,34 @@ public class Obj
     @Override
     public String toString()
     {
-        StringBuilder builder = new StringBuilder(getClass().getSimpleName());
-        builder.append("{classifier='").append(this.classifier).append("'");
-        builder.append(", identifier='").append(this.identifier).append("'");
+        return toString(false);
+    }
+
+    public String toString(boolean includePropertyValues)
+    {
+        return writeObj(new StringBuilder(128), includePropertyValues).toString();
+    }
+
+    public <T extends Appendable> T writeObj(T appendable, boolean writePropertyValues)
+    {
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        safeAppendable.append(getClass().getSimpleName());
+        safeAppendable.append("{classifier='").append(this.classifier).append("'");
+        safeAppendable.append(", identifier='").append(this.identifier).append("'");
         if (this.name != null)
         {
-            builder.append(", name='").append(this.name).append("'");
+            safeAppendable.append(", name='").append(this.name).append("'");
         }
-        this.properties.appendString(builder, ", properties=[", ", ", "]");
+        if (writePropertyValues)
+        {
+            this.properties.appendString(safeAppendable, ", properties=[", ", ", "]");
+        }
         if (this.sourceInformation != null)
         {
-            this.sourceInformation.appendMessage(builder.append(", sourceInformation="));
+            this.sourceInformation.appendMessage(safeAppendable.append(", sourceInformation="));
         }
-        builder.append('}');
-        return builder.toString();
+        safeAppendable.append('}');
+        return appendable;
     }
 
     public static Obj newObj(String classifier, String identifier, String name, ListIterable<PropertyValue> propertyValues, SourceInformation sourceInformation, boolean isEnum)

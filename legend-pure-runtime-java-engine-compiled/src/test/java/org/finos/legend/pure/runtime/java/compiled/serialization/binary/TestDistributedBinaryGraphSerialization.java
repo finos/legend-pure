@@ -79,7 +79,7 @@ public abstract class TestDistributedBinaryGraphSerialization extends AbstractPu
         serializer.serialize(getFileWriter());
 
         // Deserialize
-        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromFileReader(metadataName, getFileReader());
+        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.newBuilder(getFileReader()).withMetadataName(metadataName).build();
 
         // Validate classifiers
         ListMultimap<String, Obj> objsByClassifier = expectedObjs.groupBy(Obj::getClassifier);
