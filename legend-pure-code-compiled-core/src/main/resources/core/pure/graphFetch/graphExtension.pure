@@ -59,10 +59,10 @@ function <<access.private>> meta::pure::graphFetch::addSubTrees(onto:GraphFetchT
 function <<access.private>> meta::pure::graphFetch::addSubTree(onto:GraphFetchTree[1], subTree:PropertyGraphFetchTree[1]): GraphFetchTree[1]
 {
    let existingSubTrees = $onto.subTrees->filter(st|$st->cast(@PropertyGraphFetchTree).property == $subTree.property && $st->cast(@PropertyGraphFetchTree).subType == $subTree.subType);
-   let r = $existingSubTrees->match([
-      stree0: PropertyGraphFetchTree[0] | ^$onto(subTrees=$onto.subTrees->concatenate($subTree)),
-      stree : PropertyGraphFetchTree[1] | ^$onto(subTrees=$onto.subTrees->cast(@PropertyGraphFetchTree)->filter(st|!$st->forSameProperty($stree))->concatenate($stree->addSubTrees($subTree.subTrees->cast(@PropertyGraphFetchTree))))
-   ]);
+   if($existingSubTrees->isEmpty(),
+    | ^$onto(subTrees=$onto.subTrees->concatenate($subTree)),
+    | $existingSubTrees->fold({stree, newTree | ^$newTree(subTrees=$onto.subTrees->cast(@PropertyGraphFetchTree)->filter(st | !$st->forSameProperty($stree->cast(@PropertyGraphFetchTree)))->concatenate($stree->addSubTrees($subTree.subTrees))->removeDuplicates())}, $onto)
+   );
 }
 
 function <<access.private>> meta::pure::graphFetch::forSameProperty(t1:PropertyGraphFetchTree[1], t2:PropertyGraphFetchTree[1]): Boolean[1]
