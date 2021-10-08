@@ -64,6 +64,7 @@
         <module>legend-pure-code-compiled-core-servicestore</module>
         <module>legend-pure-code-compiled-core-external-shared</module>
         <module>legend-pure-code-compiled-core-external-format-flatdata</module>
+        <module>legend-pure-code-compiled-core-external-format-json</module>
         <module>legend-pure-code-compiled-core-external-format-xml</module>
 
         <module>legend-pure-code-java-compiled-core</module>
@@ -281,7 +282,7 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[11.0.10,12)</version>
+                                    <version>[11.0.4,12)</version>
                                 </requireJavaVersion>
                                 <dependencyConvergence />
                                 <bannedDependencies>
@@ -449,6 +450,11 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-code-compiled-core-external-format-flatdata</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-code-compiled-core-external-format-json</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
