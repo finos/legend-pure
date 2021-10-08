@@ -15,54 +15,79 @@
 package org.finos.legend.pure.m3.coreinstance.helper;
 
 import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.set.ImmutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStub;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.tools.GrammarInfoStub;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 /**
  * Any Stub Helper
  */
 public class AnyStubHelper
 {
-
-    public static final Function<CoreInstance, CoreInstance> FROM_STUB_FN = new Function<CoreInstance, CoreInstance>()
-    {
-        public CoreInstance valueOf(CoreInstance instance)
-        {
-            if (instance instanceof ImportStub)
-            {
-                if (((ImportStub)instance)._idOrPath() != null && ((ImportStub)instance)._resolvedNodeCoreInstance() == null)
-                {
-                    throw new PureCompilationException("Error, ImportStub needs to be resolved before it can be accessed");
-                }
-                return ((ImportStub)instance)._resolvedNodeCoreInstance();
-            }
-            else if (instance instanceof PropertyStub)
-            {
-                if (((PropertyStub)instance)._resolvedPropertyCoreInstance() == null)
-                {
-                    throw new PureCompilationException("Error, PropertyStub needs to be resolved before it can be accessed");
-                }
-                return ((PropertyStub)instance)._resolvedPropertyCoreInstance();
-            }
-            else if (instance instanceof EnumStub)
-            {
-                if (((EnumStub)instance)._resolvedEnumCoreInstance() == null)
-                {
-                    throw new PureCompilationException("Error, EnumStub needs to be resolved before it can be accessed");
-                }
-                return ((EnumStub)instance)._resolvedEnumCoreInstance();
-            }
-            else
-            {
-                return instance;
-            }
-        }
-    };
+    public static final ImmutableSet<String> STUB_CLASSES = Sets.immutable.with(M3Paths.EnumStub, M3Paths.GrammarInfoStub, M3Paths.ImportStub, M3Paths.PropertyStub);
+    public static final Function<CoreInstance, CoreInstance> FROM_STUB_FN = AnyStubHelper::fromStub;
 
     private AnyStubHelper()
     {
+    }
+
+    public static CoreInstance fromStub(CoreInstance instance)
+    {
+        if (instance instanceof ImportStub)
+        {
+            return ImportStubHelper.fromImportStub((ImportStub) instance);
+        }
+        if (instance instanceof PropertyStub)
+        {
+            return PropertyStubHelper.fromPropertyStub((PropertyStub) instance);
+        }
+        if (instance instanceof EnumStub)
+        {
+            return EnumStubHelper.fromEnumStub((EnumStub) instance);
+        }
+        if (instance instanceof GrammarInfoStub)
+        {
+            return GrammarInfoStubHelper.fromGrammarInfoStub((GrammarInfoStub) instance);
+        }
+        return instance;
+    }
+
+    public static boolean isUnresolvedStub(CoreInstance instance)
+    {
+        if (instance instanceof ImportStub)
+        {
+            return ImportStubHelper.isUnresolved((ImportStub) instance);
+        }
+        if (instance instanceof PropertyStub)
+        {
+            return PropertyStubHelper.isUnresolved((PropertyStub) instance);
+        }
+        if (instance instanceof EnumStub)
+        {
+            return EnumStubHelper.isUnresolved((EnumStub) instance);
+        }
+        if (instance instanceof GrammarInfoStub)
+        {
+            return GrammarInfoStubHelper.isUnresolved((GrammarInfoStub) instance);
+        }
+        return false;
+    }
+
+    public static boolean isStub(CoreInstance instance)
+    {
+        return (instance instanceof ImportStub) ||
+                (instance instanceof PropertyStub) ||
+                (instance instanceof EnumStub) ||
+                (instance instanceof GrammarInfoStub);
+    }
+
+    public static ImmutableSet<String> getStubClasses()
+    {
+        return STUB_CLASSES;
     }
 }
