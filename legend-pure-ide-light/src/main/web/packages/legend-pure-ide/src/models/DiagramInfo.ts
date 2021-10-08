@@ -717,10 +717,13 @@ export const addClassToGraph = (
     );
     graph.setOwnType(_class.path, _class);
   }
+  const isCurrentlyStubbed = diagramClasses.get(_class.path)?.isStubbed ?? true;
   diagramClasses.set(_class.path, {
     sourceInformation: classData.sourceInformation,
     isStubbed: false,
   });
-  buildClass(_class, classData, graph, diagramClasses);
+  if (isCurrentlyStubbed) {
+    buildClass(_class, classData, graph, diagramClasses);
+  }
   return _class;
 };
