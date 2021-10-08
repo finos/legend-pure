@@ -106,12 +106,14 @@ createModelSchema(PURE__TaggedValue, {
 });
 
 class PURE__GenericType {
-  rawType!: string;
+  rawType?: string;
+  typeParameter?: string; // this will be specified when for generics case
   // typeArguments
 }
 
 createModelSchema(PURE__GenericType, {
-  rawType: primitive(),
+  rawType: optional(primitive()),
+  typeParameter: optional(primitive()),
 });
 
 class PURE__Property {
@@ -460,53 +462,67 @@ const buildClass = (
       ),
     );
   });
-  classData.generalizations.forEach((superTypeData) => {
-    _class.addSuperType(
-      GenericTypeExplicitReference.create(
-        new GenericType(
-          getOrCreateClass(superTypeData.rawType, graph, diagramClasses),
-        ),
-      ),
-    );
-  });
-  classData.properties.forEach((propertyData) => {
-    _class.addProperty(
-      new Property(
-        propertyData.name,
-        parseMultiplicty(propertyData.multiplicity),
+  classData.generalizations
+    .filter((superTypeData) => Boolean(superTypeData.rawType))
+    .forEach((superTypeData) => {
+      _class.addSuperType(
         GenericTypeExplicitReference.create(
           new GenericType(
-            graph.getOwnEnumeration(propertyData.genericType.rawType) ??
-              getOrCreateClass(
-                propertyData.genericType.rawType,
-                graph,
-                diagramClasses,
-              ),
+            getOrCreateClass(
+              guaranteeNonNullable(superTypeData.rawType),
+              graph,
+              diagramClasses,
+            ),
           ),
         ),
-        _class,
-      ),
-    );
-  });
-  classData.qualifiedProperties.forEach((propertyData) => {
-    _class.addDerivedProperty(
-      new DerivedProperty(
-        propertyData.name,
-        parseMultiplicty(propertyData.multiplicity),
-        GenericTypeExplicitReference.create(
-          new GenericType(
-            graph.getOwnEnumeration(propertyData.genericType.rawType) ??
-              getOrCreateClass(
-                propertyData.genericType.rawType,
-                graph,
-                diagramClasses,
-              ),
+      );
+    });
+  classData.properties
+    .filter((propertyData) => Boolean(propertyData.genericType.rawType))
+    .forEach((propertyData) => {
+      _class.addProperty(
+        new Property(
+          propertyData.name,
+          parseMultiplicty(propertyData.multiplicity),
+          GenericTypeExplicitReference.create(
+            new GenericType(
+              graph.getOwnEnumeration(
+                guaranteeNonNullable(propertyData.genericType.rawType),
+              ) ??
+                getOrCreateClass(
+                  guaranteeNonNullable(propertyData.genericType.rawType),
+                  graph,
+                  diagramClasses,
+                ),
+            ),
           ),
+          _class,
         ),
-        _class,
-      ),
-    );
-  });
+      );
+    });
+  classData.qualifiedProperties
+    .filter((propertyData) => propertyData.genericType.rawType)
+    .forEach((propertyData) => {
+      _class.addDerivedProperty(
+        new DerivedProperty(
+          propertyData.name,
+          parseMultiplicty(propertyData.multiplicity),
+          GenericTypeExplicitReference.create(
+            new GenericType(
+              graph.getOwnEnumeration(
+                guaranteeNonNullable(propertyData.genericType.rawType),
+              ) ??
+                getOrCreateClass(
+                  guaranteeNonNullable(propertyData.genericType.rawType),
+                  graph,
+                  diagramClasses,
+                ),
+            ),
+          ),
+          _class,
+        ),
+      );
+    });
 };
 
 /**
@@ -701,10 +717,13 @@ export const addClassToGraph = (
     );
     graph.setOwnType(_class.path, _class);
   }
+  const isCurrentlyStubbed = diagramClasses.get(_class.path)?.isStubbed ?? true;
   diagramClasses.set(_class.path, {
     sourceInformation: classData.sourceInformation,
     isStubbed: false,
   });
-  buildClass(_class, classData, graph, diagramClasses);
+  if (isCurrentlyStubbed) {
+    buildClass(_class, classData, graph, diagramClasses);
+  }
   return _class;
 };
