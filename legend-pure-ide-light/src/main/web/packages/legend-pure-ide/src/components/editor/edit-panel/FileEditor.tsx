@@ -16,6 +16,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
+import type { Position } from 'monaco-editor';
 import { editor as monacoEditorAPI, KeyCode } from 'monaco-editor';
 import { useEditorStore } from '../../../stores/EditorStore';
 import ReactResizeDetector from 'react-resize-detector';
@@ -39,6 +40,7 @@ import {
 export const FileEditor = observer(
   (props: { editorState: FileEditorState }) => {
     const { editorState } = props;
+    const currentCursorPosition = useRef<Position | undefined>(undefined);
     const [editor, setEditor] = useState<
       monacoEditorAPI.IStandaloneCodeEditor | undefined
     >();
@@ -72,6 +74,12 @@ export const FileEditor = observer(
           fixedOverflowWidgets: true, // make sure hover or widget near boundary are not truncated
           language: EDITOR_LANGUAGE.PURE,
           theme: EDITOR_THEME.LEGEND,
+        });
+        editor.onDidChangeCursorPosition(() => {
+          const currentPosition = editor.getPosition();
+          if (currentPosition) {
+            currentCursorPosition.current = currentPosition;
+          }
         });
         editor.onDidChangeModelContent(() => {
           const currentVal = editor.getValue();
@@ -182,6 +190,22 @@ export const FileEditor = observer(
         }
       },
       [editor],
+    );
+
+    // remember the line the editor is on when we switch to another tab
+    useEffect(
+      () => (): void => {
+        if (currentCursorPosition.current) {
+          editorState.setCoordinate(
+            new FileCoordinate(
+              editorState.filePath,
+              currentCursorPosition.current.lineNumber,
+              currentCursorPosition.current.column,
+            ),
+          );
+        }
+      },
+      [editorState],
     );
 
     return (

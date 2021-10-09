@@ -258,9 +258,7 @@ function meta::pure::ide::diagram::getDiagramClassInfo(classPath:String[1]):Stri
   let profiles = $class.taggedValues->map(tv|$tv.tag.profile)
     ->concatenate($class.stereotypes->map(st|$st.profile))
     ->cast(@Profile)->removeDuplicates();
-  // this call is really heavy for certain classes and we don't even need this info for now so we skip it
-  // let specializations = $class.specializations->map(g|$g.specific)->filter(s|!$s->instanceOf(meta::pure::mapping::MappingClass))->map(s|$s->packageableElementPointer())->cast(@ShallowPackageableElement<Class<Any>>);
-  let specializations = [];
+  let specializations = $class.specializations->map(g|$g.specific)->filter(s|$s->instanceOf(meta::pure::metamodel::type::Class))->map(s|$s->packageableElementPointer())->cast(@ShallowPackageableElement<Class<Any>>);
   let enumerations = $class.properties->map(p|$p.genericType.rawType)->filter(t|$t->instanceOf(Enumeration))
     ->concatenate($class.qualifiedProperties->map(p|$p.genericType.rawType)->filter(t|$t->instanceOf(Enumeration)))->cast(@Enumeration<Any>)->removeDuplicates();
   
