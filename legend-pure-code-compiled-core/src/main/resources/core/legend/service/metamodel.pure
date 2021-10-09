@@ -14,7 +14,6 @@
 
 import meta::pure::runtime::*;
 import meta::pure::mapping::*;
-import meta::pure::service::*;
 import meta::legend::service::metamodel::*;
 import meta::pure::executionPlan::*;
 
@@ -40,6 +39,16 @@ Class meta::legend::service::metamodel::Service extends PackageableElement
    authorizer: Authorizer[0..1];
    test :Test[1];
    tags: ServiceTag[*];
+}
+
+Class meta::legend::service::metamodel::Authorizer
+{
+
+}
+
+Class meta::legend::service::metamodel::PackageableAuthorizer extends PackageableElement
+{
+
 }
 
 Class meta::legend::service::metamodel::ServiceTag
