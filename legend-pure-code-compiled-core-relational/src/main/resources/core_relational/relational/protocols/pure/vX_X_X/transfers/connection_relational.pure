@@ -182,7 +182,12 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
             warehouseName = $s.warehouseName,
             databaseName = $s.databaseName,
             cloudType = $s.cloudType,
-            quotedIdentifiersIgnoreCase = $s.quotedIdentifiersIgnoreCase
+            quotedIdentifiersIgnoreCase = $s.quotedIdentifiersIgnoreCase,
+            proxyHost = $s.proxyHost,
+            proxyPort = $s.proxyPort,
+            nonProxyHosts = $s.nonProxyHosts,
+            accountType = $s.accountType->toOne()->toString(),
+            organization = $s.organization
         ),
       b:meta::pure::alloy::connections::alloy::specification::BigQueryDatasourceSpecification[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::BigQueryDatasourceSpecification(
