@@ -56,21 +56,29 @@ public class ProcessorContext
     private final boolean includePureStackTrace;
     private String classImplSuffix;
     private final M3ToJavaGenerator generator;
+    private final IdBuilder idBuilder;
 
     private int id = 0;
     private final MutableMap<String, Object> objects = UnifiedMap.newMap();
 
-    public ProcessorContext(ProcessorSupport support, Iterable<? extends CompiledExtension> compiledExtensions, boolean includePureStackTrace)
+    public ProcessorContext(ProcessorSupport support, Iterable<? extends CompiledExtension> compiledExtensions, IdBuilder idBuilder, boolean includePureStackTrace)
     {
         this.support = support;
         this.nativeFunctionProcessor = NativeFunctionProcessor.newWithCompiledExtensions(compiledExtensions);
         this.includePureStackTrace = includePureStackTrace;
         this.generator = M3CoreInstanceGenerator.generator(null, null, null);
+        this.idBuilder = (idBuilder == null) ? IdBuilder.newIdBuilder(this.support) : idBuilder;
+    }
+
+    @Deprecated
+    public ProcessorContext(ProcessorSupport support, Iterable<? extends CompiledExtension> compiledExtensions, boolean includePureStackTrace)
+    {
+        this(support, compiledExtensions, null, includePureStackTrace);
     }
 
     public ProcessorContext(ProcessorSupport support, boolean includePureStackTrace)
     {
-        this(support, CompiledExtensionLoader.extensions(), includePureStackTrace);
+        this(support, CompiledExtensionLoader.extensions(), null, includePureStackTrace);
     }
 
     public ProcessorContext(ProcessorSupport support)
@@ -86,6 +94,11 @@ public class ProcessorContext
     public ProcessorSupport getSupport()
     {
         return this.support;
+    }
+
+    public IdBuilder getIdBuilder()
+    {
+        return this.idBuilder;
     }
 
     public NativeFunctionProcessor getNativeFunctionProcessor()
@@ -131,7 +144,7 @@ public class ProcessorContext
 
     public void registerLambdaFunction(CoreInstance lambda, String javaCode)
     {
-        registerLambdaFunction(IdBuilder.sourceToId(lambda.getSourceInformation()), IdBuilder.buildId(lambda, this.support), javaCode);
+        registerLambdaFunction(IdBuilder.sourceToId(lambda.getSourceInformation()), this.idBuilder.buildId(lambda), javaCode);
     }
 
     public void registerLambdaFunction(String sourceId, String lambdaId, String javaCode)
