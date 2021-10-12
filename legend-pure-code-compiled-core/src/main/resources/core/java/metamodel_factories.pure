@@ -55,6 +55,7 @@ function meta::external::language::java::factory::javaArrays():                 
 function meta::external::language::java::factory::javaCollections():            meta::external::language::java::metamodel::Class[1] { javaClass('java.util.Collections'); }
 function meta::external::language::java::factory::javaLocale():                 meta::external::language::java::metamodel::Class[1] { javaClass('java.util.Locale'); }
 function meta::external::language::java::factory::javaObjects():                meta::external::language::java::metamodel::Class[1] { javaClass('java.util.Objects'); }
+function meta::external::language::java::factory::javaList():                   meta::external::language::java::metamodel::Class[1] { javaClass('java.util.List'); }
 function meta::external::language::java::factory::javaArrayList():              meta::external::language::java::metamodel::Class[1] { javaClass('java.util.ArrayList'); }
 function meta::external::language::java::factory::javaLinkedList():             meta::external::language::java::metamodel::Class[1] { javaClass('java.util.LinkedList'); }
 function meta::external::language::java::factory::javaHashMap():                meta::external::language::java::metamodel::Class[1] { javaClass('java.util.HashMap'); }

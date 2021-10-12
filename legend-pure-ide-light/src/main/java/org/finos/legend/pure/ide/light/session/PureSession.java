@@ -88,13 +88,14 @@ public class PureSession
         try
         {
             MutableList<RepositoryCodeStorage> repos = Lists.mutable
-                .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
-                .with(this.buildCore(""))
-                .with(this.buildCore("relational"))
-                .with(this.buildCore("external-shared"))
-                .with(this.buildCore("external-format-flatdata"))
-                .with(this.buildCore("external-format-xml"))
-                .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
+                    .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
+                    .with(this.buildCore(""))
+                    .with(this.buildCore("relational"))
+                    .with(this.buildCore("servicestore"))
+                    .with(this.buildCore("external-shared"))
+                    .with(this.buildCore("external-format-flatdata"))
+                    .with(this.buildCore("external-format-xml"))
+                    .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
 
             this.codeStorage = new PureCodeStorage(Paths.get(rootPath), repos.toArray(new RepositoryCodeStorage[0]));
             this.pureRuntime = new PureRuntimeBuilder(this.codeStorage).withMessage(this.message).setUseFastCompiler(true).build();

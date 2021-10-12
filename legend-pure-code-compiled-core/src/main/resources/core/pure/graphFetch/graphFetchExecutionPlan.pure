@@ -79,8 +79,8 @@ function meta::pure::graphFetch::executionPlan::planGraphFetchExecution(sq: Stor
    let rootTree                 = $clusterTreesWithParents->filter(x | $x.second.values->isEmpty()).first->toOne();
    let rootTreeOneCluster       = $rootTree->recursivelyRemoveClusterTrees();
 
-   let enableConstraints = $exeCtx.enableConstraints->isEmpty() || $exeCtx.enableConstraints->toOne();
-   let checked           = $fe.genericType.rawType == Checked;
+   let enableConstraints        = $exeCtx.enableConstraints->isEmpty() || $exeCtx.enableConstraints->toOne();
+   let checked                  = $fe.genericType.rawType == Checked;
 
    let localRoot = $rootTree.store->match([
       model : ModelStore[1] | planRootGraphFetchExecutionInMemory($sq, $ext, $rootTreeOneCluster, $orderedPaths, $mapping, $runtime, $exeCtx, $enableConstraints, $checked, $extensions, $debug)
@@ -99,13 +99,13 @@ function meta::pure::graphFetch::executionPlan::planGraphFetchExecution(sq: Stor
                            checked                      = $checked
                         );
 
-   $rootGlobalNode->addCrossStoreChildren([], $rootTree, $orderedPaths, $clusterTreesWithParents, $sq.inScopeVars, $mapping, $runtime, $exeCtx, $extensions, $debug);
+   $rootGlobalNode->addCrossStoreChildren([], $rootTree, $orderedPaths, $clusterTreesWithParents, $sq.inScopeVars, $mapping, $runtime, $exeCtx, $enableConstraints, $checked, $extensions, $debug);
 }
 
-function <<access.private>> meta::pure::graphFetch::executionPlan::addCrossStoreChildren(currentNode: GlobalGraphFetchExecutionNode[1], parentPath: String[0..1], currentTree: ClusteredGraphFetchTree[1], orderedPaths: String[*], clusterNodesWithParents: Pair<ClusteredGraphFetchTree, List<RoutedGraphFetchTree>>[*], inScopeVars: Map<String, List<Any>>[1], m: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions:RouterExtension[*], debug: DebugContext[1]):GlobalGraphFetchExecutionNode[1]
+function <<access.private>> meta::pure::graphFetch::executionPlan::addCrossStoreChildren(currentNode: GlobalGraphFetchExecutionNode[1], parentPath: String[0..1], currentTree: ClusteredGraphFetchTree[1], orderedPaths: String[*], clusterNodesWithParents: Pair<ClusteredGraphFetchTree, List<RoutedGraphFetchTree>>[*], inScopeVars: Map<String, List<Any>>[1], m: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], enableConstraints: Boolean[1], checked: Boolean[1], extensions:RouterExtension[*], debug: DebugContext[1]):GlobalGraphFetchExecutionNode[1]
 {
    let currentNonClusterTrees = $currentTree->recursivelyFindNonClusterTrees();
-   let childrenClusterNodes = $clusterNodesWithParents->filter(x | $x.second.values->isNotEmpty() && $x.second.values->toOne()->in($currentNonClusterTrees));
+   let childrenClusterNodes   = $clusterNodesWithParents->filter(x | $x.second.values->isNotEmpty() && $x.second.values->toOne()->in($currentNonClusterTrees));
    if($childrenClusterNodes->isEmpty(),
       | $currentNode,
       | let children = $childrenClusterNodes->map({ch |
@@ -115,7 +115,11 @@ function <<access.private>> meta::pure::graphFetch::executionPlan::addCrossStore
                                         |$currentTree->toOne()->getPathTo($ch.first)->toOne(),
                                         |$parentPath->toOne()+'.'+$currentTree->getPathTo($ch.first)->toOne()
                                      );
-           let crossLocalNode      = $ch.first.store->match($extensions.graphFetch_executionPlan_addCrossStoreChildren->map(f|$f->evaluate([list($childTreeOneCluster), list($orderedPaths), list($newParentPath), list($inScopeVars), list($m), list($runtime), list($exeCtx), list($extensions), list($debug)])->cast(@Function<{Nil[1]->LocalGraphFetchExecutionNode[1]}>))->toOneMany());
+           let crossLocalNode      = $ch.first.store->match([
+                                                                model : ModelStore[1] | planCrossStoreGraphFetchExecutionInMemory($childTreeOneCluster, $orderedPaths, $newParentPath, $inScopeVars, $m, $runtime, $exeCtx, $enableConstraints, $checked, $extensions, $debug);
+                                                            ]->concatenate(
+                                                                $extensions.graphFetch_executionPlan_addCrossStoreChildren->map(f|$f->evaluate([list($childTreeOneCluster), list($orderedPaths), list($newParentPath), list($inScopeVars), list($m), list($runtime), list($exeCtx), list($enableConstraints), list($checked), list($extensions), list($debug)])->cast(@Function<{Nil[1]->LocalGraphFetchExecutionNode[1]}>))
+                                                            )->toOneMany())->toOne()->cast(@LocalGraphFetchExecutionNode);
            let propertyMapping     = $routedTree.propertyMapping->toOne()->cast(@meta::pure::mapping::xStore::XStorePropertyMapping);
            let newCrossNode        = ^GlobalGraphFetchExecutionNode
                                      (
@@ -128,7 +132,7 @@ function <<access.private>> meta::pure::graphFetch::executionPlan::addCrossStore
                                         xStorePropertyFetchDetails   = $propertyMapping->buildXStorePropertyFetchDetails($ch.first, $newParentPath, $m)
                                      );
          
-           $newCrossNode->addCrossStoreChildren($newParentPath, $ch.first, $orderedPaths, $clusterNodesWithParents, $inScopeVars, $m, $runtime, $exeCtx, $extensions, $debug);
+           $newCrossNode->addCrossStoreChildren($newParentPath, $ch.first, $orderedPaths, $clusterNodesWithParents, $inScopeVars, $m, $runtime, $exeCtx, $enableConstraints, $checked, $extensions, $debug);
         });
       
         ^$currentNode(children = $children);
@@ -143,7 +147,7 @@ function <<access.private>> meta::pure::graphFetch::executionPlan::buildXStorePr
 
    let xStoreExpressionSequence  = $xStorePropertyMapping.crossExpression.expressionSequence->evaluateAndDeactivate();
    let isXStoreMappingMultiEqual = $xStoreExpressionSequence->size() == 1 && $xStoreExpressionSequence->toOne()->isExpressionMultiEqual();
-   
+
    let supportsCaching = $isXStoreMappingMultiEqual && !($subTreeString->contains('$'));
 
    ^XStorePropertyFetchDetails

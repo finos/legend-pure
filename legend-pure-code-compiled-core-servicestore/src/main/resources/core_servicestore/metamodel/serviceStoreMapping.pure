@@ -14,10 +14,10 @@
 
 import meta::pure::mapping::*;
 import meta::external::shared::format::metamodel::*;
-import meta::servicestore::metamodel::*;
-import meta::servicestore::metamodel::mapping::*;
+import meta::external::store::service::metamodel::*;
+import meta::external::store::service::metamodel::mapping::*;
 
-Class meta::servicestore::metamodel::mapping::RootServiceInstanceSetImplementation extends InstanceSetImplementation
+Class meta::external::store::service::metamodel::mapping::RootServiceInstanceSetImplementation extends InstanceSetImplementation
 {
    localProperties : Property<Nil,Any|*>[*];
    servicesMapping : ServiceMapping[*];
@@ -27,7 +27,7 @@ Class meta::servicestore::metamodel::mapping::RootServiceInstanceSetImplementati
    }: ServiceStore[1];
 }
 
-Class meta::servicestore::metamodel::mapping::ServiceMapping
+Class meta::external::store::service::metamodel::mapping::ServiceMapping
 {
    owner             : RootServiceInstanceSetImplementation[1];
    
@@ -35,16 +35,16 @@ Class meta::servicestore::metamodel::mapping::ServiceMapping
    parameterMappings : ServiceParameterMapping[*];
 }
 
-Class meta::servicestore::metamodel::mapping::ServiceParameterMapping
+Class meta::external::store::service::metamodel::mapping::ServiceParameterMapping
 {
    serviceParameter  : ServiceParameter[1];
    transform         : LambdaFunction<Any>[1];
 }
 
-Class meta::servicestore::metamodel::mapping::ServiceStorePropertyMapping extends PropertyMapping
+Class meta::external::store::service::metamodel::mapping::ServiceStorePropertyMapping extends PropertyMapping
 {
 }
 
-Class meta::servicestore::metamodel::mapping::EmbeddedServiceStoreSetImplementation extends EmbeddedSetImplementation
+Class meta::external::store::service::metamodel::mapping::EmbeddedServiceStoreSetImplementation extends EmbeddedSetImplementation
 {
 }

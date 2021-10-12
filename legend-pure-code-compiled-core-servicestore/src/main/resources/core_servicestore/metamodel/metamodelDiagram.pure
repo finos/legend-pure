@@ -13,10 +13,10 @@
 // limitations under the License.
 
 ###Diagram
-Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.06055, height=678.00000)
+Diagram meta::external::store::service::metamodel::ServiceStoreMetamodelDiagram(width=1791.06055, height=678.00000)
 {
     TypeView ServiceStore_$_0(
-        type=meta::servicestore::metamodel::ServiceStore,
+        type=meta::external::store::service::metamodel::ServiceStore,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -28,7 +28,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=48.00000)
 
     TypeView ServiceStoreElement_$_1(
-        type=meta::servicestore::metamodel::ServiceStoreElement,
+        type=meta::external::store::service::metamodel::ServiceStoreElement,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -40,7 +40,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=60.00000)
 
     TypeView ServiceGroup_$_2(
-        type=meta::servicestore::metamodel::ServiceGroup,
+        type=meta::external::store::service::metamodel::ServiceGroup,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -52,7 +52,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=36.00000)
 
     TypeView Service_$_3(
-        type=meta::servicestore::metamodel::Service,
+        type=meta::external::store::service::metamodel::Service,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -64,7 +64,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=48.00000)
 
     TypeView ServiceParameter_$_4(
-        type=meta::servicestore::metamodel::ServiceParameter,
+        type=meta::external::store::service::metamodel::ServiceParameter,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -76,7 +76,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=60.00000)
 
     TypeView TypeReference_$_5(
-        type=meta::servicestore::metamodel::TypeReference,
+        type=meta::external::store::service::metamodel::TypeReference,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -88,7 +88,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=48.00000)
 
     TypeView BooleanTypeReference_$_6(
-        type=meta::servicestore::metamodel::BooleanTypeReference,
+        type=meta::external::store::service::metamodel::BooleanTypeReference,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -100,7 +100,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=36.00000)
 
     TypeView FloatTypeReference_$_7(
-        type=meta::servicestore::metamodel::FloatTypeReference,
+        type=meta::external::store::service::metamodel::FloatTypeReference,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -112,7 +112,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=36.00000)
 
     TypeView IntegerTypeReference_$_8(
-        type=meta::servicestore::metamodel::IntegerTypeReference,
+        type=meta::external::store::service::metamodel::IntegerTypeReference,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -124,7 +124,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=36.00000)
 
     TypeView StringTypeReference_$_9(
-        type=meta::servicestore::metamodel::StringTypeReference,
+        type=meta::external::store::service::metamodel::StringTypeReference,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -136,7 +136,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=36.00000)
 
     TypeView ComplexTypeReference_$_10(
-        type=meta::servicestore::metamodel::ComplexTypeReference,
+        type=meta::external::store::service::metamodel::ComplexTypeReference,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -148,7 +148,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=36.00000)
 
     TypeView SecurityScheme_$_11(
-        type=meta::servicestore::metamodel::SecurityScheme,
+        type=meta::external::store::service::metamodel::SecurityScheme,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -160,7 +160,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=36.00000)
 
     TypeView SerializationFormat_$_12(
-        type=meta::servicestore::metamodel::SerializationFormat,
+        type=meta::external::store::service::metamodel::SerializationFormat,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -172,7 +172,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=60.00000)
 
     TypeView RootServiceInstanceSetImplementation_$_13(
-        type=meta::servicestore::metamodel::mapping::RootServiceInstanceSetImplementation,
+        type=meta::external::store::service::metamodel::mapping::RootServiceInstanceSetImplementation,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -184,7 +184,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         height=36.00000)
 
     TypeView ServiceMapping_$_14(
-        type=meta::servicestore::metamodel::mapping::ServiceMapping,
+        type=meta::external::store::service::metamodel::mapping::ServiceMapping,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -197,7 +197,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
 
 
     TypeView ServiceParameterMapping_$_16(
-        type=meta::servicestore::metamodel::mapping::ServiceParameterMapping,
+        type=meta::external::store::service::metamodel::mapping::ServiceParameterMapping,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -210,7 +210,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
 
 
 
-    PropertyView pview_17(property=meta::servicestore::metamodel::ServiceStoreElement.owner,
+    PropertyView pview_17(property=meta::external::store::service::metamodel::ServiceStoreElement.owner,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -223,7 +223,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(411.22823, 130.50000),
         multiplicityPosition=(384.55440, 130.50000))
 
-    PropertyView pview_18(property=meta::servicestore::metamodel::ServiceStore.elements,
+    PropertyView pview_18(property=meta::external::store::service::metamodel::ServiceStore.elements,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -236,7 +236,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(342.36901, 196.50000),
         multiplicityPosition=(411.06042, 196.50000))
 
-    PropertyView pview_19(property=meta::servicestore::metamodel::ServiceGroup.elements,
+    PropertyView pview_19(property=meta::external::store::service::metamodel::ServiceGroup.elements,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -249,7 +249,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(371.56472, 272.50000),
         multiplicityPosition=(346.89479, 272.50000))
 
-    PropertyView pview_20(property=meta::servicestore::metamodel::ServiceStoreElement.parent,
+    PropertyView pview_20(property=meta::external::store::service::metamodel::ServiceStoreElement.parent,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -262,7 +262,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(218.95355, 331.50000),
         multiplicityPosition=(272.97894, 331.50000))
 
-    PropertyView pview_21(property=meta::servicestore::metamodel::Service.parameters,
+    PropertyView pview_21(property=meta::external::store::service::metamodel::Service.parameters,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -275,7 +275,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(588.52301, 435.50000),
         multiplicityPosition=(563.85309, 435.50000))
 
-    PropertyView pview_22(property=meta::servicestore::metamodel::Service.requestBody,
+    PropertyView pview_22(property=meta::external::store::service::metamodel::Service.requestBody,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -288,7 +288,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(587.51264, 549.50000),
         multiplicityPosition=(547.49702, 549.50000))
 
-    PropertyView pview_23(property=meta::servicestore::metamodel::ServiceParameter.type,
+    PropertyView pview_23(property=meta::external::store::service::metamodel::ServiceParameter.type,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -301,7 +301,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(545.17442, 549.50000),
         multiplicityPosition=(587.85607, 549.50000))
 
-    PropertyView pview_24(property=meta::servicestore::metamodel::Service.response,
+    PropertyView pview_24(property=meta::external::store::service::metamodel::Service.response,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -314,7 +314,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(171.68437, 708.50000),
         multiplicityPosition=(241.04961, 708.50000))
 
-    PropertyView pview_25(property=meta::servicestore::metamodel::Service.security,
+    PropertyView pview_25(property=meta::external::store::service::metamodel::Service.security,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -327,7 +327,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(877.84354, 450.50000),
         multiplicityPosition=(853.17361, 450.50000))
 
-    PropertyView pview_26(property=meta::servicestore::metamodel::ServiceParameter.serializationFormat,
+    PropertyView pview_26(property=meta::external::store::service::metamodel::ServiceParameter.serializationFormat,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -340,7 +340,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(679.60254, 564.09164),
         multiplicityPosition=(760.95410, 543.09164))
 
-    PropertyView pview_27(property=meta::servicestore::metamodel::mapping::ServiceMapping.owner,
+    PropertyView pview_27(property=meta::external::store::service::metamodel::mapping::ServiceMapping.owner,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -353,7 +353,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(1761.39835, 164.50000),
         multiplicityPosition=(1814.08194, 164.50000))
 
-    PropertyView pview_28(property=meta::servicestore::metamodel::mapping::ServiceMapping.service,
+    PropertyView pview_28(property=meta::external::store::service::metamodel::mapping::ServiceMapping.service,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -366,7 +366,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         propertyPosition=(660.52344, 345.55968),
         multiplicityPosition=(660.52344, 366.55968))
 
-    PropertyView pview_29(property=meta::servicestore::metamodel::mapping::RootServiceInstanceSetImplementation.servicesMapping,
+    PropertyView pview_29(property=meta::external::store::service::metamodel::mapping::RootServiceInstanceSetImplementation.servicesMapping,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
@@ -380,7 +380,7 @@ Diagram meta::servicestore::metamodel::ServiceStoreMetamodelDiagram(width=1791.0
         multiplicityPosition=(1790.23152, 328.50000))
 
 
-    PropertyView pview_31(property=meta::servicestore::metamodel::mapping::ServiceParameterMapping.serviceParameter,
+    PropertyView pview_31(property=meta::external::store::service::metamodel::mapping::ServiceParameterMapping.serviceParameter,
         stereotypesVisible=true,
         nameVisible=true,
         color=#000000,
