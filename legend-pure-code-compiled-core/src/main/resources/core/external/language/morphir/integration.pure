@@ -20,10 +20,6 @@ Class meta::external::language::morphir::generation::MorphirConfig extends Gener
 {
 }
 
-Class meta::external::language::morphir::generation::MorphirOutput extends GenerationOutput
-{
-}
-
 function <<access.private, Generation.Configuration>>  meta::external::language::morphir::generation::describeConfiguration():GenerationParameter[*]
 {
     []
