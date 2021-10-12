@@ -135,6 +135,18 @@ createModelSchema(PURE__Property, {
   taggedValues: list(object(PURE__TaggedValue)),
 });
 
+class PURE__PackageableElementPointer {
+  package!: string;
+  name!: string;
+  sourceInformation!: SourceInformation;
+}
+
+createModelSchema(PURE__PackageableElementPointer, {
+  name: primitive(),
+  package: primitive(),
+  sourceInformation: object(SourceInformation),
+});
+
 class PURE__Class {
   package!: string;
   name!: string;
@@ -312,7 +324,7 @@ export class DiagramClassInfo {
   class!: PURE__Class;
   enumerations: PURE__Enumeration[] = [];
   profiles: PURE__Profile[] = [];
-  // specializations
+  specializations: PURE__PackageableElementPointer[] = [];
 }
 
 createModelSchema(DiagramClassInfo, {
@@ -320,7 +332,7 @@ createModelSchema(DiagramClassInfo, {
   class: object(PURE__Class),
   enumerations: list(object(PURE__Enumeration)),
   profiles: list(object(PURE__Profile)),
-  // specializations
+  specializations: list(object(PURE__PackageableElementPointer)),
 });
 
 // ----------------------------------------- Serializer --------------------------------------------
@@ -402,6 +414,7 @@ const getOrCreateClass = (
   path: string,
   graph: PureModel,
   diagramClasses: Map<string, DiagramClassMetadata>,
+  sourceInformation: SourceInformation | undefined,
 ): Class => {
   const existingClass = graph.getOwnClass(path);
   if (!existingClass) {
@@ -411,7 +424,7 @@ const getOrCreateClass = (
     graph.setOwnType(path, _class);
     diagramClasses.set(path, {
       isStubbed: true,
-      sourceInformation: undefined,
+      sourceInformation,
     });
     return _class;
   }
@@ -465,17 +478,16 @@ const buildClass = (
   classData.generalizations
     .filter((superTypeData) => Boolean(superTypeData.rawType))
     .forEach((superTypeData) => {
-      _class.addSuperType(
-        GenericTypeExplicitReference.create(
-          new GenericType(
-            getOrCreateClass(
-              guaranteeNonNullable(superTypeData.rawType),
-              graph,
-              diagramClasses,
-            ),
-          ),
-        ),
+      const superClass = getOrCreateClass(
+        guaranteeNonNullable(superTypeData.rawType),
+        graph,
+        diagramClasses,
+        undefined,
       );
+      _class.addSuperType(
+        GenericTypeExplicitReference.create(new GenericType(superClass)),
+      );
+      superClass.addSubClass(_class);
     });
   classData.properties
     .filter((propertyData) => Boolean(propertyData.genericType.rawType))
@@ -493,6 +505,7 @@ const buildClass = (
                   guaranteeNonNullable(propertyData.genericType.rawType),
                   graph,
                   diagramClasses,
+                  undefined,
                 ),
             ),
           ),
@@ -516,6 +529,7 @@ const buildClass = (
                   guaranteeNonNullable(propertyData.genericType.rawType),
                   graph,
                   diagramClasses,
+                  undefined,
                 ),
             ),
           ),
@@ -721,6 +735,29 @@ export const addClassToGraph = (
   diagramClasses.set(_class.path, {
     sourceInformation: classData.sourceInformation,
     isStubbed: false,
+  });
+  diagramClassInfo.specializations.forEach((subTypePointer) => {
+    const currentClass = guaranteeNonNullable(_class);
+    const subClass = getOrCreateClass(
+      guaranteeNonNullable(
+        `${subTypePointer.package}${
+          subTypePointer.package === '' ? '' : ELEMENT_PATH_DELIMITER
+        }${subTypePointer.name}`,
+      ),
+      graph,
+      diagramClasses,
+      subTypePointer.sourceInformation,
+    );
+    currentClass.addSubClass(subClass);
+    if (
+      !subClass.generalizations
+        .map((generalization) => generalization.value.rawType)
+        .includes(currentClass)
+    ) {
+      subClass.addSuperType(
+        GenericTypeExplicitReference.create(new GenericType(currentClass)),
+      );
+    }
   });
   if (isCurrentlyStubbed) {
     buildClass(_class, classData, graph, diagramClasses);
