@@ -94,6 +94,7 @@ public class PureSession
                     .with(this.buildCore("servicestore"))
                     .with(this.buildCore("external-shared"))
                     .with(this.buildCore("external-format-flatdata"))
+                    .with(this.buildCore("external-format-json"))
                     .with(this.buildCore("external-format-xml"))
                     .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
 

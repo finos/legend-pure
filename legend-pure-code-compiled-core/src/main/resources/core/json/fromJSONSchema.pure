@@ -776,12 +776,12 @@ function <<access.private>> meta::json::schema::fromSchema::packageFromPath(path
   let updatedPath = if( $path->startsWith($slash),|$path->substringAfter($slash),|if($path->startsWith('..'),|$path->substringAfter('..'+$slash),|$path));
   let hasFileName = if($path ->matches('^.*\.(json|JSON)$'),|1,|0);
   let splitPath= $updatedPath->split($slash)->map(v|$v->sanitizePackagePart());
-  let prefix = if($pathPrefix->isNotEmpty(),|$pathPrefix->toOne()+'::',|''); 
+  let prefix = if($pathPrefix->isNotEmpty() && $pathPrefix != '',|$pathPrefix->toOne()+'::',|''); 
   let pathParts = $splitPath->take($splitPath->size()-$hasFileName);  
   $prefix+ if($pathParts->isNotEmpty(),|$pathParts->joinStrings('::')+'::',|'');
 }
 
-function <<access.private>> meta::json::schema::fromSchema::typeFullPath(fileName:String[1],pathPrefix:String[0..1]):String[1]
+function meta::json::schema::fromSchema::typeFullPath(fileName:String[1],pathPrefix:String[0..1]):String[1]
 {
    let package = $fileName->packageFromPath($pathPrefix); 
    let name = $fileName->refToFileName();
@@ -1145,7 +1145,7 @@ function <<access.private>> meta::json::schema::fromSchema:: newClassfromReferen
   newClass( $ref->refToFullPath($parentPath)->typeFullPath($pathPrefix));
 }
 
-function <<access.private>> meta::json::schema::fromSchema::refToFileName(ref:String[1]):String[1]
+function meta::json::schema::fromSchema::refToFileName(ref:String[1]):String[1]
 { 
       $ref->split('/')->last()->toOne()->split('.')->init()->joinStrings()->toOne();
    
