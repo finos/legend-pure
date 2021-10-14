@@ -144,10 +144,13 @@ Class meta::pure::router::extension::RouterExtension
          { found : Pair<String, SerializerExtension> [1] | $found.second; },
          { missing : Pair<String, SerializerExtension> [0] |
             let serializer = $this.fetchSerializerExtension($version);
-            $ext->mutateAdd('serializerExtensionByProtocolVersion', pair($version, $serializer));
-            $serializer;
+            if($serializer->isEmpty(),
+               | $serializer,
+               | $ext->mutateAdd('serializerExtensionByProtocolVersion', pair($version, $serializer->toOne()));
+                  $serializer->toOne();
+             );
          }]);
-   } : SerializerExtension[1];
+   } : SerializerExtension[0..1];
 
    fetchSerializerExtension(version : String[1])
    {
