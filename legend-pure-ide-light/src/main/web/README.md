@@ -6,6 +6,7 @@ This is the code for the web application of the Pure IDE (Light) we bapplication
 
 ```bash
   yarn install
+  yarn setup
   yarn start
 ```
 
