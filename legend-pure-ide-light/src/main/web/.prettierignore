@@ -1,0 +1,11 @@
+# Build
+/build/
+/packages/*/build/
+/packages/*/dist/
+/packages/*/lib/
+/packages/*/dev/
+
+# Yarn
+.yarn/*
+.pnp.*
+

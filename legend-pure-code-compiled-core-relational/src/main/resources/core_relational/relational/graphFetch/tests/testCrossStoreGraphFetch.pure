@@ -1,6 +1,6 @@
-import meta::pure::graphFetch::tests::XStore::*;
+import meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::*;
 
-Class meta::pure::graphFetch::tests::XStore::Trade
+Class meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::Trade
 {
    tradeId : Integer[1];
    traderKerb: String[0..1];
@@ -9,65 +9,65 @@ Class meta::pure::graphFetch::tests::XStore::Trade
    justProduct(){$this.product;}:Product[0..1];
 }
 
-Class meta::pure::graphFetch::tests::XStore::Product
+Class meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::Product
 {
    productId : String[1];
    productName : String[1];
    description : String[1];
 }
 
-Class meta::pure::graphFetch::tests::XStore::Synonym
+Class meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::Synonym
 {
    name : String[1];
    type : SynonymType[1];
 }
 
-Enum meta::pure::graphFetch::tests::XStore::SynonymType
+Enum meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::SynonymType
 {
    CUSIP,
    ISIN
 }
 
-Association meta::pure::graphFetch::tests::XStore::Product_Synonym
+Association meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::Product_Synonym
 {
    product : Product[1];
    synonyms : Synonym[*];
 }
 
-Class meta::pure::graphFetch::tests::XStore::Trader
+Class meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::Trader
 {
    kerberos : String[1];
    firstName : String[1];
    lastName : String[1];
 }
 
-Class meta::pure::graphFetch::tests::XStore::TradeEvent
+Class meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::TradeEvent
 {
    eventId : String[1];
    description : String[1];
    timestamp : DateTime[1];
 }
 
-Association meta::pure::graphFetch::tests::XStore::Trade_Product
+Association meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::Trade_Product
 {
    product : Product[1];
    trades : Trade[*];
 }
 
-Association meta::pure::graphFetch::tests::XStore::Trade_Trader
+Association meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::Trade_Trader
 {
    trader : Trader[1];
    trades : Trade[*];
 }
 
-Association meta::pure::graphFetch::tests::XStore::Trade_TradeEvent
+Association meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::Trade_TradeEvent
 {
    tradeEvents : TradeEvent[*];
    trade : Trade[1];
 }
 
 
-Class meta::pure::graphFetch::tests::XStore::T_Trade
+Class meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::T_Trade
 {
    prodId     : String[1];
    tradeId    : Integer[1];
@@ -75,32 +75,32 @@ Class meta::pure::graphFetch::tests::XStore::T_Trade
    quantity   : Integer[1];
 }
 
-Class meta::pure::graphFetch::tests::XStore::S_Trade
+Class meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::S_Trade
 {
    s_tradeId       : Integer[1];
    s_traderDetails : String[1];
    s_tradeDetails  : String[1];
 }
 
-Class meta::pure::graphFetch::tests::XStore::S_TradesWrapper
+Class meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::S_TradesWrapper
 {
    s_trades        : S_Trade[*];
 }
 
-Association meta::pure::graphFetch::tests::XStore::T_Trade_Product
+Association meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::T_Trade_Product
 {
    product : Product[1];
    t_trades : T_Trade[*];
 }
 
-Association meta::pure::graphFetch::tests::XStore::T_Trade_Trader
+Association meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::T_Trade_Trader
 {
    trader : Trader[1];
    t_trades : T_Trade[*];
 }
 
 ###Relational
-Database meta::pure::graphFetch::tests::XStore::db1
+Database meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::db1
 (
    Table tradeTable (tradeId_source INT PRIMARY KEY, quantity INT, productId VARCHAR(100), traderKerb VARCHAR(100))
    Table traderTable (kerberos VARCHAR(100) PRIMARY KEY, firstName VARCHAR(100), lastName VARCHAR(100))
@@ -113,7 +113,7 @@ Database meta::pure::graphFetch::tests::XStore::db1
 )
 
 ###Relational
-Database meta::pure::graphFetch::tests::XStore::db2
+Database meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::db2
 (
    Table productTable (productId VARCHAR(100) PRIMARY KEY, productName VARCHAR(100), description VARCHAR(1000))
    Table synonymTable (synonymId INT PRIMARY KEY, productId VARCHAR(100), type VARCHAR(200), name    VARCHAR(200))
@@ -123,15 +123,15 @@ Database meta::pure::graphFetch::tests::XStore::db2
 
 
 ###Relational
-Database meta::pure::graphFetch::tests::XStore::db3
+Database meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::db3
 (
    Table tradeEventTable (eventId VARCHAR(100) PRIMARY KEY, tradeId INT, timestamp TIMESTAMP, description VARCHAR(1000))
 )
 
 ###Mapping
-import meta::pure::graphFetch::tests::XStore::*;
+import meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::*;
 
-Mapping meta::pure::graphFetch::tests::XStore::crossMapping1
+Mapping meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping1
 (
    Trade[trade_set] : Relational {
       tradeId : [db1]tradeTable.tradeId_source,
@@ -183,9 +183,9 @@ Mapping meta::pure::graphFetch::tests::XStore::crossMapping1
 )
 
 ###Mapping
-import meta::pure::graphFetch::tests::XStore::*;
+import meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::*;
 
-Mapping meta::pure::graphFetch::tests::XStore::crossMapping2
+Mapping meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping2
 (
    Trade[trade_set] : Relational {
       tradeId : [db1]tradeTable.tradeId_source,
@@ -208,9 +208,9 @@ Mapping meta::pure::graphFetch::tests::XStore::crossMapping2
 )
 
 ###Mapping
-import meta::pure::graphFetch::tests::XStore::*;
+import meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::*;
 
-Mapping meta::pure::graphFetch::tests::XStore::crossMapping3
+Mapping meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping3
 (
    Trade[trade_set] : Pure {
       ~src S_Trade
@@ -252,9 +252,9 @@ Mapping meta::pure::graphFetch::tests::XStore::crossMapping3
 )
 
 ###Mapping
-import meta::pure::graphFetch::tests::XStore::*;
+import meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::*;
 
-Mapping meta::pure::graphFetch::tests::XStore::crossMapping4
+Mapping meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping4
 (
    T_Trade[trade_set] : Pure {
       ~src S_Trade
@@ -296,9 +296,9 @@ Mapping meta::pure::graphFetch::tests::XStore::crossMapping4
 )
 
 ###Mapping
-import meta::pure::graphFetch::tests::XStore::*;
+import meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::*;
 
-Mapping meta::pure::graphFetch::tests::XStore::crossMapping5
+Mapping meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping5
 (
    T_Trade[trade_set] : Pure {
       ~src S_TradesWrapper
@@ -338,13 +338,13 @@ import meta::pure::executionPlan::profiles::*;
 import meta::pure::executionPlan::toString::*;
 import meta::pure::executionPlan::*;
 import meta::pure::graphFetch::execution::*;
-import meta::pure::graphFetch::tests::XStore::*;
+import meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::*;
 import meta::relational::metamodel::execute::*;
 import meta::relational::functions::toDDL::*;
 import meta::pure::graphFetcha::tests::XStore::*;
 import meta::relational::runtime::*;
 
-function <<test.BeforePackage>> meta::pure::graphFetch::tests::XStore::createTablesInDb():Boolean[1]
+function <<test.BeforePackage>> meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::createTablesInDb():Boolean[1]
 {
    let runtime =  ^Runtime(connections = [^TestDatabaseConnection(element=db1, type=DatabaseType.H2), ^TestDatabaseConnection(element=db2, type=DatabaseType.H2), ^TestDatabaseConnection(element=db3, type=DatabaseType.H2)]);
    let dbConn1 = $runtime.connections->at(0)->cast(@DatabaseConnection);   
@@ -381,7 +381,7 @@ function <<test.BeforePackage>> meta::pure::graphFetch::tests::XStore::createTab
    true;
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::testSimpleCrossDBPropertyAccess():Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::testSimpleCrossDBPropertyAccess():Boolean[1]
 {
    let tree = #{
       Trade {
@@ -392,7 +392,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
       }
    }#;
    let query = {|Trade.all()->graphFetch($tree)->serialize($tree)};
-   let mapping = meta::pure::graphFetch::tests::XStore::crossMapping1;
+   let mapping = meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping1;
    let runtime = meta::relational::tests::testRuntime();
 
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
@@ -406,7 +406,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::testSimpleCrossDBPropertyAccessWithAddedDefaults():Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::testSimpleCrossDBPropertyAccessWithAddedDefaults():Boolean[1]
 {
    let tree = #{
       Trade {
@@ -419,7 +419,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
       }
    }#;
    let query = {|Trade.all()->graphFetch($tree)->serialize($tree)};
-   let mapping = meta::pure::graphFetch::tests::XStore::crossMapping1;
+   let mapping = meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping1;
    let runtime = meta::relational::tests::testRuntime();
 
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
@@ -433,7 +433,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::testMultipleCrossDBPropertyAcceses():Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::testMultipleCrossDBPropertyAcceses():Boolean[1]
 {
    let tree = #{
       Trade {
@@ -451,7 +451,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
       }
    }#;
    let query = {|Trade.all()->graphFetch($tree)->serialize($tree)};
-   let mapping = meta::pure::graphFetch::tests::XStore::crossMapping1;
+   let mapping = meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping1;
    let runtime = meta::relational::tests::testRuntime();
 
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
@@ -465,7 +465,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::testSameStoreAndCrossStorePropertyAcceses():Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::testSameStoreAndCrossStorePropertyAcceses():Boolean[1]
 {
    let tree = #{
       Trade {
@@ -492,7 +492,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
       }
    }#;
    let query = {|Trade.all()->graphFetch($tree)->serialize($tree)};
-   let mapping = meta::pure::graphFetch::tests::XStore::crossMapping1;
+   let mapping = meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping1;
    let runtime = meta::relational::tests::testRuntime();
 
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
@@ -528,7 +528,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::testDeepCrossPropertyAccesses():Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::testDeepCrossPropertyAccesses():Boolean[1]
 {
    let tree = #{
       Trade {
@@ -558,7 +558,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
       }
    }#;
    let query = {|Trade.all()->graphFetch($tree)->serialize($tree)};
-   let mapping = meta::pure::graphFetch::tests::XStore::crossMapping1;
+   let mapping = meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping1;
    let runtime = meta::relational::tests::testRuntime();
 
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
@@ -594,7 +594,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::testDeepCrossPropertyAccesses3Levels():Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::testDeepCrossPropertyAccesses3Levels():Boolean[1]
 {
    let tree = #{
       Trade {
@@ -633,7 +633,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
       }
    }#;
    let query = {|Trade.all()->graphFetch($tree)->serialize($tree)};
-   let mapping = meta::pure::graphFetch::tests::XStore::crossMapping1;
+   let mapping = meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping1;
    let runtime = meta::relational::tests::testRuntime();
 
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
@@ -669,7 +669,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::testMultiDeepCrossPropertyAccesses():Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::testMultiDeepCrossPropertyAccesses():Boolean[1]
 {
    let tree = #{
       Trade {
@@ -711,7 +711,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
       }
    }#;
    let query = {|Trade.all()->graphFetch($tree)->serialize($tree)};
-   let mapping = meta::pure::graphFetch::tests::XStore::crossMapping1;
+   let mapping = meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping1;
    let runtime = meta::relational::tests::testRuntime();
 
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
@@ -747,7 +747,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::testCrossMappingWithMoreBooleanAlgebra():Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::testCrossMappingWithMoreBooleanAlgebra():Boolean[1]
 {
    let tree = #{
       Trade {
@@ -760,7 +760,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
       }
    }#;
    let query = {|Trade.all()->graphFetch($tree)->serialize($tree)};
-   let mapping = meta::pure::graphFetch::tests::XStore::crossMapping2;
+   let mapping = meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping2;
    let runtime = meta::relational::tests::testRuntime();
 
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
@@ -774,7 +774,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::testCrossMappingJsonToDB():Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::testCrossMappingJsonToDB():Boolean[1]
 {
    let tree = #{
       Trade {
@@ -809,7 +809,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    let dbRuntime = meta::relational::tests::testRuntime();
    
    let query = {|Trade.all()->graphFetch($tree)->serialize($tree)};
-   let mapping = meta::pure::graphFetch::tests::XStore::crossMapping3;
+   let mapping = meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping3;
    let runtime = ^$dbRuntime(connections = $dbRuntime.connections->concatenate($jsonConnection));
    
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
@@ -841,7 +841,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::testCrossMappingJsonToDBWithNoLocalProperties():Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::testCrossMappingJsonToDBWithNoLocalProperties():Boolean[1]
 {
    let tree = #{
       T_Trade {
@@ -876,7 +876,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    let dbRuntime = meta::relational::tests::testRuntime();
    
    let query = {|T_Trade.all()->graphFetch($tree)->serialize($tree)};
-   let mapping = meta::pure::graphFetch::tests::XStore::crossMapping4;
+   let mapping = meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping4;
    let runtime = ^$dbRuntime(connections = $dbRuntime.connections->concatenate($jsonConnection));
    
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
@@ -908,7 +908,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::testCrossMappingJsonToDBWithExplosion():Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::testCrossMappingJsonToDBWithExplosion():Boolean[1]
 {
    let tree = #{
       T_Trade {
@@ -938,7 +938,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::pur
    let dbRuntime = meta::relational::tests::testRuntime();
    
    let query = {|T_Trade.all()->graphFetch($tree)->serialize($tree)};
-   let mapping = meta::pure::graphFetch::tests::XStore::crossMapping5;
+   let mapping = meta::pure::graphFetch::tests::XStore::inMemoryAndRelational::crossMapping5;
    let runtime = ^$dbRuntime(connections = $dbRuntime.connections->concatenate($jsonConnection));
    
    let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;

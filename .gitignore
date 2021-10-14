@@ -1,17 +1,13 @@
 # IDE
-.vscode
 .settings
 .classpath
 .project
 .idea/**
 .factorypath
 **/*.iml
-**/yarn.lock
 
 # Build
 **/target
 **/lib
 **/surefire-reports-aggregate
 **/dependency-reduced-pom.xml
-**/node_modules/
-package-lock.json

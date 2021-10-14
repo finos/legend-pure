@@ -69,17 +69,38 @@ function meta::external::shared::format::executionPlan::planPrepareDataQuality(p
    };
 }
 
+function meta::external::shared::format::executionPlan::generateUrlStreamExecutionNode(connection:ExternalFormatConnection[1]): ExecutionNode[1]
+{
+   assert($connection.externalSource->instanceOf(UrlStreamExternalSource), | 'Only UrlStreamExternalSource is supported !!');
+   
+   let sourceUrl = $connection.externalSource->cast(@UrlStreamExternalSource).url;
+   
+   ^UrlStreamExecutionNode(
+      resultType = ^DataTypeResultType(type = String),
+      url        = $sourceUrl
+   );
+}
+
 function meta::external::shared::format::executionPlan::printPlanNodeToString(space:String[1], extensions:RouterExtension[*]): Function<{Nil[1]->String[1]}>[*]
 {
-   {node:DataQualityExecutionNode[1] |
-      'DataQuality\n' + 
-      $space + '(' + header($node, $space, $extensions) + '\n' +
-      $space + '  enableConstraints = ' + $node.enableConstraints->toString() + '\n' +
-      $space + '  checked = ' + $node.checked->toString() + '\n' +
-      $node->childrenToString($space+'  ', $extensions) + '\n' +
-      $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
-      $space + ')\n'
-   };
+   [
+      {node:DataQualityExecutionNode[1] |
+         'DataQuality\n' + 
+         $space + '(' + header($node, $space, $extensions) + '\n' +
+         $space + '  enableConstraints = ' + $node.enableConstraints->toString() + '\n' +
+         $space + '  checked = ' + $node.checked->toString() + '\n' +
+         $node->childrenToString($space+'  ', $extensions) + '\n' +
+         $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
+         $space + ')\n'
+      },
+      {node:UrlStreamExecutionNode[1] |
+         'UrlStream\n' + 
+         $space + '(' + header($node, $space, $extensions) + '\n' +
+         $space + '  url = ' + $node.url + '\n' +
+         $node->childrenToString($space+'  ', $extensions) + '\n' +
+         $space + ')\n'
+      }
+   ]
 }
 
 Class <<access.private>> meta::external::shared::format::executionPlan::PropertyDetails
@@ -106,6 +127,10 @@ function meta::external::shared::format::executionPlan::createDataClass(class:me
    let conventions = $context.conventions;
    let pureDate    = $conventions->className(PureDate);
    let defects     = j_variable(javaList($conventions->defectClass()), 'defects');
+
+   let mappedProperties = if(!$context->nodeInfosForPath($path).data->isEmpty(),
+                             |$context->nodeInfosForPath($path).data->toOne()->cast(@meta::external::shared::format::binding::validation::SuccessfulBindingDetail).mappedPropertiesForClass($class),
+                             |$context.typeInfos->allProperties($class));
    
    let baseClass = $conventions->dataClass($class, $path)->addModifiers('public')
       ->implements($conventions->className($class))
@@ -181,20 +206,23 @@ function meta::external::shared::format::executionPlan::createDataClass(class:me
                   )
                );
 
-               $withGetter->addAdderMethods($p, $conventions,
-                     [
-                        j_if($field->j_eq(j_null()), 
-                           $field->j_assign(javaArrayList($p.itemType)->j_new([]))
-                        ),
-                        if($p.itemType == $pureDate && $p.propType == StrictDate, 
-                           | $field->j_invoke('add', $pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('DAY_OF_MONTH', javaInt())], $pureDate)), 
-                           |
-                        if($p.itemType == $pureDate, 
-                           | $field->j_invoke('add', $pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('MILLISECOND', javaInt())], $pureDate)), 
-                           | $field->j_invoke('add', $p.adderParam)
-                        ))
-                     ] 
-               );
+                if($p.property->in($mappedProperties),
+                   |
+                     $withGetter->addAdderMethods($p, $conventions,
+                                 [
+                                    j_if($field->j_eq(j_null()),
+                                       $field->j_assign(javaArrayList($p.itemType)->j_new([]))
+                                    ),
+                                    if($p.itemType == $pureDate && $p.propType == StrictDate,
+                                       | $field->j_invoke('add', $pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('DAY_OF_MONTH', javaInt())], $pureDate)),
+                                       |
+                                    if($p.itemType == $pureDate,
+                                       | $field->j_invoke('add', $pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('MILLISECOND', javaInt())], $pureDate)),
+                                       | $field->j_invoke('add', $p.adderParam)
+                                    ))
+                                 ]
+                              );,
+                  |$withGetter);
             }, 
             {|
                let withFields = $c
@@ -210,20 +238,23 @@ function meta::external::shared::format::executionPlan::createDataClass(class:me
                   )
                );
 
-               $withGetter->addAdderMethods($p, $conventions,
-                     [
-                        j_if($fieldSize->j_eq(j_int(0)), 
-                           if($p.itemType == $pureDate && $p.propType == StrictDate, 
-                              | $field->j_assign($pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('DAY_OF_MONTH', javaInt())], $pureDate)), 
-                              |
-                           if($p.itemType == $pureDate, 
-                              | $field->j_assign($pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('MILLISECOND', javaInt())], $pureDate)), 
-                              | $field->j_assign($p.adderParam)
-                           ))
-                        ),
-                        $fieldSize->j_inc()
-                     ] 
-               );
+                if($p.property->in($mappedProperties),
+                   |
+                    $withGetter->addAdderMethods($p, $conventions,
+                                         [
+                                            j_if($fieldSize->j_eq(j_int(0)),
+                                               if($p.itemType == $pureDate && $p.propType == StrictDate,
+                                                  | $field->j_assign($pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('DAY_OF_MONTH', javaInt())], $pureDate)),
+                                                  |
+                                               if($p.itemType == $pureDate,
+                                                  | $field->j_assign($pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('MILLISECOND', javaInt())], $pureDate)),
+                                                  | $field->j_assign($p.adderParam)
+                                               ))
+                                            ),
+                                            $fieldSize->j_inc()
+                                         ]
+                                       );,
+                   |$withGetter);
             }
          );
       }, 
@@ -233,7 +264,7 @@ function meta::external::shared::format::executionPlan::createDataClass(class:me
    let propertyName = j_parameter(javaString(), 'propertyName');
    let objectParam  = j_parameter($withFieldsAndGetters, 'object');
 
-   let adderClauses  = $properties->map(
+   let adderClauses  = $properties->filter(p | $p.property->in($mappedProperties))->map(
       {p|
          let adderImpl = if($p.itemType == javaBoolean(),
                             {|

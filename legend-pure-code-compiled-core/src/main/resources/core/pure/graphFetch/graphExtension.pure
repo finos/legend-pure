@@ -89,11 +89,9 @@ function <<access.private>> meta::pure::graphFetch::addXStorePropertiesInternal(
    ]));
    
    let xstoreTrees = $extraPropertiesFromThisLevelCrossExpression->concatenate($extraPropertiesFromChildCrossExpressions)
+                        ->filter(x | $setImpls->map(setImpl| $setImpl->meta::pure::mapping::propertyMappingsByPropertyName($x.name->toOne());)->isNotEmpty())
                         ->map(x | ^RoutedPropertyGraphFetchTree(
-                                     propertyMapping = $setImpls->map(setImpl| $setImpl->match([
-                                                                         e:EmbeddedSetImplementation[1]| $e->propertyMappingsByPropertyName($x.name->toOne()), 
-                                                                         a:InstanceSetImplementation[1]| $setImpl.propertyMappingsByPropertyName($x.name->toOne())
-                                                                      ])), 
+                                     propertyMapping = $setImpls->map(setImpl| $setImpl->meta::pure::mapping::propertyMappingsByPropertyName($x.name->toOne());),
                                      property = $x)
                         );
 
@@ -150,10 +148,12 @@ function <<access.private>> meta::pure::graphFetch::addSubTrees(onto:GraphFetchT
 function <<access.private>> meta::pure::graphFetch::addSubTree(onto:GraphFetchTree[1], subTree:GraphFetchTree[1]): GraphFetchTree[1]
 {
    let existingSubTree = $onto.subTrees->filter(st|$st->cast(@PropertyGraphFetchTree).property == $subTree->cast(@PropertyGraphFetchTree).property);
-   $existingSubTree->match([
-      stree0: PropertyGraphFetchTree[0] | ^$onto(subTrees=$onto.subTrees->concatenate($subTree)),
-      stree : PropertyGraphFetchTree[1] | ^$onto(subTrees=$onto.subTrees->filter(st|$st != $existingSubTree)->concatenate($stree->addSubTrees($subTree.subTrees)))
-   ]);
+
+   if($existingSubTree->isEmpty(),
+     | ^$onto(subTrees=$onto.subTrees->concatenate($subTree)),
+     | $existingSubTree->fold({stree, newTree | ^$newTree(subTrees=$newTree.subTrees->filter(st|$st != $existingSubTree)->concatenate($stree->addSubTrees($subTree.subTrees)))},
+                              $onto)
+   );
 }
 
 function meta::pure::graphFetch::printTree(root:GraphFetchTree[1]): Any[*]
@@ -333,8 +333,8 @@ function meta::pure::graphFetch::calculateSourceTree(tree:RootGraphFetchTree<Any
                                              r:RootGraphFetchTree<Any>[1]|$mapping.rootClassMappingByClass($replaced.class)]);
                                   
    assert($rootSetImplementation->isNotEmpty(), |'Mapping ' + $mapping->elementToPath() + ' does not map class from tree: ' + $replaced.class->elementToPath());
-
-   $rootSetImplementation->toOne()->match($extensions.graphExtension_calculateSourceTree->concatenate([
+   
+   $rootSetImplementation->toOne()->match($extensions.graphExtension_calculateSourceTree->map(ext | $ext->eval($replaced))->concatenate([
       {pisi: PureInstanceSetImplementation[1]  | 
          assert($pisi.srcClass->isNotEmpty() && $pisi.srcClass->toOne()->instanceOf(Class), 'Pure mapping does not have a class as ~src for root of tree');
          let root = ^RootGraphFetchTree<Any>(class=$pisi.srcClass->cast(@Class<Any>)->toOne());
@@ -343,18 +343,18 @@ function meta::pure::graphFetch::calculateSourceTree(tree:RootGraphFetchTree<Any
    ])->toOneMany());
 }
 
- 
+
 function meta::pure::graphFetch::mergeSubTrees(tree:GraphFetchTree[1]): GraphFetchTree[1]
 {
    ^$tree(subTrees = $tree.subTrees->cast(@PropertyGraphFetchTree)->mergeSubTreesRecur());
 }
- 
+
 function meta::pure::graphFetch::mergeSubTreesRecur(subTrees:PropertyGraphFetchTree[*]): PropertyGraphFetchTree[*]
 {
    let subTreesGroupedByProperty = $subTrees->groupBy(c|$c->cast(@PropertyGraphFetchTree).property);
    let updatedSubTrees = $subTreesGroupedByProperty->keyValues()->map(p|mergePropertiesFromBaseSubTreeToSubTypedSubTree($p.second.values->cast(@PropertyGraphFetchTree)));
 }
- 
+
 function <<access.private>> meta::pure::graphFetch::mergePropertiesFromBaseSubTreeToSubTypedSubTree(subTrees:PropertyGraphFetchTree[*]): PropertyGraphFetchTree[*]
 {
    let subTreeWithBaseClass = $subTrees->filter(st|$st->cast(@PropertyGraphFetchTree).subType->isEmpty())->cast(@PropertyGraphFetchTree);
@@ -491,7 +491,7 @@ function <<access.private>> meta::pure::graphFetch::propertyTreeToGraphFetchTree
                                                                 |^PropertyGraphFetchTree(property = $node.property, subType = $propertyPathOwner, subTrees = $children->map(c| $c->propertyTreeToGraphFetchTree($propertyPathOwner))),
                                                                 |^PropertyGraphFetchTree(property = $node.property, subTrees = $children->map(c| $c->propertyTreeToGraphFetchTree($node.property->functionReturnType().rawType->cast(@Class<Any>)->toOne()))));
                                                          );
-     );  
+     );
 }
 
 function <<access.private>> meta::pure::graphFetch::replaceQualifiedPropertiesWithRequiredProperties(pgft:PropertyGraphFetchTree[1], class:Class<Any>[1]):GraphFetchTree[*]
