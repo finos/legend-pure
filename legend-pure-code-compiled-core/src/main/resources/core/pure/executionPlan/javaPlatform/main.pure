@@ -67,7 +67,7 @@ Class meta::pure::executionPlan::engine::java::SimpleJavaType extends JavaType
 Class meta::pure::executionPlan::engine::java::CheckedJavaType extends JavaType
 {
    checkedOf  : SimpleJavaType[1];
-   source     : JavaType[1];
+   source     : JavaType[0..1];
 }
 
 
@@ -190,7 +190,7 @@ function meta::pure::executionPlan::engine::java::prepare(node:ExecutionNode[1],
          if($f.falseBlock->isEmpty(), |$contextFromTrueBlock, |$f.falseBlock->toOne()->prepare($path+'.falseBlock', $contextFromTrueBlock, $extensions, $debug));,
       g:GlobalGraphFetchExecutionNode[1] | 
          let contextFromGlobalChildren = $g.children->size()->range()->fold({x, ctx | $g.children->at($x)->prepare($path+'.globalChild' + $x->toString(), $ctx, $extensions, $debug)}, $contextFromChildren);
-         $g.localGraphFetchExecutionNode->prepare($path+'.localGraph', $contextFromGlobalChildren, $extensions, $debug);,
+         $g.localGraphFetchExecutionNode->prepare($path+localGraphFetchNodePathPrefix(), $contextFromGlobalChildren, $extensions, $debug);,
       g:InMemoryGraphFetchExecutionNode[1] | 
          $g.children->size()->range()->fold({x, ctx | $g.children->at($x)->prepare($path+'.localChild' + $x->toString(), $ctx, $extensions, $debug)}, $contextFromChildren),
       e:ExecutionNode[1] | $contextFromChildren
@@ -244,7 +244,7 @@ function meta::pure::executionPlan::engine::java::generatePlatformCode(node:Exec
    $newNode->match($extensions.plan_javaRuntime_main_generatePlatformCode2->map(e|$e->eval($path, $mapping, $context, $extensions, $fullProject, $debug))->concatenate([
       g:GlobalGraphFetchExecutionNode[1] |
          let transformedChildren = $g.children->size()->range()->map(x | $g.children->at($x)->generatePlatformCode($path+'.globalChild' + $x->toString(), $mapping, $context, $extensions, $debug));
-         let transformedLocal = $g.localGraphFetchExecutionNode->generatePlatformCode($path+'.localGraph', $mapping, $context, $extensions, $debug);
+         let transformedLocal = $g.localGraphFetchExecutionNode->generatePlatformCode($path+localGraphFetchNodePathPrefix(), $mapping, $context, $extensions, $debug);
          let transformedLocalNode = $transformedLocal.node->cast(@LocalGraphFetchExecutionNode);
          ^GeneratedNode(node=^$g(children = $transformedChildren.node->cast(@GlobalGraphFetchExecutionNode), localGraphFetchExecutionNode = $transformedLocalNode), project = mergeProjectsNullable($fullProject->concatenate($transformedChildren.project)->concatenate($transformedLocal.project)));,
       g:InMemoryGraphFetchExecutionNode[1] | 

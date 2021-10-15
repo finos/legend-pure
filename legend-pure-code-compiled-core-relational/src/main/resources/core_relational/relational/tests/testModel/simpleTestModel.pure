@@ -586,3 +586,11 @@ Class meta::relational::tests::model::simple::Event
    eventName:String[1];
    eventDate: DateTime[1];
 }
+
+Class meta::relational::tests::model::simple::PersonWithConstraints extends Person
+[
+   firstNameTest( ~function: $this.firstName == 'test'
+                          ~enforcementLevel: Error
+                          ~message: 'First name has to be test')
+]
+{}

@@ -54,7 +54,7 @@ public class PureIDEServer extends Application<ServerConfiguration>
                 return configuration.swagger;
             }
         });
-        bootstrap.addBundle(new AssetsBundle("/ide", "/ide", "index.html", "static"));
+        bootstrap.addBundle(new AssetsBundle("/web/ide", "/ide", "index.html", "static"));
     }
 
     @Override

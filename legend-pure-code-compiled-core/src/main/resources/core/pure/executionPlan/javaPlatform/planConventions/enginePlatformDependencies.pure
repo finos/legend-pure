@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2021 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,11 +50,14 @@ Class meta::pure::executionPlan::engine::IInMemoryRootGraphFetchExecutionNodeSpe
 Class meta::pure::executionPlan::engine::IInMemoryPropertyGraphFetchExecutionNodeSpecifics {}
 Class meta::pure::executionPlan::engine::IRelationalRootQueryTempTableGraphFetchExecutionNodeSpecifics {}
 Class meta::pure::executionPlan::engine::IRelationalCrossRootQueryTempTableGraphFetchExecutionNodeSpecifics {}
+Class meta::pure::executionPlan::engine::IInMemoryCrossStoreGraphFetchExecutionNodeSpecifics {}
 Class meta::pure::executionPlan::engine::IRelationalClassQueryTempTableGraphFetchExecutionNodeSpecifics {}
 Class meta::pure::executionPlan::engine::IRelationalPrimitiveQueryGraphFetchExecutionNodeSpecifics {}
+Class meta::pure::executionPlan::engine::IServiceParametersResolutionExecutionNodeSpecifics {}
 
 function meta::pure::executionPlan::engine::applyJavaEngineDependencies(conventions:Conventions[1], extensions:meta::pure::router::extension::RouterExtension[*]):Conventions[1]
 {
+
    let jIConstantResult = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.shared.IConstantResult')
       ->addMethod(javaMethod('public', javaObject(), 'getValue', []));
 
@@ -436,6 +439,12 @@ function meta::pure::executionPlan::engine::applyJavaEngineDependencies(conventi
       ->addMethod(javaMethod('public', javaString(), 'targetInstanceSetId', []))
       ->addMethod(javaMethod('public', javaList(javaString()), 'targetPropertiesOrdered', []));
 
+   let jIInMemoryCrossStoreGraphFetchExecutionNodeSpecifics = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.inMemory.graphFetch.IInMemoryCrossStoreGraphFetchExecutionNodeSpecifics')
+      ->addMethod(javaMethod('public', javaBoolean(), 'attemptAddingChildToParent', [javaParam(javaObject(), 'p0'), javaParam(javaObject(), 'p1')]))
+      ->addMethod(javaMethod('public', javaParameterizedType(javaClass('java.util.Map'), [javaString(), javaObject()]), 'getCrossStoreKeysValueForChildren', [javaParam(javaObject(), 'p0')]))
+      ->addMethod(javaMethod('public', javaParameterizedType(javaClass('java.util.Map'), [javaString(), javaObject()]), 'getCrossStoreKeysValueFromChild', [javaParam(javaObject(), 'p0')]))
+      ->addMethod(javaMethod('public', javaParameterizedType($jIGraphInstance, [javaWildcard()]), 'wrapChildInGraphInstance', [javaParam(javaObject(), 'p0')]));
+
    let jIRelationalClassQueryTempTableGraphFetchExecutionNodeSpecifics = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.relational.graphFetch.IRelationalClassQueryTempTableGraphFetchExecutionNodeSpecifics')
       ->addMethod(javaMethod('public', javaVoid(), 'addChildToParent', [javaParam(javaObject(), 'p0'), javaParam(javaObject(), 'p1'), javaParam($jIExecutionNodeContext, 'p2')]))
       ->addMethod(javaMethod('public', javaList(javaParameterizedType(javaClass('org.eclipse.collections.api.tuple.Pair'), [javaString(), javaString()])), 'allInstanceSetImplementations', []))
@@ -452,6 +461,9 @@ function meta::pure::executionPlan::engine::applyJavaEngineDependencies(conventi
       ->addMethod(javaMethod('public', javaParameterizedType($jIGraphInstance, [javaWildcard()]), 'nextGraphInstance', []))
       ->addMethod(javaMethod('public', javaList(javaString()), 'parentPrimaryKeyColumns', [javaParam(javaList(javaString()), 'p0')]))
       ->addMethod(javaMethod('public', javaVoid(), 'prepare', [javaParam(javaResultSet(), 'p0'), javaParam(javaString(), 'p1'), javaParam(javaString(), 'p2')]));
+
+   let jIServiceParametersResolutionExecutionNodeSpecifics = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.serviceStore.IServiceParametersResolutionExecutionNodeSpecifics')
+      ->addMethod(javaMethod('public', javaParameterizedType(javaClass('java.util.Map'), [javaString(), javaObject()]), 'resolveServiceParameters', [javaParam(javaParameterizedType(javaClass('java.util.Map'), [javaString(), javaObject()]), 'p0')]));
 
    let res = $conventions
       ->addProvidedType(meta::pure::executionPlan::engine::IConstantResult, $jIConstantResult)
@@ -493,8 +505,10 @@ function meta::pure::executionPlan::engine::applyJavaEngineDependencies(conventi
       ->addProvidedType(meta::pure::executionPlan::engine::IInMemoryPropertyGraphFetchExecutionNodeSpecifics, $jIInMemoryPropertyGraphFetchExecutionNodeSpecifics)
       ->addProvidedType(meta::pure::executionPlan::engine::IRelationalRootQueryTempTableGraphFetchExecutionNodeSpecifics, $jIRelationalRootQueryTempTableGraphFetchExecutionNodeSpecifics)
       ->addProvidedType(meta::pure::executionPlan::engine::IRelationalCrossRootQueryTempTableGraphFetchExecutionNodeSpecifics, $jIRelationalCrossRootQueryTempTableGraphFetchExecutionNodeSpecifics)
+      ->addProvidedType(meta::pure::executionPlan::engine::IInMemoryCrossStoreGraphFetchExecutionNodeSpecifics, $jIInMemoryCrossStoreGraphFetchExecutionNodeSpecifics)
       ->addProvidedType(meta::pure::executionPlan::engine::IRelationalClassQueryTempTableGraphFetchExecutionNodeSpecifics, $jIRelationalClassQueryTempTableGraphFetchExecutionNodeSpecifics)
-      ->addProvidedType(meta::pure::executionPlan::engine::IRelationalPrimitiveQueryGraphFetchExecutionNodeSpecifics, $jIRelationalPrimitiveQueryGraphFetchExecutionNodeSpecifics);
+      ->addProvidedType(meta::pure::executionPlan::engine::IRelationalPrimitiveQueryGraphFetchExecutionNodeSpecifics, $jIRelationalPrimitiveQueryGraphFetchExecutionNodeSpecifics)
+      ->addProvidedType(meta::pure::executionPlan::engine::IServiceParametersResolutionExecutionNodeSpecifics, $jIServiceParametersResolutionExecutionNodeSpecifics);
 
    $extensions.plan_javaRuntime_enginePlatformDependencies_conventions->fold({e,b|$e->eval($b)}, $res);
 }

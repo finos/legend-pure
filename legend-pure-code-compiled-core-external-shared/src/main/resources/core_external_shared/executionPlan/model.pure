@@ -31,6 +31,11 @@ Class meta::external::shared::format::executionPlan::ExternalFormatSerializeExec
    binding : Binding[1];
 }
 
+Class meta::external::shared::format::executionPlan::UrlStreamExecutionNode extends ExecutionNode
+{
+   url : String[1];
+}
+
 Class meta::external::shared::format::executionPlan::ExternalFormatConnection extends Connection
 [
    $this.element->instanceOf(Binding)

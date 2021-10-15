@@ -36,7 +36,7 @@ function meta::pure::executionPlan::engine::java::graphFetch::common::prepareFor
 {
    if ($node.parentIndex->isEmpty(),
        |
-         let localNodeInfo = $context->nodeInfosForPath($path + '.localGraph')->toOne();
+         let localNodeInfo = $context->nodeInfosForPath($path + localGraphFetchNodePathPrefix())->toOne();
 
          ^$context
          (
@@ -47,6 +47,11 @@ function meta::pure::executionPlan::engine::java::graphFetch::common::prepareFor
          );,
        | $context
    )
+}
+
+function meta::pure::executionPlan::engine::java::graphFetch::common::localGraphFetchNodePathPrefix():String[1]
+{
+   '.localGraph'
 }
 
 function meta::pure::executionPlan::engine::java::graphFetch::common::generateCodeForLocalGraphFetchNode(node: LocalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
