@@ -69,7 +69,7 @@ function <<access.private>> meta::external::language::morphir::transform::transf
 function <<access.private>> meta::external::language::morphir::transform::transformFunctionInputTypes(func:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Value::DefinitionInputType[*]
 {
    let parameters = $func.classifierGenericType.typeArguments.rawType->cast(@FunctionType).parameters;
-   $parameters->map(p| let type = $p->transformType();
+   $parameters->map(p| let type = $p->transformType($func->sourceInformation());
                        ^meta::external::language::morphir::metamodel::Value::DefinitionInputType(name=^Name(words=$p->evaluateAndDeactivate().name),
                                                                                                  type=$type,
                                                                                                  value=$type););
@@ -80,7 +80,7 @@ function <<access.private>> meta::external::language::morphir::transform::transf
    let functionElementTypes = $func.expressionSequence->map(e| $e->evaluateAndDeactivate()
                                                                  ->toOne()->cast(@FunctionExpression)
                                                                  .genericType.rawType->toOne()
-                                                                 ->transformType());
+                                                                 ->transformType($func->sourceInformation()));
 }
 
 function meta::external::language::morphir::transform::transformFunction(func:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Value::Value[*]
@@ -91,20 +91,28 @@ function meta::external::language::morphir::transform::transformFunction(func:Fu
 
 function <<access.private>> meta::external::language::morphir::transform::transformValue(element:ValueSpecification[1]): meta::external::language::morphir::metamodel::Value::Value[1]
 {
-   transformValue($element, getDummyFunctionExpression(), false);
+   transformValue($element, getDummyFunctionExpression(), false, true);
 }
 
-function <<access.private>> meta::external::language::morphir::transform::transformValue(element:ValueSpecification[1], fullFunctionForTypeParametrizing:FunctionExpression[1], extractFullFunction:Boolean[1]): meta::external::language::morphir::metamodel::Value::Value[1]
+function <<access.private>> meta::external::language::morphir::transform::transformValue(element:ValueSpecification[1],
+                                                                                         fullFunctionForTypeParametrizing:FunctionExpression[1],
+                                                                                         extractFullFunction:Boolean[1],
+                                                                                         enrichSourceInformation:Boolean[1]): meta::external::language::morphir::metamodel::Value::Value[1]
 {
+   let esourceInfo = if ($enrichSourceInformation,
+                         | $element->sourceInformation()->toOne();,
+                         | []);
+
    $element->evaluateAndDeactivate()->toOne()->match(
                      [ fe: FunctionExpression[1] |
                         let parametersValues = $fe.parametersValues->evaluateAndDeactivate();
                         let functionName = $fe.functionName;
+
                         if ($functionName == 'if',
                             | ^IfThenElse(condition=$parametersValues->at(0)->transformValue(),
                                           thenBranch=$parametersValues->at(1)->transformValue(),
                                           elseBranch=$parametersValues->at(2)->transformValue(),
-                                          valueParameter=$fe.genericType.rawType->toOne()->transformType());,
+                                          valueParameter=$fe.genericType.rawType->toOne()->transformType($esourceInfo));,
                             | if ($functionName == 'letFunction',
                                  | let variable = $parametersValues->at(0);
                                    let variableName = $variable->cast(@InstanceValue).values->toOne()->cast(@String);
@@ -119,7 +127,7 @@ function <<access.private>> meta::external::language::morphir::transform::transf
                                                                                  multiplicity=$variable->cast(@InstanceValue).multiplicity,genericType=$variable->cast(@InstanceValue).genericType);
                                    let newVariableValue = $newRawVariableValue->transformValue();
 
-                                   ^meta::external::language::morphir::metamodel::Value::LetDefinition(valueParameter=$fe.genericType.rawType->toOne()->transformType(),
+                                   ^meta::external::language::morphir::metamodel::Value::LetDefinition(valueParameter=$fe.genericType.rawType->toOne()->transformType($esourceInfo),
                                                                                                        name=^Name(words=$variableName),
                                                                                                        definition=$transformedDefinitionValue,
                                                                                                        value=$newVariableValue);,
@@ -127,16 +135,17 @@ function <<access.private>> meta::external::language::morphir::transform::transf
                                  | let applyParametersValues = $parametersValues->map(p| if ($p->instanceOf(InstanceValue) && ($p->cast(@InstanceValue).values->size() > 1),
                                                                                 | $p->cast(@InstanceValue).values->cast(@ValueSpecification),
                                                                                 | $p));
+
                                    let applyParamSize = $applyParametersValues->size();
                                    let currentApply = if ($applyParamSize == 1,
-                                                            | let applyValueParameter = $fe->transformType();
-                                                              ^Apply(targetFunction=if ($extractFullFunction, | $fullFunctionForTypeParametrizing, | $fe)->findMorphirFunctionReference(),
+                                                            | let applyValueParameter = $fe->transformType($esourceInfo);
+                                                              ^Apply(targetFunction=if ($extractFullFunction, | $fullFunctionForTypeParametrizing->findMorphirFunctionReference($esourceInfo), | $fe->findMorphirFunctionReference([])),
                                                                      argument=$applyParametersValues->toOne()->transformValue(),
                                                                      valueParameter=$applyValueParameter);,
 
                                                             | let functionWithAllButLastParam = ^$fe(parametersValues=$applyParametersValues->init());
-                                                              let applyValueParameter = $fe.genericType.rawType->toOne()->transformType();
-                                                              ^Apply(targetFunction=$functionWithAllButLastParam->transformValue(^$fe(parametersValues=$applyParametersValues), true),
+                                                              let applyValueParameter = $fe.genericType.rawType->toOne()->transformType($esourceInfo);
+                                                              ^Apply(targetFunction=$functionWithAllButLastParam->transformValue(^$fe(parametersValues=$applyParametersValues), true, false),
                                                                      argument=$applyParametersValues->last()->toOne()->transformValue(),
                                                                      valueParameter=$applyValueParameter);
                                                          );
@@ -148,19 +157,19 @@ function <<access.private>> meta::external::language::morphir::transform::transf
                             let literal = $iv.values->first()->toOne();
                             $literal->match([
                                               l: LambdaFunction<Any>[1] | $l.expressionSequence->first()->toOne()->cast(@ValueSpecification)->transformValue(),
-                                              s: String[1] | ^meta::external::language::morphir::metamodel::Value::Literal(valueParameter=$s->deactivate().genericType.rawType->toOne()->transformType(),
+                                              s: String[1] | ^meta::external::language::morphir::metamodel::Value::Literal(valueParameter=$s->deactivate().genericType.rawType->toOne()->transformType($esourceInfo),
                                                                                                 literal=^StringLiteral(value=$s)),
-                                              i: Integer[1] | ^meta::external::language::morphir::metamodel::Value::Literal(valueParameter=$i->deactivate().genericType.rawType->toOne()->transformType(),
+                                              i: Integer[1] | ^meta::external::language::morphir::metamodel::Value::Literal(valueParameter=$i->deactivate().genericType.rawType->toOne()->transformType($esourceInfo),
                                                                                                  literal=^IntLiteral(value=$i)),
-                                              b: Boolean[1] | ^meta::external::language::morphir::metamodel::Value::Literal(valueParameter=$b->deactivate().genericType.rawType->toOne()->transformType(),
+                                              b: Boolean[1] | ^meta::external::language::morphir::metamodel::Value::Literal(valueParameter=$b->deactivate().genericType.rawType->toOne()->transformType($esourceInfo),
                                                                                                  literal=^BoolLiteral(value=$b)),
-                                              f: Float[1] | ^meta::external::language::morphir::metamodel::Value::Literal(valueParameter=$f->deactivate().genericType.rawType->toOne()->transformType(),
+                                              f: Float[1] | ^meta::external::language::morphir::metamodel::Value::Literal(valueParameter=$f->deactivate().genericType.rawType->toOne()->transformType($esourceInfo),
                                                                                                literal=^FloatLiteral(value=$f)),
-                                              n: Number[1] | ^meta::external::language::morphir::metamodel::Value::Literal(valueParameter=$n->deactivate().genericType.rawType->toOne()->transformType(),
+                                              n: Number[1] | ^meta::external::language::morphir::metamodel::Value::Literal(valueParameter=$n->deactivate().genericType.rawType->toOne()->transformType($esourceInfo),
                                                                                                 literal=^FloatLiteral(value=$n->toFloat()))
                                             ]);,
                        var: VariableExpression[1] |
-                        let varValueParameter = $var.genericType.rawType->toOne()->transformType();
+                        let varValueParameter = $var.genericType.rawType->toOne()->transformType($esourceInfo);
                         ^meta::external::language::morphir::metamodel::Value::Variable(valueParameter=$varValueParameter,
                                                                                        name=^Name(words=[$var.name]));
                      ]);
@@ -168,27 +177,43 @@ function <<access.private>> meta::external::language::morphir::transform::transf
 
 function <<access.private>> meta::external::language::morphir::transform::transformType(type:meta::pure::metamodel::type::Any[1]): meta::external::language::morphir::metamodel::Type::Type[1]
 {
+   meta::external::language::morphir::transform::transformType($type, []);
+}
+
+function <<access.private>> meta::external::language::morphir::transform::transformType(type:meta::pure::metamodel::type::Any[1], sourceInfo:meta::pure::functions::meta::SourceInformation[0..1]): meta::external::language::morphir::metamodel::Type::Type[1]
+{
+   let transformedSourceInfo = if ($sourceInfo->isEmpty(),
+                                   | [],
+                                   | let sourceInfoToOne = $sourceInfo->toOne();
+                                     ^meta::external::language::morphir::metamodel::Type::SourceInformation(source=$sourceInfoToOne.source,
+                                                                                                           startLine=$sourceInfoToOne.startLine,
+                                                                                                           startColumn=$sourceInfoToOne.startColumn,
+                                                                                                           endLine=$sourceInfoToOne.endLine,
+                                                                                                           endColumn=$sourceInfoToOne.endColumn););
+
    $type->match([
-                  pmt: PrimitiveType[1] | $pmt->findMorphirPrimitiveTypeReference(),
+                  pmt: PrimitiveType[1] | $pmt->findMorphirPrimitiveTypeReference($transformedSourceInfo);,
                   fe: FunctionExpression[1] |
                         let parameters = $fe.parametersValues->evaluateAndDeactivate();
                         let currentArgType = $parameters->last()->toOne().genericType.rawType->toOne()->transformType();
                         let result = if ($parameters->size() == 1,
                                           | let currentReturnType = $fe.genericType.rawType->toOne()->transformType();
                                             ^meta::external::language::morphir::metamodel::Type::Function(argumentType=$currentArgType,
-                                                                                                          returnType=$currentReturnType);,
+                                                                                                          returnType=$currentReturnType,
+                                                                                                          sourceInformation=$transformedSourceInfo);,
                                           | let functionWithAllButLastParam = ^$fe(parametersValues=$fe.parametersValues->init());
                                             let currentReturnType = $functionWithAllButLastParam->transformType();
                                             ^meta::external::language::morphir::metamodel::Type::Function(argumentType=$currentArgType,
-                                                                                                          returnType=$currentReturnType);
+                                                                                                          returnType=$currentReturnType,
+                                                                                                          sourceInformation=$transformedSourceInfo);
                                           );,
-                  iv: InstanceValue[1] | $iv.values->toOne()-> transformType(),
-                  l: LambdaFunction<Any>[1] | $l.expressionSequence->evaluateAndDeactivate()->toOne()->cast(@ValueSpecification).genericType.rawType->toOne()->transformType();,
-                  var: VariableExpression[1] | $var->evaluateAndDeactivate().genericType.rawType->toOne()->transformType();
+                  iv: InstanceValue[1] | $iv.values->toOne()->transformType($sourceInfo);,
+                  l: LambdaFunction<Any>[1] | $l.expressionSequence->evaluateAndDeactivate()->toOne()->cast(@ValueSpecification).genericType.rawType->toOne()->transformType($sourceInfo);,
+                  var: VariableExpression[1] | $var->evaluateAndDeactivate().genericType.rawType->toOne()->transformType($sourceInfo);
                 ]);
 }
 
-function <<access.private>> meta::external::language::morphir::transform::findMorphirFunctionReference(fe:FunctionExpression[1]): meta::external::language::morphir::metamodel::Value::Reference[1]
+function <<access.private>> meta::external::language::morphir::transform::findMorphirFunctionReference(fe:FunctionExpression[1], sourceInfo:meta::pure::functions::meta::SourceInformation[0..1]): meta::external::language::morphir::metamodel::Value::Reference[1]
 {
    let morphirSDKPackagePath = 'Morphir.SDK';
    let morphirSDKBasicsModulePath = 'Basics';
@@ -205,6 +230,7 @@ function <<access.private>> meta::external::language::morphir::transform::findMo
          pair('lessThan', 'lessThan'),
          pair('greaterThan', 'greaterThan'),
          pair('lessThanOrEqual', 'lessThanOrEqual'),
+         pair('greaterThanOrEqual', 'greaterThanOrEqual'),
          pair('abs', 'abs')
       ]);
 
@@ -214,13 +240,13 @@ function <<access.private>> meta::external::language::morphir::transform::findMo
                                                                                          | $p->cast(@InstanceValue).values->cast(@ValueSpecification),
                                                                                          | $p));
 
-   ^meta::external::language::morphir::metamodel::Value::Reference(valueParameter=^$fe(parametersValues=$applyParametersValues)->transformType(),
+   ^meta::external::language::morphir::metamodel::Value::Reference(valueParameter=^$fe(parametersValues=$applyParametersValues)->transformType($sourceInfo),
                                                                    fQName=^FQName(packagePath=^Path(names=$packagePathNames->map(name| ^Name(words=[$name]))),
                                                                                   modulePath=^Path(names=$modulePathNames->map(name| ^Name(words=[$name]))),
                                                                                   name=^Name(words=$localName)));
 }
 
-function <<access.private>> meta::external::language::morphir::transform::findMorphirPrimitiveTypeReference(type:meta::pure::metamodel::type::PrimitiveType[1]): meta::external::language::morphir::metamodel::Type::Reference[1]
+function <<access.private>> meta::external::language::morphir::transform::findMorphirPrimitiveTypeReference(type:meta::pure::metamodel::type::PrimitiveType[1], transformedSourceInfo:meta::external::language::morphir::metamodel::Type::SourceInformation[0..1]): meta::external::language::morphir::metamodel::Type::Reference[1]
 {
    let morphirSDKPackagePath = 'Morphir.SDK';
    let morphirSDKBasicsModulePath = 'Basics';
@@ -241,8 +267,9 @@ function <<access.private>> meta::external::language::morphir::transform::findMo
    let modulePathNames = $morphirSDKBasicsModulePath->split('.');
 
    ^meta::external::language::morphir::metamodel::Type::Reference(fQName=^FQName(packagePath=^Path(names=$packagePathNames->map(name| ^Name(words=[$name]))),
-                                                                  modulePath=^Path(names=$modulePathNames->map(name| ^Name(words=[$name]))),
-                                                                  name=^Name(words=$localName)));
+                                                                                 modulePath=^Path(names=$modulePathNames->map(name| ^Name(words=[$name]))),
+                                                                                 name=^Name(words=$localName)),
+                                                                  sourceInformation=$transformedSourceInfo);
 }
 
 function <<access.private>> meta::external::language::morphir::transform::getDummyFunctionExpression(): FunctionExpression[1]

@@ -139,6 +139,8 @@ function <<access.private>> meta::external::language::morphir::serialization::mo
 
 function <<access.private>> meta::external::language::morphir::serialization::morphirTypeToJson(type:meta::external::language::morphir::metamodel::Type::Type[0..1]):JSONElement[1]
 {
+   let sourceInformation = $type.sourceInformation->morphirSourceInformationToJson();
+
    if ($type->isEmpty(),
         | ^JSONObject(),
         | $type->match([
@@ -146,13 +148,15 @@ function <<access.private>> meta::external::language::morphir::serialization::mo
                            let content = [^JSONString(value='reference'),
                                           $ref.typeParameter->morphirTypeToJson(),
                                           $ref.fQName->toOne()->morphirFQNameToJson(),
-                                          ^JSONArray(values=$ref.types->map(type| $type->morphirTypeToJson()))];
+                                          ^JSONArray(values=$ref.types->map(type| $type->morphirTypeToJson())),
+                                          $sourceInformation];
                            ^JSONArray(values=$content);,
                         func: meta::external::language::morphir::metamodel::Type::Function[1] |
                            let content = [^JSONString(value='function'),
                                           $func.typeParameter->morphirTypeToJson(),
                                           $func.argumentType->morphirTypeToJson(),
-                                          $func.returnType->morphirTypeToJson()];
+                                          $func.returnType->morphirTypeToJson(),
+                                          $sourceInformation];
                            ^JSONArray(values=$content);
                        ]);
       );
@@ -216,6 +220,27 @@ function <<access.private>> meta::external::language::morphir::serialization::mo
                     stringLiteral:StringLiteral[1] | ^JSONArray(values=[^JSONString(value='string_literal'), ^JSONString(value=$stringLiteral.value->toOne())])
                    ]);
 }
+
+function <<access.private>> meta::external::language::morphir::serialization::morphirSourceInformationToJson(sourceInfo:meta::external::language::morphir::metamodel::Type::SourceInformation[0..1]):JSONArray[1]
+{
+   if ($sourceInfo->isEmpty(),
+       | ^JSONArray(values=[]),
+       | let sourceInfo = $sourceInfo->toOne();
+         let content = [^JSONString(value='sourceInformation'),
+                        ^JSONArray(values=[^JSONString(value='source'),
+                                           ^JSONString(value=$sourceInfo.source)]),
+                        ^JSONArray(values=[^JSONString(value='startLine'),
+                                           ^JSONNumber(value=$sourceInfo.startLine)]),
+                        ^JSONArray(values=[^JSONString(value='startColumn'),
+                                           ^JSONNumber(value=$sourceInfo.startColumn)]),
+                        ^JSONArray(values=[^JSONString(value='endLine'),
+                                           ^JSONNumber(value=$sourceInfo.endLine)]),
+                        ^JSONArray(values=[^JSONString(value='endColumn'),
+                                           ^JSONNumber(value=$sourceInfo.endColumn)])];
+         ^JSONArray(values=$content);
+      );
+}
+
 
 function <<access.private>> meta::external::language::morphir::serialization::processWord(word:String[1]): String[*]
 {
