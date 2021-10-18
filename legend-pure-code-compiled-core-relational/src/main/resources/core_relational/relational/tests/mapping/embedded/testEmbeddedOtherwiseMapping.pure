@@ -216,6 +216,45 @@ function <<test.Test>> meta::relational::tests::mapping::embedded::advanced::oth
   assertSameSQL('select \'test\' as "name" from PRODUCT_DENORM as "root" left outer join BOND_DETAIL as "bond_detail_0" on ("root".PRODUCT_ID = "bond_detail_0".BOND_ID)', $result);
 
 } 
+
+function <<test.Test>> meta::relational::tests::mapping::embedded::advanced::otherwiseTestFilterExistsOnEmbeddedProperty():Boolean[1]
+{
+  let result = execute(|Product.all()->filter(p|$p.bondDetails->exists(b|$b.description->startsWith('Bond')))
+                                      ->project([p|$p.name], ['name'])
+                                 , testMappingEmbeddedOtherwise, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
+
+  assertEquals('name\n' + 'Product 1\nProduct 2\n', $result.values->toOne()->toCSV());
+  assertSameSQL('select "root".PRODUCT_NAME as "name" from PRODUCT_DENORM as "root" where "root".BOND_DETAILS like \'Bond%\'', $result);
+} 
+
+function <<test.Test>> meta::relational::tests::mapping::embedded::advanced::otherwiseTestProjectExistsOnEmbeddedProperty():Boolean[1]
+{
+  let result = execute(|Product.all()->project( [p | $p.bondDetails->exists(b|$b.description->startsWith('Bond'))], ['descriptionExists'])
+                                 , testMappingEmbeddedOtherwise, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
+
+  assertEquals('descriptionExists\n' + 'true\ntrue\nfalse\n', $result.values->toOne()->toCSV());
+  assertSameSQL('select "root".BOND_DETAILS like \'Bond%\' as "descriptionExists" from PRODUCT_DENORM as "root"', $result);
+} 
+
+function <<test.Test>> meta::relational::tests::mapping::embedded::advanced::otherwiseTestFilterExistsOnOtherwiseProperty():Boolean[1]
+{
+  let result = execute(|Product.all()->filter(p|$p.bondDetails->exists(b|$b.type == '15 years'))
+                                      ->project([p|$p.name], ['name'])
+                                 , testMappingEmbeddedOtherwise, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
+
+  assertEquals('name\n' + 'Product 1\nProduct 2\n', $result.values->toOne()->toCSV());
+  assertSameSQL('select "root".PRODUCT_NAME as "name" from PRODUCT_DENORM as "root" left outer join BOND_DETAIL as "bond_detail_0" on ("root".PRODUCT_ID = "bond_detail_0".BOND_ID) where "bond_detail_0".TYPE = \'15 years\'', $result);
+} 
+ 
+
+function <<test.Test>> meta::relational::tests::mapping::embedded::advanced::otherwiseTestProjectExistsOnOtherwiseProperty():Boolean[1]
+{
+  let result = execute(|Product.all()->project( [p | $p.bondDetails->exists(b|$b.type == '15 years')], ['typeExists'])
+                                 , testMappingEmbeddedOtherwise, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
+
+  assertEquals('typeExists\n' + 'true\ntrue\nfalse\n', $result.values->toOne()->toCSV());
+  assertSameSQL('select "bond_detail_0".TYPE = \'15 years\' as "typeExists" from PRODUCT_DENORM as "root" left outer join BOND_DETAIL as "bond_detail_0" on ("root".PRODUCT_ID = "bond_detail_0".BOND_ID)', $result);
+} 
  
 ###Mapping
 import meta::relational::tests::mapping::embedded::advanced::store::*;

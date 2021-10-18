@@ -3569,7 +3569,17 @@ function meta::relational::functions::pureToSqlQuery::processExists(expression:F
 
     let opMapping = $leftSideOp.currentPropertyMapping;
     if (!$opMapping->isEmpty() && $opMapping->at(0)->instanceOf(EmbeddedRelationalInstanceSetImplementation)
-                  ,| processFilter($expression, $currentPropertyMapping, $nOperation, $vars, $existsState, JoinType.LEFT_OUTER, $nodeId, $aggFromMap, $context, $extensions);
+                  ,{|                                                                   
+                     let existsAsFilter = processFilter($expression, $currentPropertyMapping, $nOperation, $vars, $existsState, JoinType.LEFT_OUTER, $nodeId, $aggFromMap, $context, $extensions);
+                     if($existsState.inFilter
+                         ,|$existsAsFilter
+                         ,{|
+                            let selectWithCursor = $existsAsFilter.element->cast(@SelectWithCursor);
+                            let select = $selectWithCursor.select;
+                            ^$selectWithCursor(select=^$select(savedFilteringOperation=[], columns=$select.savedFilteringOperation.second));
+                          }
+                      );
+                   }
                   ,| if($node.childrenData->size() == 1 && $leftSide->shouldBuildExistsPredicate()
                      ,| buildExistsPredicate($leftSide, $expression, $negate, $opMapping, $nOperation, $vars, $existsState, $nodeId, $aggFromMap, $context, $extensions);
                      ,| buildExistsAsJoinWithNullCheck($leftSide, $expression, $negate, $opMapping, $nOperation, $vars, $existsState, $nodeId, $aggFromMap, $context, $extensions);
