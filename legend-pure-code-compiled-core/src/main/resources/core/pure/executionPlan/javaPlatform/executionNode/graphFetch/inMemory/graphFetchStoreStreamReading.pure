@@ -155,7 +155,7 @@ function meta::pure::executionPlan::engine::java::graphFetch::storeStreamReading
    'read_'+ $conventions->identifier($type->elementToPath('_'));
 }
 
-function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::storeStreamReading::createStreamReadingDataClass(class:meta::pure::metamodel::type::Class<Any>[1], path:String[1], context:GenerationContext[1], createConstraintChecking:Boolean[1], debug:DebugContext[1]): Project[1]
+function meta::pure::executionPlan::engine::java::graphFetch::storeStreamReading::createStreamReadingDataClass(class:meta::pure::metamodel::type::Class<Any>[1], path:String[1], context:GenerationContext[1], createConstraintChecking:Boolean[1], debug:DebugContext[1]): Project[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') createDataClass for '+$class->elementToPath()+'\n', |''));
 

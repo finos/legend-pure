@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::shared::format::binding::validation::*;
-
 Class <<typemodifiers.abstract>> meta::external::shared::format::binding::validation::BindingDetail
 {
 }
@@ -25,9 +23,9 @@ Class meta::external::shared::format::binding::validation::FailedBindingDetail e
 
 Class meta::external::shared::format::binding::validation::SuccessfulBindingDetail extends meta::external::shared::format::binding::validation::BindingDetail
 {
-   fetchMappedPropertiesForClass : Function<{SuccessfulBindingDetail[1], Class<Any>[1] -> AbstractProperty<Any>[*]}>[1];
-   
+   fetchMappedPropertiesForClass : Function<{Class<Any>[1] -> AbstractProperty<Any>[*]}>[1];
+
    mappedPropertiesForClass(class: Class<Any>[1]){
-      $this.fetchMappedPropertiesForClass->eval($this, $class)
+      $this.fetchMappedPropertiesForClass->eval($class)
    }:AbstractProperty<Any>[*];
 }
