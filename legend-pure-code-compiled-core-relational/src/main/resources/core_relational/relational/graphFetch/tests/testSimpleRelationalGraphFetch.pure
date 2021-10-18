@@ -1157,7 +1157,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::rel
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='vX_X_X'} meta::relational::graphFetch::tests::simple::testSimpleGraphFetchCheckedWithPrimitivesOnly(): Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_21_0'} meta::relational::graphFetch::tests::simple::testSimpleGraphFetchCheckedWithPrimitivesOnly(): Boolean[1]
 {
    let tree = #{
       PersonWithConstraints {
@@ -1177,7 +1177,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='vX_X_X'} meta::rela
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='vX_X_X'} meta::relational::graphFetch::tests::simple::testSimpleGraphFetchCheckedWithPrimitivesOnlyNoDefects(): Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_21_0'} meta::relational::graphFetch::tests::simple::testSimpleGraphFetchCheckedWithPrimitivesOnlyNoDefects(): Boolean[1]
 {
    let tree = #{
       Person {
@@ -1197,7 +1197,7 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='vX_X_X'} meta::rela
    );
 }
 
-function <<test.Test, test.AlloyOnly>> {serverVersion.start='vX_X_X'} meta::relational::graphFetch::tests::simple::testCheckedOneComplexProperty(): Boolean[1]
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_21_0'} meta::relational::graphFetch::tests::simple::testCheckedOneComplexProperty(): Boolean[1]
 {
    let tree = #{
       PersonWithConstraints {
