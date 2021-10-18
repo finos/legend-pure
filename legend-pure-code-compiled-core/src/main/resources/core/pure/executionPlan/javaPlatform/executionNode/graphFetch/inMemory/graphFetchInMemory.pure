@@ -43,7 +43,6 @@ import meta::pure::runtime::*;
 function meta::pure::executionPlan::engine::java::graphFetch::inMemory::prepareForInMemoryGraphFetch(node: InMemoryGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], debug: DebugContext[1]):GenerationContext[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') prepareForInMemory' + if($node->instanceOf(InMemoryRootGraphFetchExecutionNode),|if($node->instanceOf(InMemoryCrossStoreGraphFetchExecutionNode), |'CrossStore', |'Root'),|'Property') + 'GraphFetch\n', |''));
-         
    let pureType        = $node->typeFromStoreLocalNode();
    let simpleType      = ^SimpleJavaType(pureType = $pureType, javaType = $context.conventions->className($pureType));
    let currentNodeInfo = $node->match([
@@ -85,28 +84,98 @@ function meta::pure::executionPlan::engine::java::graphFetch::inMemory::enrichFo
 function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::inMemory::generateInMemoryStoreRootNodeProject(node: InMemoryRootGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], extensions: RouterExtension[*], debug: DebugContext[1]):Project[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') generateCodeForInMemoryRootGraphFetch\n', |''));
-   
-   let conventions    = $context.conventions;
-   let graphFetchTree = $node.graphFetchTree->cast(@RoutedGraphFetchTree);
-   let graphImpl      = $node->graphImplClass($path, $context);
-   let currentSet     = $graphFetchTree.sets->toOne()->cast(@InstanceSetImplementation);
-   let input          = j_parameter(javaObject(), 'input');
-   
-   let executeClassWithImports = $context.conventions->planNodeClass('public', $path, 'Execute')
-      ->usingKnownPackages($conventions->knownPackages())
-      ->imports($conventions->standardImports())
-      ->imports([IReferencedObject, GraphInstance, IStoreStreamReadingExecutionNodeContext, IInMemoryRootGraphFetchExecutionNodeSpecifics]->map(x | $conventions->className($x)))
-      ->implements($conventions->className(IInMemoryRootGraphFetchExecutionNodeSpecifics));
+   if ($node->nodeIsMerged(),
+      | meta::pure::executionPlan::engine::java::graphFetch::inMemory::generateInMemoryStoreMergeRootNodes($node,$path,$context,$extensions,$debug);,
+       |
 
-   let transformMethodCodes = $input->setTransformerCodes($currentSet, $graphFetchTree, $graphImpl, true, true, $context, $extensions, $debug);
+            let conventions    = $context.conventions;
+            let graphFetchTree = $node.graphFetchTree->cast(@RoutedGraphFetchTree);
+
+            let graphImpl      = $node->graphImplClass($path, $context);
+            let currentSet     = $graphFetchTree.sets->toOne()->cast(@InstanceSetImplementation);
+            let input          = j_parameter(javaObject(), 'input');
+
+            let executeClassWithImports = $context.conventions->planNodeClass('public', $path, 'Execute')
+               ->usingKnownPackages($conventions->knownPackages())
+               ->imports($conventions->standardImports())
+               ->imports([IReferencedObject, GraphInstance, IStoreStreamReadingExecutionNodeContext, IInMemoryRootGraphFetchMergeExecutionNodeSpecifics]->map(x | $conventions->className($x)))
+               ->implements($conventions->className(IInMemoryRootGraphFetchExecutionNodeSpecifics));
+
+            let transformMethodCodes = $input->setTransformerCodes($currentSet, $graphFetchTree, $graphImpl, true, true, $context, $extensions, $debug);
    let transformMethod      = javaMethod(['public'], javaObject(), 'transform', [$input], $transformMethodCodes);
    
    let executeClass   = $executeClassWithImports->addMethod($transformMethod);
    let executeProject = newProject()->addClasses($executeClass);
    let allProjects    = $executeProject->concatenate($transformMethodCodes->dependencies()->resolveAndGetProjects())->toOneMany();
-   
    $allProjects->mergeProjects();
+
+     );
+
+
 }
+
+
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::inMemory::getPropertiesBySourceID(fetchTrees: RoutedPropertyGraphFetchTree[*],id:String[1]):RoutedPropertyGraphFetchTree[*]
+{
+
+   $fetchTrees->filter(s| $s.sets->cast(@PureInstanceSetImplementation).id==$id);
+
+}
+
+
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::inMemory::generateInMemoryStoreMergeRootNodes(node: InMemoryRootGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], extensions: RouterExtension[*], debug: DebugContext[1]):Project[1]
+{
+
+   print(if($debug.debug,|$debug.space+'('+$path+') generateCodeForInMemoryRootGraphFetch for Merge\n', |''));
+   let conventions    = $context.conventions;
+   let subNodes = $node.executionNodes->cast(@InMemoryRootGraphFetchExecutionNode);
+   let initialNode = $node.executionNodes->cast(@InMemoryRootGraphFetchExecutionNode)->head()->toOne();
+   let resultPath =  $path+'.n1';
+   let resultGraphImpl = $initialNode->graphImplClass($resultPath, $context);
+   let rootSet = $node.graphFetchTree->cast(@RoutedRootGraphFetchTree<Any>).sets->cast(@OperationSetImplementation)->toOne();
+
+
+   let input = j_parameter(javaList(javaObject()), 'input');
+
+    let executeClassWithImports = $context.conventions->planNodeClass('public', $path, 'Execute')
+      ->usingKnownPackages($conventions->knownPackages())
+      ->imports($conventions->standardImports())
+      ->imports([IReferencedObject, GraphInstance, IStoreStreamReadingExecutionNodeContext, IInMemoryRootGraphFetchMergeExecutionNodeSpecifics]->map(x | $conventions->className($x)))
+      ->implements($conventions->className(IInMemoryRootGraphFetchMergeExecutionNodeSpecifics));
+
+    let result = j_variable($resultGraphImpl, 'result');
+
+    let rootMerge =   $result->j_declare( j_this($executeClassWithImports)->j_invoke('merge',$input,javaVoid()));
+    let initializationCodes = [$rootMerge,
+                               $result->j_invoke($conventions->setterName('setId$'), j_string($rootSet.id), javaVoid())
+                              ];
+
+    let mergeMethods = $subNodes->generateMergeFunction($path,$executeClassWithImports,[],$context,$extensions,$debug);
+
+    let resultGraphParameter = j_parameter($resultGraphImpl, 'graphObject');
+
+    let returnCodes         =  $conventions->createGraphInstance($resultGraphImpl, $result)->j_return();
+    let transform =    $initializationCodes->concatenate($returnCodes)->toOneMany();
+
+    let transformMethod      = javaMethod(['public'], javaObject(), 'transform', [$input], $transform);
+
+   let executeClass   = $executeClassWithImports->addMethods($transformMethod->concatenate($mergeMethods));
+   let executeProject = newProject()->addClasses($executeClass);
+   let allProjects    = $executeProject->concatenate($transform->dependencies()->resolveAndGetProjects())->toOneMany();
+   $allProjects->mergeProjects();
+ }
+
+Class <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::inMemory::MergedPropertyHolder
+{
+   mergeOperation:Code[0..1];
+   mergeMethod:Method[*];
+}
+
+
+
+
+
+
 
 function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::inMemory::generateInMemoryStorePropertyNodeProject(node: InMemoryPropertyGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], extensions: RouterExtension[*], debug: DebugContext[1]):Project[1]
 {
@@ -378,7 +447,6 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
    let srcClass          = $set->sourceClass($extensions);
    let srcJavaClass      = $conventions->className($srcClass);
    let src               = j_variable($srcJavaClass, 'src');
-   
    let transform = if ($setHasExplosion,
                        | $set->cast(@PureInstanceSetImplementation)->propertyExplosionCodes($primitiveSubTrees, $result, $graphImplClass, $src, $wrapAsGraphInstance, $resolveToList, $conventions, $extensions, $debug),
                        | let propertyValues = $primitiveSubTrees->map({st |
@@ -432,7 +500,6 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
          let sourceProperty = $pureSetImpl->noMappingPassThruSourceProperty($property)->toOne();
          let sourceType     = $conventions->pureTypeToJavaType($sourceProperty);
          let callGetter     = $src->j_invoke($conventions->getterName($sourceProperty), [], $sourceType);
-         
          if($propertyJavaType == $sourceType,
             | $callGetter,
             |

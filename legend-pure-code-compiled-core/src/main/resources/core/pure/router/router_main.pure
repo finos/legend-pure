@@ -159,6 +159,13 @@ function meta::pure::router::isUnionOnGraphFetch(vs:ValueSpecification[1]):Boole
    $vs->instanceOf(FunctionExpression) && $unionFunctions->contains($vs->cast(@FunctionExpression).func) && $vs->cast(@FunctionExpression).parametersValues->map(v|$v->byPassRouterInfo())->forAll(v|$v->instanceOf(FunctionExpression) && $v->cast(@FunctionExpression).func->in(meta::pure::graphFetch::execution::graphFetchFunctions()));
 }
 
+function meta::pure::router::isMergeOnGraphFetch(vs:ValueSpecification[1]):Boolean[1]
+{
+   let mergefunc = mergeInstance_Any_MANY__Any_1_;
+   $vs->instanceOf(FunctionExpression) && $mergefunc == ($vs->cast(@FunctionExpression).func) && $vs->cast(@FunctionExpression).parametersValues->at(0)->cast(@InstanceValue).values->cast(@ValueSpecification)->map(v|$v->byPassRouterInfo())->forAll(v|$v->instanceOf(FunctionExpression) && $v->cast(@FunctionExpression).func->in(meta::pure::graphFetch::execution::graphFetchFunctions()));
+}
+
+
 function meta::pure::functions::collection::unionLambdas(vs:ValueSpecification[*], concatenate:Boolean[1], genericType:GenericType[1]):ValueSpecification[1]
 {
    let first = $vs->at(0);
