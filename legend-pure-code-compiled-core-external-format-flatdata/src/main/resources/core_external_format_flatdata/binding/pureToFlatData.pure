@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::external::shared::format::binding::*;
+import meta::external::shared::format::binding::toString::*;
 import meta::external::shared::format::metamodel::*;
-import meta::external::shared::format::metamodel::toString::*;
 import meta::external::shared::format::utils::*;
 import meta::external::format::flatdata::metamodel::*;
 import meta::external::format::flatdata::binding::fromPure::*;
+import meta::pure::model::unit::*;
 
 /// ========================================================================================================================================================
 // Entry points 
@@ -26,20 +28,20 @@ Class meta::external::format::flatdata::binding::fromPure::ModelToFlatDataConfig
 {
 }
 
-function meta::external::format::flatdata::binding::fromPure::pureToFlatData(config:ModelToFlatDataConfiguration[1]): SchemaBinding[1]
+function meta::external::format::flatdata::binding::fromPure::pureToFlatData(config:ModelToFlatDataConfiguration[1]): Binding[1]
 {
    pureToFlatData($config, noDebug());
 }
 
-function meta::external::format::flatdata::binding::fromPure::pureToFlatDataWithDebug(config:ModelToFlatDataConfiguration[1]): SchemaBinding[1]
+function meta::external::format::flatdata::binding::fromPure::pureToFlatDataWithDebug(config:ModelToFlatDataConfiguration[1]): Binding[1]
 {
    pureToFlatData($config, debug());
 }
 
-function meta::external::format::flatdata::binding::fromPure::pureToFlatData(config:ModelToFlatDataConfiguration[1], debug:DebugContext[1]): SchemaBinding[1]
+function meta::external::format::flatdata::binding::fromPure::pureToFlatData(config:ModelToFlatDataConfiguration[1], debug:DebugContext[1]): Binding[1]
 {
    let generatedFlatData = generate($config, $debug);
-   let result            = createOperation($generatedFlatData, $config);
+   let result            = createBinding($generatedFlatData, $config);
       
    $debug->log(|'\nGenerated the following:\n\n'+$result->bindingToString()); //+'\n\n'+$result->modelToString());
    $result;
@@ -90,26 +92,30 @@ function <<access.private>> meta::external::format::flatdata::binding::fromPure:
    ^FlatData(sections = $section);
 }
 
-function <<access.private>> meta::external::format::flatdata::binding::fromPure::createOperation(flatData:FlatData[1], config:ModelToFlatDataConfiguration[1]): SchemaBinding[1]
+function <<access.private>> meta::external::format::flatdata::binding::fromPure::createBinding(flatData:FlatData[1], config:ModelToFlatDataConfiguration[1]): Binding[1]
 {
-   let schemaSepPos  = $config.targetSchema->lastIndexOf('::');
-   let schemaPkgName = $config.targetSchema->substring(0, $schemaSepPos);
+   let schemaSetSepPos  = $config.targetSchemaSet->lastIndexOf('::');
+   let schemaSetPkgName = $config.targetSchemaSet->substring(0, $schemaSetSepPos);
    
-   let schema = ^Schema(
-      package = pathToPackage($schemaPkgName, true),
-      name    = $config.targetSchema->substring($schemaSepPos+2),
+   let schemaSet = ^SchemaSet(
+      package = pathToPackage($schemaSetPkgName, true),
+      name    = $config.targetSchemaSet->substring($schemaSetSepPos+2),
       format  = 'FlatData',
-      detail  = $flatData
+      schemas = ^Schema(                   
+         id     = 'default.flatdata',
+         detail = $flatData
+      )
    );
       
-   let opSepPos  = $config.targetOperation->lastIndexOf('::');
-   let opPkgName = $config.targetOperation->substring(0, $opSepPos);
+   let opSepPos  = $config.targetBinding->lastIndexOf('::');
+   let opPkgName = $config.targetBinding->substring(0, $opSepPos);
    
-   ^SchemaBinding(
-      package = pathToPackage($opPkgName, true),
-      name    = $config.targetOperation->substring($opSepPos+2),
-      schema  = $schema, 
-      model   = $config.sourceModel
+   ^Binding(
+      package     = pathToPackage($opPkgName, true),
+      name        = $config.targetBinding->substring($opSepPos+2),
+      schemaSet   = $schemaSet, 
+      contentType = 'application/x.flatdata',
+      modelUnit   = newModelUnit()->include($config.sourceModel)
    );
 }
 

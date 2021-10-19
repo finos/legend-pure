@@ -12,24 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::typeInfo::*;
-import meta::java::metamodel::project::*;
-import meta::java::serialization::*;
-import meta::java::metamodel::factory::*;
-import meta::pure::mapping::*;
-import meta::relational::mapping::*;
-import meta::java::generation::convention::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
+import meta::pure::mapping::*;
+import meta::relational::mapping::*;
 
-function meta::alloy::runtime::java::databaseConnectionPropertyName():String[1]
+function meta::pure::executionPlan::engine::java::databaseConnectionPropertyName():String[1]
 {
    'databaseConnection$'
 }
 
-function meta::alloy::runtime::java::generateImplementionForRelationalClassResult(node: RelationalClassInstantiationExecutionNode[1], path: String[1], context:GenerationContext[1], debug: DebugContext[1]):GeneratedCode[1]
+function meta::pure::executionPlan::engine::java::generateImplementionForRelationalClassResult(node: RelationalClassInstantiationExecutionNode[1], path: String[1], context:GenerationContext[1], debug: DebugContext[1]):GeneratedCode[1]
 {
    let classResultType = $node.resultType->cast(@ClassResultType);
    let resultClass = $classResultType.type->cast(@Class<Any>);
@@ -53,7 +54,7 @@ function meta::alloy::runtime::java::generateImplementionForRelationalClassResul
    ]);
 }
 
-function meta::alloy::runtime::java::generateImplementionForRelationalPartialClassResult(node: RelationalClassInstantiationExecutionNode[1], path: String[1], properties: AbstractProperty<Any>[*], context:GenerationContext[1], debug: DebugContext[1]):GeneratedCode[1]
+function meta::pure::executionPlan::engine::java::generateImplementionForRelationalPartialClassResult(node: RelationalClassInstantiationExecutionNode[1], path: String[1], properties: AbstractProperty<Any>[*], context:GenerationContext[1], debug: DebugContext[1]):GeneratedCode[1]
 {
    let classResultType = $node.resultType->cast(@ClassResultType);
    let resultClass = $classResultType.type->cast(@Class<Any>);
@@ -77,7 +78,7 @@ function meta::alloy::runtime::java::generateImplementionForRelationalPartialCla
    ]);
 }
 
-function <<access.private>> meta::alloy::runtime::java::generateImplementionForRelationalSetImpls(relationalSets: RelationalInstanceSetImplementation[*], setToPropertyMappingsMap: Map<RelationalInstanceSetImplementation, List<PropertyMapping>>[1], path: String[1], resultClass: Class<Any>[1], context:GenerationContext[1], debug: DebugContext[1]):GeneratedCode[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::generateImplementionForRelationalSetImpls(relationalSets: RelationalInstanceSetImplementation[*], setToPropertyMappingsMap: Map<RelationalInstanceSetImplementation, List<PropertyMapping>>[1], path: String[1], resultClass: Class<Any>[1], context:GenerationContext[1], debug: DebugContext[1]):GeneratedCode[1]
 {
    let globalProject = generateInterfacesAndEnums($context, $debug->indent());
    
@@ -90,7 +91,7 @@ function <<access.private>> meta::alloy::runtime::java::generateImplementionForR
    generatedCode($globalProject->addClasses($setImplClasses)->addClasses([$baseImplClass, $helperClass, $executeClass]), $executeClass);
 }
 
-function <<access.private>> meta::alloy::runtime::java::generateRelationalMappingClassResultBaseImplementation(sets: RelationalInstanceSetImplementation[*], resultClass: Class<Any>[1], path: String[1], context: GenerationContext[1], debug: DebugContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::generateRelationalMappingClassResultBaseImplementation(sets: RelationalInstanceSetImplementation[*], resultClass: Class<Any>[1], path: String[1], context: GenerationContext[1], debug: DebugContext[1]): meta::external::language::java::metamodel::Class[1]
 {
    let typeInfo = $context.typeInfos->forClass($resultClass);
    let conventions = $context.conventions;
@@ -113,7 +114,7 @@ function <<access.private>> meta::alloy::runtime::java::generateRelationalMappin
       let fieldName = $typeAndNameInfo.second;
       $cl
       ->addField(javaField(['private'], $fieldType, $fieldName))
-      ->addMethod(javaMethod(['public'], $fieldType, $conventions->getterName($p), [], 'return this.' + $fieldName + ';')->addAnnotation(^meta::java::metamodel::annotations::json::JsonProperty(value = $fieldName)))
+      ->addMethod(javaMethod(['public'], $fieldType, $conventions->getterName($p), [], 'return this.' + $fieldName + ';')->addAnnotation(^meta::external::language::java::metamodel::annotations::json::JsonProperty(value = $fieldName)))
       ->addMethod(javaMethod(['public'], javaVoid(), $conventions->setterName($p), [javaParam($fieldType, $fieldName)], 'this.' +  $fieldName + ' = ' + $fieldName + ';'));
    }, $implementationClass);
 
@@ -127,7 +128,7 @@ function <<access.private>> meta::alloy::runtime::java::generateRelationalMappin
    let classWithSetId = 
       $classWithQualifiedProps
       ->addField(javaField(['private'], javaString(), $conventions->fieldName(setIdPropertyName())))
-      ->addMethod(javaMethod(['public'], javaString(), $conventions->getterName(setIdPropertyName()), [], 'return this.' + $conventions->fieldName(setIdPropertyName()) + ';')->addAnnotation(^meta::java::metamodel::annotations::json::JsonIgnore()))
+      ->addMethod(javaMethod(['public'], javaString(), $conventions->getterName(setIdPropertyName()), [], 'return this.' + $conventions->fieldName(setIdPropertyName()) + ';')->addAnnotation(^meta::external::language::java::metamodel::annotations::json::JsonIgnore()))
       ->addMethod(javaMethod(['public'], javaVoid(), $conventions->setterName(setIdPropertyName()), [javaParam(javaString(), 'setId')], 'this.' + $conventions->fieldName(setIdPropertyName()) + ' = setId;'));
 
    let classWithDBConnection = 
@@ -138,7 +139,7 @@ function <<access.private>> meta::alloy::runtime::java::generateRelationalMappin
       $classWithDBConnection
       ->addObjectMapperField($conventions)
       ->addField(javaField(['private'], javaString(), $conventions->fieldName($conventions->storeObjectReferenceIdentifier())))
-      ->addMethod(relationalReferenceIdentifierGetterMethodForImplementation($sets, $classWithDBConnection, $conventions)->addAnnotation(^meta::java::metamodel::annotations::json::JsonProperty(value = $conventions->fieldName($conventions->storeObjectReferenceIdentifier()))));
+      ->addMethod(relationalReferenceIdentifierGetterMethodForImplementation($sets, $classWithDBConnection, $conventions)->addAnnotation(^meta::external::language::java::metamodel::annotations::json::JsonProperty(value = $conventions->fieldName($conventions->storeObjectReferenceIdentifier()))));
 
    let classWithKeys = $sets->fold({set, cl |
       let setIdx = $sets->indexOf($set);
@@ -149,13 +150,13 @@ function <<access.private>> meta::alloy::runtime::java::generateRelationalMappin
          let pkFieldName = $conventions->fieldName($pkString);
          $clWithKeys
          ->addField(javaField(['private'], javaObject(), $pkFieldName))
-         ->addMethod(javaMethod(['public'], javaObject(), $conventions->getterName($pkString), [], 'return this.' + $pkFieldName + ';')->addAnnotation(^meta::java::metamodel::annotations::json::JsonIgnore()))
+         ->addMethod(javaMethod(['public'], javaObject(), $conventions->getterName($pkString), [], 'return this.' + $pkFieldName + ';')->addAnnotation(^meta::external::language::java::metamodel::annotations::json::JsonIgnore()))
          ->addMethod(javaMethod(['public'], javaVoid(), $conventions->setterName($pkString), [javaParam(javaObject(), $pkFieldName)], 'this.' + $pkFieldName + ' = ' + $pkFieldName + ';'));
       }, $cl);
    }, $classWithReference);
 }
 
-function <<access.private>> meta::alloy::runtime::java::generateRelationalMappingClassResultImplementations(sets: RelationalInstanceSetImplementation[*], setToPropertyMappingsMap: Map<RelationalInstanceSetImplementation, List<PropertyMapping>>[1], resultClass: Class<Any>[1], baseImpl: meta::java::metamodel::Class[1], path: String[1], context:GenerationContext[1], debug: DebugContext[1]): meta::java::metamodel::Class[*]
+function <<access.private>> meta::pure::executionPlan::engine::java::generateRelationalMappingClassResultImplementations(sets: RelationalInstanceSetImplementation[*], setToPropertyMappingsMap: Map<RelationalInstanceSetImplementation, List<PropertyMapping>>[1], resultClass: Class<Any>[1], baseImpl: meta::external::language::java::metamodel::Class[1], path: String[1], context:GenerationContext[1], debug: DebugContext[1]): meta::external::language::java::metamodel::Class[*]
 {
    print(if($debug.debug,|$debug.space+'generateMappingImplementations\n', |''));
 
@@ -186,7 +187,7 @@ function <<access.private>> meta::alloy::runtime::java::generateRelationalMappin
          let fieldName = $typeAndNameInfo.second;
          $cl
          ->addField(javaField(['private'], $fieldType, $fieldName))
-         ->addMethod(javaMethod(['public'], $fieldType, $conventions->getterName($p), [], 'return this.' + $fieldName + ';')->addAnnotation(^meta::java::metamodel::annotations::json::JsonProperty(value = $fieldName)))
+         ->addMethod(javaMethod(['public'], $fieldType, $conventions->getterName($p), [], 'return this.' + $fieldName + ';')->addAnnotation(^meta::external::language::java::metamodel::annotations::json::JsonProperty(value = $fieldName)))
          ->addMethod(javaMethod(['public'], javaVoid(), $conventions->setterName($p), [javaParam($fieldType, $fieldName)], 'this.' +  $fieldName + ' = ' + $fieldName + ';'));
       }, $implementationClass);
    
@@ -199,7 +200,7 @@ function <<access.private>> meta::alloy::runtime::java::generateRelationalMappin
    });
 }
 
-function <<access.private>> meta::alloy::runtime::java::createRelationalObjectQueryHelperClass(path: String[1], sets: RelationalInstanceSetImplementation[*], setToPropertyMappingsMap: Map<RelationalInstanceSetImplementation, List<PropertyMapping>>[1], resultClass: Class<Any>[1], context: GenerationContext[1], debug:DebugContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::createRelationalObjectQueryHelperClass(path: String[1], sets: RelationalInstanceSetImplementation[*], setToPropertyMappingsMap: Map<RelationalInstanceSetImplementation, List<PropertyMapping>>[1], resultClass: Class<Any>[1], context: GenerationContext[1], debug:DebugContext[1]): meta::external::language::java::metamodel::Class[1]
 {
    let conventions = $context.conventions;
    let className   = $conventions->className($resultClass);
@@ -286,7 +287,7 @@ function <<access.private>> meta::alloy::runtime::java::createRelationalObjectQu
          'try\n'+
          '{\n'+
          '    this.calendar = new GregorianCalendar(TimeZone.getTimeZone(databaseTimeZone));\n'+
-         '    ' + $conventions->baseImplementationName($sets, $resultClass, $path)->typePathToString(true) + '.' + $conventions->fieldName(databaseConnectionPropertyName()) + ' = databaseConnection;\n'+
+         '    ' + $conventions->baseImplementationName($sets, $resultClass, $path)->typeToString() + '.' + $conventions->fieldName(databaseConnectionPropertyName()) + ' = databaseConnection;\n'+
          '    ResultSetMetaData resultSetMetaData = resultSet.getMetaData();\n'+
          '    int columnCount = resultSetMetaData.getColumnCount();\n'+
          '    this.columnTypes = new ArrayList<>();\n'+
@@ -369,7 +370,7 @@ function <<access.private>> meta::alloy::runtime::java::createRelationalObjectQu
                       '        propertyGetter = () -> {\n'+
                       '            try\n'+
                       '            {\n'+
-                      '                ' + $javaEnumeration->typePathToString(true) + ' res = null;\n'+
+                      '                ' + $javaEnumeration->typeToString() + ' res = null;\n'+
                       '                Object r = this.getAlloyNativeValueFromResultSet(resultSet, finalPropertyIndex, this.columnTypes.get(finalPropertyIndex - 1));\n'+
                       '                if (r != null)\n'+
                       '                {\n'+
@@ -378,7 +379,7 @@ function <<access.private>> meta::alloy::runtime::java::createRelationalObjectQu
                       '                    {\n'+
                       '                        throw new RuntimeException("Enumeration mapping failure. Cannot find transformation for source value \'" + r + "\' for enumeration property \'' + $propertyName + '\' of type ' + $propertyType->elementToPath() + ' in enumeration mapping ' + $currentPropertyMapping.transformer->cast(@EnumerationMapping<Any>).name->toOne() + '.");\n'+
                       '                    }\n'+
-                      '                    res = Enum.valueOf(' + $javaEnumeration->typePathToString(true) + '.class, transformedR);\n'+
+                      '                    res = Enum.valueOf(' + $javaEnumeration->typeToString() + '.class, transformedR);\n'+
                       '                }\n'+
                       '                return res;\n'+
                       '            }\n'+
@@ -409,7 +410,7 @@ function <<access.private>> meta::alloy::runtime::java::createRelationalObjectQu
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::objectCreation(implClass: meta::java::metamodel::Class[1], set: RelationalInstanceSetImplementation[1], allSets: RelationalInstanceSetImplementation[*],  properties: Property<Nil,Any|*>[*], index: Integer[1], conventions:Conventions[1]):String[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::objectCreation(implClass: meta::external::language::java::metamodel::Class[1], set: RelationalInstanceSetImplementation[1], allSets: RelationalInstanceSetImplementation[*],  properties: Property<Nil,Any|*>[*], index: Integer[1], conventions:Conventions[1]):String[1]
 {
    let currentSetPks = if (!$set->instanceOf(RootRelationalInstanceSetImplementation) || ($set->cast(@RootRelationalInstanceSetImplementation)->meta::relational::functions::pureToSqlQuery::getGroupBy()->isEmpty() && ($set->cast(@RootRelationalInstanceSetImplementation)->meta::relational::functions::pureToSqlQuery::getDistinct()->isEmpty() || $set->cast(@RootRelationalInstanceSetImplementation)->meta::relational::functions::pureToSqlQuery::getDistinct()->toOne() == false)),
                            | $set->resolvePrimaryKey(),
@@ -425,11 +426,11 @@ function <<access.private>> meta::alloy::runtime::java::objectCreation(implClass
      if ($x == StrictDate,            | 'PureDate', |
      if ($x == DateTime,              | 'PureDate', |
      if ($x == Date,                  | 'PureDate', |
-     if ($x->instanceOf(Enumeration), |  $conventions->className($x)->typePathToString(true), |
+     if ($x->instanceOf(Enumeration), |  $conventions->className($x)->typeToString(), |
      fail('Not supported!');'';)))))))))
    };
 
-   'final ' + $implClass->typePathToString(true) + ' object = new ' + $implClass->typePathToString(true) + '();\n' +
+   'final ' + $implClass->typeToString() + ' object = new ' + $implClass->typeToString() + '();\n' +
    'object.' + $conventions->setterName(setIdPropertyName()) + '("' + $set.id + '");\n' +
    'int pkColIndex;\n' +
    $currentSetPks->size()->range()->map({pkIdx | 
@@ -466,7 +467,7 @@ function <<access.private>> meta::alloy::runtime::java::objectCreation(implClass
    ->joinStrings('\n', '\n', '\n');
 }
 
-function <<access.private>> meta::alloy::runtime::java::createRelationalObjectQueryExecuteClass(helperClass: meta::java::metamodel::Class[1], path: String[1], conventions: Conventions[1]):meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::createRelationalObjectQueryExecuteClass(helperClass: meta::external::language::java::metamodel::Class[1], path: String[1], conventions: Conventions[1]):meta::external::language::java::metamodel::Class[1]
 {
    let relationalClassNodeExecutorInterface = $conventions->className(RelationalClassInstantiationNodeExecutor);
    $conventions->planNodeClass('public', $path, 'Execute')
@@ -490,7 +491,7 @@ function <<access.private>> meta::alloy::runtime::java::createRelationalObjectQu
       );
 }
 
-function meta::alloy::runtime::java::getResultSetPropertyGetterForStringPropertyMethod():meta::java::metamodel::Method[1]
+function meta::pure::executionPlan::engine::java::getResultSetPropertyGetterForStringPropertyMethod():meta::external::language::java::metamodel::Method[1]
 {
    javaMethod(
       ['private'], javaParameterizedType(javaClass('java.util.function.Supplier'), [javaObject()]), 'getResultSetPropertyGetterForStringProperty', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'), javaParam(javaInt(), 'columnIndex'), javaParam(javaInt(), 'columnType'), javaParam(javaString(), 'propertyName')],
@@ -514,7 +515,7 @@ function meta::alloy::runtime::java::getResultSetPropertyGetterForStringProperty
    );
 }
 
-function meta::alloy::runtime::java::getResultSetPropertyGetterForIntegerPropertyMethod():meta::java::metamodel::Method[1]
+function meta::pure::executionPlan::engine::java::getResultSetPropertyGetterForIntegerPropertyMethod():meta::external::language::java::metamodel::Method[1]
 {
    javaMethod(
       ['private'], javaParameterizedType(javaClass('java.util.function.Supplier'), [javaObject()]), 'getResultSetPropertyGetterForIntegerProperty', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'), javaParam(javaInt(), 'columnIndex'), javaParam(javaInt(), 'columnType'), javaParam(javaString(), 'propertyName')],
@@ -541,7 +542,7 @@ function meta::alloy::runtime::java::getResultSetPropertyGetterForIntegerPropert
    );
 }
 
-function meta::alloy::runtime::java::getResultSetPropertyGetterForFloatPropertyMethod():meta::java::metamodel::Method[1]
+function meta::pure::executionPlan::engine::java::getResultSetPropertyGetterForFloatPropertyMethod():meta::external::language::java::metamodel::Method[1]
 {
    javaMethod(
       ['private'], javaParameterizedType(javaClass('java.util.function.Supplier'), [javaObject()]), 'getResultSetPropertyGetterForFloatProperty', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'), javaParam(javaInt(), 'columnIndex'), javaParam(javaInt(), 'columnType'), javaParam(javaString(), 'propertyName')],
@@ -587,7 +588,7 @@ function meta::alloy::runtime::java::getResultSetPropertyGetterForFloatPropertyM
    );
 }
 
-function meta::alloy::runtime::java::getResultSetPropertyGetterForDecimalPropertyMethod():meta::java::metamodel::Method[1]
+function meta::pure::executionPlan::engine::java::getResultSetPropertyGetterForDecimalPropertyMethod():meta::external::language::java::metamodel::Method[1]
 {
    javaMethod(
       ['private'], javaParameterizedType(javaClass('java.util.function.Supplier'), [javaObject()]), 'getResultSetPropertyGetterForDecimalProperty', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'), javaParam(javaInt(), 'columnIndex'), javaParam(javaInt(), 'columnType'), javaParam(javaString(), 'propertyName')],
@@ -633,7 +634,7 @@ function meta::alloy::runtime::java::getResultSetPropertyGetterForDecimalPropert
    );
 }
 
-function meta::alloy::runtime::java::getResultSetPropertyGetterForBooleanPropertyMethod():meta::java::metamodel::Method[1]
+function meta::pure::executionPlan::engine::java::getResultSetPropertyGetterForBooleanPropertyMethod():meta::external::language::java::metamodel::Method[1]
 {
    javaMethod(
       ['private'], javaParameterizedType(javaClass('java.util.function.Supplier'), [javaObject()]), 'getResultSetPropertyGetterForBooleanProperty', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'), javaParam(javaInt(), 'columnIndex'), javaParam(javaInt(), 'columnType'), javaParam(javaString(), 'propertyName')],
@@ -698,7 +699,7 @@ function meta::alloy::runtime::java::getResultSetPropertyGetterForBooleanPropert
    );
 }
 
-function meta::alloy::runtime::java::getResultSetPropertyGetterForStrictDatePropertyMethod():meta::java::metamodel::Method[1]
+function meta::pure::executionPlan::engine::java::getResultSetPropertyGetterForStrictDatePropertyMethod():meta::external::language::java::metamodel::Method[1]
 {
    javaMethod(
       ['private'], javaParameterizedType(javaClass('java.util.function.Supplier'), [javaObject()]), 'getResultSetPropertyGetterForStrictDateProperty', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'), javaParam(javaInt(), 'columnIndex'), javaParam(javaInt(), 'columnType'), javaParam(javaString(), 'propertyName')],
@@ -751,7 +752,7 @@ function meta::alloy::runtime::java::getResultSetPropertyGetterForStrictDateProp
    );
 }
 
-function meta::alloy::runtime::java::getResultSetPropertyGetterForDateTimePropertyMethod():meta::java::metamodel::Method[1]
+function meta::pure::executionPlan::engine::java::getResultSetPropertyGetterForDateTimePropertyMethod():meta::external::language::java::metamodel::Method[1]
 {
    javaMethod(
       ['private'], javaParameterizedType(javaClass('java.util.function.Supplier'), [javaObject()]), 'getResultSetPropertyGetterForDateTimeProperty', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'),  javaParam(javaInt(), 'columnIndex'), javaParam(javaInt(), 'columnType'), javaParam(javaString(), 'propertyName')],
@@ -804,7 +805,7 @@ function meta::alloy::runtime::java::getResultSetPropertyGetterForDateTimeProper
    );
 }
 
-function meta::alloy::runtime::java::getResultSetPropertyGetterForDatePropertyMethod():meta::java::metamodel::Method[1]
+function meta::pure::executionPlan::engine::java::getResultSetPropertyGetterForDatePropertyMethod():meta::external::language::java::metamodel::Method[1]
 {
    javaMethod(
       ['private'], javaParameterizedType(javaClass('java.util.function.Supplier'), [javaObject()]), 'getResultSetPropertyGetterForDateProperty', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'),  javaParam(javaInt(), 'columnIndex'), javaParam(javaInt(), 'columnType'), javaParam(javaString(), 'propertyName')],
@@ -883,7 +884,7 @@ function meta::alloy::runtime::java::getResultSetPropertyGetterForDatePropertyMe
    );
 }
 
-function meta::alloy::runtime::java::getAlloyNativeValueFromResultSetMethod():meta::java::metamodel::Method[1]
+function meta::pure::executionPlan::engine::java::getAlloyNativeValueFromResultSetMethod():meta::external::language::java::metamodel::Method[1]
 {
    javaMethod(
       ['private'], javaObject(), 'getAlloyNativeValueFromResultSet', [javaParam(javaType('java.sql.ResultSet'), 'resultSet'), javaParam(javaInt(), 'columnIndex'), javaParam(javaInt(), 'columnType')],
@@ -989,7 +990,7 @@ function meta::alloy::runtime::java::getAlloyNativeValueFromResultSetMethod():me
    );
 }
 
-function meta::alloy::runtime::java::encodeHexMethod():meta::java::metamodel::Method[1]
+function meta::pure::executionPlan::engine::java::encodeHexMethod():meta::external::language::java::metamodel::Method[1]
 {
    javaMethod(
       ['private'], javaString(), 'encodeHex', [javaParam(javaArray(javaByte()), 'data')],
@@ -1005,7 +1006,7 @@ function meta::alloy::runtime::java::encodeHexMethod():meta::java::metamodel::Me
    )
 }
 
-function meta::alloy::runtime::java::relationalReferenceIdentifierGetterMethodForImplementation(sets: RelationalInstanceSetImplementation[*], implClass: meta::java::metamodel::Class[1], conventions: Conventions[1]):meta::java::metamodel::Method[1]
+function meta::pure::executionPlan::engine::java::relationalReferenceIdentifierGetterMethodForImplementation(sets: RelationalInstanceSetImplementation[*], implClass: meta::external::language::java::metamodel::Class[1], conventions: Conventions[1]):meta::external::language::java::metamodel::Method[1]
 {
    let referenceIdentifier = $conventions->fieldName($conventions->storeObjectReferenceIdentifier());
    javaMethod(
@@ -1028,7 +1029,7 @@ function meta::alloy::runtime::java::relationalReferenceIdentifierGetterMethodFo
       '        referenceBuilder.append(":");\n'+
       '        referenceBuilder.append(setId);\n'+
       '        referenceBuilder.append(":");\n\n'+
-      '        String databaseConnectionString = ' + $implClass->typePathToString(true) + '.' + $conventions->fieldName(databaseConnectionPropertyName()) + ';\n'+
+      '        String databaseConnectionString = ' + $implClass->typeToString() + '.' + $conventions->fieldName(databaseConnectionPropertyName()) + ';\n'+
       '        referenceBuilder.append(String.format("%010d", databaseConnectionString.length()));\n'+
       '        referenceBuilder.append(":");\n'+
       '        referenceBuilder.append(databaseConnectionString);\n'+
@@ -1058,7 +1059,7 @@ function meta::alloy::runtime::java::relationalReferenceIdentifierGetterMethodFo
    );
 }
 
-function meta::alloy::runtime::java::addObjectMapperField(cl: meta::java::metamodel::Class[1], conventions: Conventions[1]):meta::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::addObjectMapperField(cl: meta::external::language::java::metamodel::Class[1], conventions: Conventions[1]):meta::external::language::java::metamodel::Class[1]
 {
    $cl
    ->imports(javaClass('com.fasterxml.jackson.databind.module.SimpleModule'))

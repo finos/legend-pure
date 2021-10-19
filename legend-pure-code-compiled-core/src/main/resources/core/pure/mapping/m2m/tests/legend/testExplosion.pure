@@ -83,7 +83,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testTargetConstraints
    assert(jsonEquivalent('[{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"hasLongName","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint","message":"Constraint :[hasLongName] violated in the Class FirmEmployeeWithConstraint"}],"source":{"defects":[],"source":{"number":1,"record":"{\\"name\\":\\"Anonymous Company\\",\\"simpleEmployees\\":[{\\"fullName\\":\\"PersonA\\"},{\\"fullName\\":\\"PersonB\\"}]}"},"value":{"name":"Anonymous Company","simpleEmployees":[{"fullName":"PersonA"},{"fullName":"PersonB"}]}},"value":{"fullName":"PersonA","firmName":"Anonymous Company"}},{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"hasLongName","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::explosion::FirmEmployeeWithConstraint","message":"Constraint :[hasLongName] violated in the Class FirmEmployeeWithConstraint"}],"source":{"defects":[],"source":{"number":1,"record":"{\\"name\\":\\"Anonymous Company\\",\\"simpleEmployees\\":[{\\"fullName\\":\\"PersonA\\"},{\\"fullName\\":\\"PersonB\\"}]}"},"value":{"name":"Anonymous Company","simpleEmployees":[{"fullName":"PersonA"},{"fullName":"PersonB"}]}},"value":{"fullName":"PersonB","firmName":"Anonymous Company"}}]'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
-function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>> 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::pure::executionPlan::engine::java::roadmap::feature.M2MBasics>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0',
    doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping with sets using and not using explosion mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
@@ -107,7 +107,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testMappingWithSetsUs
    assert(jsonEquivalent('{"firstName":"Pierre","lastName":"Doe"}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
-function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::pure::executionPlan::engine::java::roadmap::feature.M2MBasics>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0',
    doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize. GraphFetch tree demonstrates usage of explosion at a property level.',
@@ -131,7 +131,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testExplosionAtProper
    assert(jsonEquivalent('{"name": "Anonymous Company","firmEmployees": [{"firmName": "Anonymous Company","fullName": "PersonA","streetAddress": "first","dateOfBirth": "2020-11-09"},{"firmName": "Anonymous Company","fullName": "PersonB","streetAddress": "second","dateOfBirth": "2020-11-10"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
-function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::pure::executionPlan::engine::java::roadmap::feature.M2MBasics>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0',
    doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
@@ -155,7 +155,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testMappingWithExplos
    assert(jsonEquivalent('{"name": "Anonymous Company","firmEmployees": [{"firmName": "Anonymous Company"}, {"firmName": "Anonymous Company"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
-function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::pure::executionPlan::engine::java::roadmap::feature.M2MBasics>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0',
    doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize.',
@@ -179,7 +179,7 @@ meta::pure::mapping::modelToModel::test::alloy::explosion::testExplosionAtProper
    assert(jsonEquivalent('{"name": "Anonymous Company","firmEmployees": [{"firmName": "Anonymous Company","fullName": "PersonA"},{"firmName": "Anonymous Company","fullName": "PersonB"}]}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
-function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::alloy::runtime::java::roadmap::feature.M2MBasics>>
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, meta::pure::executionPlan::engine::java::roadmap::feature.M2MBasics>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_19_0',
    doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
    doc.doc='When:  the mapping is executed using graphFetch and serialize. GraphFetch tree demonstrates usage of explosion at a property level.',

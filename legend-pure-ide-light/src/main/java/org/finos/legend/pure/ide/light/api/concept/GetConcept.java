@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.ide.light.api.concept;
 
+import org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.ide.light.session.SimpleFunction;
-import org.finos.legend.pure.ide.light.helpers.response.ExceptionTranslation;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
@@ -41,7 +41,7 @@ public class GetConcept implements SimpleFunction
 
         ProcessorSupport processorSupport = pureRuntime.getProcessorSupport();
 
-        Source src = pureRuntime.getSourceById((String)extraParams.get("file"));
+        Source src = pureRuntime.getSourceById((String) extraParams.get("file"));
         if (!src.isCompiled())
         {
             try
@@ -59,8 +59,8 @@ public class GetConcept implements SimpleFunction
                 }
             }
         }
-        Long line = (Long)extraParams.get("line");
-        Long column = (Long)extraParams.get("column");
+        Long line = (Long) extraParams.get("line");
+        Long column = (Long) extraParams.get("column");
         CoreInstance found = src.navigate(line.intValue(), column.intValue(), processorSupport);
 
         if (null != found)

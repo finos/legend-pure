@@ -54,6 +54,7 @@ Class meta::pure::router::ExtendedRoutedValueSpecification extends RoutedValueSp
 {
    id:String[1];
    sets:SetImplementation[*];
+   processedChainSets:SetImplementation[*];
    runtime:Runtime[1];
    mapping:Mapping[1];
    executionContext:ExecutionContext[1];
@@ -106,7 +107,7 @@ function meta::pure::router::store::platform::planExecution(sq:meta::pure::mappi
       (
          expression = $fe,
          resultType = ^ResultType(type=$fe.genericType.rawType->toOne()),
-         executionNodes = $children
+         executionNodes = $ch
       )
    };
    

@@ -14,7 +14,7 @@
 
 import meta::meta::external::query::graphQL::metamodel::*;
 
-Enum meta::external::query::graphQL::metamodel::ExecutableDirectiveLocation
+Enum meta::external::query::graphQL::metamodel::typeSystem::ExecutableDirectiveLocation
 {
   QUERY,
   MUTATION,
@@ -25,14 +25,14 @@ Enum meta::external::query::graphQL::metamodel::ExecutableDirectiveLocation
   INLINE_FRAGMENT
 }
 
-Enum meta::external::query::graphQL::metamodel::OperationType
+Enum meta::external::query::graphQL::metamodel::executable::OperationType
 {
   query,
   mutation,
   subscription
 }
 
-Enum meta::external::query::graphQL::metamodel::TypeSystemDirectiveLocation
+Enum meta::external::query::graphQL::metamodel::typeSystem::TypeSystemDirectiveLocation
 {
   SCHEMA,
   SCALAR,
@@ -47,13 +47,13 @@ Enum meta::external::query::graphQL::metamodel::TypeSystemDirectiveLocation
   INPUT_FIELD_DEFINITION
 }
 
-Class meta::external::query::graphQL::metamodel::Argument
+Class meta::external::query::graphQL::metamodel::executable::Argument
 {
   name: String[1];
-  value: meta::external::query::graphQL::metamodel::Value[1];
+  value: meta::external::query::graphQL::metamodel::value::Value[1];
 }
 
-Class meta::external::query::graphQL::metamodel::BooleanValue extends meta::external::query::graphQL::metamodel::Value
+Class meta::external::query::graphQL::metamodel::value::BooleanValue extends meta::external::query::graphQL::metamodel::value::Value
 {
   value: Boolean[1];
 }
@@ -65,15 +65,15 @@ Class meta::external::query::graphQL::metamodel::Definition
 Class meta::external::query::graphQL::metamodel::Directive
 {
   name: String[1];
-  arguments: meta::external::query::graphQL::metamodel::Argument[*];
+  arguments: meta::external::query::graphQL::metamodel::executable::Argument[*];
 }
 
-Class meta::external::query::graphQL::metamodel::DirectiveDefinition extends meta::external::query::graphQL::metamodel::TypeSystemDefinition
+Class meta::external::query::graphQL::metamodel::typeSystem::DirectiveDefinition extends meta::external::query::graphQL::metamodel::typeSystem::TypeSystemDefinition
 {
   name: String[1];
-  executableLocation: meta::external::query::graphQL::metamodel::ExecutableDirectiveLocation[*];
-  typeSystemLocation: meta::external::query::graphQL::metamodel::TypeSystemDirectiveLocation[*];
-  argumentDefinitions: meta::external::query::graphQL::metamodel::InputValueDefinition[*];
+  executableLocation: meta::external::query::graphQL::metamodel::typeSystem::ExecutableDirectiveLocation[*];
+  typeSystemLocation: meta::external::query::graphQL::metamodel::typeSystem::TypeSystemDirectiveLocation[*];
+  argumentDefinitions: meta::external::query::graphQL::metamodel::typeSystem::InputValueDefinition[*];
 }
 
 Class meta::external::query::graphQL::metamodel::Document
@@ -81,14 +81,14 @@ Class meta::external::query::graphQL::metamodel::Document
   definitions: meta::external::query::graphQL::metamodel::Definition[*];
 }
 
-Class meta::external::query::graphQL::metamodel::EnumTypeDefinition extends meta::external::query::graphQL::metamodel::Type
+Class meta::external::query::graphQL::metamodel::typeSystem::EnumTypeDefinition extends meta::external::query::graphQL::metamodel::typeSystem::Type
 {
   name: String[1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
-  values: meta::external::query::graphQL::metamodel::EnumValueDefinition[*];
+  values: meta::external::query::graphQL::metamodel::typeSystem::EnumValueDefinition[*];
 }
 
-Class meta::external::query::graphQL::metamodel::EnumValue extends meta::external::query::graphQL::metamodel::Value
+Class meta::external::query::graphQL::metamodel::value::EnumValue extends meta::external::query::graphQL::metamodel::value::Value
 [
   not($this.value->in(['true', 'false', 'null']))
 ]
@@ -96,13 +96,13 @@ Class meta::external::query::graphQL::metamodel::EnumValue extends meta::externa
   value: String[1];
 }
 
-Class meta::external::query::graphQL::metamodel::EnumValueDefinition
+Class meta::external::query::graphQL::metamodel::typeSystem::EnumValueDefinition
 {
   value: String[1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
 }
 
-Class meta::external::query::graphQL::metamodel::ExecutableDefinition extends meta::external::query::graphQL::metamodel::Definition
+Class meta::external::query::graphQL::metamodel::executable::ExecutableDefinition extends meta::external::query::graphQL::metamodel::Definition
 {
 }
 
@@ -111,32 +111,32 @@ Class meta::external::query::graphQL::metamodel::ExecutableDocument extends meta
   $this.executableDefinitions->size() > 0
 ]
 {
-  executableDefinitions() {$this.definitions->filter(c|$c->instanceOf(meta::external::query::graphQL::metamodel::ExecutableDefinition))}: meta::external::query::graphQL::metamodel::Definition[*];
+  executableDefinitions() {$this.definitions->filter(c|$c->instanceOf(meta::external::query::graphQL::metamodel::executable::ExecutableDefinition))}: meta::external::query::graphQL::metamodel::Definition[*];
 }
 
-Class meta::external::query::graphQL::metamodel::Field extends meta::external::query::graphQL::metamodel::Selection
+Class meta::external::query::graphQL::metamodel::executable::Field extends meta::external::query::graphQL::metamodel::executable::Selection
 {
   alias: String[0..1];
   name: String[1];
-  arguments: meta::external::query::graphQL::metamodel::Argument[*];
+  arguments: meta::external::query::graphQL::metamodel::executable::Argument[*];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
-  selectionSet: meta::external::query::graphQL::metamodel::Selection[*];
+  selectionSet: meta::external::query::graphQL::metamodel::executable::Selection[*];
 }
 
-Class meta::external::query::graphQL::metamodel::FieldDefinition
+Class meta::external::query::graphQL::metamodel::typeSystem::FieldDefinition
 {
   name: String[1];
-  argumentDefinitions: meta::external::query::graphQL::metamodel::InputValueDefinition[*];
-  type: meta::external::query::graphQL::metamodel::TypeReference[1];
+  argumentDefinitions: meta::external::query::graphQL::metamodel::typeSystem::InputValueDefinition[*];
+  type: meta::external::query::graphQL::metamodel::typeSystem::TypeReference[1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
 }
 
-Class meta::external::query::graphQL::metamodel::FloatValue extends meta::external::query::graphQL::metamodel::Value
+Class meta::external::query::graphQL::metamodel::value::FloatValue extends meta::external::query::graphQL::metamodel::value::Value
 {
   value: Float[1];
 }
 
-Class meta::external::query::graphQL::metamodel::FragmentDefinition extends meta::external::query::graphQL::metamodel::ExecutableDefinition
+Class meta::external::query::graphQL::metamodel::executable::FragmentDefinition extends meta::external::query::graphQL::metamodel::executable::ExecutableDefinition
 [
   not($this.typeCondition == 'on')
 ]
@@ -144,135 +144,135 @@ Class meta::external::query::graphQL::metamodel::FragmentDefinition extends meta
   name: String[1];
   typeCondition: String[1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
-  selectionSet: meta::external::query::graphQL::metamodel::Selection[*];
+  selectionSet: meta::external::query::graphQL::metamodel::executable::Selection[*];
 }
 
-Class meta::external::query::graphQL::metamodel::FragmentSpread extends meta::external::query::graphQL::metamodel::Selection
+Class meta::external::query::graphQL::metamodel::executable::FragmentSpread extends meta::external::query::graphQL::metamodel::executable::Selection
 {
   name: String[1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
 }
 
-Class meta::external::query::graphQL::metamodel::InLineFragment extends meta::external::query::graphQL::metamodel::Selection
+Class meta::external::query::graphQL::metamodel::executable::InLineFragment extends meta::external::query::graphQL::metamodel::executable::Selection
 {
   typeCondition: String[0..1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
-  selectionSet: meta::external::query::graphQL::metamodel::Selection[*];
+  selectionSet: meta::external::query::graphQL::metamodel::executable::Selection[*];
 }
 
-Class meta::external::query::graphQL::metamodel::InputValueDefinition
+Class meta::external::query::graphQL::metamodel::typeSystem::InputValueDefinition
 {
   description: String[0..1];
   name: String[1];
-  type: meta::external::query::graphQL::metamodel::TypeReference[1];
-  defaultValue: meta::external::query::graphQL::metamodel::Value[0..1];
+  type: meta::external::query::graphQL::metamodel::typeSystem::TypeReference[1];
+  defaultValue: meta::external::query::graphQL::metamodel::value::Value[0..1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
 }
 
-Class meta::external::query::graphQL::metamodel::IntValue extends meta::external::query::graphQL::metamodel::Value
+Class meta::external::query::graphQL::metamodel::value::IntValue extends meta::external::query::graphQL::metamodel::value::Value
 {
   value: Integer[1];
 }
 
-Class meta::external::query::graphQL::metamodel::InterfaceTypeDefinition extends meta::external::query::graphQL::metamodel::Type
+Class meta::external::query::graphQL::metamodel::typeSystem::InterfaceTypeDefinition extends meta::external::query::graphQL::metamodel::typeSystem::Type
 {
   name: String[1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
-  fields: meta::external::query::graphQL::metamodel::FieldDefinition[*];
+  fields: meta::external::query::graphQL::metamodel::typeSystem::FieldDefinition[*];
 }
 
-Class meta::external::query::graphQL::metamodel::ListValue extends meta::external::query::graphQL::metamodel::Value
+Class meta::external::query::graphQL::metamodel::value::ListValue extends meta::external::query::graphQL::metamodel::value::Value
 {
-  values: meta::external::query::graphQL::metamodel::Value[*];
+  values: meta::external::query::graphQL::metamodel::value::Value[*];
 }
 
-Class meta::external::query::graphQL::metamodel::NullValue extends meta::external::query::graphQL::metamodel::Value
+Class meta::external::query::graphQL::metamodel::value::NullValue extends meta::external::query::graphQL::metamodel::value::Value
 {
 }
 
-Class meta::external::query::graphQL::metamodel::ObjectTypeDefinition extends meta::external::query::graphQL::metamodel::Type
+Class meta::external::query::graphQL::metamodel::typeSystem::ObjectTypeDefinition extends meta::external::query::graphQL::metamodel::typeSystem::Type
 {
   name: String[1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
-  fields: meta::external::query::graphQL::metamodel::FieldDefinition[*];
+  fields: meta::external::query::graphQL::metamodel::typeSystem::FieldDefinition[*];
   implements: String[*];
 }
 
-Class meta::external::query::graphQL::metamodel::ObjectValue extends meta::external::query::graphQL::metamodel::Value
+Class meta::external::query::graphQL::metamodel::value::ObjectValue extends meta::external::query::graphQL::metamodel::value::Value
 {
 }
 
-Class meta::external::query::graphQL::metamodel::OperationDefinition extends meta::external::query::graphQL::metamodel::ExecutableDefinition
+Class meta::external::query::graphQL::metamodel::executable::OperationDefinition extends meta::external::query::graphQL::metamodel::executable::ExecutableDefinition
 {
-  type: meta::external::query::graphQL::metamodel::OperationType[1];
+  type: meta::external::query::graphQL::metamodel::executable::OperationType[1];
   name: String[0..1];
-  variables: meta::external::query::graphQL::metamodel::VariableDefinition[*];
+  variables: meta::external::query::graphQL::metamodel::executable::VariableDefinition[*];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
-  selectionSet: meta::external::query::graphQL::metamodel::Selection[*];
+  selectionSet: meta::external::query::graphQL::metamodel::executable::Selection[*];
 }
 
-Class meta::external::query::graphQL::metamodel::RootOperationTypeDefinition
+Class meta::external::query::graphQL::metamodel::typeSystem::RootOperationTypeDefinition
 {
-  operationType: meta::external::query::graphQL::metamodel::OperationType[1];
+  operationType: meta::external::query::graphQL::metamodel::executable::OperationType[1];
   type: String[1];
 }
 
-Class meta::external::query::graphQL::metamodel::ScalarTypeDefinition extends meta::external::query::graphQL::metamodel::Type
+Class meta::external::query::graphQL::metamodel::typeSystem::ScalarTypeDefinition extends meta::external::query::graphQL::metamodel::typeSystem::Type
 {
   name: String[1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
 }
 
-Class meta::external::query::graphQL::metamodel::SchemaDefinition extends meta::external::query::graphQL::metamodel::TypeSystemDefinition
+Class meta::external::query::graphQL::metamodel::typeSystem::SchemaDefinition extends meta::external::query::graphQL::metamodel::typeSystem::TypeSystemDefinition
 {
   directives: meta::external::query::graphQL::metamodel::Directive[*];
-  rootOperationTypeDefinitions: meta::external::query::graphQL::metamodel::RootOperationTypeDefinition[*];
+  rootOperationTypeDefinitions: meta::external::query::graphQL::metamodel::typeSystem::RootOperationTypeDefinition[*];
 }
 
-Class meta::external::query::graphQL::metamodel::Selection
+Class meta::external::query::graphQL::metamodel::executable::Selection
 {
 }
 
-Class meta::external::query::graphQL::metamodel::StringValue extends meta::external::query::graphQL::metamodel::Value
+Class meta::external::query::graphQL::metamodel::value::StringValue extends meta::external::query::graphQL::metamodel::value::Value
 {
   value: String[1];
 }
 
-Class meta::external::query::graphQL::metamodel::Type extends meta::external::query::graphQL::metamodel::TypeSystemDefinition
+Class meta::external::query::graphQL::metamodel::typeSystem::Type extends meta::external::query::graphQL::metamodel::typeSystem::TypeSystemDefinition
 {
 }
 
-Class meta::external::query::graphQL::metamodel::TypeReference
+Class meta::external::query::graphQL::metamodel::typeSystem::TypeReference
 {
   name: String[1];
   list: Boolean[1];
   nullable: Boolean[1];
 }
 
-Class meta::external::query::graphQL::metamodel::TypeSystemDefinition extends meta::external::query::graphQL::metamodel::Definition
+Class meta::external::query::graphQL::metamodel::typeSystem::TypeSystemDefinition extends meta::external::query::graphQL::metamodel::Definition
 {
 }
 
-Class meta::external::query::graphQL::metamodel::UnionTypeDefinition extends meta::external::query::graphQL::metamodel::Type
+Class meta::external::query::graphQL::metamodel::typeSystem::UnionTypeDefinition extends meta::external::query::graphQL::metamodel::typeSystem::Type
 {
   name: String[1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
   members: String[*];
 }
 
-Class meta::external::query::graphQL::metamodel::Value
+Class meta::external::query::graphQL::metamodel::value::Value
 {
 }
 
-Class meta::external::query::graphQL::metamodel::Variable extends meta::external::query::graphQL::metamodel::Value
+Class meta::external::query::graphQL::metamodel::value::Variable extends meta::external::query::graphQL::metamodel::value::Value
 {
   name: String[1];
 }
 
-Class meta::external::query::graphQL::metamodel::VariableDefinition
+Class meta::external::query::graphQL::metamodel::executable::VariableDefinition
 {
   name: String[1];
-  type: meta::external::query::graphQL::metamodel::TypeReference[1];
-  defaultValue: meta::external::query::graphQL::metamodel::Value[0..1];
+  type: meta::external::query::graphQL::metamodel::typeSystem::TypeReference[1];
+  defaultValue: meta::external::query::graphQL::metamodel::value::Value[0..1];
   directives: meta::external::query::graphQL::metamodel::Directive[*];
 }

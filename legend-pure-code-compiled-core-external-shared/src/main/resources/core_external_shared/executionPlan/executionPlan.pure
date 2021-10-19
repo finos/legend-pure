@@ -12,28 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::typeInfo::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::transform::*;
+import meta::external::shared::format::binding::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::executionPlan::engine::*;
 import meta::external::shared::format::metamodel::*;
-import meta::external::shared::runtime::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
 import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::executionPlan::toString::*;
 import meta::pure::metamodel::serialization::grammar::*;
 import meta::pure::router::extension::*;
 
-function meta::external::shared::format::executionPlan::createDataClassesProject(classes:Class<Any>[*], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::external::shared::format::executionPlan::createDataClassesProject(classes:meta::pure::metamodel::type::Class<Any>[*], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') createDataClassesProject\n', |''));
    mergeProjects($classes->map(c| $c->createDataClass($path, $context, $debug->indent()))->toOneMany());
+}
+
+function meta::external::shared::format::executionPlan::generateDataTestProject(packageName:String[1], baseJavaPackage:String[1]): Project[1]
+{
+   let conventions = engineConventions(meta::external::shared::format::routerExtensions('externalFormat', []))->setBasePackageName($baseJavaPackage);
+
+   let package   = $packageName->pathToElement()->cast(@Package);
+   let classes   = $package.children->filter(pe| $pe->instanceOf(meta::pure::metamodel::type::Class))->cast(@meta::pure::metamodel::type::Class<Any>);
+   let typeInfos = $classes->fold({c, ti| $ti->addForClass($c, true, false, true)}, newTypeInfoSet());
+   let context   = ^GenerationContext(typeInfos=$typeInfos, conventions=$conventions);
+
+   let project = mergeProjects(generateTypes($context, noDebug())->concatenate($classes->map(c| $c->createDataClass('node', $context, noDebug())))->toOneMany());
+   newProject()->addClasses($project->allClasses()->map(cl | $cl->inferImports()));
 }
 
 function meta::external::shared::format::executionPlan::generateDataQualityNode(deserializeNode:ExecutionNode[1], enableConstraints:Boolean[1], checked:Boolean[1]): ExecutionNode[1]
@@ -56,17 +69,38 @@ function meta::external::shared::format::executionPlan::planPrepareDataQuality(p
    };
 }
 
+function meta::external::shared::format::executionPlan::generateUrlStreamExecutionNode(connection:ExternalFormatConnection[1]): ExecutionNode[1]
+{
+   assert($connection.externalSource->instanceOf(UrlStreamExternalSource), | 'Only UrlStreamExternalSource is supported !!');
+   
+   let sourceUrl = $connection.externalSource->cast(@UrlStreamExternalSource).url;
+   
+   ^UrlStreamExecutionNode(
+      resultType = ^DataTypeResultType(type = String),
+      url        = $sourceUrl
+   );
+}
+
 function meta::external::shared::format::executionPlan::printPlanNodeToString(space:String[1], extensions:RouterExtension[*]): Function<{Nil[1]->String[1]}>[*]
 {
-   {node:DataQualityExecutionNode[1] |
-      'DataQuality\n' + 
-      $space + '(' + header($node, $space, $extensions) + '\n' +
-      $space + '  enableConstraints = ' + $node.enableConstraints->toString() + '\n' +
-      $space + '  checked = ' + $node.checked->toString() + '\n' +
-      $node->childrenToString($space+'  ', $extensions) + '\n' +
-      $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
-      $space + ')\n'
-   };
+   [
+      {node:DataQualityExecutionNode[1] |
+         'DataQuality\n' + 
+         $space + '(' + header($node, $space, $extensions) + '\n' +
+         $space + '  enableConstraints = ' + $node.enableConstraints->toString() + '\n' +
+         $space + '  checked = ' + $node.checked->toString() + '\n' +
+         $node->childrenToString($space+'  ', $extensions) + '\n' +
+         $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
+         $space + ')\n'
+      },
+      {node:UrlStreamExecutionNode[1] |
+         'UrlStream\n' + 
+         $space + '(' + header($node, $space, $extensions) + '\n' +
+         $space + '  url = ' + $node.url + '\n' +
+         $node->childrenToString($space+'  ', $extensions) + '\n' +
+         $space + ')\n'
+      }
+   ]
 }
 
 Class <<access.private>> meta::external::shared::format::executionPlan::PropertyDetails
@@ -74,9 +108,9 @@ Class <<access.private>> meta::external::shared::format::executionPlan::Property
    property          : AbstractProperty<Any>[1];
    fieldName         : String[1];
    sizeFieldName     : String[1];
-   propType          : Type[1];
-   javaType          : meta::java::metamodel::Type[1];
-   itemType          : meta::java::metamodel::Type[1];
+   propType          : meta::pure::metamodel::type::Type[1];
+   javaType          : meta::external::language::java::metamodel::Type[1];
+   itemType          : meta::external::language::java::metamodel::Type[1];
    getterName        : String[1];
    adderName         : String[1];
    adderParam        : Code[1];
@@ -86,13 +120,17 @@ Class <<access.private>> meta::external::shared::format::executionPlan::Property
    isViaAssociation() {$this.property.owner->instanceOf(Association)}: Boolean[1];
 }
 
-function meta::external::shared::format::executionPlan::createDataClass(class:Class<Any>[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::external::shared::format::executionPlan::createDataClass(class:meta::pure::metamodel::type::Class<Any>[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') createDataClass for '+$class->elementToPath()+'\n', |''));
    
    let conventions = $context.conventions;
    let pureDate    = $conventions->className(PureDate);
    let defects     = j_variable(javaList($conventions->defectClass()), 'defects');
+
+   let mappedProperties = if(!$context->nodeInfosForPath($path).data->isEmpty(),
+                             |$context->nodeInfosForPath($path).data->toOne()->cast(@meta::external::shared::format::binding::validation::SuccessfulBindingDetail).mappedPropertiesForClass($class),
+                             |$context.typeInfos->allProperties($class));
    
    let baseClass = $conventions->dataClass($class, $path)->addModifiers('public')
       ->implements($conventions->className($class))
@@ -134,8 +172,8 @@ function meta::external::shared::format::executionPlan::createDataClass(class:Cl
          itemType          = $itemType,
          getterName        = $conventions->getterName($p),
          adderName         = '_'+$fieldName+'Add',
-         adderParam        = if($propType->instanceOf(Class),
-                                | j_parameter($conventions->dataClass($propType->cast(@Class<Any>), $path), 'value'),
+         adderParam        = if($propType->instanceOf(meta::pure::metamodel::type::Class),
+                                | j_parameter($conventions->dataClass($propType->cast(@meta::pure::metamodel::type::Class<Any>), $path), 'value'),
                                 |
                              if($itemType == $pureDate,
                                 | j_parameter(javaTemporal(), 'value'),
@@ -168,20 +206,23 @@ function meta::external::shared::format::executionPlan::createDataClass(class:Cl
                   )
                );
 
-               $withGetter->addAdderMethods($p, $conventions,
-                     [
-                        j_if($field->j_eq(j_null()), 
-                           $field->j_assign(javaArrayList($p.itemType)->j_new([]))
-                        ),
-                        if($p.itemType == $pureDate && $p.propType == StrictDate, 
-                           | $field->j_invoke('add', $pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('DAY_OF_MONTH', javaInt())], $pureDate)), 
-                           |
-                        if($p.itemType == $pureDate, 
-                           | $field->j_invoke('add', $pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('MILLISECOND', javaInt())], $pureDate)), 
-                           | $field->j_invoke('add', $p.adderParam)
-                        ))
-                     ] 
-               );
+                if($p.property->in($mappedProperties),
+                   |
+                     $withGetter->addAdderMethods($p, $conventions,
+                                 [
+                                    j_if($field->j_eq(j_null()),
+                                       $field->j_assign(javaArrayList($p.itemType)->j_new([]))
+                                    ),
+                                    if($p.itemType == $pureDate && $p.propType == StrictDate,
+                                       | $field->j_invoke('add', $pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('DAY_OF_MONTH', javaInt())], $pureDate)),
+                                       |
+                                    if($p.itemType == $pureDate,
+                                       | $field->j_invoke('add', $pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('MILLISECOND', javaInt())], $pureDate)),
+                                       | $field->j_invoke('add', $p.adderParam)
+                                    ))
+                                 ]
+                              );,
+                  |$withGetter);
             }, 
             {|
                let withFields = $c
@@ -197,20 +238,23 @@ function meta::external::shared::format::executionPlan::createDataClass(class:Cl
                   )
                );
 
-               $withGetter->addAdderMethods($p, $conventions,
-                     [
-                        j_if($fieldSize->j_eq(j_int(0)), 
-                           if($p.itemType == $pureDate && $p.propType == StrictDate, 
-                              | $field->j_assign($pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('DAY_OF_MONTH', javaInt())], $pureDate)), 
-                              |
-                           if($p.itemType == $pureDate, 
-                              | $field->j_assign($pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('MILLISECOND', javaInt())], $pureDate)), 
-                              | $field->j_assign($p.adderParam)
-                           ))
-                        ),
-                        $fieldSize->j_inc()
-                     ] 
-               );
+                if($p.property->in($mappedProperties),
+                   |
+                    $withGetter->addAdderMethods($p, $conventions,
+                                         [
+                                            j_if($fieldSize->j_eq(j_int(0)),
+                                               if($p.itemType == $pureDate && $p.propType == StrictDate,
+                                                  | $field->j_assign($pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('DAY_OF_MONTH', javaInt())], $pureDate)),
+                                                  |
+                                               if($p.itemType == $pureDate,
+                                                  | $field->j_assign($pureDate->j_invoke('fromTemporal', [$p.adderParam, javaCalendar()->j_field('MILLISECOND', javaInt())], $pureDate)),
+                                                  | $field->j_assign($p.adderParam)
+                                               ))
+                                            ),
+                                            $fieldSize->j_inc()
+                                         ]
+                                       );,
+                   |$withGetter);
             }
          );
       }, 
@@ -220,7 +264,7 @@ function meta::external::shared::format::executionPlan::createDataClass(class:Cl
    let propertyName = j_parameter(javaString(), 'propertyName');
    let objectParam  = j_parameter($withFieldsAndGetters, 'object');
 
-   let adderClauses  = $properties->map(
+   let adderClauses  = $properties->filter(p | $p.property->in($mappedProperties))->map(
       {p|
          let adderImpl = if($p.itemType == javaBoolean(),
                             {|
@@ -282,7 +326,7 @@ function meta::external::shared::format::executionPlan::createDataClass(class:Cl
    mergeProjects(newProject()->concatenate($constraintChecking)->toOneMany());
 }
 
-function <<access.private>> meta::external::shared::format::executionPlan::addAdderMethods(jc:meta::java::metamodel::Class[1], prop: PropertyDetails[1], conventions:Conventions[1], impl:Code[*]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::external::shared::format::executionPlan::addAdderMethods(jc:meta::external::language::java::metamodel::Class[1], prop: PropertyDetails[1], conventions:Conventions[1], impl:Code[*]): meta::external::language::java::metamodel::Class[1]
 {
    if($prop.isViaAssociation,
       {|
@@ -310,7 +354,7 @@ function <<access.private>> meta::external::shared::format::executionPlan::addAd
    )
 }
 
-function meta::external::shared::format::executionPlan::dataClass(conventions:Conventions[1], class:Class<Any>[1], path:String[1]): meta::java::metamodel::Class[1]
+function meta::external::shared::format::executionPlan::dataClass(conventions:Conventions[1], class:meta::pure::metamodel::type::Class<Any>[1], path:String[1]): meta::external::language::java::metamodel::Class[1]
 {
   $conventions->planNodeClass([], $path, $conventions->identifier($class->elementToPath('_')) + '_Impl');
 }
@@ -333,14 +377,11 @@ function meta::external::shared::format::executionPlan::occursFromMultiplicity(m
 function meta::external::shared::format::executionPlan::printConnection(extensions:RouterExtension[*]): Function<{Nil[1]->String[1]}>[*]
 {
    [
-      {url:UrlConnection[1] |
-         'url="'+$url.url+'", contentType="'+$url.contentType+'", class = '+$url.class->elementToPath()+$url.schema->match([s0:Schema[0]|'', s1:Schema[1]|', schema='+$s1->elementToPath()])
-      },
       {ext:ExternalFormatConnection[1] |
          let source = $ext.externalSource->match([
             u:UrlStreamExternalSource[1] | 'url="'+$u.url+'"'
          ]);
-         'schemaBinding="'+$ext.schemaBinding->elementToPath()+'", source=('+$source+')';
+         'binding="'+$ext.element->cast(@Binding)->elementToPath()+'", source=('+$source+')';
       }
    ];
 }

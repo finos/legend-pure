@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::external::shared::format::binding::*;
 import meta::external::shared::format::binding::validation::*;
-import meta::external::shared::format::metamodel::*;
 import meta::external::shared::format::utils::*;
 import meta::external::format::flatdata::binding::validation::*;
 import meta::external::format::flatdata::metamodel::*;
+import meta::pure::model::unit::*;
 
-Class meta::external::format::flatdata::binding::validation::FlatDataBindingDetail extends BindingDetail
+Class meta::external::format::flatdata::binding::validation::FlatDataBindingDetail extends SuccessfulBindingDetail
 {
    sectionBindingDetails: SectionBindingDetail[*];
 }
@@ -36,19 +37,24 @@ Class meta::external::format::flatdata::binding::validation::FieldToProperty
    property : Property<Nil,Any|*>[1];
 }
 
-function meta::external::format::flatdata::binding::validation::bindDetails(binding: SchemaBinding[1]): BindingDetail[1]
+function meta::external::format::flatdata::binding::validation::bindDetails(binding: Binding[1]): BindingDetail[1]
 {
-   assert($binding.schema.format == 'FlatData');
+   assert($binding.schemaSet.format == 'FlatData');
    
-   let flatData  = $binding.schema.detail->cast(@FlatData);   
+   let flatData  = if($binding.schemaId->isEmpty(),
+                      | $binding.schemaSet.schemas->at(0).detail->cast(@FlatData),
+                      | $binding.schemaSet.schemas->filter(s| $s.id == $binding.schemaId)->toOne().detail->cast(@FlatData)
+                   );
    let sections  = $flatData.sections->filter(s | $s.recordType->isNotEmpty());
-   let classes   = $binding.model->filter(pe| $pe->instanceOf(Class))->cast(@Class<Any>);
+   let classes   = $binding.modelUnit->resolve().classes;
    
    let sectionBindingDetails = $sections->map(s| $s->findMatchingClasses($classes));
-   
+      
    if($sectionBindingDetails->exists(sc| $sc->instanceOf(FailedBindingDetail)),
       | ^FailedBindingDetail(errorMessages=$sectionBindingDetails->filter(sc| $sc->instanceOf(FailedBindingDetail))->cast(@FailedBindingDetail).errorMessages),
-      | ^FlatDataBindingDetail(sectionBindingDetails=$sectionBindingDetails->cast(@SectionBindingDetail))
+      | ^FlatDataBindingDetail(sectionBindingDetails=$sectionBindingDetails->cast(@SectionBindingDetail), 
+                               fetchMappedPropertiesForClass = {class:Class<Any>[1] | let sectionForClass = $sectionBindingDetails->cast(@SectionBindingDetail)->filter(s | $s.class == $class);
+                                                                                      $sectionForClass.details.property;})
    );
 }
 

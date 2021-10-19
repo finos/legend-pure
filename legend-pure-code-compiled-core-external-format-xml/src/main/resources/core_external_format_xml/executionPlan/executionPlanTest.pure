@@ -16,6 +16,7 @@ import meta::xsd::tests::toPure::*;
 import meta::external::format::xml::executionPlan::test::*;
 import meta::external::format::xml::metamodel::xml::*;
 import meta::external::format::xml::metamodel::xsd::*;
+import meta::external::shared::format::binding::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::functions::*;
 import meta::external::shared::format::metamodel::*;
@@ -23,6 +24,7 @@ import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::toString::*;
 import meta::pure::graphFetch::execution::*;
 import meta::pure::mapping::modelToModel::*;
+import meta::pure::model::unit::*;
 import meta::pure::runtime::*;
 
 Class meta::external::format::xml::executionPlan::test::Person
@@ -35,47 +37,50 @@ function <<meta::pure::profiles::test.Test>> meta::external::format::xml::execut
 {
    let extensions = meta::external::shared::format::routerExtensions('externalFormat', meta::external::format::xml::xmlFormatExtension());   
    
-   let schema = ^Schema(
+   let schemaSet = ^SchemaSet(
       name    = 'TestSchema',
       package = meta::external::format::xml::executionPlan::test,
       format  = 'XSD',
-      detail  = ^XsdSchema(
-                   items = [
-                      ^XsdElement(
-                         name=^QName(localPart='person', namespace=''),
-                         minOccurs=1,
-                         maxOccurs=1,
-                         type=^XsdComplexType(
-                            particle=^XsdSequence(
-                               minOccurs=1,
-                               maxOccurs=1,
-                               items = [
-                                  ^XsdElement(name=^QName(localPart='firstName', namespace=''), typeName=xsType('string'), minOccurs=1, maxOccurs=1),
-                                  ^XsdElement(name=^QName(localPart='lastName', namespace=''), typeName=xsType('string'), minOccurs=1, maxOccurs=1)
-                               ]
-                            )
-                         )
-                      )
-                   ]
-                )
+      schemas = ^Schema(
+         id      = 'default.xsd',
+         detail  = ^XsdSchema(
+            items = [
+               ^XsdElement(
+                  name=^QName(localPart='person', namespace=''),
+                  minOccurs=1,
+                  maxOccurs=1,
+                  type=^XsdComplexType(
+                     particle=^XsdSequence(
+                        minOccurs=1,
+                        maxOccurs=1,
+                        items = [
+                           ^XsdElement(name=^QName(localPart='firstName', namespace=''), typeName=xsType('string'), minOccurs=1, maxOccurs=1),
+                           ^XsdElement(name=^QName(localPart='lastName', namespace=''), typeName=xsType('string'), minOccurs=1, maxOccurs=1)
+                        ]
+                     )
+                  )
+               )
+            ]
+         )
+      )
    );
    
-   let schemaBinding = ^SchemaBinding(
-      name    = 'TestBinding',
-      package = meta::external::format::xml::executionPlan::test,
-      schema = $schema,
-      model  = Person
+   let binding = ^Binding(
+      name      = 'TestBinding',
+      package   = meta::external::format::xml::executionPlan::test,
+      schemaSet = $schemaSet,
+      contentType = 'application/xml',
+      modelUnit = newModelUnit()->include(Person)
    );
    
    let tree = #{Person {firstName, lastName}}#;
-      
+
    let plan = executionPlan(
-      |Person.all()->graphFetchChecked($tree)->externalize($schemaBinding),
+      |Person.all()->graphFetchChecked($tree)->externalize($binding),
       SelfMapping,
       ^Runtime(
          connections = ^ExternalFormatConnection(
-            element        = ^ModelStore(),
-            schemaBinding  = $schemaBinding,
+            element        = $binding,
             externalSource = ^UrlStreamExternalSource(url = 'executor:default')
          )
       ),
@@ -86,56 +91,64 @@ function <<meta::pure::profiles::test.Test>> meta::external::format::xml::execut
    
    let planString = $plan->planToString(false, $extensions);
    
-   let expected = 'XML_Serialize\n' +
-      '(\n' +
-      '  type = String\n' +
-      '  resultSizeRange = 1\n' +
-      '  checked = true\n' +
-      '  schemaBinding = meta::external::format::xml::executionPlan::test::TestBinding\n' +
-      '\n' +
-      '  (\n' +
-      '    GlobalGraphFetch\n' +
-      '    (\n' +
-      '      type = PartialClass[impls=[(meta::external::format::xml::executionPlan::test::Person | SelfMapping.meta_external_format_xml_executionPlan_test_Person)], propertiesWithParameters = [firstName, lastName]]\n' +
-      '      resultSizeRange = *\n' +
-      '      store = MODEL\n' +
-      '      localGraphFetchExecutionNode = \n' +
-      '         InMemoryRootGraphFetch\n' +
-      '         (\n' +
-      '           type = PartialClass[impls=[(meta::external::format::xml::executionPlan::test::Person | SelfMapping.meta_external_format_xml_executionPlan_test_Person)], propertiesWithParameters = [firstName, lastName]]\n' +
-      '           graphFetchTree = [meta_external_format_xml_executionPlan_test_Person/meta::external::format::xml::executionPlan::test::Person]{@(meta_external_format_xml_executionPlan_test_Person->)@[/firstName],@(meta_external_format_xml_executionPlan_test_Person->)@[/lastName]}\n' +
-      '           nodeIndex = 0\n' +
-      '           batchSize = 1\n' +
-      '           checked = true\n' +
-      '           (\n' +
-      '             DataQuality\n' +
-      '             (\n' +
-      '               type = PartialClass[impls=[], propertiesWithParameters = [firstName, lastName]]\n' +
-      '               resultSizeRange = *\n' +
-      '               enableConstraints = true\n' +
-      '               checked = true\n' +
-      '\n' +
-      '               (\n' +
-      '                 XML_Deserialize\n' +
-      '                 (\n' +
-      '                   type = PartialClass[impls=[], propertiesWithParameters = [firstName, lastName]]\n' +
-      '                   resultSizeRange = *\n' +
-      '                   connection = ExternalFormatConnection(schemaBinding="meta::external::format::xml::executionPlan::test::TestBinding", source=(url="executor:default"))\n' +
-      '\n' +
-      '                 )\n' +
-      '               )\n' +
-      '             )\n' +
-      '           )\n' +
-      '           children = [\n' +
-      '              \n' +              
-      '           ]\n' +
-      '         )\n' +
-      '      children = [\n' +
-      '         \n' +         
-      '      ]\n' +
-      '    )\n' +
-      '  )\n' +
-      ')\n';
+   let expected = 'XML_Serialize\n'+
+                  '(\n'+
+                  '  type = String\n'+
+                  '  resultSizeRange = 1\n'+
+                  '  checked = true\n'+
+                  '  binding = meta::external::format::xml::executionPlan::test::TestBinding\n'+
+                  '\n'+
+                  '  (\n'+
+                  '    GlobalGraphFetch\n'+
+                  '    (\n'+
+                  '      type = PartialClass[impls=[(meta::external::format::xml::executionPlan::test::Person | SelfMapping.meta_external_format_xml_executionPlan_test_Person)], propertiesWithParameters = [firstName, lastName]]\n'+
+                  '      resultSizeRange = *\n'+
+                  '      store = MODEL\n'+
+                  '      localGraphFetchExecutionNode = \n'+
+                  '         InMemoryRootGraphFetch\n'+
+                  '         (\n'+
+                  '           type = PartialClass[impls=[(meta::external::format::xml::executionPlan::test::Person | SelfMapping.meta_external_format_xml_executionPlan_test_Person)], propertiesWithParameters = [firstName, lastName]]\n'+
+                  '           graphFetchTree = [meta_external_format_xml_executionPlan_test_Person/meta::external::format::xml::executionPlan::test::Person]{@(meta_external_format_xml_executionPlan_test_Person->)@[/firstName],@(meta_external_format_xml_executionPlan_test_Person->)@[/lastName]}\n'+
+                  '           nodeIndex = 0\n'+
+                  '           batchSize = 1\n'+
+                  '           checked = true\n'+
+                  '           (\n'+
+                  '             DataQuality\n'+
+                  '             (\n'+
+                  '               type = PartialClass[impls=[], propertiesWithParameters = [firstName, lastName]]\n'+
+                  '               resultSizeRange = *\n'+
+                  '               enableConstraints = true\n'+
+                  '               checked = true\n'+
+                  '\n'+
+                  '               (\n'+
+                  '                 XML_Deserialize\n'+
+                  '                 (\n'+
+                  '                   type = PartialClass[impls=[], propertiesWithParameters = [firstName, lastName]]\n'+
+                  '                   resultSizeRange = *\n'+
+                  '                   binding = meta::external::format::xml::executionPlan::test::TestBinding\n'+
+                  '\n'+
+                  '                   (\n'+
+                  '                     UrlStream\n'+
+                  '                     (\n'+
+                  '                       type = String\n'+
+                  '                       url = executor:default\n'+
+                  '\n'+
+                  '                     )\n'+
+                  '                   )\n'+
+                  '                 )\n'+
+                  '               )\n'+
+                  '             )\n'+
+                  '           )\n'+
+                  '           children = [\n'+
+                  '              \n'+
+                  '           ]\n'+
+                  '         )\n'+
+                  '      children = [\n'+
+                  '         \n'+
+                  '      ]\n'+
+                  '    )\n'+
+                  '  )\n'+
+                  ')\n';
 
    assertEquals($expected, $planString);   
 }

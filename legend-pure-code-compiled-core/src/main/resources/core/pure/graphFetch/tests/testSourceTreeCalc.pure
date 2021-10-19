@@ -977,10 +977,11 @@ Class meta::pure::graphFetch::tests::sourceTreeCalc::withUnrelatedConstraintProp
 
 Class meta::pure::graphFetch::tests::sourceTreeCalc::withUnrelatedConstraintProperty::_A
 [
-   constraint: $this.a1 == ^_B(b1='x').b1
+   constraint: $this.a1 == ^_B(b1='x').b1 || $this.qp1()
 ]
 {
    a1: String[1];
+   qp1() { $this.a1 == ^_B(b1='y').b1} : Boolean[1];
 }
 
 Class meta::pure::graphFetch::tests::sourceTreeCalc::withUnrelatedConstraintProperty::_B
@@ -998,4 +999,312 @@ Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withUnrelatedConstraintPr
          ~src _A
          a1: $src.a1
       }
+)
+
+###Pure
+import meta::pure::graphFetch::*;
+import meta::pure::graphFetch::execution::*;
+import meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::*;
+ 
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target
+{
+   targetZipCode: String[1];
+   targetAddress: String[1];
+}
+ 
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Person
+{
+   address: Location[1];
+}
+ 
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Location
+{
+   zipCode: String[1];
+   coordinates: String[1];
+}
+ 
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Street extends Location
+{
+   street: String[1];
+}
+ 
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Road extends Location
+{
+   road: String[1];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetStreetCluster
+{
+  streetNames: String[*];
+  zipCodes: String[*];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceStreetCluster
+{
+  streetCluster: Street[*];
+}
+ 
+function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testWithSingleSubType():Boolean[1]
+{
+   let tree0 = #{
+      Target{
+         targetZipCode
+      }
+   }#;
+   let sourceTree0 = calculateSourceTree($tree0, meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType, meta::pure::router::extension::defaultExtensions())->sortTree();
+   let expectedSourceTree0 = #{
+      Person{
+         address{
+            zipCode
+         }
+      }
+   }#; 
+   assertEquals($expectedSourceTree0->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree0->sortTree()->meta::pure::graphFetch::treeToString());    
+   
+   let tree = #{
+      Target{
+         targetZipCode, 
+         targetAddress
+      }
+   }#;
+   let sourceTree = calculateSourceTree($tree, meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType, meta::pure::router::extension::defaultExtensions())->sortTree();
+   let expectedSourceTree = #{
+      Person{
+         address{
+            zipCode
+         },
+         address->subType(@Street){
+            zipCode,
+            street
+         }
+      }
+   }#; 
+   
+   assertEquals($expectedSourceTree->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree->sortTree()->meta::pure::graphFetch::treeToString()); 
+  
+   let tree1 = #{
+      Target{
+         targetAddress
+      }
+   }#;
+   let sourceTree1 = calculateSourceTree($tree1, meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType, meta::pure::router::extension::defaultExtensions())->sortTree();
+   let expectedSourceTree1 = #{
+      Person{
+         address->subType(@Street){
+            street
+         }
+      }
+   }#; 
+   assertEquals($expectedSourceTree1->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree1->sortTree()->meta::pure::graphFetch::treeToString());  
+}
+ 
+function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testWithMultipleSubTypes():Boolean[1]
+{   
+   let tree = #{
+      Target{
+         targetZipCode, 
+         targetAddress
+      }
+   }#;
+   let sourceTree = calculateSourceTree($tree, meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithMultipleSubTypes, meta::pure::router::extension::defaultExtensions())->sortTree();
+   let expectedSourceTree = #{
+      Person
+      {
+         address{
+            coordinates, 
+            zipCode
+         }, 
+         address->subType(@Street){
+            coordinates,
+            street,
+            zipCode
+         },       
+         address->subType(@Road){
+            coordinates,
+            road, 
+            zipCode
+         }
+      }
+   }#; 
+   assertEquals($expectedSourceTree->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree->meta::pure::graphFetch::treeToString());
+   
+   let tree1 = #{
+      Target{
+         targetAddress
+      }
+   }#;
+   let sourceTree1 = calculateSourceTree($tree1, meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithMultipleSubTypes, meta::pure::router::extension::defaultExtensions())->sortTree();
+   let expectedSourceTree1 = #{
+      Person
+      {  
+         address{
+            coordinates
+         },   
+         address->subType(@Street){
+            coordinates,
+            street
+         },
+         address->subType(@Road){
+            coordinates,
+            road
+         }
+      }
+   }#; 
+   assertEquals($expectedSourceTree1->sortTree()->meta::pure::graphFetch::treeToString(), $sourceTree1->meta::pure::graphFetch::treeToString());      
+}
+ 
+###Mapping
+Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSingleSubType
+(
+   *meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target: Pure
+   {
+      ~src meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Person
+      targetZipCode: $src.address.zipCode,
+      targetAddress: if($src.address->instanceOf(meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Street),|$src.address->cast(@meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Street).street,|'unknown')
+   }
+)
+
+Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithSuperTypeProperties
+(
+  *meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetStreetCluster: Pure
+  {
+    ~src meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceStreetCluster
+    streetNames: $src.streetCluster.street,
+    zipCodes: $src.streetCluster.zipCode
+  }
+)
+
+ 
+###Mapping
+import meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::*;
+Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::testMappingWithMultipleSubTypes
+(
+   *meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Target: Pure
+   {
+      ~src meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Person
+      targetZipCode: $src.address.zipCode,
+      targetAddress: $src.address->match([
+         s:Street[1] | $s.street, 
+         r:Road[1] | $r.road,
+         l:Location[1] | $l.coordinates
+         ])
+   }
+)
+
+###Pure
+import meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::*;
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::A
+{
+  b:meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::B[*];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::C
+{
+  cid:String[1];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::B extends meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::C
+{
+  id:String[1];
+  id2:String[1];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Source
+{
+  a : meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::A[*];
+  accessClassBProperties() { $this.a->filter(a | $a.b.id->isEmpty()).b.id2} : String[*];
+  accessClassBAndCSuperTypeProperties() { $this.a->filter(a | $a.b.id->isNotEmpty() && $a.b->accessCid()).b.id} : String[*];
+}
+
+function meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::accessCid(c : C[*]) : Boolean[1]
+{
+  $c.cid->isNotEmpty();
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetForSubTypeAndSuperTypeAccesses
+{
+  id : String[*];
+}
+
+function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testNestedSubTypeAndSuperTypeAccesses():Boolean[1]
+{
+  let tree = #{
+      TargetForSubTypeAndSuperTypeAccesses {
+         id
+      }
+   }#;
+
+  let expectedString = 'Source [requires: accessClassBProperties,accessClassBAndCSuperTypeProperties]\n' +
+                        '(\n' +
+                        '  a\n' +
+                        '  (\n' +
+                        '    b\n' +
+                        '    (\n' +
+                        '      id\n' +
+                        '      id2\n' +
+                        '    )\n' +
+                        '  )\n' +
+                        ')';
+
+   let sourceTree = meta::pure::graphFetch::calculateSourceTree($tree, 
+                                                                meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceToTargetMappingWithSubtypeAndSuperTypeAccesses,
+                                                                meta::pure::router::extension::defaultExtensions())->meta::pure::graphFetch::sortTree();
+   assertEquals($expectedString, $sourceTree->meta::pure::graphFetch::sortTree()->meta::pure::graphFetch::treeToString());
+}
+
+function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testNestedSubTypeAndSuperTypeAccesses2():Boolean[1]
+{
+  let tree = #{
+      TargetForSubTypeAndSuperTypeAccesses {
+         id
+      }
+   }#;
+
+  let expectedString = 'Source [requires: accessClassBProperties]\n' +
+                        '(\n' +
+                        '  a\n' +
+                        '  (\n' +
+                        '    b\n' +
+                        '    (\n' +
+                        '      id\n' +
+                        '      id2\n' +
+                        '    )\n' +
+                        '  )\n' +
+                        ')';
+
+   let sourceTree = meta::pure::graphFetch::calculateSourceTree($tree, 
+                                                                meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceToTargetMappingWithSubtypeAndSuperTypeAccesses2,
+                                                                meta::pure::router::extension::defaultExtensions())->meta::pure::graphFetch::sortTree();
+   assertEquals($expectedString, $sourceTree->meta::pure::graphFetch::sortTree()->meta::pure::graphFetch::treeToString());
+
+
+}
+
+function meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::f(a:A[1]):Boolean[1]
+{
+  $a.b.id->isNotEmpty() && $a.b->meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::g();
+}
+
+function meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::g(c:meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::C[*]):Boolean[1]
+{
+  $c.cid->isNotEmpty();
+}
+
+###Mapping
+Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceToTargetMappingWithSubtypeAndSuperTypeAccesses
+(
+  meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetForSubTypeAndSuperTypeAccesses : Pure
+  {
+    ~src meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Source
+    id : if($src.a->size() == 1, | $src.accessClassBProperties, | $src.accessClassBAndCSuperTypeProperties)
+  }
+)
+
+Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceToTargetMappingWithSubtypeAndSuperTypeAccesses2
+(
+  meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::TargetForSubTypeAndSuperTypeAccesses : Pure
+  {
+    ~src meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::Source
+    id : if($src.a->size()==1, | $src.a->filter(a|$a.b.id->isNotEmpty() && $a->meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::f()).b.id, | $src.accessClassBProperties())
+  }
 )

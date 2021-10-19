@@ -12,21 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::external::shared::format::binding::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::metamodel::*;
 import meta::pure::dataQuality::*;
+import meta::pure::model::binding::*;
 
 Class meta::external::shared::format::executionPlan::ExternalFormatOption
 {   
 }
 
-function meta::external::shared::format::executionPlan::externalize<T>(collection: T[*], operation:SchemaBinding[1]):String[1]
+function meta::external::shared::format::executionPlan::externalize<T>(collection: T[*], binding:Binding[1]):String[1]
 {
    fail('Implemented by execution plans');
    'Not impemented!';
 }
 
-function meta::external::shared::format::executionPlan::externalize<T>(collection: Checked<T>[*], operation:SchemaBinding[1]):String[1]
+function meta::external::shared::format::executionPlan::externalize<T>(collection: Checked<T>[*], binding:Binding[1]):String[1]
 {
    fail('Implemented by execution plans');
    'Not impemented!';
@@ -41,7 +43,7 @@ function meta::external::shared::format::executionPlan::isSerialize(fe:FunctionE
 function meta::external::shared::format::executionPlan::serializeFunctions():Function<Any>[*]
 {
    [
-      externalize_T_MANY__SchemaBinding_1__String_1_,
-      externalize_Checked_MANY__SchemaBinding_1__String_1_
+      externalize_T_MANY__Binding_1__String_1_,
+      externalize_Checked_MANY__Binding_1__String_1_
    ]
 }

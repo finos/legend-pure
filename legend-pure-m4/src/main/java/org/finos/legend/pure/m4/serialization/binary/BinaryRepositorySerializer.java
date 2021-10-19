@@ -241,7 +241,7 @@ public class BinaryRepositorySerializer
 
         // Build intermediate nodes
         int nodeCount = reader.readInt();
-        message.message("Loading from cache<BR>Building '" + nodeCount + "' intermediate nodes");
+        message.message("Loading from cache - Building '" + nodeCount + "' intermediate nodes");
         final MutableIntObjectMap<IntermediateNode> nodes = IntObjectHashMap.newMap();
         for (int i = 0; i < nodeCount; i++)
         {
@@ -251,7 +251,7 @@ public class BinaryRepositorySerializer
 
 
         // First pass
-        message.message("Loading from cache<BR>First pass node instantiation<BR>(" + nodes.size() + " nodes)");
+        message.message("Loading from cache - First pass node instantiation (" + nodes.size() + " nodes)");
         final MutableIntObjectMap<CoreInstance> map = IntObjectHashMap.newMap();
         topLevelIds.forEach(new IntProcedure()
         {

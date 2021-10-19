@@ -12,29 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::graphFetch::inMemory::*;
-import meta::pure::mapping::modelToModel::graphFetch::executionPlan::*;
-import meta::alloy::runtime::java::graphFetch::common::*;
-import meta::alloy::runtime::java::graphFetch::storeStreamReading::*;
-import meta::pure::mapping::modelToModel::*;
-import meta::pure::graphFetch::executionPlan::*;
-import meta::java::generation::utils::*;
-import meta::java::serialization::*;
-import meta::pure::mapping::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::executionPlan::*;
-import meta::pure::metamodel::constraint::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::graphFetch::inMemory::*;
+import meta::pure::executionPlan::engine::java::graphFetch::common::*;
+import meta::pure::executionPlan::engine::java::graphFetch::storeStreamReading::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::graphFetch::*;
-import meta::java::metamodel::project::*;
-import meta::java::generation::convention::*;
-import meta::alloy::runtime::java::typeInfo::*;
+import meta::pure::graphFetch::executionPlan::*;
+import meta::pure::mapping::*;
+import meta::pure::mapping::modelToModel::*;
+import meta::pure::mapping::modelToModel::graphFetch::executionPlan::*;
+import meta::pure::metamodel::constraint::*;
 
-Profile meta::alloy::runtime::java::roadmap::feature
+Profile meta::pure::executionPlan::engine::java::roadmap::feature
 {
    stereotypes: [ M2MBasics, DataQuality, Enums, Filter, Project, Advanced, XML, Runtime ];
 }
 
-Class meta::alloy::runtime::java::GenerationContext
+Class meta::pure::executionPlan::engine::java::GenerationContext
 {
    typeInfos                 : TypeInfoSet[1];
    conventions               : Conventions[1];
@@ -43,7 +46,7 @@ Class meta::alloy::runtime::java::GenerationContext
    graphFetchWithCachingFlow : Boolean[0..1];
 }
 
-Class meta::alloy::runtime::java::NodeInfo
+Class meta::pure::executionPlan::engine::java::NodeInfo
 {
    path            : String[1];
    returnType      : JavaType[1];
@@ -51,64 +54,64 @@ Class meta::alloy::runtime::java::NodeInfo
    graphFetchTrees : RootGraphFetchTree<Any>[*];
 }
 
-Class meta::alloy::runtime::java::JavaType
+Class meta::pure::executionPlan::engine::java::JavaType
 {
 }
 
-Class meta::alloy::runtime::java::SimpleJavaType extends JavaType
+Class meta::pure::executionPlan::engine::java::SimpleJavaType extends JavaType
 {
-   pureType   : Type[1];
-   javaType   : meta::java::metamodel::Type[1];
+   pureType   : meta::pure::metamodel::type::Type[1];
+   javaType   : meta::external::language::java::metamodel::Type[1];
 }
 
-Class meta::alloy::runtime::java::CheckedJavaType extends JavaType
+Class meta::pure::executionPlan::engine::java::CheckedJavaType extends JavaType
 {
    checkedOf  : SimpleJavaType[1];
-   source     : JavaType[1];
+   source     : JavaType[0..1];
 }
 
 
-Class <<typemodifiers.abstract>> meta::alloy::runtime::java::typeInfo::TypeInfoSet
+Class <<typemodifiers.abstract>> meta::pure::executionPlan::engine::java::typeInfo::TypeInfoSet
 {
    typeInfos: TypeInfo[*];
 }
 
-Class <<typemodifiers.abstract>> meta::alloy::runtime::java::typeInfo::TypeInfo
+Class <<typemodifiers.abstract>> meta::pure::executionPlan::engine::java::typeInfo::TypeInfo
 {
-   type: Type[1];
+   type: meta::pure::metamodel::type::Type[1];
 }
 
-Class meta::alloy::runtime::java::typeInfo::EnumerationTypeInfo extends TypeInfo
+Class meta::pure::executionPlan::engine::java::typeInfo::EnumerationTypeInfo extends TypeInfo
 {
-   enumeration() { $this.type->cast(@Enumeration<Any>) }: Enumeration<Any>[1];
+   enumeration() { $this.type->cast(@meta::pure::metamodel::type::Enumeration<Any>) }: meta::pure::metamodel::type::Enumeration<Any>[1];
 }
 
-Class <<typemodifiers.abstract>> meta::alloy::runtime::java::typeInfo::ConstraintInfo
+Class <<typemodifiers.abstract>> meta::pure::executionPlan::engine::java::typeInfo::ConstraintInfo
 {
    constraint:Constraint[1];
 }
 
-Class meta::alloy::runtime::java::typeInfo::SupportedConstraintInfo extends ConstraintInfo
+Class meta::pure::executionPlan::engine::java::typeInfo::SupportedConstraintInfo extends ConstraintInfo
 {
 }
 
-Class meta::alloy::runtime::java::typeInfo::AlwaysDefectConstraintInfo extends ConstraintInfo
+Class meta::pure::executionPlan::engine::java::typeInfo::AlwaysDefectConstraintInfo extends ConstraintInfo
 {
    defectMessage: String[1];
 }
 
-Class meta::alloy::runtime::java::typeInfo::ClassTypeInfo extends TypeInfo
+Class meta::pure::executionPlan::engine::java::typeInfo::ClassTypeInfo extends TypeInfo
 {
    properties          : Property<Nil,Any|*>[*];
-   supertypes          : Class<Any>[*];
+   supertypes          : meta::pure::metamodel::type::Class<Any>[*];
    qualifiedProperties : QualifiedProperty<Any>[*];
    constraints         : ConstraintInfo[*];
-   isFromConstraint    : Boolean[1];
+   isNewInstanceAllowed        : Boolean[1];
    
-   class() { $this.type->cast(@Class<Any>) }: Class<Any>[1];
+   class() { $this.type->cast(@meta::pure::metamodel::type::Class<Any>) }: meta::pure::metamodel::type::Class<Any>[1];
 }
 
-Class meta::alloy::runtime::java::typeInfo::UnitTypeInfo extends TypeInfo
+Class meta::pure::executionPlan::engine::java::typeInfo::UnitTypeInfo extends TypeInfo
 {
    measure: Measure[1];
    conversionFunction: FunctionDefinition<Any>[1];
@@ -116,13 +119,13 @@ Class meta::alloy::runtime::java::typeInfo::UnitTypeInfo extends TypeInfo
    unit() { $this.type->cast(@Unit) }: Unit[1];
 }
 
-Class meta::alloy::runtime::java::GeneratedCode
+Class meta::pure::executionPlan::engine::java::GeneratedCode
 {
    project: Project[0..1];
    implementation: JavaPlatformImplementation[0..1];
 }
 
-Class meta::alloy::runtime::java::GeneratedNode
+Class meta::pure::executionPlan::engine::java::GeneratedNode
 {
    project: Project[0..1];
    node: ExecutionNode[1];
@@ -134,15 +137,15 @@ Class meta::alloy::runtime::java::GeneratedNode
 // --- Plan generation
 // ----------------------------------------------------------------------------------------------------------
 
-function meta::alloy::runtime::java::generatePlatformCode(e:ExecutionPlan[1], config:PlatformCodeGenerationConfig[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):ExecutionPlan[1]
+function meta::pure::executionPlan::engine::java::generatePlatformCode(e:ExecutionPlan[1], config:PlatformCodeGenerationConfig[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):ExecutionPlan[1]
 {
-   let conventions     = alloyConventions($extensions);
+   let conventions     = engineConventions($extensions);
    let pathAdjusted    = if($config.planId->isEmpty(), 
                             |$conventions, 
                             |$conventions->setBasePackageName($conventions.basePackageName+'.'+$conventions->identifier('plan_'+$config.planId->toOne()))
                          );
    let initialContext  = ^GenerationContext(typeInfos=newTypeInfoSet(), conventions=$pathAdjusted, graphFetchWithCachingFlow=$config.graphFetchWithCachingFlow);
-   let preparedContext = $e.rootExecutionNode->prepare('root', $initialContext, $extensions, $debug)->meta::alloy::runtime::java::fillNewFunctionProhibitedList();
+   let preparedContext = $e.rootExecutionNode->prepare('root', $initialContext, $extensions, $debug)->meta::pure::executionPlan::engine::java::fillNewFunctionProhibitedList();
    
    // TODO Move Interface/Enum/Unit generation to here
    let context = ^$preparedContext(baseProject=$preparedContext.conventions->fundamentals($debug));
@@ -159,8 +162,10 @@ function meta::alloy::runtime::java::generatePlatformCode(e:ExecutionPlan[1], co
    );
 }
 
-function meta::alloy::runtime::java::projectToImplementation(project:Project[1]):JavaPlatformImplementation[1]
-{                                                     
+function meta::pure::executionPlan::engine::java::projectToImplementation(project:Project[1]):JavaPlatformImplementation[1]
+{   
+   let sfer = newStringifier($project);
+   
    ^JavaPlatformImplementation
     (
        classes = $project->allClasses()->map({cl |
@@ -168,14 +173,14 @@ function meta::alloy::runtime::java::projectToImplementation(project:Project[1])
            (
              package = $cl.package->packageToString(),
              name    = $cl.simpleName,
-             source  = $cl->meta::java::metamodel::factory::inferImports()->meta::java::serialization::classToString()
+             source  = $sfer->ofClass($cl->meta::external::language::java::factory::inferImports())
           )
        })
     );
 }
 
 
-function meta::alloy::runtime::java::prepare(node:ExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
+function meta::pure::executionPlan::engine::java::prepare(node:ExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
 {    
    let contextFromChildren = $node.executionNodes->prepareChildNodes(1, $path, $context, $extensions, $debug);
    
@@ -185,7 +190,7 @@ function meta::alloy::runtime::java::prepare(node:ExecutionNode[1], path:String[
          if($f.falseBlock->isEmpty(), |$contextFromTrueBlock, |$f.falseBlock->toOne()->prepare($path+'.falseBlock', $contextFromTrueBlock, $extensions, $debug));,
       g:GlobalGraphFetchExecutionNode[1] | 
          let contextFromGlobalChildren = $g.children->size()->range()->fold({x, ctx | $g.children->at($x)->prepare($path+'.globalChild' + $x->toString(), $ctx, $extensions, $debug)}, $contextFromChildren);
-         $g.localGraphFetchExecutionNode->prepare($path+'.localGraph', $contextFromGlobalChildren, $extensions, $debug);,
+         $g.localGraphFetchExecutionNode->prepare($path+localGraphFetchNodePathPrefix(), $contextFromGlobalChildren, $extensions, $debug);,
       g:InMemoryGraphFetchExecutionNode[1] | 
          $g.children->size()->range()->fold({x, ctx | $g.children->at($x)->prepare($path+'.localChild' + $x->toString(), $ctx, $extensions, $debug)}, $contextFromChildren),
       e:ExecutionNode[1] | $contextFromChildren
@@ -200,14 +205,14 @@ function meta::alloy::runtime::java::prepare(node:ExecutionNode[1], path:String[
    ])->toOneMany());
 }
 
-function <<access.private>> meta::alloy::runtime::java::fillNewFunctionProhibitedList(context:GenerationContext[1]):GenerationContext[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::fillNewFunctionProhibitedList(context:GenerationContext[1]):GenerationContext[1]
 {
-   let cls = $context.typeInfos.typeInfos->filter(t|$t->instanceOf(ClassTypeInfo))->cast(@ClassTypeInfo)->filter(c| !$c.isFromConstraint);
+   let cls = $context.typeInfos.typeInfos->filter(t|$t->instanceOf(ClassTypeInfo))->cast(@ClassTypeInfo)->filter(c| !$c.isNewInstanceAllowed); //TODO: remove the not in the last filter
    let oldConventions = $context.conventions; 
    ^$context(conventions = ^$oldConventions(newFunctionProhibitedList = $cls->map(c|$c.class())));
 }
 
-function <<access.private>> meta::alloy::runtime::java::prepareChildNodes(nodes:ExecutionNode[*], childNo:Integer[1], parentPath:String[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::prepareChildNodes(nodes:ExecutionNode[*], childNo:Integer[1], parentPath:String[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
 {
    $nodes->head()->match([
       {n0:ExecutionNode[0] |
@@ -220,7 +225,7 @@ function <<access.private>> meta::alloy::runtime::java::prepareChildNodes(nodes:
    ]);
 }
 
-function meta::alloy::runtime::java::generatePlatformCode(node:ExecutionNode[1], path:String[1], mapping:Mapping[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedNode[1]
+function meta::pure::executionPlan::engine::java::generatePlatformCode(node:ExecutionNode[1], path:String[1], mapping:Mapping[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedNode[1]
 {
    let generated = $node->match($extensions.plan_javaRuntime_main_generatePlatformCode1->map(e|$e->eval($path, $context, $extensions, $debug))->concatenate([
       l:LocalGraphFetchExecutionNode[1]              | $l->generateCodeForLocalGraphFetchNode($path, $context, $extensions, $debug),
@@ -239,7 +244,7 @@ function meta::alloy::runtime::java::generatePlatformCode(node:ExecutionNode[1],
    $newNode->match($extensions.plan_javaRuntime_main_generatePlatformCode2->map(e|$e->eval($path, $mapping, $context, $extensions, $fullProject, $debug))->concatenate([
       g:GlobalGraphFetchExecutionNode[1] |
          let transformedChildren = $g.children->size()->range()->map(x | $g.children->at($x)->generatePlatformCode($path+'.globalChild' + $x->toString(), $mapping, $context, $extensions, $debug));
-         let transformedLocal = $g.localGraphFetchExecutionNode->generatePlatformCode($path+'.localGraph', $mapping, $context, $extensions, $debug);
+         let transformedLocal = $g.localGraphFetchExecutionNode->generatePlatformCode($path+localGraphFetchNodePathPrefix(), $mapping, $context, $extensions, $debug);
          let transformedLocalNode = $transformedLocal.node->cast(@LocalGraphFetchExecutionNode);
          ^GeneratedNode(node=^$g(children = $transformedChildren.node->cast(@GlobalGraphFetchExecutionNode), localGraphFetchExecutionNode = $transformedLocalNode), project = mergeProjectsNullable($fullProject->concatenate($transformedChildren.project)->concatenate($transformedLocal.project)));,
       g:InMemoryGraphFetchExecutionNode[1] | 
@@ -253,7 +258,7 @@ function meta::alloy::runtime::java::generatePlatformCode(node:ExecutionNode[1],
    ])->toOneMany());
 }
 
-function <<access.private>> meta::alloy::runtime::java::generateChildNodes(nodes:ExecutionNode[*], childNo:Integer[1], parentPath:String[1], mapping:Mapping[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedNode[*]
+function <<access.private>> meta::pure::executionPlan::engine::java::generateChildNodes(nodes:ExecutionNode[*], childNo:Integer[1], parentPath:String[1], mapping:Mapping[1], context:GenerationContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedNode[*]
 {
    $nodes->head()->match([
       n0:ExecutionNode[0] | [],
@@ -261,40 +266,40 @@ function <<access.private>> meta::alloy::runtime::java::generateChildNodes(nodes
    ]);
 }
 
-function meta::alloy::runtime::java::generatedCode(project:Project[1], entryPoint:meta::java::metamodel::Class[1]):GeneratedCode[1]
+function meta::pure::executionPlan::engine::java::generatedCode(project:Project[1], entryPoint:meta::external::language::java::metamodel::Class[1]):GeneratedCode[1]
 {
    assert($project->containsClass($entryPoint), 'Entry point class is missing');
    ^GeneratedCode(
       project        = $project,
       implementation = ^JavaPlatformImplementation
                        (
-                          executionClassFullName = $entryPoint->typePathToString(true),
+                          executionClassFullName = $entryPoint->typeToString(),
                           executionMethodName    = $entryPoint.methods->filter(m |$m->isStatic())->first().name
                        )
    );
 }
 
-function meta::alloy::runtime::java::addNodeInfo(context:GenerationContext[1], nodeInfo:NodeInfo[1]): GenerationContext[1]
+function meta::pure::executionPlan::engine::java::addNodeInfo(context:GenerationContext[1], nodeInfo:NodeInfo[1]): GenerationContext[1]
 {
    ^$context(nodeInfos=$context.nodeInfos->concatenate($nodeInfo));   
 }
 
-function meta::alloy::runtime::java::nodeInfosForPath(context:GenerationContext[1], path:String[1]): NodeInfo[*]
+function meta::pure::executionPlan::engine::java::nodeInfosForPath(context:GenerationContext[1], path:String[1]): NodeInfo[*]
 {
    $context.nodeInfos->filter(ni| $ni.path == $path);
 }
 
-function meta::alloy::runtime::java::childNodeInfosForPath(context:GenerationContext[1], path:String[1]): NodeInfo[*]
+function meta::pure::executionPlan::engine::java::childNodeInfosForPath(context:GenerationContext[1], path:String[1]): NodeInfo[*]
 {
    $context.nodeInfos->filter(ni| $ni.path->contains('.') && $ni.path->substring(0, $ni.path->lastIndexOf('.')) == $path);
 }
 
-function meta::alloy::runtime::java::setTypeInfos(context:GenerationContext[1], typeInfos:TypeInfoSet[1]): GenerationContext[1]
+function meta::pure::executionPlan::engine::java::setTypeInfos(context:GenerationContext[1], typeInfos:TypeInfoSet[1]): GenerationContext[1]
 {
    ^$context(typeInfos=$typeInfos);   
 }
 
-function meta::alloy::runtime::java::setConventions(context:GenerationContext[1], conventions:Conventions[1]): GenerationContext[1]
+function meta::pure::executionPlan::engine::java::setConventions(context:GenerationContext[1], conventions:Conventions[1]): GenerationContext[1]
 {
    ^$context(conventions=$conventions);   
 }

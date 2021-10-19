@@ -17,14 +17,16 @@ import meta::external::format::xml::metamodel::xml::*;
 import meta::external::format::xml::metamodel::xsd::*;
 import meta::external::shared::*;
 import meta::external::shared::generation::*;
+import meta::external::shared::format::binding::*;
+import meta::external::shared::format::binding::toString::*;
 import meta::external::shared::format::metamodel::*;
-import meta::external::shared::format::metamodel::toString::*;
 import meta::json::*;
 import meta::pure::functions::collection::*;
 import meta::pure::functions::meta::*;
 import meta::pure::functions::tests::collection::*;
 import meta::pure::graphFetch::*;
 import meta::pure::metamodel::serialization::grammar::*;
+import meta::pure::model::unit::*;
 
 /// ========================================================================================================================================================
 // Entry points 
@@ -36,19 +38,19 @@ Class meta::external::format::xml::binding::toPure::XsdToModelConfiguration exte
    includeUnreachableClasses : Boolean[1];
 }
 
-function meta::external::format::xml::binding::toPure::xsdToPure(schema:Schema[1], config:XsdToModelConfiguration[1]): SchemaBinding[1]
+function meta::external::format::xml::binding::toPure::xsdToPure(schemaSet:SchemaSet[1], config:XsdToModelConfiguration[1]): Binding[1]
 {
-   xsdToPure($schema, $config, noDebug());
+   xsdToPure($schemaSet, $config, noDebug());
 }
 
-function meta::external::format::xml::binding::toPure::xsdToPureWithDebug(schema:Schema[1], config:XsdToModelConfiguration[1]): SchemaBinding[1]
+function meta::external::format::xml::binding::toPure::xsdToPureWithDebug(schemaSet:SchemaSet[1], config:XsdToModelConfiguration[1]): Binding[1]
 {
-   xsdToPure($schema, $config, debug());
+   xsdToPure($schemaSet, $config, debug());
 }
 
-function meta::external::format::xml::binding::toPure::xsdToPure(schema:Schema[1], config:XsdToModelConfiguration[1], debug:DebugContext[1]): SchemaBinding[1]
+function meta::external::format::xml::binding::toPure::xsdToPure(schemaSet:SchemaSet[1], config:XsdToModelConfiguration[1], debug:DebugContext[1]): Binding[1]
 {
-   let resolved = createGenerationContext($schema, $config)
+   let resolved = createGenerationContext($schemaSet, $config)
       ->findAllGlobals($debug)
       ->resolveAllGlobalSimpleTypes($debug)
       ->resolveAllGlobalComplexTypesAndElements($debug)
@@ -60,13 +62,14 @@ function meta::external::format::xml::binding::toPure::xsdToPure(schema:Schema[1
    
    let generatedElements = $optimized->generateTypes($debug)->removeDuplicates();   
 
-   let sepPos  = $config.targetOperation->lastIndexOf('::');
-   let pkgName = $config.targetOperation->substring(0, $sepPos);   
-   let result  = ^SchemaBinding(
-      package = pathToPackage($pkgName, true),
-      name    = $config.targetOperation->substring($sepPos+2),
-      schema  = $schema, 
-      model   = $generatedElements
+   let sepPos  = $config.targetBinding->lastIndexOf('::');
+   let pkgName = $config.targetBinding->substring(0, $sepPos);   
+   let result  = ^Binding(
+      package     = pathToPackage($pkgName, true),
+      name        = $config.targetBinding->substring($sepPos+2),
+      schemaSet   = $schemaSet,
+      contentType = 'application/xml',
+      modelUnit   = newModelUnit()->include($generatedElements)
    );
       
    $debug->log(|'\nGenerated the following model:\n\n'+$result->bindingToString());
@@ -80,7 +83,7 @@ function meta::external::format::xml::binding::toPure::xsdToPure(schema:Schema[1
 Class <<access.private>> meta::external::format::xml::binding::toPure::GenerationContext
 {
    config          : XsdToModelConfiguration[1];
-   externalSchema  : Schema[1];
+   schemaSet       : SchemaSet[1];
    schema          : XsdSchema[1];
    
    targetNamespace : String[1];
@@ -94,12 +97,15 @@ Class <<access.private>> meta::external::format::xml::binding::toPure::Generatio
    package() {if($this.config.targetPackage->endsWith('::'), |$this.config.targetPackage, |$this.config.targetPackage+'::')}: String[1];
 }
 
-function <<access.private>> meta::external::format::xml::binding::toPure::createGenerationContext(externalSchema:Schema[1], config:XsdToModelConfiguration[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::createGenerationContext(schemaSet:SchemaSet[1], config:XsdToModelConfiguration[1]): GenerationContext[1]
 {
-   let schema  = $externalSchema.detail->cast(@XsdSchema); 
+   let schema  = if($config.sourceSchemaId->isEmpty(), 
+                    | $schemaSet.schemas->at(0),
+                    | $schemaSet.schemas->filter(s| $s.id == $config.sourceSchemaId)->toOne()
+                 ).detail->cast(@XsdSchema); 
    let context = ^GenerationContext(
-      config          =  $config, 
-      externalSchema  =  $externalSchema,
+      config          = $config, 
+      schemaSet       = $schemaSet,
       schema          = $schema, 
       targetNamespace = '',
       genInfos        = ^Map<QName, GenInfo>(), 
