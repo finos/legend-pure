@@ -989,18 +989,22 @@ function <<test.Test>> meta::pure::executionPlan::tests::letVariableFunctionAdju
    '      0006 import org.finos.legend.engine.plan.dependencies.store.shared.IExecutionNodeContext;\n' +
    '      0007 import org.finos.legend.engine.plan.dependencies.util.Library;\n' +
    '      0008 \n' +
-   '      0009 public class Execute {\n' +
-   '      0010     public static Object execute(IExecutionNodeContext context) {\n' +
-   '      0011         try\n' +
-   '      0012         {\n' +
-   '      0013             return Library.adjustDate(PureDate.fromDate(new Date()), 1L, DurationUnit.DAYS);\n' +
-   '      0014         }\n' +
-   '      0015         catch (Exception e)\n' +
-   '      0016         {\n' +
-   '      0017             throw new RuntimeException("Failed in node: root.n1.n1", e);\n' +
+   '      0009 public class Execute\n' +
+   '      0010 {\n' +
+   '      0011     public static Object execute(IExecutionNodeContext context)\n' +
+   '      0012     {\n' +
+   '      0013         try\n' +
+   '      0014         {\n' +
+   '      0015             return Library.adjustDate(PureDate.fromDate(new Date()),\n' +
+   '      0016                                       1L,\n' +
+   '      0017                                       DurationUnit.DAYS);\n' +
    '      0018         }\n' +
-   '      0019     }\n' +
-   '      0020 }\n' +
+   '      0019         catch (Exception e)\n' +
+   '      0020         {\n' +
+   '      0021             throw new RuntimeException("Failed in node: root.n1.n1", e);\n' +
+   '      0022         }\n' +
+   '      0023     }\n' +
+   '      0024 }\n' +
    ')\n';
    assertEquals($expectedJava, $withJava->planToString(true, meta::pure::router::extension::defaultRelationalExtensions()));
 }
@@ -1087,21 +1091,24 @@ function <<test.Test>> meta::pure::executionPlan::tests::letVariableFunctionAdju
    '      0005 import org.finos.legend.engine.plan.dependencies.store.shared.IExecutionNodeContext;\n' +
    '      0006 import org.finos.legend.engine.plan.dependencies.util.Library;\n' +
    '      0007 \n' +
-   '      0008 public class Execute {\n' +
-   '      0009     public static Object execute(IExecutionNodeContext context) {\n' +
-   '      0010         try\n' +
-   '      0011         {\n' +
-   '      0012             return Library.adjustDate(PureDate.parsePureDate("2005-10-10"), 1L, DurationUnit.DAYS);\n' +
-   '      0013         }\n' +
-   '      0014         catch (Exception e)\n' +
-   '      0015         {\n' +
-   '      0016             throw new RuntimeException("Failed in node: root.n1.n1", e);\n' +
+   '      0008 public class Execute\n' +
+   '      0009 {\n' +
+   '      0010     public static Object execute(IExecutionNodeContext context)\n' +
+   '      0011     {\n' +
+   '      0012         try\n' +
+   '      0013         {\n' +
+   '      0014             return Library.adjustDate(PureDate.parsePureDate("2005-10-10"),\n' +
+   '      0015                                       1L,\n' +
+   '      0016                                       DurationUnit.DAYS);\n' +
    '      0017         }\n' +
-   '      0018     }\n' +
-   '      0019 }\n' +
+   '      0018         catch (Exception e)\n' +
+   '      0019         {\n' +
+   '      0020             throw new RuntimeException("Failed in node: root.n1.n1", e);\n' +
+   '      0021         }\n' +
+   '      0022     }\n' +
+   '      0023 }\n' +
    ')\n';
    assertEquals($expectedJava, $withJava->planToString(true, meta::pure::router::extension::defaultRelationalExtensions()));
-
 }
 
 function <<test.Test>> meta::pure::executionPlan::tests::testTemporalDateVariableAtRoot():Boolean[1]
@@ -1381,10 +1388,10 @@ function <<test.Test>> meta::pure::executionPlan::tests::testExecutionPlanGenera
 function <<test.Test>> meta::pure::executionPlan::tests::testExecutionPlanGenerationForInWithTimeZone():Boolean[1]
 {
    let res = executionPlan({dates:DateTime[*] |Trade.all()->filter(t|$t.settlementDateTime->in($dates))->project([x | $x.id], ['TradeId'])},
-                           simpleRelationalMapping, 
-                           ^Runtime(connections=^DatabaseConnection(element = relationalDB, type=DatabaseType.Presto, timeZone='US/Arizona')), 
+                           simpleRelationalMapping,
+                           ^Runtime(connections=^DatabaseConnection(element = relationalDB, type=DatabaseType.Presto, timeZone='US/Arizona')),
                            meta::pure::router::extension::defaultRelationalExtensions());
-   let expected = 
+   let expected =
       'Sequence\n'+
       '(\n'+
       '  type = TDS[(TradeId, Integer, INT, \"\")]\n'+
@@ -1408,10 +1415,10 @@ function <<test.Test>> meta::pure::executionPlan::tests::testExecutionPlanGenera
 function <<test.Test>> meta::pure::executionPlan::tests::testExecutionPlanGenerationForInWithStrictDate():Boolean[1]
 {
    let res = executionPlan({dates:StrictDate[*] |Trade.all()->filter(t|$t.date->in($dates))->project([x | $x.id], ['TradeId'])},
-                           simpleRelationalMapping, 
-                           ^Runtime(connections=^DatabaseConnection(element = relationalDB, type=DatabaseType.Sybase)), 
+                           simpleRelationalMapping,
+                           ^Runtime(connections=^DatabaseConnection(element = relationalDB, type=DatabaseType.Sybase)),
                            meta::pure::router::extension::defaultRelationalExtensions());
-   let expected = 
+   let expected =
       'Sequence\n'+
       '(\n'+
       '  type = TDS[(TradeId, Integer, INT, \"\")]\n'+

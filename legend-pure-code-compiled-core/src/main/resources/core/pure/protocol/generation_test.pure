@@ -63,9 +63,200 @@ Class meta::protocols::generation::tests::model::scalar::String extends meta::pr
 {
 }
 
+function <<test.Test>> meta::protocols::generation::tests::testTranslatorJavaGeneration():Boolean[1]
+{
+  let sources = meta::protocols::generation::java::translation::generateTranslation('meta::protocols::generation::tests::model', 'org.finos')->meta::pure::executionPlan::engine::java::projectToImplementation().classes.source->sort();
+  assertEquals(1, $sources->size());
+  assertEquals( 'package org.finos;\n' +
+                '\n' +
+                'import org.eclipse.collections.impl.factory.Lists;\n' +
+                'import org.eclipse.collections.impl.utility.ListIterate;\n' +
+                'import org.finos.legend.engine.language.pure.compiler.toPureGraph.PureModel;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_Enum;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_EnumPtr;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_EnumPtr_Impl;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_Enum_Impl;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_Enumeration;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_Enumeration_Impl;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_Field;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_Field_Impl;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_Message;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_MessagePtr;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_MessagePtr_Impl;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_Message_Impl;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_ProtoBufType;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_ScalarType;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_ScalarType_Impl;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_scalar_Bool;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_scalar_Bool_Impl;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_scalar_Int32;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_scalar_Int32_Impl;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_scalar_String;\n' +
+                'import org.finos.legend.pure.generated.Root_meta_protocols_generation_tests_model_scalar_String_Impl;\n' +
+                'import org.finos.scalar.Bool;\n' +
+                'import org.finos.scalar.Int32;\n' +
+                'import org.finos.scalar.String;\n' +
+                '\n' +
+                'public class Translator\n' +
+                '{\n' +
+                '    public org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum translate(FieldFlag fieldflag,\n' +
+                '                                                                                         PureModel pureModel)\n' +
+                '    {\n' +
+                '        return pureModel.getEnumValue("meta::protocols::generation::tests::model::FieldFlag",\n' +
+                '                                      fieldflag.name());\n' +
+                '    }\n' +
+                '\n' +
+                '    public Root_meta_protocols_generation_tests_model_Enum translate(Enum enum, PureModel pureModel)\n' +
+                '    {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_Enum_Impl("")._constant(enum.constant)\n' +
+                '                                                                           ._constantNumber(enum.constantNumber);\n' +
+                '    }\n' +
+                '\n' +
+                '    public Root_meta_protocols_generation_tests_model_EnumPtr translate(EnumPtr enumptr,\n' +
+                '                                                                        PureModel pureModel)\n' +
+                '    {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_EnumPtr_Impl("")._name(enumptr.name);\n' +
+                '    }\n' +
+                '\n' +
+                '    public Root_meta_protocols_generation_tests_model_Enumeration translate(Enumeration enumeration,\n' +
+                '                                                                            PureModel pureModel)\n' +
+                '    {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_Enumeration_Impl("")._name(enumeration.name)\n' +
+                '                                                                                  ._values(ListIterate.collect(enumeration.values,\n' +
+                '                                                                                                               (Enum x) -> this.translate(x, pureModel)));\n' +
+                '    }\n' +
+                '\n' +
+                '    public Root_meta_protocols_generation_tests_model_Field translate(Field field,\n' +
+                '                                                                      PureModel pureModel)\n' +
+                '    {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_Field_Impl("")._flag(this.translate(field.flag, pureModel))\n' +
+                '                                                                            ._binaryFieldNumber(field.binaryFieldNumber)\n' +
+                '                                                                            ._name(field.name)\n' +
+                '                                                                            ._type(this.translate(field.type, pureModel))\n' +
+                '                                                                            ._repeated(field.repeated);\n' +
+                '    }\n' +
+                '\n' +
+                '    public Root_meta_protocols_generation_tests_model_Message translate(Message message,\n' +
+                '                                                                        PureModel pureModel)\n' +
+                '    {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_Message_Impl("")._name(message.name)\n' +
+                '                                                                              ._fields(ListIterate.collect(message.fields,\n' +
+                '                                                                                                           (Field x) -> this.translate(x, pureModel)))\n' +
+                '                                                                              ._reservedFieldNames(Lists.mutable.withAll(message.reservedFieldNames))\n' +
+                '                                                                              ._reservedFieldNumbers(Lists.mutable.withAll(message.reservedFieldNumbers));\n' +
+                '    }\n' +
+                '\n' +
+                '    public Root_meta_protocols_generation_tests_model_MessagePtr translate(MessagePtr messageptr,\n' +
+                '                                                                           PureModel pureModel)\n' +
+                '    {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_MessagePtr_Impl("")._name(messageptr.name);\n' +
+                '    }\n' +
+                '\n' +
+                '    public Root_meta_protocols_generation_tests_model_ProtoBufType translate(ProtoBufType protobuftype,\n' +
+                '                                                                             PureModel pureModel)\n' +
+                '    {\n' +
+                '        return protobuftype == null ? null\n' +
+                '                                    : protobuftype.accept(new ProtoBufTypeVisitor<Root_meta_protocols_generation_tests_model_ProtoBufType>()\n' +
+                '        {\n' +
+                '            public Root_meta_protocols_generation_tests_model_ProtoBufType visit(Bool val)\n' +
+                '            {\n' +
+                '                return Translator.this.translate(val, pureModel);\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ProtoBufType visit(EnumPtr val)\n' +
+                '            {\n' +
+                '                return Translator.this.translate(val, pureModel);\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ProtoBufType visit(Enumeration val)\n' +
+                '            {\n' +
+                '                return Translator.this.translate(val, pureModel);\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ProtoBufType visit(Int32 val)\n' +
+                '            {\n' +
+                '                return Translator.this.translate(val, pureModel);\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ProtoBufType visit(Message val)\n' +
+                '            {\n' +
+                '                return Translator.this.translate(val, pureModel);\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ProtoBufType visit(MessagePtr val)\n' +
+                '            {\n' +
+                '                return Translator.this.translate(val, pureModel);\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ProtoBufType visit(ScalarType val)\n' +
+                '            {\n' +
+                '                return Translator.this.translate(val, pureModel);\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ProtoBufType visit(String val)\n' +
+                '            {\n' +
+                '                return Translator.this.translate(val, pureModel);\n' +
+                '            }\n' +
+                '        });\n' +
+                '    }\n' +
+                '\n' +
+                '    public Root_meta_protocols_generation_tests_model_ScalarType translate(ScalarType scalartype,\n' +
+                '                                                                           PureModel pureModel)\n' +
+                '    {\n' +
+                '        return scalartype == null ? null\n' +
+                '                                  : scalartype.accept(new ProtoBufTypeVisitor<Root_meta_protocols_generation_tests_model_ScalarType>()\n' +
+                '        {\n' +
+                '            public Root_meta_protocols_generation_tests_model_ScalarType visit(Bool val)\n' +
+                '            {\n' +
+                '                return Translator.this.translate(val, pureModel);\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ScalarType visit(EnumPtr val)\n' +
+                '            {\n' +
+                '                return null;\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ScalarType visit(Enumeration val)\n' +
+                '            {\n' +
+                '                return null;\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ScalarType visit(Int32 val)\n' +
+                '            {\n' +
+                '                return Translator.this.translate(val, pureModel);\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ScalarType visit(Message val)\n' +
+                '            {\n' +
+                '                return null;\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ScalarType visit(MessagePtr val)\n' +
+                '            {\n' +
+                '                return null;\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ScalarType visit(ScalarType val)\n' +
+                '            {\n' +
+                '                return new Root_meta_protocols_generation_tests_model_ScalarType_Impl(\"\");\n' +
+                '            }\n' +
+                '            public Root_meta_protocols_generation_tests_model_ScalarType visit(String val)\n' +
+                '            {\n' +
+                '                return Translator.this.translate(val, pureModel);\n' +
+                '            }\n' +
+                '        });\n' +
+                '    }\n' +
+                '\n' +
+                '    public Root_meta_protocols_generation_tests_model_scalar_Bool translate(Bool bool,\n' +
+                '                                                                            PureModel pureModel)\n' +
+                '    {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_scalar_Bool_Impl(\"\");\n' +
+                '    }\n' +
+                '\n' +
+                '    public Root_meta_protocols_generation_tests_model_scalar_Int32 translate(Int32 int32,\n' +
+                '                                                                             PureModel pureModel)\n' +
+                '    {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_scalar_Int32_Impl(\"\");\n' +
+                '    }\n' +
+                '\n' +
+                '    public Root_meta_protocols_generation_tests_model_scalar_String translate(String string,\n' +
+                '                                                                              PureModel pureModel)\n' +
+                '    {\n' +
+                '        return new Root_meta_protocols_generation_tests_model_scalar_String_Impl(\"\");\n' +
+                '    }\n' +
+                '}', $sources->at(0));
+}
+
 function <<test.Test>> meta::protocols::generation::tests::testProtocolJavaGeneration():Boolean[1]
 {
-  let sources = meta::protocols::generation::java::generateProtocolClasses('meta::protocols::generation::tests::model', 'org.finos')->meta::alloy::runtime::java::projectToImplementation().classes.source->sort();
+  let sources = meta::protocols::generation::java::generateProtocolClasses('meta::protocols::generation::tests::model', 'org.finos')->meta::pure::executionPlan::engine::java::projectToImplementation().classes.source->sort();
   assertEquals(13, $sources->size());
 
   assertEquals('package org.finos.scalar;\n' +
@@ -73,11 +264,13 @@ function <<test.Test>> meta::protocols::generation::tests::testProtocolJavaGener
             'import org.finos.ProtoBufTypeVisitor;\n' +
             'import org.finos.ScalarType;\n' +
             '\n' +
-            'public class Bool extends ScalarType {\n' +
-            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            'public class Bool extends ScalarType\n' +
+            '{\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor)\n' +
+            '    {\n' +
             '        return visitor.visit(this);\n' +
             '    }\n' +
-            '}\n', $sources->at(0));
+            '}', $sources->at(0));
 
 
   assertEquals('package org.finos.scalar;\n' +
@@ -85,11 +278,13 @@ function <<test.Test>> meta::protocols::generation::tests::testProtocolJavaGener
             'import org.finos.ProtoBufTypeVisitor;\n' +
             'import org.finos.ScalarType;\n' +
             '\n' +
-            'public class Int32 extends ScalarType {\n' +
-            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            'public class Int32 extends ScalarType\n' +
+            '{\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor)\n' +
+            '    {\n' +
             '        return visitor.visit(this);\n' +
             '    }\n' +
-            '}\n', $sources->at(1));
+            '}', $sources->at(1));
 
 
   assertEquals('package org.finos.scalar;\n' +
@@ -97,11 +292,13 @@ function <<test.Test>> meta::protocols::generation::tests::testProtocolJavaGener
             'import org.finos.ProtoBufTypeVisitor;\n' +
             'import org.finos.ScalarType;\n' +
             '\n' +
-            'public class String extends ScalarType {\n' +
-            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            'public class String extends ScalarType\n' +
+            '{\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor)\n' +
+            '    {\n' +
             '        return visitor.visit(this);\n' +
             '    }\n' +
-            '}\n', $sources->at(2));
+            '}', $sources->at(2));
 
 
   assertEquals('package org.finos;\n' +
@@ -109,14 +306,16 @@ function <<test.Test>> meta::protocols::generation::tests::testProtocolJavaGener
                'import java.util.Collections;\n' +
                'import java.util.List;\n' +
                '\n' +
-               'public class Enumeration extends ProtoBufType {\n' +
+               'public class Enumeration extends ProtoBufType\n' +
+               '{\n' +
                '    public String name;\n' +
-               '    public List<Enum> values = Collections.<org.finos.Enum>emptyList();\n' +
+               '    public List<Enum> values = Collections.<Enum>emptyList();\n' +
                '\n' +
-               '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+               '    public <T> T accept(ProtoBufTypeVisitor<T> visitor)\n' +
+               '    {\n' +
                '        return visitor.visit(this);\n' +
                '    }\n' +
-               '}\n', $sources->at(3));
+               '}', $sources->at(3));
 
 
   assertEquals('package org.finos;\n' +
@@ -124,24 +323,28 @@ function <<test.Test>> meta::protocols::generation::tests::testProtocolJavaGener
             'import java.util.Collections;\n' +
             'import java.util.List;\n' +
             '\n' +
-            'public class Message extends ProtoBufType {\n' +
+            'public class Message extends ProtoBufType\n' +
+            '{\n' +
             '    public String name;\n' +
-            '    public List<Field> fields = Collections.<org.finos.Field>emptyList();\n' +
+            '    public List<Field> fields = Collections.<Field>emptyList();\n' +
             '    public List<String> reservedFieldNames = Collections.<String>emptyList();\n' +
             '    public List<Long> reservedFieldNumbers = Collections.<Long>emptyList();\n' +
             '\n' +
-            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor)\n' +
+            '    {\n' +
             '        return visitor.visit(this);\n' +
             '    }\n' +
-            '}\n', $sources->at(4));
+            '}', $sources->at(4));
 
 
   assertEquals('package org.finos;\n' +
             '\n' +
             'import org.finos.scalar.Bool;\n' +
             'import org.finos.scalar.Int32;\n' +
+            'import org.finos.scalar.String;\n' +
             '\n' +
-            'public interface ProtoBufTypeVisitor<T>  {\n' +
+            'public interface ProtoBufTypeVisitor<T>\n' +
+            '{\n' +
             '    T visit(Bool val);\n' +
             '    T visit(EnumPtr val);\n' +
             '    T visit(Enumeration val);\n' +
@@ -149,66 +352,76 @@ function <<test.Test>> meta::protocols::generation::tests::testProtocolJavaGener
             '    T visit(Message val);\n' +
             '    T visit(MessagePtr val);\n' +
             '    T visit(ScalarType val);\n' +
-            '    T visit(org.finos.scalar.String val);\n' +
-            '}\n', $sources->at(5));
+            '    T visit(String val);\n' +
+            '}', $sources->at(5));
 
   assertEquals('package org.finos;\n' +
             '\n' +
-            'public abstract class ProtoBufType {\n' +
+            'public abstract class ProtoBufType\n' +
+            '{\n' +
             '    public abstract <T> T accept(ProtoBufTypeVisitor<T> visitor);\n' +
-            '}\n', $sources->at(6));
+            '}', $sources->at(6));
 
 
   assertEquals('package org.finos;\n' +
                '\n' +
-               'public class Enum {\n' +
+               'public class Enum\n' +
+               '{\n' +
                '    public String constant;\n' +
                '    public long constantNumber;\n' +
-               '}\n', $sources->at(7));
+               '}', $sources->at(7));
 
   assertEquals('package org.finos;\n' +
                '\n' +
-               'public class EnumPtr extends ProtoBufType {\n' +
+               'public class EnumPtr extends ProtoBufType\n' +
+               '{\n' +
                '    public String name;\n' +
                '\n' +
-               '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+               '    public <T> T accept(ProtoBufTypeVisitor<T> visitor)\n' +
+               '    {\n' +
                '        return visitor.visit(this);\n' +
                '    }\n' +
-               '}\n', $sources->at(8));
+               '}', $sources->at(8));
 
 
   assertEquals('package org.finos;\n' +
             '\n' +
-            'public class Field {\n' +
+            'public class Field\n' +
+            '{\n' +
             '    public FieldFlag flag;\n' +
             '    public long binaryFieldNumber;\n' +
             '    public String name;\n' +
             '    public ProtoBufType type;\n' +
             '    public boolean repeated;\n' +
-            '}\n', $sources->at(9));
+            '}', $sources->at(9));
 
  assertEquals('package org.finos;\n' +
             '\n' +
-            'public class MessagePtr extends ProtoBufType {\n' +
+            'public class MessagePtr extends ProtoBufType\n' +
+            '{\n' +
             '    public String name;\n' +
             '\n' +
-            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor)\n' +
+            '    {\n' +
             '        return visitor.visit(this);\n' +
             '    }\n' +
-            '}\n', $sources->at(10)); 
+            '}', $sources->at(10)); 
 
   assertEquals('package org.finos;\n' +
             '\n' +
-            'public class ScalarType extends ProtoBufType {\n' +
-            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor) {\n' +
+            'public class ScalarType extends ProtoBufType\n' +
+            '{\n' +
+            '    public <T> T accept(ProtoBufTypeVisitor<T> visitor)\n' +
+            '    {\n' +
             '        return visitor.visit(this);\n' +
             '    }\n' +
-            '}\n', $sources->at(11));
+            '}', $sources->at(11));
 
   assertEquals('package org.finos;\n' +
             '\n' +
-            'public enum FieldFlag {\n' +
+            'public enum FieldFlag\n' +
+            '{\n' +
             '    ON,\n' +
-            '    OFF;\n' +
-            '}\n', $sources->at(12));         
+            '    OFF\n' +
+            '}', $sources->at(12));         
 }

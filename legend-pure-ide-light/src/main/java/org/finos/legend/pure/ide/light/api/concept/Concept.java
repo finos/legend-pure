@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 @Api(
-        tags = {"Concepts"}
+    tags = {"Concepts"}
 )
 @Path("/")
 public class Concept

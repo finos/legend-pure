@@ -15,8 +15,6 @@
 // Press F9 to execute the 'go' function...
 // Press F10 to run the full test suite
 
-// To get started:  Click the + on the top right in order to create a new userDB of just your datamart
-
 function go():Any[*]
 {
     print('ok',1);

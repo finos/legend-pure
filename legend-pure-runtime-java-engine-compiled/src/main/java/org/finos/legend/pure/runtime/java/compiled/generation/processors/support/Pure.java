@@ -66,6 +66,8 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.coreinstance.meta.pure.router.RoutedValueSpecification;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.ChangeType;
@@ -108,8 +110,8 @@ public class Pure
     private static final ExecutorService traceAsyncExecutor = Executors.newCachedThreadPool(new ThreadFactory()
     {
         private final ThreadGroup group = System.getSecurityManager() == null
-                ? Thread.currentThread().getThreadGroup()
-                : System.getSecurityManager().getThreadGroup();
+            ? Thread.currentThread().getThreadGroup()
+            : System.getSecurityManager().getThreadGroup();
         private final AtomicInteger threadNumber = new AtomicInteger(1);
 
         @Override
@@ -176,11 +178,11 @@ public class Pure
         {
             if (port == -1)
             {
-                throw new PureExecutionException("The system variable 'legend.test.server.host' is set to '"+host+"' however 'legend.test.server.port' has not been set!");
+                throw new PureExecutionException("The system variable 'legend.test.server.host' is set to '" + host + "' however 'legend.test.server.port' has not been set!");
             }
             if (serializationKind == null || !(serializationKind.equals("text") || serializationKind.equals("json")))
             {
-                serializationKind="json";
+                serializationKind = "json";
             }
             if (clientVersion == null)
             {
@@ -314,10 +316,12 @@ public class Pure
         try
         {
             return value.getClass().getField("_" + property._name()).get(value);
-        } catch (NoSuchFieldException e)
+        }
+        catch (NoSuchFieldException e)
         {
             throw new PureExecutionException(sourceInformation, "Can't find the property '" + property._name() + "' in the class " + CompiledSupport.getPureClassName(value));
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -451,7 +455,8 @@ public class Pure
         {
             Class myClass = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
             functions = (MutableMap<String, SharedPureFunction>) myClass.getDeclaredField("__functions").get(null);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -526,7 +531,8 @@ public class Pure
             {
                 Object o = ((RichIterable) paramInputs.getFirst()).getFirst();
                 return o.getClass().getMethod("_" + func.getName()).invoke(o);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new RuntimeException(e);
             }
@@ -553,7 +559,7 @@ public class Pure
             {
                 Object o = ((RichIterable) paramInputs.getFirst()).getFirst();
                 return CompiledSupport.executeMethod(o.getClass(), func._functionName(), func, Arrays.copyOfRange(paramClasses, 1, paramClasses.length),
-                        o, Arrays.copyOfRange(paramInstances, 1, paramInstances.length), es);
+                    o, Arrays.copyOfRange(paramInstances, 1, paramInstances.length), es);
             }
             if (func instanceof ConcreteFunctionDefinition)
             {
@@ -569,10 +575,12 @@ public class Pure
                 return foundFunc.execute(Lists.mutable.with(paramInstances), es);
             }
             throw new PureExecutionException("Unknown function type:" + func.getClass().getName());
-        } catch (RuntimeException e)
+        }
+        catch (RuntimeException e)
         {
             throw e;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -590,7 +598,8 @@ public class Pure
                     Class myClass = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
                     MutableMap<String, SharedPureFunction> functions = (MutableMap<String, SharedPureFunction>) myClass.getDeclaredField("__functions").get(null);
                     return functions.get(func.getName());
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     throw new RuntimeException(e);
                 }
@@ -604,7 +613,8 @@ public class Pure
         {
             SharedPureFunction spf = getNativeOrLambdaFunction(es, func);
             return spf != null;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             return false;
         }
@@ -758,7 +768,8 @@ public class Pure
             });
 
             return result;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -859,7 +870,18 @@ public class Pure
             return (obj instanceof Enum) && type.equals(((CompiledExecutionSupport) es).getMetadataAccessor().getEnumeration(((Enum) obj).getFullSystemPath()));
         }
 
-        Class<?> javaClass = pureTypeToJavaClass(type, es);
+        Class<?> javaClass;
+        try
+        {
+            javaClass = pureTypeToJavaClass(type, es);
+        }
+        catch (Exception e)
+        {
+            if (obj instanceof CoreInstance) {
+                return Instance.instanceOf((CoreInstance) obj, type, ((CompiledExecutionSupport) es).getProcessorSupport());
+            }
+            throw e;
+        }
         if (javaClass == Any.class)
         {
             return true;
@@ -1059,13 +1081,35 @@ public class Pure
             return true;
         }
 
-        Class<?> theSubTypeClass = pureTypeToJavaClass(subType, es);
+        // NOTE: ClassNotFoundException can occur when we use subTypeOf() in engine where some
+        // Java classes are not available during plan generation. There is a potentially
+        // less performant alternative which is to use type_subTypeOf() as this will use the
+        // metamodel graph instead of Java classes to test subtype; but this alternative is more reliable.
+        // As such, to be defensive, we should fallback to the latter when the former fails with ClassNotFoundException
+        // See https://github.com/finos/legend-pure/issues/324
+        Class<?> theSubTypeClass;
+        try
+        {
+            theSubTypeClass = pureTypeToJavaClass(subType, es);
+        }
+        catch (Exception e)
+        {
+            return ((CompiledExecutionSupport) es).getProcessorSupport().type_subTypeOf(subType, superType);
+        }
         if (theSubTypeClass == Nil.class)
         {
             return true;
         }
 
-        Class<?> theSuperTypeClass = pureTypeToJavaClass(superType, es);
+        Class<?> theSuperTypeClass;
+        try
+        {
+            theSuperTypeClass = pureTypeToJavaClass(superType, es);
+        }
+        catch (Exception e)
+        {
+            return ((CompiledExecutionSupport) es).getProcessorSupport().type_subTypeOf(subType, superType);
+        }
         return (theSuperTypeClass == Any.class) || theSuperTypeClass.isAssignableFrom(theSubTypeClass);
     }
 
@@ -1396,7 +1440,8 @@ public class Pure
             try
             {
                 return Reactivator.reactivateWithoutJavaCompilation(bridge, valueSpecification, lambdaOpenVariablesMap, es);
-            } catch (PureDynamicReactivateException e)
+            }
+            catch (PureDynamicReactivateException e)
             {
                 throw new RuntimeException("Out of sync state between can reactivate and actual reactive without Java source code", e);
             }
@@ -1408,19 +1453,19 @@ public class Pure
     }
 
     public static boolean canReactivateWithoutJavaCompilation(
-            final ValueSpecification valueSpecification,
-            final ExecutionSupport es,
-            Bridge bridge
+        final ValueSpecification valueSpecification,
+        final ExecutionSupport es,
+        Bridge bridge
     )
     {
         return canReactivateWithoutJavaCompilation(valueSpecification, es, new PureMap(UnifiedMap.newMap()), bridge);
     }
 
     public static boolean canReactivateWithoutJavaCompilation(
-            final ValueSpecification valueSpecification,
-            final ExecutionSupport es,
-            final PureMap lambdaOpenVariablesMap,
-            Bridge bridge
+        final ValueSpecification valueSpecification,
+        final ExecutionSupport es,
+        final PureMap lambdaOpenVariablesMap,
+        Bridge bridge
     )
     {
         return Reactivator.canReactivateWithoutJavaCompilation(valueSpecification, es, lambdaOpenVariablesMap, bridge);
@@ -1464,7 +1509,8 @@ public class Pure
                     try
                     {
                         return classLoader.loadClass(TypeProcessor.fullyQualifiedJavaInterfaceNameForType(type));
-                    } catch (ClassNotFoundException e)
+                    }
+                    catch (ClassNotFoundException e)
                     {
                         // Type specified is incorrect or problem with metadata. Return default.
                         return typeFromClassMetaData;
@@ -1531,7 +1577,8 @@ public class Pure
                         }
                     });
                     future.get(60, TimeUnit.SECONDS);
-                } catch (TimeoutException e)
+                }
+                catch (TimeoutException e)
                 {
                     if (span != null)
                     {
@@ -1555,7 +1602,8 @@ public class Pure
                 }
             }
             return evaluate(es, function, bridge, Lists.mutable.empty());
-        } finally
+        }
+        finally
         {
             if (span != null)
             {

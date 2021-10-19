@@ -12,25 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::typeInfo::*;
 import meta::external::format::xml::executionPlan::*;
 import meta::external::format::xml::executionPlan::engine::*;
 import meta::external::format::xml::runtime::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::transform::*;
 import meta::external::shared::format::binding::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::executionPlan::engine::*;
 import meta::external::shared::format::metamodel::*;
 import meta::external::shared::runtime::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::format::xml::*;
 import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::executionPlan::toString::*;
 import meta::pure::graphFetch::*;
 import meta::pure::router::extension::*;
@@ -42,8 +42,8 @@ Class meta::external::format::xml::executionPlan::XmlSerializeExecutionNode exte
 
 Class meta::external::format::xml::executionPlan::XmlDeserializeExecutionNode extends ExecutionNode
 {
-   connection : Connection[1];
-   tree       : RootGraphFetchTree<Any>[0..1]; 
+   binding : Binding[1];
+   tree    : RootGraphFetchTree<Any>[0..1]; 
 }
 
 function meta::external::format::xml::executionPlan::generateSerializeNode(checked:Boolean[1], binding:Binding[1], children:ExecutionNode[*]): ExecutionNode[1]
@@ -57,7 +57,7 @@ function meta::external::format::xml::executionPlan::generateSerializeNode(check
    );
 }
 
-function meta::external::format::xml::executionPlan::generateDeserializeNode(connection:Connection[1], tree:RootGraphFetchTree<Any>[0..1]): ExecutionNode[1]
+function meta::external::format::xml::executionPlan::generateDeserializeNode(connection:Connection[1], children:ExecutionNode[1], tree:RootGraphFetchTree<Any>[0..1]): ExecutionNode[1]
 {
    assert($tree->isNotEmpty(), 'Deserialization without Graph Fetch Tree not yet supported');
    let returnedClass = $tree.class->toOne();
@@ -68,8 +68,9 @@ function meta::external::format::xml::executionPlan::generateDeserializeNode(con
                            propertiesWithParameters = $tree.subTrees->cast(@PropertyGraphFetchTree)->map(x | $x->map(x | ^PropertyWithParameters(property = $x.property, parameters = $x.parameters)))
                         ),
       resultSizeRange = ZeroMany,
-      connection      = $connection,
-      tree            = $tree
+      tree            = $tree,
+      binding         = $connection->cast(@ExternalFormatConnection).element->cast(@Binding),
+      executionNodes  = $children
    );
 }
 
@@ -88,7 +89,7 @@ function meta::external::format::xml::executionPlan::printPlanNodeToString(space
       {node:XmlDeserializeExecutionNode[1] |
          'XML_Deserialize\n' + 
          $space + '(' + header($node, $space, $extensions) + '\n' +
-         $space + '  connection = ' + $node.connection->meta::pure::executionPlan::toString::connectionToString($extensions) + '\n' +
+         $space + '  binding = ' + $node.binding->elementToPath() + '\n' +
          $node->childrenToString($space+'  ', $extensions) + '\n' +
          $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
          $space + ')\n'
@@ -152,7 +153,7 @@ function <<access.private>> meta::external::format::xml::executionPlan::generate
    $project->addClasses($readerClass)->generatedCode($readerClass);
 }
 
-function <<access.private>> meta::external::format::xml::executionPlan::createReaderClass(node:XmlDeserializeExecutionNode[1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::external::format::xml::executionPlan::createReaderClass(node:XmlDeserializeExecutionNode[1], path:String[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
 {   
    let conventions = $context.conventions;
    let rootClass   = $node.tree->toOne().class;   
@@ -163,7 +164,7 @@ function <<access.private>> meta::external::format::xml::executionPlan::createRe
       ->addReadNoSchemaMethod($ctxParam, $node, $path, $context);
 }
 
-function <<access.private>> meta::external::format::xml::executionPlan::addReadNoSchemaMethod(jc:meta::java::metamodel::Class[1], ctxParam:Code[1], node:XmlDeserializeExecutionNode[1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::external::format::xml::executionPlan::addReadNoSchemaMethod(jc:meta::external::language::java::metamodel::Class[1], ctxParam:Code[1], node:XmlDeserializeExecutionNode[1], path:String[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
 {   
    let conventions = $context.conventions;
    let rootClass   = $node.tree->toOne().class;   
@@ -188,13 +189,13 @@ Class <<access.private>> meta::external::format::xml::executionPlan::PropertyCod
    elementInit   : Code[1];
    attributeVar  : Code[0..1];
    attributeInit : Code[0..1];
-   calledMethods : meta::java::metamodel::Method[*];
+   calledMethods : meta::external::language::java::metamodel::Method[*];
    
    elementDeclare()   { $this.elementVar->j_declare($this.elementInit); }: Code[1];
    attributeDeclare() { $this.attributeVar->map(v| $v->j_declare($this.attributeInit->toOne())); }: Code[0..1];
 }
 
-function <<access.private>> meta::external::format::xml::executionPlan::createClassElementNoSchemaMethods(jc:meta::java::metamodel::Class[1], ctxParam:Code[1], class:Class<Any>[1], property:Property<Nil,Any|*>[0..1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Method[*]
+function <<access.private>> meta::external::format::xml::executionPlan::createClassElementNoSchemaMethods(jc:meta::external::language::java::metamodel::Class[1], ctxParam:Code[1], class:meta::pure::metamodel::type::Class<Any>[1], property:Property<Nil,Any|*>[0..1], path:String[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Method[*]
 {   
    let conventions = $context.conventions;
    let reverseProp = if($property->isNotEmpty() && $property.owner->toOne()->instanceOf(Association),
@@ -209,9 +210,9 @@ function <<access.private>> meta::external::format::xml::executionPlan::createCl
       ->filter(p| $p != $reverseProp)
       ->map({p|
          let propType  = $p->functionReturnType().rawType->toOne();
-         if($propType->instanceOf(Class),
+         if($propType->instanceOf(meta::pure::metamodel::type::Class),
             {|
-               let propClass  = $propType->cast(@Class<Any>);
+               let propClass  = $propType->cast(@meta::pure::metamodel::type::Class<Any>);
                let getAdder   = $dataClass->j_invoke('_getAdderForProperty', j_string($p.name->toOne()), $conventions->className(_ExternalDataAdder))->j_cast($conventions->className(_ExternalDataObjectAdder));
                let propOccurs = occursFromMultiplicity($p.multiplicity);
                let elementVar = j_variable($conventions->className(h_Element), $conventions->identifier($p.name->toOne() + 'Element'));
@@ -266,7 +267,7 @@ function <<access.private>> meta::external::format::xml::executionPlan::createCl
    )->concatenate($propertyCodes.calledMethods)->removeDuplicatesBy(m| $m.name);
 }
 
-function <<access.private>> meta::external::format::xml::executionPlan::codePrimitivePropertyNoSchema(prop:Property<Nil,Any|*>[1], dataClass:meta::java::metamodel::Class[1], ctxParam:Code[1], context:GenerationContext[1]): PropertyCodes[1]
+function <<access.private>> meta::external::format::xml::executionPlan::codePrimitivePropertyNoSchema(prop:Property<Nil,Any|*>[1], dataClass:meta::external::language::java::metamodel::Class[1], ctxParam:Code[1], context:GenerationContext[1]): PropertyCodes[1]
 {
    let conventions = $context.conventions;
    let pureDate    = $conventions->className(PureDate);
@@ -280,7 +281,7 @@ function <<access.private>> meta::external::format::xml::executionPlan::codePrim
    let itemType  = if($javaType->isJavaList(), |$javaType->elementType(), |$javaType)->toUnboxed();
       
    let getAdder  = $dataClass->j_invoke('_getAdderForProperty', j_string($prop.name->toOne()), $conventions->className(_ExternalDataAdder));
-   let addTo     = if($propType->instanceOf(Enumeration),
+   let addTo     = if($propType->instanceOf(meta::pure::metamodel::type::Enumeration),
                       {|
                          let addToType         = javaParameterizedType($conventions->className(_AddEnumToObject), [$dataClass, $itemType]);
                          let simpleTypeHandler = $ctxParam->j_invoke('stringSimpleTypeHandler', [], javaParameterizedType($conventions->className(_SimpleTypeHandler), javaString()));
@@ -329,7 +330,7 @@ function <<access.private>> meta::external::format::xml::executionPlan::codePrim
                          j_new($addToType, [$getAdder, $simpleTypeHandler]);
                       },
                       {|
-                         fail('Unsupported type ' + $itemType->meta::java::serialization::typePathToString(true));
+                         fail('Unsupported type ' + $itemType->meta::external::language::java::serialization::typeToString());
                          j_null();
                       }
                    )))))));
@@ -346,12 +347,12 @@ function <<access.private>> meta::external::format::xml::executionPlan::codePrim
    );
 }
 
-function <<access.private>> meta::external::format::xml::executionPlan::elementMethodName(conventions:Conventions[1], class:Class<Any>[1]): String[1]
+function <<access.private>> meta::external::format::xml::executionPlan::elementMethodName(conventions:Conventions[1], class:meta::pure::metamodel::type::Class<Any>[1]): String[1]
 {   
    'element_' + $conventions->identifier($class->elementToPath('_'));
 }
 
-function meta::external::format::xml::executionPlan::readerClass(conventions:Conventions[1], path:String[1], cls:Class<Any>[1]): meta::java::metamodel::Class[1]
+function meta::external::format::xml::executionPlan::readerClass(conventions:Conventions[1], path:String[1], cls:meta::pure::metamodel::type::Class<Any>[1]): meta::external::language::java::metamodel::Class[1]
 {   
    $conventions->planNodeClass('public', $path, 'XmlReader_' + $conventions->identifier($cls->elementToPath('_')));
 }

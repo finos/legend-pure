@@ -12,26 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::pure::router::extension::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::project::*;
 import meta::pure::alloy::connections::*;
-import meta::pure::store::*;
-import meta::pure::tds::schema::*;
-import meta::pure::router::systemMapping::*;
-import meta::java::metamodel::project::*;
-import meta::alloy::runtime::java::*;
-import meta::relational::metamodel::*;
-import meta::relational::functions::sqlQueryToString::*;
 import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::engine::java::*;
 import meta::pure::executionPlan::toString::*;
-import meta::relational::mapping::*;
 import meta::pure::graphFetch::executionPlan::*;
 import meta::pure::graphFetch::routing::*;
-import meta::pure::router::routing::*;
-import meta::relational::runtime::*;
-import meta::pure::runtime::*;
-import meta::pure::router::store::embedded::*;
-import meta::pure::router::clustering::*;
 import meta::pure::mapping::*;
+import meta::pure::router::clustering::*;
+import meta::pure::router::extension::*;
+import meta::pure::router::routing::*;
+import meta::pure::router::store::embedded::*;
+import meta::pure::router::systemMapping::*;
+import meta::pure::runtime::*;
+import meta::pure::store::*;
+import meta::pure::tds::schema::*;
+import meta::relational::metamodel::*;
+import meta::relational::functions::sqlQueryToString::*;
+import meta::relational::mapping::*;
+import meta::relational::runtime::*;
 
 function meta::pure::router::extension::defaultRelationalExtensions() : meta::pure::router::extension::RouterExtension[*]
 {
@@ -160,7 +161,7 @@ function <<access.private>> meta::pure::router::extension::relationalExtension(t
       },
       
       graphFetch_executionPlan_addCrossStoreChildren = {
-         clusteredTree: ClusteredGraphFetchTree[1], orderedPaths: String[*], parentPath: String[1], inScopeVars: Map<String, List<Any>>[1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions: RouterExtension[*], debug: DebugContext[1] |
+         clusteredTree: ClusteredGraphFetchTree[1], orderedPaths: String[*], parentPath: String[1], inScopeVars: Map<String, List<Any>>[1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], enableConstraints: Boolean[1], checked: Boolean[1], extensions: RouterExtension[*], debug: DebugContext[1] |
          {db : meta::relational::metamodel::Database[1] | meta::relational::graphFetch::executionPlan::planCrossRootGraphFetchExecutionRelational($clusteredTree, $orderedPaths, $parentPath, $inScopeVars, $mapping, $runtime, $exeCtx, $extensions, $debug)}
       },
       
@@ -310,12 +311,12 @@ function <<access.private>> meta::pure::router::extension::relationalExtension(t
                   meta::relational::metamodel::execute::loadValuesToDbTable_List_MANY__Table_1__DatabaseConnection_1__Nil_0_,
                   meta::pure::functions::io::logActivities_Activity_MANY__Nil_0_
             ],
-      java_graphFetch_graphFetchCommon_generateCodeForLocalGraphFetchNode = {path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] | {rel: meta::relational::graphFetch::executionPlan::RelationalGraphFetchExecutionNode[1] | $rel->meta::alloy::runtime::java::graphFetch::relational::generateRelationalStoreGraphFetchProject($path, $context, $extensions, $debug)}},
-      java_graphFetch_graphFetchCommon_updateImplementationClassWithStoreSpecificFieldsAndMethods= {x:meta::java::metamodel::Class[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] | {rel: meta::relational::graphFetch::executionPlan::RelationalGraphFetchExecutionNode[1] | $x->meta::alloy::runtime::java::graphFetch::relational::enrichForRelationalGraphExecution($rel, $context, $extensions, $debug)}},
+      java_graphFetch_graphFetchCommon_generateCodeForLocalGraphFetchNode = {path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] | {rel: meta::relational::graphFetch::executionPlan::RelationalGraphFetchExecutionNode[1] | $rel->meta::pure::executionPlan::engine::java::graphFetch::relational::generateRelationalStoreGraphFetchProject($path, $context, $extensions, $debug)}},
+      java_graphFetch_graphFetchCommon_updateImplementationClassWithStoreSpecificFieldsAndMethods= {x:meta::external::language::java::metamodel::Class[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] | {rel: meta::relational::graphFetch::executionPlan::RelationalGraphFetchExecutionNode[1] | $x->meta::pure::executionPlan::engine::java::graphFetch::relational::enrichForRelationalGraphExecution($rel, $context, $extensions, $debug)}},
       java_parseObjectReference_getParseObjectReferenceImplClass = {storeType:String[1], args:Any[*], path:String[1], context:GenerationContext[1], debug:DebugContext[1] | 
                                                                                                        if($storeType == meta::relational::postProcessor::getObjectReferenceStoreType(),
                                                                                                           |  let pkOrder = $args->cast(@String);
-                                                                                                             meta::alloy::runtime::java::getRelationalObjectReferenceParserHelperClass($pkOrder, $path, $context, $debug);,
+                                                                                                             meta::pure::executionPlan::engine::java::getRelationalObjectReferenceParserHelperClass($pkOrder, $path, $context, $debug);,
                                                                                                           | [])},
       plan_javaRuntime_main_prepare1 =
             {path:String[1], contextFromChildren:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] |
@@ -328,7 +329,7 @@ function <<access.private>> meta::pure::router::extension::relationalExtension(t
             {path:String[1], contextFromOtherNodes:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] |
                [
                   g:meta::relational::mapping::RelationalClassInstantiationExecutionNode[1]           | $g->prepareForClassResult($path, $contextFromOtherNodes, $debug),
-                  g:meta::relational::graphFetch::executionPlan::RelationalGraphFetchExecutionNode[1] | $g->meta::alloy::runtime::java::graphFetch::relational::prepareForRelationalGraphFetch($path, $contextFromOtherNodes, $debug)
+                  g:meta::relational::graphFetch::executionPlan::RelationalGraphFetchExecutionNode[1] | $g->meta::pure::executionPlan::engine::java::graphFetch::relational::prepareForRelationalGraphFetch($path, $contextFromOtherNodes, $debug)
                ]
             },
       plan_javaRuntime_main_generatePlatformCode1 =

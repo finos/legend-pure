@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import meta::pure::executionPlan::*;
-import meta::java::metamodel::project::*;
+import meta::external::language::java::metamodel::project::*;
 import meta::pure::executionPlan::toString::*;
 import meta::pure::router::clustering::*;
 import meta::pure::deepfetch::builder::*;

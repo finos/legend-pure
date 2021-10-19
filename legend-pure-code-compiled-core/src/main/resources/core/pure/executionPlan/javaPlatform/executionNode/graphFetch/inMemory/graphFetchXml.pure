@@ -12,25 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::graphFetch::xml::*;
-import meta::alloy::runtime::java::graphFetch::storeStreamReading::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::typeInfo::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::convention::jackson::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
-import meta::java::serialization::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::dataQuality::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::graphFetch::xml::*;
+import meta::pure::executionPlan::engine::java::graphFetch::storeStreamReading::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::mapping::modelToModel::*;
 import meta::pure::mapping::modelToModel::test::shared::src::*;
 import meta::pure::metamodel::serialization::grammar::*;
 
-function meta::java::codeGeneration::convention::jackson::xmlParserGetter(conventions:Conventions[1], parser:String[1], type:Type[1]): String[1]
+function meta::pure::executionPlan::engine::java::xmlParserGetter(conventions:Conventions[1], parser:String[1], type:meta::pure::metamodel::type::Type[1]): String[1]
 {
    let pureDate = $conventions->className(PureDate);
 
@@ -38,52 +37,52 @@ function meta::java::codeGeneration::convention::jackson::xmlParserGetter(conven
       | $parser+'.getLocalName()', 
       | 
    if($type == Boolean,
-      | $conventions->codeType(javaClass('java.lang.Boolean'))->codeToString($conventions)+'.valueOf('+$parser+'.getLocalName())',
+      | $conventions->codeType(javaClass('java.lang.Boolean'))->codeToString()+'.valueOf('+$parser+'.getLocalName())',
       | 
    if($type == Integer,
-      | $conventions->codeType(javaClass('java.lang.Integer'))->codeToString($conventions)+'.valueOf('+$parser+'.getLocalName())',
+      | $conventions->codeType(javaClass('java.lang.Integer'))->codeToString()+'.valueOf('+$parser+'.getLocalName())',
       | 
    if($type == Float,
-      | $conventions->codeType(javaClass('java.lang.Float'))->codeToString($conventions)+'.valueOf('+$parser+'.getLocalName())',
+      | $conventions->codeType(javaClass('java.lang.Float'))->codeToString()+'.valueOf('+$parser+'.getLocalName())',
       | 
    if($type == Decimal,
-      | 'new '+$conventions->codeType(javaClass('java.math.BigDecimal'))->codeToString($conventions)+'('+$parser+'.getLocalName())', 
+      | 'new '+$conventions->codeType(javaClass('java.math.BigDecimal'))->codeToString()+'('+$parser+'.getLocalName())', 
       | 
    if($type == Number,
-      | ' new '+$conventions->codeType(javaClass('java.math.BigDecimal'))->codeToString($conventions)+'('+$parser+'.getLocalName())',
+      | ' new '+$conventions->codeType(javaClass('java.math.BigDecimal'))->codeToString()+'('+$parser+'.getLocalName())',
       | 
    if($type == StrictDate,
-      | $conventions->codeType($pureDate)->codeToString($conventions)+'.parsePureDate('+$parser+'.getLocalName())',
+      | $conventions->codeType($pureDate)->codeToString()+'.parsePureDate('+$parser+'.getLocalName())',
       | 
    if($type == DateTime,
-      | $conventions->codeType($pureDate)->codeToString($conventions)+'.parsePureDate('+$parser+'.getLocalName())',
+      | $conventions->codeType($pureDate)->codeToString()+'.parsePureDate('+$parser+'.getLocalName())',
       | 
    if($type == Date,
-      | $conventions->codeType($pureDate)->codeToString($conventions)+'.parsePureDate('+$parser+'.getLocalName())',
+      | $conventions->codeType($pureDate)->codeToString()+'.parsePureDate('+$parser+'.getLocalName())',
       | 
-   if($type->instanceOf(Enumeration),
-      | $conventions->codeType($conventions->pureTypeToJavaType($type, PureOne))->codeToString($conventions)+'.valueOf('+$parser+'.getLocalName())',
+   if($type->instanceOf(meta::pure::metamodel::type::Enumeration),
+      | $conventions->codeType($conventions->pureTypeToJavaType($type, PureOne))->codeToString()+'.valueOf('+$parser+'.getLocalName())',
       |
    if($type->instanceOf(Unit) || $type->instanceOf(Measure),
-      | $conventions->codeType($conventions->pureTypeToJavaType($type, PureOne))->codeToString($conventions)+'.valueOf('+$parser+'.getLocalName())',
+      | $conventions->codeType($conventions->pureTypeToJavaType($type, PureOne))->codeToString()+'.valueOf('+$parser+'.getLocalName())',
       | fail('Unsupported type: ' + $type.name->toOne());
         '';
    )))))))))));
 }
 
-function meta::alloy::runtime::java::graphFetch::xml::xmlReaderClass(conventions:Conventions[1], path:String[1], srcTreeClass:Class<Any>[1]): meta::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::graphFetch::xml::xmlReaderClass(conventions:Conventions[1], path:String[1], srcTreeClass:meta::pure::metamodel::type::Class<Any>[1]): meta::external::language::java::metamodel::Class[1]
 {
    $conventions->planNodeClass('public', $path, 'XmlDataReader' + $conventions->identifier($srcTreeClass->elementToPath('_')));
 }
 
-function meta::alloy::runtime::java::graphFetch::xml::createXmlReading(pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], readableClasses:Class<Any>[*], readableEnums:Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::pure::executionPlan::engine::java::graphFetch::xml::createXmlReading(pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], readableClasses:meta::pure::metamodel::type::Class<Any>[*], readableEnums:meta::pure::metamodel::type::Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    newProject()
       ->addClasses(createReadingClass($pureClass, $javaInterface, $path, $readableClasses, $readableEnums, $context, $debug))
       ->addMavenDependency('com.fasterxml.jackson.dataformat', 'jackson-dataformat-xml', '2.10.3');
 }
 
-function meta::alloy::runtime::java::graphFetch::xml::createReadingClass(pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], readableClasses:Class<Any>[*], readableEnums:Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): meta::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::graphFetch::xml::createReadingClass(pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], readableClasses:meta::pure::metamodel::type::Class<Any>[*], readableEnums:meta::pure::metamodel::type::Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): meta::external::language::java::metamodel::Class[1]
 {
    let fetchClass      = $context.conventions->xmlReaderClass($path, $pureClass);
    let conventions     = $context.conventions;
@@ -145,12 +144,12 @@ function meta::alloy::runtime::java::graphFetch::xml::createReadingClass(pureCla
       ->addReadCheckedObjects($pureClass, $javaInterface, $path, $context);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addClassReadMethods(self:meta::java::metamodel::Class[1], readableClasses:Class<Any>[*], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addClassReadMethods(self:meta::external::language::java::metamodel::Class[1], readableClasses:meta::pure::metamodel::type::Class<Any>[*], path:String[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
 {
   $readableClasses->fold({c, ths | $ths->addClassReadMethod($c, $path, $context)}, $self);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addClassReadMethod(self:meta::java::metamodel::Class[1], class:Class<Any>[1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addClassReadMethod(self:meta::external::language::java::metamodel::Class[1], class:meta::pure::metamodel::type::Class<Any>[1], path:String[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
 {
   let cgi           = $self->classGenInfo($class, $path, $context);
   let checked       = $cgi.conventions->className(Checked);
@@ -163,11 +162,10 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addClas
       ->concatenate(acceptProperties($cgi))
       ->concatenate(validateMultiplicities($cgi))
       ->concatenate(returnCheckedObject($cgi))
-      ->codesToString($self)
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::defineClassPreParseVariables(cgi:ClassGenInfo[1]): Code[*]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::defineClassPreParseVariables(cgi:ClassGenInfo[1]): Code[*]
 {
   $cgi.allProperties->map({p|
     let pgi   = $cgi.propertyGenInfoFor($p);
@@ -183,7 +181,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::defineC
    });
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::acceptProperties(cgi:ClassGenInfo[1]): Code[*]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::acceptProperties(cgi:ClassGenInfo[1]): Code[*]
 {
   let fieldname = j_variable(javaString(), 'fieldname');
 
@@ -191,7 +189,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::acceptP
     let pgi = $cgi.propertyGenInfoFor($p);
 
     let assign = $pgi.propertyType->match([
-      {c: Class<Any>[1] |
+      {c: meta::pure::metamodel::type::Class<Any>[1] |
         let checked         = j_variable($pgi.checkedType, 'checked');
         let propertyDefects = j_variable(javaList($cgi.conventions->defectClass()), 'propertyDefects');
         let i               = j_variable(javaInt(), 'i');
@@ -212,7 +210,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::acceptP
           )
         ]->j_block();
       },
-      {e: Enumeration<Any>[1] |
+      {e: meta::pure::metamodel::type::Enumeration<Any>[1] |
         let propertyValue = j_variable($pgi.accept.type, 'propertyValue');
 
         [
@@ -254,7 +252,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::acceptP
   ];
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::validateMultiplicities(cgi:ClassGenInfo[1]): Code[*]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::validateMultiplicities(cgi:ClassGenInfo[1]): Code[*]
 {
   $cgi.allProperties->map({p|
     let pgi          = $cgi.propertyGenInfoFor($p);
@@ -287,7 +285,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::validat
    });
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::returnCheckedObject(cgi:ClassGenInfo[1]): Code[*]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::returnCheckedObject(cgi:ClassGenInfo[1]): Code[*]
 {
   let objectAccess  = $cgi.stackPeek->j_cast($cgi.dataClass);
 
@@ -318,17 +316,17 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::returnC
   ];
 }
 
-Class <<access.private>> meta::alloy::runtime::java::graphFetch::xml::ClassGenInfo
+Class <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::ClassGenInfo
 {
-  thisClass        : meta::java::metamodel::Class[1];
+  thisClass        : meta::external::language::java::metamodel::Class[1];
   path             : String[1];
   context          : GenerationContext[1];
   stack            : Code[1];
   defects          : Code[1];
-  class            : Class<Any>[1];
-  javaInterface    : meta::java::metamodel::Class[1];
-  dataClass        : meta::java::metamodel::Class[1];
-  propertyGenInfos : meta::alloy::runtime::java::graphFetch::xml::PropertyGenInfo[*];
+  class            : meta::pure::metamodel::type::Class<Any>[1];
+  javaInterface    : meta::external::language::java::metamodel::Class[1];
+  dataClass        : meta::external::language::java::metamodel::Class[1];
+  propertyGenInfos : meta::pure::executionPlan::engine::java::graphFetch::xml::PropertyGenInfo[*];
 
   conventions()
   {
@@ -371,21 +369,21 @@ Class <<access.private>> meta::alloy::runtime::java::graphFetch::xml::ClassGenIn
   }: Code[1];
 }
 
-Class <<access.private>> meta::alloy::runtime::java::graphFetch::xml::PropertyGenInfo
+Class <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::PropertyGenInfo
 {
   property    : Property<Nil, Any|*>[1];
   fieldName   : String[1];
-  javaType    : meta::java::metamodel::Type[1];
-  listType    : meta::java::metamodel::Type[1];
-  elementType : meta::java::metamodel::Type[1];
-  checkedType : meta::java::metamodel::Type[1];
+  javaType    : meta::external::language::java::metamodel::Type[1];
+  listType    : meta::external::language::java::metamodel::Type[1];
+  elementType : meta::external::language::java::metamodel::Type[1];
+  checkedType : meta::external::language::java::metamodel::Type[1];
   variable    : Code[1];
   accept      : Code[1];
 
   propertyType()
   {
     $this.property.genericType.rawType->toOne();
-  }: Type[1];
+  }: meta::pure::metamodel::type::Type[1];
 
   nameCode()
   {
@@ -398,7 +396,7 @@ Class <<access.private>> meta::alloy::runtime::java::graphFetch::xml::PropertyGe
   }: Code[1];
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::classGenInfo(self:meta::java::metamodel::Class[1], class:Class<Any>[1], path:String[1], context:GenerationContext[1]): ClassGenInfo[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::classGenInfo(self:meta::external::language::java::metamodel::Class[1], class:meta::pure::metamodel::type::Class<Any>[1], path:String[1], context:GenerationContext[1]): ClassGenInfo[1]
 {
   let conventions   = $context.conventions;
   let jThis         = j_this($self);
@@ -445,19 +443,19 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::classGe
   );
 }
 
-Enum meta::alloy::runtime::java::graphFetch::xml::XmlType
+Enum meta::pure::executionPlan::engine::java::graphFetch::xml::XmlType
 {
   Element, Attribute, Text
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addAcceptTypeMethods(self:meta::java::metamodel::Class[1], type:Type[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addAcceptTypeMethods(self:meta::external::language::java::metamodel::Class[1], type:meta::pure::metamodel::type::Type[1], conventions:Conventions[1]): meta::external::language::java::metamodel::Class[1]
 {
   $self->addAcceptType($type, XmlType.Attribute, $conventions)
        ->addAcceptType($type, XmlType.Text,      $conventions)
        ->addAcceptType($type, XmlType.Element,   $conventions);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addAcceptType(self:meta::java::metamodel::Class[1], type:Type[1], xmlType:XmlType[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addAcceptType(self:meta::external::language::java::metamodel::Class[1], type:meta::pure::metamodel::type::Type[1], xmlType:XmlType[1], conventions:Conventions[1]): meta::external::language::java::metamodel::Class[1]
 {
   let javaType      = $conventions->pureTypeToJavaType($type, PureOne);
   let value         = j_variable($javaType->toBoxed(), 'value');
@@ -517,16 +515,16 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addAcce
         $accept,
         j_throw(j_new($parseException, $illegalArgEx->j_invoke('getMessage', [], javaString())))
       ])
-    )->codesToString($self)
+    )
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addEnumReadMethods(self:meta::java::metamodel::Class[1], enums:Enumeration<Any>[*], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addEnumReadMethods(self:meta::external::language::java::metamodel::Class[1], enums:meta::pure::metamodel::type::Enumeration<Any>[*], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
 {
   $enums->fold({e, ths| $ths->addEnumReadMethod($e, $context)}, $self);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addEnumReadMethod(self:meta::java::metamodel::Class[1], enum:Enumeration<Any>[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addEnumReadMethod(self:meta::external::language::java::metamodel::Class[1], enum:meta::pure::metamodel::type::Enumeration<Any>[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
 {
   let jThis     = j_this($self);
   let text      = j_variable(javaString(), 'text');
@@ -539,17 +537,17 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addEnum
       $text->j_declare($jThis->j_invoke('acceptStringAsElement', [], javaString())),
       $value->j_declare(j_conditional($text->j_invoke('startsWith', j_string($qualifier), javaBoolean()), $text->j_invoke('substring', j_int($qualifier->length()), javaString()), $text)),
       j_return($javaClass->j_invoke('valueOf', $value, $javaClass))
-    ]->codesToString($self)
+    ]
    ));
 
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addUnitAcceptMethods(self:meta::java::metamodel::Class[1], unitTypes:Type[*], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addUnitAcceptMethods(self:meta::external::language::java::metamodel::Class[1], unitTypes:meta::pure::metamodel::type::Type[*], conventions:Conventions[1]): meta::external::language::java::metamodel::Class[1]
 {
   $unitTypes->fold({t, ths| $ths->addUnitAcceptMethod($t, $conventions)}, $self);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addUnitAcceptMethod(self:meta::java::metamodel::Class[1], type:Type[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addUnitAcceptMethod(self:meta::external::language::java::metamodel::Class[1], type:meta::pure::metamodel::type::Type[1], conventions:Conventions[1]): meta::external::language::java::metamodel::Class[1]
 {
   let jThis     = j_this($self);
   let unitValue = j_variable(javaDouble(), 'unitValue');
@@ -567,11 +565,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addUnit
       $unitValue->j_declare($jThis->j_invoke('acceptFloatAsElement', [], javaFloat())),
       $jThis->j_invoke('accept', xmlEndElement(), javaVoid()),
       j_return(j_new($javaImpl, $unitValue))
-    ]->j_exTryCatch()->codesToString($self)
+    ]->j_exTryCatch()
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addReadCheckedObjects(fetchClass:meta::java::metamodel::Class[1], pureClass:Class<Any>[1], javaInterface:meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addReadCheckedObjects(fetchClass:meta::external::language::java::metamodel::Class[1], pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
 {
    let conv            = $context.conventions;
    let checkedClass    = $context.baseProject->toOne()->resolve($conv->className(Checked));
@@ -616,12 +614,12 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addRead
                   javaRuntimeException()->j_new([$xmlStreamEx])->j_throw()
                )
             )
-         ]->codesToString($fetchClass)
+         ]
       )
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addInitReading(self:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addInitReading(self:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
    let jThis  = j_this($self);
    let parser = $jThis->j_field('parser');
@@ -634,11 +632,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addInit
          $xmlTokenStreamF->j_declare($jThis->j_invoke('getField', [$parser->j_invoke('getClass', []),j_string('_xmlTokens')], javaClass('java.lang.reflect.Field'))),
          $xmlTokenStreamF->j_invoke('setAccessible', [j_boolean('true')], javaVoid()),
          $xmlTokenStream->j_assign($xmlTokenStreamF->j_invoke('get', [$parser], javaObject())->j_cast(xmlTokenStream()))
-      ]->j_exTryCatch()->codesToString($self)
+      ]->j_exTryCatch()
    ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addGetField(self:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addGetField(self:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
   let field      = javaClass('java.lang.reflect.Field');
   let clazz      = j_parameter(javaClassType(), 'clazz');
@@ -658,11 +656,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addGetF
           )
         ]
       )
-    )->codesToString($self)
+    )
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addIsFinished(self:meta::java::metamodel::Class[1], sourceClassName:String[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addIsFinished(self:meta::external::language::java::metamodel::Class[1], sourceClassName:String[1]): meta::external::language::java::metamodel::Class[1]
 {
   let jThis            = j_this($self);
   let getCurrentToken  = $jThis->j_invoke('getCurrentToken', [], javaInt());
@@ -679,44 +677,44 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addIsFi
       $isNewRecord->j_assign(j_true()),
       $finishedReading->j_assign(j_or($finishedReading, $getCurrentToken->j_eq(xmlEnd()))),
       j_return($finishedReading)
-    ]->codesToString($self)
+    ]
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addDestroyReading(self:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addDestroyReading(self:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
   let parser = j_this($self)->j_field('parser');
 
   $self->addMethod(javaMethod(['public'], javaVoid(), 'destroyReading', [],
     j_if(j_not($parser->j_invoke('isClosed', [], javaBoolean())),
       $parser->j_invoke('close', [], javaVoid())->j_ioExTryCatch()
-    )->codesToString($self)
+    )
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addConstructor(self:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addConstructor(self:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
    let in = j_parameter(javaInputStream(),'in');
 
    $self->addConstructor(
-      javaConstructor([], [$in]->cast(@meta::java::metamodel::Parameter),
+      javaConstructor([], [$in]->cast(@meta::external::language::java::metamodel::Parameter),
          [
             j_this($self)->j_field('in')->j_assign($in)
-         ]->codesToString($self)
+         ]
       )
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addGetCurrentToken(self:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addGetCurrentToken(self:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
   let tokenStream = j_this($self)->j_field('xmlTokenStream');
 
   $self->addMethod(javaMethod('private', javaInt(), 'getCurrentToken', [],
-    j_return($tokenStream->j_invoke('getCurrentToken', [], javaInt()))->codesToString($self)
+    j_return($tokenStream->j_invoke('getCurrentToken', [], javaInt()))
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addCurrentFieldName(self:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addCurrentFieldName(self:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
   let jThis            = j_this($self);
   let getCurrentToken  = $jThis->j_invoke('getCurrentToken', [], javaInt());
@@ -740,11 +738,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addCurr
         )
       ]),
       j_throw(j_new(javaIllegalStateException(), j_string('Unknown token for field name')))
-    )->codesToString($self)
+    )
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addAcceptToken(self:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addAcceptToken(self:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
   let expectedToken    = j_parameter(javaInt(), 'expectedToken');
   let jThis            = j_this($self);
@@ -752,11 +750,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addAcce
   let errorMessage     = j_string('Failed to parse xml, expected \'')->j_plus($expectedToken)->j_plus(j_string('\', Found '))->j_plus($getCurrentToken);
 
   $self->addMethod(javaMethod('private', javaVoid(), 'accept', [$expectedToken],
-    $jThis->j_invoke('accept', [$expectedToken, $errorMessage], javaVoid())->codesToString($self)
+    $jThis->j_invoke('accept', [$expectedToken, $errorMessage], javaVoid())
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addAcceptToken_Message(self:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addAcceptToken_Message(self:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
   let expectedToken = j_parameter(javaInt(), 'expectedToken');
   let errorMessage  = j_parameter(javaString(), 'errorMessage');
@@ -766,11 +764,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addAcce
     [
       $jThis->j_invoke('check', [$expectedToken, $errorMessage], javaVoid()),
       $jThis->j_invoke('accept', j_true(), javaVoid())
-    ]->codesToString($self)
+    ]
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addAcceptAppendToRecord(self:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addAcceptAppendToRecord(self:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
   let append        = j_parameter(javaBoolean(), 'appendToRecord');
   let jThis         = j_this($self);
@@ -782,11 +780,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addAcce
         $jThis->j_invoke('appendToRecord', [], javaVoid())
       ),
       $tokenStream->j_invoke('next', [], javaInt())
-    ]->j_exTryCatch()->codesToString($self)
+    ]->j_exTryCatch()
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addAppendToRecord(self:meta::java::metamodel::Class[1], sourceClassName:String[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addAppendToRecord(self:meta::external::language::java::metamodel::Class[1], sourceClassName:String[1]): meta::external::language::java::metamodel::Class[1]
 {
   let jThis         = j_this($self);
   let isNewRecord   = $jThis->j_field('isNewRecord');
@@ -825,13 +823,13 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addAppe
           )
         ]
       ))
-    ]->j_exTryCatch()->codesToString($self)
+    ]->j_exTryCatch()
   ));
 }
 
 
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addSkip(self:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addSkip(self:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
   let jThis            = j_this($self);
   let getCurrentToken  = $jThis->j_invoke('getCurrentToken', [], javaInt());
@@ -873,11 +871,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addSkip
         )
       ]),
       j_throw(j_new(javaIllegalStateException(), j_string('Unknown token for skip')))
-    )->codesToString($self)
+    )
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addCheckToken(self:meta::java::metamodel::Class[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addCheckToken(self:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
   let expectedToken   = j_parameter(javaInt(), 'expectedToken');
   let jThis           = j_this($self);
@@ -885,11 +883,11 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addChec
   let errorMessage    = j_string('Failed to parse xml, expected \'')->j_plus($expectedToken)->j_plus(j_string('\', Found '))->j_plus($getCurrentToken);
 
   $self->addMethod(javaMethod('private', javaVoid(), 'check', [$expectedToken],
-    $jThis->j_invoke('check', [$expectedToken, $errorMessage], javaVoid())->codesToString($self)
+    $jThis->j_invoke('check', [$expectedToken, $errorMessage], javaVoid())
   ));
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addCheckToken_Message(self:meta::java::metamodel::Class[1], conventions:Conventions[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::addCheckToken_Message(self:meta::external::language::java::metamodel::Class[1], conventions:Conventions[1]): meta::external::language::java::metamodel::Class[1]
 {
   let expectedToken   = j_parameter(javaInt(), 'expectedToken');
   let errorMessage    = j_parameter(javaString(), 'errorMessage');
@@ -899,24 +897,24 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::addChec
   $self->addMethod(javaMethod('private', javaVoid(), 'check', [$expectedToken, $errorMessage],
     j_if($getCurrentToken->j_ne($expectedToken),
       j_throw(j_new($conventions->className(meta::pure::executionPlan::engine::DataParsingException), $errorMessage))
-    )->codesToString($self)
+    )
   ));
 }
 
-function meta::alloy::runtime::java::graphFetch::xml::nextToken(parser:Code[1]): Code[1] { $parser->j_invoke('nextToken', [], jsonToken()); }
+function meta::pure::executionPlan::engine::java::graphFetch::xml::nextToken(parser:Code[1]): Code[1] { $parser->j_invoke('nextToken', [], jsonToken()); }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlFactory()         : meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.dataformat.xml.XmlFactory'); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlTokenStream()     : meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream'); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlBuilderFactory()  : meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.dataformat.xml.XmlFactoryBuilder'); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::jsonXmlParser()      : meta::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser'); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlInputFactory()    : meta::java::metamodel::Class[1] { javaClass('javax.xml.stream.XMLInputFactory'); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlStreamReader()    : meta::java::metamodel::Class[1] { javaClass('javax.xml.stream.XMLStreamReader'); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlStreamWriter()    : meta::java::metamodel::Class[1] { javaClass('javax.xml.stream.XMLStreamWriter'); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlStreamException() : meta::java::metamodel::Class[1] { javaClass('javax.xml.stream.XMLStreamException'); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlFactory()         : meta::external::language::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.dataformat.xml.XmlFactory'); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlTokenStream()     : meta::external::language::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.dataformat.xml.deser.XmlTokenStream'); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlBuilderFactory()  : meta::external::language::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.dataformat.xml.XmlFactoryBuilder'); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::jsonXmlParser()      : meta::external::language::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.dataformat.xml.deser.FromXmlParser'); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlInputFactory()    : meta::external::language::java::metamodel::Class[1] { javaClass('javax.xml.stream.XMLInputFactory'); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlStreamReader()    : meta::external::language::java::metamodel::Class[1] { javaClass('javax.xml.stream.XMLStreamReader'); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlStreamWriter()    : meta::external::language::java::metamodel::Class[1] { javaClass('javax.xml.stream.XMLStreamWriter'); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlStreamException() : meta::external::language::java::metamodel::Class[1] { javaClass('javax.xml.stream.XMLStreamException'); }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlStartElement()   : Code[1]  { xmlTokenStream()->j_field('XML_START_ELEMENT',   javaInt()); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlEndElement()     : Code[1]  { xmlTokenStream()->j_field('XML_END_ELEMENT',     javaInt()); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlAttributeName()  : Code[1]  { xmlTokenStream()->j_field('XML_ATTRIBUTE_NAME',  javaInt()); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlAttributeValue() : Code[1]  { xmlTokenStream()->j_field('XML_ATTRIBUTE_VALUE', javaInt()); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlText()           : Code[1]  { xmlTokenStream()->j_field('XML_TEXT',            javaInt()); }
-function <<access.private>> meta::alloy::runtime::java::graphFetch::xml::xmlEnd()            : Code[1]  { xmlTokenStream()->j_field('XML_END',             javaInt()); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlStartElement()   : Code[1]  { xmlTokenStream()->j_field('XML_START_ELEMENT',   javaInt()); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlEndElement()     : Code[1]  { xmlTokenStream()->j_field('XML_END_ELEMENT',     javaInt()); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlAttributeName()  : Code[1]  { xmlTokenStream()->j_field('XML_ATTRIBUTE_NAME',  javaInt()); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlAttributeValue() : Code[1]  { xmlTokenStream()->j_field('XML_ATTRIBUTE_VALUE', javaInt()); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlText()           : Code[1]  { xmlTokenStream()->j_field('XML_TEXT',            javaInt()); }
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::xml::xmlEnd()            : Code[1]  { xmlTokenStream()->j_field('XML_END',             javaInt()); }

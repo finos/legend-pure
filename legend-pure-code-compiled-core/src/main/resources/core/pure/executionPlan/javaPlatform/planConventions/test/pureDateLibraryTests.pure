@@ -12,20 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::expression::*;
-import meta::java::generation::tests::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::serialization::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::tests::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::date::testPureDateLiteral() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testPureDateLiteral() : Boolean[1]
 {
-   let conventions = alloyConventions([]);
+   let conventions = engineConventions([]);
    javaExpressionTests($conventions)
       ->addTest('Date Literal', {| %2018-12-31}, 'org.finos.legend.engine.plan.dependencies.domain.date.PureDate.parsePureDate("2018-12-31")', $conventions->className(PureDate))
          ->assert('%s.equals(org.finos.legend.engine.plan.dependencies.domain.date.PureDate.newPureDate(2018,12,31))')
@@ -34,9 +32,9 @@ meta::java::generation::tests::functions::date::testPureDateLiteral() : Boolean[
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::date::testPureDateGetUnits() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testPureDateGetUnits() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('Year', {| %2018-12-31->year()}, '(long) org.finos.legend.engine.plan.dependencies.domain.date.PureDate.parsePureDate("2018-12-31").getYear()', javaLong())
          ->assert('%s == 2018')
       ->addTest('Month', {| %2018-12-31->monthNumber()}, '(long) org.finos.legend.engine.plan.dependencies.domain.date.PureDate.parsePureDate("2018-12-31").getMonth()', javaLong())
@@ -46,9 +44,9 @@ meta::java::generation::tests::functions::date::testPureDateGetUnits() : Boolean
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::date::testPureDateCompare() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testPureDateCompare() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('Greater Than', {| %2019-12-31 > %2018-12-31}, 'org.finos.legend.engine.plan.dependencies.util.Library.greaterThan(org.finos.legend.engine.plan.dependencies.domain.date.PureDate.parsePureDate("2019-12-31"), org.finos.legend.engine.plan.dependencies.domain.date.PureDate.parsePureDate("2018-12-31"))', javaBoolean())
          ->assert('%s == true')
       ->addTest('Greater Than Equal', {| %2019-12-31 >= %2018-12-31}, 'org.finos.legend.engine.plan.dependencies.util.Library.greaterThanEqual(org.finos.legend.engine.plan.dependencies.domain.date.PureDate.parsePureDate("2019-12-31"), org.finos.legend.engine.plan.dependencies.domain.date.PureDate.parsePureDate("2018-12-31"))', javaBoolean())
@@ -70,9 +68,9 @@ meta::java::generation::tests::functions::date::testPureDateCompare() : Boolean[
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::date::testPureDateDerivations() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testPureDateDerivations() : Boolean[1]
 {
-   let conventions = alloyConventions([]);
+   let conventions = engineConventions([]);
    javaExpressionTests($conventions)
       ->addTest('First day of week', {| %1973-02-01->firstDayOfWeek()}, 'org.finos.legend.engine.plan.dependencies.util.Library.firstDayOfWeek(org.finos.legend.engine.plan.dependencies.domain.date.PureDate.parsePureDate("1973-02-01"))', $conventions->className(PureDate))
          ->assert('%s.equals(org.finos.legend.engine.plan.dependencies.domain.date.PureDate.newPureDate(1973,1,29))')
@@ -115,9 +113,9 @@ meta::java::generation::tests::functions::date::testPureDateDerivations() : Bool
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::date::testPureDateToday() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testPureDateToday() : Boolean[1]
 {
-   let conventions = alloyConventions([]);
+   let conventions = engineConventions([]);
    let today = today();
    let day = $today->dayOfMonth();
    let month = $today->monthNumber();
@@ -130,9 +128,9 @@ meta::java::generation::tests::functions::date::testPureDateToday() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::date::testPureDateRunPureTests() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testPureDateRunPureTests() : Boolean[1]
 {
-   javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
+   javaPureTests(meta::pure::executionPlan::engine::java::engineConventions([]), [
       meta::pure::functions::date::tests::testDateDiffYears__Boolean_1_,
       meta::pure::functions::date::tests::testDateDiffMonths__Boolean_1_,
       meta::pure::functions::date::tests::testDateDiffWeeks__Boolean_1_,

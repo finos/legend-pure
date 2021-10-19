@@ -1,11 +1,11 @@
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 
-function meta::alloy::runtime::java::getRelationalObjectReferenceParserHelperClass(pkOrder: String[*], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::getRelationalObjectReferenceParserHelperClass(pkOrder: String[*], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::external::language::java::metamodel::Class[1]
 {
    let objectMapperClass           = javaClass('com.fasterxml.jackson.databind.ObjectMapper');
    let base64Class                 = javaClass('java.util.Base64');
@@ -28,7 +28,7 @@ function meta::alloy::runtime::java::getRelationalObjectReferenceParserHelperCla
                                                      [
                                                         $jThis->j_field($pkOrderField)->j_assign(javaArrayList(javaString())->j_new(javaArrays()->j_invoke('asList', $pkOrder->cast(@String)->map(pk| j_string($pk)), javaList(javaString())))),
                                                         $jThis->j_field($objectMapperField)->j_assign(j_new($objectMapperClass, []))
-                                                     ]->codesToString($baseClass));
+                                                     ]);
 
    let objectReferenceParam        = j_parameter(javaString(), 'objectReference');
    let ex                          = j_parameter(javaException(), 'e');
@@ -80,7 +80,7 @@ function meta::alloy::runtime::java::getRelationalObjectReferenceParserHelperCla
                                                               j_return($jThis->j_invoke('parseObjectReferenceV1', $decodedObjectReferenceVar->j_invoke('substring', j_int(4), javaString()), javaString())),
                                                               j_throw(j_new(javaRuntimeException(), j_string('We currently support parsing objectReference v1 only!! Found version - ')->j_plus($objectReferenceVersionVar)))  
                                                          )
-                                                      ]->codesToString($baseClass));
+                                                      ]);
 
    let parseObjectReferenceV1Method = javaMethod(['private'], javaString(), 'parseObjectReferenceV1', [$objectReferenceParam],
                                                       [
@@ -123,24 +123,24 @@ function meta::alloy::runtime::java::getRelationalObjectReferenceParserHelperCla
                                                          $pkMapVar->j_declare($jThis->j_field($objectMapperField)->j_invoke('readValue',
                                                                                                                            [
                                                                                                                               $pkMapStringVar,
-                                                                                                                              j_field(javaMap(javaString(), javaObject())->cast(@meta::java::metamodel::ParameterizedType).rawType, 'class', javaObject())
+                                                                                                                              j_field(javaMap(javaString(), javaObject())->cast(@meta::external::language::java::metamodel::ParameterizedType).rawType, 'class', javaObject())
                                                                                                                            ],
                                                                                                                            javaMap(javaObject(), javaObject())
                                                                                                                            )->j_cast(javaMap(javaString(), javaObject()))),
                                                          $jThis->j_field($pkOrderField)->j_streamOf()->js_map(j_methodReference($pkMapVar, 'get', javaFunctionType(javaString(), javaObject())))->js_map(j_methodReference(javaObject(), 'toString'))->js_joining(j_string(','))->j_return()
-                                                      ]->j_exTryCatch())->codesToString($baseClass));
+                                                      ]->j_exTryCatch()));
  
    let parseUnEncodedObjectReferenceMethod = javaMethod(['private'], javaString(), 'parseUnEncodedObjectReference', [$objectReferenceParam],
                                                       [
                                                          $pkMapVar->j_declare($jThis->j_field($objectMapperField)->j_invoke('readValue',
                                                                                                                            [
                                                                                                                               $objectReferenceParam,
-                                                                                                                              j_field(javaMap(javaString(), javaObject())->cast(@meta::java::metamodel::ParameterizedType).rawType, 'class', javaObject())
+                                                                                                                              j_field(javaMap(javaString(), javaObject())->cast(@meta::external::language::java::metamodel::ParameterizedType).rawType, 'class', javaObject())
                                                                                                                            ],
                                                                                                                            javaMap(javaString(), javaObject())
                                                                                                                            )->j_invoke('get', j_string('pkMap'), javaObject())->j_cast(javaMap(javaString(), javaObject()))),
                                                          $jThis->j_field($pkOrderField)->j_streamOf()->js_map(j_methodReference($pkMapVar, 'get', javaFunctionType(javaString(), javaObject())))->js_map(j_methodReference(javaObject(), 'toString'))->js_joining(j_string(','))->j_return()
-                                                      ]->j_exTryCatch()->codesToString($baseClass));
+                                                      ]->j_exTryCatch());
    
    let parseObjectReferenceMethod = javaMethod(['public'], javaObject(), 'parseObjectReference', [$objectReferenceParam],
                                                j_try(
@@ -155,8 +155,8 @@ function meta::alloy::runtime::java::getRelationalObjectReferenceParserHelperCla
                                                          j_throw(j_new(javaRuntimeException(), j_string('Unable to parse objectReference. Exception - ')->j_plus($ex)))                  
                                                       ]
                                                    )
-                                               )->codesToString($baseClass))
-                                    ->addAnnotation(^meta::java::metamodel::annotations::override::Override());
+                                               ))
+                                    ->addAnnotation(^meta::external::language::java::metamodel::annotations::override::Override());
 
    $baseClass->addConstructor($constructor)
                 ->addMethod($parseObjectReferenceMethod)
