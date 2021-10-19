@@ -1040,6 +1040,47 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::rel
    );
 }
 
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::qualifier::testInScopeVariableBoolean(): Boolean[1]
+{
+   let query = {|
+      let var = 'Mr';
+      let boolVar = false;
+      Person.all()->graphFetch(
+         #{
+            Person {
+               firstName,
+               fullName($boolVar),
+               nameWithTitle($var)
+            }
+         }#
+      )->serialize(
+         #{
+            Person {
+               firstName,
+               fullName($boolVar),
+               'nwt' : nameWithTitle($var)
+            }
+         }#
+      );
+   };
+
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"firstName":"Peter","fullName($boolVar)":"Peter Smith","nwt":"Mr Peter Smith"},'+
+      '{"firstName":"John","fullName($boolVar)":"John Johnson","nwt":"Mr John Johnson"},'+
+      '{"firstName":"John","fullName($boolVar)":"John Hill","nwt":"Mr John Hill"},'+
+      '{"firstName":"Anthony","fullName($boolVar)":"Anthony Allen","nwt":"Mr Anthony Allen"},'+
+      '{"firstName":"Fabrice","fullName($boolVar)":"Fabrice Roberts","nwt":"Mr Fabrice Roberts"},'+
+      '{"firstName":"Oliver","fullName($boolVar)":"Oliver Hill","nwt":"Mr Oliver Hill"},'+
+      '{"firstName":"David","fullName($boolVar)":"David Harris","nwt":"Mr David Harris"}]',
+      $result
+   );
+}
+
 function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::qualifier::testQualifierWithManyMultiplicityParameter_EmptyInput(): Boolean[1]
 {
    let tree = #{
@@ -1112,6 +1153,69 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::rel
        '{"synonyms":[{"typeAsString":"CUSIP","name":"CUSIP2","type":"CUSIP"},{"typeAsString":"ISIN","name":"ISIN2","type":"ISIN"}],"name":"Firm A"},' +
        '{"synonyms":[{"typeAsString":"CUSIP","name":"CUSIP3","type":"CUSIP"},{"typeAsString":"ISIN","name":"ISIN3","type":"ISIN"}],"name":"Firm C"},' +
        '{"synonyms":[],"name":"Firm D"}]',
+      $result
+   );
+}
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_21_0'} meta::relational::graphFetch::tests::simple::testSimpleGraphFetchCheckedWithPrimitivesOnly(): Boolean[1]
+{
+   let tree = #{
+      PersonWithConstraints {
+         firstName,
+         lastName
+      }
+   }#;
+   let query = {|PersonWithConstraints.all()->graphFetchChecked($tree)->serialize($tree)};
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[ { "defects": [ { "id": "firstNameTest", "externalId": null, "message": "First name has to be test", "enforcementLevel": "Error", "ruleType": "ClassConstraint", "ruleDefinerPath": "meta::relational::tests::model::simple::PersonWithConstraints", "path": [] } ], "value": { "firstName": "Peter", "lastName": "Smith" } }, { "defects": [ { "id": "firstNameTest", "externalId": null, "message": "First name has to be test", "enforcementLevel": "Error", "ruleType": "ClassConstraint", "ruleDefinerPath": "meta::relational::tests::model::simple::PersonWithConstraints", "path": [] } ], "value": { "firstName": "John", "lastName": "Johnson" } }, { "defects": [ { "id": "firstNameTest", "externalId": null, "message": "First name has to be test", "enforcementLevel": "Error", "ruleType": "ClassConstraint", "ruleDefinerPath": "meta::relational::tests::model::simple::PersonWithConstraints", "path": [] } ], "value": { "firstName": "John", "lastName": "Hill" } }, { "defects": [ { "id": "firstNameTest", "externalId": null, "message": "First name has to be test", "enforcementLevel": "Error", "ruleType": "ClassConstraint", "ruleDefinerPath": "meta::relational::tests::model::simple::PersonWithConstraints", "path": [] } ], "value": { "firstName": "Anthony", "lastName": "Allen" } }, { "defects": [ { "id": "firstNameTest", "externalId": null, "message": "First name has to be test", "enforcementLevel": "Error", "ruleType": "ClassConstraint", "ruleDefinerPath": "meta::relational::tests::model::simple::PersonWithConstraints", "path": [] } ], "value": { "firstName": "Fabrice", "lastName": "Roberts" } }, { "defects": [ { "id": "firstNameTest", "externalId": null, "message": "First name has to be test", "enforcementLevel": "Error", "ruleType": "ClassConstraint", "ruleDefinerPath": "meta::relational::tests::model::simple::PersonWithConstraints", "path": [] } ], "value": { "firstName": "Oliver", "lastName": "Hill" } }, { "defects": [ { "id": "firstNameTest", "externalId": null, "message": "First name has to be test", "enforcementLevel": "Error", "ruleType": "ClassConstraint", "ruleDefinerPath": "meta::relational::tests::model::simple::PersonWithConstraints", "path": [] } ], "value": { "firstName": "David", "lastName": "Harris" } }]',
+      $result
+   );
+}
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_21_0'} meta::relational::graphFetch::tests::simple::testSimpleGraphFetchCheckedWithPrimitivesOnlyNoDefects(): Boolean[1]
+{
+   let tree = #{
+      Person {
+         firstName,
+         lastName
+      }
+   }#;
+   let query = {|Person.all()->graphFetchChecked($tree)->serialize($tree)};
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"defects":[],"value":{"firstName":"Peter","lastName":"Smith"}},{"defects":[],"value":{"firstName":"John","lastName":"Johnson"}},{"defects":[],"value":{"firstName":"John","lastName":"Hill"}},{"defects":[],"value":{"firstName":"Anthony","lastName":"Allen"}},{"defects":[],"value":{"firstName":"Fabrice","lastName":"Roberts"}},{"defects":[],"value":{"firstName":"Oliver","lastName":"Hill"}},{"defects":[],"value":{"firstName":"David","lastName":"Harris"}}]',
+      $result
+   );
+}
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_21_0'} meta::relational::graphFetch::tests::simple::testCheckedOneComplexProperty(): Boolean[1]
+{
+   let tree = #{
+      PersonWithConstraints {
+         firstName,
+         lastName,
+         firm {
+            legalName
+         }
+      }
+   }#;
+   let query = {|PersonWithConstraints.all()->graphFetchChecked($tree)->serialize($tree)};
+   let mapping = meta::relational::tests::simpleRelationalMapping;
+   let runtime = meta::relational::tests::testRuntime();
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual(
+      '[{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"firstNameTest","ruleDefinerPath":"meta::relational::tests::model::simple::PersonWithConstraints","message":"First name has to be test"}],"value":{"firstName":"Peter","lastName":"Smith","firm":{"legalName":"Firm X"}}},{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"firstNameTest","ruleDefinerPath":"meta::relational::tests::model::simple::PersonWithConstraints","message":"First name has to be test"}],"value":{"firstName":"John","lastName":"Johnson","firm":{"legalName":"Firm X"}}},{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"firstNameTest","ruleDefinerPath":"meta::relational::tests::model::simple::PersonWithConstraints","message":"First name has to be test"}],"value":{"firstName":"John","lastName":"Hill","firm":{"legalName":"Firm X"}}},{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"firstNameTest","ruleDefinerPath":"meta::relational::tests::model::simple::PersonWithConstraints","message":"First name has to be test"}],"value":{"firstName":"Anthony","lastName":"Allen","firm":{"legalName":"Firm X"}}},{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"firstNameTest","ruleDefinerPath":"meta::relational::tests::model::simple::PersonWithConstraints","message":"First name has to be test"}],"value":{"firstName":"Fabrice","lastName":"Roberts","firm":{"legalName":"Firm A"}}},{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"firstNameTest","ruleDefinerPath":"meta::relational::tests::model::simple::PersonWithConstraints","message":"First name has to be test"}],"value":{"firstName":"Oliver","lastName":"Hill","firm":{"legalName":"Firm B"}}},{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"firstNameTest","ruleDefinerPath":"meta::relational::tests::model::simple::PersonWithConstraints","message":"First name has to be test"}],"value":{"firstName":"David","lastName":"Harris","firm":{"legalName":"Firm C"}}}]',
       $result
    );
 }

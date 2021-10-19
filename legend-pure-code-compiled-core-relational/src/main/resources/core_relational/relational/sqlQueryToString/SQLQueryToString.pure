@@ -308,9 +308,9 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getLi
 function <<access.private>> meta::relational::functions::sqlQueryToString::getLiteralProcessorsForBigQuery(dbTimeZone:String[0..1]):Map<Type,LiteralProcessor>[1]
 {
    newMap([
-      pair(StrictDate,     ^LiteralProcessor(format = 'PARSE_DATE(\'%s\')',   transform = {d:StrictDate[1] | $d->convertDateToSqlString($dbTimeZone)})),
-      pair(DateTime,       ^LiteralProcessor(format = 'PARSE_DATETIME(\'%s\')', transform = {d:DateTime[1] | $d->convertDateToSqlString($dbTimeZone)})),
-      pair(Date,           ^LiteralProcessor(format = 'PARSE_DATE(\'%s\')', transform = {d:Date[1] | $d->convertDateToSqlString($dbTimeZone)}))
+      pair(StrictDate,     ^LiteralProcessor(format = 'PARSE_DATE(\'%%Y-%%m-%%d\', \'%s\')',   transform = {d:StrictDate[1] | $d->convertDateToSqlString($dbTimeZone)})),
+      pair(DateTime,       ^LiteralProcessor(format = 'PARSE_DATETIME(\'%%Y-%%m-%%d %%H:%%M:%%E6S\', \'%s\')', transform = {d:DateTime[1] | $d->convertDateToSqlString($dbTimeZone)})),
+      pair(Date,           ^LiteralProcessor(format = 'PARSE_DATE(\'%%Y-%%m-%%d\', \'%s\')', transform = {d:Date[1] | $d->convertDateToSqlString($dbTimeZone)}))
    ])
 }
 
@@ -671,7 +671,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processGroupByColumns(columns:RelationalOperationElement[*], dbConfig : DbConfig[1], format:Format[1], extensions:RouterExtension[*]):String[*]
 {
-   let supportsAliasInGroupBy = !($dbConfig.dbType->in([DatabaseType.DB2, DatabaseType.Sybase, DatabaseType.Presto]));
+   let supportsAliasInGroupBy = !($dbConfig.dbType->in([DatabaseType.DB2, DatabaseType.Sybase, DatabaseType.Presto, DatabaseType.Snowflake]));
    $columns->map(c | $c->match([
                                 a:Alias[1] | if($supportsAliasInGroupBy == true, | $a->cast(@Alias).name->processIdentifier($dbConfig)
                                                                                , | $a->cast(@Alias).relationalElement->processOperation($dbConfig, $format, $extensions)),
@@ -1653,7 +1653,9 @@ function  <<access.private>> meta::relational::functions::sqlQueryToString::gene
      ])},
      {| fail('The DurationUnit \''+$params->at(2)+'\' is not supported yet!');'';},
      {| fail('The DurationUnit \''+$params->at(2)+'\' is not supported yet!');'';},
-     {| fail('The DurationUnit \''+$params->at(2)+'\' is not supported yet!');'';},
+     {| format('(%s)', [
+        'time_to_sec(timediff(%s , %s))'
+     ])},
      {| fail('The DurationUnit \''+$params->at(2)+'\' is not supported yet!');'';}
   ];
 
@@ -2107,19 +2109,15 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::sybas
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processDateDiffDurationUnit(durationUnit:String[1], dbType:DatabaseType[1]):String[1]
 {
-
-  let enumList = [DurationUnit.YEARS,DurationUnit.MONTHS,DurationUnit.WEEKS,DurationUnit.DAYS,DurationUnit.HOURS,DurationUnit.MINUTES,DurationUnit.SECONDS,DurationUnit.MILLISECONDS]->map(e|$e->toString());
-  let h2DiffMapping = $enumList->zip(['year', 'month', 'week', 'day', 'hour', 'minute', 'second', 'millisecond']);
-  let prestoDiffMapping = $enumList->zip(['\'year\'', '\'month\'', '\'week\'', '\'day\'', '\'hour\'', '\'minute\'', '\'second\'', '\'millisecond\'']);
-  let iqDiffMapping = $enumList->zip(['yy', 'mm', 'wk', 'dd', 'hh', 'mi', 'ss', 'ms']);
-
-  let dbSpecificUnits = if ($dbType == DatabaseType.H2,
-                          | $h2DiffMapping,
-                          | if ($dbType == DatabaseType.SybaseIQ,
-                                | $iqDiffMapping,
-                                | if ($dbType == DatabaseType.Presto, |$prestoDiffMapping,|[])));
-
-  $dbSpecificUnits->filter(h | $h.first == $durationUnit).second->toOne();
+   let enumList = [DurationUnit.YEARS,DurationUnit.MONTHS,DurationUnit.WEEKS,DurationUnit.DAYS,DurationUnit.HOURS,DurationUnit.MINUTES,DurationUnit.SECONDS,DurationUnit.MILLISECONDS]->map(e|$e->toString());
+   let dbs = [pair(DatabaseType.H2, list(['year', 'month', 'week', 'day', 'hour', 'minute', 'second', 'millisecond'])),
+              pair(DatabaseType.SybaseIQ, list(['yy', 'mm', 'wk', 'dd', 'hh', 'mi', 'ss', 'ms'])),
+              pair(DatabaseType.Presto, list(['\'year\'', '\'month\'', '\'week\'', '\'day\'', '\'hour\'', '\'minute\'', '\'second\'', '\'millisecond\''])),
+              pair(DatabaseType.Snowflake, list(['year', 'month', 'week', 'day', 'hour', 'minute', 'second','']))]->newMap();
+   let dbTypeUnitPair = $dbs->get($dbType);
+   let dbUnitType = $enumList->zip($dbTypeUnitPair.values)->filter(h | $h.first == $durationUnit).second->toOne();
+   assert($dbUnitType->isNotEmpty(), $durationUnit + ' is not supported by ' + toString($dbType) + ' in the DateDiff Function.');
+   $dbUnitType;
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processIdentifier(originalIdentifier:String[1], dbConfig : DbConfig[1]):String[1]
@@ -2221,12 +2219,22 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::conve
    'date( date_parse('+$params->at(0)+','+$dateFormat +') )';
 }
 
+function meta::relational::functions::sqlQueryToString::normalizeH2DateFormat(params:String[1]):String[1]
+{
+   [pair('YYYY', 'yyyy'), pair('DD', 'dd')]->fold({e, a| $a->replace($e.first,$e.second)}, $params);
+  
+}
+
 function <<access.private>> meta::relational::functions::sqlQueryToString::convertToDateH2(params:String[*]):String[1]
 {
-   assert( 2 - $params->size()  >= 0,'Incorrect number of parameters for convertDate: convertDate(column,[dateformat])');
-   assert($params->size()==1 || dateFormatsH2()->contains($params->at(1)->replace('\'', '')) , | $params->at(1) +' not supported ');
-   let dateFormat = if( $params->size() == 1,|'\'yyyy-MM-dd\'' ,| $params->at(1););
-   'cast( parseDateTime('+$params->at(0)+','+$dateFormat +') as date)';
+   
+      assert( 2 - $params->size()  >= 0,'Incorrect number of parameters for convertDate: convertDate(column,[dateformat])');
+      let dateFormat = if( $params->size() == 1,|'\'yyyy-MM-dd\'' ,| let normalizedFormat = $params->at(1)->normalizeH2DateFormat();
+                                                                     assert(dateFormatsH2()->contains($normalizedFormat->replace('\'', '')), $normalizedFormat +' not supported ');
+                                                                     $normalizedFormat;
+                                                                     );
+      'cast( parseDateTime('+$params->at(0)+','+$dateFormat +') as date)';
+   
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::convertToDateTimeH2(params:String[*]):String[1]

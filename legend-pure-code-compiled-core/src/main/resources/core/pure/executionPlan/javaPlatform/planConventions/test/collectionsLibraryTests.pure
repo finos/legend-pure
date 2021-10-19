@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
+import meta::external::language::java::factory::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::tests::*;
 import meta::pure::functions::tests::model::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::tests::*;
-import meta::java::metamodel::factory::*;
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::collection::testCollectionCreations() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testCollectionCreations() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('Add to list', {|['A', 'B']->add('C')}, 'java.util.stream.Stream.concat(java.util.Arrays.asList("A", "B").stream(), java.util.Optional.ofNullable("C").map(java.util.stream.Stream::of).orElseGet(java.util.stream.Stream::empty)).collect(java.util.stream.Collectors.toList())', javaList(javaString()))
          ->assert('%s.contains("A")')
          ->assert('%s.contains("B")')
@@ -62,9 +61,9 @@ meta::java::generation::tests::functions::collection::testCollectionCreations() 
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::collection::testCollectionRestrictions() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testCollectionRestrictions() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('distinct singletons', {|[1]->distinct()}, 'java.util.stream.Stream.<Long>of(1L).distinct().collect(java.util.stream.Collectors.toList())', javaList(javaLong()))
          ->assert('%s.contains(1L)')
          ->assert('%s.size() == 1')
@@ -89,9 +88,9 @@ meta::java::generation::tests::functions::collection::testCollectionRestrictions
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::collection::testBooleanCombinators() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testBooleanCombinators() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('And true', {|[true,true]->and()}, 'java.util.Arrays.asList(true, true).stream().reduce(true, (Boolean x, Boolean y) -> x && y)', javaBoolean())
          ->assert('%s == true')
       ->addTest('And false', {|[true,false]->and()}, 'java.util.Arrays.asList(true, false).stream().reduce(true, (Boolean x, Boolean y) -> x && y)', javaBoolean())
@@ -112,9 +111,9 @@ meta::java::generation::tests::functions::collection::testBooleanCombinators() :
 // We need broader support before being able to test the other map signatures
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::collection::testMap() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testMap() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('map over multiple', {|[1, 2, 3]->map(n|$n+1)}, 'java.util.Arrays.asList(1L, 2L, 3L).stream().map((Long n) -> java.util.Arrays.<Long>asList(n, 1L).stream().reduce(0L, org.finos.legend.engine.plan.dependencies.util.Library::integerPlus).longValue()).collect(java.util.stream.Collectors.toList())', javaList(javaLong()))
          ->assert('%s.contains(2L)')
          ->assert('%s.contains(3L)')
@@ -125,9 +124,9 @@ meta::java::generation::tests::functions::collection::testMap() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::collection::testCollectionQueries() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testCollectionQueries() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('size of none', {|[1,2]->filter(n|false)->size()}, 'java.util.Arrays.asList(1L, 2L).stream().filter((Long n) -> false).count()', javaLong())
          ->assert('%s == 0')
       ->addTest('size of one', {|1->size()}, 'java.util.stream.Stream.<Long>of(1L).count()', javaLong())
@@ -161,9 +160,9 @@ meta::java::generation::tests::functions::collection::testCollectionQueries() : 
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::collection::testSortBy() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testSortBy() : Boolean[1]
 {
-      javaExpressionTests(alloyConventions([]))
+      javaExpressionTests(engineConventions([]))
       ->addTest('Test sortBy()',
                 {|['Kevin', 'Neema', 'Pierre']->sortBy(p| $p->substring(4, 5))},
                 'org.finos.legend.engine.plan.dependencies.util.Library.<String>sort(java.util.Arrays.asList("Kevin", "Neema", "Pierre"), java.util.Comparator.comparing((String p) -> p.substring((int) 4L, (int) 5L)))',
@@ -178,13 +177,15 @@ meta::java::generation::tests::functions::collection::testSortBy() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::collection::testPartsOfCollections() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testPartsOfCollections() : Boolean[1]
 {
-   let conventions = alloyConventions([]);
+   let conventions = engineConventions([]);
    
    javaExpressionTests($conventions)
-      ->addTest('at from many', {|[1,2]->at(1)}, 'java.util.Arrays.asList(1L, 2L).get((int) 1L).longValue()', javaLong())
+      ->addTest('at from many', {|[1,2]->at(1)}, 'org.finos.legend.engine.plan.dependencies.util.Library.at(java.util.Arrays.asList(1L, 2L), 1L).longValue()', javaLong())
          ->assert('%s == 2L')
+      ->addTest('at from single', {|8->at(0)}, 'org.finos.legend.engine.plan.dependencies.util.Library.at(8L, 0L)', javaLong())
+         ->assert('%s == 8L')
       ->addTest('find first', {|[1,2,3]->first()}, 'org.finos.legend.engine.plan.dependencies.util.Library.first(java.util.Arrays.asList(1L, 2L, 3L))', javaLong()->toBoxed())
          ->assert('%s == 1L')
       ->addTest('find first', {|1->first()}, 'org.finos.legend.engine.plan.dependencies.util.Library.first(1L)', javaLong()->toBoxed())
@@ -254,9 +255,9 @@ meta::java::generation::tests::functions::collection::testPartsOfCollections() :
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::collection::testPureTests() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testCollectionsPureTests() : Boolean[1]
 {
-   javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
+   javaPureTests(engineConventions([]), [
       meta::pure::functions::collection::tests::removeDuplicates::testRemoveDuplicatesPrimitiveNonStandardFunction__Boolean_1_,
       meta::pure::functions::collection::tests::removeDuplicates::testRemoveDuplicatesEmptyList__Boolean_1_,
       meta::pure::functions::collection::tests::removeDuplicates::testRemoveDuplicatesByPrimitive__Boolean_1_
@@ -265,6 +266,7 @@ meta::java::generation::tests::functions::collection::testPureTests() : Boolean[
       ->addTestsWithin(meta::pure::functions::collection::tests::init)
       ->addTestsWithin(meta::pure::functions::collection::tests::tail)
       ->addTestsWithin(meta::pure::functions::collection::tests::last)
+      ->addTestsWithin(meta::pure::functions::collection::tests::at)
       ->addTestsWithin(meta::pure::functions::collection::tests::sort)
       ->addTestsWithin(meta::pure::functions::collection::tests::indexof)
       ->addTestsWithin(meta::pure::functions::collection::tests::range)   

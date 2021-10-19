@@ -14,8 +14,9 @@
 
 import meta::external::shared::*;
 import meta::external::shared::generation::*;
+import meta::external::shared::format::binding::*;
+import meta::external::shared::format::binding::toString::*;
 import meta::external::shared::format::metamodel::*;
-import meta::external::shared::format::metamodel::toString::*;
 import meta::external::shared::format::utils::*;
 import meta::external::format::flatdata::metamodel::*;
 import meta::external::format::flatdata::binding::toPure::*;
@@ -25,6 +26,7 @@ import meta::pure::functions::meta::*;
 import meta::pure::functions::tests::collection::*;
 import meta::pure::graphFetch::*;
 import meta::pure::metamodel::serialization::grammar::*;
+import meta::pure::model::unit::*;
 import meta::xml::metamodel::*;
 
 /// ========================================================================================================================================================
@@ -36,19 +38,19 @@ Class meta::external::format::flatdata::binding::toPure::FlatDataToModelConfigur
    purifyNames: Boolean[1];
 }
 
-function meta::external::format::flatdata::binding::toPure::flatDataToPure(schema:Schema[1], config:FlatDataToModelConfiguration[1]): SchemaBinding[1]
+function meta::external::format::flatdata::binding::toPure::flatDataToPure(schemaSet:SchemaSet[1], config:FlatDataToModelConfiguration[1]): Binding[1]
 {
-   flatDataToPure($schema, $config, noDebug());
+   flatDataToPure($schemaSet, $config, noDebug());
 }
 
-function meta::external::format::flatdata::binding::toPure::flatDataToPureWithDebug(schema:Schema[1], config:FlatDataToModelConfiguration[1]): SchemaBinding[1]
+function meta::external::format::flatdata::binding::toPure::flatDataToPureWithDebug(schemaSet:SchemaSet[1], config:FlatDataToModelConfiguration[1]): Binding[1]
 {
-   flatDataToPure($schema, $config, debug());
+   flatDataToPure($schemaSet, $config, debug());
 }
 
-function meta::external::format::flatdata::binding::toPure::flatDataToPure(schema:Schema[1], config:FlatDataToModelConfiguration[1], debug:DebugContext[1]): SchemaBinding[1]
+function meta::external::format::flatdata::binding::toPure::flatDataToPure(schemaSet:SchemaSet[1], config:FlatDataToModelConfiguration[1], debug:DebugContext[1]): Binding[1]
 {
-   let context           = createGenerationContext($schema, $config);
+   let context           = createGenerationContext($schemaSet, $config);
    let generatedElements = generate($context, $debug);
    let result            = createOperation($generatedElements, $context);
    
@@ -62,18 +64,31 @@ function meta::external::format::flatdata::binding::toPure::flatDataToPure(schem
 
 Class <<access.private>> meta::external::format::flatdata::binding::toPure::GenerationContext
 {
-   config  : FlatDataToModelConfiguration[1];
-   schema  : Schema[1];
+   config    : FlatDataToModelConfiguration[1];
+   schemaSet : SchemaSet[1];
 
-   flatData() {$this.schema.detail->cast(@FlatData)}: FlatData[1];
-   package()  {if($this.config.targetPackage->endsWith('::'), |$this.config.targetPackage, |$this.config.targetPackage+'::')}: String[1];
+   flatData() 
+   {
+      if($this.config.sourceSchemaId->isEmpty(),
+         | $this.schemaSet.schemas->at(0),
+         | $this.schemaSet.schemas->filter(s| $s.id == $this.config.sourceSchemaId)->toOne()
+      ).detail->cast(@FlatData)
+         
+   }: FlatData[1];
+
+   package()
+   {
+      if($this.config.targetPackage->endsWith('::'), 
+         |$this.config.targetPackage, 
+         |$this.config.targetPackage+'::')
+   }: String[1];
 }
 
-function <<access.private>> meta::external::format::flatdata::binding::toPure::createGenerationContext(schema:Schema[1], config:FlatDataToModelConfiguration[1]): GenerationContext[1]
+function <<access.private>> meta::external::format::flatdata::binding::toPure::createGenerationContext(schemaSet:SchemaSet[1], config:FlatDataToModelConfiguration[1]): GenerationContext[1]
 {
    let context = ^GenerationContext(
-      config = $config, 
-      schema = $schema
+      config    = $config, 
+      schemaSet = $schemaSet
    );
 }
 
@@ -110,16 +125,17 @@ function <<access.private>> meta::external::format::flatdata::binding::toPure::g
    $cls->mutateAdd('properties', $properties);
 }
 
-function <<access.private>> meta::external::format::flatdata::binding::toPure::createOperation(model:PackageableElement[*], context:GenerationContext[1]): SchemaBinding[1]
+function <<access.private>> meta::external::format::flatdata::binding::toPure::createOperation(model:PackageableElement[*], context:GenerationContext[1]): Binding[1]
 {
-   let sepPos  = $context.config.targetOperation->lastIndexOf('::');
-   let pkgName = $context.config.targetOperation->substring(0, $sepPos);
+   let sepPos  = $context.config.targetBinding->lastIndexOf('::');
+   let pkgName = $context.config.targetBinding->substring(0, $sepPos);
    
-   ^SchemaBinding(
-      package = pathToPackage($pkgName, true),
-      name    = $context.config.targetOperation->substring($sepPos+2),
-      schema  = $context.schema, 
-      model   = $model
+   ^Binding(
+      package     = pathToPackage($pkgName, true),
+      name        = $context.config.targetBinding->substring($sepPos+2),
+      schemaSet   = $context.schemaSet, 
+      contentType = 'application/x.flatdata',
+      modelUnit   = newModelUnit()->include($model)
    );
 }
 

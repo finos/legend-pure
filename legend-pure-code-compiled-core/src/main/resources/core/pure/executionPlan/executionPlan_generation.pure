@@ -92,12 +92,18 @@ function meta::pure::executionPlan::executionPlan(f:FunctionDefinition<Any>[1], 
 function meta::pure::executionPlan::executionPlan(routed:RoutingResult[1], f:FunctionDefinition<Any>[1], m:Mapping[1], runtime:Runtime[1], context:ExecutionContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debugContext:DebugContext[1]):ExecutionPlan[1]
 {
    let routedFunction = $routed.functions->evaluateAndDeactivate()->toOne();
-
    let clusters = $routedFunction.expressionSequence->evaluateAndDeactivate()->cast(@ClusteredValueSpecification);
 
    let functionParameters = $f->stubFuncParameters();
    let inScopeVars = $functionParameters->map(ep|pair($ep.name, ^List<Any>(values=$ep)))->newMap();
+   
+   meta::pure::executionPlan::executionPlan($clusters, $routed, $routedFunction, $f, $m, $runtime, $context, $inScopeVars, $extensions, $debugContext);
+}
 
+function meta::pure::executionPlan::executionPlan(clusters:ClusteredValueSpecification[*], routed:RoutingResult[1], routedFunction:FunctionDefinition<Any>[1], f:FunctionDefinition<Any>[1], m:Mapping[1], runtime:Runtime[1], context:ExecutionContext[1], inScopeVars:Map<String, List<Any>>[1], extensions:meta::pure::router::extension::RouterExtension[*], debugContext:DebugContext[1]):ExecutionPlan[1]
+{
+   let functionParameters = $f->stubFuncParameters();
+   
    let node = if ($clusters->size() == 1,
        | $clusters->at(0)->plan($runtime, $inScopeVars, $routed.advancedRouting, $context, $extensions, $debugContext),
        | let allNodes = $clusters->fold({c,a|let x = $a.vars;
@@ -145,7 +151,7 @@ function meta::pure::executionPlan::generatePlatformCode(plan:ExecutionPlan[1], 
 function meta::pure::executionPlan::generatePlatformCode(plan:ExecutionPlan[1], config:PlatformCodeGenerationConfig[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):ExecutionPlan[1]
 {
    assert($config.platform == Platform.JAVA, 'Platform Not Supported: ' + $config.platform.name);
-   meta::alloy::runtime::java::generatePlatformCode($plan, $config, $extensions, $debug);
+   meta::pure::executionPlan::engine::java::generatePlatformCode($plan, $config, $extensions, $debug);
 }
 
 
@@ -191,7 +197,7 @@ function <<access.private>> meta::pure::executionPlan::findParamsForStreamInput(
           );
 }
 
-function <<access.private>> meta::pure::executionPlan::stubFuncParameters(f:FunctionDefinition<Any>[1]):PlanVarPlaceHolder[*]
+function meta::pure::executionPlan::stubFuncParameters(f:FunctionDefinition<Any>[1]):PlanVarPlaceHolder[*]
 {
    $f->functionType().parameters->evaluateAndDeactivate()->map(p|^PlanVarPlaceHolder(name=$p.name, type = $p.genericType.rawType->toOne(), multiplicity=$p.multiplicity));
 }
@@ -252,6 +258,16 @@ function meta::pure::executionPlan::nodeFromConnection(c:Connection[1], tree:Roo
 function meta::pure::executionPlan::nodeFromConnection(c:Connection[1], tree:RootGraphFetchTree<Any>[0..1], enableConstraints:Boolean[1], checked:Boolean[1], extensions:meta::pure::router::extension::RouterExtension[*], dflt:Function<{Nil[1]->ExecutionNode[1]}>[*]):ExecutionNode[1]
 {
    $c->match($extensions.executionPlan_generation_nodeFromConnection->map(x| $x->eval($tree, $enableConstraints, $checked))->concatenate($dflt)->toOneMany())->toOne();
+}
+
+function meta::pure::executionPlan::nodeFromConnection(c:Connection[1], tree:RootGraphFetchTree<Any>[0..1], childNode: ExecutionNode[1], enableConstraints:Boolean[1], checked:Boolean[1], extensions:meta::pure::router::extension::RouterExtension[*]):ExecutionNode[1]
+{
+   $c->nodeFromConnection($tree, $childNode, $enableConstraints, $checked, $extensions, {c:Connection[1] | fail('No node available for connection'); @ExecutionNode;});
+}
+
+function meta::pure::executionPlan::nodeFromConnection(c:Connection[1], tree:RootGraphFetchTree<Any>[0..1], childNode: ExecutionNode[1], enableConstraints:Boolean[1], checked:Boolean[1], extensions:meta::pure::router::extension::RouterExtension[*], dflt:Function<{Nil[1]->ExecutionNode[1]}>[*]):ExecutionNode[1]
+{
+   $c->match($extensions.executionPlan_generation_nodeFromConnectionWithChildren->map(x| $x->eval($tree, $childNode, $enableConstraints, $checked))->concatenate($dflt)->toOneMany())->toOne();
 }
 
 function meta::pure::executionPlan::nodeFromFunctionExpression(fe:FunctionExpression[1], children:ExecutionNode[*], extensions:meta::pure::router::extension::RouterExtension[*]):ExecutionNode[1]

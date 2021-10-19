@@ -47,7 +47,6 @@ function meta::relational::mapping::planExecution(sq:meta::pure::mapping::StoreQ
    if($fe.func->in([meta::pure::graphFetch::execution::graphFetchFunctions()]),
       |
         // Graph Fetch Flow
-        assert($fe.func != meta::pure::graphFetch::execution::graphFetchChecked_T_MANY__RootGraphFetchTree_1__Checked_MANY_, | '\'graphFetchChecked\' functionality is not supported yet with relational mappings. Use \'graphFetch\' function instead');
         $sq->meta::pure::graphFetch::executionPlan::planGraphFetchExecution($ext, $m->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug);,
 
       |
@@ -211,24 +210,22 @@ function meta::relational::mapping::collectionSizeFunction():String[1]
 function meta::relational::mapping::collectionRenderFunction():String[1]
 {
    '<#function renderCollection collection separator prefix suffix defaultValue>'+
-        '<#assign result = []>' +
-        '<#list collection as c>' +
-           '<#assign result += [prefix + c + suffix]>' +
-        '</#list>' +
-        '<#return result?join(separator, defaultValue)>'+
+        '<#if collection?size == 0>' +
+           '<#return defaultValue>' +
+        '</#if>' +
+        '<#return prefix + collection?join(suffix + separator + prefix) + suffix>'+
    '</#function>';
 }
 
 function meta::relational::mapping::utcToTimeZoneSupportFunction():String[1]
 {
-   '<#function GMTtoTZ tz paramDate><#return (tz+" "+paramDate)?date.@alloyDate></#function>'
-    +
+   '<#function GMTtoTZ tz paramDate><#return (tz+" "+paramDate)?date.@alloyDate></#function>'+
    '<#function renderCollectionWithTz collection timeZone separator prefix suffix defaultValue>'+
       '<#assign result = [] />'+
       '<#list collection as c>'+
-         '<#assign result +=[prefix + (timeZone+" "+c)?date.@alloyDate + suffix]>'+
+         '<#assign result = [prefix + (timeZone+" "+c)?date.@alloyDate + suffix] + result>'+
       '</#list>'+
-      '<#return result?join(separator, defaultValue)>'+
+      '<#return result?reverse?join(separator, defaultValue)>'+
    '</#function>';
 }
 

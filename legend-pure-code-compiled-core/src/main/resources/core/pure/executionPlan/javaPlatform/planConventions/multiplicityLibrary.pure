@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::expression::*;
-import meta::java::generation::functions::multiplicity::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::project::*;
-import meta::java::metamodel::factory::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::transform::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
 
-function meta::java::generation::functions::multiplicity::register(conventions: Conventions[1]): Conventions[1]
+function meta::pure::executionPlan::engine::java::registerMultiplicityLibrary(conventions: Conventions[1]): Conventions[1]
 {
    let lib = newConventionsLibrary()
       ->usesJavaPackage('java.util')
@@ -38,7 +36,7 @@ function meta::java::generation::functions::multiplicity::register(conventions: 
    $conventions->registerLibrary($lib);
 }
 
-function meta::java::generation::functions::multiplicity::toOne(fe:FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1]): Code[1]
+function meta::pure::executionPlan::engine::java::toOne(fe:FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1]): Code[1]
 {
    let params = $fe.parametersValues->evaluateAndDeactivate();
 
@@ -53,7 +51,7 @@ function meta::java::generation::functions::multiplicity::toOne(fe:FunctionExpre
    $conventions->className(Library)->j_invoke('toOne', $collection, $oneType);
 }
 
-function meta::java::generation::functions::multiplicity::toOneMany(fe:FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1]): Code[1]
+function meta::pure::executionPlan::engine::java::toOneMany(fe:FunctionExpression[1], conventions:Conventions[1], debug:DebugContext[1]): Code[1]
 {
    let params = $fe.parametersValues->evaluateAndDeactivate();
 

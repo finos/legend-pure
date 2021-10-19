@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::platform::*;
-import meta::alloy::runtime::java::serialize::*;
-import meta::alloy::runtime::java::typeInfo::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::platform::*;
+import meta::pure::executionPlan::engine::java::serialize::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::graphFetch::execution::*;
-import meta::java::metamodel::factory::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::expression::*;
-import meta::java::metamodel::project::*;
-import meta::java::serialization::*;
 
-function <<access.private>> meta::alloy::runtime::java::prepareForPlatformNode(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::prepareForPlatformNode(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
 {   
    if($p.expression->cast(@FunctionExpression)->isSerialize($extensions),
       | prepareForSerialize($p, $path, $context, $debug),
@@ -38,7 +38,7 @@ function <<access.private>> meta::alloy::runtime::java::prepareForPlatformNode(p
     );
 }
 
-function <<access.private>> meta::alloy::runtime::java::generateImplementionForPlatformNode(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::generateImplementionForPlatformNode(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
 {   
    if($p.expression->cast(@FunctionExpression).func == now__DateTime_1_,
       | generateImplementionForNow($context.conventions),
@@ -55,30 +55,30 @@ function <<access.private>> meta::alloy::runtime::java::generateImplementionForP
    ))));
 }
 
-function <<access.private>> meta::alloy::runtime::java::isParseObjectReferences(fe:FunctionExpression[1]):Boolean[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::isParseObjectReferences(fe:FunctionExpression[1]):Boolean[1]
 {
    $fe.func == parseObjectReferences_String_MANY__String_1__Any_MANY__Any_MANY_;
 }
 
-function <<access.private>> meta::alloy::runtime::java::generateImplementionForNow(conventions:Conventions[1]):GeneratedCode[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::generateImplementionForNow(conventions:Conventions[1]):GeneratedCode[1]
 {   
    ^GeneratedCode(
       implementation = ^JavaPlatformImplementation
                        (
-                          executionClassFullName = $conventions->className(PredefinedExpressions)->typePathToString(true),
+                          executionClassFullName = $conventions->className(PredefinedExpressions)->typeToString(),
                           executionMethodName    = 'now'
                        )
    );   
 }
 
-function <<access.private>> meta::alloy::runtime::java::generateImplementionForExpression(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):GeneratedCode[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::generateImplementionForExpression(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):GeneratedCode[1]
 {  
    let body            = $p.expression->generateJava($context.conventions, $debug)->j_return();
    let execClass       = $body->buildExecuteClass(iExecutionNodeContextParam($context.conventions), $path, $context.conventions);
    generatedCode(newProject()->addClass($execClass), $execClass);
 }
 
-function meta::alloy::runtime::java::getObjectReferenceParserHelperInterface(path:String[1], context:GenerationContext[1]):meta::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::getObjectReferenceParserHelperInterface(path:String[1], context:GenerationContext[1]):meta::external::language::java::metamodel::Class[1]
 {
    let objectReferenceParam = j_parameter(javaString(), 'objectReferences');
    
@@ -87,7 +87,7 @@ function meta::alloy::runtime::java::getObjectReferenceParserHelperInterface(pat
                        ->addMethod(javaMethod(['public'], javaObject(), 'parseObjectReference', [$objectReferenceParam]));
 }
 
-function meta::alloy::runtime::java::generateImplementationForParseObjectReferences(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
+function meta::pure::executionPlan::engine::java::generateImplementationForParseObjectReferences(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
 {
    let conventions    	     = $context.conventions;
 
@@ -123,13 +123,13 @@ function meta::alloy::runtime::java::generateImplementationForParseObjectReferen
    generatedCode(newProject()->addClasses([$objectRefParserIface, $objectRefParserImpl, $executeClass]), $executeClass);
 }
 
-function <<access.private>> meta::alloy::runtime::java::prepareForUnionOnGraphFetch(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::prepareForUnionOnGraphFetch(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
 {
    let childNodeInfos = $context->childNodeInfosForPath($path);
    ^$context(nodeInfos = $context.nodeInfos->concatenate(^NodeInfo(path = $path, returnType = $childNodeInfos->at(0).returnType, graphFetchTrees = $childNodeInfos.graphFetchTrees->removeDuplicatesBy(x | $x.class))));
 }
 
-function <<access.private>> meta::alloy::runtime::java::generateImplementationForUnionOnGraphFetch(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::generateImplementationForUnionOnGraphFetch(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GeneratedCode[1]
 {
    let conventions  = $context.conventions;
    let interface    = $conventions->className(IPlatformPureExpressionExecutionNodeGraphFetchUnionSpecifics);

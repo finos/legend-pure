@@ -37,8 +37,8 @@ Class meta::protocols::pure::vX_X_X::metamodel::external::format::flatdata::exec
 
 Class meta::protocols::pure::vX_X_X::metamodel::external::format::flatdata::executionPlan::FlatDataDeserializeExecutionNode extends ExecutionNode
 {
-   connection : meta::protocols::pure::vX_X_X::metamodel::runtime::Connection[1];
-   tree       : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RootGraphFetchTree[0..1];
+   binding : String[1];
+   tree    : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RootGraphFetchTree[0..1];
 }
 
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::format::flatdata::transformSerializeNode(node:meta::external::format::flatdata::executionPlan::FlatDataSerializeExecutionNode[1], mapping:meta::pure::mapping::Mapping[1], extensions:RouterExtension[*]): ExecutionNode[1]
@@ -46,7 +46,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external:
    ^meta::protocols::pure::vX_X_X::metamodel::external::format::flatdata::executionPlan::FlatDataSerializeExecutionNode(
       _type           = 'flatDataSerialize',
       checked         = $node.checked,
-      schemaBinding   = $node.schemaBinding->elementToPath(),
+      binding         = $node.binding->elementToPath(),
       resultType      = $node.resultType->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformResultType($mapping, $extensions),
       resultSizeRange = $node.resultSizeRange->map(s| $s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity())
    );
@@ -58,7 +58,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external:
       _type           = 'flatDataDeserialize',
       resultType      = $node.resultType->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformResultType($mapping, $extensions),
       resultSizeRange = $node.resultSizeRange->map(s| $s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()),
-      connection      = $node.connection->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::runtime::transformConnection($extensions),
+      binding         = $node.binding->elementToPath(),
       tree            = $node.tree->map(t| $t->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformGraphFetchTree([], ^Map<String,List<Any>>(), $extensions))->cast(@meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RootGraphFetchTree)
    );
 }

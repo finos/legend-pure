@@ -12,18 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::tests::*;
-import meta::java::metamodel::factory::*;
-import meta::java::generation::expression::*;
-import meta::java::generation::utils::*;
-import meta::java::serialization::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::serialization::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::tests::*;
 
-function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix>> meta::java::generation::tests::functions::math::testLiterals() : Boolean[1]
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix>> meta::pure::executionPlan::engine::java::tests::testNumberLiterals() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('Number literal', {|5.2->cast(@Number)}, 'new java.math.BigDecimal("5.2")', javaNumber())
          ->assert('%s.equals(new java.math.BigDecimal("5.2"))')
       ->addTest('Decimal literal', {|5.2D}, 'new java.math.BigDecimal("5.2")', javaBigDecimal())
@@ -37,9 +33,9 @@ function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.ToFix>> m
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::math::testBasicOperators() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testBasicOperators() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       // Number
       ->addTest('Number Plus', {|[1.0,3]->plus()}, '(Number) java.util.Arrays.<Number>asList(1.0, 3L).stream().reduce(0L, org.finos.legend.engine.plan.dependencies.util.Library::numberPlus)', javaNumber())
          ->assert('(%s).doubleValue() == 4.0')
@@ -102,9 +98,9 @@ meta::java::generation::tests::functions::math::testBasicOperators() : Boolean[1
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::math::testAverage() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testAverage() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('Number Average', {| average([5.0,1,2.0,8,3])}, 'org.finos.legend.engine.plan.dependencies.util.Library.average(java.util.Arrays.<Number>asList(5.0, 1L, 2.0, 8L, 3L))', javaDouble())
          ->assert('%s == 3.8')
       ->addTest('Integer Average', {|[1,2,3]->average()}, 'org.finos.legend.engine.plan.dependencies.util.Library.average(java.util.Arrays.asList(1L, 2L, 3L))', javaDouble())
@@ -116,9 +112,9 @@ meta::java::generation::tests::functions::math::testAverage() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::math::testRound() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testRound() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('Number Round 1', {| round(2.5)}, 'org.finos.legend.engine.plan.dependencies.util.Library.round(2.5)', javaLong())
          ->assert('%s == 2L')
       ->addTest('Number Round 2', {| round(3.5)}, 'org.finos.legend.engine.plan.dependencies.util.Library.round(3.5)', javaLong())
@@ -130,9 +126,9 @@ meta::java::generation::tests::functions::math::testRound() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::math::testLimitations() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testLimitations() : Boolean[1]
 {
-   javaExpressionTests(meta::alloy::runtime::java::alloyConventions([]))
+   javaExpressionTests(meta::pure::executionPlan::engine::java::engineConventions([]))
       // Number
       ->addTest('Number Max', {| [10.0,1,-2]->max()}, 'java.util.Arrays.<Number>asList(10.0, 1L, -2L).stream().reduce(org.finos.legend.engine.plan.dependencies.util.Library::max).orElse(null)', javaNumber())
          ->assert('%s.doubleValue() == 10.0')
@@ -186,9 +182,9 @@ meta::java::generation::tests::functions::math::testLimitations() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::math::testTrigs() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testTrigs() : Boolean[1]
 {
-   javaExpressionTests(alloyConventions([]))
+   javaExpressionTests(engineConventions([]))
       ->addTest('Number Sin 1', {| sin(0)}, 'Math.sin(new Long(0L).doubleValue())', javaDouble())
          ->assert('%s == 0.0d')
       ->addTest('Number Sin 2', {| sin(1.57079d)}, 'Math.sin(new java.math.BigDecimal("1.57079").doubleValue())', javaDouble())
@@ -211,9 +207,9 @@ meta::java::generation::tests::functions::math::testTrigs() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::math::testInequalities() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testInequalities() : Boolean[1]
 {
-   javaExpressionTests(meta::alloy::runtime::java::alloyConventions([]))
+   javaExpressionTests(meta::pure::executionPlan::engine::java::engineConventions([]))
       // >
       ->addTest('Number : [1]   ,[1]    : 1 > 1',          {|1 > 1}, '1L > 1L', javaBoolean())->assert('(%s)==false')
       ->addTest('Number : [1]   ,[1]    : 1 > 2',          {|1 > 2}, '1L > 2L', javaBoolean())->assert('(%s)==false')
@@ -291,9 +287,9 @@ meta::java::generation::tests::functions::math::testInequalities() : Boolean[1]
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
-meta::java::generation::tests::functions::math::testPureTests() : Boolean[1]
+meta::pure::executionPlan::engine::java::tests::testMathsPureTests() : Boolean[1]
 {
-   javaPureTests(meta::alloy::runtime::java::alloyConventions([]), [
+   javaPureTests(meta::pure::executionPlan::engine::java::engineConventions([]), [
       meta::pure::functions::lang::tests::greaterThan::testGreaterThan_Number__Boolean_1_,
       meta::pure::functions::lang::tests::greaterThanEqual::testGreaterThanEqual_Number__Boolean_1_,
       meta::pure::functions::lang::tests::lessThan::testLessThan_Number__Boolean_1_,

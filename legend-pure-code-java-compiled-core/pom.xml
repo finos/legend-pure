@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.31.1-SNAPSHOT</version>
+        <version>1.41.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -49,9 +49,11 @@
                                 <repository>platform</repository>
                                 <repository>core</repository>
                                 <repository>core_relational</repository>
+                                <repository>core_servicestore</repository>
                                 <repository>core_external_shared</repository>
                                 <repository>core_external_format_xml</repository>
                                 <repository>core_external_format_flatdata</repository>
+                                <repository>core_external_format_json</repository>
                             </repositories>
                         </configuration>
                     </execution>
@@ -74,6 +76,11 @@
                     </dependency>
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-code-compiled-core-servicestore</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-core-external-shared</artifactId>
                         <version>${project.version}</version>
                     </dependency>
@@ -85,6 +92,11 @@
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-core-external-format-flatdata</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-code-compiled-core-external-format-json</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>
@@ -205,6 +217,11 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-code-compiled-core-servicestore</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-code-compiled-core-external-shared</artifactId>
             <scope>test</scope>
         </dependency>
@@ -216,6 +233,11 @@
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-code-compiled-core-external-format-flatdata</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-code-compiled-core-external-format-json</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

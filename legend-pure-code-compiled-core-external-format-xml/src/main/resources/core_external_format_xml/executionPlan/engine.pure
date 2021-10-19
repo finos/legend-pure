@@ -17,8 +17,8 @@
  */
 
 import meta::external::format::xml::executionPlan::engine::*;
-import meta::java::generation::convention::*;
-import meta::java::metamodel::factory::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::transform::*;
 
 Class meta::external::format::xml::executionPlan::engine::_IXmlDeserializeExecutionNodeSpecifics {}
 Class meta::external::format::xml::executionPlan::engine::_DeserializeContext {}

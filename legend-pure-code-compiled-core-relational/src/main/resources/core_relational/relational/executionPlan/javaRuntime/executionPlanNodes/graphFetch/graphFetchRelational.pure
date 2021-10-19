@@ -12,26 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::graphFetch::common::*;
-import meta::alloy::runtime::java::graphFetch::relational::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::platform::*;
-import meta::alloy::runtime::java::typeinfo::*;
-import meta::alloy::runtime::java::typeInfo::*;
-import meta::java::generation::code::*;
-import meta::java::generation::utils::*;
-import meta::java::tostring::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
-import meta::java::generation::convention::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::graphFetch::common::*;
+import meta::pure::executionPlan::engine::java::graphFetch::relational::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::platform::*;
+import meta::pure::executionPlan::engine::java::typeinfo::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::graphFetch::*;
-import meta::pure::executionPlan::engine::*;
-import meta::pure::graphFetch::routing::*;
 import meta::pure::graphFetch::execution::*;
 import meta::pure::graphFetch::executionPlan::*;
+import meta::pure::graphFetch::routing::*;
 import meta::pure::mapping::*;
 import meta::pure::mapping::xStore::*;
 import meta::pure::milestoning::*;
@@ -40,7 +39,7 @@ import meta::relational::graphFetch::executionPlan::*;
 import meta::relational::mapping::*;
 import meta::relational::milestoning::*;
 
-function meta::alloy::runtime::java::graphFetch::relational::prepareForRelationalGraphFetch(node: RelationalGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], debug: DebugContext[1]):GenerationContext[1]
+function meta::pure::executionPlan::engine::java::graphFetch::relational::prepareForRelationalGraphFetch(node: RelationalGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], debug: DebugContext[1]):GenerationContext[1]
 {
    $node->match([
       r : RelationalClassQueryTempTableGraphFetchExecutionNode[1] | $r->prepareForRelationalClassQueryTempTableGraphFetch($path, $context, $debug),
@@ -48,21 +47,28 @@ function meta::alloy::runtime::java::graphFetch::relational::prepareForRelationa
    ])
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::prepareForRelationalClassQueryTempTableGraphFetch(node: RelationalClassQueryTempTableGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], debug: DebugContext[1]):GenerationContext[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::prepareForRelationalClassQueryTempTableGraphFetch(node: RelationalClassQueryTempTableGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], debug: DebugContext[1]):GenerationContext[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') prepareForRelationalClassQueryTempTableGraphFetch\n', |''));
 
    let pureType = $node->typeFromStoreLocalNode();
 
+   let simpleType = ^SimpleJavaType(pureType = $pureType, javaType = $context.conventions->className($pureType));
+
+   let returnType = $node->match([
+      r : RelationalRootQueryTempTableGraphFetchExecutionNode[1] | if($r.checked->isTrue(), | ^CheckedJavaType(checkedOf = $simpleType), | $simpleType),
+      p : RelationalClassQueryTempTableGraphFetchExecutionNode[1]| $simpleType
+   ]);
+
    ^$context
    (
       nodeInfos = $context.nodeInfos->concatenate(
-         ^NodeInfo(path = $path, returnType = ^SimpleJavaType(pureType = $pureType, javaType = $context.conventions->className($pureType)))
+         ^NodeInfo(path = $path, returnType = $returnType)
       )
    );
 }
 
-function meta::alloy::runtime::java::graphFetch::relational::generateRelationalStoreGraphFetchProject(node: RelationalGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], extensions: RouterExtension[*], debug: DebugContext[1]):Project[1]
+function meta::pure::executionPlan::engine::java::graphFetch::relational::generateRelationalStoreGraphFetchProject(node: RelationalGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], extensions: RouterExtension[*], debug: DebugContext[1]):Project[1]
 {
    let specificsClass = initializeSpecificsClass($node, $path, $context, $debug)
                            ->map(s | $s->addSpecificsPrepareMethod($node, $path, $context, $debug))
@@ -76,7 +82,7 @@ function meta::alloy::runtime::java::graphFetch::relational::generateRelationalS
    newProject()->addClasses([$specificsClass, $executeClass]);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::initializeExecuteClass(node:RelationalGraphFetchExecutionNode[1], specificsClass: meta::java::metamodel::Class[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::initializeExecuteClass(node:RelationalGraphFetchExecutionNode[1], specificsClass: meta::external::language::java::metamodel::Class[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::external::language::java::metamodel::Class[1]
 {
    let conventions   = $context.conventions;
    let nodeSpecifics = $conventions->className($node->match([
@@ -104,12 +110,12 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
       ->addConstructor(
          javaConstructor(
             ['public'], [],
-            j_this($executeClass)->j_field('specifics', $specificsClass)->j_assign(j_new($specificsClass, []))->codesToString($executeClass)
+            j_this($executeClass)->j_field('specifics', $specificsClass)->j_assign(j_new($specificsClass, []))
          )
       );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::addExecuteGeneralMethods(executeClass: meta::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::addExecuteGeneralMethods(executeClass: meta::external::language::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::external::language::java::metamodel::Class[1]
 {
    let conventions    = $context.conventions;
    let jThis          = j_this($executeClass);
@@ -171,7 +177,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
       });
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::addExecuteCachingMethods(executeClass: meta::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::addExecuteCachingMethods(executeClass: meta::external::language::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::external::language::java::metamodel::Class[1]
 {
    let jThis          = j_this($executeClass);
    let specificsField = $jThis->j_field('specifics');
@@ -193,7 +199,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
    });
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::initializeSpecificsClass(node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::initializeSpecificsClass(node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::external::language::java::metamodel::Class[1]
 {
    let conventions = $context.conventions;
 
@@ -234,7 +240,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
       ]);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::addSpecificsPrepareMethod(specificsClass: meta::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::addSpecificsPrepareMethod(specificsClass: meta::external::language::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::external::language::java::metamodel::Class[1]
 {
    let conventions   = $context.conventions;
    let isComplexNode = $node.resultType->instanceOf(PartialClassResultType);
@@ -263,7 +269,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
    let propertyIndexVar    = j_variable(javaInt(), 'propertyIndex');
    let propertyGetterVar   = j_variable(javaSupplier(javaObject()), 'propertyGetter');
 
-   let enumPropertyGetterCodes = {property:AbstractProperty<Any>[1], propertyType: Enumeration<Any>[1], currentPropertyMapping: RelationalPropertyMapping[1] |
+   let enumPropertyGetterCodes = {property:AbstractProperty<Any>[1], propertyType: meta::pure::metamodel::type::Enumeration<Any>[1], currentPropertyMapping: RelationalPropertyMapping[1] |
       let javaEnumeration       =  $conventions->className($propertyType);
       let enumValueMappings     = $currentPropertyMapping.transformer->cast(@EnumerationMapping<Any>).enumValueMappings;
       let enumReverseMapVar     = j_variable(javaMap(javaObject(), javaString()), 'enumReverseMap');
@@ -359,7 +365,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                   if ($isComplexNode,
                      {|
                         let partialClassResultType = $node.resultType->cast(@PartialClassResultType);
-                        let resultClass = $node->typeFromStoreLocalNode()->cast(@Class<Any>);
+                        let resultClass = $node->typeFromStoreLocalNode()->cast(@meta::pure::metamodel::type::Class<Any>);
                         let sets = $partialClassResultType.setImplementations->cast(@RelationalInstanceSetImplementation);
                         let nonExplodingSimplePrimitiveProperties = $typeInfos->allProperties($typeInfos->forClass($resultClass))->filter(x | $x->isPrimitiveValueProperty() && (!$x->hasGeneratedMilestoningPropertyStereotype()) && $x->functionReturnMultiplicity()->hasToOneUpperBound())->filter(x | $x->in($partialClassResultType.propertiesWithParameters.property));
 
@@ -436,7 +442,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                                              ], javaSupplier(javaObject())))
                                           },
                                           {|
-                                             if ($propertyType->instanceOf(Enumeration),
+                                             if ($propertyType->instanceOf(meta::pure::metamodel::type::Enumeration),
                                                 {|
                                                    let allPropertyMappings = $sets->at($s)->cast(@InstanceSetImplementation).allPropertyMappings()->filter(pm | $pm.property->instanceOf(Property) && $pm.property->functionReturnType().rawType->toOne()->instanceOf(meta::pure::metamodel::type::DataType));
                                                    let currentPropertyMapping = $allPropertyMappings->filter(x | $x.property == $prop)->toOne()->cast(@RelationalPropertyMapping);
@@ -485,7 +491,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                                  ], javaSupplier(javaObject())))
                               },
                               {|
-                                 if ($propertyType->instanceOf(Enumeration),
+                                 if ($propertyType->instanceOf(meta::pure::metamodel::type::Enumeration),
                                     {|
                                        let currentPropertyMapping = $node.graphFetchTree->cast(@RoutedPropertyGraphFetchTree).propertyMapping->at(0)->cast(@RelationalPropertyMapping);
                                        $enumPropertyGetterCodes->eval($property, $propertyType, $currentPropertyMapping);
@@ -513,7 +519,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
       );
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::addSpecificsGeneralMethods(specificsClass: meta::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::addSpecificsGeneralMethods(specificsClass: meta::external::language::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::external::language::java::metamodel::Class[1]
 {
    let conventions    = $context.conventions;
    let isComplexNode  = $node.resultType->instanceOf(PartialClassResultType);
@@ -550,7 +556,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                if ($isComplex,
                   {|
                      let partialClassResultType    = $node.resultType->cast(@PartialClassResultType);
-                     let resultClass               = $node->typeFromStoreLocalNode()->cast(@Class<Any>);
+                     let resultClass               = $node->typeFromStoreLocalNode()->cast(@meta::pure::metamodel::type::Class<Any>);
                      let implClass                 = $node->graphImplClass($path, $context);
                      let sets                      = $partialClassResultType.setImplementations->cast(@RelationalInstanceSetImplementation);
                      let simplePrimitiveProperties = $typeInfos->allProperties($typeInfos->forClass($resultClass))->filter(x | $x->isPrimitiveValueProperty() && (!$x->hasGeneratedMilestoningPropertyStereotype()) && $x->functionReturnMultiplicity()->hasToOneUpperBound())->filter(x | $x->in($partialClassResultType.propertiesWithParameters.property));
@@ -628,7 +634,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                            ];
                         },
                         {|
-                           if ($propertyType->instanceOf(Enumeration),
+                           if ($propertyType->instanceOf(meta::pure::metamodel::type::Enumeration),
                               {|
                                  let javaEnumeration = $conventions->className($propertyType);
                                  let objectVar       = j_variable($javaEnumeration, 'object');
@@ -685,7 +691,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
          if (($isClassResult || $isLocalRoot) && !$isCrossRoot,
             {|
                let partialClassResultType = $node.resultType->cast(@PartialClassResultType);
-               let resultClass            = $node->typeFromStoreLocalNode()->cast(@Class<Any>);
+               let resultClass            = $node->typeFromStoreLocalNode()->cast(@meta::pure::metamodel::type::Class<Any>);
                let sets                   = $partialClassResultType.setImplementations->cast(@RelationalInstanceSetImplementation);
                let pairType               = javaParameterizedType(javaClass('org.eclipse.collections.api.tuple.Pair'), [javaString(), javaString()]);
 
@@ -736,7 +742,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
 
                let valueExtractor = {x: VariableExpression[1] |
                   let javaType = $conventions->pureTypeToJavaType($x.genericType.rawType->toOne(), PureOne);
-                  let typeArg  = if($javaType->isJavaList(), |$contextParam->j_invoke('listType', $javaType->elementType()->j_field('class', javaClassType())), |$javaType->j_field('class', javaClassType()));
+                  let typeArg  = if($javaType->isJavaList(), |$contextParam->j_invoke('listType', $javaType->elementType()->toBoxed()->j_classField()), |$javaType->toBoxed()->j_classField());
                   j_cast(
                      $contextParam->j_invoke('getResult', [j_string($x.name), $typeArg], $javaType),
                      $javaType
@@ -765,7 +771,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                });
 
                let fieldType = $conventions->pureTypeToJavaType($property);
-               let singlePropertyType = if ($property->functionReturnMultiplicity()->hasToOneUpperBound(), | $fieldType, | $fieldType->cast(@meta::java::metamodel::ParameterizedType).typeArguments->at(0));
+               let singlePropertyType = if ($property->functionReturnMultiplicity()->hasToOneUpperBound(), | $fieldType, | $fieldType->cast(@meta::external::language::java::metamodel::ParameterizedType).typeArguments->at(0));
 
                $spe->addMethod(
                   $spe->buildAddChildToParentMethod(
@@ -830,9 +836,9 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
          if ($isCrossRoot,
             {|
                let xStorePropertyMapping = $node->cast(@RelationalCrossRootQueryTempTableGraphFetchExecutionNode).graphFetchTree->cast(@RoutedPropertyGraphFetchTree).propertyMapping->toOne()->cast(@XStorePropertyMapping);
-               let currentClass          = $node->typeFromStoreLocalNode()->cast(@Class<Any>);
+               let currentClass          = $node->typeFromStoreLocalNode()->cast(@meta::pure::metamodel::type::Class<Any>);
                let allProperties         = $xStorePropertyMapping.crossExpression.expressionSequence->evaluateAndDeactivate()->toOne()->findPropertiesInValueSpecification();
-               let currentProperties     = $allProperties->filter(x | $x.owner->cast(@Class<Any>)->_subTypeOf($currentClass) || $currentClass->_subTypeOf($x.owner->cast(@Class<Any>)));
+               let currentProperties     = $allProperties->filter(x | $x.owner->cast(@meta::pure::metamodel::type::Class<Any>)->_subTypeOf($currentClass) || $currentClass->_subTypeOf($x.owner->cast(@meta::pure::metamodel::type::Class<Any>)));
                let parentProperties      = $allProperties->filter(x | !$x->in($currentProperties));
 
                $spe->addMethod(
@@ -840,7 +846,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                      [],
                      j_try(
                         [
-                           j_return(javaArrays()->j_invoke('asList', $parentProperties->map({x | $conventions->className($x.owner->cast(@Class<Any>))->j_classField()->j_invoke('getMethod', [j_string($conventions->getterName($x))], javaReflectMethod())}), javaList(javaReflectMethod())))
+                           j_return(javaArrays()->j_invoke('asList', $parentProperties->map({x | $conventions->className($x.owner->cast(@meta::pure::metamodel::type::Class<Any>))->j_classField()->j_invoke('getMethod', [j_string($conventions->getterName($x))], javaReflectMethod())}), javaList(javaReflectMethod())))
                         ],
                         j_catch($javaException, j_throw(j_new(javaRuntimeException(), [$javaException])))
                      )
@@ -852,7 +858,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
       });
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::addSpecificsCachingMethods(specificsClass: meta::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::addSpecificsCachingMethods(specificsClass: meta::external::language::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):meta::external::language::java::metamodel::Class[1]
 {
    let conventions   = $context.conventions;
    let isLocalRoot   = $node->instanceOf(RelationalRootQueryTempTableGraphFetchExecutionNode);
@@ -885,7 +891,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                      if ($isMultiEqual,
                          | j_try(
                               [
-                                 javaArrays()->j_invoke('asList', $propertyPairs->sortBy(x | $x.second.name->toOne()).first->map({x | $conventions->className($x.owner->cast(@Class<Any>))->j_classField()->j_invoke('getMethod', [j_string($conventions->getterName($x))], javaReflectMethod())}), javaList(javaReflectMethod()))->j_return()
+                                 javaArrays()->j_invoke('asList', $propertyPairs->sortBy(x | $x.second.name->toOne()).first->map({x | $conventions->className($x.owner->cast(@meta::pure::metamodel::type::Class<Any>))->j_classField()->j_invoke('getMethod', [j_string($conventions->getterName($x))], javaReflectMethod())}), javaList(javaReflectMethod()))->j_return()
                               ],
                               j_catch($javaException, j_throw(j_new(javaRuntimeException(), [$javaException])))
                            ),
@@ -899,52 +905,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
    });
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::isExpressionMultiEqual(v : ValueSpecification[1]):Boolean[1]
-{
-   $v->evaluateAndDeactivate()->match([
-      f: FunctionExpression[1] | let params = $f.parametersValues->evaluateAndDeactivate()->map(x| $x->byPassRouterInfo());
-                                 if($f.func->in([meta::pure::functions::boolean::equal_Any_MANY__Any_MANY__Boolean_1_, meta::pure::functions::boolean::eq_Any_1__Any_1__Boolean_1_]) ,
-                                    | $params->match([
-                                       sfes: SimpleFunctionExpression[*] | $sfes->at(0).func->instanceOf(Property) && $sfes->at(1).func->instanceOf(Property),
-                                       a: Any[*] | false
-                                      ]),
-                                    | if($f.functionName == 'and',
-                                         | $params->at(0)->isExpressionMultiEqual() && $params->at(1)->isExpressionMultiEqual(),
-                                         | false
-                                      );
-                                 );
-   ])
-}
-
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::propertyPairsInMultiEqual(v : ValueSpecification[1]):Pair<Property<Nil,Any|*>, Property<Nil,Any|*>>[*]
-{
-   $v->evaluateAndDeactivate()->match([
-      f: FunctionExpression[1] | let params = $f.parametersValues->evaluateAndDeactivate()->map(x| $x->byPassRouterInfo());
-                                 if($f.func->in([meta::pure::functions::boolean::equal_Any_MANY__Any_MANY__Boolean_1_, meta::pure::functions::boolean::eq_Any_1__Any_1__Boolean_1_]) ,
-                                    | $params->match([
-                                       sfes: SimpleFunctionExpression[*] | assert($sfes->at(0).func->instanceOf(Property) && $sfes->at(1).func->instanceOf(Property));
-                                                                           if($sfes->at(0).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'this' &&
-                                                                              $sfes->at(1).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'that',
-                                                                              | pair($sfes->at(0).func->cast(@Property<Nil,Any|*>), $sfes->at(1).func->cast(@Property<Nil,Any|*>)),
-                                                                              | if($sfes->at(0).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'that' &&
-                                                                                   $sfes->at(1).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'this',
-                                                                                   | pair($sfes->at(1).func->cast(@Property<Nil,Any|*>), $sfes->at(0).func->cast(@Property<Nil,Any|*>)),
-                                                                                   | assert(false, 'Complex cross expressions not supported yet!'); [];
-                                                                                )
-                                                                           );,
-                                       a: Any[*] | assert(false, 'Complex cross expressions not supported yet!'); [];
-                                      ]),
-                                    | if($f.functionName == 'and',
-                                         | $params->at(0)->propertyPairsInMultiEqual()->concatenate($params->at(1)->propertyPairsInMultiEqual()),
-                                         | assert(false, 'Complex cross expressions not supported yet!'); [];
-                                      );
-                                 );
-   ])
-}
-
-
-
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::objectCreationCodes(specificsClass: meta::java::metamodel::Class[1], implClass: meta::java::metamodel::Class[1], set: RelationalInstanceSetImplementation[1], allSets: RelationalInstanceSetImplementation[*], properties: Property<Nil,Any|*>[*], index: Integer[1], context:GenerationContext[1]):Code[*]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::objectCreationCodes(specificsClass: meta::external::language::java::metamodel::Class[1], implClass: meta::external::language::java::metamodel::Class[1], set: RelationalInstanceSetImplementation[1], allSets: RelationalInstanceSetImplementation[*], properties: Property<Nil,Any|*>[*], index: Integer[1], context:GenerationContext[1]):Code[*]
 {
    let conventions = $context.conventions;
    let jThis = j_this($specificsClass);
@@ -997,7 +958,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
       let propertyName = $prop.name->toOne();
       let propertyType = $prop->genericType().typeArguments->at(1).rawType->toOne();
       let propertyMultiplicity = $prop.multiplicity;
-      let javaType = if ($propertyType->instanceOf(Enumeration),
+      let javaType = if ($propertyType->instanceOf(meta::pure::metamodel::type::Enumeration),
                          | $conventions->className($propertyType),
                          | let jt = $pureTypeToJavaTypeMap->get($propertyType);
                            assert($jt->isNotEmpty(), | 'Property type \'' + $propertyType->elementToPath() + '\' not supported yet. Property name: \'' + $propertyName + '\'');
@@ -1025,7 +986,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
    }));
 }
 
-function meta::alloy::runtime::java::graphFetch::relational::enrichForRelationalGraphExecution(cl: meta::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], context: GenerationContext[1], extensions: meta::pure::router::extension::RouterExtension[*], debug: DebugContext[1]):Project[1]
+function meta::pure::executionPlan::engine::java::graphFetch::relational::enrichForRelationalGraphExecution(cl: meta::external::language::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], context: GenerationContext[1], extensions: meta::pure::router::extension::RouterExtension[*], debug: DebugContext[1]):Project[1]
 {
    let qualifiersProject  = $cl->updateImplementationClassWithQualifiedProperties($node->typeFromStoreLocalNode(), $context);
    let constraintsProject = $cl->createConstraintCheckingForClass($node->typeFromStoreLocalNode(), $context, $debug->indent());
@@ -1034,7 +995,7 @@ function meta::alloy::runtime::java::graphFetch::relational::enrichForRelational
    mergeProjects([$qualifiersProject, $constraintsProject, $primaryKeyProject, $additionalProject]);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::updateImplementationClassWithQualifiedProperties(implClass: meta::java::metamodel::Class[1], nodeType: Class<Any>[1], context: GenerationContext[1]): Project[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::updateImplementationClassWithQualifiedProperties(implClass: meta::external::language::java::metamodel::Class[1], nodeType: meta::pure::metamodel::type::Class<Any>[1], context: GenerationContext[1]): Project[1]
 {
    let conventions = $context.conventions;
    let typeInfo = $context.typeInfos->forClass($nodeType);
@@ -1051,12 +1012,12 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
       let param     = j_parameter($fieldType, $fieldName);
       let keyVar = $keyType->j_variable('qualifierKey$');
       let existingVar = javaObject()->j_variable('existing$');
-      let singlePropertyType = if ($q->functionReturnMultiplicity()->hasToOneUpperBound(), | $fieldType, | $fieldType->cast(@meta::java::metamodel::ParameterizedType).typeArguments->at(0));
+      let singlePropertyType = if ($q->functionReturnMultiplicity()->hasToOneUpperBound(), | $fieldType, | $fieldType->cast(@meta::external::language::java::metamodel::ParameterizedType).typeArguments->at(0));
 
       $cl
          ->addField(
             javaField(
-               ['private'], javaMap($keyType, $fieldType), $mapName, j_new(javaParameterizedType(javaClass('java.util.HashMap'), [$keyType, $fieldType->toBoxed()]), [])->codesToString($cl)
+               ['private'], javaMap($keyType, $fieldType), $mapName, j_new(javaParameterizedType(javaClass('java.util.HashMap'), [$keyType, $fieldType->toBoxed()]), [])
             )
          )
          ->addMethod(
@@ -1065,13 +1026,13 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                [
                   $keyVar->j_declare(javaArrays()->j_invoke([javaList(javaWildcard())], 'asList', $q->functionType().parameters->evaluateAndDeactivate()->tail()->map(p | let param = j_parameter($conventions->pureTypeToJavaType($p.genericType.rawType->toOne(), $p.multiplicity), $p.name); if($p.multiplicity->hasToOneUpperBound(), | javaArrays()->j_invoke('asList', $param, javaList(javaWildcard())), | $param);), $keyType)),
                   j_return($mapField->j_invoke('get', [$keyVar], $fieldType))
-               ]->codesToString($cl)
+               ]
             )
          )
          ->addMethod(
             javaMethod(
                ['public'], javaMap($keyType, $fieldType), $conventions->getterName($q.name->toOne() + '_QualifierMap'), [],
-               j_return($mapField)->codesToString($cl)
+               j_return($mapField)
             )
          )
          ->addMethod(
@@ -1086,13 +1047,13 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                       | j_if($existingVar->j_ne(j_null()), j_throw(j_new(javaRuntimeException(), j_string('Found multiple objects for property \'' + $q.name->toOne() + '\' of multiplicity with bound 1')))),
                       | []
                   )
-               )->codesToString($cl)
+               )
             )
          )
          ->addMethod(
             javaMethod(
                ['public'], javaVoid(), $conventions->setterName($q.name->toOne() + '_QualifierMap'), [javaParam(javaMap($keyType, $fieldType), 'qualifierMap$')],
-               $mapField->j_assign(j_parameter(javaMap($keyType, $fieldType), 'qualifierMap$'))->codesToString($cl)
+               $mapField->j_assign(j_parameter(javaMap($keyType, $fieldType), 'qualifierMap$'))
             )
          )
          ->addMethod(
@@ -1114,7 +1075,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
                             $mapField->j_invoke('put', [$keyVar, j_parameter($fieldType, 'qualifierValue$')], javaObject())
                         ]
                   )
-               )->codesToString($cl)
+               )
             )
          );
    }, $implClass);
@@ -1122,7 +1083,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
    newProject()->addClasses($updatedClass);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::updateImplementationClassWithPrimaryKeys(implClass: meta::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], context: GenerationContext[1]): Project[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::updateImplementationClassWithPrimaryKeys(implClass: meta::external::language::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], context: GenerationContext[1]): Project[1]
 {
    let conventions = $context.conventions;
    let sets        = $node.resultType->cast(@ClassResultType).setImplementations->cast(@RelationalInstanceSetImplementation);
@@ -1146,7 +1107,7 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
 }
 
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::updateImplementationClassWithSetConnectionAndReference(implClass: meta::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], context: GenerationContext[1]): Project[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::updateImplementationClassWithSetConnectionAndReference(implClass: meta::external::language::java::metamodel::Class[1], node: RelationalGraphFetchExecutionNode[1], context: GenerationContext[1]): Project[1]
 {
    let conventions     = $context.conventions;
    let setIdProp       = setIdPropertyName();
@@ -1174,82 +1135,82 @@ function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::
    newProject()->addClasses($updatedClass);
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildPrepareMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildPrepareMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaVoid(), 'prepare', [javaParam(javaResultSet(), 'resultSet'), javaParam(javaString(), 'databaseTimeZone'), javaParam(javaString(), 'databaseConnection')], $code->codesToString($class))
+   javaMethod($modifiers, javaVoid(), 'prepare', [javaParam(javaResultSet(), 'resultSet'), javaParam(javaString(), 'databaseTimeZone'), javaParam(javaString(), 'databaseConnection')], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildNextGraphInstanceMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], type: meta::java::metamodel::Type[1], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildNextGraphInstanceMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], type: meta::external::language::java::metamodel::Type[1], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, $type, 'nextGraphInstance', [], $code->codesToString($class))
+   javaMethod($modifiers, $type, 'nextGraphInstance', [], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildPrimaryKeyGettersMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildPrimaryKeyGettersMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaList(javaReflectMethod()), 'primaryKeyGetters', [], $code->codesToString($class))
+   javaMethod($modifiers, javaList(javaReflectMethod()), 'primaryKeyGetters', [], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildAllInstanceSetImplementationsMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildAllInstanceSetImplementationsMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaList(javaParameterizedType(javaClass('org.eclipse.collections.api.tuple.Pair'), [javaString(), javaString()])), 'allInstanceSetImplementations', [], $code->codesToString($class))
+   javaMethod($modifiers, javaList(javaParameterizedType(javaClass('org.eclipse.collections.api.tuple.Pair'), [javaString(), javaString()])), 'allInstanceSetImplementations', [], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildPrimaryKeyColumnsMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildPrimaryKeyColumnsMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaList(javaString()), 'primaryKeyColumns', [javaParam(javaInt(), 'setIndex')], $code->codesToString($class))
+   javaMethod($modifiers, javaList(javaString()), 'primaryKeyColumns', [javaParam(javaInt(), 'setIndex')], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildParentPrimaryKeyColumnsMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildParentPrimaryKeyColumnsMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaList(javaString()), 'parentPrimaryKeyColumns', [javaParam(javaList(javaString()), 'queryResultColumns')], $code->codesToString($class))
+   javaMethod($modifiers, javaList(javaString()), 'parentPrimaryKeyColumns', [javaParam(javaList(javaString()), 'queryResultColumns')], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildAddChildToParentMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*], conventions: Conventions[1]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildAddChildToParentMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*], conventions: Conventions[1]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaVoid(), 'addChildToParent', [javaParam(javaObject(), 'parent'), javaParam(javaObject(), 'child'), javaParam($conventions->className(IExecutionNodeContext), 'executionNodeContext')], $code->codesToString($class))
+   javaMethod($modifiers, javaVoid(), 'addChildToParent', [javaParam(javaObject(), 'parent'), javaParam(javaObject(), 'child'), javaParam($conventions->className(IExecutionNodeContext), 'executionNodeContext')], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildMappingIdMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildMappingIdMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaString(), 'mappingId', [], $code->codesToString($class))
+   javaMethod($modifiers, javaString(), 'mappingId', [], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildSourceInstanceSetIdMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildSourceInstanceSetIdMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaString(), 'sourceInstanceSetId', [], $code->codesToString($class))
+   javaMethod($modifiers, javaString(), 'sourceInstanceSetId', [], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildTargetInstanceSetIdMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildTargetInstanceSetIdMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaString(), 'targetInstanceSetId', [], $code->codesToString($class))
+   javaMethod($modifiers, javaString(), 'targetInstanceSetId', [], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildParentCrossKeyColumnsMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildParentCrossKeyColumnsMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaList(javaString()), 'parentCrossKeyColumns', [javaParam(javaList(javaString()), 'queryResultColumns')], $code->codesToString($class))
+   javaMethod($modifiers, javaList(javaString()), 'parentCrossKeyColumns', [javaParam(javaList(javaString()), 'queryResultColumns')], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildParentCrossKeyGettersMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildParentCrossKeyGettersMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaList(javaReflectMethod()), 'parentCrossKeyGetters', [], $code->codesToString($class))
+   javaMethod($modifiers, javaList(javaReflectMethod()), 'parentCrossKeyGetters', [], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildSupportsCachingMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildSupportsCachingMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaBoolean(), 'supportsCaching', [], $code->codesToString($class))
+   javaMethod($modifiers, javaBoolean(), 'supportsCaching', [], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildSupportsCrossCachingMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildSupportsCrossCachingMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaBoolean(), 'supportsCrossCaching', [], $code->codesToString($class))
+   javaMethod($modifiers, javaBoolean(), 'supportsCrossCaching', [], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildTargetPropertiesOrderedMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildTargetPropertiesOrderedMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaList(javaString()), 'targetPropertiesOrdered', [], $code->codesToString($class))
+   javaMethod($modifiers, javaList(javaString()), 'targetPropertiesOrdered', [], $code)
 }
 
-function <<access.private>> meta::alloy::runtime::java::graphFetch::relational::buildParentCrossKeyGettersOrderedByTargetPropertiesMethod(class: meta::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::java::metamodel::Method[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::relational::buildParentCrossKeyGettersOrderedByTargetPropertiesMethod(class: meta::external::language::java::metamodel::Class[1], modifiers: String[*], code: Code[*]):meta::external::language::java::metamodel::Method[1]
 {
-   javaMethod($modifiers, javaList(javaReflectMethod()), 'parentCrossKeyGettersOrderedByTargetProperties', [], $code->codesToString($class))
+   javaMethod($modifiers, javaList(javaReflectMethod()), 'parentCrossKeyGettersOrderedByTargetProperties', [], $code)
 }

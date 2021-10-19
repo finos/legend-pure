@@ -675,6 +675,17 @@ function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteg
    assertEquals('select (datediff(\'2017-04-01\' , \'2017-03-01\')) as `dateDiff` from dataTable as `root`',$s);
 }
 
+function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteger::testToSQLStringDateDiffInSecondsInMemSQL():Boolean[1]
+{
+   let da = %2017-03-01T19:09:20;
+   let db = %2017-03-01T20:08:08;
+   let s = toSQLString(|SqlFunctionDemo.all()->project([s | dateDiff($da, $db, DurationUnit.SECONDS)], ['dateDiff']),
+                                                testMapping,
+                                                meta::relational::runtime::DatabaseType.MemSQL,
+                                                meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('select (time_to_sec(timediff(\'2017-03-01 20:08:08\' , \'2017-03-01 19:09:20\'))) as `dateDiff` from dataTable as `root`',$s);
+}
+
 function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteger::testToSQLStringDateDiffInPresto():Boolean[1]
 {
 
@@ -684,6 +695,31 @@ function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteg
                                                 testMapping,
                                                 meta::relational::runtime::DatabaseType.Presto, meta::pure::router::extension::defaultRelationalExtensions());
    assertEquals('select date_diff(\'day\',Date(\'2017-03-01\'),Date(\'2017-04-01\')) as "dateDiff" from dataTable as "root"',$s);
+}
+
+function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteger::testToSQLStringDateDiffInSnowflake():Boolean[1]
+{
+   let da = %2013-03-01T19:09:20;
+   let db = %2017-03-01T20:08:08;
+  
+   let test = toSQLString(|SqlFunctionDemo.all()->project([s|dateDiff($da, $db, DurationUnit.YEARS), 
+                                                           s|dateDiff($da, $db, DurationUnit.MONTHS), 
+                                                           s|dateDiff($da, $db, DurationUnit.WEEKS), 
+                                                           s|dateDiff($da, $db, DurationUnit.DAYS),
+                                                           s|dateDiff($da, $db, DurationUnit.HOURS),
+                                                           s|dateDiff($da, $db, DurationUnit.MINUTES),
+                                                           s|dateDiff($da, $db, DurationUnit.SECONDS)],
+                                                           ['dateDiffYears','dateDiffMonths','dateDiffWeeks','dateDiffDays','dateDiffHours','dateDiffMinutes','dateDiffSeconds']),
+                                                   testMapping,
+                                                   meta::relational::runtime::DatabaseType.Snowflake,
+                                                   meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('select datediff(year,\'2013-03-01 19:09:20\',\'2017-03-01 20:08:08\') as "dateDiffYears",'+
+                ' datediff(month,\'2013-03-01 19:09:20\',\'2017-03-01 20:08:08\') as "dateDiffMonths",'+
+                ' datediff(week,\'2013-03-01 19:09:20\',\'2017-03-01 20:08:08\') as "dateDiffWeeks",'+
+                ' datediff(day,\'2013-03-01 19:09:20\',\'2017-03-01 20:08:08\') as "dateDiffDays",'+
+                ' datediff(hour,\'2013-03-01 19:09:20\',\'2017-03-01 20:08:08\') as "dateDiffHours",'+
+                ' datediff(minute,\'2013-03-01 19:09:20\',\'2017-03-01 20:08:08\') as "dateDiffMinutes",'+
+                ' datediff(second,\'2013-03-01 19:09:20\',\'2017-03-01 20:08:08\') as "dateDiffSeconds"'+ ' from dataTable as "root"',$test);
 }
 
 function <<test.Test>> meta::relational::tests::mapping::sqlFunction::parseInteger::testToSQLStringConvertVarchar128InMemSQL():Boolean[1]
@@ -1052,6 +1088,14 @@ function <<test.Test>> meta::relational::tests::mapping::sqlFunction::date::test
     assertEquals('select Date("root".dateTime) as "date" from dataTable as "root"',$s);
 }
 
+function <<test.Test>> meta::relational::tests::mapping::sqlFunction::date::testToSQLConvertDateH2():Boolean[1]
+{
+    let s = toSQLString(|SqlFunctionDemo.all()->project([s | $s.convertToDateMemSQL], ['date']),
+                                                testMapping,
+                                                meta::relational::runtime::DatabaseType.H2, meta::pure::router::extension::defaultRelationalExtensions());
+    assertEquals('select cast( parseDateTime("root".stringDateFormat,\'yyyy-MM-dd\') as date) as "date" from dataTable as "root"',$s);
+}
+
 Class meta::relational::tests::mapping::sqlFunction::model::domain::SqlFunctionDemo
 {
    concatResult :String[1];
@@ -1088,6 +1132,7 @@ Class meta::relational::tests::mapping::sqlFunction::model::domain::SqlFunctionD
    string2DateTime: DateTime[1];
    convertToDate1: Date[1];
    convertToDate: Date[1];
+   convertToDateMemSQL: Date[1];
    convertToDateUserDefinedFormat: Date[1];
    convertToDateUserDefinedFormat1: Date[1];
    convertToDateUserDefinedFormat2: Date[1];
@@ -1184,6 +1229,7 @@ Mapping meta::relational::tests::mapping::sqlFunction::model::mapping::testMappi
           string2Integer  : parseInteger(string2Integer),
           convertToDate1: convertDate(stringDateFormat),
           convertToDate: convertDate(stringDateFormat,'yyyy-MM-dd'),
+          convertToDateMemSQL: convertDate(stringDateFormat,'YYYY-MM-DD'),
           convertToDateUserDefinedFormat3: convertDate(stringUserDefinedDateFormat,'DD/MM/YYYY'),
           convertToDateUserDefinedFormat2: convertDate(stringUserDefinedDateFormat,'YYYY/MM/DD'),
           convertToDateUserDefinedFormat1: convertDate(stringUserDefinedDateFormat,'MMMYYYY'),

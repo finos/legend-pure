@@ -12,34 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::*;
-import meta::alloy::runtime::java::naming::*;
-import meta::alloy::runtime::java::serialize::*;
-import meta::alloy::runtime::java::typeInfo::*;
+import meta::external::language::java::metamodel::*;
+import meta::external::language::java::metamodel::project::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::language::java::serialization::*;
+import meta::external::language::java::transform::*;
 import meta::pure::dataQuality::*;
-import meta::pure::graphFetch::execution::*;
-import meta::java::generation::functions::date::pure::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::jackson::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::expression::*;
-import meta::java::generation::lib::pure::*;
-import meta::java::generation::utils::*;
-import meta::java::metamodel::factory::*;
-import meta::java::metamodel::project::*;
-import meta::java::serialization::*;
 import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::engine::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::pure::executionPlan::engine::java::serialize::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::graphFetch::*;
+import meta::pure::graphFetch::execution::*;
 
-Class <<access.private>> meta::alloy::runtime::java::serialize::SerializeData
+Class meta::pure::executionPlan::engine::java::serialize::SerializeData
 {
    tree           : RootGraphFetchTree<Any>[1];
    auxiliaryTrees : RootGraphFetchTree<Any>[*];
    config         : AlloySerializationConfig[0..1];
 }
 
-function meta::alloy::runtime::java::serialize::prepareForSerialize(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
+function meta::pure::executionPlan::engine::java::serialize::prepareForSerialize(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
 {
    let fe        = $p.expression->cast(@FunctionExpression);
    let tree      = $fe.parametersValues->at(1)->cast(@InstanceValue).values->cast(@RootGraphFetchTree<Any>)->toOne();
@@ -62,7 +58,7 @@ function meta::alloy::runtime::java::serialize::prepareForSerialize(p:PureExpres
    ^$context(typeInfos=$newInfo, nodeInfos=$context.nodeInfos->concatenate(^NodeInfo(path=$path, returnType=^SimpleJavaType(pureType=String, javaType=javaString()), data=$data, graphFetchTrees=$data.tree->concatenate($data.auxiliaryTrees))));
 }
 
-function meta::alloy::runtime::java::serialize::generateImplementionForSerialize(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): GeneratedCode[1]
+function meta::pure::executionPlan::engine::java::serialize::generateImplementionForSerialize(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): GeneratedCode[1]
 {
    print(if($debug.debug,|$debug.space+'generateImplementionForSerialize\n', |''));
 
@@ -75,7 +71,7 @@ function meta::alloy::runtime::java::serialize::generateImplementionForSerialize
    generatedCode($project, $serializeClass);
 }
 
-function <<access.private>> meta::alloy::runtime::java::serialize::createSerializeProject(path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::pure::executionPlan::engine::java::serialize::createSerializeProject(path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    let conventions = $context.conventions;
    let data        = $context->nodeInfosForPath($path).data->cast(@SerializeData)->toOne();
@@ -100,7 +96,7 @@ function <<access.private>> meta::alloy::runtime::java::serialize::createSeriali
    newProject()->addClasses([$serializeClass, $serializer]);
 }
 
-function <<access.private>> meta::alloy::runtime::java::serialize::prnt(tree:GraphFetchTree[1], indent:String[1]): Any[*]
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::prnt(tree:GraphFetchTree[1], indent:String[1]): Any[*]
 {
    $tree->match([
       t:SerializeTopRootGraphFetchTree<Any>[1] | println($indent+'SerializeTopRootGraphFetchTree ' + $t.class.name->toOne());              $t.subTrees->map(st| $st->prnt($indent + '  '));,
@@ -111,19 +107,19 @@ function <<access.private>> meta::alloy::runtime::java::serialize::prnt(tree:Gra
    ]);
 }
 
-Class meta::alloy::runtime::java::serialize::SerializeTop
+Class meta::pure::executionPlan::engine::java::serialize::SerializeTop
 {
 }
 
-Class meta::alloy::runtime::java::serialize::SerializeTopRootGraphFetchTree<T> extends RootGraphFetchTree<T>, SerializeTop
+Class meta::pure::executionPlan::engine::java::serialize::SerializeTopRootGraphFetchTree<T> extends RootGraphFetchTree<T>, SerializeTop
 {
 }
 
-Class meta::alloy::runtime::java::serialize::SerializeTopPropertyGraphFetchTree extends PropertyGraphFetchTree, SerializeTop
+Class meta::pure::executionPlan::engine::java::serialize::SerializeTopPropertyGraphFetchTree extends PropertyGraphFetchTree, SerializeTop
 {
 }
 
-Class meta::alloy::runtime::java::serialize::SerializePropertyGraphFetchTree extends PropertyGraphFetchTree
+Class meta::pure::executionPlan::engine::java::serialize::SerializePropertyGraphFetchTree extends PropertyGraphFetchTree
 {
    fieldName : String[1];
    fieldSet  : PropertyGraphFetchTree[*];
@@ -133,7 +129,7 @@ Class meta::alloy::runtime::java::serialize::SerializePropertyGraphFetchTree ext
          | $this.fieldSet->at(0).subType->toOne(), 
          | $this.property->functionReturnType().rawType->toOne()
       );
-   }:Type[1];
+   }:meta::pure::metamodel::type::Type[1];
 
    defaultTree()  { 
       if($this.property == checkedProperty('value') || $this.property == checkedProperty('source'), 
@@ -150,38 +146,41 @@ Class meta::alloy::runtime::java::serialize::SerializePropertyGraphFetchTree ext
    }: GraphFetchTree[*];
 }
 
-function <<access.private>> meta::alloy::runtime::java::serialize::prepareTree(data:SerializeData[1], javaType:JavaType[1]): RootGraphFetchTree<Any>[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::prepareTree(data:SerializeData[1], javaType:JavaType[1]): RootGraphFetchTree<Any>[1]
 {
    let defectTree = #{Defect {id, externalId, message, enforcementLevel, ruleType, ruleDefinerPath, path { propertyName, index }}}#;
    
    $javaType->match([
       {chk:CheckedJavaType[1] |
          let defectsTree = ^PropertyGraphFetchTree(property=checkedProperty('defects'), subTrees=$defectTree.subTrees);
-         let sourceTree  = prepareTree($data, $chk.source)->toPropertyTree(checkedProperty('source'));
          let valueTree   = prepareTree($data, $chk.checkedOf)->toPropertyTree(checkedProperty('value'));
 
-         ^RootGraphFetchTree<Any>(class=Checked, subTrees=[$defectsTree, $sourceTree, $valueTree]);
+         if($chk.source->isEmpty(),
+            | ^RootGraphFetchTree<Any>(class=Checked, subTrees=[$defectsTree, $valueTree]),
+            | let sourceTree  = prepareTree($data, $chk.source->toOne())->toPropertyTree(checkedProperty('source'));
+               ^RootGraphFetchTree<Any>(class=Checked, subTrees=[$defectsTree, $sourceTree, $valueTree]);
+            );
       },
       {simp:SimpleJavaType[1] | 
-         let tree = $data->treeForClass($simp.pureType->cast(@Class<Any>));
+         let tree = $data->treeForClass($simp.pureType->cast(@meta::pure::metamodel::type::Class<Any>));
          ^SerializeTopRootGraphFetchTree<Any>(class=$tree.class, subTrees=$tree.subTrees);
       }
    ]);
 
 }
 
-function <<access.private>> meta::alloy::runtime::java::serialize::treeForClass(data:SerializeData[1], class:Class<Any>[1]): RootGraphFetchTree<Any>[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::treeForClass(data:SerializeData[1], class:meta::pure::metamodel::type::Class<Any>[1]): RootGraphFetchTree<Any>[1]
 {
    if($class->_subTypeOf($data.tree.class),
       | $data.tree,
       |
    if($data.auxiliaryTrees->exists(t|$class->_subTypeOf($t.class)),
       | $data.auxiliaryTrees->filter(t|$class->_subTypeOf($t.class))->toOne(),
-      | ^RootGraphFetchTree<Any>(class=$class->cast(@Class<Any>))
+      | ^RootGraphFetchTree<Any>(class=$class->cast(@meta::pure::metamodel::type::Class<Any>))
    ));               
 }
 
-function <<access.private>> meta::alloy::runtime::java::serialize::toPropertyTree(root:RootGraphFetchTree<Any>[1], property:AbstractProperty<Any>[1]): PropertyGraphFetchTree[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::toPropertyTree(root:RootGraphFetchTree<Any>[1], property:AbstractProperty<Any>[1]): PropertyGraphFetchTree[1]
 {
    $root->match([
       st: SerializeTopRootGraphFetchTree<Any>[1] | ^SerializeTopPropertyGraphFetchTree(property=$property, subType=$root.class, subTrees=$root.subTrees),
@@ -189,7 +188,7 @@ function <<access.private>> meta::alloy::runtime::java::serialize::toPropertyTre
    ]);
 }
 
-function <<access.private>> meta::alloy::runtime::java::serialize::groupByFields(tree:GraphFetchTree[1]): GraphFetchTree[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::groupByFields(tree:GraphFetchTree[1]): GraphFetchTree[1]
 {
    let byFieldName        = $tree.subTrees->cast(@PropertyGraphFetchTree)->groupBy(st| $st->subTreeFieldName());
    let fieldNamesInOrder  = $tree.subTrees->cast(@PropertyGraphFetchTree)->map(st| $st->subTreeFieldName())->removeDuplicates();
@@ -216,7 +215,7 @@ function <<access.private>> meta::alloy::runtime::java::serialize::groupByFields
    ^$tree(subTrees=$grouped);
 }
 
-function <<access.private>> meta::alloy::runtime::java::serialize::treeSerializerClass(path:String[1], tree:RootGraphFetchTree<Any>[1], conventions:Conventions[1], debug:DebugContext[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::treeSerializerClass(path:String[1], tree:RootGraphFetchTree<Any>[1], conventions:Conventions[1], debug:DebugContext[1]): meta::external::language::java::metamodel::Class[1]
 {
    print(if($debug.debug,|$debug.space+'treeSerializerClass\n', |''));
    
@@ -243,7 +242,7 @@ function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialize
 }
 
 
-function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialiseMethods(jClass:meta::java::metamodel::Class[1], path:String[*], class:Class<Any>[1], tree:GraphFetchTree[1], conventions:Conventions[1], debug:DebugContext[1]): Pair<meta::java::metamodel::Method, Code>[*]
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::treeSerialiseMethods(jClass:meta::external::language::java::metamodel::Class[1], path:String[*], class:meta::pure::metamodel::type::Class<Any>[1], tree:GraphFetchTree[1], conventions:Conventions[1], debug:DebugContext[1]): Pair<meta::external::language::java::metamodel::Method, Code>[*]
 {
    let name = treeSerialiseMethodName($path, $class, false, $conventions);
    print(if($debug.debug,|$debug.space+'treeSerialiseMethods '+$name+'\n', |''));
@@ -255,8 +254,8 @@ function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialise
       {|
          let method         = treeSerialiseMethod($jClass, $path, $class, $defaultTree->toOne(), $conventions, $debug);
          let subTreeMethods = $defaultTree.subTrees->cast(@SerializePropertyGraphFetchTree)
-            ->filter(spgft| $spgft.returnType->instanceOf(Class))
-            ->map(spgft| treeSerialiseMethods($jClass, $path->concatenate($spgft.property.name->toOne()), $spgft.returnType->cast(@Class<Any>), $spgft, $conventions, $debug->indent()));
+            ->filter(spgft| $spgft.returnType->instanceOf(meta::pure::metamodel::type::Class))
+            ->map(spgft| treeSerialiseMethods($jClass, $path->concatenate($spgft.property.name->toOne()), $spgft.returnType->cast(@meta::pure::metamodel::type::Class<Any>), $spgft, $conventions, $debug->indent()));
          $method->concatenate($subTreeMethods);
       }
       ,
@@ -276,8 +275,8 @@ function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialise
                              ));
          let else          = $defaultTree->map(t |treeSerialiseMethod($jClass, $path, $class, $t, $conventions, $debug)).second;
          let defaultSubTreeMethods = $defaultTree.subTrees->cast(@SerializePropertyGraphFetchTree)
-            ->filter(spgft| $spgft.returnType->instanceOf(Class))
-            ->map(spgft| treeSerialiseMethods($jClass, $path->concatenate($spgft.property.name->toOne()), $spgft.returnType->cast(@Class<Any>), $spgft, $conventions, $debug->indent()));
+            ->filter(spgft| $spgft.returnType->instanceOf(meta::pure::metamodel::type::Class))
+            ->map(spgft| treeSerialiseMethods($jClass, $path->concatenate($spgft.property.name->toOne()), $spgft.returnType->cast(@meta::pure::metamodel::type::Class<Any>), $spgft, $conventions, $debug->indent()));
          
          let method        = pair(javaMethod('public', javaVoid(), $name, [$value]), j_if($testsAndThens, $else));
          
@@ -286,7 +285,7 @@ function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialise
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialiseMethod(jClass:meta::java::metamodel::Class[1], path:String[*], class:Class<Any>[1], tree:GraphFetchTree[1], conventions:Conventions[1], debug:DebugContext[1]): Pair<meta::java::metamodel::Method, Code>[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::treeSerialiseMethod(jClass:meta::external::language::java::metamodel::Class[1], path:String[*], class:meta::pure::metamodel::type::Class<Any>[1], tree:GraphFetchTree[1], conventions:Conventions[1], debug:DebugContext[1]): Pair<meta::external::language::java::metamodel::Method, Code>[1]
 {
    let name = treeSerialiseMethodName($path, $class, false, $conventions);
    
@@ -311,7 +310,7 @@ function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialise
                                       {|
                                          let valueExtractor = {x: VariableExpression[1] | 
                                                                  let javaType = $conventions->pureTypeToJavaType($x.genericType, $x.multiplicity);
-                                                                 let typeArg  = if($javaType->isJavaList(), |$fContext->j_invoke('listType', $javaType->elementType()->j_field('class', javaClassType())), |$javaType->j_field('class', javaClassType()));
+                                                                 let typeArg  = if($javaType->isJavaList(), |$fContext->j_invoke('listType', $javaType->elementType()->toBoxed()->j_classField()), |$javaType->toBoxed()->j_classField());
                                                                  $fContext->j_invoke('getResult', [j_string($x.name), $typeArg], $javaType);
                                                               };
                                          let parameters = $spgft.parameters->evaluateAndDeactivate();
@@ -337,7 +336,7 @@ function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialise
          
          if($type == Any,
             {|               
-               let methodRef = $jThis->j_methodReference(treeSerialiseMethodName($path->concatenate($propertyName), $type->cast(@Class<Any>), false, $conventions), javaFunctionType($conventions->pureTypeToJavaType($type, PureOne), javaVoid()));
+               let methodRef = $jThis->j_methodReference(treeSerialiseMethodName($path->concatenate($propertyName), $type->cast(@meta::pure::metamodel::type::Class<Any>), false, $conventions), javaFunctionType($conventions->pureTypeToJavaType($type, PureOne), javaVoid()));
                j_if(
                   list([
                      pair($getterCall->j_instanceof(javaString()),       $fWriter->j_invoke('writeStringProperty',  [j_string($spgft.fieldName), $getterCall->j_cast(javaString())])),
@@ -350,13 +349,13 @@ function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialise
                );
             },
             |
-         if($type->instanceOf(Class),
+         if($type->instanceOf(meta::pure::metamodel::type::Class),
             {|
-               let methodRef = $jThis->j_methodReference(treeSerialiseMethodName($path->concatenate($propertyName), $type->cast(@Class<Any>), false, $conventions), javaFunctionType($conventions->pureTypeToJavaType($type, PureOne), javaVoid()));
+               let methodRef = $jThis->j_methodReference(treeSerialiseMethodName($path->concatenate($propertyName), $type->cast(@meta::pure::metamodel::type::Class<Any>), false, $conventions), javaFunctionType($conventions->pureTypeToJavaType($type, PureOne), javaVoid()));
                $fWriter->j_invoke('writeComplexProperty', [j_string($spgft.fieldName), $getterCall, $methodRef]);
             },
             |
-         if($type->instanceOf(Enumeration),
+         if($type->instanceOf(meta::pure::metamodel::type::Enumeration),
             {|
                let names = if($getterCall.type->isJavaList(),
                               {| 
@@ -402,15 +401,15 @@ function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialise
    );
 }
 
-function <<access.private>> meta::alloy::runtime::java::serialize::writerField(conventions:Conventions[1]):  meta::java::metamodel::Field[1] { javaField('private', $conventions->className(ISerializationWriter), 'writer'); }
-function <<access.private>> meta::alloy::runtime::java::serialize::contextField(conventions:Conventions[1]): meta::java::metamodel::Field[1] { javaField('private', $conventions->className(IExecutionNodeContext), 'context'); }
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::writerField(conventions:Conventions[1]):  meta::external::language::java::metamodel::Field[1] { javaField('private', $conventions->className(ISerializationWriter), 'writer'); }
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::contextField(conventions:Conventions[1]): meta::external::language::java::metamodel::Field[1] { javaField('private', $conventions->className(IExecutionNodeContext), 'context'); }
 
-function <<access.private>> meta::alloy::runtime::java::serialize::subTreeFieldName(tree:PropertyGraphFetchTree[1]): String[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::subTreeFieldName(tree:PropertyGraphFetchTree[1]): String[1]
 {      
    if($tree.alias->isEmpty(), |$tree.property.name->toOne() + if($tree.property->instanceOf(QualifiedProperty), | $tree.parameters->evaluateAndDeactivate()->map(x | $x->meta::pure::router::printer::asString())->joinStrings('(', ', ', ')'), | ''), |$tree.alias)->toOne();
 }
 
-function <<access.private>> meta::alloy::runtime::java::serialize::treeSerialiseMethodName(path:String[*], class:Class<Any>[1], checked:Boolean[1], conventions:Conventions[1]): String[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::serialize::treeSerialiseMethodName(path:String[*], class:meta::pure::metamodel::type::Class<Any>[1], checked:Boolean[1], conventions:Conventions[1]): String[1]
 {
-   'write'+if($checked, |'Checked', |'')+$conventions->pureTypeToJavaType($class, PureOne)->cast(@meta::java::metamodel::Class).simpleName+'_'+$path->joinStrings('_');
+   'write'+if($checked, |'Checked', |'')+$conventions->pureTypeToJavaType($class, PureOne)->cast(@meta::external::language::java::metamodel::Class).simpleName+'_'+$path->joinStrings('_');
 }

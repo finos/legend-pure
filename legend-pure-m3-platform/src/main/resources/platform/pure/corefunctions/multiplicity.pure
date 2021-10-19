@@ -33,6 +33,11 @@ function meta::pure::functions::multiplicity::isToOne(multiplicity:Multiplicity[
     hasToOneUpperBound($multiplicity) && eq($multiplicity->getLowerBound(), 1)
 }
 
+function meta::pure::functions::multiplicity::isToMany(m:Multiplicity[1]):Boolean[1]
+{
+   !$m->hasUpperBound() || ($m->getUpperBound() > 1);
+}
+
 function meta::pure::functions::multiplicity::getLowerBound(multiplicity:Multiplicity[1]):Integer[1]
 {
     $multiplicity.lowerBound->toOne().value->toOne()

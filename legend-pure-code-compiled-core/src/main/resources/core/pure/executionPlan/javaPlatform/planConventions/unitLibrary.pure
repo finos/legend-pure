@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::alloy::runtime::java::naming::*;
-import meta::java::generation::code::*;
-import meta::java::generation::convention::*;
-import meta::java::generation::convention::jackson::*;
-import meta::java::generation::expression::*;
-import meta::java::generation::functions::unit::*;
-import meta::java::metamodel::factory::*;
+import meta::external::language::java::factory::*;
+import meta::external::language::java::transform::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::engine::java::naming::*;
 
-function meta::java::generation::functions::unit::register(conventions: Conventions[1]): Conventions[1]
+function meta::pure::executionPlan::engine::java::registerUnitLibrary(conventions: Conventions[1]): Conventions[1]
 {
    let lib = newConventionsLibrary()
       ->usesJavaPackage('java.util')
@@ -35,31 +32,31 @@ function meta::java::generation::functions::unit::register(conventions: Conventi
    $conventions->registerLibrary($lib);
 }
 
-function meta::java::generation::functions::unit::unitType(unit:Any[1]):String[1]
+function meta::pure::executionPlan::engine::java::unitType(unit:Any[1]):String[1]
 {
    fail('Not implemented yet');
    '';
 }
 
-function meta::java::generation::functions::unit::unitValue(unit:Any[1]):Number[1]
+function meta::pure::executionPlan::engine::java::unitValue(unit:Any[1]):Number[1]
 {
    fail('Not implemented yet');
    0;
 }
 
-function meta::java::generation::functions::unit::convert(unit:Any[1], targetUnit:Unit[1]):Any[1]
+function meta::pure::executionPlan::engine::java::convert(unit:Any[1], targetUnit:Unit[1]):Any[1]
 {
    fail('Not implemented yet');
    '';
 }
 
-function <<access.private>> meta::java::generation::functions::unit::unitImpl(ctx:FuncCoderContext[1], index:Integer[1]): meta::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::unitImpl(ctx:FuncCoderContext[1], index:Integer[1]): meta::external::language::java::metamodel::Class[1]
 {
    let unit = $ctx.params->at($index)->cast(@InstanceValue).values->toOne()->cast(@Unit);
    $ctx.conventions->implClassName($unit);
 }
 
-function meta::java::generation::functions::unit::unitInterface(conventions: Conventions[1]): meta::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::unitInterface(conventions: Conventions[1]): meta::external::language::java::metamodel::Class[1]
 {
    $conventions->className(Unit)
       ->addModifiers(['public', 'interface'])
