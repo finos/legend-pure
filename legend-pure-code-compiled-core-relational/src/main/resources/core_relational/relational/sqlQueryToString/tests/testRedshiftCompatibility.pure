@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ###Pure
-Class meta::relational::functions::sqlQueryToString::tests::redshift::domain::Person
+Class meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::domain::Person
 {
    firstName: String[1];
    lastName: String[1];
@@ -21,14 +21,14 @@ Class meta::relational::functions::sqlQueryToString::tests::redshift::domain::Pe
    key:Integer[1];
 }
 
-Class meta::relational::functions::sqlQueryToString::tests::redshift::domain::Thing
+Class meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::domain::Thing
 {
    name: String[1];
    id: Integer[1];
 }
 
 ###Relational
-Database meta::relational::functions::sqlQueryToString::tests::redshift::db::rsDb
+Database meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::db::rsDb
 (
    Table "person table" (ID INT PRIMARY KEY, firstName VARCHAR(200), lastName VARCHAR(200), age INT, key INT)
    Schema dataset1
@@ -40,11 +40,11 @@ Database meta::relational::functions::sqlQueryToString::tests::redshift::db::rsD
 )
 
 ###Mapping
-Mapping meta::relational::functions::sqlQueryToString::tests::redshift::mapping::simpleRelationalMappingPersonForBQ
+Mapping meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::mapping::simpleRelationalMappingPersonForBQ
 (
-   meta::relational::functions::sqlQueryToString::tests::redshift::domain::Person : Relational
+   meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::domain::Person : Relational
    {
-      scope([meta::relational::functions::sqlQueryToString::tests::redshift::db::rsDb])
+      scope([meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::db::rsDb])
       (
          firstName : "person table".firstName,
          lastName: "person table".lastName,
@@ -52,15 +52,15 @@ Mapping meta::relational::functions::sqlQueryToString::tests::redshift::mapping:
       )
    }
 
-   meta::relational::functions::sqlQueryToString::tests::redshift::domain::Thing : Relational
+   meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::domain::Thing : Relational
    {
     ~primaryKey
     (
-      [meta::relational::functions::sqlQueryToString::tests::redshift::db::rsDb]dataset1."thing table".ID
+      [meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::db::rsDb]dataset1."thing table".ID
     )
-    ~mainTable [meta::relational::functions::sqlQueryToString::tests::redshift::db::rsDb]dataset1."thing table"
-    id: [meta::relational::functions::sqlQueryToString::tests::redshift::db::rsDb]dataset1."thing table".ID,
-    name: [meta::relational::functions::sqlQueryToString::tests::redshift::db::rsDb]dataset1."thing table".NAME
+    ~mainTable [meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::db::rsDb]dataset1."thing table"
+    id: [meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::db::rsDb]dataset1."thing table".ID,
+    name: [meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::db::rsDb]dataset1."thing table".NAME
   }
 
 )
@@ -83,24 +83,24 @@ import meta::pure::profiles::*;
 
 function meta::relational::functions::sqlQueryToString::tests::redshift::testRuntimeForRedshift():Runtime[1]
 {
-   meta::relational::tests::testRuntime(meta::relational::functions::sqlQueryToString::tests::redshift::db::rsDb);
+   meta::relational::tests::testRuntime(meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::db::rsDb);
 }
 
-function <<test.Test>> meta::relational::functions::sqlQueryToString::tests::redshift::tableAndColumnNamesAreQuoted():Boolean[1]
+function <<test.Test>> meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::tableAndColumnNamesAreQuoted():Boolean[1]
 {
    let result = toSQLString(
-    |meta::relational::functions::sqlQueryToString::tests::redshift::domain::Person.all()->project([s | $s.age], ['KEY']),
-    meta::relational::functions::sqlQueryToString::tests::redshift::mapping::simpleRelationalMappingPersonForBQ,
+    |meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::domain::Person.all()->project([s | $s.age], ['KEY']),
+    meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::mapping::simpleRelationalMappingPersonForBQ,
     meta::relational::runtime::DatabaseType.Redshift,
     meta::pure::router::extension::defaultRelationalExtensions());
    assertEquals('select "person_table_d#2_d_m1".key as "KEY" from "person table" as "root" left outer join "person table" as "person_table_d#2_d_m1" on ("root".key = "person_table_d#2_d_m1".key)', $result);
 }
 
-function <<test.Test>> meta::relational::functions::sqlQueryToString::tests::redshift::tableWithSchema():Boolean[1]
+function <<test.Test>> meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::tableWithSchema():Boolean[1]
 {
    let result = toSQLString(
-    |meta::relational::functions::sqlQueryToString::tests::redshift::domain::Thing.all()->project([s | $s.id], ['ID']),
-    meta::relational::functions::sqlQueryToString::tests::redshift::mapping::simpleRelationalMappingPersonForBQ,
+    |meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::domain::Thing.all()->project([s | $s.id], ['ID']),
+    meta::relational::functions::sqlQueryToString::tests::redshift::testQuoting::mapping::simpleRelationalMappingPersonForBQ,
     meta::relational::runtime::DatabaseType.Redshift,
     meta::pure::router::extension::defaultRelationalExtensions());
    assertEquals('select "root".ID as "ID" from dataset1."thing table" as "root"', $result);
