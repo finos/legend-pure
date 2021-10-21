@@ -126,6 +126,19 @@ Class meta::protocols::pure::v1_21_0::metamodel::executionPlan::graphFetch::Glob
    xStorePropertyMapping : meta::protocols::pure::v1_21_0::metamodel::mapping::xStore::XStorePropertyMapping[0..1];
    enableConstraints : Boolean[0..1];
    checked           : Boolean[0..1];
+   xStorePropertyFetchDetails : meta::protocols::pure::v1_21_0::metamodel::executionPlan::graphFetch::XStorePropertyFetchDetails[0..1];
+}
+
+Class meta::protocols::pure::v1_21_0::metamodel::executionPlan::graphFetch::XStorePropertyFetchDetails
+{
+   supportsCaching         : Boolean[1];
+   propertyPath            : String[1];
+   sourceMappingId         : String[1];
+   sourceSetId             : String[1];
+   targetMappingId         : String[1];
+   targetSetId             : String[1];
+   targetPropertiesOrdered : String[*];
+   subTree                 : String[1];
 }
 
 Class meta::protocols::pure::v1_21_0::metamodel::executionPlan::graphFetch::LocalGraphFetchExecutionNode extends ExecutionNode
@@ -153,6 +166,12 @@ Class meta::protocols::pure::v1_21_0::metamodel::executionPlan::graphFetch::stor
 {
    batchSize : Integer[0..1];
    checked : Boolean[1];
+}
+
+Class meta::protocols::pure::v1_21_0::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryCrossStoreGraphFetchExecutionNode extends meta::protocols::pure::v1_21_0::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryRootGraphFetchExecutionNode
+{
+   supportsBatching      : Boolean[1];
+   xStorePropertyMapping : meta::protocols::pure::v1_21_0::metamodel::mapping::xStore::XStorePropertyMapping[1];
 }
 
 Class meta::protocols::pure::v1_21_0::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryPropertyGraphFetchExecutionNode extends meta::protocols::pure::v1_21_0::metamodel::executionPlan::graphFetch::store::inMemory::InMemoryGraphFetchExecutionNode

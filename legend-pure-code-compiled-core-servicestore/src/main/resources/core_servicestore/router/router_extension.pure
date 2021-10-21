@@ -123,21 +123,47 @@ function <<access.private>> meta::external::store::service::router::extension::s
       },
       java_graphFetch_inMemory_generatePropertyMapping1 = [
          {spm : ServiceStorePropertyMapping[1] | let dummyLambda = {|'ok'};
+                                                 let gen = ^GenericType
+                                                            (
+                                                               rawType = LambdaFunction,
+                                                               typeArguments = ^GenericType
+                                                                                 (
+                                                                                    rawType = ^meta::pure::metamodel::type::FunctionType
+                                                                                             (
+                                                                                                parameters = [], 
+                                                                                                returnType = $spm.property->functionReturnType(),
+                                                                                                returnMultiplicity= $spm.property->functionReturnMultiplicity()
+                                                                                             )
+                                                                                 )
+                                                            );
                                                  let exp = ^SimpleFunctionExpression(func = $spm.property, 
                                                                                      genericType = $spm.property.genericType,
                                                                                      importGroup = system.children->at(0)->cast(@Package).children->at(0)->cast(@ImportGroup),
                                                                                      multiplicity = $spm.property.multiplicity,
                                                                                      parametersValues = ^VariableExpression(genericType=^GenericType(rawType = $spm.property.owner->cast(@meta::pure::metamodel::type::Class<Any>)), multiplicity = PureOne, name = 'src'),
                                                                                      propertyName = ^InstanceValue(genericType = ^GenericType(rawType = String), multiplicity = PureOne, values = $spm.property.name));
-                                                 ^$dummyLambda(expressionSequence = $exp);},
+                                                 ^$dummyLambda(classifierGenericType = $gen, expressionSequence = $exp);},
          {epm : EmbeddedServiceStoreSetImplementation[1] | let dummyLambda = {|'ok'};
+                                                 let gen = ^GenericType
+                                                            (
+                                                               rawType = LambdaFunction,
+                                                               typeArguments = ^GenericType
+                                                                                 (
+                                                                                    rawType = ^meta::pure::metamodel::type::FunctionType
+                                                                                             (
+                                                                                                parameters = [], 
+                                                                                                returnType = $epm.property->functionReturnType(),
+                                                                                                returnMultiplicity= $epm.property->functionReturnMultiplicity()
+                                                                                             )
+                                                                                 )
+                                                            );
                                                  let exp = ^SimpleFunctionExpression(func = $epm.property, 
                                                                                      genericType = $epm.property.genericType,
                                                                                      importGroup = system.children->at(0)->cast(@Package).children->at(0)->cast(@ImportGroup),
                                                                                      multiplicity = $epm.property.multiplicity,
                                                                                      parametersValues = ^VariableExpression(genericType=^GenericType(rawType = $epm.property.owner->cast(@meta::pure::metamodel::type::Class<Any>)), multiplicity = PureOne, name = 'src'),
                                                                                      propertyName = ^InstanceValue(genericType = ^GenericType(rawType = String), multiplicity = PureOne, values = $epm.property.name));
-                                                 ^$dummyLambda(expressionSequence = $exp);}
+                                                 ^$dummyLambda(classifierGenericType = $gen, expressionSequence = $exp);}
       ],  
       java_graphFetch_inMemory_generatePropertyMapping2 = [
          spm : ServiceStorePropertyMapping[1] |  [],

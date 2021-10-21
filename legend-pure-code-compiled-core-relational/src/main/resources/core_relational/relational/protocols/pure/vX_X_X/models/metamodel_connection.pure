@@ -83,7 +83,8 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
     proxyHost: String[0..1];
     proxyPort: String[0..1];
     nonProxyHosts: String[0..1];
-
+   
+    role: String [0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::BigQueryDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
