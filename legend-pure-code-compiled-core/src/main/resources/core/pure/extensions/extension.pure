@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::executionPlan::engine::java::*;
+import meta::java::metamodel::*;
 import meta::external::language::java::metamodel::*;
 import meta::external::language::java::metamodel::project::*;
 import meta::external::language::java::transform::*;
@@ -33,7 +34,8 @@ Class meta::pure::router::extension::RouterExtension
 {
    type : String[1];
    serializerExtension : Function<{String[1]->String[1]}>[1];
-   
+   serializerExtensionByProtocolVersion : Pair<String, SerializerExtension>[*];
+
    analytics_getStoreFromSetImpl : Function<{Mapping[1] -> Function<{Nil[1]->Store[1]}>[1]}>[0..1];
    analytics_getStoreFromSetImpl_Operation : Function<{Mapping[1] -> Function<{Nil[1]->Store[1]}>[1]}>[0..1];
    
@@ -136,6 +138,21 @@ Class meta::pure::router::extension::RouterExtension
    validTestPackages : String[*];
    
    serializerExtension(version : String[1])
+   {
+      let ext = $this;
+      $this.serializerExtensionByProtocolVersion->filter(p|$p.first == $version)->match([
+         { found : Pair<String, SerializerExtension> [1] | $found.second; },
+         { missing : Pair<String, SerializerExtension> [0] |
+            let serializer = $this.fetchSerializerExtension($version);
+            if($serializer->isEmpty(),
+               | $serializer,
+               | $ext->mutateAdd('serializerExtensionByProtocolVersion', pair($version, $serializer->toOne()));
+                  $serializer->toOne();
+             );
+         }]);
+   } : SerializerExtension[0..1];
+
+   fetchSerializerExtension(version : String[1])
    {
       let funcString = $this.serializerExtension->eval($version);
       let func = $funcString->forgivingPathToElement()->cast(@Function<{String[1]->SerializerExtension[1]}>);
