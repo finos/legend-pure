@@ -460,7 +460,7 @@ Class meta::external::language::morphir::metamodel::Path::Path
   names: meta::external::language::morphir::metamodel::Name::Name[*];
 }
 
-Class meta::external::language::morphir::metamodel::Documented::Documented
+Class meta::external::language::morphir::metamodel::Documented::Documented extends meta::external::language::morphir::metamodel::AccessControlled::AccessControlledValue
 {
   doc: String[0..1];
   value: meta::external::language::morphir::metamodel::Type::Type[1];

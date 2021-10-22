@@ -11,8 +11,13 @@ import meta::external::language::morphir::metamodel::AccessControlled::*;
 
 function meta::external::language::morphir::transform::transformToMorphirModel(func:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Distribution::IR[1]
 {
+   transformToMorphirModel($func, []);
+}
+
+function meta::external::language::morphir::transform::transformToMorphirModel(func:FunctionDefinition<Any>[1], enums:Enumeration<Any>[*]): meta::external::language::morphir::metamodel::Distribution::IR[1]
+{
    ^meta::external::language::morphir::metamodel::Distribution::IR(formatVersion=getDefaultFormatVersion(),
-                                                                   distribution=transformDistributionWithFunction($func));
+                                                                   distribution=transformDistributionWithFunction($func, $enums)); 
 }
 
 function meta::external::language::morphir::transform::transformEmptyDistribution(): Distribution[1]
@@ -20,24 +25,24 @@ function meta::external::language::morphir::transform::transformEmptyDistributio
    ^Distribution();
 }
 
-function <<access.private>> meta::external::language::morphir::transform::transformDistributionWithFunction(func:FunctionDefinition<Any>[1]): Distribution[1]
+function <<access.private>> meta::external::language::morphir::transform::transformDistributionWithFunction(func:FunctionDefinition<Any>[1], enums:Enumeration<Any>[*]): Distribution[1]
 {
-   transformLibraryDistributionWithFunction($func);
+   transformLibraryDistributionWithFunction($func, $enums);
 }
 
-function <<access.private>> meta::external::language::morphir::transform::transformLibraryDistributionWithFunction(func:FunctionDefinition<Any>[1]): Library[1]
+function <<access.private>> meta::external::language::morphir::transform::transformLibraryDistributionWithFunction(func:FunctionDefinition<Any>[1], enums:Enumeration<Any>[*]): Library[1]
 {
    let defaultPackagePath = getDefaultLibraryPackagePath()->split('.');
-   let packageDefinition = transformPackageDefinitionWithFunction($func);
+   let packageDefinition = transformPackageDefinitionWithFunction($func, $enums);
 
    ^Library(packageName=^PackageName(path=^Path(names=$defaultPackagePath->map(name| ^Name(words=[$name])))),
             packageDef=$packageDefinition);
 }
 
-function <<access.private>> meta::external::language::morphir::transform::transformPackageDefinitionWithFunction(func:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Package::Definition[1]
+function <<access.private>> meta::external::language::morphir::transform::transformPackageDefinitionWithFunction(func:FunctionDefinition<Any>[1], enums:Enumeration<Any>[*]): meta::external::language::morphir::metamodel::Package::Definition[1]
 {
    let defaultModuleName = getDefaultModuleName();
-   let accessValueWithFunction = transformModuleAccessValueWithFunction($func);
+   let accessValueWithFunction = transformModuleAccessValueWithFunction($func, $enums);
 
    ^meta::external::language::morphir::metamodel::Package::Definition(modules=
                                                                       ^meta::external::language::morphir::metamodel::Package::DefinitionModule(moduleName=
@@ -48,12 +53,21 @@ function <<access.private>> meta::external::language::morphir::transform::transf
                                                                                                                                                                                   value=$accessValueWithFunction)));
 }
 
-function <<access.private>> meta::external::language::morphir::transform::transformModuleAccessValueWithFunction(func:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Module::Definition[1]
+function <<access.private>> meta::external::language::morphir::transform::transformModuleAccessValueWithFunction(func:FunctionDefinition<Any>[1], enums:Enumeration<Any>[*]): meta::external::language::morphir::metamodel::Module::Definition[1]
 {
    ^meta::external::language::morphir::metamodel::Module::Definition(values=^meta::external::language::morphir::metamodel::Module::DefinitionValue(accessControlled=^AccessControlled(value=transformValueAccessValueWithFunction($func),
                                                                                                                                                                                       access=^Public()),
-                                                                                                                                                   name=^Name(words=$func.functionName)));
+                                                                                                                                                   name=^Name(words=$func.functionName))); // ,
+                                                                     // types=$enums->map(enum | ^meta::external::language::morphir::metamodel::Module::DefinitionType(accessControlled=^AccessControlled(value=transformDocumentedAccessValueWithEnum($enum),
+                                                                     //                                                                                                                                 access=^Public()),
+                                                                     //                                                                                              name=^Name(words=$enum.name))));
 }
+
+// function <<access.private>> meta::external::language::morphir::transform::transformDocumentedAccessValueWithEnum(enum:Enumeration<Any>[1]): meta::external::language::morphir::metamodel::Documented::Documented[1]
+// {
+//   let doc = getDefaultDocumentedAccessValueDoc();
+//
+// }
 
 function <<access.private>> meta::external::language::morphir::transform::transformValueAccessValueWithFunction(func:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Value::Definition[1]
 {
@@ -100,7 +114,10 @@ function <<access.private>> meta::external::language::morphir::transform::transf
                                                                                          enrichSourceInformation:Boolean[1]): meta::external::language::morphir::metamodel::Value::Value[1]
 {
    let esourceInfo = if ($enrichSourceInformation,
-                         | $element->sourceInformation()->toOne();,
+                         | let srcInfo = $element->sourceInformation();
+                           if (!$srcInfo->isEmpty(), 
+                               |$srcInfo->toOne(),
+                               | []);,
                          | []);
 
    $element->evaluateAndDeactivate()->toOne()->match(
@@ -121,7 +138,7 @@ function <<access.private>> meta::external::language::morphir::transform::transf
                                    let body = $definitionValue->transformValue();
 
                                    let transformedDefinitionValue = ^meta::external::language::morphir::metamodel::Value::Definition(body=$body,
-                                                                                                          outputType=$outputType);
+                                                                                                                                     outputType=$outputType);
 
                                    let newRawVariableValue = ^VariableExpression(name=$variableName,
                                                                                  multiplicity=$variable->cast(@InstanceValue).multiplicity,genericType=$variable->cast(@InstanceValue).genericType);
@@ -132,7 +149,10 @@ function <<access.private>> meta::external::language::morphir::transform::transf
                                                                                                        definition=$transformedDefinitionValue,
                                                                                                        value=$newVariableValue);,
 
-                                 | let applyParametersValues = $parametersValues->map(p| if ($p->instanceOf(InstanceValue) && ($p->cast(@InstanceValue).values->size() > 1),
+                                 | let applyParametersValues = $parametersValues->map(p| if ($p->instanceOf(InstanceValue) 
+                                                                                              && ($p->cast(@InstanceValue).values->size() > 1) 
+                                                                                              && (!$p->cast(@InstanceValue).values->at(0)->instanceOf(Integer))
+                                                                                              && (!$p->cast(@InstanceValue).values->at(0)->instanceOf(Float)),
                                                                                 | $p->cast(@InstanceValue).values->cast(@ValueSpecification),
                                                                                 | $p));
 
@@ -236,7 +256,10 @@ function <<access.private>> meta::external::language::morphir::transform::findMo
 
    let localName = $basicFunctionLocalNameMap->get($fe.functionName->toOne());
 
-   let applyParametersValues = $fe->evaluateAndDeactivate().parametersValues->map(p| if ($p->instanceOf(InstanceValue) && ($p->cast(@InstanceValue).values->size() > 1),
+   let applyParametersValues = $fe->evaluateAndDeactivate().parametersValues->map(p| if ($p->instanceOf(InstanceValue) 
+                                                                                          && ($p->cast(@InstanceValue).values->size() > 1)
+                                                                                          && (!$p->cast(@InstanceValue).values->at(0)->instanceOf(Integer))
+                                                                                          && (!$p->cast(@InstanceValue).values->at(0)->instanceOf(Float)),
                                                                                          | $p->cast(@InstanceValue).values->cast(@ValueSpecification),
                                                                                          | $p));
 
@@ -291,10 +314,15 @@ function <<access.private>> meta::external::language::morphir::transform::getDef
 
 function <<access.private>> meta::external::language::morphir::transform::getDefaultLibraryPackagePath(): String[1]
 {
-   'system.morphir';
+   'external.morphir';
 }
 
 function <<access.private>> meta::external::language::morphir::transform::getDefaultModuleName(): String[1]
 {
    'transform';
+}
+
+function <<access.private>> meta::external::language::morphir::transform::getDefaultDocumentedAccessValueDoc(): String[1]
+{
+   '';
 }

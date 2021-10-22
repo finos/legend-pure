@@ -23,7 +23,7 @@ function meta::external::language::morphir::transform::tests::letFunction():Numb
 
 function meta::external::language::morphir::transform::tests::zeroDivisionFunction(v1:Number[1]):Number[1]
 {
-   $v1 / 0.0;
+   $v1 / (1 - 1);
 }
 
 function meta::external::language::morphir::transform::tests::multipleStatementFunction(v1:Number[1]):Number[1]
@@ -36,6 +36,17 @@ function meta::external::language::morphir::transform::tests::multipleStatementF
 {
    let v2 = 0.0;
    $v1 / $v2;
+}
+
+function meta::external::language::morphir::transform::tests::getRentals(requests: Number[1], available: Number[1], allowPartials: Boolean[1]):Number[1]
+{
+   if(0.25 < $requests / $available, 
+      |0.0, 
+      |if($requests < $available, 
+          |$requests, 
+          |if($allowPartials, 
+              |$available, 
+              |0.0)))
 }
 
 // Note: Add new class or function definitions from tail to maintain existent source information.
@@ -108,6 +119,27 @@ function meta::external::language::morphir::transform::tests::decide(windCategor
                    | ^ErrResult(reason=Reason.InsufficientAvailability))));
 }
 
+function meta::external::language::morphir::transform::tests::decideTemp(windCategory:WindCategory[1],
+                                                                        forecastDetail:String[1],
+                                                                        currentInventory:Integer[1],
+                                                                        existingReservations:Integer[1],
+                                                                        pendingReturns:Integer[1],
+                                                                        requestedQuantity:Integer[1],
+                                                                        allowPartials:Boolean[1]
+                                                                        ):Integer[1]
+{
+  //  let isClosed = ($windCategory == WindCategory.DangerousWinds) || ($forecastDetail == ForecastDetail.Thunderstorms);
+  //  let availability = $currentInventory - $existingReservations + $pendingReturns;
+
+   if ($windCategory == WindCategory.DangerousWinds || $forecastDetail == 'thun',
+       | -1,
+       | if ($requestedQuantity <= $currentInventory, // $currentInventory - $existingReservations + $pendingReturns,
+             | $requestedQuantity,
+             | if ($allowPartials,
+                   | 0, // $currentInventory - $existingReservations + $pendingReturns
+                   | -1)));
+}
+
 function <<test.Test>> meta::external::language::morphir::transform::tests::testTransformAndSerializeVerboseMinFunction():Boolean[1]
 {
    let func = meta::external::language::morphir::transform::tests::verboseMin_Number_1__Number_1__Number_1_;
@@ -161,6 +193,25 @@ function <<test.Test>> meta::external::language::morphir::transform::tests::test
 function <<test.Test, test.ToFix>> meta::external::language::morphir::transform::tests::testTransformAndSerializeMultipleStatementFunction():Boolean[1]
 {
    let func = meta::external::language::morphir::transform::tests::multipleStatementFunction_Number_1__Number_1_;
+   let funcTransformedModel = $func->meta::external::language::morphir::transform::transformToMorphirModel();
+   let funcSerializedComplete = $funcTransformedModel->meta::external::language::morphir::serialization::morphirModelToJson();
+   let completeResult = $funcSerializedComplete->map(elem| $elem->toCompactJSONString());
+
+   assertEquals($completeResult, '');
+}
+function <<test.Test, test.ToFix>> meta::external::language::morphir::transform::tests::testTransformTemp():Boolean[1]
+{
+   let func = meta::external::language::morphir::transform::tests::decideTemp_WindCategory_1__String_1__Integer_1__Integer_1__Integer_1__Integer_1__Boolean_1__Integer_1_;
+   let funcTransformedModel = $func->meta::external::language::morphir::transform::transformToMorphirModel();
+   let funcSerializedComplete = $funcTransformedModel->meta::external::language::morphir::serialization::morphirModelToJson();
+   let completeResult = $funcSerializedComplete->map(elem| $elem->toCompactJSONString());
+
+   assertEquals($completeResult, '');
+}
+
+function <<test.Test, test.ToFix>> meta::external::language::morphir::transform::tests::testTransformRentals():Boolean[1]
+{
+   let func = meta::external::language::morphir::transform::tests::getRentals_Number_1__Number_1__Boolean_1__Number_1_;
    let funcTransformedModel = $func->meta::external::language::morphir::transform::transformToMorphirModel();
    let funcSerializedComplete = $funcTransformedModel->meta::external::language::morphir::serialization::morphirModelToJson();
    let completeResult = $funcSerializedComplete->map(elem| $elem->toCompactJSONString());

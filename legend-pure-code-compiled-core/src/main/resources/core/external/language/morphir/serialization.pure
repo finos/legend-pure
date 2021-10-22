@@ -225,18 +225,18 @@ function <<access.private>> meta::external::language::morphir::serialization::mo
 {
    if ($sourceInfo->isEmpty(),
        | ^JSONArray(values=[]),
-       | let sourceInfo = $sourceInfo->toOne();
+       | let sourceInfoToOne = $sourceInfo->toOne();
          let content = [^JSONString(value='sourceInformation'),
                         ^JSONArray(values=[^JSONString(value='source'),
-                                           ^JSONString(value=$sourceInfo.source)]),
+                                           ^JSONString(value=$sourceInfoToOne.source)]),
                         ^JSONArray(values=[^JSONString(value='startLine'),
-                                           ^JSONNumber(value=$sourceInfo.startLine)]),
+                                           ^JSONNumber(value=$sourceInfoToOne.startLine)]),
                         ^JSONArray(values=[^JSONString(value='startColumn'),
-                                           ^JSONNumber(value=$sourceInfo.startColumn)]),
+                                           ^JSONNumber(value=$sourceInfoToOne.startColumn)]),
                         ^JSONArray(values=[^JSONString(value='endLine'),
-                                           ^JSONNumber(value=$sourceInfo.endLine)]),
+                                           ^JSONNumber(value=$sourceInfoToOne.endLine)]),
                         ^JSONArray(values=[^JSONString(value='endColumn'),
-                                           ^JSONNumber(value=$sourceInfo.endColumn)])];
+                                           ^JSONNumber(value=$sourceInfoToOne.endColumn)])];
          ^JSONArray(values=$content);
       );
 }
