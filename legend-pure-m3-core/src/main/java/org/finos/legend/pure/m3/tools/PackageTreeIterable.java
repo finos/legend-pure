@@ -15,21 +15,20 @@
 package org.finos.legend.pure.m3.tools;
 
 import org.eclipse.collections.api.block.procedure.Procedure;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.ImmutableSet;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
-import org.eclipse.collections.impl.utility.internal.IteratorIterate;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.function.Consumer;
 
 public class PackageTreeIterable extends AbstractLazyIterable<Package>
 {
@@ -45,13 +44,25 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
     @Override
     public Iterator<Package> iterator()
     {
-        return this.depthFirst ? new DepthFirstPackageTreeIterator() : new BreadthFirstPackageTreeIterator();
+        return new PackageTreeIterator(this.startingPackages, this.depthFirst);
     }
 
     @Override
     public void each(Procedure<? super Package> procedure)
     {
-        IteratorIterate.forEach(iterator(), procedure);
+        for (Package pkg : this)
+        {
+            procedure.value(pkg);
+        }
+    }
+
+    @Override
+    public void forEach(Consumer<? super Package> consumer)
+    {
+        for (Package pkg : this)
+        {
+            consumer.accept(pkg);
+        }
     }
 
     public boolean isDepthFirst()
@@ -81,7 +92,7 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
 
     public static PackageTreeIterable newRootPackageTreeIterable(ModelRepository repository, boolean depthFirst)
     {
-        return newPackageTreeIterable((Package)repository.getTopLevel(M3Paths.Root), depthFirst);
+        return newPackageTreeIterable((Package) repository.getTopLevel(M3Paths.Root), depthFirst);
     }
 
     public static PackageTreeIterable newRootPackageTreeIterable(ModelRepository repository)
@@ -91,7 +102,7 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
 
     public static PackageTreeIterable newRootPackageTreeIterable(ProcessorSupport processorSupport, boolean depthFirst)
     {
-        return newPackageTreeIterable((Package)processorSupport.repository_getTopLevel(M3Paths.Root), depthFirst);
+        return newPackageTreeIterable((Package) processorSupport.repository_getTopLevel(M3Paths.Root), depthFirst);
     }
 
     public static PackageTreeIterable newRootPackageTreeIterable(ProcessorSupport processorSupport)
@@ -99,9 +110,16 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
         return newRootPackageTreeIterable(processorSupport, true);
     }
 
-    private abstract class PackageTreeIterator implements Iterator<Package>
+    private static class PackageTreeIterator implements Iterator<Package>
     {
-        protected final Deque<Package> deque = new ArrayDeque<>(PackageTreeIterable.this.startingPackages.castToSet());
+        private final Deque<Package> deque;
+        private final boolean depthFirst;
+
+        private PackageTreeIterator(ImmutableSet<Package> startingNodes, boolean depthFirst)
+        {
+            this.deque = new ArrayDeque<>(startingNodes.castToSet());
+            this.depthFirst = depthFirst;
+        }
 
         @Override
         public boolean hasNext()
@@ -112,50 +130,24 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
         @Override
         public Package next()
         {
-            Package pkg = this.deque.poll();
-            if (pkg == null)
-            {
-                throw new NoSuchElementException();
-            }
-            update(pkg);
+            Package pkg = this.deque.removeFirst();
+            pkg._children().forEach(this::possiblyAddChild);
             return pkg;
         }
 
-        @Override
-        public void remove()
+        private void possiblyAddChild(CoreInstance child)
         {
-            throw new UnsupportedOperationException();
-        }
-
-        private void update(Package pkg)
-        {
-            for (CoreInstance child : pkg._children())
+            if (child instanceof Package)
             {
-                if (child instanceof Package)
+                if (this.depthFirst)
                 {
-                    addPackage((Package)child);
+                    this.deque.addFirst((Package) child);
+                }
+                else
+                {
+                    this.deque.addLast((Package) child);
                 }
             }
-        }
-
-        abstract protected void addPackage(Package pkg);
-    }
-
-    private class DepthFirstPackageTreeIterator extends PackageTreeIterator
-    {
-        @Override
-        protected void addPackage(Package pkg)
-        {
-            this.deque.addFirst(pkg);
-        }
-    }
-
-    private class BreadthFirstPackageTreeIterator extends PackageTreeIterator
-    {
-        @Override
-        protected void addPackage(Package pkg)
-        {
-            this.deque.addLast(pkg);
         }
     }
 }

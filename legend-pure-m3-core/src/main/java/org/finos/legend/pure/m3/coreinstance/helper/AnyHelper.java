@@ -28,68 +28,62 @@ import java.math.BigInteger;
 
 public class AnyHelper
 {
-    public static final Function<CoreInstance, ? extends Object> UNWRAP_PRIMITIVES = new Function<CoreInstance, Object>()
+    public static final Function<CoreInstance, ? extends Object> UNWRAP_PRIMITIVES = AnyHelper::unwrapPrimitives;
+    public static final Function2<Object, ModelRepository, ? extends CoreInstance> WRAP_PRIMITIVES = AnyHelper::wrapPrimitives;
+
+    public static Object unwrapPrimitives(CoreInstance instance)
     {
-        public Object valueOf(CoreInstance instance)
+        if (!(instance instanceof PrimitiveCoreInstance))
         {
-            if (instance instanceof PrimitiveCoreInstance)
-            {
-                Object result = ((PrimitiveCoreInstance)instance).getValue();
-                if (result instanceof Integer)
-                {
-                    return ((Integer)result).longValue();
-                }
-                if (result instanceof BigDecimal && instance instanceof FloatCoreInstance)
-                {
-                    return ((BigDecimal)result).doubleValue();
-                }
-                return result;
-            }
             return instance;
         }
-    };
 
-    public static final Function2<Object, ModelRepository, ? extends CoreInstance> WRAP_PRIMITIVES = new Function2<Object, ModelRepository, CoreInstance>()
-    {
-        @Override
-        public CoreInstance value(Object object, ModelRepository modelRepository)
+        Object result = ((PrimitiveCoreInstance<?>) instance).getValue();
+        if (result instanceof Integer)
         {
-            if (object instanceof CoreInstance )
-            {
-                return (CoreInstance) object;
-            }
-            if (object instanceof Integer || object instanceof Long || object instanceof BigInteger)
-            {
-                return PrimitiveHelper.INTEGER_TO_COREINSTANCE_FN.value((Number) object, modelRepository);
-            }
-            else if (object instanceof String)
-            {
-                return PrimitiveHelper.STRING_TO_COREINSTANCE_FN.value((String) object, modelRepository);
-            }
-            else if (object instanceof Boolean)
-            {
-                return PrimitiveHelper.BOOLEAN_TO_COREINSTANCE_FN.value((Boolean) object, modelRepository);
-            }
-            else if (object instanceof PureDate)
-            {
-                return PrimitiveHelper.DATE_TO_COREINSTANCE_FN.value((PureDate) object, modelRepository);
-            }
-            else if (object instanceof BigDecimal)
-            {
-                return PrimitiveHelper.FLOAT_TO_COREINSTANCE_FN.value((BigDecimal) object, modelRepository);
-            }
-            else if (object instanceof Double)
-            {
-                return PrimitiveHelper.FLOAT_TO_COREINSTANCE_FN.value(BigDecimal.valueOf((Double)object), modelRepository);
-            }
-            else if (object instanceof PureStrictTime)
-            {
-                return PrimitiveHelper.STRICTTIME_TO_COREINSTANCE_FN.value((PureStrictTime)object, modelRepository);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Unhandled type: " + object.getClass().getName() + " (value=" + object + ")");
-            }
+            return ((Integer) result).longValue();
         }
-    };
+        if (result instanceof BigDecimal && instance instanceof FloatCoreInstance)
+        {
+            return ((BigDecimal) result).doubleValue();
+        }
+        return result;
+    }
+
+    public static CoreInstance wrapPrimitives(Object object, ModelRepository modelRepository)
+    {
+        if (object instanceof CoreInstance)
+        {
+            return (CoreInstance) object;
+        }
+        if (object instanceof Integer || object instanceof Long || object instanceof BigInteger)
+        {
+            return PrimitiveHelper.integerToCoreInstance((Number) object, modelRepository);
+        }
+        if (object instanceof String)
+        {
+            return PrimitiveHelper.stringToCoreInstance((String) object, modelRepository);
+        }
+        if (object instanceof Boolean)
+        {
+            return PrimitiveHelper.booleanToCoreInstance((Boolean) object, modelRepository);
+        }
+        if (object instanceof PureDate)
+        {
+            return PrimitiveHelper.dateToCoreInstance((PureDate) object, modelRepository);
+        }
+        if ((object instanceof Float) || (object instanceof Double))
+        {
+            return PrimitiveHelper.floatToCoreInstance(BigDecimal.valueOf(((Number) object).doubleValue()), modelRepository);
+        }
+        if (object instanceof BigDecimal)
+        {
+            return PrimitiveHelper.decimalToCoreInstance((BigDecimal) object, modelRepository);
+        }
+        if (object instanceof PureStrictTime)
+        {
+            return PrimitiveHelper.strictTimeToCoreInstance((PureStrictTime) object, modelRepository);
+        }
+        throw new IllegalArgumentException("Unhandled type: " + object.getClass().getName() + " (value=" + object + ")");
+    }
 }
