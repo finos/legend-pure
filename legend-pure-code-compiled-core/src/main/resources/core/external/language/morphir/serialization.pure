@@ -191,7 +191,7 @@ function <<access.private>> meta::external::language::morphir::serialization::mo
 {
    if ($value->isEmpty(),
        | ^JSONArray(values=[]),
-       | ^JSONArray(values=[$value.name->toOne()->morphirNameToJson(),
+       | ^JSONArray(values=[^Name(words=[getDefaultPackageValueName()])->morphirNameToJson(),
                             $value.accessControlled->toOne()->morphirAccessControlledToJson()]);
       );
 }
@@ -253,4 +253,9 @@ function <<access.private>> meta::external::language::morphir::serialization::de
    let res = if ($specialWords->contains($word),
        | range($word->length())->map(i| $word->substring($i, $i + 1)->toLower()),
        | $word);
+}
+
+function <<access.private>> meta::external::language::morphir::serialization::getDefaultPackageValueName(): String[1]
+{
+   'main'
 }
