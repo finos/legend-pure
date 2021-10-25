@@ -47,6 +47,7 @@ public class DistributedBinaryGraphSerializer
     private final Iterable<? extends CoreInstance> nodes;
     private final ProcessorSupport processorSupport;
     private final IdBuilder idBuilder;
+    private final GraphSerializer.ClassifierCaches classifierCaches;
 
     private DistributedBinaryGraphSerializer(String metadataName, Iterable<? extends CoreInstance> nodes, ProcessorSupport processorSupport)
     {
@@ -54,6 +55,7 @@ public class DistributedBinaryGraphSerializer
         this.nodes = nodes;
         this.processorSupport = processorSupport;
         this.idBuilder = IdBuilder.newIdBuilder(DistributedMetadataHelper.getMetadataIdPrefix(this.metadataName), this.processorSupport);
+        this.classifierCaches = new GraphSerializer.ClassifierCaches(this.processorSupport);
     }
 
     public void serializeToDirectory(Path directory)
@@ -76,7 +78,7 @@ public class DistributedBinaryGraphSerializer
         MutableMap<String, MutableList<CoreInstance>> nodesByClassifierId = getNodesByClassifierId();
 
         // Build string cache
-        DistributedStringCache stringCache = DistributedStringCache.fromNodes(nodesByClassifierId.valuesView().flatCollect(l -> l), this.idBuilder, this.processorSupport);
+        DistributedStringCache stringCache = DistributedStringCache.newBuilder().withObjs(nodesByClassifierId.valuesView().flatCollect(l -> l).collect(this::buildObj)).build();
         BinaryObjSerializer serializer = new BinaryObjSerializerWithStringCacheAndImplicitIdentifiers(stringCache);
 
         // Write string cache
@@ -104,11 +106,10 @@ public class DistributedBinaryGraphSerializer
                     ByteArrayOutputStream objByteStream = new ByteArrayOutputStream();
                     try (Writer objWriter = BinaryWriters.newBinaryWriter(objByteStream))
                     {
-                        GraphSerializer.ClassifierCaches classifierCaches = new GraphSerializer.ClassifierCaches(this.processorSupport);
                         for (CoreInstance coreInstance : classifierObjs)
                         {
                             //Obj serialization
-                            Obj obj = GraphSerializer.buildObj(coreInstance, this.idBuilder, classifierCaches, this.processorSupport);
+                            Obj obj = buildObj(coreInstance);
                             objByteStream.reset();
                             serializer.serializeObj(objWriter, obj);
                             int objByteCount = objByteStream.size();
@@ -165,6 +166,11 @@ public class DistributedBinaryGraphSerializer
                 writer.writeBytes(binByteStream.toByteArray());
             }
         }
+    }
+
+    private Obj buildObj(CoreInstance instance)
+    {
+        return GraphSerializer.buildObj(instance, this.idBuilder, this.classifierCaches, this.processorSupport);
     }
 
     private MutableMap<String, MutableList<CoreInstance>> getNodesByClassifierId()
