@@ -57,17 +57,8 @@ function <<access.private>> meta::external::language::morphir::transform::transf
 {
    ^meta::external::language::morphir::metamodel::Module::Definition(values=^meta::external::language::morphir::metamodel::Module::DefinitionValue(accessControlled=^AccessControlled(value=transformValueAccessValueWithFunction($func),
                                                                                                                                                                                       access=^Public()),
-                                                                                                                                                   name=^Name(words=$func.functionName))); // ,
-                                                                     // types=$enums->map(enum | ^meta::external::language::morphir::metamodel::Module::DefinitionType(accessControlled=^AccessControlled(value=transformDocumentedAccessValueWithEnum($enum),
-                                                                     //                                                                                                                                 access=^Public()),
-                                                                     //                                                                                              name=^Name(words=$enum.name))));
+                                                                                                                                                   name=^Name(words=$func.functionName))); 
 }
-
-// function <<access.private>> meta::external::language::morphir::transform::transformDocumentedAccessValueWithEnum(enum:Enumeration<Any>[1]): meta::external::language::morphir::metamodel::Documented::Documented[1]
-// {
-//   let doc = getDefaultDocumentedAccessValueDoc();
-//
-// }
 
 function <<access.private>> meta::external::language::morphir::transform::transformValueAccessValueWithFunction(func:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Value::Definition[1]
 {
@@ -91,24 +82,36 @@ function <<access.private>> meta::external::language::morphir::transform::transf
 
 function <<access.private>> meta::external::language::morphir::transform::transformFunctionOutputType(func:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Type::Type[*]
 {
-   let functionElementTypes = $func.expressionSequence->map(e| $e->evaluateAndDeactivate()
+   let functionElementTypes = $func.expressionSequence->last()->map(e| $e->evaluateAndDeactivate()
                                                                  ->toOne()->cast(@FunctionExpression)
                                                                  .genericType.rawType->toOne()
                                                                  ->transformType($func->sourceInformation()));
 }
 
-function meta::external::language::morphir::transform::transformFunction(func:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Value::Value[*]
+function meta::external::language::morphir::transform::transformFunction(func:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Value::Value[1]
 {
-   let expressionSequence = $func.expressionSequence;
+   let firstExpression = $func.expressionSequence->first();
+   $firstExpression->toOne()->transformValue($func);
+}
+
+function meta::external::language::morphir::transform::transformNonHeadOfMultiExpressionFunction(func:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Value::Value[*]
+{
+   let expressionSequence = $func.expressionSequence->tail();
    $expressionSequence->map(e| $e->transformValue());
 }
 
 function <<access.private>> meta::external::language::morphir::transform::transformValue(element:ValueSpecification[1]): meta::external::language::morphir::metamodel::Value::Value[1]
 {
-   transformValue($element, getDummyFunctionExpression(), false, true);
+   transformValue($element, getDummyFunctionDefinition(), getDummyFunctionExpression(), false, true);
+}
+
+function <<access.private>> meta::external::language::morphir::transform::transformValue(element:ValueSpecification[1], originalFunc:FunctionDefinition<Any>[1]): meta::external::language::morphir::metamodel::Value::Value[1]
+{
+   transformValue($element, $originalFunc, getDummyFunctionExpression(), false, true);
 }
 
 function <<access.private>> meta::external::language::morphir::transform::transformValue(element:ValueSpecification[1],
+                                                                                         originalFunc:FunctionDefinition<Any>[1],
                                                                                          fullFunctionForTypeParametrizing:FunctionExpression[1],
                                                                                          extractFullFunction:Boolean[1],
                                                                                          enrichSourceInformation:Boolean[1]): meta::external::language::morphir::metamodel::Value::Value[1]
@@ -142,7 +145,9 @@ function <<access.private>> meta::external::language::morphir::transform::transf
 
                                    let newRawVariableValue = ^VariableExpression(name=$variableName,
                                                                                  multiplicity=$variable->cast(@InstanceValue).multiplicity,genericType=$variable->cast(@InstanceValue).genericType);
-                                   let newVariableValue = $newRawVariableValue->transformValue();
+                                   let newVariableValue = if ($originalFunc.expressionSequence->size() > 1, 
+                                                              | transformNonHeadOfMultiExpressionFunction($originalFunc)->first()->toOne(),
+                                                              | $newRawVariableValue->transformValue());
 
                                    ^meta::external::language::morphir::metamodel::Value::LetDefinition(valueParameter=$fe.genericType.rawType->toOne()->transformType($esourceInfo),
                                                                                                        name=^Name(words=$variableName),
@@ -165,7 +170,7 @@ function <<access.private>> meta::external::language::morphir::transform::transf
 
                                                             | let functionWithAllButLastParam = ^$fe(parametersValues=$applyParametersValues->init());
                                                               let applyValueParameter = $fe.genericType.rawType->toOne()->transformType($esourceInfo);
-                                                              ^Apply(targetFunction=$functionWithAllButLastParam->transformValue(^$fe(parametersValues=$applyParametersValues), true, false),
+                                                              ^Apply(targetFunction=$functionWithAllButLastParam->transformValue(getDummyFunctionDefinition(), ^$fe(parametersValues=$applyParametersValues), true, false),
                                                                      argument=$applyParametersValues->last()->toOne()->transformValue(),
                                                                      valueParameter=$applyValueParameter);
                                                          );
@@ -305,6 +310,11 @@ function <<access.private>> meta::external::language::morphir::transform::getDum
                      genericType=^GenericType(rawType=String),
                      parametersValues = []
                    );
+}
+
+function <<access.private>> meta::external::language::morphir::transform::getDummyFunctionDefinition(): FunctionDefinition<Any>[1]
+{
+   meta::external::language::morphir::transform::tests::verboseMin_Number_1__Number_1__Number_1_
 }
 
 function <<access.private>> meta::external::language::morphir::transform::getDefaultFormatVersion(): Integer[1]

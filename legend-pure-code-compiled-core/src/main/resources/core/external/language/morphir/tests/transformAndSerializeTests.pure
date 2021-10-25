@@ -49,6 +49,16 @@ function meta::external::language::morphir::transform::tests::getRentals(request
               |0.0)))
 }
 
+function meta::external::language::morphir::transform::tests::getRentalsTwo(requests: Number[1], available: Number[1], allowPartials: Boolean[1]):Number[1]
+{
+   let maximumAllowed = if (0.5 < $requests / $available, | $available / 2, | $requests);
+   if($requests <= $maximumAllowed, 
+      |$requests, 
+      |if($allowPartials, 
+          |$maximumAllowed, 
+          |0.0));
+}
+
 // Note: Add new class or function definitions from tail to maintain existent source information.
 
 // ------ Morphir Rental Use Cases ------
@@ -212,6 +222,16 @@ function <<test.Test, test.ToFix>> meta::external::language::morphir::transform:
 function <<test.Test, test.ToFix>> meta::external::language::morphir::transform::tests::testTransformRentals():Boolean[1]
 {
    let func = meta::external::language::morphir::transform::tests::getRentals_Number_1__Number_1__Boolean_1__Number_1_;
+   let funcTransformedModel = $func->meta::external::language::morphir::transform::transformToMorphirModel();
+   let funcSerializedComplete = $funcTransformedModel->meta::external::language::morphir::serialization::morphirModelToJson();
+   let completeResult = $funcSerializedComplete->map(elem| $elem->toCompactJSONString());
+
+   assertEquals($completeResult, '');
+}
+
+function <<test.Test, test.ToFix>> meta::external::language::morphir::transform::tests::testTransformRentalsTwo():Boolean[1]
+{
+   let func = meta::external::language::morphir::transform::tests::getRentalsTwo_Number_1__Number_1__Boolean_1__Number_1_;
    let funcTransformedModel = $func->meta::external::language::morphir::transform::transformToMorphirModel();
    let funcSerializedComplete = $funcTransformedModel->meta::external::language::morphir::serialization::morphirModelToJson();
    let completeResult = $funcSerializedComplete->map(elem| $elem->toCompactJSONString());
