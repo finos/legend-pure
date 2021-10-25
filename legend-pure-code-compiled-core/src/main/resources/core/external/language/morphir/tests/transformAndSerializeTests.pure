@@ -52,7 +52,7 @@ function meta::external::language::morphir::transform::tests::getRentals(request
 function meta::external::language::morphir::transform::tests::getRentalsTwo(requests: Number[1], available: Number[1], allowPartials: Boolean[1]):Number[1]
 {
    let maximumAllowed = if (0.5 < $requests / $available, | $available / 2.0, | $requests);
-   if($requests < $maximumAllowed, 
+   if($requests <= $maximumAllowed, 
       |$requests, 
       |if($allowPartials, 
           |$maximumAllowed, 

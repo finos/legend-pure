@@ -156,11 +156,11 @@ function <<access.private>> meta::external::language::morphir::transform::transf
 
                                  | let applyParametersValues = $parametersValues->map(p| if ($p->instanceOf(InstanceValue) 
                                                                                         && ($p->cast(@InstanceValue).values->size() > 1),
-                                                                                      | if ($p->cast(@InstanceValue).values->at(0)->instanceOf(Integer),
-                                                                                            | $p->cast(@InstanceValue).values->map(myv | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Integer), values=$myv)),
-                                                                                            | if ($p->cast(@InstanceValue).values->at(0)->instanceOf(Float),
-                                                                                                 | $p->cast(@InstanceValue).values->map(myv | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Float), values=$myv)),
-                                                                                                 | $p->cast(@InstanceValue).values->cast(@ValueSpecification))),
+                                                                                      | $p->cast(@InstanceValue).values->map(myv | if ($myv->instanceOf(Integer), 
+                                                                                                                                       | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Integer), values=$myv),
+                                                                                                                                       | if ($myv->instanceOf(Float),
+                                                                                                                                             | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Float), values=$myv),
+                                                                                                                                             | $p->cast(@InstanceValue).values->cast(@ValueSpecification)))),
                                                                                       | $p));
 
                                    let applyParamSize = $applyParametersValues->size();
@@ -256,8 +256,8 @@ function <<access.private>> meta::external::language::morphir::transform::findMo
          pair('divide', 'divide'),
          pair('lessThan', 'lessThan'),
          pair('greaterThan', 'greaterThan'),
-         pair('lessThanOrEqual', 'lessThanOrEqual'),
-         pair('greaterThanOrEqual', 'greaterThanOrEqual'),
+         pair('lessThanEqual', 'lessThanOrEqual'),
+         pair('greaterThanEqual', 'greaterThanOrEqual'),
          pair('abs', 'abs')
       ]);
 
@@ -265,11 +265,11 @@ function <<access.private>> meta::external::language::morphir::transform::findMo
 
    let applyParametersValues = $fe->evaluateAndDeactivate().parametersValues->map(p| if ($p->instanceOf(InstanceValue) 
                                                                                         && ($p->cast(@InstanceValue).values->size() > 1),
-                                                                                      | if ($p->cast(@InstanceValue).values->at(0)->instanceOf(Integer),
-                                                                                            | $p->cast(@InstanceValue).values->map(myv | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Integer), values=$myv)),
-                                                                                            | if ($p->cast(@InstanceValue).values->at(0)->instanceOf(Float),
-                                                                                                 | $p->cast(@InstanceValue).values->map(myv | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Float), values=$myv)),
-                                                                                                 | $p->cast(@InstanceValue).values->cast(@ValueSpecification))),
+                                                                                      | $p->cast(@InstanceValue).values->map(myv | if ($myv->instanceOf(Integer), 
+                                                                                                                                       | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Integer), values=$myv),
+                                                                                                                                       | if ($myv->instanceOf(Float),
+                                                                                                                                             | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Float), values=$myv),
+                                                                                                                                             | $p->cast(@InstanceValue).values->cast(@ValueSpecification)))),
                                                                                       | $p));
 
    ^meta::external::language::morphir::metamodel::Value::Reference(valueParameter=^$fe(parametersValues=$applyParametersValues)->transformType($sourceInfo),
