@@ -155,11 +155,13 @@ function <<access.private>> meta::external::language::morphir::transform::transf
                                                                                                        value=$newVariableValue);,
 
                                  | let applyParametersValues = $parametersValues->map(p| if ($p->instanceOf(InstanceValue) 
-                                                                                              && ($p->cast(@InstanceValue).values->size() > 1) 
-                                                                                              && (!$p->cast(@InstanceValue).values->at(0)->instanceOf(Integer))
-                                                                                              && (!$p->cast(@InstanceValue).values->at(0)->instanceOf(Float)),
-                                                                                | $p->cast(@InstanceValue).values->cast(@ValueSpecification),
-                                                                                | $p));
+                                                                                        && ($p->cast(@InstanceValue).values->size() > 1),
+                                                                                      | if ($p->cast(@InstanceValue).values->at(0)->instanceOf(Integer),
+                                                                                            | $p->cast(@InstanceValue).values->map(myv | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Integer), values=$myv)),
+                                                                                            | if ($p->cast(@InstanceValue).values->at(0)->instanceOf(Float),
+                                                                                                 | $p->cast(@InstanceValue).values->map(myv | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Float), values=$myv)),
+                                                                                                 | $p->cast(@InstanceValue).values->cast(@ValueSpecification))),
+                                                                                      | $p));
 
                                    let applyParamSize = $applyParametersValues->size();
                                    let currentApply = if ($applyParamSize == 1,
@@ -262,11 +264,13 @@ function <<access.private>> meta::external::language::morphir::transform::findMo
    let localName = $basicFunctionLocalNameMap->get($fe.functionName->toOne());
 
    let applyParametersValues = $fe->evaluateAndDeactivate().parametersValues->map(p| if ($p->instanceOf(InstanceValue) 
-                                                                                          && ($p->cast(@InstanceValue).values->size() > 1)
-                                                                                          && (!$p->cast(@InstanceValue).values->at(0)->instanceOf(Integer))
-                                                                                          && (!$p->cast(@InstanceValue).values->at(0)->instanceOf(Float)),
-                                                                                         | $p->cast(@InstanceValue).values->cast(@ValueSpecification),
-                                                                                         | $p));
+                                                                                        && ($p->cast(@InstanceValue).values->size() > 1),
+                                                                                      | if ($p->cast(@InstanceValue).values->at(0)->instanceOf(Integer),
+                                                                                            | $p->cast(@InstanceValue).values->map(myv | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Integer), values=$myv)),
+                                                                                            | if ($p->cast(@InstanceValue).values->at(0)->instanceOf(Float),
+                                                                                                 | $p->cast(@InstanceValue).values->map(myv | ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=Float), values=$myv)),
+                                                                                                 | $p->cast(@InstanceValue).values->cast(@ValueSpecification))),
+                                                                                      | $p));
 
    ^meta::external::language::morphir::metamodel::Value::Reference(valueParameter=^$fe(parametersValues=$applyParametersValues)->transformType($sourceInfo),
                                                                    fQName=^FQName(packagePath=^Path(names=$packagePathNames->map(name| ^Name(words=[$name]))),
