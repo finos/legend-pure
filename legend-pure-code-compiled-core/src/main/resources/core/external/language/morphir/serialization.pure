@@ -139,6 +139,8 @@ function <<access.private>> meta::external::language::morphir::serialization::mo
 
 function <<access.private>> meta::external::language::morphir::serialization::morphirTypeToJson(type:meta::external::language::morphir::metamodel::Type::Type[0..1]):JSONElement[1]
 {
+   let sourceInformation = $type.sourceInformation->morphirSourceInformationToJson();
+
    if ($type->isEmpty(),
         | ^JSONObject(),
         | $type->match([
@@ -146,13 +148,15 @@ function <<access.private>> meta::external::language::morphir::serialization::mo
                            let content = [^JSONString(value='reference'),
                                           $ref.typeParameter->morphirTypeToJson(),
                                           $ref.fQName->toOne()->morphirFQNameToJson(),
-                                          ^JSONArray(values=$ref.types->map(type| $type->morphirTypeToJson()))];
+                                          ^JSONArray(values=$ref.types->map(type| $type->morphirTypeToJson())),
+                                          $sourceInformation];
                            ^JSONArray(values=$content);,
                         func: meta::external::language::morphir::metamodel::Type::Function[1] |
                            let content = [^JSONString(value='function'),
                                           $func.typeParameter->morphirTypeToJson(),
                                           $func.argumentType->morphirTypeToJson(),
-                                          $func.returnType->morphirTypeToJson()];
+                                          $func.returnType->morphirTypeToJson(),
+                                          $sourceInformation];
                            ^JSONArray(values=$content);
                        ]);
       );
@@ -187,7 +191,7 @@ function <<access.private>> meta::external::language::morphir::serialization::mo
 {
    if ($value->isEmpty(),
        | ^JSONArray(values=[]),
-       | ^JSONArray(values=[$value.name->toOne()->morphirNameToJson(),
+       | ^JSONArray(values=[^Name(words=[getDefaultPackageValueName()])->morphirNameToJson(),
                             $value.accessControlled->toOne()->morphirAccessControlledToJson()]);
       );
 }
@@ -217,6 +221,27 @@ function <<access.private>> meta::external::language::morphir::serialization::mo
                    ]);
 }
 
+function <<access.private>> meta::external::language::morphir::serialization::morphirSourceInformationToJson(sourceInfo:meta::external::language::morphir::metamodel::Type::SourceInformation[0..1]):JSONArray[1]
+{
+   if ($sourceInfo->isEmpty(),
+       | ^JSONArray(values=[]),
+       | let sourceInfoToOne = $sourceInfo->toOne();
+         let content = [^JSONString(value='sourceInformation'),
+                        ^JSONArray(values=[^JSONString(value='source'),
+                                           ^JSONString(value=$sourceInfoToOne.source)]),
+                        ^JSONArray(values=[^JSONString(value='startLine'),
+                                           ^JSONNumber(value=$sourceInfoToOne.startLine)]),
+                        ^JSONArray(values=[^JSONString(value='startColumn'),
+                                           ^JSONNumber(value=$sourceInfoToOne.startColumn)]),
+                        ^JSONArray(values=[^JSONString(value='endLine'),
+                                           ^JSONNumber(value=$sourceInfoToOne.endLine)]),
+                        ^JSONArray(values=[^JSONString(value='endColumn'),
+                                           ^JSONNumber(value=$sourceInfoToOne.endColumn)])];
+         ^JSONArray(values=$content);
+      );
+}
+
+
 function <<access.private>> meta::external::language::morphir::serialization::processWord(word:String[1]): String[*]
 {
    $word->map(s| $s->splitOnCamelCase())->map(result| $result->decomposeSpecialWord())->map(s| $s->toLower());
@@ -228,4 +253,9 @@ function <<access.private>> meta::external::language::morphir::serialization::de
    let res = if ($specialWords->contains($word),
        | range($word->length())->map(i| $word->substring($i, $i + 1)->toLower()),
        | $word);
+}
+
+function <<access.private>> meta::external::language::morphir::serialization::getDefaultPackageValueName(): String[1]
+{
+   'main'
 }

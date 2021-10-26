@@ -98,6 +98,7 @@ Class meta::external::language::morphir::metamodel::Module::SpecificationValue
 Class meta::external::language::morphir::metamodel::Type::Type
 {
   typeParameter: meta::external::language::morphir::metamodel::Type::Type[0..1];
+  sourceInformation: meta::external::language::morphir::metamodel::Type::SourceInformation[0..1];
 }
 
 Class meta::external::language::morphir::metamodel::Type::Constructors
@@ -459,7 +460,7 @@ Class meta::external::language::morphir::metamodel::Path::Path
   names: meta::external::language::morphir::metamodel::Name::Name[*];
 }
 
-Class meta::external::language::morphir::metamodel::Documented::Documented
+Class meta::external::language::morphir::metamodel::Documented::Documented extends meta::external::language::morphir::metamodel::AccessControlled::AccessControlledValue
 {
   doc: String[0..1];
   value: meta::external::language::morphir::metamodel::Type::Type[1];
@@ -475,4 +476,13 @@ Class meta::external::language::morphir::metamodel::FQName::FQName
 Class meta::external::language::morphir::metamodel::Name::Name
 {
   words: String[*];
+}
+
+Class meta::external::language::morphir::metamodel::Type::SourceInformation
+{
+   source: String[1];
+   startLine: Integer[1];
+   startColumn: Integer[1];
+   endLine: Integer[1];
+   endColumn: Integer[1];
 }
