@@ -88,9 +88,9 @@ public class JavaStandaloneLibraryGenerator
         DistributedBinaryGraphSerializer.newSerializer(this.runtime).serializeToDirectory(directory);
     }
 
-    public void serializeAndWriteDistributedMetadata(String metadataName, Path directory) throws IOException
+    public void serializeAndWriteDistributedMetadata(String repositoryName, Path directory) throws IOException
     {
-        DistributedBinaryGraphSerializer.newSerializer(metadataName, this.runtime).serializeToDirectory(directory);
+        DistributedBinaryGraphSerializer.newSerializer(this.runtime, repositoryName).serializeToDirectory(directory);
     }
 
     public void serializeAndWriteDistributedMetadata(JarOutputStream jarOutputStream) throws IOException
@@ -98,9 +98,9 @@ public class JavaStandaloneLibraryGenerator
         DistributedBinaryGraphSerializer.newSerializer(this.runtime).serializeToJar(jarOutputStream);
     }
 
-    public void serializeAndWriteDistributedMetadata(String metadataName, JarOutputStream jarOutputStream) throws IOException
+    public void serializeAndWriteDistributedMetadata(String repositoryName, JarOutputStream jarOutputStream) throws IOException
     {
-        DistributedBinaryGraphSerializer.newSerializer(metadataName, this.runtime).serializeToJar(jarOutputStream);
+        DistributedBinaryGraphSerializer.newSerializer(this.runtime, repositoryName).serializeToJar(jarOutputStream);
     }
 
     public void compileSerializeAndWriteClassesAndMetadata(JarOutputStream jarOutputStream) throws IOException, PureJavaCompileException

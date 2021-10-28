@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
 import org.eclipse.collections.api.map.primitive.ObjectIntMap;
@@ -61,6 +62,12 @@ abstract class StringCache extends StringCacheOrIndex
             }
         }
         return id;
+    }
+
+    @Override
+    public RichIterable<String> getClassifierIds()
+    {
+        return this.classifierIds.keysView();
     }
 
     protected String[] getClassifierStringArray()

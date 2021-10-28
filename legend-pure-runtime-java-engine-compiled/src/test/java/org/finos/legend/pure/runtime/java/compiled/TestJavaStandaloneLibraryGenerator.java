@@ -42,7 +42,6 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     @BeforeClass
     public static void setUp()
     {
-
         MutableCodeStorage codeStorage = new PureCodeStorage(null,
                 new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()),
                 new EmptyCodeStorage(new GenericCodeRepository("test", "test::.*", PlatformCodeRepository.NAME)));
@@ -91,15 +90,13 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
     @Test
     public void testStandaloneLibraryNoExternal() throws Exception
     {
-        String metadataName = "test_metadata_name";
-
         JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, null);
         Path classesDir = this.temporaryFolder.newFolder("classes").toPath();
-        generator.serializeAndWriteDistributedMetadata(metadataName, classesDir);
+        generator.serializeAndWriteDistributedMetadata(classesDir);
         generator.compileAndWriteClasses(classesDir);
         URLClassLoader classLoader = new URLClassLoader(new URL[]{classesDir.toUri().toURL()}, Thread.currentThread().getContextClassLoader());
 
-        MetadataLazy metadataLazy = MetadataLazy.fromClassLoader(classLoader, metadataName);
+        MetadataLazy metadataLazy = MetadataLazy.fromClassLoader(classLoader);
         CompiledExecutionSupport executionSupport = new CompiledExecutionSupport(
                 new JavaCompilerState(null, classLoader),
                 new CompiledProcessorSupport(classLoader, metadataLazy, null),

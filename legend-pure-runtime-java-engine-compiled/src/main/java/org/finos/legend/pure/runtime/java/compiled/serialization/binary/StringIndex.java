@@ -61,6 +61,7 @@ abstract class StringIndex extends StringCacheOrIndex
         return null;
     }
 
+    @Override
     public RichIterable<String> getClassifierIds()
     {
         return ArrayAdapter.adapt(this.classifierIds).asUnmodifiable();

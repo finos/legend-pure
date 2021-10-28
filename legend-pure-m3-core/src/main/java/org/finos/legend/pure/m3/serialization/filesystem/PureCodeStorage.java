@@ -22,19 +22,22 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.list.primitive.LongList;
 import org.eclipse.collections.api.map.ImmutableMap;
+import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.factory.Stacks;
 import org.eclipse.collections.impl.factory.primitive.LongLists;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.eclipse.collections.impl.utility.LazyIterate;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.StringIterate;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.*;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.ScratchCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
@@ -60,6 +63,8 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public class PureCodeStorage implements MutableCodeStorage
 {
@@ -1050,30 +1055,32 @@ public class PureCodeStorage implements MutableCodeStorage
     };
 
 
-
-
     public static RichIterable<CodeRepository> getVisibleRepositories(RichIterable<CodeRepository> codeRepositories, CodeRepository repository)
     {
         return codeRepositories.select(repository::isVisible);
     }
 
-    public static SetIterable<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, Iterable<String> repositoryNames)
+    public static MutableSet<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, CodeRepository repository)
     {
-        return getRepositoryDependenciesByName(codeRepositories, Stacks.mutable.withAll(LazyIterate.collect(repositoryNames, (String repo) -> codeRepositories.select(p ->p.getName().equals(repo)).getFirst())));
+        ArrayDeque<CodeRepository> deque = new ArrayDeque<>(codeRepositories.size());
+        deque.add(repository);
+        return getRepositoryDependenciesByName(codeRepositories, deque);
     }
 
-    private static SetIterable<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, MutableStack<CodeRepository> stack)
+    public static MutableSet<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, Iterable<String> repositoryNames)
+    {
+        return getRepositoryDependenciesByName(codeRepositories, buildDequeFromNames(codeRepositories, repositoryNames));
+    }
+
+    private static MutableSet<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, Deque<CodeRepository> deque)
     {
         MutableSet<String> results = Sets.mutable.with();
-        while (stack.notEmpty())
+        while (!deque.isEmpty())
         {
-            CodeRepository repository = stack.pop();
+            CodeRepository repository = deque.removeLast();
             if (results.add(repository.getName()))
             {
-                for (CodeRepository visible : getVisibleRepositories(codeRepositories, repository))
-                {
-                    stack.push(visible);
-                }
+                codeRepositories.select(repository::isVisible, deque);
             }
         }
         return results;
@@ -1081,26 +1088,25 @@ public class PureCodeStorage implements MutableCodeStorage
 
     public static SetIterable<CodeRepository> getRepositoryDependencies(RichIterable<CodeRepository> codeRepositories, CodeRepository repository)
     {
-        return getRepositoryDependencies(codeRepositories, Stacks.mutable.with(repository));
+        Deque<CodeRepository> deque = new ArrayDeque<>(codeRepositories.size());
+        deque.add(repository);
+        return getRepositoryDependencies(codeRepositories, deque);
     }
 
     public static SetIterable<CodeRepository> getRepositoryDependencies(RichIterable<CodeRepository> codeRepositories, Iterable<? extends CodeRepository> repositories)
     {
-        return getRepositoryDependencies(codeRepositories, Stacks.mutable.withAll(repositories));
+        return getRepositoryDependencies(codeRepositories, Iterate.addAllTo(repositories, new ArrayDeque<>()));
     }
 
-    private static SetIterable<CodeRepository> getRepositoryDependencies(RichIterable<CodeRepository> codeRepositories, MutableStack<CodeRepository> stack)
+    private static MutableSet<CodeRepository> getRepositoryDependencies(RichIterable<CodeRepository> codeRepositories, Deque<CodeRepository> deque)
     {
         MutableSet<CodeRepository> results = Sets.mutable.with();
-        while (stack.notEmpty())
+        while (!deque.isEmpty())
         {
-            CodeRepository repository = stack.pop();
+            CodeRepository repository = deque.removeLast();
             if (results.add(repository))
             {
-                for (CodeRepository visible : getVisibleRepositories(codeRepositories, repository))
-                {
-                    stack.push(visible);
-                }
+                codeRepositories.select(repository::isVisible, deque);
             }
         }
         return results;
@@ -1108,28 +1114,36 @@ public class PureCodeStorage implements MutableCodeStorage
 
     public static SetIterable<String> getRepositoriesDependendingOnByName(RichIterable<CodeRepository> codeRepositories, Iterable<String> repositoryNames)
     {
-        return getRepositoriesDependendingOnByName(codeRepositories, Stacks.mutable.withAll(LazyIterate.collect(repositoryNames, (String repo) -> codeRepositories.select(p ->p.getName().equals(repo)).getFirst())));
+        return getRepositoriesDependendingOnByName(codeRepositories, buildDequeFromNames(codeRepositories, repositoryNames));
     }
 
-    private static SetIterable<String> getRepositoriesDependendingOnByName(RichIterable<CodeRepository> codeRepositories, MutableStack<CodeRepository> stack)
+    private static SetIterable<String> getRepositoriesDependendingOnByName(RichIterable<CodeRepository> codeRepositories, Deque<CodeRepository> deque)
     {
         MutableSet<String> results = Sets.mutable.with();
-        while (stack.notEmpty())
+        while (!deque.isEmpty())
         {
-            CodeRepository repository = stack.pop();
+            CodeRepository repository = deque.removeLast();
             if (results.add(repository.getName()))
             {
-                for (CodeRepository repoWithVisibility : getRepositoriesWithVisibilityOn(codeRepositories, repository))
-                {
-                    stack.push(repoWithVisibility);
-                }
+                codeRepositories.select(r -> r.isVisible(repository), deque);
             }
         }
         return results;
     }
 
-    private static RichIterable<CodeRepository> getRepositoriesWithVisibilityOn(RichIterable<CodeRepository> codeRepositories, CodeRepository repository)
+    private static Deque<CodeRepository> buildDequeFromNames(RichIterable<CodeRepository> codeRepositories, Iterable<String> repositoryNames)
     {
-        return codeRepositories.select(r -> r.isVisible(repository));
+        MapIterable<String, CodeRepository> codeRepositoriesByName = codeRepositories.groupByUniqueKey(CodeRepository::getName);
+        Deque<CodeRepository> deque = new ArrayDeque<>();
+        repositoryNames.forEach(n ->
+        {
+            CodeRepository repository = codeRepositoriesByName.get(n);
+            if (repository == null)
+            {
+                throw new IllegalArgumentException("Unknown repository: \"" + n + "\"");
+            }
+            deque.add(repository);
+        });
+        return deque;
     }
 }
