@@ -178,6 +178,29 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOneObject
    assert(jsonEquivalent('{"fullName":"Pierre Doe"}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>> 
+{  serverVersion.start='v1_19_0',
+   doc.doc='Parse a simple JSON object with missing source property, process it through an M2M mapping and serialize the result as JSON.'
+} 
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeMissingProperty() : Boolean[1]
+{
+   let tree = #{_S_Person {fullName} }#;
+
+   let result = execute(
+      |_S_Person.all()->graphFetch($tree)->serialize($tree),
+      simpleModelMappingMissingProperty,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(), 
+                                class=Person, 
+                                url='data:application/json,{"lastName":"Doe"}'
+                             )
+      ),
+      []
+   );
+
+   assert(jsonEquivalent('{"fullName":"Somebody Doe"}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>> 
 {  serverVersion.start='v1_19_0',
    doc.doc='Given: a JSON object (matching a source class) that contains data for all primitive data types and an enumeration, and an M2M mapping',
@@ -719,6 +742,19 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::simple::simpleModelMappi
             {
                ~src Person
                fullName : $src.firstName + ' ' + $src.lastName
+            }
+)
+
+###Mapping
+import meta::pure::mapping::modelToModel::test::shared::src::*;
+import meta::pure::mapping::modelToModel::test::shared::dest::*;
+
+Mapping meta::pure::mapping::modelToModel::test::alloy::simple::simpleModelMappingMissingProperty
+(
+   _S_Person : Pure
+            {
+               ~src Person
+               fullName : 'Somebody ' + $src.lastName
             }
 )
 

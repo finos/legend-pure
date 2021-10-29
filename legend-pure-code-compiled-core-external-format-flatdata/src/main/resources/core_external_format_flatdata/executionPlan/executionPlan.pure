@@ -390,12 +390,14 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::cre
              * optimizations so when creating objects we use the driver-supplied record type details
              * to interrogate the parsed data values.
              */
-            let recordTypeParam = j_parameter($conventions->className(_FlatDataRecordType), 'recordType');
-            let fields          = $section.recordType.fields;
-            let fieldVars       = createFieldVars($fields, $recordTypeParam, $conventions);
-         
+            let recordTypeParam      = j_parameter($conventions->className(_FlatDataRecordType), 'recordType');         
             let sectionBindingDetail = $bindingDetail.sectionBindingDetails->filter(sc| $sc.section == $section)->toOne();
             let dataClass            = $conventions->dataClass($sectionBindingDetail.class, $path);
+            let classTypeInfo        = $context.typeInfos->forClass($sectionBindingDetail.class);
+            
+            let fields               = $section.recordType.fields->filter(f| $classTypeInfo.properties->contains($sectionBindingDetail->propertyForField($f)));
+            let fieldVars            = createFieldVars($fields, $recordTypeParam, $conventions);
+
             let adderVars            = $fields->toIndexed()->map({indexedField|
                let property  = $sectionBindingDetail.details->filter(c| $c.field == $indexedField.second).property->toOne();
                let propType  = $property->functionReturnType().rawType->toOne();
@@ -502,6 +504,11 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::cre
              ]  
          );
       });
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::propertyForField(bindingDetail:SectionBindingDetail[1], field:FlatDataRecordField[1]): AbstractProperty<Any>[1]
+{
+   $bindingDetail.details->filter(c| $c.field == $field).property->toOne();
 }
 
 function <<access.private>> meta::external::format::flatdata::executionPlan::createFieldVars(fields:FlatDataRecordField[*], recordTypeParam:Code[1], conventions:Conventions[1]): Pair<Code,Code>[*]
