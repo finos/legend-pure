@@ -407,6 +407,19 @@ function <<meta::pure::profiles::test.Test>> meta::pure::lineage::scanRelations:
    assertEquals($expected1, $relationTreeFromPureToSQL-> relationTreeAsString(false));
 }
 
+function <<meta::pure::profiles::test.Test>> meta::pure::lineage::scanRelations::test::testUnionToSameTableWithDiffKeys():Boolean[1]
+{
+   let query = {|Firm.all()-> project([f|$f.legalName, f|$f.employees.firstName], ['legalName','employee_firstname'])};
+   let mapping = meta::relational::tests::mapping::union::unionToUnionMappingWithJoinToSameTableWithDiffKeys;
+
+   let relationTreeFromPureToSQL = meta::pure::lineage::scanRelations::scanRelations($query, $mapping, meta::relational::tests::testRuntime(), defaultRelationalExtensions());
+   let expected1 ='root\n' +
+                  '  ------> (t) Firm [ID, name]\n' +
+                  '    ------> (t) PersonSet1(equal_s(PersonSet1FirmID_PersonSet1firstName_s1,PersonSet1,)s(PersonSet1ID_PersonSet1firstName_s1,PersonSet1,)lastName_FirmID) [FirmID, firstName_s1]\n' +
+                  '    ------> (t) PersonSet1(equal_s(PersonSet1FirmID_PersonSet1firstName_s1,PersonSet1,)s(PersonSet1ID_PersonSet1firstName_s1,PersonSet1,)lastName_FirmID) [ID, firstName_s1]\n';
+   assertEquals($expected1, $relationTreeFromPureToSQL-> relationTreeAsString(true));
+}
+
 
 function <<meta::pure::profiles::test.Test>> meta::pure::lineage::scanRelations::test::testSimpleViewRoot():Boolean[1]
 {

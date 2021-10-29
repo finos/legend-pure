@@ -724,6 +724,7 @@ Database meta::relational::tests::mapping::union::myDB
    Join PersonSet1PersonFirmSet1Firm(PersonFirmSet1.ID = PersonFirmSet1Firm.ID)
 
    Join PersonSet1Firm(PersonSet1.FirmID = Firm.ID)
+   Join PersonSet1Firm1(PersonSet1.ID = Firm.ID)
    Join PersonSet2Firm(PersonSet2.FirmID = Firm.ID)
    Join PersonSet3Firm(PersonSet3.FirmID = Firm.ID)
    
@@ -1683,4 +1684,35 @@ Mapping meta::relational::tests::mapping::union::unionToUnionMapping3
           {
              legalName : [myDB]FirmSet2.name
           }
+)
+
+###Mapping
+import meta::relational::tests::mapping::union::*;
+import meta::relational::tests::model::simple::*;
+
+Mapping meta::relational::tests::mapping::union::unionToUnionMappingWithJoinToSameTableWithDiffKeys
+(
+   Firm[firm_set1] : Relational
+          {
+             legalName : [myDB]Firm.name,
+             employees[set1]:[myDB]@PersonSet1Firm,
+             employees[set2]:[myDB]@PersonSet1Firm1
+          }
+   
+   *Person : Operation
+            {
+               meta::pure::router::operations::union_OperationSetImplementation_1__SetImplementation_MANY_(set1, set2)   
+            }
+   
+   Person[set1] : Relational
+            {
+               lastName : [myDB]PersonSet1.FirmID,
+               firstName : [myDB]PersonSet1.firstName_s1
+            }   
+   
+   Person[set2] : Relational
+            {
+               lastName : [myDB]PersonSet1.ID,
+               firstName : [myDB]PersonSet1.firstName_s1
+            }   
 )
