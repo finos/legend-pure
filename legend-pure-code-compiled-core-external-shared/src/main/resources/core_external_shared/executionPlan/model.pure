@@ -36,6 +36,11 @@ Class meta::external::shared::format::executionPlan::UrlStreamExecutionNode exte
    url : String[1];
 }
 
+Class meta::external::shared::format::executionPlan::ParameterExternalSourceExecutionNode extends ExecutionNode
+{
+   name : String[1];
+}
+
 Class meta::external::shared::format::executionPlan::ExternalFormatConnection extends Connection
 [
    $this.element->instanceOf(Binding)
@@ -48,7 +53,12 @@ Class <<typemodifiers.abstract>> meta::external::shared::format::executionPlan::
 {
 }
 
-Class <<typemodifiers.abstract>> meta::external::shared::format::executionPlan::UrlStreamExternalSource extends ExternalSource
+Class meta::external::shared::format::executionPlan::UrlStreamExternalSource extends ExternalSource
 {
    url : String[1];
+}
+
+Class meta::external::shared::format::executionPlan::ParameterExternalSource extends ExternalSource
+{
+   name : String[1];
 }

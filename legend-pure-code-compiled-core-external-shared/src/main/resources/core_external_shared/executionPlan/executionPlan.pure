@@ -81,6 +81,19 @@ function meta::external::shared::format::executionPlan::generateUrlStreamExecuti
    );
 }
 
+function meta::external::shared::format::executionPlan::generateParameterExternalSourceExecutionNode(connection:ExternalFormatConnection[1]): ExecutionNode[1]
+{
+   assert($connection.externalSource->instanceOf(ParameterExternalSource), | 'Only ParameterExternalSource is supported !!');
+   
+   let paramName = $connection.externalSource->cast(@ParameterExternalSource).name;
+   
+   ^ParameterExternalSourceExecutionNode
+   (
+      resultType = ^DataTypeResultType(type = String),
+      name       = $paramName
+   );
+}
+
 function meta::external::shared::format::executionPlan::printPlanNodeToString(space:String[1], extensions:RouterExtension[*]): Function<{Nil[1]->String[1]}>[*]
 {
    [
@@ -97,6 +110,13 @@ function meta::external::shared::format::executionPlan::printPlanNodeToString(sp
          'UrlStream\n' + 
          $space + '(' + header($node, $space, $extensions) + '\n' +
          $space + '  url = ' + $node.url + '\n' +
+         $node->childrenToString($space+'  ', $extensions) + '\n' +
+         $space + ')\n'
+      },
+      {node:ParameterExternalSourceExecutionNode[1] |
+         'ParameterExternalSource\n' + 
+         $space + '(' + header($node, $space, $extensions) + '\n' +
+         $space + '  name = ' + $node.name + '\n' +
          $node->childrenToString($space+'  ', $extensions) + '\n' +
          $space + ')\n'
       }
@@ -379,7 +399,8 @@ function meta::external::shared::format::executionPlan::printConnection(extensio
    [
       {ext:ExternalFormatConnection[1] |
          let source = $ext.externalSource->match([
-            u:UrlStreamExternalSource[1] | 'url="'+$u.url+'"'
+            u:UrlStreamExternalSource[1] | 'url="'+$u.url+'"',
+            p:ParameterExternalSource[1] | 'parameter="'+$p.name+'"'
          ]);
          'binding="'+$ext.element->cast(@Binding)->elementToPath()+'", source=('+$source+')';
       }

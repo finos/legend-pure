@@ -47,7 +47,10 @@ function meta::external::shared::format::routerExtensions(type:String[1], extern
                {x:ExternalFormatConnection[1] | 
                   let binding         = $x.element->cast(@Binding);
                   let formatExtension = $externalFormatExtensions->getExtensionForContentType($binding.contentType);
-                  let sourceNode      = generateUrlStreamExecutionNode($x);
+                  let sourceNode      = $x.externalSource->match([
+                                           u: UrlStreamExternalSource[1] | generateUrlStreamExecutionNode($x),
+                                           p: ParameterExternalSource[1] | generateParameterExternalSourceExecutionNode($x)
+                                        ]);
                   let deserializeNode = $formatExtension.generateDeserializeNode->eval($x, $sourceNode, $tree);
                   generateDataQualityNode($deserializeNode, $enableConstraints, $checked);
                }
