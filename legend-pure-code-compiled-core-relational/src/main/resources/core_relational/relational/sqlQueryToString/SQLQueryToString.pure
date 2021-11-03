@@ -798,7 +798,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::table
 function meta::relational::functions::sqlQueryToString::functions::stringCat(vals : String[*], dbType:DatabaseType[1], separator : String[1]):String[1]
 {
    let emptyStr = if ($dbType == DatabaseType.Postgres, | 'Text\'\'', | '\'\'');
-   if ($dbType->in([DatabaseType.H2, DatabaseType.Postgres, DatabaseType.MemSQL, DatabaseType.Presto, DatabaseType.BigQuery, DatabaseType.Redshift]),
+   if ($dbType->in([DatabaseType.H2, DatabaseType.Postgres, DatabaseType.MemSQL, DatabaseType.Presto, DatabaseType.BigQuery, DatabaseType.Redshift, DatabaseType.Snowflake]),
       |$vals->joinStrings('concat(', if($emptyStr == $separator, |', ', | ',' + $separator + ',') , ')'),
       |if($dbType == DatabaseType.DB2,
           | $vals->joinStrings('(',if($emptyStr == $separator, |' concat ', | ' concat ' + $separator + ' concat '), ')'),
@@ -1239,7 +1239,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='listagg(%s,%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='group_concat(%s separator %s)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='string_agg(%s, %s)')),
-                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='string_agg(%s, %s)')),
+                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='listagg(%s, %s)')),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='group_concat(%s separator %s)')),
                                                  choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='listagg(%s, %s)')),
                                                  choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='string_agg(%s, %s)'))]),
