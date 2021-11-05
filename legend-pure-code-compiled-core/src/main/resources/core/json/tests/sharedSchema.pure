@@ -95,6 +95,12 @@ Enum <<meta::json::schema::JSONSchemaTypeExtension.null>> meta::json::schema::te
 }
 
 
+Class <<temporal.bitemporal>>  meta::json::schema::tests::BiTemporalPerson
+{
+   name:String[1]; 
+
+}
+
 function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0'}  meta::json::schema::tests::roundTrip::typeInclusionForConstraintFunctions():Boolean[1]
 {
      let generatedJSON = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::ClassWithFunctionReferences,meta::json::schema::tests::functionWithStringType_String_$0_1$__Boolean_1_],
@@ -760,4 +766,27 @@ function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.sta
 
 
 
-
+function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0'}  meta::json::schema::tests::roundTrip::testMilestoneAnnotation():Boolean[1]
+{
+   
+   let generatedJSONFromElement = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::BiTemporalPerson],
+                                                          useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true ));  
+   let jsonSchema  =  ' { "$schema": "http:\\/\\/json-schema.org\\/draft-07\\/schema#",\n' +
+                      '  "title": "meta::json::schema::tests::BiTemporalPerson",\n' +
+                      '  "x-legendTemporal": "bitemporal",\n' +
+                      '  "type": "object",\n' +
+                      '  "properties":   {\n' +
+                      '    "name":     {\n' +
+                      '      "type": "string"\n' +
+                      '    }\n' +
+                      '  },\n' +
+                      '  "required": [\n' +
+                      '"name"\n' +
+                      '  ]\n' +
+                      '}\n';
+   assert(jsonEquivalent($jsonSchema->parseJSON(),$generatedJSONFromElement.content->toOne()->parseJSON()));
+    let prefix = 'meta::json::schema::tests';
+    let fileMap = [schemaInput('/BiTemporalPerson.json', $jsonSchema,$prefix)]; 
+    let generatedElementFromJSON =  $fileMap->JSONSchemaToPure(); 
+   testfromJSONSchema(meta::json::schema::tests::BiTemporalPerson,$generatedElementFromJSON);
+}

@@ -892,7 +892,7 @@ function <<access.protected>> meta::json::schema::elementTags( element:Annotated
                  );
   let doc =    $element->cast(@PackageableElement)->description();
 
-
+  let milestoning = $element->addMilestoningTag();
 
 
 let customTags = if( $config.scopeElements->filter(e|$e->instanceOf(Profile))->isNotEmpty(),
@@ -906,7 +906,7 @@ let customTags = if( $config.scopeElements->filter(e|$e->instanceOf(Profile))->i
 
 
 
-   $readWrite->concatenate($doc)->concatenate($examples)->concatenate($nullable)->concatenate($customTags);
+   $readWrite->concatenate($doc)->concatenate($examples)->concatenate($nullable)->concatenate($customTags)->concatenate($milestoning);
 
 }
 
@@ -919,6 +919,22 @@ function <<access.private>> meta::json::schema::extendedKeyName(key:String[1],co
       |$key);
 }
 
+function meta::json::schema::addMilestoningTag(type:AnnotatedElement[1]):JSONKeyValue[0..1]
+{
+ let temporalKey = 'x-legendTemporal';
+
+  if($type->hasStereotype('businesstemporal', temporal),
+        |newJSONKeyValue($temporalKey, ^JSONString(value='businesstemporal'))  ,
+        |if($type->hasStereotype('bitemporal', temporal),
+            |newJSONKeyValue($temporalKey, ^JSONString(value='bitemporal'))  ,
+            |if($type->hasStereotype('processingtemporal', temporal),
+                  |newJSONKeyValue($temporalKey, ^JSONString(value='processingtemporal')),
+                  |[]
+                );
+              );   
+  );
+
+}
 
 function <<access.private>> meta::json::schema::propertyType( property:Property<Nil,Any|*>[1],root:Class<Any>[0..1] ,constraintHasType:Boolean[1],config:JSONSchemaConfigInternal[1]) : JSONKeyValue[0..1]
 {
@@ -979,7 +995,7 @@ function <<access.private>> meta::json::schema::properties( class:Class<Any>[1],
 
 function <<access.private>> meta::json::schema::inscopeProperties( class:Class<Any>[1], config:JSONSchemaConfigInternal[1]) : Property<Nil,Any|*>[*]
 {
-   $class.properties->concatenate($class.propertiesFromAssociations->filter(p|$p.owner->in($config.scopeElements)));
+   $class.properties->concatenate($class.propertiesFromAssociations->filter(p|$p.owner->in($config.scopeElements)))->filter(p|!$p->meta::pure::milestoning::hasGeneratedMilestoningPropertyStereotype());
 
 
 }
@@ -1156,6 +1172,9 @@ function <<access.private>> meta::json::schema::schemaCollection(elements:Packag
 
    ^JsonSchemaGenerationResult(schema = newJSONObject($collection), message =$generatedSchemas.message);
 }
+
+
+
 
 
 Class meta::json::schema::DiscriminatorMapping
