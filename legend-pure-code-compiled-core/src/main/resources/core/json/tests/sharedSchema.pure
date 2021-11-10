@@ -98,8 +98,15 @@ Enum <<meta::json::schema::JSONSchemaTypeExtension.null>> meta::json::schema::te
 Class <<temporal.bitemporal>>  meta::json::schema::tests::BiTemporalPerson
 {
    name:String[1]; 
+   company: meta::json::schema::tests::BiTemporalFirm[*];
+}
+
+Class <<temporal.bitemporal>>  meta::json::schema::tests::BiTemporalFirm
+{
+   name:String[1]; 
 
 }
+
 
 function <<test.Test>>  { meta::pure::executionPlan::profiles::serverVersion.start='v1_20_0'}  meta::json::schema::tests::roundTrip::typeInclusionForConstraintFunctions():Boolean[1]
 {
@@ -770,23 +777,43 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
 {
    
    let generatedJSONFromElement = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::BiTemporalPerson],
-                                                          useConstraints = true ,includeAllRelatedTypes=false,generateConstraintFunctionSchemas=true ));  
-   let jsonSchema  =  ' { "$schema": "http:\\/\\/json-schema.org\\/draft-07\\/schema#",\n' +
-                      '  "title": "meta::json::schema::tests::BiTemporalPerson",\n' +
-                      '  "x-legendTemporal": "bitemporal",\n' +
-                      '  "type": "object",\n' +
-                      '  "properties":   {\n' +
-                      '    "name":     {\n' +
-                      '      "type": "string"\n' +
-                      '    }\n' +
-                      '  },\n' +
-                      '  "required": [\n' +
-                      '"name"\n' +
-                      '  ]\n' +
-                      '}\n';
+                                                          useConstraints = true ,includeAllRelatedTypes=true,generateConstraintFunctionSchemas=true ));  
+   let jsonSchema  =         '{\n' +
+                              '  "$schema": "http:\\/\\/json-schema.org\\/draft-07\\/schema#",\n' +
+                              '  "title": "meta::json::schema::tests::BiTemporalPerson",\n' +
+                              '  "x-legendTemporal": "bitemporal",\n' +
+                              '  "type": "object",\n' +
+                              '  "properties":   {\n' +
+                              '    "name":     {\n' +
+                              '      "type": "string"\n' +
+                              '    },\n' +
+                              '    "company":     {\n' +
+                              '      "type": "array",\n' +
+                              '      "items":       {\n' +
+                              '        "$ref": "#\\/definitions\\/meta::json::schema::tests::BiTemporalFirm"\n' +
+                              '      }\n' +
+                              '    }\n' +
+                              '  },\n' +
+                              '  "required": [\n' +
+                              '"name"\n' +
+                              '  ],\n' +
+                              '  "definitions":   {\n' +
+                              '    "meta::json::schema::tests::BiTemporalFirm":     {\n' +
+                              '      "$schema": "http:\\/\\/json-schema.org\\/draft-07\\/schema#",\n' +
+                              '      "title": "meta::json::schema::tests::BiTemporalFirm",\n' +
+                              '      "x-legendTemporal": "bitemporal",\n' +
+                              '      "type": "object",\n' +
+                              '      "properties":       {\n' +
+                              '        "name":         {\n' +
+                              '          "type": "string"\n' +
+                              '        }\n' +
+                              '      },\n' +
+                              '      "required": [\n' +
+                              '"name"\n' +
+                              '      ]\n' +
+                              '    }\n' +
+                              '  }\n' +
+                              '}';
+
    assert(jsonEquivalent($jsonSchema->parseJSON(),$generatedJSONFromElement.content->toOne()->parseJSON()));
-    let prefix = 'meta::json::schema::tests';
-    let fileMap = [schemaInput('/BiTemporalPerson.json', $jsonSchema,$prefix)]; 
-    let generatedElementFromJSON =  $fileMap->JSONSchemaToPure(); 
-   testfromJSONSchema(meta::json::schema::tests::BiTemporalPerson,$generatedElementFromJSON);
 }

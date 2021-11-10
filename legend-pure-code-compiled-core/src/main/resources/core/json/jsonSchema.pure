@@ -995,7 +995,8 @@ function <<access.private>> meta::json::schema::properties( class:Class<Any>[1],
 
 function <<access.private>> meta::json::schema::inscopeProperties( class:Class<Any>[1], config:JSONSchemaConfigInternal[1]) : Property<Nil,Any|*>[*]
 {
-   $class.properties->concatenate($class.propertiesFromAssociations->filter(p|$p.owner->in($config.scopeElements)))->filter(p|!$p->meta::pure::milestoning::hasGeneratedMilestoningPropertyStereotype());
+
+   $class.properties->concatenate($class.propertiesFromAssociations->concatenate($class.originalMilestonedProperties)->filter(p|$p.owner->in($config.scopeElements)))->filter(p|!$p->meta::pure::milestoning::hasGeneratedMilestoningPropertyStereotype());
 
 
 }
