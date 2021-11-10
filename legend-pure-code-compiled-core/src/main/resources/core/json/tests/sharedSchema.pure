@@ -777,7 +777,13 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
 {
    
    let generatedJSONFromElement = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::BiTemporalPerson],
-                                                          useConstraints = true ,includeAllRelatedTypes=true,generateConstraintFunctionSchemas=true ));  
+                                                          includeAllRelatedTypes=true ));  
+
+   
+   let generatedJSONFromElementWithMilestone = generateJsonSchemaFromPureWithScope(^JSONSchemaConfig(scopeElements=[meta::json::schema::tests::BiTemporalPerson],
+                                                          includeAllRelatedTypes=false,generateMilestoneProperties=true ));  
+
+
    let jsonSchema  =         '{\n' +
                               '  "$schema": "http:\\/\\/json-schema.org\\/draft-07\\/schema#",\n' +
                               '  "title": "meta::json::schema::tests::BiTemporalPerson",\n' +
@@ -814,6 +820,43 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
                               '    }\n' +
                               '  }\n' +
                               '}';
+
+let jsonSchemaWithMilestone = '        {\n' +
+        '  "$schema": "http:\\/\\/json-schema.org\\/draft-07\\/schema#",\n' +
+        '  "title": "meta::json::schema::tests::BiTemporalPerson",\n' +
+        '  "x-legendTemporal": "bitemporal",\n' +
+        '  "type": "object",\n' +
+        '  "properties":   {\n' +
+        '    "name":     {\n' +
+        '      "type": "string"\n' +
+        '    },\n' +
+        '    "processingDate":     {\n' +
+        '      "type": "string",\n' +
+        '      "format": "date-time"\n' +
+        '    },\n' +
+        '    "businessDate":     {\n' +
+        '      "type": "string",\n' +
+        '      "format": "date-time"\n' +
+        '    },\n' +
+        '    "milestoning":     {\n' +
+        '      "$ref": "..\\/..\\/..\\/pure\\/milestoning\\/BiTemporalMilestoning.json"\n' +
+        '    },\n' +
+        '    "companyAllVersions":     {\n' +
+        '      "type": "array",\n' +
+        '      "items":       {\n' +
+        '        "$ref": "BiTemporalFirm.json"\n' +
+        '      }\n' +
+        '    }\n' +
+        '  },\n' +
+        '  "required": [\n' +
+        '"name",\n' +
+        '"processingDate",\n' +
+        '"businessDate"\n' +
+        '  ]\n' +
+        '}\n';
+
+
+   assert(jsonEquivalent($jsonSchemaWithMilestone->parseJSON(),$generatedJSONFromElementWithMilestone.content->toOne()->parseJSON()));
 
    assert(jsonEquivalent($jsonSchema->parseJSON(),$generatedJSONFromElement.content->toOne()->parseJSON()));
 }
