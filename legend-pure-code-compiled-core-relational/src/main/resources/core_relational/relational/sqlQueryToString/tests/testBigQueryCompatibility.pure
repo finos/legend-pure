@@ -147,6 +147,62 @@ function <<test.Test>> meta::relational::sqlQueryToString::tests::bigquery::test
    assertEquals('select `root`.tradeDate as `date` from tradeTable as `root` where `root`.tradeDate < PARSE_DATETIME(\'%Y-%m-%d %H:%M:%E6S\', \'2015-01-01 00:00:00.000\')', $result);
 }
 
+function <<test.Test>> meta::relational::sqlQueryToString::tests::bigquery::testParseDateOnQueryVariable():Boolean[1]
+{
+   let result = meta::pure::executionPlan::executionPlan(
+    date:StrictDate[1]|Trade.all()->project(t | $t.date, 'date')->filter(r | $r.getDate('date') < $date),
+    meta::relational::tests::simpleRelationalMapping, 
+     ^Runtime(connections = ^DatabaseConnection(type=DatabaseType.BigQuery, element = Any)),
+     meta::pure::router::extension::defaultRelationalExtensions());
+   let expected = 
+      'Sequence\n'+
+      '(\n'+
+      '  type = TDS[(date, StrictDate, DATE, \"\")]\n'+
+      '  (\n'+
+      '    FunctionParametersValidationNode\n'+
+      '    (\n'+
+      '      functionParameters = [date:StrictDate[1]]\n'+
+      '    )\n'+
+      '    Relational\n'+
+      '    (\n'+
+      '      type = TDS[(date, StrictDate, DATE, \"\")]\n'+
+      '      resultColumns = [(\"date\", DATE)]\n'+
+      '      sql = select `root`.tradeDate as `date` from tradeTable as `root` where `root`.tradeDate < PARSE_DATE(\'%Y-%m-%d\', \'${date}\')\n'+
+      '      connection = DatabaseConnection(type = \"BigQuery\")\n'+
+      '    )\n'+
+      '  )\n'+
+      ')\n';
+   assertEquals($expected, $result->meta::pure::executionPlan::toString::planToString(meta::pure::router::extension::defaultRelationalExtensions()));
+}
+
+function <<test.Test>> meta::relational::sqlQueryToString::tests::bigquery::testParseDateTimeOnQueryVariable():Boolean[1]
+{
+   let result = meta::pure::executionPlan::executionPlan(
+    dateTime:DateTime[1]|Trade.all()->project(t | $t.settlementDateTime, 'settlementDateTime')->filter(r | $r.getDate('settlementDateTime') < $dateTime),
+    meta::relational::tests::simpleRelationalMapping, 
+     ^Runtime(connections = ^DatabaseConnection(type=DatabaseType.BigQuery, element = Any)),
+     meta::pure::router::extension::defaultRelationalExtensions());
+   let expected = 
+      'Sequence\n'+
+      '(\n'+
+      '  type = TDS[(settlementDateTime, DateTime, TIMESTAMP, "")]\n'+
+      '  (\n'+
+      '    FunctionParametersValidationNode\n'+
+      '    (\n'+
+      '      functionParameters = [dateTime:DateTime[1]]\n'+
+      '    )\n'+
+      '    Relational\n'+
+      '    (\n'+
+      '      type = TDS[(settlementDateTime, DateTime, TIMESTAMP, "")]\n'+
+      '      resultColumns = [("settlementDateTime", TIMESTAMP)]\n'+
+      '      sql = select `root`.settlementDateTime as `settlementDateTime` from tradeTable as `root` where `root`.settlementDateTime < PARSE_DATETIME(\'%Y-%m-%d %H:%M:%E6S\', \'${dateTime}\')\n'+
+      '      connection = DatabaseConnection(type = \"BigQuery\")\n'+
+      '    )\n'+
+      '  )\n'+
+      ')\n';
+   assertEquals($expected, $result->meta::pure::executionPlan::toString::planToString(meta::pure::router::extension::defaultRelationalExtensions()));
+}
+
 function <<test.Test>> meta::relational::sqlQueryToString::tests::bigquery::testGroupByAlias():Boolean[1]
 {
     let result = toSQLString(
