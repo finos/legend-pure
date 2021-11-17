@@ -80,7 +80,7 @@ function  <<meta::pure::profiles::test.Test>> meta::relational::tests::mapping::
    let snowflakeSql = toSQLString(|SqlFunctionDemo.all()->project([s | length($s.concatResult)], ['len']),
                                                 testMapping,
                                                 meta::relational::runtime::DatabaseType.Snowflake, meta::pure::router::extension::defaultRelationalExtensions());
-   assertEquals('select length(concat("root".string1, "root".string2)) as "let" from dataTable as "root"',$snowflakeSql);
+   assertEquals('select length(concat("root".string1, "root".string2)) as "len" from dataTable as "root"',$snowflakeSql);
 }
 
 function <<test.Test>> meta::relational::tests::mapping::sqlFunction::concat::testFilter():Boolean[1]
