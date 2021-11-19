@@ -606,7 +606,9 @@ function meta::pure::router::routing::shouldStop(f:Function<Any>[1], extensions:
       meta::pure::tds::tdsRows_TabularDataSet_1__TDSRow_MANY_,
       meta::pure::functions::collection::objectReferenceIn_Any_1__String_MANY__Boolean_1_,
       meta::pure::graphFetch::execution::serialize_T_MANY__RootGraphFetchTree_1__AlloySerializationConfig_1__String_1_,
-      meta::pure::graphFetch::execution::serialize_Checked_MANY__RootGraphFetchTree_1__AlloySerializationConfig_1__String_1_ 
+      meta::pure::graphFetch::execution::serialize_Checked_MANY__RootGraphFetchTree_1__AlloySerializationConfig_1__String_1_,
+      meta::pure::functions::math::percentile_Number_MANY__Float_1__Number_$0_1$_,
+      meta::pure::functions::math::percentile_Number_MANY__Float_1__Boolean_1__Boolean_1__Number_$0_1$_ 
     ]->concatenate($extensions.routing_extraShouldStop)->contains($f);
 }
 
