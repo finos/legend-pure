@@ -86,7 +86,12 @@ function meta::relational::functions::sqlQueryToString::sqlQueryToString(sqlQuer
    processOperation($sqlQuery, createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers), $format, ^Config(), $extensions);
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1]):DbConfig[1]
+function meta::relational::functions::sqlQueryToString::createDbConfig(dbType:DatabaseType[1]):DbConfig[1]
+{
+   createDbConfig($dbType, []);
+}
+
+function meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1]):DbConfig[1]
 {
    createDbConfig($dbType, $dbTimeZone, []);
 }
@@ -1098,7 +1103,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='concat%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='concat%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='%s', transform={p:String[*]|$p->joinStrings(' + ')})),
-                                                 choice(DatabaseType.BigQuery,    $allStates,             ^ToSql(format='%s', transform={p:String[*]|$p->joinStrings(' + ')})) ]),
+                                                 choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='%s', transform={p:String[*]|$p->joinStrings(' + ')})),
+                                                 choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='%s', transform={p:String[*]|$p->joinStrings(' + ')})) ]),
       forDynafunction('contains',              [ choice($allTypes,                 $allStates,            ^ToSql(format=likePattern('%%%s%%'), transform={p:String[2]|$p->transformLikeParams($dbType)}))]),
       forDynafunction('convertDate',           [ choice($aSybase,                  $allStates,            ^ToSql(format='%s', transform={p:String[*] | $p->convertToDateIQ()})),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='%s', transform={p:String[*] | $p->convertToDateDB2()})),
@@ -1375,6 +1381,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='adddate(%s, INTERVAL case when %s - dayofweek(%s) >= 0 then %s - dayofweek(%s) - 7 else %s - dayofweek(%s) end DAY)', transform={p:String[1..2] | $p->formatMostRecentMemDb2('curdate()')}, parametersWithinWhenClause = [false, false])),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='dateadd(DAY, case when %s - DAYOFWEEK(%s) +1  >= 0 then %s  - DAYOFWEEK(%s) -1 - 7 else %s - DAYOFWEEK(%s) -1 end, %s)', transform={p:String[1..2] | $p->formatMostRecentMemSnowflake('current_date')}, parametersWithinWhenClause = [false, false])),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='date_add(\'day\', case when %s - day_of_week(%s) >= 0 then %s - day_of_week(%s) - 7 else %s - day_of_week(%s) end, %s)', transform={p:String[1..2] | $p->formatMostRecentPresto('current_date')}, parametersWithinWhenClause = [false, false]))]),
+      forDynafunction('percentile',            [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform = {p:String[*] | $p->transformPercentile($dbType)}))]),
       forDynafunction('quarter',               [ choice($aSybase ,                 $allStates,            ^ToSql(format='quarter(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='quarter(%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='quarter(%s)')),
@@ -1685,7 +1692,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::trans
    ]);
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::processColumnName(name:String[1], dbConfig:DbConfig[1]):String[1]
+function meta::relational::functions::sqlQueryToString::processColumnName(name:String[1], dbConfig:DbConfig[1]):String[1]
 {
     let lowerName = $name->toLower();
     let dbType = $dbConfig.dbType;
@@ -1714,7 +1721,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::dbReservedWords(dbType : DatabaseType[1]):String[*]
 {
-    if ($dbType == DatabaseType.H2 || $dbType == DatabaseType.Postgres,
+    if ($dbType == DatabaseType.Postgres,
          | [],
          | if ($dbType == DatabaseType.SybaseIQ,
                |
@@ -1722,11 +1729,23 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::dbRes
                |
                  if ($dbType == DatabaseType.MemSQL,
                      |memSQLReservedWords(),
-                     |['kerberos', 'date', 'first']
+                     | if($dbType == DatabaseType.H2, 
+                          | h2ReservedWords(),
+                          | ['kerberos', 'date', 'first']
                     )
 
                )
-         );
+         ) 
+   );
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::h2ReservedWords():String[*]
+{  
+   [
+      'all','array','case','check','constraint','cross','current_date','current_time','current_timestamp','current_user','distinct','except','exists','false','fetch','for','foreign','from',
+      'full','group','having','if','inner','intersect','intersects','interval','is','join','like','limit','localtime','localtimestamp','minus','natural','not','null','offset','on','order','primary',
+      'qualify','row','rownum','select','sysdate','systime','systimestamp','table','today','top','true','union','unique','values','where','window','with'
+   ];
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::memSQLReservedWords():String[*]
@@ -2120,6 +2139,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    $dbUnitType;
 }
 
+
+
 function <<access.private>> meta::relational::functions::sqlQueryToString::processIdentifier(originalIdentifier:String[1], dbConfig : DbConfig[1]):String[1]
 {   
   let processedIdentifier = $originalIdentifier->map(identifier|
@@ -2354,4 +2375,24 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::dateT
            pair('yyyy-MM-dd hh:mm:ss.mmm',121),
            pair('YYYY-MM-DDTHH:MI:SS',120),
            pair('YYYY-MM-DDTHH:MI:SS.FF', 121)]);
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::transformPercentile(args: String[*], dbType: DatabaseType[1]): String[1]
+{
+   let boolProc = getLiteralProcessorForType(getLiteralProcessors($dbType, []), Boolean);
+   let trueVal  = $boolProc.formatValue(true);
+   let falseVal = $boolProc.formatValue(false);
+
+   let column     = $args->at(0);
+   let percentile = $args->at(1);
+   let ascending  = if($args->size() > 2, | $args->at(2), | $trueVal);
+   let continuous = if($args->size() > 3, | $args->at(3), | $trueVal);
+
+   assert($ascending->in([$trueVal, $falseVal]), 'Ascending argument for percentile should be ' + $trueVal + ' or ' + $falseVal + '. Got: ' + $ascending);
+   assert($continuous->in([$trueVal, $falseVal]), 'Continuous argument for percentile should be ' + $trueVal + ' or ' + $falseVal + '. Got: ' + $continuous);
+
+   let func  = if($continuous == $trueVal, | 'percentile_cont', | 'percentile_disc');
+   let order = if($ascending == $trueVal, | 'asc', | 'desc');
+
+   $func + '(' + $percentile + ') within group (order by ' + $column + ' ' + $order + ')';
 }

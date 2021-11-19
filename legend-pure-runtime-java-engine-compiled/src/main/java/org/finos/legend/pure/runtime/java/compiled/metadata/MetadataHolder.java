@@ -16,11 +16,9 @@ package org.finos.legend.pure.runtime.java.compiled.metadata;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Nil;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -38,70 +36,57 @@ public class MetadataHolder implements MetadataAccessor
         this.metadata = metadata;
     }
 
-
     @Override
     public Class<?> getClass(String fullPath)
     {
-        return (Class)this.metadata.getMetadata(MetadataJavaPaths.Class, fullPath);
+        return (Class<?>) this.metadata.getMetadata(MetadataJavaPaths.Class, fullPath);
     }
 
     @Override
     public Measure getMeasure(String fullPath)
     {
-        return (Measure)this.metadata.getMetadata(MetadataJavaPaths.Measure, fullPath);
+        return (Measure) this.metadata.getMetadata(MetadataJavaPaths.Measure, fullPath);
     }
 
     @Override
     public Unit getUnit(String fullPath)
     {
-        return (Unit)this.metadata.getMetadata(MetadataJavaPaths.Unit, fullPath);
+        return (Unit) this.metadata.getMetadata(MetadataJavaPaths.Unit, fullPath);
     }
 
     @Override
     public Enumeration<?> getEnumeration(String fullPath)
     {
-        return (Enumeration)this.metadata.getMetadata(MetadataJavaPaths.Enumeration, fullPath);
+        return (Enumeration<?>) this.metadata.getMetadata(MetadataJavaPaths.Enumeration, fullPath);
     }
 
     @Override
     public PrimitiveType getPrimitiveType(String name)
     {
-        return (PrimitiveType)this.metadata.getMetadata(MetadataJavaPaths.PrimitiveType, name);
+        return (PrimitiveType) this.metadata.getMetadata(MetadataJavaPaths.PrimitiveType, name);
     }
 
     @Override
     public ConcreteFunctionDefinition<?> getConcreteFunctionDefinition(String name)
     {
-        return (ConcreteFunctionDefinition)this.metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition, name);
+        return (ConcreteFunctionDefinition<?>) this.metadata.getMetadata(MetadataJavaPaths.ConcreteFunctionDefinition, name);
     }
 
     @Override
     public LambdaFunction<?> getLambdaFunction(String id)
     {
-        return (LambdaFunction)this.metadata.getMetadata(MetadataJavaPaths.LambdaFunction, id);
+        return (LambdaFunction<?>) this.metadata.getMetadata(MetadataJavaPaths.LambdaFunction, id);
     }
 
     @Override
     public org.finos.legend.pure.m3.coreinstance.Package getPackage(String path)
     {
-        return (org.finos.legend.pure.m3.coreinstance.Package)this.metadata.getMetadata(M3Paths.Package, path);
-    }
-
-    @Override
-    public Class<Any> getTopType()
-    {
-        return (Class<Any>)this.getClass("Root::" + M3Paths.Any);
-    }
-
-    @Override
-    public Class<Nil> getBottomType()
-    {
-        return (Class<Nil>)this.getClass("Root::" + M3Paths.Nil);
+        return (org.finos.legend.pure.m3.coreinstance.Package) this.metadata.getMetadata(M3Paths.Package, path);
     }
 
     @Override
     public org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum getEnum(String enumerationName, String enumName)
     {
-        return (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum)this.metadata.getEnum(enumerationName, enumName);
+        return (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum) this.metadata.getEnum(enumerationName, enumName);
     }
 }

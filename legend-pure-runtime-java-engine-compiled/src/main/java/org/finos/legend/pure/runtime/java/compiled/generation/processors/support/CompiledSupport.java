@@ -14,42 +14,37 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support;
 
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.io.http.HTTPResponse;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.io.http.URL;
-import org.finos.legend.pure.runtime.java.shared.cipher.AESCipherUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.function.Function0;
 import org.eclipse.collections.api.block.function.Function2;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.block.procedure.Procedure;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.list.primitive.LongList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.ordered.OrderedIterable;
 import org.eclipse.collections.api.ordered.ReversibleIterable;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
-import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
 import org.finos.legend.pure.m3.coreinstance.Package;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.io.http.HTTPResponse;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.io.http.URL;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
@@ -112,6 +107,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuesp
 import org.finos.legend.pure.runtime.java.compiled.metadata.ClassCache;
 import org.finos.legend.pure.runtime.java.compiled.metadata.JavaMethodWithParamsSharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
+import org.finos.legend.pure.runtime.java.shared.cipher.AESCipherUtil;
 import org.finos.legend.pure.runtime.java.shared.http.HttpMethod;
 import org.finos.legend.pure.runtime.java.shared.http.HttpRawHelper;
 import org.finos.legend.pure.runtime.java.shared.identity.IdentityManager;
@@ -119,8 +115,6 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -130,7 +124,23 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
+import java.util.UUID;
+import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 
 public class CompiledSupport
 {
@@ -148,31 +158,16 @@ public class CompiledSupport
 
 
     private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
-    private static final ImmutableList<Class<?>> PRIMITIVE_CLASS_COMPARISON_ORDER = Lists.immutable.<Class<?>>with(Long.class, Double.class, PureDate.class, Boolean.class, String.class);
+    private static final ImmutableList<Class<?>> PRIMITIVE_CLASS_COMPARISON_ORDER = Lists.immutable.with(Long.class, Double.class, PureDate.class, Boolean.class, String.class);
 
-    public static final Comparator<Object> DEFAULT_COMPARATOR = new Comparator<Object>()
-    {
-        @Override
-        public int compare(Object left, Object right)
-        {
-            return compareInt(left, right);
-        }
-    };
-
-    private static final Function<CoreInstance, Object> GET_VALUE_FUNCTION = new Function<CoreInstance, Object>()
-    {
-        @Override
-        public Object valueOf(CoreInstance instance)
-        {
-            return instance instanceof ValCoreInstance ? ((ValCoreInstance)instance).getValue() : instance;
-        }
-    };
+    public static final Comparator<Object> DEFAULT_COMPARATOR = CompiledSupport::compareInt;
 
     public static <T> T copy(T coreInstance)
     {
         return copy(coreInstance, (coreInstance == null ? null : ((AbstractCoreInstance)coreInstance).getSourceInformation()));
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T copy(T coreInstance, SourceInformation sourceInformation)
     {
         if (coreInstance == null)
@@ -187,9 +182,9 @@ public class CompiledSupport
         }
     }
 
-    public static Object buildSourceInformation(RichIterable coreInstance, ClassLoader globalClassLoader)
+    public static Object buildSourceInformation(RichIterable<?> coreInstance, ClassLoader globalClassLoader)
     {
-        return buildSourceInformation(coreInstance.getFirst(), globalClassLoader);
+        return buildSourceInformation(coreInstance.getAny(), globalClassLoader);
     }
 
     public static Object buildSourceInformation(Object obj, ClassLoader globalClassLoader)
@@ -203,7 +198,7 @@ public class CompiledSupport
             {
                 try
                 {
-                    Class sourceInfoClass = globalClassLoader.loadClass(FullJavaPaths.SourceInformation_Impl);
+                    Class<?> sourceInfoClass = globalClassLoader.loadClass(FullJavaPaths.SourceInformation_Impl);
                     result = sourceInfoClass.getConstructor(String.class).newInstance("NOID");
                     sourceInfoClass.getField("_source").set(result, sourceInfo.getSourceId());
                     sourceInfoClass.getField("_startLine").set(result, sourceInfo.getStartLine());
@@ -238,19 +233,12 @@ public class CompiledSupport
 
     public static RichIterable enumValues(CoreInstance coreInstance)
     {
-        try
-        {
-            return coreInstance.getValueForMetaPropertyToMany(M3Properties.values);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        return coreInstance.getValueForMetaPropertyToMany(M3Properties.values);
     }
 
     public static <T> RichIterable<T> toPureCollection(RichIterable<T> objects)
     {
-        return (objects == null) ? Lists.immutable.<T>empty() : objects;
+        return (objects == null) ? Lists.immutable.empty() : objects;
     }
 
     public static <T> RichIterable<T> toPureCollection(Iterable<T> objects)
@@ -292,8 +280,8 @@ public class CompiledSupport
 
     public static RichIterable<String> split(Object string, Object delimiter)
     {
-        String str = (String)((string instanceof Iterable) ? Iterate.getFirst((Iterable)string) : string);
-        String delim = (String)((delimiter instanceof Iterable) ? Iterate.getFirst((Iterable)delimiter) : delimiter);
+        String str = (String)((string instanceof Iterable) ? Iterate.getFirst((Iterable<?>)string) : string);
+        String delim = (String)((delimiter instanceof Iterable) ? Iterate.getFirst((Iterable<?>)delimiter) : delimiter);
 
         MutableList<String> result = Lists.mutable.with();
         StringTokenizer tokenizer = new StringTokenizer(str, delim);
@@ -315,11 +303,11 @@ public class CompiledSupport
         {
             try
             {
-                return ((ListIterable)list).get((int)offset);
+                return ((ListIterable<?>)list).get((int)offset);
             }
             catch (IndexOutOfBoundsException e)
             {
-                String message = "The system is trying to get an element at offset " + offset + " where the collection is of size " + ((ListIterable)list).size();
+                String message = "The system is trying to get an element at offset " + offset + " where the collection is of size " + ((ListIterable<?>)list).size();
                 throw new PureExecutionException(sourceInformation, message);
             }
         }
@@ -327,12 +315,12 @@ public class CompiledSupport
         {
             if (offset < 0)
             {
-                String message = "The system is trying to get an element at offset " + offset + " where the collection is of size " + ((RichIterable)list).size();
+                String message = "The system is trying to get an element at offset " + offset + " where the collection is of size " + ((RichIterable<?>)list).size();
                 throw new PureExecutionException(sourceInformation, message);
             }
             int intOffset = (int)offset;
             int size = 0;
-            for (Object item : (RichIterable)list)
+            for (Object item : (RichIterable<?>)list)
             {
                 if (size == intOffset)
                 {
@@ -417,7 +405,7 @@ public class CompiledSupport
             throw new PureExecutionException(sourceInformation,
                     "Cannot cast a collection of size " + (objects == null ? 0 : objects.size()) + " to multiplicity [1]");
         }
-        return objects.getFirst();
+        return objects.getAny();
     }
 
     public static SourceInformation getSourceInformation(String sourceIdForError, int line, int column)
@@ -429,7 +417,7 @@ public class CompiledSupport
     {
         if (object instanceof RichIterable)
         {
-            return ((RichIterable)object).getFirst();
+            return ((RichIterable<?>)object).getAny();
         }
         return object;
     }
@@ -466,7 +454,7 @@ public class CompiledSupport
         // TODO remove this hack
         if (object instanceof RichIterable)
         {
-            if (((RichIterable)object).isEmpty())
+            if (((RichIterable<?>)object).isEmpty())
             {
                 throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity [1..*]");
             }
@@ -475,7 +463,7 @@ public class CompiledSupport
         // TODO remove this hack
         if (object instanceof Iterable)
         {
-            if (Iterate.isEmpty((Iterable)object))
+            if (Iterate.isEmpty((Iterable<?>)object))
             {
                 throw new PureExecutionException(sourceInformation, "Cannot cast a collection of size 0 to multiplicity [1..*]");
             }
@@ -500,12 +488,12 @@ public class CompiledSupport
 
     public static boolean isEmpty(Object object)
     {
-        return (object == null) || ((object instanceof Iterable) && Iterate.isEmpty((Iterable)object));
+        return (object == null) || ((object instanceof Iterable) && Iterate.isEmpty((Iterable<?>)object));
     }
 
     public static <T> RichIterable<T> take(T element, long number)
     {
-        return ((element == null) || (number < 1)) ? Lists.immutable.<T>empty() : Lists.immutable.with(element);
+        return ((element == null) || (number < 1)) ? Lists.immutable.empty() : Lists.immutable.with(element);
     }
 
     public static <T> RichIterable<T> take(RichIterable<T> list, long number)
@@ -583,7 +571,7 @@ public class CompiledSupport
         }
 
         int size = list.size();
-        return (size <= 1) ? Lists.immutable.<T>empty() : LazyIterate.take(list, size - 1).toList();
+        return (size <= 1) ? Lists.immutable.empty() : LazyIterate.take(list, size - 1).toList();
     }
 
     public static <T> RichIterable<T> tail(T list)
@@ -595,11 +583,10 @@ public class CompiledSupport
     {
         if (list == null || isEmpty(list))
         {
-            return Lists.immutable.<T>empty();
+            return Lists.immutable.empty();
         }
 
         RichIterable<T> result = LazyIterate.drop(list, 1);
-
         return (list instanceof LazyIterable) ? result : result.toList();
     }
 
@@ -625,7 +612,7 @@ public class CompiledSupport
             }
             if ((left instanceof PureDate) && (right instanceof PureDate))
             {
-                return ((Comparable)left).compareTo(right);
+                return ((PureDate)left).compareTo((PureDate)right);
             }
 
             int leftIndex = PRIMITIVE_CLASS_COMPARISON_ORDER.indexOf(leftClass);
@@ -658,12 +645,19 @@ public class CompiledSupport
         return toBigDecimal(x).compareTo(toBigDecimal(y));
     }
 
-    private static boolean isSpecial(Number x)
+    private static boolean isSpecial(Number number)
     {
-        boolean specialDouble = x instanceof Double && (Double.isNaN((Double)x) || Double.isInfinite((Double)x));
-        boolean specialFloat = x instanceof Float && (Float.isNaN((Float)x) || Float.isInfinite((Float)x));
-
-        return specialDouble || specialFloat;
+        if (number instanceof Double)
+        {
+            Double d = (Double) number;
+            return d.isNaN() || d.isInfinite();
+        }
+        if (number instanceof Float)
+        {
+            Float f = (Float) number;
+            return f.isNaN() || f.isInfinite();
+        }
+        return false;
     }
 
     private static BigDecimal toBigDecimal(Number number)
@@ -700,7 +694,7 @@ public class CompiledSupport
         {
             return (RichIterable<T>)list;
         }
-        MutableList<T> newList = list == null ? FastList.<T>newList() : Lists.mutable.withAll(list);
+        MutableList<T> newList = list == null ? Lists.mutable.empty() : Lists.mutable.withAll(list);
         newList.add((element instanceof Iterable) ? Iterate.getFirst((Iterable<T>)element) : element);
         return newList;
     }
@@ -724,11 +718,11 @@ public class CompiledSupport
         }
         if (list1 == null)
         {
-            return (list2 instanceof RichIterable) ? (RichIterable)list2 : Lists.immutable.with(list2);
+            return (list2 instanceof RichIterable) ? (RichIterable<?>)list2 : Lists.immutable.with(list2);
         }
         if (list2 == null)
         {
-            return (list1 instanceof RichIterable) ? (RichIterable)list1 : Lists.immutable.with(list1);
+            return (list1 instanceof RichIterable) ? (RichIterable<?>)list1 : Lists.immutable.with(list1);
         }
 
         Iterable it1 = (list1 instanceof Iterable) ? (Iterable)list1 : Lists.immutable.with(list1);
@@ -754,15 +748,8 @@ public class CompiledSupport
 
     public static <T> RichIterable<? extends T> removeAllOptimized(RichIterable<? extends T> main, RichIterable<? extends T> other)
     {
-        final Set set = UnifiedSet.newSet(other);
-        return main.select(new Predicate<T>()
-        {
-            @Override
-            public boolean accept(T o)
-            {
-                return !set.contains(o);
-            }
-        });
+        Set<?> set = (other instanceof Set) ? (Set<?>) other : Sets.mutable.withAll(other);
+        return main.reject(set::contains);
     }
 
     public static boolean exists(Object object, Predicate predicate)
@@ -795,33 +782,25 @@ public class CompiledSupport
         return predicate.accept(object);
     }
 
-    public static <T, V> RichIterable<? extends T> mapToManyOverMany(RichIterable<? extends V> collection, final Function2<? super V, ExecutionSupport, ? extends Iterable<? extends T>> function, final ExecutionSupport executionSupport)
+    public static <T, V> RichIterable<? extends T> mapToManyOverMany(RichIterable<? extends V> collection, Function2<? super V, ExecutionSupport, ? extends Iterable<? extends T>> function, final ExecutionSupport executionSupport)
     {
-        return collection == null ? Lists.mutable.<T>empty() : collection.flatCollect((Function<? super V, ? extends Iterable<T>>)new Function<V, Iterable<? extends T>>()
-        {
-            @Override
-            public Iterable<? extends T> valueOf(V object)
-            {
-                return function.value(object, executionSupport);
-            }
-        });
+        return collection == null ? Lists.mutable.empty() : collection.flatCollect((Function<? super V, ? extends Iterable<T>>) object -> ((Function2<? super V, ExecutionSupport, ? extends Iterable<T>>) function).value(object, executionSupport));
     }
 
     public static <T, V> RichIterable<? extends T> mapToOneOverMany(RichIterable<? extends V> collection, Function2<? super V, ExecutionSupport, T> function, ExecutionSupport executionSupport)
     {
         if (collection == null)
         {
-            return Lists.mutable.with();
+            return Lists.mutable.empty();
         }
 
-        RichIterable<? extends T> result = collection.asLazy().collectWith(function, executionSupport).select(Predicates.notNull());
-
+        RichIterable<T> result = collection.asLazy().collectWith(function, executionSupport).select(Objects::nonNull);
         return collection instanceof LazyIterable ? result : result.toList();
     }
 
     public static <T, V> RichIterable<? extends T> mapToManyOverOne(V element, Function2<? super V, ExecutionSupport, ? extends RichIterable<? extends T>> function, ExecutionSupport executionSupport)
     {
-        return (element == null) ? Lists.mutable.<T>with() : function.value(element, executionSupport);
+        return (element == null) ? Lists.mutable.empty() : function.value(element, executionSupport);
     }
 
     public static <T, V> T mapToOneOverOne(V element, Function2<? super V, ExecutionSupport, T> function, ExecutionSupport executionSupport)
@@ -916,7 +895,7 @@ public class CompiledSupport
         }
         if ((key == null) && (comp == null))
         {
-            return collection.toSortedList(DEFAULT_COMPARATOR);
+            return collection.toSortedList(CompiledSupport::compareInt);
         }
         if (key == null)
         {
@@ -929,73 +908,44 @@ public class CompiledSupport
         return toSortedWithKeyComparison(collection, key, comp, es);
     }
 
-    private static <T> RichIterable<T> toSortedWithKeyComparison(RichIterable<T> collection, final SharedPureFunction key, final SharedPureFunction comp, final ExecutionSupport es)
+    private static <T> RichIterable<T> toSortedWithKeyComparison(RichIterable<T> collection, SharedPureFunction key, SharedPureFunction comp, ExecutionSupport es)
     {
         final MutableMap<T, Object> keyMap = new UnifiedMapWithHashingStrategy<>(PureEqualsHashingStrategy.HASHING_STRATEGY, collection.size());
-        final Function<T, Object> keyFunction = new Function<T, Object>()
+        final Function<T, Object> keyFunction = element -> key.execute(Lists.immutable.with(element), null);
+        return collection.toSortedList((left, right) ->
         {
-            @Override
-            public Object valueOf(T element)
+            if (left == right)
             {
-                return key.execute(Lists.immutable.with(element), null);
-            }
-        };
-        return collection.toSortedList(new Comparator<T>()
-        {
-            @Override
-            public int compare(T left, T right)
-            {
-                if (left == right)
-                {
-                    Object leftKey = keyMap.getIfAbsentPutWithKey(left, keyFunction);
-                    return ((Long)comp.execute(Lists.immutable.with(leftKey, leftKey), es)).intValue();
-                }
-
                 Object leftKey = keyMap.getIfAbsentPutWithKey(left, keyFunction);
-                Object rightKey = keyMap.getIfAbsentPutWithKey(right, keyFunction);
-                return ((Long)comp.execute(Lists.immutable.with(leftKey, rightKey), es)).intValue();
+                return ((Long)comp.execute(Lists.immutable.with(leftKey, leftKey), es)).intValue();
             }
+
+            Object leftKey = keyMap.getIfAbsentPutWithKey(left, keyFunction);
+            Object rightKey = keyMap.getIfAbsentPutWithKey(right, keyFunction);
+            return ((Long)comp.execute(Lists.immutable.with(leftKey, rightKey), es)).intValue();
         });
     }
 
-    private static <T> RichIterable<T> toSortedWithKey(RichIterable<T> collection, final SharedPureFunction key, final ExecutionSupport es)
+    private static <T> RichIterable<T> toSortedWithKey(RichIterable<T> collection, SharedPureFunction key, ExecutionSupport es)
     {
-        final MutableMap<T, Object> keyMap = new UnifiedMapWithHashingStrategy<>(PureEqualsHashingStrategy.HASHING_STRATEGY, collection.size());
-        final Function<T, Object> keyFunction = new Function<T, Object>()
+        MutableMap<T, Object> keyMap = new UnifiedMapWithHashingStrategy<>(PureEqualsHashingStrategy.HASHING_STRATEGY, collection.size());
+        Function<T, Object> keyFunction = element -> key.execute(Lists.immutable.with(element), es);
+        return collection.toSortedList((left, right) ->
         {
-            @Override
-            public Object valueOf(T element)
+            if (left == right)
             {
-                return key.execute(Lists.immutable.with(element), es);
+                return 0;
             }
-        };
-        return collection.toSortedList(new Comparator<T>()
-        {
-            @Override
-            public int compare(T left, T right)
-            {
-                if (left == right)
-                {
-                    return 0;
-                }
 
-                Object leftKey = keyMap.getIfAbsentPutWithKey(left, keyFunction);
-                Object rightKey = keyMap.getIfAbsentPutWithKey(right, keyFunction);
-                return compareInt(leftKey, rightKey);
-            }
+            Object leftKey = keyMap.getIfAbsentPutWithKey(left, keyFunction);
+            Object rightKey = keyMap.getIfAbsentPutWithKey(right, keyFunction);
+            return compareInt(leftKey, rightKey);
         });
     }
 
-    private static <T> RichIterable<T> toSortedWithComparison(RichIterable<T> collection, final SharedPureFunction comp, final ExecutionSupport executionSupport)
+    private static <T> RichIterable<T> toSortedWithComparison(RichIterable<T> collection, SharedPureFunction comp, final ExecutionSupport executionSupport)
     {
-        return collection.toSortedList(new Comparator<T>()
-        {
-            @Override
-            public int compare(T left, T right)
-            {
-                return ((Long)comp.execute(Lists.immutable.with(left, right), executionSupport)).intValue();
-            }
-        });
+        return collection.toSortedList((left, right) -> ((Long)comp.execute(Lists.immutable.with(left, right), executionSupport)).intValue());
     }
 
     /**
@@ -1279,7 +1229,7 @@ public class CompiledSupport
             Method method = instance.getClass().getDeclaredMethod("toString", ExecutionSupport.class);
             try
             {
-                return (String)method.invoke(instance, (ExecutionSupport)es);
+                return (String)method.invoke(instance, es);
             }
             catch (IllegalAccessException | InvocationTargetException e)
             {
@@ -1518,7 +1468,7 @@ public class CompiledSupport
 
     public static <T extends Number> T plus(RichIterable<T> numbers)
     {
-        Number sum = 0l;
+        Number sum = 0L;
         for (Number n : numbers)
         {
             sum = plus(sum, n);
@@ -1590,7 +1540,7 @@ public class CompiledSupport
         }
         else
         {
-            Number result = size == 1 ? 0l : numbers.get(0);
+            Number result = size == 1 ? 0L : numbers.get(0);
             int start = size == 1 ? 0 : 1;
 
             for (int i = start; i < size; i++)
@@ -1653,7 +1603,7 @@ public class CompiledSupport
 
     public static <T extends Number> T times(RichIterable<T> numbers)
     {
-        Number product = 1l;
+        Number product = 1L;
         for (Number number : numbers)
         {
             product = times(product, number);
@@ -1696,7 +1646,7 @@ public class CompiledSupport
             double toRound = number.doubleValue();
             if (toRound == 0x1.fffffffffffffp-2) // greatest double value less than 0.5
             {
-                return 0l;
+                return 0L;
             }
             else
             {
@@ -1704,7 +1654,7 @@ public class CompiledSupport
                 double floor = Math.floor(toRound);
                 if ((floor == toRound) && ((floor % 2) != 0))
                 {
-                    return (long)((long)floor - 1);
+                    return ((long)floor - 1);
                 }
                 else
                 {
@@ -1768,7 +1718,7 @@ public class CompiledSupport
         double result = Math.tan(input);
         if (Double.isNaN(result))
         {
-            throw new PureExecutionException("Unable to compute tan of " + Double.toString(input));
+            throw new PureExecutionException("Unable to compute tan of " + input);
         }
         return result;
     }
@@ -1783,7 +1733,7 @@ public class CompiledSupport
         double result = Math.asin(input);
         if (Double.isNaN(result))
         {
-            throw new PureExecutionException(sourceInformation, "Unable to compute asin of " + Double.toString(input));
+            throw new PureExecutionException(sourceInformation, "Unable to compute asin of " + input);
         }
         return result;
     }
@@ -1798,7 +1748,7 @@ public class CompiledSupport
         double result = Math.acos(input);
         if (Double.isNaN(result))
         {
-            throw new PureExecutionException(sourceInformation, "Unable to compute acos of " + Double.toString(input));
+            throw new PureExecutionException(sourceInformation, "Unable to compute acos of " + input);
         }
         return result;
     }
@@ -1823,7 +1773,7 @@ public class CompiledSupport
         double result = Math.atan2(input1, input2);
         if (Double.isNaN(result))
         {
-            throw new PureExecutionException(sourceInformation, "Unable to compute atan2 of " + Double.toString(input1) + " " + Double.toString(input2));
+            throw new PureExecutionException(sourceInformation, "Unable to compute atan2 of " + input1 + " " + input2);
         }
         return result;
     }
@@ -1839,7 +1789,7 @@ public class CompiledSupport
         if (Double.isNaN(result))
         {
             throw new PureExecutionException(sourceInformation,
-                    "Unable to compute sqrt of " + Double.toString(input));
+                    "Unable to compute sqrt of " + input);
         }
         return result;
     }
@@ -1888,7 +1838,7 @@ public class CompiledSupport
     {
         if (right.doubleValue() == 0)
         {
-            throw new PureExecutionException(sourceInformation, "Cannot divide " + right.toString() + " by zero");
+            throw new PureExecutionException(sourceInformation, "Cannot divide " + right + " by zero");
         }
 
         if (left instanceof BigDecimal && right instanceof BigDecimal)
@@ -2009,7 +1959,7 @@ public class CompiledSupport
 
     public static Long length(String str)
     {
-        return Long.valueOf(str.length());
+        return (long) str.length();
     }
 
     public static String toLowerCase(String str)
@@ -2055,14 +2005,7 @@ public class CompiledSupport
     public static Object matchFailure(Object obj, SourceInformation sourceInformation)
     {
         throw new PureExecutionException(sourceInformation,
-                "Match failure: " + ((obj instanceof RichIterable) ? ((RichIterable)obj).collect(new Function()
-                {
-                    @Override
-                    public Object valueOf(Object o)
-                    {
-                        return o == null ? null : getErrorMessageForMatchFunctionBasedOnObjectType(o);
-                    }
-                }).makeString("[", ", ", "]") : getErrorMessageForMatchFunctionBasedOnObjectType(obj)));
+                "Match failure: " + ((obj instanceof RichIterable) ? ((RichIterable<?>)obj).collect(o -> o == null ? null : getErrorMessageForMatchFunctionBasedOnObjectType(o)).makeString("[", ", ", "]") : getErrorMessageForMatchFunctionBasedOnObjectType(obj)));
     }
 
     private static String getErrorMessageForMatchFunctionBasedOnObjectType(Object obj)
@@ -2128,13 +2071,13 @@ public class CompiledSupport
 
     private static boolean isTypeOfEnum(Object obj)
     {
-        return org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum.class.isInstance(obj);
+        return obj instanceof Enum;
     }
 
     private static boolean isPureGeneratedClass(Object obj)
     {
         return hasField(obj, TEMP_TYPE_NAME) ||
-                obj instanceof Class && ((Class)obj).getCanonicalName().contains(JavaPackageAndImportBuilder.buildPackageFromSystemPath(null));
+                obj instanceof Class && ((Class<?>)obj).getCanonicalName().contains(JavaPackageAndImportBuilder.buildPackageFromSystemPath(null));
     }
 
     private static String getFieldValue(Object obj, String fieldName)
@@ -2295,12 +2238,6 @@ public class CompiledSupport
                         this.current = end;
                         return next;
                     }
-
-                    @Override
-                    public void remove()
-                    {
-                        throw new UnsupportedOperationException();
-                    }
                 };
             }
         };
@@ -2338,7 +2275,7 @@ public class CompiledSupport
         ClassLoader cl = new MemoryClassLoader(manager, globalClassLoader);
         try
         {
-            Class realClass = cl.loadClass("temp" + "." + name);
+            Class<?> realClass = cl.loadClass("temp" + "." + name);
             return realClass.getMethod("build", MutableMap.class, IntObjectMap.class).invoke(null, processorContext.getObjectToPassToDynamicallyGeneratedCode(), processorContext.getLocalLambdas());
         }
         catch (Exception e)
@@ -2361,16 +2298,9 @@ public class CompiledSupport
         if (Instance.instanceOf(valueSpecification, M3Paths.InstanceValue, processorContext.getSupport()))
         {
             ListIterable<? extends CoreInstance> l = valueSpecification.getValueForMetaPropertyToMany(M3Properties.values);
-            if (l.noneSatisfy(new Predicate<CoreInstance>()
+            if (l.noneSatisfy(instance -> Instance.instanceOf(instance, M3Paths.ValueSpecification, processorContext.getSupport()) || Instance.instanceOf(instance, M3Paths.LambdaFunction, processorContext.getSupport())))
             {
-                @Override
-                public boolean accept(CoreInstance instance)
-                {
-                    return Instance.instanceOf(instance, M3Paths.ValueSpecification, processorContext.getSupport()) || Instance.instanceOf(instance, M3Paths.LambdaFunction, processorContext.getSupport());
-                }
-            }))
-            {
-                ListIterable result = l.collect(GET_VALUE_FUNCTION);
+                ListIterable<Object> result = l.collect(instance -> instance instanceof ValCoreInstance ? ((ValCoreInstance)instance).getValue() : instance);
                 return result.size() == 1 ? result.get(0) : result;
             }
         }
@@ -2394,28 +2324,14 @@ public class CompiledSupport
                             {
                                 final String name = pair.getOne();
                                 CoreInstance valuesCoreInstance = pair.getTwo();
-                                ListIterable<? extends CoreInstance> values = valuesCoreInstance.getValueForMetaPropertyToMany(M3Properties.values).select(new Predicate<CoreInstance>()
-                                {
-                                    @Override
-                                    public boolean accept(CoreInstance coreInstance)
-                                    {
-                                        return !Instance.instanceOf(coreInstance, "meta::pure::executionPlan::PlanVarPlaceHolder", compiledSupport) && !Instance.instanceOf(coreInstance, "meta::pure::executionPlan::PlanVariablePlaceHolder", compiledSupport);
-                                    }
-                                });
+                                ListIterable<? extends CoreInstance> values = valuesCoreInstance.getValueForMetaPropertyToMany(M3Properties.values).select(coreInstance -> !Instance.instanceOf(coreInstance, "meta::pure::executionPlan::PlanVarPlaceHolder", compiledSupport) && !Instance.instanceOf(coreInstance, "meta::pure::executionPlan::PlanVariablePlaceHolder", compiledSupport));
                                 String type = null;
                                 openVars.put(name, valuesCoreInstance);
                                 if (values.isEmpty())
                                 {
                                     MutableList<CoreInstance> vars = FastList.newList();
                                     collectVars(valueSpecification, vars, compiledSupport);
-                                    CoreInstance found = vars.detect(new Predicate<CoreInstance>()
-                                    {
-                                        @Override
-                                        public boolean accept(CoreInstance coreInstance)
-                                        {
-                                            return coreInstance.getValueForMetaPropertyToOne("name").getName().equals(name);
-                                        }
-                                    });
+                                    CoreInstance found = vars.detect(coreInstance -> coreInstance.getValueForMetaPropertyToOne("name").getName().equals(name));
                                     if (found != null)
                                     {
                                         type = TypeProcessor.typeToJavaObjectSingle(found.getValueForMetaPropertyToOne(M3Properties.genericType), false, compiledSupport);
@@ -2462,7 +2378,7 @@ public class CompiledSupport
         ClassLoader cl = new MemoryClassLoader(manager, globalClassLoader);
         try
         {
-            Class realClass = cl.loadClass(javaPackage + "." + name);
+            Class<?> realClass = cl.loadClass(javaPackage + "." + name);
             return realClass.getMethod("doProcess", MapIterable.class, MutableMap.class, IntObjectMap.class, ExecutionSupport.class).invoke(null, openVars, processorContext.getObjectToPassToDynamicallyGeneratedCode(), processorContext.getLocalLambdas(), es);
         }
         catch (Exception e)
@@ -2846,30 +2762,30 @@ public class CompiledSupport
         return ((CompiledExecutionSupport)es).getRuntimeOptions().isOptionSet(name);
     }
 
-    public static Class convertFunctionTypeStringToClass(String type, ClassLoader classLoader)
+    public static Class<?> convertFunctionTypeStringToClass(String type, ClassLoader classLoader)
     {
-        Class theClass = null;
-
-        if ("long".equals(type))
+        switch (type)
         {
-            theClass = long.class;
+            case "long":
+            {
+                return long.class;
+            }
+            case "boolean":
+            {
+                return boolean.class;
+            }
+            case "double":
+            {
+                return double.class;
+            }
+            default:
+            {
+                return loadClass(fullClassName(type), classLoader);
+            }
         }
-        else if ("boolean".equals(type))
-        {
-            theClass = boolean.class;
-        }
-        else if ("double".equals(type))
-        {
-            theClass = double.class;
-        }
-        else
-        {
-            theClass = loadClass(fullClassName(type), classLoader);
-        }
-        return theClass;
     }
 
-    public static Class loadClass(String classToLoad, ClassLoader classLoader)
+    public static Class<?> loadClass(String classToLoad, ClassLoader classLoader)
     {
         try
         {
@@ -2977,80 +2893,56 @@ public class CompiledSupport
         return ((CompiledExecutionSupport)es).getCodeStorage().exists(path) ? ((CompiledExecutionSupport)es).getCodeStorage().getContentAsText(path) : null;
     }
 
-    public static Object executeFunction(CoreInstance functionDefinition, Class[] paramClasses,
-                                         Object[] params, ExecutionSupport executionSupport)
+    public static Object executeFunction(CoreInstance functionDefinition, Class<?>[] paramClasses, Object[] params, ExecutionSupport executionSupport)
     {
-        return executeFunction(IdBuilder.sourceToId(functionDefinition.getSourceInformation()), (ConcreteFunctionDefinition)functionDefinition,
-                paramClasses, params, executionSupport);
+        return executeFunction(IdBuilder.sourceToId(functionDefinition.getSourceInformation()), (ConcreteFunctionDefinition<?>)functionDefinition, paramClasses, params, executionSupport);
     }
 
 
-    public static Object executeFunction(final String uniqueFunctionId, final ConcreteFunctionDefinition functionDefinition, final Class[] paramClasses,
-                                         final Object[] params, final ExecutionSupport es)
+    public static Object executeFunction(String uniqueFunctionId, ConcreteFunctionDefinition<?> functionDefinition, Class<?>[] paramClasses, Object[] params, ExecutionSupport es)
     {
-        SharedPureFunction spf = ((CompiledExecutionSupport)es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(functionDefinition, new Function0<SharedPureFunction>()
+        SharedPureFunction<?> spf = ((CompiledExecutionSupport)es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(functionDefinition, () ->
         {
-            @Override
-            public SharedPureFunction value()
+            try
             {
-
-                try
-                {
-                    Class clazz = ((CompiledExecutionSupport)es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + '.' + uniqueFunctionId);
-                    String functionName = FunctionProcessor.functionNameToJava(functionDefinition);
-                    Method method = getFunctionMethod(clazz, functionName, functionDefinition, paramClasses, params, es);
-                    return new JavaMethodWithParamsSharedPureFunction(method, paramClasses, functionDefinition.getSourceInformation());
-                }
-                catch (ClassNotFoundException e)
-                {
-                    throw new PureExecutionException("Unable to execute " + uniqueFunctionId, e);
-                }
-
+                Class<?> clazz = ((CompiledExecutionSupport)es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + '.' + uniqueFunctionId);
+                String functionName = FunctionProcessor.functionNameToJava(functionDefinition);
+                Method method = getFunctionMethod(clazz, functionName, functionDefinition, paramClasses, params, es);
+                return new JavaMethodWithParamsSharedPureFunction(method, paramClasses, functionDefinition.getSourceInformation());
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new PureExecutionException("Unable to execute " + uniqueFunctionId, e);
             }
         });
 
         return spf.execute(Lists.fixedSize.of(params).with(es), es);
     }
 
-    public static Object executeMethod(Class clazz, String methodName, CoreInstance functionDefinition, Class[] paramClasses,
-                                       Object objectWhichHasMethod, Object[] params, ExecutionSupport executionSupport)
+    public static Object executeMethod(Class<?> clazz, String methodName, CoreInstance functionDefinition, Class<?>[] paramClasses, Object objectWhichHasMethod, Object[] params, ExecutionSupport executionSupport)
     {
         Method method = getFunctionMethod(clazz, methodName, functionDefinition, paramClasses, params, executionSupport);
-
         return executeMethod(functionDefinition, method, objectWhichHasMethod, params, executionSupport);
-
     }
 
-    private static Method getFunctionMethod(Class clazz, String methodName, CoreInstance functionDefinition, Class[] paramClasses, Object[] params, ExecutionSupport executionSupport)
+    private static Method getFunctionMethod(Class<?> clazz, String methodName, CoreInstance functionDefinition, Class<?>[] paramClasses, Object[] params, ExecutionSupport executionSupport)
     {
-        Class[] newParamClasses;
-        if (params == null)
-        {
-            newParamClasses = new Class[]{ExecutionSupport.class};
-        }
-        else
-        {
-            newParamClasses = Arrays.copyOf(paramClasses, paramClasses.length + 1);
-            newParamClasses[newParamClasses.length - 1] = ExecutionSupport.class;
-        }
-
-        Method method;
+        Class<?>[] newParamClasses = (paramClasses == null) ? new Class[1] : Arrays.copyOf(paramClasses, paramClasses.length + 1);
+        newParamClasses[newParamClasses.length - 1] = ExecutionSupport.class;
 
         try
         {
-            method = clazz.getMethod(methodName, newParamClasses);
+            return clazz.getMethod(methodName, newParamClasses);
         }
         catch (NoSuchMethodException e)
         {
             throw new PureExecutionException(buildFunctionExecutionErrorMessage(functionDefinition, params, "Function was not found.", executionSupport), e);
         }
-        return method;
     }
 
 
     private static Object executeMethod(CoreInstance functionDefinition, Method method, Object objectWhichHasMethod, Object[] params, ExecutionSupport executionSupport)
     {
-
         try
         {
             Object[] newParams;
@@ -3136,26 +3028,12 @@ public class CompiledSupport
         return builder.toString();
     }
 
-    private static final Function2<Object, Pair<Class, SourceInformation>, Object> CAN_CAST_TO = new Function2<Object, Pair<Class, SourceInformation>, Object>()
+    public static <T> RichIterable<? extends T> castWithExceptionHandling(RichIterable<?> sourceCollection, Class<?> targetType, SourceInformation sourceInformation)
     {
-        @Override
-        public Object value(Object sourceObject, Pair<Class, SourceInformation> castTypeAndSourceInformation)
-        {
-            SourceInformation sourceInformation = castTypeAndSourceInformation.getTwo();
-            return castWithExceptionHandling(sourceObject, castTypeAndSourceInformation.getOne(), sourceInformation);
-        }
-    };
-
-    public static <T> RichIterable<? extends T> castWithExceptionHandling(RichIterable<?> sourceCollection, Class targetType, SourceInformation sourceInformation)
-    {
-        if (sourceCollection == null)
-        {
-            return Lists.immutable.<T>empty();
-        }
-        return (RichIterable<? extends T>)sourceCollection.collectWith(CAN_CAST_TO, Tuples.pair(targetType, sourceInformation));
+        return (sourceCollection == null) ? Lists.immutable.empty() : sourceCollection.collect(sourceObject -> castWithExceptionHandling(sourceObject, targetType, sourceInformation));
     }
 
-    public static <T> T castWithExceptionHandling(Object sourceObject, Class targetType, SourceInformation sourceInformation)
+    public static <T> T castWithExceptionHandling(Object sourceObject, Class<?> targetType, SourceInformation sourceInformation)
     {
         if (sourceObject != null && !targetType.isInstance(sourceObject))
         {
@@ -3174,7 +3052,7 @@ public class CompiledSupport
         }
         if (obj instanceof RichIterable)
         {
-            return ((RichIterable)obj).size();
+            return ((RichIterable<?>)obj).size();
         }
         return 1L;
     }
@@ -3187,13 +3065,14 @@ public class CompiledSupport
         }
         if (isPureGeneratedClass(obj))
         {
-            if (!(obj instanceof Class && ((Class)obj).isInterface()))
+            if (!(obj instanceof Class && ((Class<?>)obj).isInterface()))
             {
                 return getPureGeneratedClassName(obj);
             }
         }
-        String primitiveJavaToPureType = obj instanceof Class ? JavaPurePrimitiveTypeMapping.getPureM3TypeFromJavaPrimitivesAndDates((Class)obj)
-                : JavaPurePrimitiveTypeMapping.getPureM3TypeFromJavaPrimitivesAndDates(obj);
+        String primitiveJavaToPureType = obj instanceof Class ?
+                JavaPurePrimitiveTypeMapping.getPureM3TypeFromJavaPrimitivesAndDates((Class<?>)obj) :
+                JavaPurePrimitiveTypeMapping.getPureM3TypeFromJavaPrimitivesAndDates(obj);
         if (primitiveJavaToPureType != null)
         {
             return primitiveJavaToPureType;
@@ -3207,7 +3086,7 @@ public class CompiledSupport
         if (ClassProcessor.isPlatformClass(element))
         {
             Package pkg = element._package();
-            ListIterable<String> packagePath = pkg == null ? Lists.fixedSize.<String>empty() : getUserObjectPathForPackageableElement(pkg, false);
+            ListIterable<String> packagePath = pkg == null ? Lists.fixedSize.empty() : getUserObjectPathForPackageableElement(pkg, false);
             return M3ToJavaGenerator.getFullyQualifiedM3InterfaceForCompiledModel(packagePath, element);
         }
         else
@@ -3222,12 +3101,17 @@ public class CompiledSupport
         return val instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum ? metadata.getEnumeration(fullSystemPath) : metadata.getClass(fullSystemPath);
     }
 
-    private static MutableList<String> getUserObjectPathForPackageableElement(final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement packageableElement, boolean includeRoot)
+    private static MutableList<String> getUserObjectPathForPackageableElement(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement packageableElement, boolean includeRoot)
     {
         Package pkg = packageableElement._package();
         if (pkg == null)
         {
-            return (includeRoot || !"Root".equals(packageableElement.getName())) ? Lists.mutable.with(packageableElement.getName()) : Lists.mutable.<String>of();
+            MutableList<String> pkgPath = Lists.mutable.empty();
+            if (includeRoot || !M3Paths.Root.equals(packageableElement.getName()))
+            {
+                pkgPath.add(packageableElement.getName());
+            }
+            return pkgPath;
         }
         else
         {
@@ -3256,38 +3140,58 @@ public class CompiledSupport
         return FunctionDescriptor.isValidFunctionDescriptor(possiblyFunctionDescriptor);
     }
 
-    public static Object newObject(final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class aClass, RichIterable<? extends KeyValue> root_meta_pure_functions_lang_keyExpressions, ElementOverride override, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function getterToOne, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function getterToMany, Object payload, PureFunction2 getterToOneExec, PureFunction2 getterToManyExec, final ExecutionSupport es)
+    public static Object newObject(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<?> aClass, RichIterable<? extends KeyValue> keyExpressions, ElementOverride override, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function getterToOne, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function getterToMany, Object payload, PureFunction2 getterToOneExec, PureFunction2 getterToManyExec, ExecutionSupport es)
     {
+        ClassCache classCache = ((CompiledExecutionSupport)es).getClassCache();
+        Constructor<?> constructor = classCache.getIfAbsentPutConstructorForType(aClass);
+        Any result;
         try
         {
-            final ClassCache classCache = ((CompiledExecutionSupport)es).getClassCache();
-            final Constructor constructor = classCache.getIfAbsentPutConstructorForType(aClass, ((CompiledExecutionSupport)es).getClassLoader());
-            final Any result = (Any)constructor.newInstance("");
-            root_meta_pure_functions_lang_keyExpressions.forEach(new org.eclipse.collections.impl.block.procedure.checked.CheckedProcedure<KeyValue>()
-            {
-                @Override
-                public void safeValue(KeyValue o) throws Exception
-                {
-                    Method m = classCache.getIfAbsentPutPropertySetterMethodForType(aClass, o._key(), ((CompiledExecutionSupport)es).getClassLoader());
-                    m.invoke(result, o._value());
-                }
-            });
-            PureFunction2Wrapper getterToOneExecFunc = getterToOneExec == null ? null : new PureFunction2Wrapper(getterToOneExec, es);
-            PureFunction2Wrapper getterToManyExecFunc = getterToManyExec == null ? null : new PureFunction2Wrapper(getterToManyExec, es);
-            ElementOverride elementOverride = override;
-            if (override != null && override instanceof GetterOverride)
-            {
-                elementOverride = ((GetterOverride)elementOverride)._getterOverrideToOne(getterToOne)._getterOverrideToMany(getterToMany)._hiddenPayload(payload);
-                ((GetterOverrideExecutor)elementOverride).__getterOverrideToOneExec(getterToOneExecFunc);
-                ((GetterOverrideExecutor)elementOverride).__getterOverrideToManyExec(getterToManyExecFunc);
-            }
-            result._elementOverride(elementOverride);
-            return result;
+            result = (Any) constructor.newInstance("");
         }
-        catch (Exception e)
+        catch (InvocationTargetException | InstantiationException | IllegalAccessException e)
         {
-            throw new RuntimeException(e);
+            Throwable cause = (e instanceof InvocationTargetException) ? e.getCause() : e;
+            StringBuilder builder = new StringBuilder("Error instantiating ");
+            PackageableElement.writeUserPathForPackageableElement(builder, aClass);
+            String eMessage = cause.getMessage();
+            if (eMessage != null)
+            {
+                builder.append(": ").append(eMessage);
+            }
+            throw new RuntimeException(builder.toString(), cause);
         }
+        keyExpressions.forEach(keyValue ->
+        {
+            Method m = classCache.getIfAbsentPutPropertySetterMethodForType(aClass, keyValue._key());
+            try
+            {
+                m.invoke(result, keyValue._value());
+            }
+            catch (InvocationTargetException | IllegalAccessException e)
+            {
+                Throwable cause = (e instanceof InvocationTargetException) ? e.getCause() : e;
+                StringBuilder builder = new StringBuilder("Error setting property '").append(keyValue._key()).append("' for instance of ");
+                PackageableElement.writeUserPathForPackageableElement(builder, aClass);
+                String eMessage = cause.getMessage();
+                if (eMessage != null)
+                {
+                    builder.append(": ").append(eMessage);
+                }
+                throw new RuntimeException(builder.toString(), cause);
+            }
+        });
+        PureFunction2Wrapper getterToOneExecFunc = getterToOneExec == null ? null : new PureFunction2Wrapper(getterToOneExec, es);
+        PureFunction2Wrapper getterToManyExecFunc = getterToManyExec == null ? null : new PureFunction2Wrapper(getterToManyExec, es);
+        ElementOverride elementOverride = override;
+        if (override instanceof GetterOverride)
+        {
+            elementOverride = ((GetterOverride)elementOverride)._getterOverrideToOne(getterToOne)._getterOverrideToMany(getterToMany)._hiddenPayload(payload);
+            ((GetterOverrideExecutor)elementOverride).__getterOverrideToOneExec(getterToOneExecFunc);
+            ((GetterOverrideExecutor)elementOverride).__getterOverrideToManyExec(getterToManyExecFunc);
+        }
+        result._elementOverride(elementOverride);
+        return result;
     }
 
     public static String encrypt(String value, String key)
