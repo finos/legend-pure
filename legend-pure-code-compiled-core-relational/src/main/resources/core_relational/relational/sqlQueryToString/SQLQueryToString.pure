@@ -86,7 +86,12 @@ function meta::relational::functions::sqlQueryToString::sqlQueryToString(sqlQuer
    processOperation($sqlQuery, createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers), $format, ^Config(), $extensions);
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1]):DbConfig[1]
+function meta::relational::functions::sqlQueryToString::createDbConfig(dbType:DatabaseType[1]):DbConfig[1]
+{
+   createDbConfig($dbType, []);
+}
+
+function meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1]):DbConfig[1]
 {
    createDbConfig($dbType, $dbTimeZone, []);
 }
@@ -1685,7 +1690,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::trans
    ]);
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::processColumnName(name:String[1], dbConfig:DbConfig[1]):String[1]
+function meta::relational::functions::sqlQueryToString::processColumnName(name:String[1], dbConfig:DbConfig[1]):String[1]
 {
     let lowerName = $name->toLower();
     let dbType = $dbConfig.dbType;
@@ -1714,7 +1719,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::dbReservedWords(dbType : DatabaseType[1]):String[*]
 {
-    if ($dbType == DatabaseType.H2 || $dbType == DatabaseType.Postgres,
+    if ($dbType == DatabaseType.Postgres,
          | [],
          | if ($dbType == DatabaseType.SybaseIQ,
                |
@@ -1722,11 +1727,23 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::dbRes
                |
                  if ($dbType == DatabaseType.MemSQL,
                      |memSQLReservedWords(),
-                     |['kerberos', 'date', 'first']
+                     | if($dbType == DatabaseType.H2, 
+                          | h2ReservedWords(),
+                          | ['kerberos', 'date', 'first']
                     )
 
                )
-         );
+         ) 
+   );
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::h2ReservedWords():String[*]
+{  
+   [
+      'all','array','case','check','constraint','cross','current_date','current_time','current_timestamp','current_user','distinct','except','exists','false','fetch','for','foreign','from',
+      'full','group','having','if','inner','intersect','intersects','interval','is','join','like','limit','localtime','localtimestamp','minus','natural','not','null','offset','on','order','primary',
+      'qualify','row','rownum','select','sysdate','systime','systimestamp','table','today','top','true','union','unique','values','where','window','with'
+   ];
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::memSQLReservedWords():String[*]
@@ -2119,6 +2136,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    assert($dbUnitType->isNotEmpty(), $durationUnit + ' is not supported by ' + toString($dbType) + ' in the DateDiff Function.');
    $dbUnitType;
 }
+
+
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processIdentifier(originalIdentifier:String[1], dbConfig : DbConfig[1]):String[1]
 {   
