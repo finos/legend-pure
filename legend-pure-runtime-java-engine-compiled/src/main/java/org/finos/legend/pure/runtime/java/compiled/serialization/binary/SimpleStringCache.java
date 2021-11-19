@@ -17,10 +17,13 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.ObjectIntMap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.block.factory.Predicates;
 import org.eclipse.collections.impl.factory.Sets;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.Writer;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialized;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
+
+import java.util.Objects;
 
 class SimpleStringCache extends AbstractStringCache
 {
@@ -35,12 +38,12 @@ class SimpleStringCache extends AbstractStringCache
         writer.writeStringArray(getOtherStringsArray());
     }
 
-    static SimpleStringCache fromSerialized(Serialized serialized)
+    static SimpleStringCache fromNodes(Iterable<? extends CoreInstance> nodes, IdBuilder idBuilder, ProcessorSupport processorSupport)
     {
         SimpleStringCollector collector = new SimpleStringCollector();
-        collectStrings(collector, serialized);
+        collectStrings(collector, nodes, idBuilder, processorSupport);
         MutableList<String> classifierIds = collector.classifierIds.toSortedList();
-        MutableList<String> otherStrings = collector.otherStrings.asLazy().reject(Predicates.in(collector.classifierIds)).toSortedList();
+        MutableList<String> otherStrings = collector.otherStrings.asLazy().reject(collector.classifierIds::contains).toSortedList();
         return new SimpleStringCache(listToIndexIdMap(classifierIds, 0), listToIndexIdMap(otherStrings, classifierIds.size()));
     }
 
@@ -52,34 +55,47 @@ class SimpleStringCache extends AbstractStringCache
         @Override
         public void collectObj(String classifierId, String identifier, String name)
         {
-            this.classifierIds.add(classifierId);
-            this.otherStrings.add(identifier);
-            this.otherStrings.add(name);
+            addClassifierId(classifierId);
+            addOtherString(identifier);
+            addOtherString(name);
         }
 
         @Override
         public void collectSourceId(String sourceId)
         {
-            this.otherStrings.add(sourceId);
+            addOtherString(sourceId);
         }
 
         @Override
         public void collectProperty(String property)
         {
-            this.otherStrings.add(property);
+            addOtherString(property);
         }
 
         @Override
         public void collectRef(String classifierId, String identifier)
         {
-            this.classifierIds.add(classifierId);
-            this.otherStrings.add(identifier);
+            addClassifierId(classifierId);
+            addOtherString(identifier);
         }
 
         @Override
         public void collectPrimitiveString(String string)
         {
-            this.otherStrings.add(string);
+            addOtherString(string);
+        }
+
+        private void addClassifierId(String string)
+        {
+            this.classifierIds.add(Objects.requireNonNull(string));
+        }
+
+        private void addOtherString(String string)
+        {
+            if (string != null)
+            {
+                this.otherStrings.add(string);
+            }
         }
     }
 }

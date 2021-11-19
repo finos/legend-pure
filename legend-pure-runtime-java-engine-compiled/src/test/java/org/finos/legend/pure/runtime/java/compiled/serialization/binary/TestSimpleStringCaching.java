@@ -16,8 +16,8 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.Writer;
-import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialized;
+import org.finos.legend.pure.m4.tools.GraphNodeIterable;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 
 public class TestSimpleStringCaching extends TestStringCaching<SimpleStringCache>
 {
@@ -26,8 +26,7 @@ public class TestSimpleStringCaching extends TestStringCaching<SimpleStringCache
     @Override
     protected SimpleStringCache buildCache()
     {
-        Serialized serialized = GraphSerializer.serializeAll(repository.getTopLevels(), runtime.getProcessorSupport(), false);
-        return SimpleStringCache.fromSerialized(serialized);
+        return SimpleStringCache.fromNodes(GraphNodeIterable.allInstancesFromRepository(repository), IdBuilder.newIdBuilder(processorSupport), processorSupport);
     }
 
     @Override

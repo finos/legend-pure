@@ -47,7 +47,7 @@ function <<test.Test>>  meta::relational::tests::ddl::createCreateTableStatement
 function <<test.Test>> meta::relational::tests::ddl::createCreateTableStatementWithReservedWorks():Boolean[1]
 {
   let s = createTableStatement(foo_db, 'keyword_t');
-  assertEquals('Create Table keyword_t(id INT NOT NULL,"order" INT NULL,"limit" INT NULL,"window" INT NULL, PRIMARY KEY(id));', $s);
+  assertEquals('Create Table keyword_t(id INT NOT NULL,"order" INT NULL,"limit" INT NULL,"window" INT NULL,"current_date" DATE NULL, PRIMARY KEY(id));', $s);
 }
 
 function <<test.Test>>  meta::relational::tests::ddl::dropAndCreateTable():Boolean[1]
@@ -106,6 +106,7 @@ Database meta::relational::tests::ddl::foo_db
        id             integer PRIMARY KEY,
        order          integer,
        limit          integer,
-       window         integer
+       window         integer,
+       current_date   date
    )
 )

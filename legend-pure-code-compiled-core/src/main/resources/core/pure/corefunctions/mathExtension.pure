@@ -241,6 +241,23 @@ function meta::pure::functions::math::mean(numbers:Float[*]):Float[1]
     if($numbers->isEmpty(),|fail('Error: Mean of an empty set.');0.0;,|$numbers->sum() / $numbers->size())
 }
 
+function meta::pure::functions::math::percentile(numbers: Number[*], percentile: Float[1]): Number[0..1]
+[
+  ($percentile >= 0) && ($percentile <= 1)
+]
+{
+   percentile($numbers, $percentile, true, true)
+}
+
+function meta::pure::functions::math::percentile(numbers: Number[*], percentile: Float[1], ascending: Boolean[1], continuous: Boolean[1]): Number[0..1]
+[
+  ($percentile >= 0) && ($percentile <= 1)
+]
+{
+   fail('Only supported in store execution flow!');
+   0;
+}
+
 
 
 function meta::pure::functions::math::calculateInverseFunction(f:FunctionDefinition<Any>[1]):FunctionDefinition<Any>[1]
