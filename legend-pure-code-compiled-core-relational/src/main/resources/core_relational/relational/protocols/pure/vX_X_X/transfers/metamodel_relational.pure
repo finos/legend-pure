@@ -160,7 +160,7 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::mapping::RelationalPropertyMapping
          (
             _type = 'relationalPropertyMapping',
-            property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->at(0).rawType->toOne()->elementToPath(), property=$pm.property.name->toOne()),
+            property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->at(0).rawType->toOne()->elementToPath(), property=$pm.property->meta::pure::milestoning::reverseMilestoningTransforms().name->toOne()),
             enumMappingId = $r.transformer->cast(@EnumerationMapping<Any>).name,
             source = if($pm.property.owner->instanceOf(Association),|$pm.sourceSetImplementationId,|[]),
             target = $pm.targetSetImplementationId,
@@ -179,7 +179,7 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
          (
             _type = 'inlineEmbeddedPropertyMapping',
             id = $i.id,
-            property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->at(0).rawType->toOne()->elementToPath(), property=$pm.property.name->toOne()),
+            property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->at(0).rawType->toOne()->elementToPath(), property=$pm.property->meta::pure::milestoning::reverseMilestoningTransforms().name->toOne()),
             target = $i.id,
             setImplementationId = $i.inlineSetImplementationId
          ),
@@ -188,7 +188,7 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
          (
             _type = 'otherwiseEmbeddedPropertyMapping',
             id = $o.id,
-            property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->at(0).rawType->toOne()->elementToPath(), property=$pm.property.name->toOne()),
+            property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->at(0).rawType->toOne()->elementToPath(), property=$pm.property->meta::pure::milestoning::reverseMilestoningTransforms().name->toOne()),
             target = $o.id,
             classMapping = $o->transformEmbeddedRelationalInstanceSetImplementation($topDatabase, $extensions)->cast(@RelationalClassMapping),
             otherwisePropertyMapping = $o.otherwisePropertyMapping->transformRelationalPropertyMapping($topDatabase, $mapping, $extensions)->cast(@meta::protocols::pure::vX_X_X::metamodel::store::relational::mapping::RelationalPropertyMapping)
@@ -198,7 +198,7 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
          (
             _type = 'embeddedPropertyMapping',
             id = $e.id,
-            property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->at(0).rawType->toOne()->elementToPath(), property=$pm.property.name->toOne()),
+            property = ^meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr(class=$pm.property->genericType().typeArguments->at(0).rawType->toOne()->elementToPath(), property=$pm.property->meta::pure::milestoning::reverseMilestoningTransforms().name->toOne()),
             target = $e.id,
             classMapping = $e->transformEmbeddedRelationalInstanceSetImplementation($topDatabase, $extensions)->cast(@RelationalClassMapping)
          ),
