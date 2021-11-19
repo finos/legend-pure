@@ -1254,7 +1254,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='char_length(%s)')),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='char_length(%s)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='char_length(%s)')),
-                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='char_length(%s)')),
+                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='length(%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='length(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='len(%s)'))]),
       forDynafunction('lessThan',              [ choice($allTypes,                 $allStates,            ^ToSql(format='%s < %s'))]),
