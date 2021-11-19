@@ -17,15 +17,14 @@ package org.finos.legend.pure.runtime.java.compiled.metadata;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
-import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.multimap.set.MutableSetMultimap;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Multimaps;
+import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.Counter;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
@@ -36,50 +35,32 @@ import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Primitive;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.PropertyValue;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.PropertyValueMany;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.PropertyValueOne;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.PropertyValueVisitor;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValue;
+import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValueConsumer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValueVisitor;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
 public class MetadataLazy implements Metadata
 {
-    private static final PropertyValueVisitor<Object> VALUES_VISITOR = new PropertyValueVisitor<Object>()
-    {
-        @Override
-        public Object accept(PropertyValueMany many)
-        {
-            return many.getValues();
-        }
-
-        @Override
-        public Object accept(PropertyValueOne one)
-        {
-            return one.getValue();
-        }
-    };
-
     private final RValueVisitor<Object> valueToObjectVisitor = new RValueVisitor<Object>()
     {
         @Override
-        public Object accept(Primitive primitive)
+        public Object visit(Primitive primitive)
         {
             return primitive.getValue();
         }
 
         @Override
-        public Object accept(ObjRef ref)
+        public Object visit(ObjRef ref)
         {
             return toJavaObject(ref.getClassifierId(), ref.getId());
         }
 
         @Override
-        public Object accept(EnumRef enumRef)
+        public Object visit(EnumRef enumRef)
         {
             return getEnum(enumRef.getEnumerationId(), enumRef.getEnumName());
         }
@@ -89,27 +70,13 @@ public class MetadataLazy implements Metadata
     private final DistributedBinaryGraphDeserializer deserializer;
     private final ConcurrentMutableMap<String, Constructor<? extends CoreInstance>> constructors = ConcurrentHashMap.newMap();
     private final ConcurrentMutableMap<String, ConcurrentMutableMap<String, CoreInstance>> instanceCache = ConcurrentHashMap.newMap();
-    private final ConcurrentMutableMap<String, MapIterable<String, CoreInstance>> enumCache = ConcurrentHashMap.newMap();
 
     private volatile Constructor<? extends CoreInstance> enumConstructor = null; //NOSONAR we actually want to protect the pointer
 
-    @Deprecated
-    public MetadataLazy(ClassLoader classLoader, DistributedBinaryGraphDeserializer deserializer)
+    private MetadataLazy(ClassLoader classLoader, DistributedBinaryGraphDeserializer deserializer)
     {
-        this.classLoader = (classLoader == null) ? MetadataLazy.class.getClassLoader() : classLoader;
-        this.deserializer = (deserializer == null) ? DistributedBinaryGraphDeserializer.fromClassLoader(this.classLoader) : deserializer;
-    }
-
-    @Deprecated
-    public MetadataLazy(ClassLoader classLoader)
-    {
-        this(classLoader, null);
-    }
-
-    @Deprecated
-    public MetadataLazy()
-    {
-        this(null, null);
+        this.classLoader = classLoader;
+        this.deserializer = deserializer;
     }
 
     @Override
@@ -133,35 +100,43 @@ public class MetadataLazy implements Metadata
     @Override
     public CoreInstance getMetadata(String classifier, String id)
     {
-        return this.deserializer.hasClassifier(classifier) ? toJavaObject(classifier, id) : null;
+        return hasClassifier(classifier) ? toJavaObject(classifier, id) : null;
     }
 
     @Override
     public MapIterable<String, CoreInstance> getMetadata(String classifier)
     {
-        if (!this.deserializer.hasClassifier(classifier))
-        {
-            return null;
-        }
-        loadAllClassifierInstances(classifier);
-        return getClassifierInstanceCache(classifier).asUnmodifiable();
+        return hasClassifier(classifier) ? loadAllClassifierInstances(classifier).asUnmodifiable() : null;
     }
 
     @Override
     public CoreInstance getEnum(String enumerationName, String enumName)
     {
-        MapIterable<String, CoreInstance> enumerationCache = this.enumCache.getIfAbsentPutWithKey(enumerationName, this::indexEnumerationValues);
-        if (enumerationCache == null)
+        if (!hasClassifier(enumerationName))
         {
             throw new RuntimeException("Cannot find enum '" + enumName + "' in enumeration '" + enumerationName + "': unknown enumeration");
         }
-        return enumerationCache.get(enumName);
-    }
 
-    private MapIterable<String, CoreInstance> indexEnumerationValues(String enumerationId)
-    {
-        MapIterable<String, CoreInstance> enums = getMetadata(enumerationId);
-        return (enums == null) ? null : enums.groupByUniqueKey(CoreInstance::getName, Maps.mutable.withInitialCapacity(enums.size()));
+        ConcurrentMutableMap<String, CoreInstance> cache = getClassifierInstanceCache(enumerationName);
+        if (cache.isEmpty())
+        {
+            loadAllClassifierInstances(enumerationName);
+        }
+        CoreInstance result = cache.get(enumName);
+        if (result == null)
+        {
+            StringBuilder builder = new StringBuilder("Cannot find enum '").append(enumName).append("' in enumeration '").append(enumerationName).append("' unknown enum value");
+            if (cache.isEmpty())
+            {
+                builder.append(" (no known values)");
+            }
+            else
+            {
+                cache.keysView().appendString(builder, " (known values: '", "', '", "')");
+            }
+            throw new RuntimeException(builder.toString());
+        }
+        return result;
     }
 
     public Object valueToObject(RValue value)
@@ -181,26 +156,25 @@ public class MetadataLazy implements Metadata
             return Lists.mutable.with(valueToObject(values.get(0)));
         }
 
-        MutableSetMultimap<String, ObjRef> objRefsByClassifier = Multimaps.mutable.set.empty();
-        values.forEachWith(RValue::visit, new RValueVisitor<Void>()
+        MutableMap<String, MutableSet<ObjRef>> objRefsByClassifier = Maps.mutable.empty();
+        Counter objRefCounter = new Counter();
+        values.forEach(new RValueConsumer()
         {
             @Override
-            public Void accept(Primitive primitive)
+            protected void accept(Primitive primitive)
             {
-                return null;
             }
 
             @Override
-            public Void accept(ObjRef objRef)
+            protected void accept(ObjRef objRef)
             {
-                objRefsByClassifier.put(objRef.getClassifierId(), objRef);
-                return null;
+                objRefsByClassifier.getIfAbsentPut(objRef.getClassifierId(), Sets.mutable::empty).add(objRef);
+                objRefCounter.increment();
             }
 
             @Override
-            public Void accept(EnumRef enumRef)
+            protected void accept(EnumRef enumRef)
             {
-                return null;
             }
         });
         if (objRefsByClassifier.isEmpty())
@@ -208,14 +182,12 @@ public class MetadataLazy implements Metadata
             return values.collect(this::valueToObject);
         }
 
-        MutableMap<ObjRef, CoreInstance> objectByRef = Maps.mutable.withInitialCapacity(objRefsByClassifier.size());
-        for (Pair<String, RichIterable<ObjRef>> pair : objRefsByClassifier.keyMultiValuePairsView())
+        MutableMap<ObjRef, CoreInstance> objectByRef = Maps.mutable.withInitialCapacity(objRefCounter.getCount());
+        objRefsByClassifier.forEach((classifier, objRefs) ->
         {
-            String classifier = pair.getOne();
-            RichIterable<ObjRef> objRefs = pair.getTwo();
             MutableList<String> idsToDeserialize = Lists.mutable.withInitialCapacity(objRefs.size());
             ConcurrentMutableMap<String, CoreInstance> classifierCache = getClassifierInstanceCache(classifier);
-            for (ObjRef objRef : objRefs)
+            objRefs.forEach(objRef ->
             {
                 String id = objRef.getId();
                 CoreInstance cachedInstance = classifierCache.get(id);
@@ -227,69 +199,73 @@ public class MetadataLazy implements Metadata
                 {
                     objectByRef.put(objRef, cachedInstance);
                 }
-            }
+            });
             if (idsToDeserialize.notEmpty())
             {
-                try
+                ListIterable<Obj> deserialized = getInstances(classifier, idsToDeserialize);
+                deserialized.forEach(obj ->
                 {
-                    for (Obj obj : this.deserializer.getInstances(classifier, idsToDeserialize))
-                    {
-                        CoreInstance cachedInstance = classifierCache.getIfAbsentPut(obj.getIdentifier(), () -> newInstance(classifier, obj));
-                        objectByRef.put(new ObjRef(obj.getClassifier(), obj.getIdentifier()), cachedInstance);
-                    }
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException("Error deserializing instances of " + classifier, e);
-                }
+                    CoreInstance cachedInstance = classifierCache.getIfAbsentPut(obj.getIdentifier(), () -> newInstance(classifier, obj));
+                    objectByRef.put(new ObjRef(obj.getClassifier(), obj.getIdentifier()), cachedInstance);
+                });
             }
-        }
+        });
         return values.collectWith(RValue::visit, new RValueVisitor<Object>()
         {
             @Override
-            public Object accept(Primitive primitive)
+            public Object visit(Primitive primitive)
             {
                 return primitive.getValue();
             }
 
             @Override
-            public Object accept(ObjRef objRef)
+            public Object visit(ObjRef objRef)
             {
                 return objectByRef.get(objRef);
             }
 
             @Override
-            public Object accept(EnumRef enumRef)
+            public Object visit(EnumRef enumRef)
             {
                 return getEnum(enumRef.getEnumerationId(), enumRef.getEnumName());
             }
         });
     }
 
-    public ImmutableMap<String, Object> buildMap(Obj instance)
+    private boolean hasClassifier(String classifier)
     {
-        return instance.getPropertyValues().toMap(PropertyValue::getProperty, pv -> pv.visit(VALUES_VISITOR)).toImmutable();
+        return this.deserializer.hasClassifier(classifier);
     }
 
-    private void loadAllClassifierInstances(String classifier)
+    private RichIterable<String> getClassifierInstanceIds(String classifier)
     {
-        RichIterable<String> instanceIds = this.deserializer.getClassifierInstanceIds(classifier);
+        return this.deserializer.getClassifierInstanceIds(classifier);
+    }
+
+    private Obj getInstance(String classifier, String id)
+    {
+        return this.deserializer.getInstance(classifier, id);
+    }
+
+    private ListIterable<Obj> getInstances(String classifier, Iterable<String> instanceIds)
+    {
+        return this.deserializer.getInstances(classifier, instanceIds);
+    }
+
+    private ConcurrentMutableMap<String, CoreInstance> loadAllClassifierInstances(String classifier)
+    {
+        RichIterable<String> instanceIds = getClassifierInstanceIds(classifier);
         ConcurrentMutableMap<String, CoreInstance> classifierCache = getClassifierInstanceCache(classifier);
-        int notLoadedCount = instanceIds.size() - classifierCache.size();
-        if (notLoadedCount > 0)
+        if (classifierCache.size() < instanceIds.size())
         {
-            MutableList<String> instanceIdsToLoad = instanceIds.reject(classifierCache::containsKey, Lists.mutable.withInitialCapacity(notLoadedCount));
-            ListIterable<Obj> objs;
-            try
+            MutableList<String> notLoadedIds = instanceIds.reject(classifierCache::containsKey, Lists.mutable.empty());
+            if (notLoadedIds.notEmpty())
             {
-                objs = this.deserializer.getInstances(classifier, instanceIdsToLoad);
+                ListIterable<Obj> objs = getInstances(classifier, notLoadedIds);
+                objs.forEach(obj -> classifierCache.getIfAbsentPut(obj.getIdentifier(), () -> newInstance(classifier, obj)));
             }
-            catch (IOException e)
-            {
-                throw new RuntimeException("Error loading all instances for classifier: " + classifier, e);
-            }
-            objs.forEach(obj -> classifierCache.getIfAbsentPut(obj.getIdentifier(), () -> newInstance(classifier, obj)));
         }
+        return classifierCache;
     }
 
     private CoreInstance toJavaObject(String classifier, String id)
@@ -304,15 +280,7 @@ public class MetadataLazy implements Metadata
 
     private CoreInstance newInstance(String classifier, String id)
     {
-        Obj obj;
-        try
-        {
-            obj = this.deserializer.getInstance(classifier, id);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Error loading instance '" + id + "' with classifier '" + classifier + "'", e);
-        }
+        Obj obj = getInstance(classifier, id);
         return newInstance(classifier, obj);
     }
 
@@ -323,9 +291,16 @@ public class MetadataLazy implements Metadata
         {
             return constructor.newInstance(obj, this);
         }
-        catch (ReflectiveOperationException e)
+        catch (InvocationTargetException | InstantiationException | IllegalAccessException e)
         {
-            throw new RuntimeException("Error instantiating " + obj, e);
+            Throwable cause = (e instanceof InvocationTargetException) ? e.getCause() : e;
+            StringBuilder builder = new StringBuilder("Error instantiating ").append(obj).append(" (instance of ").append(classifier).append(")");
+            String eMessage = cause.getMessage();
+            if (eMessage != null)
+            {
+                builder.append(": ").append(eMessage);
+            }
+            throw new RuntimeException(builder.toString(), cause);
         }
     }
 
@@ -350,6 +325,7 @@ public class MetadataLazy implements Metadata
         return this.constructors.getIfAbsentPutWithKey(classifier, this::getLazyImplClassConstructor);
     }
 
+    @SuppressWarnings("unchecked")
     private Constructor<? extends CoreInstance> getLazyImplClassConstructor(String classifier)
     {
         String lazyImplClassName = JavaPackageAndImportBuilder.buildLazyImplClassReferenceFromUserPath(classifier);
@@ -364,6 +340,7 @@ public class MetadataLazy implements Metadata
         }
     }
 
+    @SuppressWarnings("unchecked")
     private Constructor<? extends CoreInstance> getLazyImplEnumConstructor()
     {
         String lazyImplEnumName = JavaPackageAndImportBuilder.rootPackage() + '.' + EnumProcessor.ENUM_LAZY_CLASS_NAME;

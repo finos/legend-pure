@@ -32,9 +32,7 @@ import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileExcep
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
-import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialized;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
 
 import java.io.IOException;
@@ -71,11 +69,6 @@ public class JavaStandaloneLibraryGenerator
     public PureJavaCompiler compile() throws PureJavaCompileException
     {
         return compile(false, null);
-    }
-
-    public Serialized serialize()
-    {
-        return GraphSerializer.serializeAll(this.runtime.getModelRepository().getTopLevels(), this.runtime.getProcessorSupport());
     }
 
     public void compileAndWriteClasses(Path directory) throws IOException, PureJavaCompileException
