@@ -428,9 +428,9 @@ function <<test.Test>> meta::relational::sqlQueryToString::tests::bigquery::test
 function <<test.Test>> meta::relational::sqlQueryToString::tests::bigquery::testDynaConcat():Boolean[1]
 {
    let result = toSQLString(
-     |Order.all()->project([o|$o.id] ,['id']),
-      meta::relational::tests::simpleRelationalMappingWithConcat, 
-      DatabaseType.BigQuery, 
-      meta::pure::router::extension::defaultRelationalExtensions());
+       |Order.all()->project([o|$o.id] ,['id']),
+        meta::relational::tests::simpleRelationalMappingWithConcat,
+        DatabaseType.BigQuery,
+        meta::pure::router::extension::defaultRelationalExtensions());
    assertSameSQL('select concat(\'id\', `root`.ID) as `id` from orderTable as `root`', $result);
 }
