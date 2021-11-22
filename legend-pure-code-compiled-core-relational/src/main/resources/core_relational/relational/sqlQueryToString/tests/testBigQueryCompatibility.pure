@@ -480,3 +480,13 @@ function <<test.Test>> meta::relational::sqlQueryToString::tests::bigquery::test
                               simpleRelationalMapping, DatabaseType.BigQuery, meta::pure::router::extension::defaultRelationalExtensions());
   assertEquals('select \'String\' as `a`, PARSE_DATE(\'%Y-%m-%d\', \'2016-03-01\') as `b`, PARSE_DATETIME(\'%Y-%m-%d %H:%M:%E6S\', \'2016-03-01 10:18:18.976\') as `c`, 1 as `d`, 1.1 as `e`, \'false\' as `f` from personTable as `root` limit 0', $result);
 }
+
+function <<test.Test>> meta::relational::sqlQueryToString::tests::bigquery::testDynaConcat():Boolean[1]
+{
+   let result = toSQLString(
+       |Order.all()->project([o|$o.id] ,['id']),
+        meta::relational::tests::simpleRelationalMappingWithConcat,
+        DatabaseType.BigQuery,
+        meta::pure::router::extension::defaultRelationalExtensions());
+   assertSameSQL('select concat(\'id\', `root`.ID) as `id` from orderTable as `root`', $result);
+}
