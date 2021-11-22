@@ -392,11 +392,13 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::conve
 function <<access.private>> meta::relational::functions::sqlQueryToString::getPrefixAndSuffixForType(type:Type[1], processors:Map<Type, LiteralProcessor>[1]):Pair<String, String>[1]
 {
    let lp           = $processors->get($type)->toOne();
-
-   let lpFormat     = $lp.format;
-   let prefixSuffix = $lpFormat->split('%');
-   let prefix       = if($prefixSuffix->size() == 1, | '', |$prefixSuffix->at(0));
-   let suffix       = if($prefixSuffix->size() == 1, | $prefixSuffix->at(0), |$prefixSuffix->at(1))->substring(1);
+   // We need this replace here to mimic what we would have done if we had executed the format string on input.
+   // %% is used in format to escape a required % symbol. We don't need to do this while building freemarker context
+   let lpFormat     = $lp.format->replace('%%', '%');  
+   
+   let index        = $lpFormat->indexOf('%s');
+   let prefix       = $lpFormat->substring(0, $index);
+   let suffix       = $lpFormat->substring($index+2);
 
    ^Pair<String, String>(first = $prefix, second = $suffix);
 }
