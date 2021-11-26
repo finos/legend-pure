@@ -839,24 +839,32 @@ function meta::external::language::java::metamodel::isClass(type:meta::external:
    ]);
 }
 
+function meta::external::language::java::metamodel::isClass(type:meta::external::language::java::metamodel::Type[1], pkg:String[1], names:String[*]):Boolean[1]
+{
+   $type->match([
+      c:meta::external::language::java::metamodel::Class[1] | $c->isClass($pkg, $names),
+      a:Any[1]                                              | false
+   ]);
+}
+
 function meta::external::language::java::metamodel::isClass(c:meta::external::language::java::metamodel::Class[1], qualifiedName:String[1]):Boolean[1]
 {
    let pos  = $qualifiedName->lastIndexOf('.');
    let pkg  = $qualifiedName->substring(0, $pos);
    let name = $qualifiedName->substring($pos+1);
-   $c->isClass($pkg, $name);   
+   $c->isClass($pkg, $name);
 }
 
 function meta::external::language::java::metamodel::isClass(c:meta::external::language::java::metamodel::Class[1], pkg:String[1], names:String[*]):Boolean[1]
 {
-   $c->isInPackage($pkg) && $c.simpleName->in($names);   
+   $c->isInPackage($pkg) && $c.simpleName->in($names);
 }
 
 function meta::external::language::java::metamodel::isSubclassOf(c1:meta::external::language::java::metamodel::Class[1], c2:meta::external::language::java::metamodel::Class[1]):Boolean[1]
 {
    if($c1 == $c2 || $c2->isClass('java.lang.Object'),
       | true,
-      | 
+      |
    if($c1.superType->isNotEmpty(),
       | $c1.superType->cast(@meta::external::language::java::metamodel::Class)->toOne()->isSubclassOf($c2),
       |
@@ -959,22 +967,22 @@ function meta::external::language::java::metamodel::isDeprecated(c:Code[1]):Bool
 
 function meta::external::language::java::metamodel::isParameter(c:Code[1]):Boolean[1]
 {
-   $c->instanceOf(Parameter);   
+   $c->instanceOf(Parameter);
 }
 
 function meta::external::language::java::metamodel::parameterName(c:Code[1]):String[1]
 {
-   $c->cast(@Parameter).name;   
+   $c->cast(@Parameter).name;
 }
 
 function meta::external::language::java::metamodel::isVariable(c:Code[1]):Boolean[1]
 {
-   $c->instanceOf(Variable);   
+   $c->instanceOf(Variable);
 }
 
 function meta::external::language::java::metamodel::variableName(c:Code[1]):String[1]
 {
-   $c->cast(@Variable).name;   
+   $c->cast(@Variable).name;
 }
 
 
@@ -997,6 +1005,14 @@ function meta::external::language::java::metamodel::isJavaList(type: meta::exter
 {
    $type->match([
       pt: meta::external::language::java::metamodel::ParameterizedType[1] | $pt.rawType->isClass('java.util.List'),
+      a :Any[1]                                                           | false
+   ]);
+}
+
+function meta::external::language::java::metamodel::isJavaCollection(type: meta::external::language::java::metamodel::Type[1]):Boolean[1]
+{
+   $type->match([
+      pt: meta::external::language::java::metamodel::ParameterizedType[1] | $pt.rawType->isClass('java.util', ['List', 'Set', 'EnumSet', 'ArrayList', 'LinkedList', 'HashSet', 'TreeSet']),
       a :Any[1]                                                           | false
    ]);
 }

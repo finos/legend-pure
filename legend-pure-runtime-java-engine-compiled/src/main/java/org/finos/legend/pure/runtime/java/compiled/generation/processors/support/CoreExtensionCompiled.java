@@ -226,6 +226,21 @@ public class CoreExtensionCompiled extends BaseCompiledExtension
                                 "                                ._specific(_class)));\n" +
                                 "    }\n" +
                                 "\n" +
+                                "    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association newAssociation(String fullPathString, Property p1, Property p2, MetadataAccessor ma, SourceInformation si)\n" +
+                                "    {\n" +
+                                "        ListIterable<String> fullPath = PackageableElement.splitUserPath(fullPathString);\n" +
+                                "        if (fullPath.isEmpty())\n" +
+                                "        {\n" +
+                                "            throw new PureExecutionException(null, \"Cannot create a new Association: '\" + fullPathString + \"'\");\n" +
+                                "        }\n" +
+                                "        String name = fullPath.getLast();\n" +
+                                "        org.finos.legend.pure.m3.coreinstance.Package _package = Pure.buildPackageIfNonExistent(new Package_Impl(\"Root\")._name(\"Root\"), ListHelper.subList(fullPath, 0, fullPath.size() - 1), si, s -> new Package_Impl(s));\n" +
+                                "        org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association _association = new Root_meta_pure_metamodel_relationship_Association_Impl(name)._name(name)._package(_package);\n" +
+                                "        return _association._propertiesAdd(p1)._propertiesAdd(p2)._classifierGenericType(\n" +
+                                "                new Root_meta_pure_metamodel_type_generics_GenericType_Impl(\"Anonymous_StripedId\")\n" +
+                                "                        ._rawType(ma.getClass(\"Root::meta::pure::metamodel::relationship::Association\")));\n" +
+                                "    }\n" +
+                                "\n" +
                                 "    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration<Any> newEnumeration(String fullPathString, RichIterable values, MetadataAccessor ma, SourceInformation si)\n" +
                                 "    {\n" +
                                 "        ListIterable<String> fullPath = PackageableElement.splitUserPath(fullPathString);\n" +
