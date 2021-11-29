@@ -24,6 +24,7 @@ import org.eclipse.collections.api.partition.PartitionIterable;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
@@ -81,7 +82,7 @@ public class ClassProjectionProcessor extends Processor<ClassProjection>
         processDerivedProperties(classProjection, repository, context, processorSupport);
         processSimpleProperties(classProjection, state, repository, context, processorSupport);
 
-        ProjectionUtil.copyAnnotations(projectedRawType, classProjection, true, processorSupport);
+        ProjectionUtil.copyAnnotations((AnnotatedElement)projectedRawType, classProjection, true, processorSupport);
         ProjectionUtil.copyAnnotations(projectionSpec, classProjection, true, processorSupport);
 
         context.update(classProjection);

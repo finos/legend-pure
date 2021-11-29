@@ -422,9 +422,13 @@ function meta::json::schema::newJsonRef( element:PackageableElement[1] ) : JSONK
    newJsonRef( $element, [],true,[],defaultInternalConfig()) ;
 }
 
+function <<access.protected>> meta::json::schema::newJsonRef( element:Type[1], root:PackageableElement[0..1],useDefinitions:Boolean[1],propertyOwner:PackageableElement[0..1],config:JSONSchemaConfigInternal[1] ) : JSONKeyValue[1]
+{
+    $element->cast(@PackageableElement)->newJsonRef($root, $useDefinitions, $propertyOwner, $config);
+}
+
 function <<access.protected>> meta::json::schema::newJsonRef( element:PackageableElement[1], root:PackageableElement[0..1],useDefinitions:Boolean[1],propertyOwner:PackageableElement[0..1],config:JSONSchemaConfigInternal[1] ) : JSONKeyValue[1]
 {
-
    newJSONKeyStringValue( '$ref', calculateJSONRef($element,$root,$useDefinitions,$propertyOwner,$config) ) ;
 }
 
@@ -491,6 +495,11 @@ function <<access.private>> meta::json::schema::JSONRefPrefix(config:JSONSchemaC
 
 }
 
+function <<access.private>> meta::json::schema::elementName( element:Type[1],config:JSONSchemaConfigInternal[1],includePackage:Boolean[1],convertToPath:Boolean[1],newName:String[0..1] ) : String[1]
+{
+    $element->cast(@PackageableElement)->meta::json::schema::elementName($config, $includePackage, $convertToPath, $newName);
+}
+
 function <<access.private>> meta::json::schema::elementName( element:PackageableElement[1],config:JSONSchemaConfigInternal[1],includePackage:Boolean[1],convertToPath:Boolean[1],newName:String[0..1] ) : String[1]
 {
   let package = if($includePackage,|$element.package->toOne()-> elementToPath()+'::',|'');
@@ -506,6 +515,10 @@ function <<access.private>> meta::json::schema::elementName( element:Packageable
 
 
 
+function meta::json::schema::title( element:Type[1] ) : JSONKeyValue[1]
+{
+    $element->cast(@PackageableElement)->title();
+}
 
 function meta::json::schema::title( element:PackageableElement[1] ) : JSONKeyValue[1]
 {
@@ -528,6 +541,10 @@ if($element->instanceOf(FunctionDefinition),
 
 }
 
+function meta::json::schema::description( element:Type[1] ) : JSONKeyValue[0..1]
+{
+   $element->cast(@PackageableElement)->description();
+}
 
 function meta::json::schema::description( element:PackageableElement[1] ) : JSONKeyValue[0..1]
 {
@@ -537,6 +554,10 @@ function meta::json::schema::description( element:PackageableElement[1] ) : JSON
       | [] );
 }
 
+function <<access.private>> meta::json::schema::schema( element:Type[1],schema:JSONSchemaSpecification[1])  : JSONKeyValue[0..1]
+{
+    $element->cast(@PackageableElement)->meta::json::schema::schema($schema);
+}
 
 function <<access.private>> meta::json::schema::schema( element:PackageableElement[1],schema:JSONSchemaSpecification[1])  : JSONKeyValue[0..1]
 {
@@ -545,6 +566,11 @@ function <<access.private>> meta::json::schema::schema( element:PackageableEleme
      |[]
    );
 
+}
+
+function meta::json::schema::schema( element:Type[1] ) : JSONKeyValue[1]
+{
+   $element->cast(@PackageableElement)->schema();
 }
 
 function meta::json::schema::schema( element:PackageableElement[1] ) : JSONKeyValue[1]
@@ -613,6 +639,11 @@ function meta::json::schema::isClass( rawType:PackageableElement[*] ) : Boolean[
       e:Enumeration<Any>[1] | false,
       c:Class<Any>[1]       | !$c->isAnyClass()
    ]);
+}
+
+function meta::json::schema::isEnum( rawType:Type[*] ) : Boolean[1]
+{
+    $rawType->cast(@PackageableElement)->isEnum();
 }
 
 function meta::json::schema::isEnum( rawType:PackageableElement[*] ) : Boolean[1]
@@ -871,12 +902,22 @@ function meta::json::schema::propertyFormatValue( property:Property<Nil,Any|*>[1
       );
 }
 
+function <<access.protected>> meta::json::schema::addNullType( existingType:JSONKeyValue[1],element:Type[1],config: JSONSchemaConfigInternal[1]):JSONKeyValue[1]
+{
+    $existingType->addNullType($element->cast(@AnnotatedElement), $config);
+}
+
 function <<access.protected>> meta::json::schema::addNullType( existingType:JSONKeyValue[1],element:AnnotatedElement[1],config: JSONSchemaConfigInternal[1]):JSONKeyValue[1]
 {
 
    if(!$config->isOpenAPI() && $element->cast(@ElementWithStereotypes)->hasStereotype('null',JSONSchemaTypeExtension),
      |   ^$existingType(value=^JSONArray(values=[$existingType.value,^JSONString(value='null')])),
      |$existingType);
+}
+
+function <<access.protected>> meta::json::schema::elementTags( element:Type[1],config: JSONSchemaConfigInternal[1]):JSONKeyValue[*]
+{
+    $element->cast(@AnnotatedElement)->elementTags($config);
 }
 
 function <<access.protected>> meta::json::schema::elementTags( element:AnnotatedElement[1],config: JSONSchemaConfigInternal[1]):JSONKeyValue[*]

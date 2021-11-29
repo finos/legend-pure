@@ -32,6 +32,7 @@ import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
@@ -200,7 +201,7 @@ public class InstantiationHelpers
         {
             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
             ListIterable<? extends CoreInstance> typeArguments = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport);
-            String rawTypeStr = "(" + FullJavaPaths.Type + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(rawType)) + "\",\"" + PackageableElement.getSystemPathForPackageableElement(rawType, "::") + "\")";
+            String rawTypeStr = "(" + FullJavaPaths.Type + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(rawType)) + "\",\"" + IdBuilder.buildId(rawType, processorSupport) + "\")";
             String base = "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(processorSupport.getClassifier(genericType)) + "(\"Anonymous_NoCounter\")._rawType(" + rawTypeStr + ")";
             if (typeArguments.notEmpty())
             {
@@ -239,7 +240,7 @@ public class InstantiationHelpers
     {
         if (Instance.instanceOf(multiplicity, M3Paths.PackageableMultiplicity, processorSupport))
         {
-            return "(" + FullJavaPaths.PackageableMultiplicity + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.PackageableMultiplicity + "\",\""+ PackageableElement.getSystemPathForPackageableElement(multiplicity, "::") +"\")";
+            return "(" + FullJavaPaths.PackageableMultiplicity + ")((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.PackageableMultiplicity + "\",\""+ IdBuilder.buildId(multiplicity, processorSupport) +"\")";
         }
         else
         {

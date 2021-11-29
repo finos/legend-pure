@@ -115,7 +115,7 @@ public class TestLineInfo extends AbstractPureTestWithCoreCompiledPlatform
         CoreInstance classifierGenericType = propertiesByName.get("classifierGenericType");
         Assert.assertNotNull(classifierGenericType);
         // Note: these source coordinates may change if m3.pure changes
-        assertSourceInformation("/platform/pure/m3.pure", 965, 13, 965, 126, 972, 17, classifierGenericType.getSourceInformation());
+        assertSourceInformation("/platform/pure/m3.pure", 992, 13, 992, 126, 999, 17, classifierGenericType.getSourceInformation());
 
         // Test function
         CoreInstance func = this.runtime.getCoreInstance("pkg1::pkg2::printSomething__Any_1_");
@@ -135,7 +135,7 @@ public class TestLineInfo extends AbstractPureTestWithCoreCompiledPlatform
         Assert.assertNotNull(funcType);
         Assert.assertEquals(M3Paths.ConcreteFunctionDefinition, PackageableElement.getUserPathForPackageableElement(funcType, "::"));
         // Note: these source coordinates may change if m3.pure changes
-        assertSourceInformation("/platform/pure/m3.pure", 2145, 1, 2145, 88, 2159, 1, funcType.getSourceInformation());
+        assertSourceInformation("/platform/pure/m3.pure", 2189, 1, 2189, 88, 2203, 1, funcType.getSourceInformation());
     }
 
     @Test

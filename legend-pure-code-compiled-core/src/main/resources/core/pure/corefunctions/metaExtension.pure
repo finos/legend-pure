@@ -187,6 +187,11 @@ function meta::pure::functions::meta::pathToPackage(path:String[1], createMissin
        }, ::)
 }
 
+function meta::pure::functions::meta::fullPackageName(p:Type[1],sep:String[1]):String[1]
+{
+    $p->cast(@PackageableElement)->fullPackageName($sep);
+}
+
 function {doc.doc = 'Returns package name from its root package'}
 meta::pure::functions::meta::fullPackageName(p:PackageableElement[1],sep:String[1]):String[1]
 {
@@ -203,11 +208,11 @@ meta::pure::functions::meta::fullPackageName(p:PackageableElement[1],sep:String[
 }
 
 function {doc.doc = 'Returns true if the element is in the specified package or a sub package of it'}
-meta::pure::functions::meta::isWithinPackage(element:PackageableElement[1],package:Package[1]):Boolean[1]
+meta::pure::functions::meta::isWithinPackage(element:Any[1],package:Package[1]):Boolean[1]
 {
-   if($element.package->size() == 0,
+   if($element->instanceOf(PackageableElement) && $element->cast(@PackageableElement).package->size() == 0,
            | false,
-           | let elementPackage = $element.package->toOne();
+           | let elementPackage = $element->cast(@PackageableElement).package->toOne();
              if ($package == :: || $elementPackage == $package,
                  | true,
                  | $elementPackage->isWithinPackage($package);
@@ -496,6 +501,11 @@ function meta::pure::functions::meta::multiplicitySubsumes(subsuming:Multiplicit
       ));
 }
 
+function meta::pure::functions::meta::value4Tag(f:Type[1], tagName:String[1], profile:Profile[1]):TaggedValue[*]
+{
+    $f->cast(@ElementWithTaggedValues)->value4Tag($tagName, $profile);
+}
+
 function meta::pure::functions::meta::value4Tag(f:ElementWithTaggedValues[1], tagName:String[1], profile:Profile[1]):TaggedValue[*]
 {
     let tag = $profile->tag($tagName);
@@ -506,6 +516,11 @@ function meta::pure::functions::meta::hasStereotype(f:ElementWithStereotypes[1],
 {
     let st = $profile->stereotype($stereotype);
     $f.stereotypes->exists(s | $s == $st);
+}
+
+function meta::pure::functions::meta::hasStereotype(f:Type[1], stereotype:String[1], profile:Profile[1]):Boolean[1]
+{
+    $f->cast(@ElementWithStereotypes)->meta::pure::functions::meta::hasStereotype($stereotype, $profile);
 }
 
 function meta::pure::functions::meta::functionType(f:Function<Any>[1]):FunctionType[1]
@@ -661,6 +676,6 @@ function meta::pure::functions::meta::isAnyClass( rawType:Type[*] ) : Boolean[1]
 
 function meta::pure::functions::meta::isAbstract(class:Type[1]) : Boolean[1]
 {
-  $class->hasStereotype('abstract', meta::pure::profiles::typemodifiers);
+  $class->cast(@ElementWithStereotypes)->hasStereotype('abstract', meta::pure::profiles::typemodifiers);
 }
 

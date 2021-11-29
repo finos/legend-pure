@@ -130,7 +130,7 @@ public class ValueSpecificationProcessor
                     }
                     CoreInstance type = processorSupport.getClassifier(cls);
                     String classifier = MetadataJavaPaths.buildMetadataKeyFromType(type);
-                    return "((" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(type) + "<" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls) + ">)((CompiledExecutionSupport)es).getMetadata(\"" + classifier + "\",\"" + PackageableElement.getSystemPathForPackageableElement(cls) + "\"))";
+                    return "((" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(type) + "<" + TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls) + ">)((CompiledExecutionSupport)es).getMetadata(\"" + classifier + "\",\"" + IdBuilder.buildId(cls, processorSupport) + "\"))";
                 }
                 else
                 {
@@ -149,7 +149,7 @@ public class ValueSpecificationProcessor
                             String type = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(cls);
                             types.add(type);
                             String classifier = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(processorSupport.getClassifier(cls));
-                            return "((" + classifier + "<? extends " + type + ">)((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(cls)) + "\",\"" + PackageableElement.getSystemPathForPackageableElement(cls, "::") + "\"))";
+                            return "((" + classifier + "<? extends " + type + ">)((CompiledExecutionSupport)es).getMetadata(\"" + MetadataJavaPaths.buildMetadataKeyFromType(processorSupport.getClassifier(cls)) + "\",\"" + IdBuilder.buildId(cls, processorSupport) + "\"))";
                         }
                     }).makeString();
                     String typeString = (types.size() > 1) ? ("<" + TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(valueSpecification, M3Properties.genericType, processorSupport), true, processorSupport) + ">") : "";

@@ -176,6 +176,11 @@ Class meta::pure::metamodel::serialization::json::ShallowPackageableElement<T>
    sourceInformation : SourceInformation[1];
 }
 
+function meta::pure::metamodel::serialization::json::packageableElementPointer(c:Type[1]):ShallowPackageableElement<Nil>[1]
+{
+    $c->cast(@PackageableElement)->packageableElementPointer();
+}
+
 function meta::pure::metamodel::serialization::json::packageableElementPointer(c:PackageableElement[1]):ShallowPackageableElement<Nil>[1]
 {
    ^ShallowPackageableElement<Nil>

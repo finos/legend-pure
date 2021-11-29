@@ -1196,8 +1196,8 @@ function <<test.Test>> meta::pure::executionPlan::tests::testModelConnectionJoin
 {
    let res = executionPlan(
                   |meta::pure::mapping::modelToModel::test::shared::dest::Firm.all()->project([f|$f.legalName, f|$f.employees.lastName], ['legalName', 'lastName']),
-                  meta::pure::mapping::modelToModel::test::simple::simpleModelMappingWithAssociation,
-                  ^Runtime(connections = [^meta::pure::mapping::modelToModel::ModelChainConnection(element = ^meta::pure::mapping::modelToModel::ModelStore(),
+                   meta::pure::mapping::modelToModel::test::simple::simpleModelMappingWithAssociation,
+                   ^Runtime(connections = [^meta::pure::mapping::modelToModel::ModelChainConnection(element = ^meta::pure::mapping::modelToModel::ModelStore(),
                                                                                                    mappings = meta::pure::mapping::modelToModel::test::shared::relationalMapping),
                      getConnection()]), meta::pure::router::extension::defaultRelationalExtensions());
    let expected =

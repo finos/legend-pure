@@ -353,8 +353,8 @@
                     <trimStackTrace>false</trimStackTrace>
                     <useSystemClassLoader>true</useSystemClassLoader>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
-                    <reportsDirectory>${project.parent.basedir}/legend-pure-test-reports/surefire-reports-aggregate
-                    </reportsDirectory>
+                    <reportsDirectory>${project.parent.basedir}/legend-pure-test-reports/surefire-reports-aggregate</reportsDirectory>
+                    <trimStackTrace>false</trimStackTrace>
                 </configuration>
             </plugin>
         </plugins>
