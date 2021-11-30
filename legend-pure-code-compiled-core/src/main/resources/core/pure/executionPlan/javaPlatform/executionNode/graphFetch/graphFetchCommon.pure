@@ -24,6 +24,7 @@ import meta::pure::executionPlan::engine::java::graphFetch::common::*;
 import meta::pure::executionPlan::engine::java::naming::*;
 import meta::pure::executionPlan::engine::java::platform::*;
 import meta::pure::executionPlan::engine::java::typeInfo::*;
+import meta::pure::functions::hash::*;
 import meta::pure::mapping::*;
 import meta::pure::mapping::modelToModel::inMemory::*;
 import meta::pure::milestoning::*;
@@ -113,7 +114,10 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
    let mergedProject     = mergeProjects([$implProject, $propertiesProject, $storeProject]);
    let withSizeMethods   = $mergedProject->resolve($implClass)->updateImplementationClassWithInstanceSizeMethods($resultClass, $context);
 
-   mergeProjects([$mergedProject, $withSizeMethods]);
+   let mergedProjectWithSizeMethods = mergeProjects([$mergedProject, $withSizeMethods]);
+   let withSerializableMethods      = $mergedProjectWithSizeMethods->resolve($implClass)->updateImplementationClassWithSerializableMethods($context);
+
+   mergeProjects([$mergedProjectWithSizeMethods, $withSerializableMethods]);
 }
 
 function meta::pure::executionPlan::engine::java::graphFetch::common::createGraphInstance(conventions: Conventions[1], impl: meta::external::language::java::metamodel::Class[1], value: Code[1]): Code[1]
@@ -254,4 +258,25 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
 function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::common::passThruProperty(setImpl:SetImplementation[1], property:AbstractProperty<Any>[1]):Boolean[1]
 {
    $setImpl->meta::pure::mapping::modelToModel::inMemory::isNoMappingPassThru($property)
+}
+
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::common::updateImplementationClassWithSerializableMethods(implClass: meta::external::language::java::metamodel::Class[1], context: GenerationContext[1]): Project[1]
+{
+   let codeString  = $implClass->meta::external::language::java::serialization::classToString();
+   let codeHash    = $codeString->hash(HashType.SHA256);
+
+   let charToIntMap = newMap([
+      pair('0', 0), pair('1', 1), pair('2', 2), pair('3', 3),
+      pair('4', 4), pair('5', 5), pair('6', 6), pair('7', 7),
+      pair('8', 8), pair('9', 9), pair('a', 10), pair('b', 11),
+      pair('c', 12), pair('d', 13), pair('e', 14), pair('f', 15)
+   ]);
+   let prime    = floor(pow(2, 31) - 1);
+   let uidValue = $codeHash->toLower()->chunk(1)->fold({c, h | (31 * $h) + $charToIntMap->get($c)->toOne() + 47}, 0)->mod($prime);
+
+   newProject()->addClasses(
+      $implClass
+         ->implements(javaSerializable())
+         ->addField(javaField(['private', 'static', 'final'], javaLong(), 'serialVersionUID', j_long($uidValue)->codeToString()))
+   );
 }

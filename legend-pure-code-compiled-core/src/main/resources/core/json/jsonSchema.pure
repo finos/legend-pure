@@ -62,6 +62,7 @@ Class meta::json::schema::generation::JSONSchemaConfig extends GenerationConfigu
   {doc.doc='If true, constraint functions generate as schema files, if false constraint function content is in-lined with the parent schema' }generateConstraintFunctionSchemas:Boolean[0..1];  // defaults false - if true , functions generate seperate schemas.
   {doc.doc='The specification which your schema should be compatible with' }schemaSpecification:JSONSchemaSpecification[0..1];
   {doc.doc='Generate a components or definitions collection, if true, only one file will generate with a collection of related elements in scope for execution and there will be no root element in the schema' }createSchemaCollection:Boolean[0..1];
+  {doc.doc='Generate milestoned properties on schemas' }generateMilestoneProperties:Boolean[0..1]; //defaults false - If true - the auto-gen milestoned properties will be included on generated schemas
 
 
 }
@@ -79,6 +80,7 @@ Class <<access.protected>> meta::json::schema::JSONSchemaConfigInternal
    scopeElements: PackageableElement[*];
    fileType:String[1];
    createSchemaCollection:Boolean[1]; //defaults false, if true all elements generate as a single collection
+   generateMilestoneProperties:Boolean[1];  //defaults false - If true - the auto-gen milestoned properties will be included on generated schemas
 }
 
 
@@ -203,7 +205,7 @@ function <<access.private>> meta::json::schema::generation::defaultConfig():JSON
 
 function <<Generation.Configuration>> meta::json::schema::generation::describeConfiguration():GenerationParameter[*]
 {
-   meta::pure::generation::describeConfiguration(JSONSchemaConfig,meta::json::schema::generation::defaultConfig__JSONSchemaConfig_1_,[])->filter(p|!$p.name->in(['generateAnyOfSubType','createSchemaCollection']));
+   meta::pure::generation::describeConfiguration(JSONSchemaConfig,meta::json::schema::generation::defaultConfig__JSONSchemaConfig_1_,[])->filter(p|!$p.name->in(['generateAnyOfSubType','createSchemaCollection','generateMilestoneProperties']));
 
 
 
@@ -238,7 +240,8 @@ function <<access.private>> meta::json::schema::defaultInternalConfig() : JSONSc
                              generateConstraintFunctionSchemas= false,
                              schemaSpecification = JSONSchemaSpecification.JSON_SCHEMA_DRAFT_07,
                              fileType='json',
-                             createSchemaCollection = false
+                             createSchemaCollection = false,
+                             generateMilestoneProperties = false
                               )
   }
 
@@ -251,6 +254,7 @@ function <<access.protected>> meta::json::schema::externalToInternalConfig(confi
         let schemaSpecification =   if($config.schemaSpecification->isEmpty(),|JSONSchemaSpecification.JSON_SCHEMA_DRAFT_07,|$config.schemaSpecification->toOne());
         let fileType =   if($config.schemaSpecification->isEmpty(),|'json',|if($config.schemaSpecification->toOne()->meta::json::schema::isYAML() ,|'yaml',|'json'));
         let includeAllRelatedTypes = if($schemaSpecification->isOpenAPI(),|false,|if($config.includeAllRelatedTypes->isEmpty(),|true,| $config.includeAllRelatedTypes->toOne()));  
+        let generateMilestoneProperties = if($config.generateMilestoneProperties->isEmpty(),|false,|$config.generateMilestoneProperties->toOne());
 
         let createSchemaCollection =   if($config.createSchemaCollection->isEmpty(),|false,|$config.createSchemaCollection->toOne());
       ^JSONSchemaConfigInternal(useConstraints =$useConstraints,
@@ -262,7 +266,8 @@ function <<access.protected>> meta::json::schema::externalToInternalConfig(confi
                                    schemaSpecification =$schemaSpecification,
                                    scopeElements = $config.allPackageScopeElements(),
                                    fileType = $fileType ,
-                                   createSchemaCollection = $createSchemaCollection
+                                   createSchemaCollection = $createSchemaCollection,
+                                   generateMilestoneProperties = $generateMilestoneProperties
 
                                      );
      );
@@ -892,7 +897,7 @@ function <<access.protected>> meta::json::schema::elementTags( element:Annotated
                  );
   let doc =    $element->cast(@PackageableElement)->description();
 
-
+  let milestoning = $element->addMilestoningTag();
 
 
 let customTags = if( $config.scopeElements->filter(e|$e->instanceOf(Profile))->isNotEmpty(),
@@ -906,7 +911,7 @@ let customTags = if( $config.scopeElements->filter(e|$e->instanceOf(Profile))->i
 
 
 
-   $readWrite->concatenate($doc)->concatenate($examples)->concatenate($nullable)->concatenate($customTags);
+   $readWrite->concatenate($doc)->concatenate($examples)->concatenate($nullable)->concatenate($customTags)->concatenate($milestoning);
 
 }
 
@@ -919,6 +924,22 @@ function <<access.private>> meta::json::schema::extendedKeyName(key:String[1],co
       |$key);
 }
 
+function meta::json::schema::addMilestoningTag(type:AnnotatedElement[1]):JSONKeyValue[0..1]
+{
+ let temporalKey = 'x-legendTemporal';
+
+  if($type->hasStereotype('businesstemporal', temporal),
+        |newJSONKeyValue($temporalKey, ^JSONString(value='businesstemporal'))  ,
+        |if($type->hasStereotype('bitemporal', temporal),
+            |newJSONKeyValue($temporalKey, ^JSONString(value='bitemporal'))  ,
+            |if($type->hasStereotype('processingtemporal', temporal),
+                  |newJSONKeyValue($temporalKey, ^JSONString(value='processingtemporal')),
+                  |[]
+                );
+              );   
+  );
+
+}
 
 function <<access.private>> meta::json::schema::propertyType( property:Property<Nil,Any|*>[1],root:Class<Any>[0..1] ,constraintHasType:Boolean[1],config:JSONSchemaConfigInternal[1]) : JSONKeyValue[0..1]
 {
@@ -979,8 +1000,10 @@ function <<access.private>> meta::json::schema::properties( class:Class<Any>[1],
 
 function <<access.private>> meta::json::schema::inscopeProperties( class:Class<Any>[1], config:JSONSchemaConfigInternal[1]) : Property<Nil,Any|*>[*]
 {
-   $class.properties->concatenate($class.propertiesFromAssociations->filter(p|$p.owner->in($config.scopeElements)));
-
+   if($config.generateMilestoneProperties,
+      | $class.properties->concatenate($class.propertiesFromAssociations)->filter(p|$p.owner->in($config.scopeElements)),
+      |  $class.properties->concatenate($class.propertiesFromAssociations->concatenate($class.originalMilestonedProperties)->filter(p|$p.owner->in($config.scopeElements)))->filter(p|!$p->meta::pure::milestoning::hasGeneratedMilestoningPropertyStereotype());
+      );
 
 }
 
@@ -1156,6 +1179,9 @@ function <<access.private>> meta::json::schema::schemaCollection(elements:Packag
 
    ^JsonSchemaGenerationResult(schema = newJSONObject($collection), message =$generatedSchemas.message);
 }
+
+
+
 
 
 Class meta::json::schema::DiscriminatorMapping

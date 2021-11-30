@@ -251,7 +251,7 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planInMem
 {
    let fe = $sq.fe->evaluateAndDeactivate();
    if ($fe->meta::pure::router::isUnionOnGraphFetch(),
-       | planInMemoryRouterUnionGraphFetchExecution($sq, $ext, $mapping->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug),
+       | planRouterUnionGraphFetchExecution($sq, $ext, $mapping->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug),
        | assert($fe.func->in(graphFetchFunctions()), | 'Non graphFetch function encountered');
 
          let sets    = $fe.parametersValues->evaluateAndDeactivate()->at(1)->cast(@InstanceValue).values->at(0)->cast(@ClusteredGraphFetchTree).tree->cast(@RoutedRootGraphFetchTree<Any>).sets;
@@ -259,7 +259,7 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planInMem
          
          if ($isUnion,
              | let resolvedSets = if($sets->size() > 1, | $sets, | $sets->toOne()->cast(@OperationSetImplementation)->meta::pure::router::routing::resolveOperation($mapping->toOne()))->cast(@InstanceSetImplementation);
-               planInMemoryStoreUnionGraphFetchExecution($sq, $ext, $resolvedSets, $mapping->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug);,
+               planStoreUnionGraphFetchExecution($sq, $ext, $resolvedSets, $mapping->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug);,
              | planGraphFetchExecution($sq, $ext, $mapping->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug)
          );
    );
@@ -507,49 +507,6 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::generateI
          }
       )
    })
-}
-
-function <<access.private>> meta::pure::mapping::modelToModel::graphFetch::executionPlan::planInMemoryStoreUnionGraphFetchExecution(sq: StoreQuery[1], ext: RoutedValueSpecification[0..1], sets: InstanceSetImplementation[*], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions: meta::pure::router::extension::RouterExtension[*], debug: DebugContext[1]): ExecutionNode[1]
-{
-   let fe     = $sq.fe->evaluateAndDeactivate();
-   let params = $fe.parametersValues->evaluateAndDeactivate();
-   let p1     = $params->at(0);
-   let p2     = $params->at(1)->cast(@InstanceValue);
-   let tree   = $p2.values->at(0)->cast(@ClusteredGraphFetchTree);
-   let rf     = {set: InstanceSetImplementation[1] | ^$fe(parametersValues = [$p1, ^$p2(values = ^$tree(tree = $tree->byPassClusteringInfoDeep()->cast(@RootGraphFetchTree<Any>)->routeRootGraphFetchTree($set, $mapping, $exeCtx, $extensions)))]->evaluateAndDeactivate())->evaluateAndDeactivate()};
-   
-   let newFe  = $sets->tail()->fold({set, agg |
-      ^SimpleFunctionExpression
-      (
-         func = union_T_MANY__T_MANY__T_MANY_,
-         functionName = 'union',
-         genericType = $fe.genericType,
-         multiplicity = ZeroMany,
-         importGroup = system::imports::coreImport,
-         resolvedTypeParameters = ^GenericType(rawType=Any),
-         parametersValues = [$agg, $rf->eval($set)]->evaluateAndDeactivate()
-      )->evaluateAndDeactivate()
-   }, $rf->eval($sets->at(0)));
-
-   planInMemoryRouterUnionGraphFetchExecution(^$sq(fe = $newFe), $ext, $mapping, $runtime, $exeCtx, $extensions, $debug);
-}
-
-function <<access.private>> meta::pure::mapping::modelToModel::graphFetch::executionPlan::planInMemoryRouterUnionGraphFetchExecution(sq: StoreQuery[1], ext: RoutedValueSpecification[0..1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions: RouterExtension[*], debug: DebugContext[1]): ExecutionNode[1]
-{
-   let fe = $sq.fe->evaluateAndDeactivate();
-   assert($fe->isUnionOnGraphFetch(), | 'Non union graphFetch function encountered');
-
-   let subClusters  = $fe.parametersValues->evaluateAndDeactivate()->map({p | $p->cluster($mapping, $runtime, $sq.inScopeVars, $exeCtx, $extensions, $debug).cluster->evaluateAndDeactivate()})->cast(@ClusteredValueSpecification);
-   let firstCluster = $subClusters->at(0);
-   let childNodes   = $subClusters->map(cls | $cls->plan($runtime, $sq.inScopeVars, $sq.advancedRouting, $exeCtx, $extensions, $debug));
-   
-   ^PureExpressionPlatformExecutionNode
-   (
-      fromCluster    = ^$firstCluster(val = $fe),
-      expression     = $fe,
-      resultType     = $childNodes->at(0).resultType,
-      executionNodes = $childNodes
-   );
 }
 
 function <<access.private>> meta::pure::mapping::modelToModel::graphFetch::executionPlan::explodeMultiPropertyMappingSubTreesToMultiSubTrees(tree: RoutedGraphFetchTree[1]): RoutedGraphFetchTree[1]
