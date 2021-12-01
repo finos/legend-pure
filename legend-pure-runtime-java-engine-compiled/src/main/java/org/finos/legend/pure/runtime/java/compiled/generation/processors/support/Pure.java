@@ -57,9 +57,15 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.Path;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PropertyPathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ConstraintsOverride;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ElementOverride;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.*;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Nil;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
@@ -70,13 +76,14 @@ import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.ChangeType;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.ChangedPath;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.Revision;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.coreinstance.primitive.date.*;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureDynamicReactivateException;
 import org.finos.legend.pure.runtime.java.compiled.delta.CodeBlockDeltaCompiler;
 import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;
@@ -99,11 +106,19 @@ import org.json.simple.JSONObject;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.lang.Class;
 
 public class Pure
 {
@@ -431,7 +446,7 @@ public class Pure
                             try
                             {
                                 RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
-                                Class[] paramClasses = new Class[params.size() + 1];
+                                Class<?>[] paramClasses = new Class[params.size() + 1];
                                 int index = 0;
                                 for (VariableExpression o : params)
                                 {
@@ -821,7 +836,7 @@ public class Pure
 
     public static void replaceTreeNodeCopy(TreeNode instance, TreeNode result, TreeNode targetNode, TreeNode subTree)
     {
-        result._childrenData(FastList.<TreeNode>newList());
+        result._childrenData(FastList.newList());
 
         for (TreeNode child : instance._childrenData())
         {
@@ -836,31 +851,6 @@ public class Pure
                 result._childrenDataAdd(newCopy);
             }
         }
-    }
-
-    private static String extractHostName(String url)
-    {
-        String host = "";
-        if (url.contains("jdbc:sqlanywhere"))
-        {
-            String[] urlTokens = url.split(";");
-            for (String token : urlTokens)
-            {
-                if (token.startsWith("LINKS=TCPIP{host"))
-                {
-                    host += token.substring("LINKS=TCPIP{".length(), token.length() - 1) + ";";
-                }
-                else if (token.startsWith("ServerName"))
-                {
-                    host += token + ";";
-                }
-            }
-        }
-        else
-        {
-            host = url;
-        }
-        return host;
     }
 
     public static boolean instanceOf(Object obj, Type type, ExecutionSupport es)
@@ -974,7 +964,7 @@ public class Pure
         return (lowerBound <= number) && ((upperBound < 0) || (number <= upperBound));
     }
 
-    private static Class pureTypeToJavaClassForExecution(ValueSpecification vs, Bridge bridge, ExecutionSupport es)
+    private static Class<?> pureTypeToJavaClassForExecution(ValueSpecification vs, Bridge bridge, ExecutionSupport es)
     {
         org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gt = vs._genericType();
         Multiplicity m = vs._multiplicity();
@@ -1007,71 +997,65 @@ public class Pure
 
     private static Class<?> pureTypeToJavaClass(Type type, boolean useJavaPrimitives, ExecutionSupport es)
     {
-        try
+        if (type instanceof Enumeration)
         {
-            if (type instanceof Enumeration)
+            return Enum.class;
+        }
+        if (type instanceof PrimitiveType)
+        {
+            switch (type.getName())
             {
-                return Enum.class;
-            }
-            if (type instanceof PrimitiveType)
-            {
-                switch (type.getName())
+                case "Integer":
                 {
-                    case "Integer":
-                    {
-                        return useJavaPrimitives ? long.class : Long.class;
-                    }
-                    case "Number":
-                    {
-                        return Number.class;
-                    }
-                    case "Float":
-                    {
-                        return useJavaPrimitives ? double.class : Double.class;
-                    }
-                    case "Decimal":
-                    {
-                        return BigDecimal.class;
-                    }
-                    case "Boolean":
-                    {
-                        return useJavaPrimitives ? boolean.class : Boolean.class;
-                    }
-                    case "String":
-                    {
-                        return String.class;
-                    }
-                    case "Date":
-                    {
-                        return PureDate.class;
-                    }
-                    case "StrictDate":
-                    {
-                        return StrictDate.class;
-                    }
-                    case "LatestDate":
-                    {
-                        return LatestDate.class;
-                    }
-                    case "DateTime":
-                    {
-                        return DateTime.class;
-                    }
-                    default:
-                    {
-                        CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
-                        return ces.getClassCache().getIfAbsentPutInterfaceForType(type, ces.getClassLoader());
-                    }
+                    return useJavaPrimitives ? long.class : Long.class;
+                }
+                case "Number":
+                {
+                    return Number.class;
+                }
+                case "Float":
+                {
+                    return useJavaPrimitives ? double.class : Double.class;
+                }
+                case "Decimal":
+                {
+                    return BigDecimal.class;
+                }
+                case "Boolean":
+                {
+                    return useJavaPrimitives ? boolean.class : Boolean.class;
+                }
+                case "String":
+                {
+                    return String.class;
+                }
+                case "Date":
+                {
+                    return PureDate.class;
+                }
+                case "StrictDate":
+                {
+                    return StrictDate.class;
+                }
+                case "LatestDate":
+                {
+                    return LatestDate.class;
+                }
+                case "DateTime":
+                {
+                    return DateTime.class;
+                }
+                default:
+                {
+                    CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
+                    return ces.getClassCache().getIfAbsentPutInterfaceForType(type);
                 }
             }
-
-            CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
-            Class<?> theClass = ces.getClassCache().getIfAbsentPutInterfaceForType(type, ces.getClassLoader());
-            return theClass.equals(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Map.class) ? PureMap.class : theClass;
-        } catch (Exception e)
-        {
-            throw new RuntimeException(e);
         }
+
+        CompiledExecutionSupport ces = (CompiledExecutionSupport) es;
+        Class<?> theClass = ces.getClassCache().getIfAbsentPutInterfaceForType(type);
+        return theClass.equals(org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Map.class) ? PureMap.class : theClass;
     }
 
     public static boolean subTypeOf(Type subType, Type superType, ExecutionSupport es)
@@ -1162,8 +1146,8 @@ public class Pure
         }
         else
         {
-            ConcreteFunctionDefinition cfd = (ConcreteFunctionDefinition) compilationResult.getResult();
-            result._result((ValueSpecification) cfd._expressionSequence().getFirst());
+            ConcreteFunctionDefinition<?> cfd = (ConcreteFunctionDefinition<?>) compilationResult.getResult();
+            result._result(cfd._expressionSequence().getFirst());
         }
         return result;
     }
@@ -1180,7 +1164,7 @@ public class Pure
 
     public static Object dynamicMatch(Object obj, RichIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?>> funcs, Object var, boolean isMatchWith, Bridge bridge, ExecutionSupport es)
     {
-        for (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function f : funcs)
+        for (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> f : funcs)
         {
             VariableExpression p = ((FunctionType) f._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters().getFirst();
             Multiplicity mul = p._multiplicity();
@@ -1194,12 +1178,12 @@ public class Pure
         return null;
     }
 
-    public static <T> RichIterable<T> removeDuplicates(T item, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function eqlFn)
+    public static <T> RichIterable<T> removeDuplicates(T item, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> eqlFn)
     {
-        return (item == null) ? Lists.immutable.<T>empty() : Lists.immutable.with(item);
+        return (item == null) ? Lists.immutable.empty() : Lists.immutable.with(item);
     }
 
-    public static <T, V> RichIterable<T> removeDuplicates(RichIterable<T> list, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function eqlFn, Bridge bridge, ExecutionSupport es)
+    public static <T, V> RichIterable<T> removeDuplicates(RichIterable<T> list, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> keyFn, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> eqlFn, Bridge bridge, ExecutionSupport es)
     {
         if (list == null)
         {

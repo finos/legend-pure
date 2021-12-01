@@ -29,7 +29,6 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuespecification.ValueSpecificationProcessor;
 
@@ -78,7 +77,7 @@ public class UnitImplProcessor
         }
     };
 
-    public static String buildConversionFunction(final CoreInstance unit, final ProcessorContext processorContext, ProcessorSupport processorSupport)
+    public static String buildConversionFunction(CoreInstance unit, ProcessorContext processorContext, ProcessorSupport processorSupport)
     {
         CoreInstance func = unit.getValueForMetaPropertyToOne("conversionFunction");
 
@@ -91,7 +90,7 @@ public class UnitImplProcessor
                 "public org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction<? extends java.lang.Object> _conversionFunction(final ExecutionSupport es)\n" +
                 "    {\n" +
                 "        return new PureCompiledLambda().lambdaFunction(\n" +
-                "((CompiledExecutionSupport)es).getMetadataAccessor().getLambdaFunction(\"" + IdBuilder.buildId(func, processorSupport) + "\")\n" +
+                "((CompiledExecutionSupport)es).getMetadataAccessor().getLambdaFunction(\"" + processorContext.getIdBuilder().buildId(func) + "\")\n" +
                 ").pureFunction(\n" +
                 ValueSpecificationProcessor.createFunctionForLambda(unit, func, true, processorSupport, processorContext) + "\n" +
                 ")\n" +

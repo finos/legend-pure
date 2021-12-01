@@ -82,7 +82,24 @@ function <<access.private>> meta::external::store::service::router::extension::s
                                                                                         executable = false
                                                                                      );}
                                                                                  ]},
+      cluster_cluster_ExtendedRoutedValueSpecification_Operation = {r:ExtendedRoutedValueSpecification[1], openVariables:Map<String, List<Any>>[1], mapping:Mapping[1] |
+                                                                                    {rsi:RootServiceInstanceSetImplementation[*]|
+                                                                                       let serviceStores = $rsi.serviceStore()->removeDuplicates();
+                                                                                       assert($serviceStores->size() == 1, | 'Found ' + $serviceStores->size()->toString() + ' stores while trying to resolve Operation Mappings. 1 unique store is required for routing. Stores found were ' + $serviceStores.name->joinStrings('[',',', ']'));
+                                                                                       ^ClusteredValueSpecification(
+                                                                                          genericType  = $r.genericType,
+                                                                                          multiplicity = $r.multiplicity,
+                                                                                          s = meta::external::store::service::router::systemMapping::serviceStoreSystemMapping(),
+                                                                                          store = $r.mapping.resolveStore($serviceStores->toOne()),
+                                                                                          mapping = $r.mapping,
+                                                                                          runtime = $r.runtime,
+                                                                                          openVars = $openVariables,
+                                                                                          val = $r,
+                                                                                          exeCtx = $r.executionContext,
+                                                                                          executable = false
+                                                                                       );}},
       cluster_resolveInstanceSetImplementations = {r : RouterExtension[*] | {rsi:RootServiceInstanceSetImplementation[1] | $rsi}},
+      cluster_resolveRootFromEmbedded = {r:RootServiceInstanceSetImplementation[1]|$r},
       cluster_storeSupportsNativeJoinAmongElements = {s: ServiceStore[1] | false},
       executionPlan_generation_sourceSupportsBatching = {sets:SetImplementation[*], inScopeVars:Map<String, List<Any>>[1] | 
                                                                                          {rsi:RootServiceInstanceSetImplementation[1] | 
@@ -114,6 +131,9 @@ function <<access.private>> meta::external::store::service::router::extension::s
          {s : ServiceStore[1] | meta::external::store::service::executionPlan::generation::planRootGraphFetchExecutionServiceStore($sq, $ext, $clusteredTree, $orderedPaths, $mapping, $runtime, $exeCtx, $enableConstraints, $checked, $extensions, $debug)}
       },
       graphFetch_getStoreFromSet = mapping:Mapping[1] | {rsi : RootServiceInstanceSetImplementation[1] | $mapping.resolveStore($rsi.serviceStore())},
+      graphFetch_getStoreFromSet_Operation = mapping:Mapping[1] | {rsi : RootServiceInstanceSetImplementation[*] | let serviceStores = $rsi.serviceStore()->removeDuplicates();
+                                                                                                                   assert($serviceStores->size() == 1, | 'Found ' + $serviceStores->size()->toString() + ' stores while trying to resolve Operation Mappings. 1 unique store is required for routing. Stores found were ' + $serviceStores.name->joinStrings('[',',', ']'));
+                                                                                                                   $mapping.resolveStore($serviceStores->at(0));},
       graphFetch_getSystemMappingFromStore = db : ServiceStore[1] | meta::external::store::service::router::systemMapping::serviceStoreSystemMapping(),
       java_graphFetch_inMemory_applyTypeFilter = {
          set:InstanceSetImplementation[1], src:Code[1], withoutFilter:Code[1..*], context:GenerationContext[1], debug:DebugContext[1] | [

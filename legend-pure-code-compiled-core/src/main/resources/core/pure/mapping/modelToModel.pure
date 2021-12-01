@@ -251,9 +251,8 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planInMem
 {
    let fe = $sq.fe->evaluateAndDeactivate();
    if ($fe->meta::pure::router::isUnionOnGraphFetch(),
-       | planInMemoryRouterUnionGraphFetchExecution($sq, $ext, $mapping->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug),
-       |  assert($fe.func->in(graphFetchFunctions()) , 'Non graphFetch function encountered');
- 
+       | planRouterUnionGraphFetchExecution($sq, $ext, $mapping->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug),
+       | assert($fe.func->in(graphFetchFunctions()), | 'Non graphFetch function encountered');
 
          let sets    = $fe.parametersValues->evaluateAndDeactivate()->at(1)->cast(@InstanceValue).values->at(0)->cast(@ClusteredGraphFetchTree).tree->cast(@RoutedRootGraphFetchTree<Any>).sets;
          let isUnion = ($sets->size() > 1) || ($sets->toOne()->instanceOf(OperationSetImplementation) && $sets->toOne()->cast(@OperationSetImplementation).operation == meta::pure::router::operations::union_OperationSetImplementation_1__SetImplementation_MANY_);
@@ -266,6 +265,7 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planInMem
                     |planInMemoryStoreMergeGraphFetchExecution($sq, $ext, $resolvedSets, $mapping->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug)
                 );,   
                   | planGraphFetchExecution($sq, $ext, $mapping->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug)
+
          );
    );
 }
@@ -514,6 +514,7 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::generateI
    })
 }
 
+
 function <<access.private>> meta::pure::mapping::modelToModel::graphFetch::executionPlan::planInMemoryStoreUnionGraphFetchExecution(sq: StoreQuery[1], ext: RoutedValueSpecification[0..1], sets: InstanceSetImplementation[*], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions: meta::pure::router::extension::RouterExtension[*], debug: DebugContext[1]): ExecutionNode[1]
 {
    let fe     = $sq.fe->evaluateAndDeactivate();
@@ -630,6 +631,7 @@ function <<access.private>> meta::pure::mapping::modelToModel::graphFetch::execu
                                                        );
   ^$firstNode(localGraphFetchExecutionNode=$newLocal );
 }
+
 
 
 function <<access.private>> meta::pure::mapping::modelToModel::graphFetch::executionPlan::explodeMultiPropertyMappingSubTreesToMultiSubTrees(tree: RoutedGraphFetchTree[1]): RoutedGraphFetchTree[1]

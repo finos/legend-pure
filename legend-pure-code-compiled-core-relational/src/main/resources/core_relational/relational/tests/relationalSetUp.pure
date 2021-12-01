@@ -837,6 +837,16 @@ Mapping meta::relational::tests::simpleRelationalMappingWithPlus
              }
 )
 
+Mapping meta::relational::tests::simpleRelationalMappingWithConcat
+(
+   include simpleRelationalMappingInc[dbInc->db]
+
+   Order : Relational
+             {
+                id : [db] concat('id', orderTable.ID)
+             }
+)
+
 Mapping meta::relational::tests::TestMappingOfSubtypeClass
 (
    include meta::relational::tests::simpleRelationalMapping
