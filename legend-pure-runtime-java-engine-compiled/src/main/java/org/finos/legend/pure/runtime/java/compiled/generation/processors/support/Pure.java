@@ -22,7 +22,6 @@ import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.HashingStrategy;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.function.Function0;
-import org.eclipse.collections.api.block.function.Function2;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -54,7 +53,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.proper
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.Path;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PropertyPathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
@@ -73,7 +71,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.router.RoutedValueSpecifi
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.tools.ListHelper;
@@ -342,26 +339,24 @@ public class Pure
         }
     }
 
-    public static SharedPureFunction getSharedPureFunction(final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function func, Bridge bridge, final ExecutionSupport es)
+    public static SharedPureFunction<?> getSharedPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, ExecutionSupport es)
     {
-        SharedPureFunction foundFunc = findSharedPureFunction(func, bridge, es);
-
+        SharedPureFunction<?> foundFunc = findSharedPureFunction(func, bridge, es);
         if (foundFunc == null)
         {
             throw new PureExecutionException("Can't execute " + func + " | name:'" + func._name() + "' id:'" + func.getName() + "' yet");
         }
-
         return foundFunc;
     }
 
-    public static SharedPureFunction findSharedPureFunction(final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function func, Bridge bridge, ExecutionSupport es)
+    public static SharedPureFunction<?> findSharedPureFunction(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, ExecutionSupport es)
     {
         if (func instanceof Property)
         {
             Type srcType = func._classifierGenericType()._typeArguments().getFirst()._rawType();
             return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutFunctionForClassProperty(srcType, func, ((CompiledExecutionSupport) es).getClassLoader());
         }
-        else if (func instanceof Path)
+        if (func instanceof Path)
         {
             return new PureFunction1<Object, Object>()
             {
@@ -373,113 +368,91 @@ public class Pure
                 }
 
                 @Override
-                public Object value(Object o, final ExecutionSupport es)
+                public Object value(Object o, ExecutionSupport es)
                 {
-                    RichIterable result = (RichIterable) ((Path) func)._path().injectInto(CompiledSupport.toPureCollection(o), new Function2<RichIterable, PathElement, RichIterable>()
+                    RichIterable<?> result = ((Path<?, ?>) func)._path().injectInto(CompiledSupport.toPureCollection(o), (mutableList, path) ->
                     {
-                        @Override
-                        public RichIterable value(RichIterable mutableList, final PathElement path)
+                        if (!(path instanceof PropertyPathElement))
                         {
-                            if (path instanceof PropertyPathElement)
-                            {
-                                return mutableList.flatCollect(new Function<Object, Object>()
-                                {
-                                    @Override
-                                    public Object valueOf(Object instance)
-                                    {
-                                        MutableList<Object> parameters = FastList.newListWith(instance);
-                                        parameters = parameters.withAll(((PropertyPathElement) path)._parameters().collect(new Function<ValueSpecification, Object>()
-                                        {
-                                            @Override
-                                            public Object valueOf(ValueSpecification o)
-                                            {
-                                                return o instanceof InstanceValue ? ((InstanceValue) o)._values() : null;
-                                            }
-                                        }));
-                                        return CompiledSupport.toPureCollection(evaluate(es, ((PropertyPathElement) path)._property(), bridge, parameters.toArray()));
-                                    }
-                                });
-                            }
-                            else
-                            {
-                                throw new PureExecutionException("Only PropertyPathElement is supported yet!");
-                            }
+                            throw new PureExecutionException("Only PropertyPathElement is supported yet!");
                         }
+                        return mutableList.flatCollect(instance ->
+                        {
+                            MutableList<Object> parameters = ((PropertyPathElement) path)._parameters().collect(o1 -> o1 instanceof InstanceValue ? ((InstanceValue) o1)._values() : null, Lists.mutable.with(instance));
+                            return CompiledSupport.toPureCollection(evaluate(es, ((PropertyPathElement) path)._property(), bridge, parameters.toArray()));
+                        });
                     });
                     Multiplicity mult = func._classifierGenericType()._multiplicityArguments().getFirst();
-                    if (bridge.hasToOneUpperBound().apply(mult, es))
-                    {
-                        return result.getFirst();
-                    }
-                    return result;
+                    return bridge.hasToOneUpperBound().apply(mult, es) ? result.getFirst() : result;
                 }
             };
         }
-        else if (func instanceof LambdaCompiledExtended)
+        if (func instanceof LambdaCompiledExtended)
         {
             return ((LambdaCompiledExtended) func).pureFunction();
         }
-        else if (func instanceof LambdaFunction)
+        if (func instanceof LambdaFunction)
         {
-            LambdaFunction lambda = (LambdaFunction) func;
+            LambdaFunction<?> lambda = (LambdaFunction<?>) func;
             if (canFindNativeOrLambdaFunction(es, func))
             {
                 return getNativeOrLambdaFunction(es, func);
             }
-            else if (Reactivator.canReactivateWithoutJavaCompilation(lambda, es, getOpenVariables(func, bridge), bridge))
+            if (Reactivator.canReactivateWithoutJavaCompilation(lambda, es, getOpenVariables(func, bridge), bridge))
             {
                 PureMap openVariablesMap = getOpenVariables(func, bridge);
                 return DynamicPureLambdaFunctionImpl.createPureLambdaFunction(lambda, openVariablesMap.getMap(), bridge);
             }
-            else
-            {
-                return ((LambdaCompiledExtended) CompiledSupport.dynamicallyBuildLambdaFunction(func, es)).pureFunction();
-            }
+            return ((LambdaCompiledExtended) CompiledSupport.dynamicallyBuildLambdaFunction(func, es)).pureFunction();
         }
-        else if (func instanceof ConcreteFunctionDefinition)
+        if (func instanceof ConcreteFunctionDefinition)
         {
-            return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, new Function0<SharedPureFunction>()
+            return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
                     {
-                        @Override
-                        public SharedPureFunction value()
+                        try
                         {
-                            try
+                            RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
+                            Class<?>[] paramClasses = new Class[params.size() + 1];
+                            int index = 0;
+                            for (VariableExpression o : params)
                             {
-                                RichIterable<? extends VariableExpression> params = ((FunctionType) func._classifierGenericType()._typeArguments().getFirst()._rawType())._parameters();
-                                Class<?>[] paramClasses = new Class[params.size() + 1];
-                                int index = 0;
-                                for (VariableExpression o : params)
-                                {
-                                    paramClasses[index] = pureTypeToJavaClassForExecution(o, bridge, es);
-                                    index++;
-                                }
-                                paramClasses[params.size()] = ExecutionSupport.class;
-                                Method method = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation())).getMethod(FunctionProcessor.functionNameToJava(func), paramClasses);
-                                return new JavaMethodWithParamsSharedPureFunction(method, paramClasses, func.getSourceInformation());
-                            } catch (Exception e)
-                            {
-                                throw new RuntimeException(e);
+                                paramClasses[index] = pureTypeToJavaClassForExecution(o, bridge, es);
+                                index++;
                             }
+                            paramClasses[params.size()] = ExecutionSupport.class;
+                            Method method = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation())).getMethod(FunctionProcessor.functionNameToJava(func), paramClasses);
+                            return new JavaMethodWithParamsSharedPureFunction(method, paramClasses, func.getSourceInformation());
+                        }
+                        catch (RuntimeException e)
+                        {
+                            throw e;
+                        }
+                        catch (Exception e)
+                        {
+                            throw new RuntimeException(e);
                         }
                     }
             );
         }
 
-        MutableMap<String, SharedPureFunction> functions = null;
+        MutableMap<String, SharedPureFunction<?>> functions;
         try
         {
-            Class myClass = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
-            functions = (MutableMap<String, SharedPureFunction>) myClass.getDeclaredField("__functions").get(null);
+            Class<?> myClass = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
+            functions = (MutableMap<String, SharedPureFunction<?>>) myClass.getDeclaredField("__functions").get(null);
+        }
+        catch (RuntimeException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
             throw new RuntimeException(e);
         }
-        SharedPureFunction foundFunc = functions.get(func.getName());
-        return foundFunc;
+        return functions.get(func.getName());
     }
 
-    public static Object evaluate(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function func, Bridge bridge, Object... instances)
+    public static Object evaluate(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge, Object... instances)
     {
         if (func instanceof Property)
         {
@@ -496,14 +469,14 @@ public class Pure
         if (func instanceof ConcreteFunctionDefinition)
         {
             JavaMethodWithParamsSharedPureFunction p = (JavaMethodWithParamsSharedPureFunction) getSharedPureFunction(func, bridge, es);
-            Class[] paramClasses = p.getParametersTypes();
+            Class<?>[] paramClasses = p.getParametersTypes();
             int l = paramClasses.length;
             MutableList<Object> paramInstances = FastList.newList();
             for (int i = 0; i < (l - 1); i++)
             {
                 if (instances[i] instanceof RichIterable && paramClasses[i] != RichIterable.class)
                 {
-                    paramInstances.add(CompiledSupport.toOne(((RichIterable) instances[i]), null));
+                    paramInstances.add(CompiledSupport.toOne(((RichIterable<?>) instances[i]), null));
                 }
                 else
                 {
@@ -517,7 +490,7 @@ public class Pure
         {
             return getSharedPureFunction(func, bridge, es).execute(Lists.fixedSize.with(instances), es);
         }
-        SharedPureFunction reflectiveNative = getSharedPureFunction(func, bridge, es);
+        SharedPureFunction<?> reflectiveNative = getSharedPureFunction(func, bridge, es);
         return reflectiveNative.execute(instances == null ? Lists.mutable.empty() : FastList.newListWith(instances), es);
     }
 
@@ -534,7 +507,7 @@ public class Pure
         return _evaluateToMany(es, bridge, func, inputs);
     }
 
-    public static Object _evaluateToMany(ExecutionSupport es, Bridge bridge, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function func, ListIterable<?> paramInputs)
+    public static Object _evaluateToMany(ExecutionSupport es, Bridge bridge, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, ListIterable<?> paramInputs)
     {
         if (func instanceof LambdaCompiledExtended)
         {
@@ -544,7 +517,7 @@ public class Pure
         {
             try
             {
-                Object o = ((RichIterable) paramInputs.getFirst()).getFirst();
+                Object o = ((RichIterable<?>) paramInputs.getFirst()).getFirst();
                 return o.getClass().getMethod("_" + func.getName()).invoke(o);
             }
             catch (Exception e)
@@ -566,13 +539,13 @@ public class Pure
         Iterator<?> iterator = paramInputs.iterator();
         for (int i = 0; i < params.size(); i++)
         {
-            paramInstances[i] = (paramClasses[i] == RichIterable.class) ? iterator.next() : ((RichIterable) iterator.next()).getFirst();
+            paramInstances[i] = (paramClasses[i] == RichIterable.class) ? iterator.next() : ((RichIterable<?>) iterator.next()).getFirst();
         }
         try
         {
             if (func instanceof QualifiedProperty)
             {
-                Object o = ((RichIterable) paramInputs.getFirst()).getFirst();
+                Object o = ((RichIterable<?>) paramInputs.getFirst()).getFirst();
                 return CompiledSupport.executeMethod(o.getClass(), func._functionName(), func, Arrays.copyOfRange(paramClasses, 1, paramClasses.length),
                     o, Arrays.copyOfRange(paramInstances, 1, paramInstances.length), es);
             }
@@ -582,10 +555,21 @@ public class Pure
             }
             if (func instanceof NativeFunction || func instanceof LambdaFunction)
             {
-                SharedPureFunction foundFunc = getNativeOrLambdaFunction(es, func);
+                SharedPureFunction<?> foundFunc = getNativeOrLambdaFunction(es, func);
                 if (foundFunc == null)
                 {
-                    throw new PureExecutionException("Can't execute " + func + " | name:'" + func._name() + "' id:'" + func.getName() + "' yet");
+                    StringBuilder builder = new StringBuilder("Can't execute ").append(func).append(" | name: ");
+                    String name = func._name();
+                    if (name == null)
+                    {
+                        builder.append("null");
+                    }
+                    else
+                    {
+                        builder.append("'").append(name).append("'");
+                    }
+                    builder.append(" id: '").append(func.getName()).append("' yet (metadata id: ").append(IdBuilder.buildId(func, ((CompiledExecutionSupport) es).getProcessorSupport())).append(")");
+                    throw new PureExecutionException(builder.toString());
                 }
                 return foundFunc.execute(Lists.mutable.with(paramInstances), es);
             }
@@ -601,58 +585,50 @@ public class Pure
         }
     }
 
-    private static SharedPureFunction getNativeOrLambdaFunction(final ExecutionSupport es, final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function func)
+    private static SharedPureFunction<?> getNativeOrLambdaFunction(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func)
     {
-        return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, new Function0<SharedPureFunction>()
+        return ((CompiledExecutionSupport) es).getFunctionCache().getIfAbsentPutJavaFunctionForPureFunction(func, () ->
         {
-            @Override
-            public SharedPureFunction value()
+            try
             {
-                try
-                {
-                    Class myClass = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
-                    MutableMap<String, SharedPureFunction> functions = (MutableMap<String, SharedPureFunction>) myClass.getDeclaredField("__functions").get(null);
-                    return functions.get(func.getName());
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e);
-                }
+                Class<?> myClass = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.rootPackage() + "." + IdBuilder.sourceToId(func.getSourceInformation()));
+                MutableMap<String, SharedPureFunction<?>> functions = (MutableMap<String, SharedPureFunction<?>>) myClass.getDeclaredField("__functions").get(null);
+                return functions.get(func.getName());
+            }
+            catch (RuntimeException e)
+            {
+                throw e;
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
             }
         });
     }
 
-    public static boolean canFindNativeOrLambdaFunction(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function func)
+    public static boolean canFindNativeOrLambdaFunction(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func)
     {
         try
         {
-            SharedPureFunction spf = getNativeOrLambdaFunction(es, func);
-            return spf != null;
+            return getNativeOrLambdaFunction(es, func) != null;
         }
-        catch (Exception e)
+        catch (Exception ignore)
         {
             return false;
         }
     }
 
-    public static Object get(RichIterable list, String id)
+    public static Object get(RichIterable<?> list, String id)
     {
-        for (Object element : list)
-        {
-            if (id.equals(((Any) element).getName()))
-            {
-                return element;
-            }
-        }
-        return null;
+        return list.detect(e -> id.equals(((CoreInstance) e).getName()));
     }
 
-    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class genericTypeClass(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType)
+    public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<?> genericTypeClass(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType genericType)
     {
         Type t = genericType._rawType();
         if (t instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class)
         {
-            return (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class) t;
+            return (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class<?>) t;
         }
         return null;
     }

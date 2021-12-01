@@ -183,7 +183,7 @@ public class MetadataLazy implements Metadata
         }
 
         MutableMap<ObjRef, CoreInstance> objectByRef = Maps.mutable.withInitialCapacity(objRefCounter.getCount());
-        objRefsByClassifier.forEach((classifier, objRefs) ->
+        objRefsByClassifier.forEachKeyValue((classifier, objRefs) ->
         {
             MutableList<String> idsToDeserialize = Lists.mutable.withInitialCapacity(objRefs.size());
             ConcurrentMutableMap<String, CoreInstance> classifierCache = getClassifierInstanceCache(classifier);
