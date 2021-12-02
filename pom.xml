@@ -26,7 +26,7 @@
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>1.40.1-SNAPSHOT</version>
+    <version>1.43.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -64,6 +64,7 @@
         <module>legend-pure-code-compiled-core-servicestore</module>
         <module>legend-pure-code-compiled-core-external-shared</module>
         <module>legend-pure-code-compiled-core-external-format-flatdata</module>
+        <module>legend-pure-code-compiled-core-external-format-json</module>
         <module>legend-pure-code-compiled-core-external-format-xml</module>
 
         <module>legend-pure-code-java-compiled-core</module>
@@ -349,6 +350,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <trimStackTrace>false</trimStackTrace>
                     <useSystemClassLoader>true</useSystemClassLoader>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
                     <reportsDirectory>${project.parent.basedir}/legend-pure-test-reports/surefire-reports-aggregate
@@ -449,6 +451,11 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-code-compiled-core-external-format-flatdata</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-code-compiled-core-external-format-json</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

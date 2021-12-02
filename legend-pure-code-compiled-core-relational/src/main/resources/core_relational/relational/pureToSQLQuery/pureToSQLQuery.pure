@@ -3569,7 +3569,17 @@ function meta::relational::functions::pureToSqlQuery::processExists(expression:F
 
     let opMapping = $leftSideOp.currentPropertyMapping;
     if (!$opMapping->isEmpty() && $opMapping->at(0)->instanceOf(EmbeddedRelationalInstanceSetImplementation)
-                  ,| processFilter($expression, $currentPropertyMapping, $nOperation, $vars, $existsState, JoinType.LEFT_OUTER, $nodeId, $aggFromMap, $context, $extensions);
+                  ,{|                                                                   
+                     let existsAsFilter = processFilter($expression, $currentPropertyMapping, $nOperation, $vars, $existsState, JoinType.LEFT_OUTER, $nodeId, $aggFromMap, $context, $extensions);
+                     if($existsState.inFilter
+                         ,|$existsAsFilter
+                         ,{|
+                            let selectWithCursor = $existsAsFilter.element->cast(@SelectWithCursor);
+                            let select = $selectWithCursor.select;
+                            ^$selectWithCursor(select=^$select(savedFilteringOperation=[], columns=$select.savedFilteringOperation.second));
+                          }
+                      );
+                   }
                   ,| if($node.childrenData->size() == 1 && $leftSide->shouldBuildExistsPredicate()
                      ,| buildExistsPredicate($leftSide, $expression, $negate, $opMapping, $nOperation, $vars, $existsState, $nodeId, $aggFromMap, $context, $extensions);
                      ,| buildExistsAsJoinWithNullCheck($leftSide, $expression, $negate, $opMapping, $nOperation, $vars, $existsState, $nodeId, $aggFromMap, $context, $extensions);
@@ -7027,7 +7037,9 @@ function meta::relational::functions::pureToSqlQuery::getSupportedFunctions():Ma
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::graphFetch::execution::graphFetchChecked_T_MANY__RootGraphFetchTree_1__Checked_MANY_, second=meta::relational::functions::pureToSqlQuery::processNoOp_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::functions::collection::objectReferenceIn_Any_1__String_MANY__Boolean_1_, second=meta::relational::functions::pureToSqlQuery::processObjectReferenceIn_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
         ^PureFunctionToRelationalFunctionPair(first=meta::pure::functions::string::matches_String_1__String_1__Boolean_1_,second=meta::relational::functions::pureToSqlQuery::processDynaFunction_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
-        ^PureFunctionToRelationalFunctionPair(first=meta::pure::functions::string::isAlphaNumeric_String_1__Boolean_1_,second=meta::relational::functions::pureToSqlQuery::processDynaFunction_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_)
+        ^PureFunctionToRelationalFunctionPair(first=meta::pure::functions::string::isAlphaNumeric_String_1__Boolean_1_,second=meta::relational::functions::pureToSqlQuery::processDynaFunction_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
+        ^PureFunctionToRelationalFunctionPair(first=meta::pure::functions::math::percentile_Number_MANY__Float_1__Number_$0_1$_, second=meta::relational::functions::pureToSqlQuery::processAggregation_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_),
+        ^PureFunctionToRelationalFunctionPair(first=meta::pure::functions::math::percentile_Number_MANY__Float_1__Boolean_1__Boolean_1__Number_$0_1$_, second=meta::relational::functions::pureToSqlQuery::processAggregation_FunctionExpression_1__PropertyMapping_MANY__SelectWithCursor_1__Map_1__State_1__JoinType_1__String_1__List_1__DebugContext_1__RouterExtension_MANY__RelationalOperationElement_1_)
 
    ])
 }

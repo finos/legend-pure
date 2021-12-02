@@ -83,7 +83,7 @@ public class M3CoreInstanceGenerator
 
     static class PropertyTypeResolverUsingInheritence implements M3ToJavaGenerator.PropertyTypeResolver
     {
-        private ProcessorSupport processorSupport;
+        private final ProcessorSupport processorSupport;
 
         PropertyTypeResolverUsingInheritence(ProcessorSupport processorSupport)
         {
@@ -114,7 +114,7 @@ public class M3CoreInstanceGenerator
         if (!GenericType.isGenericTypeConcrete(returnType, processorSupport) && Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport) != Instance.getValueForMetaPropertyToOneResolved(propertyOwner, M3Properties.rawType, processorSupport))
         {
             GenericTypeWithXArguments res = GenericType.resolveClassTypeParameterUsingInheritance(classGenericType, propertyOwner, processorSupport);
-            returnType = GenericType.makeTypeArgumentAsConcreteAsPossible(returnType, res.getArgumentsByParameterName(), Maps.immutable.<String, CoreInstance>empty(), processorSupport);
+            returnType = GenericType.makeTypeArgumentAsConcreteAsPossible(returnType, res.getArgumentsByParameterName(), Maps.immutable.empty(), processorSupport);
         }
         return returnType;
     }

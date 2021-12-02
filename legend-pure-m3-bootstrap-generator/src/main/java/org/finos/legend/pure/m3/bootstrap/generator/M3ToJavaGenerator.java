@@ -15,8 +15,9 @@
 package org.finos.legend.pure.m3.bootstrap.generator;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
@@ -25,26 +26,21 @@ import org.eclipse.collections.api.partition.PartitionIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.m3.tools.JavaTools;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -56,85 +52,61 @@ public class M3ToJavaGenerator
     private static final String ACCESSOR_SUFFIX = "Accessor";
     private static final String BUILDER_SUFFIX = "Builder";
 
-    private static final Map<String, String> PRIMITIVES;
-    private static final Map<String, String> PRIMITIVES_EXTERNAL_0_1;
-    private static final Map<String, String> PRIMITIVES_EXTERNAL;
     private static final String STUB_UNSUPPORTED_EXCEPTION = "throw new UnsupportedOperationException(\"This stubbed property method is not supported in interpreted mode\")";
     private static final String WRAPPER_UNSUPPORTED_EXCEPTION = "throw new UnsupportedOperationException(\"This method is not supported on wrapper classes\")";
     private static final String M3_UNSUPPORTED_EXCEPTION = "throw new UnsupportedOperationException(\"This method is not supported on M3 classes\")";
 
-    static
-    {
-        PRIMITIVES = Maps.mutable.empty();
-        PRIMITIVES.put("Integer", "Long");
-        //PRIMITIVES.put("Float", "java.math.BigDecimal");
-        PRIMITIVES.put("Float", "Double");
-        PRIMITIVES.put("Boolean", "Boolean");
-        PRIMITIVES.put("Date", "org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate");
-        PRIMITIVES.put("StrictDate", "org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate");
-        PRIMITIVES.put("DateTime", "org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime");
-        PRIMITIVES.put("LatestDate", "org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate");
-        PRIMITIVES.put("String", "String");
-        PRIMITIVES.put("Number", "Number");
+    private static final Map<String, String> PRIMITIVES = Maps.mutable.<String, String>empty()
+            .withKeyValue(ModelRepository.INTEGER_TYPE_NAME, "Long")
+            .withKeyValue(ModelRepository.INTEGER_TYPE_NAME, "Long")
+            .withKeyValue(ModelRepository.FLOAT_TYPE_NAME, "Double")
+            .withKeyValue(ModelRepository.DECIMAL_TYPE_NAME, "java.math.BigDecimal")
+            .withKeyValue(ModelRepository.BOOLEAN_TYPE_NAME, "Boolean")
+            .withKeyValue(ModelRepository.DATE_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate")
+            .withKeyValue(ModelRepository.STRICT_DATE_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate")
+            .withKeyValue(ModelRepository.DATETIME_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime")
+            .withKeyValue(ModelRepository.LATEST_DATE_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate")
+            .withKeyValue(ModelRepository.STRING_TYPE_NAME, "String")
+            .withKeyValue("Number", "Number")
+            .asUnmodifiable();
+    private static final Map<String, String> PRIMITIVES_EXTERNAL = Maps.mutable.<String, String>empty()
+            .withKeyValue(ModelRepository.INTEGER_TYPE_NAME, "long")
+            .withKeyValue(ModelRepository.FLOAT_TYPE_NAME, "double")
+            .withKeyValue(ModelRepository.DECIMAL_TYPE_NAME, "java.math.BigDecimal")
+            .withKeyValue(ModelRepository.BOOLEAN_TYPE_NAME, "boolean")
+            .withKeyValue(ModelRepository.DATE_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate")
+            .withKeyValue(ModelRepository.STRICT_DATE_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate")
+            .withKeyValue(ModelRepository.DATETIME_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime")
+            .withKeyValue(ModelRepository.LATEST_DATE_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate")
+            .withKeyValue(ModelRepository.STRING_TYPE_NAME, "String")
+            .withKeyValue("Number", "Number")
+            .asUnmodifiable();
+    private static final Map<String, String> PRIMITIVES_EXTERNAL_0_1 = Maps.mutable.<String, String>empty()
+            .withKeyValue(ModelRepository.INTEGER_TYPE_NAME, "Long")
+            .withKeyValue(ModelRepository.FLOAT_TYPE_NAME, "Double")
+            .withKeyValue(ModelRepository.DECIMAL_TYPE_NAME, "java.math.BigDecimal")
+            .withKeyValue(ModelRepository.BOOLEAN_TYPE_NAME, "Boolean")
+            .withKeyValue(ModelRepository.DATE_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate")
+            .withKeyValue(ModelRepository.STRICT_DATE_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate")
+            .withKeyValue(ModelRepository.DATETIME_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime")
+            .withKeyValue(ModelRepository.LATEST_DATE_TYPE_NAME, "org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate")
+            .withKeyValue(ModelRepository.STRING_TYPE_NAME, "String")
+            .withKeyValue("Number", "Number")
+            .asUnmodifiable();
 
-        PRIMITIVES_EXTERNAL = Maps.mutable.empty();
-        PRIMITIVES_EXTERNAL.put("Integer", "long");
-        PRIMITIVES_EXTERNAL.put("Float", "double");
-        PRIMITIVES_EXTERNAL.put("Boolean", "boolean");
-        PRIMITIVES_EXTERNAL.put("Date", "org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate");
-        PRIMITIVES_EXTERNAL.put("StrictDate", "org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate");
-        PRIMITIVES_EXTERNAL.put("DateTime", "org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime");
-        PRIMITIVES_EXTERNAL.put("LatestDate", "org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate");
-        PRIMITIVES_EXTERNAL.put("String", "String");
-        PRIMITIVES_EXTERNAL.put("Number", "Number");
-
-        PRIMITIVES_EXTERNAL_0_1 = new HashMap<>();
-        PRIMITIVES_EXTERNAL_0_1.put("Integer", "Long");
-        //PRIMITIVES_EXTERNAL_0_1.put("Float", "java.math.BigDecimal");
-        PRIMITIVES_EXTERNAL_0_1.put("Float", "Double");
-        PRIMITIVES_EXTERNAL_0_1.put("Boolean", "Boolean");
-        PRIMITIVES_EXTERNAL_0_1.put("Date", "org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate");
-        PRIMITIVES_EXTERNAL_0_1.put("StrictDate", "org.finos.legend.pure.m4.coreinstance.primitive.date.StrictDate");
-        PRIMITIVES_EXTERNAL_0_1.put("DateTime", "org.finos.legend.pure.m4.coreinstance.primitive.date.DateTime");
-        PRIMITIVES_EXTERNAL_0_1.put("LatestDate", "org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate");
-        PRIMITIVES_EXTERNAL_0_1.put("String", "String");
-        PRIMITIVES_EXTERNAL_0_1.put("Number", "Number");
-    }
-
-    private final MutableMap<String, StubDef> stubDefs = Lists.immutable.with(
-                    StubDef.build("Class", "ImportStub"),
-                    StubDef.build("Stereotype", "ImportStub"),
-                    StubDef.build("Tag", "ImportStub"),
-                    StubDef.build("Type", "ImportStub"),
-                    StubDef.build("Enumeration", "ImportStub"),
-                    StubDef.build("AbstractProperty", "PropertyStub"),
-                    StubDef.build("Association", "ImportStub"),
-                    StubDef.build("ClassProjection", "ImportStub"),
-                    StubDef.build("Function", "ImportStub"),
-                    StubDef.build("Property", "PropertyStub", Sets.immutable.with("Class", "Association")),
-                    StubDef.build("Enum", "EnumStub", Sets.immutable.with("Enumeration"))
-            ).injectInto(Maps.mutable.empty(), (map, stubDef) -> {
-                map.put(stubDef.getClassName(), stubDef);
-                return map;
-            });
-
-
-    private StubDef getStubDef(String className)
-    {
-        return this.stubDefs.get(className);
-    }
-
-    private String getStubType(String className)
-    {
-        StubDef stubDef = getStubDef(className);
-        return stubDef == null ? null : stubDef.getStubType();
-    }
-
-    private boolean isOwningClass(String instanceClassName, String propertyClassName)
-    {
-        StubDef stubDef = getStubDef(propertyClassName);
-        return stubDef != null && stubDef.isOwner(instanceClassName);
-    }
+    private final MutableMap<String, StubDef> stubDefs = ArrayAdapter.adapt(
+            StubDef.build("Class", "ImportStub"),
+            StubDef.build("Stereotype", "ImportStub"),
+            StubDef.build("Tag", "ImportStub"),
+            StubDef.build("Type", "ImportStub"),
+            StubDef.build("Enumeration", "ImportStub"),
+            StubDef.build("AbstractProperty", "PropertyStub"),
+            StubDef.build("Association", "ImportStub"),
+            StubDef.build("ClassProjection", "ImportStub"),
+            StubDef.build("Function", "ImportStub"),
+            StubDef.build("Property", "PropertyStub", Sets.immutable.with("Class", "Association")),
+            StubDef.build("Enum", "EnumStub", Sets.immutable.with("Enumeration"))
+    ).groupByUniqueKey(StubDef::getClassName);
 
     private final String outputDir;
     private final String factoryNamePrefix;
@@ -165,24 +137,27 @@ public class M3ToJavaGenerator
 
     public void generate(ModelRepository repository, ListIterable<String> fileNames)
     {
-        // TODO: sources, use FSGraphCache
-        String finalOutputDir = this.outputDir + ROOT_PACKAGE.replace(".", "/") + "/";
-        File dir = new File(finalOutputDir);
-        dir.mkdirs();
-        Path p = Paths.get(finalOutputDir + "graph.bin");
-        try (BufferedOutputStream os = new BufferedOutputStream(Files.newOutputStream(p), 1024))
-        {
-            repository.serialize(os);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Error serializing graph", e);
-        }
-
         MutableMap<String, CoreInstance> packageToCoreInstance = Maps.mutable.of();
         MutableSet<CoreInstance> m3Enumerations = Sets.mutable.of();
         this.createClasses(repository.getTopLevels(), packageToCoreInstance, m3Enumerations, fileNames);
         this.createFactory(packageToCoreInstance, m3Enumerations);
+    }
+
+    private StubDef getStubDef(String className)
+    {
+        return this.stubDefs.get(className);
+    }
+
+    private String getStubType(String className)
+    {
+        StubDef stubDef = getStubDef(className);
+        return stubDef == null ? null : stubDef.getStubType();
+    }
+
+    private boolean isOwningClass(String instanceClassName, String propertyClassName)
+    {
+        StubDef stubDef = getStubDef(propertyClassName);
+        return stubDef != null && stubDef.isOwner(instanceClassName);
     }
 
     private void createClasses(RichIterable<? extends CoreInstance> instances, MutableMap<String, CoreInstance> packageToCoreInstance,
@@ -230,17 +205,15 @@ public class M3ToJavaGenerator
         String classText = this.createClass(instance, javaPackage, properties, propertiesFromAssociations, qualifiedProperties, imports, propertyOwners);
         String wrapperClassText = this.createWrapperClass(instance, javaPackage, properties, propertiesFromAssociations, qualifiedProperties, getPropertyTypePackages(classGenericType, properties, qualifiedProperties, true), propertyOwners);
 
-        String fileOutputDir = this.outputDir + javaPackage.replace(".", "/");
-
-        File dir = new File(fileOutputDir);
-        dir.mkdirs();
-        Path classPath = Paths.get(fileOutputDir, getClassName(instance) + ".java");
-        Path interfacePath = Paths.get(fileOutputDir, getInterfaceName(instance) + ".java");
-        Path accessorInterfacePath = Paths.get(fileOutputDir, getAccessorInterfaceName(instance) + ".java");
-        Path builderInterfacePath = Paths.get(fileOutputDir, getBuilderInterfaceName(instance) + ".java");
-        Path wrapperPath = Paths.get(fileOutputDir, getWrapperName(instance) + ".java");
+        Path fileOutputDir = Paths.get(this.outputDir + javaPackage.replace(".", "/"));
+        Path classPath = fileOutputDir.resolve(getClassName(instance) + ".java");
+        Path interfacePath = fileOutputDir.resolve(getInterfaceName(instance) + ".java");
+        Path accessorInterfacePath = fileOutputDir.resolve(getAccessorInterfaceName(instance) + ".java");
+        //Path builderInterfacePath = fileOutputDir.resolve(getBuilderInterfaceName(instance) + ".java");
+        Path wrapperPath = fileOutputDir.resolve(getWrapperName(instance) + ".java");
         try
         {
+            Files.createDirectories(fileOutputDir);
             Files.write(interfacePath, interfaceText.getBytes(StandardCharsets.UTF_8));
             Files.write(accessorInterfacePath, immutableInterfaceText.getBytes(StandardCharsets.UTF_8));
             //Files.write(builderInterfacePath, mutableInterfaceText.getBytes(StandardCharsets.UTF_8));
@@ -293,8 +266,7 @@ public class M3ToJavaGenerator
 
     private String createClass(final CoreInstance instance, String javaPackage, MutableSet<CoreInstance> properties, MutableSet<CoreInstance> propertiesFromAssociations, MutableSet<CoreInstance> qualifiedProperties, final Imports imports, final MutableMap<String, CoreInstance> propertyOwners)
     {
-        imports.addImports(Lists.mutable.of("org.finos.legend.pure.m3.coreinstance.helper.PrimitiveHelper",
-                "org.finos.legend.pure.m3.coreinstance.helper.*"));
+        imports.addImports("org.finos.legend.pure.m3.coreinstance.helper.PrimitiveHelper", "org.finos.legend.pure.m3.coreinstance.helper.*");
 
         final String interfaceName = getInterfaceName(instance);
         final String className = getClassName(instance);
@@ -316,7 +288,7 @@ public class M3ToJavaGenerator
 
         RichIterable<CoreInstance> mandatoryToOneProps = toOneProperties.select(M3ToJavaGenerator::isMandatoryProperty);
 
-        RichIterable<Pair<String, String>> typesForMandatoryProps = buildMandatoryProperties(classGenericType, mandatoryToOneProps, imports).toSortedSetBy(Functions.<String>firstOfPair());
+        RichIterable<Pair<String, String>> typesForMandatoryProps = buildMandatoryProperties(classGenericType, mandatoryToOneProps, imports).toSortedSetBy(Pair::getOne);
 
         MutableList<String> mandatoryTypes = Lists.mutable.of();
         MutableList<String> mandatoryProps = Lists.mutable.of();
@@ -372,23 +344,19 @@ public class M3ToJavaGenerator
                         createClassFactory(className, getUserObjectPathForPackageableElement(instance, false).makeString("::")) +
                         "\n" +
                         "    // TODO: These should be static\n" +
-                        properties.collect(new Function<CoreInstance, String>()
+                        properties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                String propertyName = property.getName();
-                                CoreInstance propertyOwner = propertyOwners.get(propertyName);
-                                ListIterable<String> propertyOwnerPath = getUserObjectPathForPackageableElement(propertyOwner, true);
-                                return "    private CoreInstance " + propertyName + "Key;\n" +
-                                        (propertyOwner == instance || "Association".equals(propertyOwner.getClassifier().getName()) ?
-                                                "    public static final ListIterable<String> " + createPropertyKeyName(propertyName) + " = Lists.immutable.of(" + propertyOwnerPath.makeString("\"", "\",\"children\",\"", "\"") + ",\"properties\",\"" + propertyName + "\");\n" : "");
-                            }
+                            String propertyName = property.getName();
+                            CoreInstance propertyOwner = propertyOwners.get(propertyName);
+                            ListIterable<String> propertyOwnerPath = getUserObjectPathForPackageableElement(propertyOwner, true);
+                            return "    private CoreInstance " + propertyName + "Key;\n" +
+                                    (propertyOwner == instance || "Association".equals(propertyOwner.getClassifier().getName()) ?
+                                            "    public static final ListIterable<String> " + createPropertyKeyName(propertyName) + " = Lists.immutable.of(" + propertyOwnerPath.makeString("\"", "\",\"children\",\"", "\"") + ",\"properties\",\"" + propertyName + "\");\n" : "");
                         }).makeString("") +
                         "\n" +
                         "\n" +
                         "    private _State state;\n" +
-                        "    private static final SetIterable<String> keys = Sets.immutable.with(" + properties.collect(CoreInstance.GET_NAME, FastList.<String>newList()).sortThis().makeString("\"", "\",\"", "\"") + ");\n" +
+                        "    private static final SetIterable<String> keys = Sets.immutable.with(" + properties.collect(CoreInstance::getName, FastList.newList()).sortThis().makeString("\"", "\",\"", "\"") + ");\n" +
                         "\n" +
                         createClassConstructors(className) +
                         "\n" +
@@ -462,28 +430,16 @@ public class M3ToJavaGenerator
                         "    {\n" +
                         "        switch (keyName)\n" +
                         "        {\n" +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
-                        {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                return "            case \"" + property.getName() + "\":\n" +
+                        toOneProperties.collect(property ->
+                                "            case \"" + property.getName() + "\":\n" +
                                         "            {\n" +
                                         "                return this.getState()." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + ";\n" +
-                                        "            }\n";
-                            }
-                        }).makeString("") +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
-                        {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                return "            case \"" + property.getName() + "\":\n" +
+                                        "            }\n").makeString("") +
+                        toManyProperties.collect(property ->
+                                "            case \"" + property.getName() + "\":\n" +
                                         "            {\n" +
                                         "                return getOneValueFromToManyPropertyValues(keyName, this.getState()." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + ");\n" +
-                                        "            }\n";
-                            }
-                        }).makeString("") +
+                                        "            }\n").makeString("") +
                         "            default:\n" +
                         "            {\n" +
                         "                return null;\n" +
@@ -496,28 +452,16 @@ public class M3ToJavaGenerator
                         "    {\n" +
                         "        switch (keyName)\n" +
                         "        {\n" +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
-                        {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                return "            case \"" + property.getName() + "\":\n" +
+                        toManyProperties.collect(property ->
+                                "            case \"" + property.getName() + "\":\n" +
                                         "            {\n" +
                                         "                return getValuesFromToManyPropertyValues(this.getState()." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + ");\n" +
-                                        "            }\n";
-                            }
-                        }).makeString("") +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
-                        {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                return "            case \"" + property.getName() + "\":\n" +
+                                        "            }\n").makeString("") +
+                        toOneProperties.collect(property ->
+                                "            case \"" + property.getName() + "\":\n" +
                                         "            {\n" +
                                         "                return getValuesFromToOnePropertyValue(this.getState()." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + ");\n" +
-                                        "            }\n";
-                            }
-                        }).makeString("") +
+                                        "            }\n").makeString("") +
                         "            default:\n" +
                         "            {\n" +
                         "                return Lists.immutable.empty();\n" +
@@ -530,28 +474,16 @@ public class M3ToJavaGenerator
                         "    {\n" +
                         "        switch (keyName)\n" +
                         "        {\n" +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
-                        {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                return "            case \"" + property.getName() + "\":\n" +
+                        toManyProperties.collect(property ->
+                                "            case \"" + property.getName() + "\":\n" +
                                         "            {\n" +
                                         "                return getValueByIDIndexFromToManyPropertyValues(keyName, this.getState()." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + ", indexSpec, keyInIndex);\n" +
-                                        "            }\n";
-                            }
-                        }).makeString("") +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
-                        {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                return "            case \"" + property.getName() + "\":\n" +
+                                        "            }\n").makeString("") +
+                        toOneProperties.collect(property ->
+                                "            case \"" + property.getName() + "\":\n" +
                                         "            {\n" +
                                         "                return getValueByIDIndexFromToOnePropertyValue(this.getState()." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + ", indexSpec, keyInIndex);\n" +
-                                        "            }\n";
-                            }
-                        }).makeString("") +
+                                        "            }\n").makeString("") +
                         "            default:\n" +
                         "            {\n" +
                         "                return null;\n" +
@@ -564,28 +496,16 @@ public class M3ToJavaGenerator
                         "    {\n" +
                         "        switch (keyName)\n" +
                         "        {\n" +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
-                        {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                return "            case \"" + property.getName() + "\":\n" +
+                        toManyProperties.collect(property ->
+                                "            case \"" + property.getName() + "\":\n" +
                                         "            {\n" +
                                         "                return getValuesByIndexFromToManyPropertyValues(this.getState()." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + ", indexSpec, keyInIndex);\n" +
-                                        "            }\n";
-                            }
-                        }).makeString("") +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
-                        {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                return "            case \"" + property.getName() + "\":\n" +
+                                        "            }\n").makeString("") +
+                        toOneProperties.collect(property ->
+                                "            case \"" + property.getName() + "\":\n" +
                                         "            {\n" +
                                         "                return getValuesByIndexFromToOnePropertyValue(this.getState()." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + ", indexSpec, keyInIndex);\n" +
-                                        "            }\n";
-                            }
-                        }).makeString("") +
+                                        "            }\n").makeString("") +
                         "            default:\n" +
                         "            {\n" +
                         "                return Lists.immutable.empty();\n" +
@@ -598,17 +518,11 @@ public class M3ToJavaGenerator
                         "    {\n" +
                         "        switch (keyName)\n" +
                         "        {\n" +
-                        properties.collect(new Function<CoreInstance, String>()
-                        {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                return "            case \"" + property.getName() + "\":\n" +
+                        properties.collect(property ->
+                                "            case \"" + property.getName() + "\":\n" +
                                         "            {\n" +
                                         "                return this.getState()." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + " != null;\n" +
-                                        "            }\n";
-                            }
-                        }).makeString("") +
+                                        "            }\n").makeString("") +
                         "            default:\n" +
                         "            {\n" +
                         "                return false;\n" +
@@ -623,44 +537,36 @@ public class M3ToJavaGenerator
                         "        _State state = this.getState();\n" +
                         "        switch (key)\n" +
                         "        {\n" +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
+                        toManyProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return "            case \"" + property.getName() + "\":\n" +
-                                        "            {\n" +
-                                        "                " + getPropertyTypeInternal(property, propertyReturnGenericType, imports, false, false, isPlatformClass(property)) + " values = state." + propertyName + ";\n" +
-                                        "                if (values == null)\n" +
-                                        "                {\n" +
-                                        "                    throw new IllegalArgumentException(\"Cannot modify value at offset \" + offset + \" for property '\" + key + \"'\");\n" +
-                                        "                }\n" +
-                                        "                values.setValue(offset, " + (isAnyOrNilTypeProperty(propertyReturnGenericType) ? "value" : typeConversionInSetter(property, propertyReturnGenericType, imports, "value", true, true, true)) + ");\n" +
-                                        "                break;\n" +
-                                        "            }\n";
-                            }
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return "            case \"" + property.getName() + "\":\n" +
+                                    "            {\n" +
+                                    "                " + getPropertyTypeInternal(property, propertyReturnGenericType, imports, false, false, isPlatformClass(property)) + " values = state." + propertyName + ";\n" +
+                                    "                if (values == null)\n" +
+                                    "                {\n" +
+                                    "                    throw new IllegalArgumentException(\"Cannot modify value at offset \" + offset + \" for property '\" + key + \"'\");\n" +
+                                    "                }\n" +
+                                    "                values.setValue(offset, " + (isAnyOrNilTypeProperty(propertyReturnGenericType) ? "value" : typeConversionInSetter(property, propertyReturnGenericType, imports, "value", true, true, true)) + ");\n" +
+                                    "                break;\n" +
+                                    "            }\n";
                         }).makeString("") +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
+                        toOneProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return "            case \"" + property.getName() + "\":\n" +
-                                        "            {\n" +
-                                        "                if (offset != 0)\n" +
-                                        "                {\n" +
-                                        "                    throw new IllegalArgumentException(\"Cannot modify value at offset \" + offset + \" for to-one property '\" + key + \"'\");\n" +
-                                        "                }\n" +
-                                        "                synchronized (state)\n" +
-                                        "                {\n" +
-                                        "                    state." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + " = " + typeConversionInSetter(property, propertyReturnGenericType, imports, "value", false, true, true) + ";\n" +
-                                        "                }\n" +
-                                        "                break;\n" +
-                                        "            }\n";
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return "            case \"" + property.getName() + "\":\n" +
+                                    "            {\n" +
+                                    "                if (offset != 0)\n" +
+                                    "                {\n" +
+                                    "                    throw new IllegalArgumentException(\"Cannot modify value at offset \" + offset + \" for to-one property '\" + key + \"'\");\n" +
+                                    "                }\n" +
+                                    "                synchronized (state)\n" +
+                                    "                {\n" +
+                                    "                    state." + getPropertyNameAsValidJavaIdentifierSwitchName(property) + " = " + typeConversionInSetter(property, propertyReturnGenericType, imports, "value", false, true, true) + ";\n" +
+                                    "                }\n" +
+                                    "                break;\n" +
+                                    "            }\n";
                         }).makeString("") +
                         "            default:\n" +
                         "            {\n" +
@@ -676,43 +582,35 @@ public class M3ToJavaGenerator
                         "        _State state = this.getState();\n" +
                         "        switch (keyName)\n" +
                         "        {\n" +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
+                        toManyProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                return "            case \"" + property.getName() + "\":\n" +
-                                        "            {\n" +
-                                        "                " + getPropertyTypeInternal(property, propertyReturnGenericType, imports, false, false, isPlatformClass(property)) + " values = state." + propertyName + ";\n" +
-                                        "                if (values != null)\n" +
-                                        "                {\n" +
-                                        "                    values.removeValue(" + typeConversionInSetter(property, propertyReturnGenericType, imports, "valueToRemove", true, true, true) + ");\n" +
-                                        "                }\n" +
-                                        "                break;\n" +
-                                        "            }\n";
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            return "            case \"" + property.getName() + "\":\n" +
+                                    "            {\n" +
+                                    "                " + getPropertyTypeInternal(property, propertyReturnGenericType, imports, false, false, isPlatformClass(property)) + " values = state." + propertyName + ";\n" +
+                                    "                if (values != null)\n" +
+                                    "                {\n" +
+                                    "                    values.removeValue(" + typeConversionInSetter(property, propertyReturnGenericType, imports, "valueToRemove", true, true, true) + ");\n" +
+                                    "                }\n" +
+                                    "                break;\n" +
+                                    "            }\n";
                         }).makeString("") +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
+                        toOneProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                return "            case \"" + property.getName() + "\":\n" +
-                                        "            {\n" +
-                                        "                synchronized (state)\n" +
-                                        "                {\n" +
-                                        "                    CoreInstance current = state." + propertyName + ";\n" +
-                                        "                    if ((current != null) && current.equals(valueToRemove))\n" +
-                                        "                    {\n" +
-                                        "                        state." + propertyName + " = null;\n" +
-                                        "                    }\n" +
-                                        "                }\n" +
-                                        "                break;\n" +
-                                        "            }\n";
-                            }
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            return "            case \"" + property.getName() + "\":\n" +
+                                    "            {\n" +
+                                    "                synchronized (state)\n" +
+                                    "                {\n" +
+                                    "                    CoreInstance current = state." + propertyName + ";\n" +
+                                    "                    if ((current != null) && current.equals(valueToRemove))\n" +
+                                    "                    {\n" +
+                                    "                        state." + propertyName + " = null;\n" +
+                                    "                    }\n" +
+                                    "                }\n" +
+                                    "                break;\n" +
+                                    "            }\n";
                         }).makeString("") +
                         "            default:\n" +
                         "            {\n" +
@@ -734,45 +632,37 @@ public class M3ToJavaGenerator
                         "        _State state = this.getState();\n" +
                         "        switch (keyName)\n" +
                         "        {\n" +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
+                        toManyProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            String expression = "newValues";
+                            CoreInstance propertyGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            if (!isAnyOrNilTypeProperty(propertyGenericType) && !isStubType(property, propertyGenericType))
                             {
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                String expression = "newValues";
-                                CoreInstance propertyGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                if (!isAnyOrNilTypeProperty(propertyGenericType) && !isStubType(property, propertyGenericType))
-                                {
-                                    expression = "(" + expression + " == null) ? null : " + typeConversionInSetter(property, propertyGenericType, imports, expression, true, false, true);
-                                }
-                                return "            case \"" + property.getName() + "\":\n" +
-                                        "            {\n" +
-                                        "                state.init_" + propertyName + "().setValues(" + expression + ");\n" +
-                                        "                break;\n" +
-                                        "            }\n";
+                                expression = "(" + expression + " == null) ? null : " + typeConversionInSetter(property, propertyGenericType, imports, expression, true, false, true);
                             }
+                            return "            case \"" + property.getName() + "\":\n" +
+                                    "            {\n" +
+                                    "                state.init_" + propertyName + "().setValues(" + expression + ");\n" +
+                                    "                break;\n" +
+                                    "            }\n";
                         }).makeString("") +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
+                        toOneProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return "            case \"" + property.getName() + "\":\n" +
-                                        "            {\n" +
-                                        "                if (newValues.size() > 1)\n" +
-                                        "                {\n" +
-                                        "                    throw new IllegalArgumentException(\"Cannot set \" + newValues.size() + \" values for to-one property '\" + keyName + \"'\");\n" +
-                                        "                }\n" +
-                                        "                synchronized (state)\n" +
-                                        "                {\n" +
-                                        "                    state." + propertyName + " = " + typeConversionInSetter(property, propertyReturnGenericType, imports, "newValues.getFirst()", false, true, true) + ";\n" +
-                                        "                }\n" +
-                                        "                break;\n" +
-                                        "            }\n";
-                            }
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return "            case \"" + property.getName() + "\":\n" +
+                                    "            {\n" +
+                                    "                if (newValues.size() > 1)\n" +
+                                    "                {\n" +
+                                    "                    throw new IllegalArgumentException(\"Cannot set \" + newValues.size() + \" values for to-one property '\" + keyName + \"'\");\n" +
+                                    "                }\n" +
+                                    "                synchronized (state)\n" +
+                                    "                {\n" +
+                                    "                    state." + propertyName + " = " + typeConversionInSetter(property, propertyReturnGenericType, imports, "newValues.getFirst()", false, true, true) + ";\n" +
+                                    "                }\n" +
+                                    "                break;\n" +
+                                    "            }\n";
                         }).makeString("") +
                         "            default:\n" +
                         "            {\n" +
@@ -789,40 +679,32 @@ public class M3ToJavaGenerator
                         "        _State state = this.getState();\n" +
                         "        switch (keyName)\n" +
                         "        {\n" +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
+                        toManyProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                return "            case \"" + property.getName() + "\":\n" +
-                                        "            {\n" +
-                                        "                state.init_" + propertyName + "().addValue(" + typeConversionInSetter(property, propertyGenericType, imports, "value", true, true, true) + ");\n" +
-                                        "                break;\n" +
-                                        "            }\n";
-                            }
+                            CoreInstance propertyGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            return "            case \"" + property.getName() + "\":\n" +
+                                    "            {\n" +
+                                    "                state.init_" + propertyName + "().addValue(" + typeConversionInSetter(property, propertyGenericType, imports, "value", true, true, true) + ");\n" +
+                                    "                break;\n" +
+                                    "            }\n";
                         }).makeString("") +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
+                        toOneProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                return "            case \"" + property.getName() + "\":\n" +
-                                        "            {\n" +
-                                        "                synchronized (state)\n" +
-                                        "                {\n" +
-                                        "                    if (state." + propertyName + " != null)\n" +
-                                        "                    {\n" +
-                                        "                        throw new IllegalArgumentException(\"Cannot add value for to-one property '\" + keyName + \"': value already present\");\n" +
-                                        "                    }\n" +
-                                        "                    state." + propertyName + " = " + typeConversionInSetter(property, propertyGenericType, imports, "value", false, true, true) + ";\n" +
-                                        "                }\n" +
-                                        "                break;\n" +
-                                        "            }\n";
-                            }
+                            CoreInstance propertyGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            return "            case \"" + property.getName() + "\":\n" +
+                                    "            {\n" +
+                                    "                synchronized (state)\n" +
+                                    "                {\n" +
+                                    "                    if (state." + propertyName + " != null)\n" +
+                                    "                    {\n" +
+                                    "                        throw new IllegalArgumentException(\"Cannot add value for to-one property '\" + keyName + \"': value already present\");\n" +
+                                    "                    }\n" +
+                                    "                    state." + propertyName + " = " + typeConversionInSetter(property, propertyGenericType, imports, "value", false, true, true) + ";\n" +
+                                    "                }\n" +
+                                    "                break;\n" +
+                                    "            }\n";
                         }).makeString("") +
                         "            default:\n" +
                         "            {\n" +
@@ -840,18 +722,14 @@ public class M3ToJavaGenerator
                         "        {\n" +
                         "            switch (keyName)\n" +
                         "            {\n" +
-                        properties.collect(new Function<CoreInstance, String>()
+                        properties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                return "                case \"" + property.getName() + "\":\n" +
-                                        "                {\n" +
-                                        "                    state." + propertyName + " = null;\n" +
-                                        "                    break;\n" +
-                                        "                }\n";
-                            }
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            return "                case \"" + property.getName() + "\":\n" +
+                                    "                {\n" +
+                                    "                    state." + propertyName + " = null;\n" +
+                                    "                    break;\n" +
+                                    "                }\n";
                         }).makeString("") +
                         "                default:\n" +
                         "                {\n" +
@@ -868,17 +746,13 @@ public class M3ToJavaGenerator
                         (properties.isEmpty() ? "" :
                                 "        switch (name)\n" +
                                         "        {\n" +
-                                        properties.collect(new Function<CoreInstance, String>()
+                                        properties.collect(property ->
                                         {
-                                            @Override
-                                            public String valueOf(CoreInstance property)
-                                            {
-                                                String propertyName = property.getName();
-                                                CoreInstance propertyOwner = propertyOwners.get(propertyName);
-                                                return "            case \"" + propertyName + "\":\n" +
-                                                        "                realKeys = " + createPropertyKeyNameReference(propertyName, propertyOwner, instance) + ";\n" +
-                                                        "                break;\n";
-                                            }
+                                            String propertyName = property.getName();
+                                            CoreInstance propertyOwner = propertyOwners.get(propertyName);
+                                            return "            case \"" + propertyName + "\":\n" +
+                                                    "                realKeys = " + createPropertyKeyNameReference(propertyName, propertyOwner, instance) + ";\n" +
+                                                    "                break;\n";
                                         }).makeString("") +
                                         "\n" +
                                         "            default:\n" +
@@ -895,20 +769,16 @@ public class M3ToJavaGenerator
                         (properties.isEmpty() ? "" :
                                 "        switch (name)\n" +
                                         "        {\n" +
-                                        properties.collect(new Function<CoreInstance, String>()
+                                        properties.collect(property ->
                                         {
-                                            @Override
-                                            public String valueOf(CoreInstance property)
-                                            {
-                                                String propertyName = property.getName();
-                                                return "            case \"" + propertyName + "\":\n" +
-                                                        "                if (this." + propertyName + "Key == null)\n" +
-                                                        "                {\n" +
-                                                        "                    this." + propertyName + "Key = this.getRepository().resolve(" + createPropertyKeyNameReference(propertyName, propertyOwners.get(propertyName), instance) + ");\n" +
-                                                        "                }\n" +
-                                                        "                key = this." + propertyName + "Key;\n" +
-                                                        "                break;\n";
-                                            }
+                                            String propertyName = property.getName();
+                                            return "            case \"" + propertyName + "\":\n" +
+                                                    "                if (this." + propertyName + "Key == null)\n" +
+                                                    "                {\n" +
+                                                    "                    this." + propertyName + "Key = this.getRepository().resolve(" + createPropertyKeyNameReference(propertyName, propertyOwners.get(propertyName), instance) + ");\n" +
+                                                    "                }\n" +
+                                                    "                key = this." + propertyName + "Key;\n" +
+                                                    "                break;\n";
                                         }).makeString("") +
                                         "            default:\n" +
                                         "                throw new RuntimeException(\"Unsupported key: \" + name);\n" +
@@ -931,132 +801,92 @@ public class M3ToJavaGenerator
                         "        return result;\n" +
                         "    }\n" +
                         "\n" +
-                        properties.collect(new Function<CoreInstance, String>()
+                        properties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return createClassPropertyGetter(interfaceName, property, propertyReturnGenericType, imports);
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return createClassPropertyGetter(interfaceName, property, propertyReturnGenericType, imports);
                         }).makeString("") +
                         "\n" +
-                        properties.collect(new Function<CoreInstance, String>()
+                        properties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return createClassPropertySetter(interfaceName, property, propertyReturnGenericType, imports, maybeFullyQualifiedName, "");
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return createClassPropertySetter(interfaceName, property, propertyReturnGenericType, imports, maybeFullyQualifiedName, "");
                         }).makeString("") +
                         "\n" +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
+                        toManyProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return createClassSetPropertyValueAt(property, propertyGenericType, imports);
-                            }
+                            CoreInstance propertyGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return createClassSetPropertyValueAt(property, propertyGenericType, imports);
                         }).makeString("") +
-                        propertiesFromAssociations.collect(new Function<CoreInstance, String>()
+                        propertiesFromAssociations.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return createPropertyReverse(property, propertyReturnGenericType, imports, false, false) + createPropertyReverse(property, propertyReturnGenericType, imports, true, false);
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return createPropertyReverse(property, propertyReturnGenericType, imports, false, false) + createPropertyReverse(property, propertyReturnGenericType, imports, true, false);
                         }).makeString("") +
                         "\n" +
-                        qualifiedProperties.collect(new Function<CoreInstance, String>()
+                        qualifiedProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return createClassQualifiedPropertyGetter(property, propertyReturnGenericType, imports);
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return createClassQualifiedPropertyGetter(property, propertyReturnGenericType, imports);
                         }).makeString("") +
                         "    private static class _State extends AbstractCoreInstanceMutableState\n" +
                         "    {\n" +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
+                        toOneProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                String type = getPropertyTypeInternal(property, propertyReturnGenericType, imports, isToOne(property), false, isPlatformClass(property));
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                return "        private " + type + " " + propertyName + ";\n";
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            String type = getPropertyTypeInternal(property, propertyReturnGenericType, imports, isToOne(property), false, isPlatformClass(property));
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            return "        private " + type + " " + propertyName + ";\n";
                         }).makeString("") +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
+                        toManyProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                String type = getPropertyTypeInternal(property, propertyReturnGenericType, imports, isToOne(property), false, isPlatformClass(property));
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                return "        private " + type + " " + propertyName + ";\n";
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            String type = getPropertyTypeInternal(property, propertyReturnGenericType, imports, isToOne(property), false, isPlatformClass(property));
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            return "        private " + type + " " + propertyName + ";\n";
                         }).makeString("") +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
+                        toManyProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                String propertyTypeInternal = getPropertyTypeInternal(property, propertyReturnGenericType, imports, false, false, isPlatformClass(property));
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                return "        private " + propertyTypeInternal + " init_" + propertyName + "()\n" +
-                                        "        {\n" +
-                                        "            " + propertyTypeInternal + " values = this." + propertyName + ";\n" +
-                                        "            if (values == null)\n" +
-                                        "            {\n" +
-                                        "                synchronized (this)\n" +
-                                        "                {\n" +
-                                        "                    if (this." + propertyName + " == null)\n" +
-                                        "                    {\n" +
-                                        "                        this." + propertyName + " = newToManyPropertyValues();\n" +
-                                        "                    }\n" +
-                                        "                    values = this." + propertyName + ";\n" +
-                                        "                }\n" +
-                                        "            }\n" +
-                                        "            return values;\n" +
-                                        "        }\n";
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            String propertyTypeInternal = getPropertyTypeInternal(property, propertyReturnGenericType, imports, false, false, isPlatformClass(property));
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            return "        private " + propertyTypeInternal + " init_" + propertyName + "()\n" +
+                                    "        {\n" +
+                                    "            " + propertyTypeInternal + " values = this." + propertyName + ";\n" +
+                                    "            if (values == null)\n" +
+                                    "            {\n" +
+                                    "                synchronized (this)\n" +
+                                    "                {\n" +
+                                    "                    if (this." + propertyName + " == null)\n" +
+                                    "                    {\n" +
+                                    "                        this." + propertyName + " = newToManyPropertyValues();\n" +
+                                    "                    }\n" +
+                                    "                    values = this." + propertyName + ";\n" +
+                                    "                }\n" +
+                                    "            }\n" +
+                                    "            return values;\n" +
+                                    "        }\n";
                         }).makeString("\n", "\n", "\n") +
                         "        private _State copy()\n" +
                         "        {\n" +
                         "            synchronized (this)\n" +
                         "            {\n" +
                         "                final _State copy = new _State();\n" +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
+                        toOneProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                return "                if (this." + propertyName + " != null)\n" +
-                                        "                {\n" +
-                                        "                    copy." + propertyName + " = this." + propertyName + ";\n" +
-                                        "                }\n";
-                            }
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            return "                if (this." + propertyName + " != null)\n" +
+                                    "                {\n" +
+                                    "                    copy." + propertyName + " = this." + propertyName + ";\n" +
+                                    "                }\n";
                         }).makeString("") +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
+                        toManyProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                return "                if (this." + propertyName + " != null)\n" +
-                                        "                {\n" +
-                                        "                    copy." + propertyName + " = this." + propertyName + ".copy();\n" +
-                                        "                }\n";
-                            }
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            return "                if (this." + propertyName + " != null)\n" +
+                                    "                {\n" +
+                                    "                    copy." + propertyName + " = this." + propertyName + ".copy();\n" +
+                                    "                }\n";
                         }).makeString("") +
                         "\n" +
                         "                copy.setCompileStateBitSet(getCompileStateBitSet());\n" +
@@ -1073,22 +903,18 @@ public class M3ToJavaGenerator
                         (mandatoryToOneProps.isEmpty() ? "" :
                                 "        instance.prepareForWrite();\n" +
                                         "        _State state = instance.getState();\n") +
-                        mandatoryToOneProps.collect(new Function<CoreInstance, String>()
+                        mandatoryToOneProps.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+                            if (isPrimitiveTypeProperty(propertyReturnGenericType))
                             {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                                if (isPrimitiveTypeProperty(propertyReturnGenericType))
-                                {
-                                    String type = Objects.requireNonNull(getTypeFromGenericType(propertyReturnGenericType)).getName();
-                                    return "        state." + propertyName + " = " + propertyName + " == null ? null : repository.new" + type + "CoreInstance" + (ModelRepository.STRING_TYPE_NAME.equals(type) ? "_cached(" : "(") + propertyName + ");\n";
-                                }
-                                else
-                                {
-                                    return "        state." + propertyName + " = " + propertyName + ";\n";
-                                }
+                                String type = Objects.requireNonNull(getTypeFromGenericType(propertyReturnGenericType)).getName();
+                                return "        state." + propertyName + " = " + propertyName + " == null ? null : repository.new" + type + "CoreInstance" + (ModelRepository.STRING_TYPE_NAME.equals(type) ? "_cached(" : "(") + propertyName + ");\n";
+                            }
+                            else
+                            {
+                                return "        state." + propertyName + " = " + propertyName + ";\n";
                             }
                         }).makeString("") +
                         "        return instance;\n" +
@@ -1224,7 +1050,7 @@ public class M3ToJavaGenerator
         {
             MutableSet<CoreInstance> propertiesFromGeneralizations = Sets.mutable.of();
             collectGeneralizationProperties(generalizations, propertiesFromGeneralizations, propertyOwners);
-            imports.addImports(getPropertyTypePackages(classGenericType, propertiesFromGeneralizations, Sets.mutable.<CoreInstance>empty(), true));
+            imports.addImports(getPropertyTypePackages(classGenericType, propertiesFromGeneralizations, Sets.mutable.empty(), true));
             properties.addAll(propertiesFromGeneralizations);
         }
         return propertyOwners;
@@ -1558,10 +1384,9 @@ public class M3ToJavaGenerator
         String expression;
         if (!isOwningClass && isStub)
         {
-
             expression = "return " + fromCoreInstance(property, propertyReturnGenericType, imports, applyFunctionWithCardinality(property, stubType + "Helper.FROM_STUB_FN", "this." + getUnifiedMethodName(property) + "CoreInstance()", isToOne), isToOne);
         }
-        else if (propertyReturnRawType != null && isAnyType(propertyReturnRawType))
+        else if (isAnyType(propertyReturnRawType))
         {
             stubType = "AnyStub";
             expression = "return " + applyFunctionWithCardinality(property, "Functions.chain(" + stubType + "Helper.FROM_STUB_FN, AnyHelper.UNWRAP_PRIMITIVES)", "this." + getUnifiedMethodName(property) + "CoreInstance()", isToOne);
@@ -1656,17 +1481,10 @@ public class M3ToJavaGenerator
 
         this.addTypesForProperties(classGenericType, properties, includeWrapper, propertyTypePackages, false);
         this.addTypesForProperties(classGenericType, qualifiedProperties, includeWrapper, propertyTypePackages, true);
+        propertyTypePackages.remove("");
 
         Imports imports = new Imports();
-        imports.addImports(propertyTypePackages.select(new Predicate<String>()
-        {
-            @Override
-            public boolean accept(String s)
-            {
-                return !s.isEmpty();
-            }
-        }));
-
+        imports.addImports(propertyTypePackages);
         return imports;
     }
 
@@ -1693,7 +1511,7 @@ public class M3ToJavaGenerator
                 }
                 if (qualified)
                 {
-                    propertyTypePackages.addAll((Collection<String>)getQualifiedPropertyParamTypesForImports(property, new Imports()));
+                    propertyTypePackages.addAll((Collection<String>) getQualifiedPropertyParamTypesForImports(property, new Imports()));
                 }
             }
         }
@@ -1706,15 +1524,11 @@ public class M3ToJavaGenerator
 
     private RichIterable<Pair<String, String>> buildMandatoryProperties(final CoreInstance classGenericType, RichIterable<CoreInstance> properties, final Imports imports)
     {
-        return properties.collect(new Function<CoreInstance, Pair<String, String>>()
+        return properties.collect(property ->
         {
-            @Override
-            public Pair<String, String> valueOf(CoreInstance property)
-            {
-                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
-                return Tuples.pair(propertyName, getTypeForSetter(property, propertyReturnGenericType, imports));
-            }
+            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+            String propertyName = getPropertyNameAsValidJavaIdentifierSwitchName(property);
+            return Tuples.pair(propertyName, getTypeForSetter(property, propertyReturnGenericType, imports));
         });
     }
 
@@ -1727,15 +1541,11 @@ public class M3ToJavaGenerator
 
         ListIterable<? extends CoreInstance> generalizations = instance.getValueForMetaPropertyToMany("generalizations");
 
-        imports.addImports(generalizations.collect(new Function<CoreInstance, String>()
+        imports.addImports(generalizations.collect(generalization ->
         {
-            @Override
-            public String valueOf(CoreInstance generalization)
-            {
-                CoreInstance generalType = getTypeFromGenericType(generalization.getValueForMetaPropertyToOne("general"));
-                return (generalType == null) ? "" : getJavaPackageString(generalType) + "." + getAccessorInterfaceName(generalType);
-            }
-        }).toSet());
+            CoreInstance generalType = getTypeFromGenericType(generalization.getValueForMetaPropertyToOne("general"));
+            return (generalType == null) ? "" : getJavaPackageString(generalType) + "." + getAccessorInterfaceName(generalType);
+        }, Sets.mutable.empty()));
 
         String generalizationsString = "CoreInstance"; /*generalizations.collect(new Function<CoreInstance, String>()
         {
@@ -1760,33 +1570,23 @@ public class M3ToJavaGenerator
                 "\n" +
                 "public interface " + accessorInterfaceName + typeParams + " extends " + generalizationsString + "\n" +
                 "{\n" +
-                properties.collect(new Function<CoreInstance, String>()
+                properties.collect(property ->
                 {
-                    @Override
-                    public String valueOf(CoreInstance property)
-                    {
-                        CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                        return createAccessorInterfacePropertyGetter(interfaceName, property, propertyReturnGenericType, imports);
-                    }
+                    CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                    return createAccessorInterfacePropertyGetter(interfaceName, property, propertyReturnGenericType, imports);
                 }).makeString("") +
-                qualifiedProperties.collect(new Function<CoreInstance, String>()
+                qualifiedProperties.collect(property ->
                 {
-                    @Override
-                    public String valueOf(CoreInstance property)
-                    {
-                        CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                        return createAccessorInterfaceQualifiedPropertyGetter(property, propertyReturnGenericType, imports);
-                    }
+                    CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                    return createAccessorInterfaceQualifiedPropertyGetter(property, propertyReturnGenericType, imports);
                 }).makeString("") +
                 "}\n";
-
     }
 
     private static String getAccessorInterfaceName(CoreInstance instance)
     {
         return instance.getName() + ACCESSOR_SUFFIX;
     }
-
 
     private String createAccessorInterfacePropertyGetter(String className, CoreInstance property, CoreInstance propertyReturnGenericType, Imports imports)
     {
@@ -1805,36 +1605,28 @@ public class M3ToJavaGenerator
         return "    " + getPropertyTypeExternal(qualifiedProperty, propertyReturnGenericType, imports, isToOne, qualifiedPropertyIsPlatform, qualifiedPropertyIsPlatform, true, "Object") + " " + getQualifiedPropertyMethodName(qualifiedProperty) + "(" + getQualifiedPropertyParameters(qualifiedProperty, imports) + ");\n";
     }
 
-    private String getQualifiedPropertyParameters(CoreInstance qualifiedProperty, final Imports imports)
+    private String getQualifiedPropertyParameters(CoreInstance qualifiedProperty, Imports imports)
     {
         CoreInstance functionType = getFunctionType(qualifiedProperty);
-        MutableList<String> params = Lists.mutable.withAll(functionType.getValueForMetaPropertyToMany("parameters").drop(1).collect(new Function<CoreInstance, String>()
+        MutableList<String> params = functionType.getValueForMetaPropertyToMany("parameters").drop(1).collect(param ->
         {
-            @Override
-            public String valueOf(CoreInstance param)
-            {
-                CoreInstance genericType = param.getValueForMetaPropertyToOne("genericType");
-                CoreInstance multiplicity = param.getValueForMetaPropertyToOne("multiplicity");
-                return getTypeExternalFromGenericType(genericType, multiplicity, imports, isToOne(param), false, isPlatformClass(param), true, "Object") + " " + getParameterName(param);
-            }
-        }));
+            CoreInstance genericType = param.getValueForMetaPropertyToOne("genericType");
+            CoreInstance multiplicity = param.getValueForMetaPropertyToOne("multiplicity");
+            return getTypeExternalFromGenericType(genericType, multiplicity, imports, isToOne(param), false, isPlatformClass(param), true, "Object") + " " + getParameterName(param);
+        }, Lists.mutable.empty());
         params.add("final ExecutionSupport es");
         return params.makeString(", ");
     }
 
-    private Iterable<String> getQualifiedPropertyParamTypesForImports(CoreInstance qualifiedProperty, final Imports imports)
+    private Iterable<String> getQualifiedPropertyParamTypesForImports(CoreInstance qualifiedProperty, Imports imports)
     {
         CoreInstance functionType = getFunctionType(qualifiedProperty);
-        return functionType.getValueForMetaPropertyToMany("parameters").drop(1).collect(new Function<CoreInstance, String>()
+        return functionType.getValueForMetaPropertyToMany("parameters").drop(1).collect(param ->
         {
-            @Override
-            public String valueOf(CoreInstance param)
-            {
-                CoreInstance genericType = param.getValueForMetaPropertyToOne("genericType");
-                CoreInstance multiplicity = param.getValueForMetaPropertyToOne("multiplicity");
-                String typeExternal = getTypeExternalFromGenericType(genericType, multiplicity, imports, true, false, false, false, "CoreInstance");
-                return shouldntAddTypeToImports(genericType, typeExternal) ? "" : getJavaPackageString(param) + "." + typeExternal;
-            }
+            CoreInstance genericType = param.getValueForMetaPropertyToOne("genericType");
+            CoreInstance multiplicity = param.getValueForMetaPropertyToOne("multiplicity");
+            String typeExternal = getTypeExternalFromGenericType(genericType, multiplicity, imports, true, false, false, false, "CoreInstance");
+            return shouldntAddTypeToImports(genericType, typeExternal) ? "" : getJavaPackageString(param) + "." + typeExternal;
         });
     }
 
@@ -1862,7 +1654,7 @@ public class M3ToJavaGenerator
         return !isOwningClass(className, propertyType) && (isStubType(property, propertyGenericType) || isAnyOrNilTypeProperty(propertyGenericType));
     }
 
-    public  boolean requiresCoreInstanceMethods(CoreInstance property, CoreInstance propertyGenericType)
+    public boolean requiresCoreInstanceMethods(CoreInstance property, CoreInstance propertyGenericType)
     {
         // Purely for Compiled mode generation
         return isStubType(property, propertyGenericType) || isAnyOrNilTypeProperty(propertyGenericType);
@@ -1934,24 +1726,16 @@ public class M3ToJavaGenerator
 
     private String createBuilderInterfaceProperties(final CoreInstance classGenericType, final Imports imports, final String interfaceNameWithGenerics, final String interfaceName, MutableSet<CoreInstance> allProperties, MutableSet<CoreInstance> propertiesFromAssociations)
     {
-        return allProperties.collect(new Function<CoreInstance, String>()
+        return allProperties.collect(property ->
         {
-            @Override
-            public String valueOf(CoreInstance property)
-            {
-                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                return createBuilderInterfaceProperty(property, propertyReturnGenericType, imports, interfaceNameWithGenerics, interfaceName);
-            }
+            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+            return createBuilderInterfaceProperty(property, propertyReturnGenericType, imports, interfaceNameWithGenerics, interfaceName);
         }).makeString("") +
-                propertiesFromAssociations.collect(new Function<CoreInstance, String>()
+                propertiesFromAssociations.collect(property ->
                 {
-                    @Override
-                    public String valueOf(CoreInstance property)
-                    {
-                        CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                        return createBuilderInterfacePropertyReverse(property, propertyReturnGenericType, imports, false) +
-                                createBuilderInterfacePropertyReverse(property, propertyReturnGenericType, imports, true);
-                    }
+                    CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                    return createBuilderInterfacePropertyReverse(property, propertyReturnGenericType, imports, false) +
+                            createBuilderInterfacePropertyReverse(property, propertyReturnGenericType, imports, true);
                 }).makeString("");
     }
 
@@ -2032,30 +1816,22 @@ public class M3ToJavaGenerator
 
         ListIterable<? extends CoreInstance> generalizations = instance.getValueForMetaPropertyToMany("generalizations");
 
-        imports.addImports(generalizations.collect(new Function<CoreInstance, String>()
+        imports.addImports(generalizations.collect(generalization ->
         {
-            @Override
-            public String valueOf(CoreInstance generalization)
-            {
-                CoreInstance generalType = getTypeFromGenericType(generalization.getValueForMetaPropertyToOne("general"));
-                return (generalType == null) ? "" : getJavaPackageString(generalType) + "." + getInterfaceName(generalType);
-            }
-        }).toSet());
+            CoreInstance generalType = getTypeFromGenericType(generalization.getValueForMetaPropertyToOne("general"));
+            return (generalType == null) ? "" : getJavaPackageString(generalType) + "." + getInterfaceName(generalType);
+        }, Sets.mutable.empty()));
 
         String generalizationsString = "CoreInstance, " + getAccessorInterfaceName(instance) + getTypeParams(instance, false);
 
         if (!generalizations.isEmpty())
         {
-            generalizationsString += ", " + generalizations.collect(new Function<CoreInstance, String>()
+            generalizationsString += ", " + generalizations.collect(generalization ->
             {
-                @Override
-                public String valueOf(CoreInstance generalization)
-                {
-                    CoreInstance generalGenericType = generalization.getValueForMetaPropertyToOne("general");
-                    CoreInstance type = getTypeFromGenericType(generalGenericType);
-                    return getInterfaceName(Objects.requireNonNull(type)) + getTypeArgs(type, generalGenericType, false, true);
-                }
-            }).distinct().makeString(", ");
+                CoreInstance generalGenericType = generalization.getValueForMetaPropertyToOne("general");
+                CoreInstance type = getTypeFromGenericType(generalGenericType);
+                return getInterfaceName(Objects.requireNonNull(type)) + getTypeArgs(type, generalGenericType, false, true);
+            }, Sets.mutable.empty()).makeString(", ");
         }
 
         return "package " + javaPackage + ";\n" +
@@ -2096,32 +1872,25 @@ public class M3ToJavaGenerator
         String typeParams = "";
         if (isPlatformClass(_class))
         {
-            typeParams = _class.getValueForMetaPropertyToMany("typeParameters").collect(new Function<CoreInstance, String>()
-            {
-                @Override
-                public String valueOf(CoreInstance coreInstance)
-                {
-                    return includeExtends ? "CoreInstance" : coreInstance.getValueForMetaPropertyToOne("name").getName();
-                }
-            }).makeString(",");
+            typeParams = _class.getValueForMetaPropertyToMany("typeParameters").asLazy()
+                    .collect(coreInstance -> includeExtends ? "CoreInstance" : coreInstance.getValueForMetaPropertyToOne("name").getName())
+                    .makeString(",");
         }
         return typeParams.isEmpty() ? "" : "<" + typeParams + ">";
     }
 
-    private static String getTypeArgs(CoreInstance _class, CoreInstance genericType, final boolean covariant, final boolean useTypeParameterName)
+    private static String getTypeArgs(CoreInstance _class, CoreInstance genericType, boolean covariant, boolean useTypeParameterName)
     {
         String typeArgs = "";
         if (isPlatformClass(_class))
         {
-            typeArgs = genericType.getValueForMetaPropertyToMany("typeArguments").collect(new Function<CoreInstance, String>()
-            {
-                @Override
-                public String valueOf(CoreInstance genericType)
-                {
-                    String ta = getTypeArgConcreteType(genericType, useTypeParameterName);
-                    return covariant ? "? extends " + ta : ta;
-                }
-            }).makeString(", ");
+            typeArgs = genericType.getValueForMetaPropertyToMany("typeArguments").asLazy()
+                    .collect(genericType1 ->
+                    {
+                        String ta = getTypeArgConcreteType(genericType1, useTypeParameterName);
+                        return covariant ? "? extends " + ta : ta;
+                    })
+                    .makeString(", ");
         }
         return typeArgs.isEmpty() ? "" : "<" + typeArgs + ">";
     }
@@ -2131,7 +1900,7 @@ public class M3ToJavaGenerator
         return instance.getName();
     }
 
-    private String createWrapperClass(final CoreInstance instance, String javaPackage, MutableSet<CoreInstance> properties, MutableSet<CoreInstance> propertiesFromAssociations, MutableSet<CoreInstance> qualifiedProperties, final Imports imports, final MutableMap<String, CoreInstance> propertyOwners)
+    private String createWrapperClass(final CoreInstance instance, String javaPackage, MutableSet<CoreInstance> properties, MutableSet<CoreInstance> propertiesFromAssociations, MutableSet<CoreInstance> qualifiedProperties, Imports imports, MutableMap<String, CoreInstance> propertyOwners)
     {
         imports.addImports(Lists.mutable.of("org.finos.legend.pure.m4.coreinstance.simple.ValueHolder",
                 "org.finos.legend.pure.m3.coreinstance.helper.PrimitiveHelper"));
@@ -2150,7 +1919,7 @@ public class M3ToJavaGenerator
 
         RichIterable<CoreInstance> mandatoryToOneProps = toOneProperties.select(M3ToJavaGenerator::isMandatoryProperty);
 
-        RichIterable<Pair<String, String>> typesForMandatoryProps = buildMandatoryProperties(classGenericType, mandatoryToOneProps, imports).toSortedSetBy(Functions.<String>firstOfPair());
+        RichIterable<Pair<String, String>> typesForMandatoryProps = buildMandatoryProperties(classGenericType, mandatoryToOneProps, imports).toSortedSetBy(Pair::getOne);
 
         MutableList<String> mandatoryTypes = Lists.mutable.of();
         MutableList<String> mandatoryProps = Lists.mutable.of();
@@ -2194,67 +1963,41 @@ public class M3ToJavaGenerator
                         "        super(instance);\n" +
                         "    }\n" +
                         "\n" +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
+                        toOneProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return createWrapperPropertyGetterToOne(interfaceName, property, propertyReturnGenericType, imports);
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return createWrapperPropertyGetterToOne(interfaceName, property, propertyReturnGenericType, imports);
                         }).makeString("") +
-                        toManyProperties.collect(new Function<CoreInstance, String>()
+                        toManyProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return createWrapperPropertyGetterToMany(interfaceName, property, propertyReturnGenericType, imports);
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return createWrapperPropertyGetterToMany(interfaceName, property, propertyReturnGenericType, imports);
                         }).makeString("") +
                         "\n" +
-                        toOneProperties.collect(new Function<CoreInstance, String>()
+                        toOneProperties.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                String sub = getSubstituteType(property, propertyReturnGenericType);
-                                return sub == null ? "" : "    public " + maybeFullyQualifiedInterfaceName + " " + getUnifiedMethodName(property) + "(" + sub + " value)\n" +
-                                        "    {\n" +
-                                        "        instance.setKeyValues(" + createPropertyKeyNameReference(property.getName(), propertyOwners.get(property.getName()), instance) + ", Lists.immutable.<CoreInstance>with((CoreInstance)value));\n" +
-                                        "        return this;\n" +
-                                        "    }\n" + "\n";
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            String sub = getSubstituteType(property, propertyReturnGenericType);
+                            return sub == null ? "" : "    public " + maybeFullyQualifiedInterfaceName + " " + getUnifiedMethodName(property) + "(" + sub + " value)\n" +
+                                    "    {\n" +
+                                    "        instance.setKeyValues(" + createPropertyKeyNameReference(property.getName(), propertyOwners.get(property.getName()), instance) + ", Lists.immutable.<CoreInstance>with((CoreInstance)value));\n" +
+                                    "        return this;\n" +
+                                    "    }\n" + "\n";
                         }).makeString("") +
-                        properties.collect(new Function<CoreInstance, String>()
+                        properties.collect(property ->
                         {
-
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return createWrapperPropertySetter(property, propertyReturnGenericType, imports, maybeFullyQualifiedInterfaceName, propertyOwners, instance);
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return createWrapperPropertySetter(property, propertyReturnGenericType, imports, maybeFullyQualifiedInterfaceName, propertyOwners, instance);
                         }).makeString("") +
-                        propertiesFromAssociations.collect(new Function<CoreInstance, String>()
+                        propertiesFromAssociations.collect(property ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return createPropertyReverse(property, propertyReturnGenericType, imports, false, true) + createPropertyReverse(property, propertyReturnGenericType, imports, true, true);
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return createPropertyReverse(property, propertyReturnGenericType, imports, false, true) + createPropertyReverse(property, propertyReturnGenericType, imports, true, true);
                         }).makeString("") +
-                        qualifiedProperties.collect(new Function<CoreInstance, String>()
+                        qualifiedProperties.collect(property ->
                         {
-
-                            @Override
-                            public String valueOf(CoreInstance property)
-                            {
-                                CoreInstance propertyReturnGenericType = propertyTypeResolver.getPropertyReturnType(classGenericType, property);
-                                return createWrapperQualifiedPropertyGetter(property, propertyReturnGenericType, imports);
-                            }
+                            CoreInstance propertyReturnGenericType = this.propertyTypeResolver.getPropertyReturnType(classGenericType, property);
+                            return createWrapperQualifiedPropertyGetter(property, propertyReturnGenericType, imports);
                         }).makeString("") +
                         "\n" +
                         "    public static " + maybeFullyQualifiedInterfaceName + " to" + interfaceName + "(CoreInstance instance)\n" +
@@ -2454,22 +2197,8 @@ public class M3ToJavaGenerator
                         "import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;\n" +
                         "import org.eclipse.collections.api.set.SetIterable;\n" +
                         "import org.eclipse.collections.impl.factory.Sets;\n" +
-                        packageToCoreInstance.keysView().collect(new Function<String, String>()
-                        {
-                            @Override
-                            public String valueOf(String _package)
-                            {
-                                return "import " + _package + ";";
-                            }
-                        }).makeString("\n") +
-                        packageToCoreInstance.keysView().collect(new Function<String, String>()
-                        {
-                            @Override
-                            public String valueOf(String _package)
-                            {
-                                return "import " + _package.substring(0, _package.lastIndexOf("Instance")) + ";";
-                            }
-                        }).makeString("\n") +
+                        packageToCoreInstance.keysView().collect(_package -> "import " + _package + ";").makeString("\n") +
+                        packageToCoreInstance.keysView().collect(_package -> "import " + _package.substring(0, _package.lastIndexOf("Instance")) + ";").makeString("\n") +
                         "\n" +
                         "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
                         "import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;\n" +
@@ -2479,51 +2208,32 @@ public class M3ToJavaGenerator
                         "{\n" +
                         "    public static final CoreInstanceFactoryRegistry REGISTRY;\n" +
                         "    public static final SetIterable<String> ALL_PATHS = Sets.mutable.of" +
-                        allInstances.collect(new Function<CoreInstance, String>()
-                        {
-                            @Override
-                            public String valueOf(CoreInstance object)
-                            {
-                                return "\"" + getUserObjectPathForPackageableElement(object, false).makeString("::") + "\"";
-                            }
-                        }).makeString("(", ",", ")") +
+                        allInstances.collect(object -> "\"" + getUserObjectPathForPackageableElement(object, false).makeString("::") + "\"").makeString("(", ",", ")") +
                         ";\n\n" +
                         "    static\n" +
                         "    {\n" +
                         "        MutableMap<String, java.lang.Class> interfaceByPath = UnifiedMap.newMap(" + packageToCoreInstance.size() + ");\n" +
-                        allInstances.collect(new Function<CoreInstance, String>()
+                        allInstances.collect(object ->
                         {
-                            @Override
-                            public String valueOf(CoreInstance object)
-                            {
-                                String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
-                                return "        interfaceByPath.put(\"" + getUserObjectPathForPackageableElement(object, false).makeString("::") + "\", " + classString + ".class);";
-                            }
+                            String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
+                            return "        interfaceByPath.put(\"" + getUserObjectPathForPackageableElement(object, false).makeString("::") + "\", " + classString + ".class);";
                         }).makeString("\n") + "\n";
 
         if (this.generateTypeFactoriesById)
         {
             result += "        MutableIntObjectMap<CoreInstanceFactory> typeFactoriesById = IntObjectHashMap.newMap();\n" +
-                    allInstances.collect(new Function<CoreInstance, String>()
+                    allInstances.collect(object ->
                     {
-                        @Override
-                        public String valueOf(CoreInstance object)
-                        {
-                            String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
-                            return "        typeFactoriesById.put(" + object.getSyntheticId() + ", " + classString + "Instance.FACTORY);";
-                        }
+                        String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
+                        return "        typeFactoriesById.put(" + object.getSyntheticId() + ", " + classString + "Instance.FACTORY);";
                     }).makeString("", "\n", "\n");
         }
 
         result += "        MutableMap<String, CoreInstanceFactory> typeFactoriesByPath = UnifiedMap.newMap(" + packageToCoreInstance.size() + ");\n" +
-                allInstances.collect(new Function<CoreInstance, String>()
+                allInstances.collect(object ->
                 {
-                    @Override
-                    public String valueOf(CoreInstance object)
-                    {
-                        String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
-                        return "        typeFactoriesByPath.put(" + getUserObjectPathForPackageableElement(object, false).makeString("\"", "::", "\"") + ", " + classString + "Instance.FACTORY);";
-                    }
+                    String classString = isEnum(object) ? "org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum" : Objects.requireNonNull(object).getName();
+                    return "        typeFactoriesByPath.put(" + getUserObjectPathForPackageableElement(object, false).makeString("\"", "::", "\"") + ", " + classString + "Instance.FACTORY);";
                 }).makeString("", "\n", "\n") +
                 "        REGISTRY = new CoreInstanceFactoryRegistry(" + (this.generateTypeFactoriesById ? "typeFactoriesById.toImmutable()" : "new IntObjectHashMap<CoreInstanceFactory>().toImmutable()") + ", typeFactoriesByPath.toImmutable(), interfaceByPath.toImmutable());\n" +
                 "    }\n" +
@@ -2537,7 +2247,6 @@ public class M3ToJavaGenerator
         {
             Path p = Paths.get(this.outputDir + ROOT_PACKAGE.replace(".", "/") + "/" + factoryName + ".java");
             Files.write(p, result.getBytes(StandardCharsets.UTF_8));
-
         }
         catch (IOException e)
         {
@@ -2909,7 +2618,7 @@ public class M3ToJavaGenerator
         CoreInstance pkg = packageableElement.getValueForMetaPropertyToOne("package");
         if (pkg == null)
         {
-            return (includeRoot || !"Root".equals(packageableElement.getName())) ? Lists.mutable.with(packageableElement.getName()) : Lists.mutable.<String>of();
+            return (includeRoot || !"Root".equals(packageableElement.getName())) ? Lists.mutable.with(packageableElement.getName()) : Lists.mutable.empty();
         }
         else
         {
@@ -3043,17 +2752,16 @@ public class M3ToJavaGenerator
         return "(" + variable + " == null ? " + defaultValue + " : " + expression + ")";
     }
 
-    public class Imports
+    public static class Imports
     {
-        private final MutableSet<String> importsList = Sets.mutable.of();
-
-        private final MutableSet<String> classesToFullyQualify = Sets.mutable.of();
+        private final MutableSet<String> importsList = Sets.mutable.empty();
+        private final MutableSet<String> unqualifiedImportedNames = Sets.mutable.empty();
 
         private String thisClassName;
 
         public boolean shouldFullyQualify(String className)
         {
-            return this.classesToFullyQualify.contains(className) || _shouldFullyQualify(className);
+            return !this.importsList.contains(className) && this.unqualifiedImportedNames.contains(className.substring(className.lastIndexOf('.') + 1));
         }
 
         void addImports(Imports imports)
@@ -3063,15 +2771,23 @@ public class M3ToJavaGenerator
 
         void addImports(Iterable<String> imports)
         {
-            for (String importName : imports)
+            imports.forEach(this::addImport);
+        }
+
+        void addImports(String... imports)
+        {
+            ArrayIterate.forEach(imports, this::addImport);
+        }
+
+        void addImport(String classFullName)
+        {
+            if (!this.importsList.contains(classFullName))
             {
-                if (_shouldFullyQualify(importName))
+                String unqualifiedName = classFullName.substring(classFullName.lastIndexOf('.') + 1);
+                if (!this.unqualifiedImportedNames.contains(unqualifiedName))
                 {
-                    this.classesToFullyQualify.add(importName);
-                }
-                else
-                {
-                    this.importsList.add(importName);
+                    this.importsList.add(classFullName);
+                    this.unqualifiedImportedNames.add(unqualifiedName);
                 }
             }
         }
@@ -3081,39 +2797,13 @@ public class M3ToJavaGenerator
             this.thisClassName = thisClassName;
         }
 
-        private boolean _shouldFullyQualify(String classFullName)
-        {
-            final String className = classFullName.substring(classFullName.lastIndexOf('.') + 1, classFullName.length());
-            MutableSet<String> withSameName = this.importsList.select(new Predicate<String>()
-            {
-                @Override
-                public boolean accept(String currentImportName)
-                {
-                    return className.equals(currentImportName.substring(currentImportName.lastIndexOf('.') + 1, currentImportName.length()));
-                }
-            });
-
-            return !withSameName.isEmpty() && !withSameName.contains(classFullName);
-        }
-
         String toImportString()
         {
-            return this.importsList.reject(new Predicate<String>()
-            {
-                @Override
-                public boolean accept(String each)
-                {
-                    String className = each.substring(each.lastIndexOf('.') + 1, each.length());
-                    return className.equals(thisClassName);
-                }
-            }).collect(new Function<String, String>()
-            {
-                @Override
-                public String valueOf(String packagePath)
-                {
-                    return "import " + packagePath + ";";
-                }
-            }).makeString("\n");
+            String thisClassNameWithDot = "." + this.thisClassName;
+            return this.importsList.asLazy()
+                    .reject(packagePath -> packagePath.endsWith(thisClassNameWithDot))
+                    .collect(packagePath -> "import " + packagePath + ";")
+                    .makeString("\n");
         }
     }
 
@@ -3126,7 +2816,6 @@ public class M3ToJavaGenerator
 
     static class DefaultPropertyTypeResolver implements PropertyTypeResolver
     {
-
         @Override
         public CoreInstance getPropertyReturnType(CoreInstance classGenericType, CoreInstance property)
         {

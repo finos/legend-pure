@@ -1075,6 +1075,16 @@ function <<test.Test>> meta::relational::tests::functions::sqlstring::testSqlGen
    assertEquals('select cast("root"."DATE" as date) as "a" from locationTable as "root"', $result);
 }
 
+function <<test.Test>> meta::relational::tests::functions::sqlstring::testSqlGenerationForDatePartForH2():Boolean[1]
+{
+   let result = toSQLString(|Location.all()->project([
+                                                      a | $a.censusdate->toOne()->datePart()
+                                                   ],
+                                                   ['a']),
+                              simpleRelationalMappingInc, DatabaseType.H2, meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals('select cast(truncate("root".date) as date) as "a" from locationTable as "root"', $result);
+}
+
 function <<test.Test>> meta::relational::tests::functions::sqlstring::testSqlGenerationForPreviousDayOfWeekForPresto():Boolean[1]
 {
    let result = toSQLString(|Trade.all()->filter(d | $d.date == previousDayOfWeek(DayOfWeek.Friday))->project(x | $x.date, 'date'),

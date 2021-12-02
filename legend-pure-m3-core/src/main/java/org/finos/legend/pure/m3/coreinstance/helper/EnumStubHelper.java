@@ -21,22 +21,24 @@ import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class EnumStubHelper
 {
-    public static final Function<CoreInstance, CoreInstance> FROM_STUB_FN = new Function<CoreInstance, CoreInstance>()
+    public static final Function<CoreInstance, CoreInstance> FROM_STUB_FN = EnumStubHelper::fromEnumStub;
+
+    public static CoreInstance fromEnumStub(CoreInstance instance)
     {
-        public CoreInstance valueOf(CoreInstance instance)
+        return (instance instanceof EnumStub) ? fromEnumStub((EnumStub) instance) : instance;
+    }
+
+    public static CoreInstance fromEnumStub(EnumStub enumStub)
+    {
+        if (enumStub._resolvedEnumCoreInstance() == null)
         {
-            if (instance instanceof EnumStub)
-            {
-                if (((EnumStub)instance)._resolvedEnumCoreInstance() == null)
-                {
-                    throw new PureCompilationException("Error, EnumStub needs to be resolved before it can be accessed");
-                }
-                return ((EnumStub)instance)._resolvedEnumCoreInstance();
-            }
-            else
-            {
-                return instance;
-            }
+            throw new PureCompilationException("Error, EnumStub needs to be resolved before it can be accessed");
         }
-    };
+        return enumStub._resolvedEnumCoreInstance();
+    }
+
+    public static boolean isUnresolved(EnumStub enumStub)
+    {
+        return enumStub._resolvedEnum() == null;
+    }
 }

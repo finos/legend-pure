@@ -18,19 +18,22 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
 import org.eclipse.collections.api.map.primitive.ObjectIntMap;
 import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
+import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Primitive;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.PropertyValue;
+import org.finos.legend.pure.runtime.java.compiled.serialization.model.PropertyValueConsumer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.PropertyValueMany;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.PropertyValueOne;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.PropertyValueVisitor;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValue;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValueVisitor;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.Serialized;
+import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValueConsumer;
 
 abstract class AbstractStringCache implements StringCache
 {
@@ -82,15 +85,11 @@ abstract class AbstractStringCache implements StringCache
         return index;
     }
 
-    protected static void collectStrings(StringCollector collector, Serialized serialized)
+    protected static void collectStrings(StringCollector collector, Iterable<? extends CoreInstance> nodes, IdBuilder idBuilder, ProcessorSupport processorSupport)
     {
-        PropertyValueCollectorVisitor propertyValueVisitor = new PropertyValueCollectorVisitor(collector);
-        serialized.getObjects().forEach(obj -> collectStringsFromObj(collector, propertyValueVisitor, obj));
-        serialized.getPackageLinks().forEach(link ->
-        {
-            collectStringsFromObj(collector, propertyValueVisitor, link.getOne());
-            collectStringsFromObj(collector, propertyValueVisitor, link.getTwo());
-        });
+        AbstractStringCache.PropertyValueCollectorVisitor propertyValueVisitor = new AbstractStringCache.PropertyValueCollectorVisitor(collector);
+        GraphSerializer.ClassifierCaches classifierCaches = new GraphSerializer.ClassifierCaches(processorSupport);
+        nodes.forEach(node -> collectStringsFromObj(collector, propertyValueVisitor, GraphSerializer.buildObj(node, idBuilder, classifierCaches, processorSupport)));
     }
 
     protected static void collectStringsFromObj(StringCollector collector, PropertyValueCollectorVisitor propertyValueVisitor, Obj obj)
@@ -104,7 +103,7 @@ abstract class AbstractStringCache implements StringCache
         ListIterable<PropertyValue> propertyValues = obj.getPropertyValues();
         if (propertyValues != null)
         {
-            propertyValues.forEachWith(PropertyValue::visit, propertyValueVisitor);
+            propertyValues.forEach(propertyValueVisitor);
         }
     }
 
@@ -117,7 +116,7 @@ abstract class AbstractStringCache implements StringCache
         void collectPrimitiveString(String string);
     }
 
-    protected static class PropertyValueCollectorVisitor implements PropertyValueVisitor<Void>
+    protected static class PropertyValueCollectorVisitor extends PropertyValueConsumer
     {
         private final StringCollector collector;
         private final RValueCollectorVisitor rValueVisitor;
@@ -129,19 +128,18 @@ abstract class AbstractStringCache implements StringCache
         }
 
         @Override
-        public Void accept(PropertyValueMany many)
+        protected void accept(PropertyValueMany many)
         {
             commonCollection(many);
             ListIterable<RValue> values = many.getValues();
             if (values != null)
             {
-                values.forEachWith(RValue::visit, this.rValueVisitor);
+                values.forEach(this.rValueVisitor);
             }
-            return null;
         }
 
         @Override
-        public Void accept(PropertyValueOne one)
+        protected void accept(PropertyValueOne one)
         {
             commonCollection(one);
             RValue value = one.getValue();
@@ -149,7 +147,6 @@ abstract class AbstractStringCache implements StringCache
             {
                 value.visit(this.rValueVisitor);
             }
-            return null;
         }
 
         private void commonCollection(PropertyValue value)
@@ -158,7 +155,7 @@ abstract class AbstractStringCache implements StringCache
         }
     }
 
-    private static class RValueCollectorVisitor implements RValueVisitor<Void>
+    private static class RValueCollectorVisitor extends RValueConsumer
     {
         private final StringCollector collector;
 
@@ -168,28 +165,25 @@ abstract class AbstractStringCache implements StringCache
         }
 
         @Override
-        public Void accept(Primitive primitive)
+        protected void accept(Primitive primitive)
         {
             Object value = primitive.getValue();
             if ((value instanceof String) || (value instanceof PureDate))
             {
                 this.collector.collectPrimitiveString(value.toString());
             }
-            return null;
         }
 
         @Override
-        public Void accept(ObjRef objRef)
+        protected void accept(ObjRef objRef)
         {
             this.collector.collectRef(objRef.getClassifierId(), objRef.getId());
-            return null;
         }
 
         @Override
-        public Void accept(EnumRef enumRef)
+        protected void accept(EnumRef enumRef)
         {
             this.collector.collectRef(enumRef.getEnumerationId(), enumRef.getEnumName());
-            return null;
         }
     }
 }

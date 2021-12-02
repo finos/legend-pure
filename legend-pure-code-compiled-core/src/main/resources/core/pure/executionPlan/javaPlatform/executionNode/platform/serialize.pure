@@ -28,7 +28,7 @@ import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::graphFetch::*;
 import meta::pure::graphFetch::execution::*;
 
-Class <<access.private>> meta::pure::executionPlan::engine::java::serialize::SerializeData
+Class meta::pure::executionPlan::engine::java::serialize::SerializeData
 {
    tree           : RootGraphFetchTree<Any>[1];
    auxiliaryTrees : RootGraphFetchTree<Any>[*];
@@ -71,7 +71,7 @@ function meta::pure::executionPlan::engine::java::serialize::generateImplementio
    generatedCode($project, $serializeClass);
 }
 
-function <<access.private>> meta::pure::executionPlan::engine::java::serialize::createSerializeProject(path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::pure::executionPlan::engine::java::serialize::createSerializeProject(path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    let conventions = $context.conventions;
    let data        = $context->nodeInfosForPath($path).data->cast(@SerializeData)->toOne();

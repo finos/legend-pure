@@ -587,6 +587,12 @@ Class meta::relational::tests::model::simple::Event
    eventDate: DateTime[1];
 }
 
+Class meta::relational::tests::model::simple::ReservedWords
+{
+   window : String[1];
+   current_date : StrictDate[1];
+}
+
 Class meta::relational::tests::model::simple::PersonWithConstraints extends Person
 [
    firstNameTest( ~function: $this.firstName == 'test'

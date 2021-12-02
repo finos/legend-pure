@@ -212,7 +212,7 @@ function <<access.private>> meta::json::schema::fromSchema::processSchema(fileNa
 function <<access.private>> meta::json::schema::fromSchema::getExtendedTags(object:JSONObject[1],rootKey:String[1]):JSONKeyValue[*]
 {
     $object.keyValuePairs->map(k |$k.value->match([o:JSONObject[1] | $o->getExtendedTags($k.key.value),
-                                                  e:JSONElement[1]|if(!$k.key.value->isJSONSchemaKey() && !$rootKey->in(['properties','discriminator','mapping'])  ,|$k,|[])
+                                                   e:JSONElement[1]|if(!$k.key.value->isJSONSchemaKey() && !$k.key.value->in(legendReservedTags()) && !$rootKey->in(['properties','discriminator','mapping'])  ,|$k,|[])
                                                      ]));
 
 }
@@ -230,6 +230,11 @@ function <<access.private>> meta::json::schema::fromSchema::createProfile(values
      |^$profile(p_stereotypes=$sts,p_tags=$tags);,
      |[]);         
 
+}
+
+function <<access.private>> meta::json::schema::fromSchema::legendReservedTags():String[*]
+{
+  'x-legendTemporal';
 }
 
 function <<access.private>> meta::json::schema::fromSchema::extendedTagToPure(tag:String[1]):String[1]
@@ -776,12 +781,12 @@ function <<access.private>> meta::json::schema::fromSchema::packageFromPath(path
   let updatedPath = if( $path->startsWith($slash),|$path->substringAfter($slash),|if($path->startsWith('..'),|$path->substringAfter('..'+$slash),|$path));
   let hasFileName = if($path ->matches('^.*\.(json|JSON)$'),|1,|0);
   let splitPath= $updatedPath->split($slash)->map(v|$v->sanitizePackagePart());
-  let prefix = if($pathPrefix->isNotEmpty(),|$pathPrefix->toOne()+'::',|''); 
+  let prefix = if($pathPrefix->isNotEmpty() && $pathPrefix != '',|$pathPrefix->toOne()+'::',|''); 
   let pathParts = $splitPath->take($splitPath->size()-$hasFileName);  
   $prefix+ if($pathParts->isNotEmpty(),|$pathParts->joinStrings('::')+'::',|'');
 }
 
-function <<access.private>> meta::json::schema::fromSchema::typeFullPath(fileName:String[1],pathPrefix:String[0..1]):String[1]
+function meta::json::schema::fromSchema::typeFullPath(fileName:String[1],pathPrefix:String[0..1]):String[1]
 {
    let package = $fileName->packageFromPath($pathPrefix); 
    let name = $fileName->refToFileName();
@@ -1025,7 +1030,12 @@ function <<access.private>> meta::json::schema::fromSchema::addSchemaTagsToPure(
       
    
    let extendedSteroetypes =  $objectWithTags.keyValuePairs->filter(kv|$extendedProfile->isNotEmpty() && $kv.key.value->extendedTagToPure()->in($extendedProfile.p_stereotypes.value))->sortBy(s|$s.key.value)->map(kv|stereotype($extendedProfile->toOne(),$kv.key.value->extendedTagToPure()->toOne())); 
-   let extendedTaggedValues  = $objectWithTags.keyValuePairs->filter(kv|$extendedProfile->isNotEmpty() && $kv.key.value->extendedTagToPure()->in($extendedProfile.p_tags.value))->sortBy(s|$s.key.value)->map(kv| $kv.value->getJSONElementAsString()->sort()->map(v | ^TaggedValue(tag=tag($extendedProfile->toOne(),$kv.key.value->extendedTagToPure()),value=$v))); 
+   let extendedTaggedValues  =$objectWithTags.keyValuePairs->filter(kv|$extendedProfile->isNotEmpty() && $kv.key.value->extendedTagToPure()->in($extendedProfile.p_tags.value))->sortBy(s|$s.key.value)->map(kv| $kv.value->getJSONElementAsString()->sort()->map(v | ^TaggedValue(tag=tag($extendedProfile->toOne(),$kv.key.value->extendedTagToPure()),value=$v))); 
+
+   let milestoneKey =  $objectWithTags.keyValuePairs->getValueForKey('x-legendTemporal');
+   let milestoneSt =if($milestoneKey->size()==1 &&  $milestoneKey->at(0)->instanceOf(JSONString) && $milestoneKey->at(0)->cast(@JSONString).value->in(['businesstemporal','bitemporal','processingtemporal']),
+                        |  stereotype(temporal,$milestoneKey->at(0)->cast(@JSONString).value),
+                        |[]);
 
    $elementWithreadWrite->cast(@ElementWithTaggedValues)  
             ->addTag(JSONSchemaGeneration,'defaultValue',$default)
@@ -1033,7 +1043,7 @@ function <<access.private>> meta::json::schema::fromSchema::addSchemaTagsToPure(
             ->addTag($exampleTags)
             ->addTag(doc,'doc',$description)
             ->addTag(JSONSchemaJavaExtension,'javaInterface',$javaInterfaces)->addTag($extendedTaggedValues)
-       ->cast(@ElementWithStereotypes)->addStereoType($nullST)->addStereoType($extendedSteroetypes)
+       ->cast(@ElementWithStereotypes)->addStereoType($nullST)->addStereoType($extendedSteroetypes)->addStereoType($milestoneSt)
       ->cast(@PackageableElement);
 }
 
@@ -1145,7 +1155,7 @@ function <<access.private>> meta::json::schema::fromSchema:: newClassfromReferen
   newClass( $ref->refToFullPath($parentPath)->typeFullPath($pathPrefix));
 }
 
-function <<access.private>> meta::json::schema::fromSchema::refToFileName(ref:String[1]):String[1]
+function meta::json::schema::fromSchema::refToFileName(ref:String[1]):String[1]
 { 
       $ref->split('/')->last()->toOne()->split('.')->init()->joinStrings()->toOne();
    
