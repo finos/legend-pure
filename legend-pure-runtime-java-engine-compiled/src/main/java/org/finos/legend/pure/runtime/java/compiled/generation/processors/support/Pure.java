@@ -53,6 +53,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.proper
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.Path;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PropertyPathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
@@ -370,7 +371,10 @@ public class Pure
                 @Override
                 public Object value(Object o, ExecutionSupport es)
                 {
-                    RichIterable<?> result = ((Path<?, ?>) func)._path().injectInto(CompiledSupport.toPureCollection(o), (mutableList, path) ->
+                    // We specify the parameter types in the lambda below to work around a bug in the Java compiler:
+                    // https://bugs.openjdk.java.net/browse/JDK-8210495
+                    // This bug was fixed in 11.0.13, but the workaround ensures compatibility with 11.0.12 and earlier.
+                    RichIterable<?> result = ((Path<?, ?>) func)._path().injectInto(CompiledSupport.toPureCollection(o), (RichIterable<?> mutableList, PathElement path) ->
                     {
                         if (!(path instanceof PropertyPathElement))
                         {
