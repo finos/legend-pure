@@ -26,7 +26,9 @@ function meta::pure::executionPlan::engine::java::registerAssertLibrary(conventi
    let lib = newConventionsLibrary()
       ->addFunctionCoders([
          fc2(assert_Boolean_1__Function_1__Boolean_1_,         {ctx,test,message     | $library->j_invoke('pureAssert', [$test, $message], javaBoolean())}),
-         fc3(assert_Boolean_1__String_1__Any_MANY__Boolean_1_, {ctx,test,format,args | $library->j_invoke('pureAssert', [$test, j_lambda($noParams, $library->j_invoke('format', [$format, $args->j_listOf(javaList(javaObject()))], javaString()))], javaBoolean())})
+         fc1(assert_Boolean_1__Boolean_1_,                     {ctx,test             | $library->j_invoke('pureAssert', [$test, j_lambda($noParams, j_string('Assert failed'))], javaBoolean())}),
+         fc3(assert_Boolean_1__String_1__Any_MANY__Boolean_1_, {ctx,test,format,args | $library->j_invoke('pureAssert', [$test, j_lambda($noParams, $library->j_invoke('format', [$format, $args->j_listOf(javaList(javaObject()))], javaString()))], javaBoolean())}),
+         fc2(assert_Boolean_1__String_1__Boolean_1_,           {ctx,test,message     | $library->j_invoke('pureAssert', [$test, j_lambda($noParams, $message)], javaBoolean())})
       ]);
 
    $conventions->registerLibrary($lib);

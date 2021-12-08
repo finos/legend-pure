@@ -596,6 +596,49 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObje
    assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"friendA\\":{\\"fullName\\":\\"Robert T\\",\\"aName\\":\\"A\\",\\"@type\\":\\"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA\\"},\\"friendB\\":{\\"fullName\\":\\"John T\\",\\"aName\\":\\"A\\",\\"@type\\":\\"meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_PersonA\\"}}"},"value":{"friendA":{"aName":"A","fullName":"Robert T"},"friendB":{"aName":"A","fullName":"John T"}}},"value":{"friendA":{"firstName":"RobertA"},"friendB":{"firstName":"JohnA"}}}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleM2MMappingUsingExplicitAssert() : Boolean[1]
+{
+   let tree = #{Name {name}}#;
+   
+   let result = execute(
+      | Name.all()->graphFetchChecked($tree)->serialize($tree),
+      meta::pure::mapping::modelToModel::test::alloy::simple::simpleModelMappingWithExplicitAssert,
+      ^Runtime(connections = ^JsonModelConnection(
+                              element=^ModelStore(),
+                              class = meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_AString,
+                              url = 'data:application/json,{"s":"test string data"}'
+                             )
+         ),
+      []
+   );
+
+   println($result.values);
+   assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"s\\":\\"test string data\\"}"},"value":{"s":"test string data"}},"value":{"name":"ok"}}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleM2MMappingUsingImplicitAssert() : Boolean[1]
+{
+   let tree = #{Name {name}}#;
+   
+   let result = execute(
+      | Name.all()->graphFetchChecked($tree)->serialize($tree),
+      meta::pure::mapping::modelToModel::test::alloy::simple::simpleModelMappingWithImplicitAssert,
+      ^Runtime(connections = ^JsonModelConnection(
+                              element=^ModelStore(),
+                              class = meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_AString,
+                              url = 'data:application/json,{"s":"test string data"}'
+                             )
+         ),
+      []
+   );
+
+   println($result.values);
+   assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"s\\":\\"test string data\\"}"},"value":{"s":"test string data"}},"value":{"name":"ok"}}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+
 ###Pure
 import meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::*;
 import meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::*;
@@ -848,5 +891,25 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::simpleModelMappingWithMu
   }   
 )
 
+
+Mapping meta::pure::mapping::modelToModel::test::alloy::simple::simpleModelMappingWithExplicitAssert
+(
+   meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::Name : Pure
+   {
+      ~src _AString
+      name: if($src.s->isNoShorterThan(10), | assert($src.s->length() >= 0);'ok';, | 'not ok')
+   }
+)
+
+// isNoShorterThan uses an assert in its definition: this is testing out translation of the isNoShorterThan body 
+// and translation of the assert to make sure we pick up the right defintion
+Mapping meta::pure::mapping::modelToModel::test::alloy::simple::simpleModelMappingWithImplicitAssert
+(
+   meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::Name : Pure
+   {
+      ~src _AString
+      name: if($src.s->isNoShorterThan(10), | 'ok', | 'not ok')
+   }
+)
 
 
