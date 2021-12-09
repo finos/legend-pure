@@ -43,7 +43,7 @@ function meta::external::format::flatdata::binding::fromPure::pureToFlatData(con
    let generatedFlatData = generate($config, $debug);
    let result            = createBinding($generatedFlatData, $config);
       
-   $debug->log(|'\nGenerated the following:\n\n'+$result->bindingToString()); //+'\n\n'+$result->modelToString());
+   $debug->log(|'\nGenerated the following:\n\n'+$result->bindingToString());
    $result;
 }
 
@@ -62,7 +62,7 @@ function <<access.private>> meta::external::format::flatdata::binding::fromPure:
          let label      = $p.name->toOne();
          let optional   = $p.multiplicity == ZeroOne;
          let returnType = $p->functionReturnType().rawType->toOne();
-         if($returnType == String,
+         if($returnType == String || $returnType->instanceOf(Enumeration),
             | ^FlatDataRecordField(label=$label, type=^FlatDataString(optional=$optional)),
             |
          if($returnType == Boolean,
