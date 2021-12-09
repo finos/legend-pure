@@ -15,7 +15,10 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors;
 
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Annotation;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
 import org.finos.legend.pure.m3.navigation.M3Paths;
@@ -27,7 +30,6 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;
 
 public class IdBuilder
@@ -43,19 +45,57 @@ public class IdBuilder
 
     public String buildId(CoreInstance instance)
     {
+        if (instance instanceof Any)
+        {
+            return buildId((Any) instance);
+        }
+
         if (isPrimitiveValue(instance))
         {
             return buildIdForPrimitiveValue(instance);
         }
-        if (isEnumValue(instance))
+        if (this.processorSupport.instance_instanceOf(instance, M3Paths.Enum))
         {
             return buildIdForEnumValue(instance);
         }
-        if (isAbstractProperty(instance))
+        if (this.processorSupport.instance_instanceOf(instance, M3Paths.AbstractProperty))
         {
             return buildIdForAbstractProperty(instance);
         }
-        if (isPackageableElement(instance))
+        if (this.processorSupport.instance_instanceOf(instance, M3Paths.LambdaFunction))
+        {
+            return buildIdForLambdaFunction(instance);
+        }
+        if (this.processorSupport.instance_instanceOf(instance, M3Paths.Annotation))
+        {
+            return buildIdForAnnotation(instance);
+        }
+        if (this.processorSupport.instance_instanceOf(instance, M3Paths.PackageableElement))
+        {
+            return buildIdForPackageableElement(instance);
+        }
+        return buildDefaultId(instance);
+    }
+
+    private String buildId(Any instance)
+    {
+        if (instance instanceof Enum)
+        {
+            return buildIdForEnumValue(instance);
+        }
+        if (instance instanceof AbstractProperty)
+        {
+            return buildIdForAbstractProperty(instance);
+        }
+        if (instance instanceof LambdaFunction)
+        {
+            return buildIdForLambdaFunction(instance);
+        }
+        if (instance instanceof Annotation)
+        {
+            return buildIdForAnnotation(instance);
+        }
+        if (instance instanceof PackageableElement)
         {
             return buildIdForPackageableElement(instance);
         }
@@ -70,7 +110,7 @@ public class IdBuilder
         {
             return true;
         }
-        if (!(instance instanceof SimpleCoreInstance))
+        if (instance instanceof Any)
         {
             return false;
         }
@@ -86,22 +126,12 @@ public class IdBuilder
 
     // Enum value
 
-    private boolean isEnumValue(CoreInstance instance)
-    {
-        return (instance instanceof Enum) || isSimpleCoreInstanceOfType(instance, M3Paths.Enum);
-    }
-
     private String buildIdForEnumValue(CoreInstance instance)
     {
         return instance.getName();
     }
 
     // AbstractProperty
-
-    private boolean isAbstractProperty(CoreInstance instance)
-    {
-        return (instance instanceof AbstractProperty) || isSimpleCoreInstanceOfType(instance, M3Paths.AbstractProperty);
-    }
 
     private String buildIdForAbstractProperty(CoreInstance property)
     {
@@ -110,12 +140,23 @@ public class IdBuilder
         return builder.append('.').append(property.getName()).toString();
     }
 
-    // PackageableElement
+    // LambdaFunction
 
-    private boolean isPackageableElement(CoreInstance instance)
+    private String buildIdForLambdaFunction(CoreInstance lambda)
     {
-        return (instance instanceof PackageableElement) || isSimpleCoreInstanceOfType(instance, M3Paths.PackageableElement);
+        return lambda.getName();
     }
+
+    // Annotation
+
+    private String buildIdForAnnotation(CoreInstance annotation)
+    {
+        StringBuilder builder = new StringBuilder();
+        org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.writeUserPathForPackageableElement(builder, annotation.getValueForMetaPropertyToOne(M3Properties.profile));
+        return builder.append('.').append(annotation.getName()).toString();
+    }
+
+    // PackageableElement
 
     private String buildIdForPackageableElement(CoreInstance instance)
     {
@@ -128,13 +169,6 @@ public class IdBuilder
     {
         int syntheticId = instance.getSyntheticId();
         return (this.defaultIdPrefix == null) ? Integer.toString(syntheticId) : (this.defaultIdPrefix + syntheticId);
-    }
-
-    // Helpers
-
-    private boolean isSimpleCoreInstanceOfType(CoreInstance instance, String type)
-    {
-        return (instance instanceof SimpleCoreInstance) && this.processorSupport.instance_instanceOf(instance, type);
     }
 
     // Factory methods

@@ -320,11 +320,12 @@ function meta::pure::graphFetch::calculateSourceTree(tree:RootGraphFetchTree<Any
                                   
    assert($rootSetImplementation->isNotEmpty(), |'Mapping ' + $mapping->elementToPath() + ' does not map class from tree: ' + $replaced.class->elementToPath());
    
-   let r = $rootSetImplementation->toOne()->match($extensions.graphExtension_calculateSourceTree->map(ext | $ext->eval($replaced))->concatenate([
+   $rootSetImplementation->toOne()->match($extensions.graphExtension_calculateSourceTree->map(ext | $ext->eval($replaced))->concatenate([
       {pisi: PureInstanceSetImplementation[1]  | 
          assert($pisi.srcClass->isNotEmpty() && $pisi.srcClass->toOne()->instanceOf(Class), 'Pure mapping does not have a class as ~src for root of tree');
-         let root = ^RootGraphFetchTree<Any>(class=$pisi.srcClass->cast(@Class<Any>)->toOne());
-         $root->enrichSourceTreeNode($pisi, $replaced, $extensions)->mergeSubTrees()->sortTree()->cast(@RootGraphFetchTree<Any>);
+         let srcClass     = $pisi.srcClass->toOne()->cast(@Class<Any>);
+         let root         = ^RootGraphFetchTree<Any>(class=$srcClass);
+         let withChildren = $root->enrichSourceTreeNode($pisi, $replaced, $extensions)->mergeSubTrees()->sortTree()->cast(@RootGraphFetchTree<Any>);
       }
    ])->toOneMany());
 }
@@ -361,11 +362,11 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForPrope
 
    let requiredProperty = if($isPropertyTemporalMilestoned, |$setImplementation.class->propertyByName($tgtPgft.property->edgePointPropertyName()->toOne()), |$tgtPgft.property);
    let propertyMappings = $setImplementation.propertyMappings->filter(pm|$pm.property == $requiredProperty)->cast(@PurePropertyMapping);
-
+   
    assert($propertyMappings->isNotEmpty() || ($requiredProperty->isNotEmpty() && ($setImplementation->isNoMappingPassThru($requiredProperty->toOne()) || $setImplementation->isNoMappingDefaultToEmpty($requiredProperty->toOne()))),|'No mapping found for property \'' + $tgtPgft.property.name->toOne() + '\'');
-         
+
    let returnType   = $tgtPgft.property->functionReturnType().rawType->toOne();
-         
+                  
    let childSetImpls = $returnType->match([
       {c:Class<Any>[1]|
          let childSIs = $tgtPgft->match([
@@ -395,8 +396,26 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForPrope
       {a:Any[1]| []}
    ]);
 
-   let propertyPaths       = $propertyMappings->map(propertyMapping|$propertyMapping.transform.expressionSequence->at(0)->evaluateAndDeactivate()->scanProperties(^List<PropertyPathNode>(), [], []));
-
+   let propertyPaths = $propertyMappings->match([
+      {none:PurePropertyMapping[0] |
+         if($setImplementation->isNoMappingPassThru($requiredProperty->toOne()),
+            {| 
+               let path = ^PropertyPathNode(
+                  class    = $setImplementation.srcClass->toOne()->cast(@Class<Any>),
+                  property = $setImplementation->noMappingPassThruSourceProperty($requiredProperty->toOne())->toOne()
+               );
+               ^Res(current=list($path), result=list($path));
+            },
+            {| 
+              assert($setImplementation->isNoMappingDefaultToEmpty($requiredProperty->toOne()), |'No mapping found for property \'' + $tgtPgft.property.name->toOne() + '\''); 
+              [];
+            }
+         );
+      },
+      {pms:PurePropertyMapping[*] |
+         $pms->map(pm| $pm.transform.expressionSequence->at(0)->evaluateAndDeactivate()->scanProperties(^List<PropertyPathNode>(), [], []));
+      }
+   ]);
 
    let inlinedPropertyTree = $propertyPaths.result->buildPropertyTree()->inlineQualifiedPropertyNodes();
 
@@ -432,6 +451,22 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForPrope
    );
 }
 
+function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForExpression(srcNode:GraphFetchTree[1], exprThisClass:Class<Any>[1], expression:ValueSpecification[1]): GraphFetchTree[1]
+{
+   let propertyPath = $expression->evaluateAndDeactivate()->scanProperties(^List<PropertyPathNode>(), [], []);
+   $srcNode->enrichSourceTreeNodeForPropertyPath($exprThisClass, $propertyPath);
+}
+
+function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForPropertyPath(srcNode:GraphFetchTree[1], baseClass:Class<Any>[1], propertyPath:Res[0..1]): GraphFetchTree[1]
+{
+   let inlinedPropertyTree        = $propertyPath.result->buildPropertyTree()->inlineQualifiedPropertyNodes();
+   let inlinedPropertyGraphTrees  = $inlinedPropertyTree->propertyTreeToGraphFetchTree($baseClass).subTrees->cast(@PropertyGraphFetchTree);
+   let srcNodeProperties          = $inlinedPropertyGraphTrees->filter(p | $baseClass->getAllTypeGeneralisations()->contains($p.property->meta::pure::functions::meta::ownerClass()));
+   let withFoundProperties        = $srcNode->addSubTrees($srcNodeProperties);
+   let withQPsRecorded            = $propertyPath.result->filter(path| $path.values->exists(x| $x.property->instanceOf(QualifiedProperty)))
+                                                 ->fold({path, gt| $gt->recordQualifiedProperties($path)}, $withFoundProperties);
+}
+
 function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNode(srcNode:GraphFetchTree[1], setImplementation: PureInstanceSetImplementation[1], tgtNode:GraphFetchTree[1], extensions:meta::pure::router::extension::RouterExtension[*]): GraphFetchTree[1]
 {
    let setContainsExplodeProperty = $setImplementation.propertyMappings->filter(pm|if($pm->instanceOf(PurePropertyMapping),| $pm->cast(@PurePropertyMapping).explodeProperty->isTrue(), |false))->isNotEmpty();
@@ -442,6 +477,13 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNode(srcNode
                                                                                                                                                                                                                   |[])),
                                                                                                      |[]));
    let subTrees = $requiredTgtSubTrees->fold({st,n | $n->enrichSourceTreeNodeForProperty($setImplementation, $st, $extensions)}, $srcNode);
+   if($setImplementation.filter->isNotEmpty(),
+      {| 
+         let srcClass = $setImplementation.srcClass->toOne()->cast(@Class<Any>);
+         $subTrees->enrichSourceTreeNodeForExpression($srcClass, $setImplementation.filter.expressionSequence->at(0));
+      },
+      | $subTrees
+   );
 }
 
 function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeAtPath(srcNode:GraphFetchTree[1], path:List<PropertyPathNode>[1], setImplementation: PureInstanceSetImplementation[1], tgtPgft:PropertyGraphFetchTree[1], extensions:meta::pure::router::extension::RouterExtension[*]): GraphFetchTree[1]

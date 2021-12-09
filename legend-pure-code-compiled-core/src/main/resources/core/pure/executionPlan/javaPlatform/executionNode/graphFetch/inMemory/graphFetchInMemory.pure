@@ -47,14 +47,48 @@ function meta::pure::executionPlan::engine::java::graphFetch::inMemory::prepareF
    let pureType        = $node->typeFromStoreLocalNode();
    let simpleType      = ^SimpleJavaType(pureType = $pureType, javaType = $context.conventions->className($pureType));
    let currentNodeInfo = $node->match([
-      r : InMemoryRootGraphFetchExecutionNode[1]     | let childNodeInfo   = $context->nodeInfosForPath($path + '.n1')->toOne();
-                                                       let returnType      = if($r.checked, | ^CheckedJavaType(checkedOf = $simpleType, source = $childNodeInfo.returnType), | $simpleType);
-                                                       ^NodeInfo(path = $path, returnType = $returnType, graphFetchTrees = $childNodeInfo.graphFetchTrees);,
-      
-      p : InMemoryPropertyGraphFetchExecutionNode[1] | ^NodeInfo(path = $path, returnType = $simpleType)
+      r : InMemoryRootGraphFetchExecutionNode[1]        | let childNodeInfo   = $context->nodeInfosForPath($path + '.n1')->toOne();
+                                                          let returnType      = if($r.checked, | ^CheckedJavaType(checkedOf = $simpleType, source = $childNodeInfo.returnType), | $simpleType);
+                                                          ^NodeInfo(path = $path, returnType = $returnType, graphFetchTrees = $childNodeInfo.graphFetchTrees);,
+
+      p : InMemoryPropertyGraphFetchExecutionNode[1]    | ^NodeInfo(path = $path, returnType = $simpleType)
    ]);
    
-   ^$context(nodeInfos = $context.nodeInfos->concatenate($currentNodeInfo));
+   let newTypeInfos = $node->match([
+      c : InMemoryCrossStoreGraphFetchExecutionNode[1]  | let xStorePropertyMapping   = $c.xStorePropertyMapping;
+                                                          validateXStorePropertyMapping($xStorePropertyMapping);
+                                                          let equalityExpressions     = $xStorePropertyMapping.crossExpression->findExpressionsForFunctionInFunctionDefinition([meta::pure::functions::boolean::equal_Any_MANY__Any_MANY__Boolean_1_])->toOneMany();
+                                                          let newTypeInfos            = $equalityExpressions->fold(
+                                                             {exp, ti | 
+                                                                let graphFetchTree          = $node.graphFetchTree->cast(@RoutedPropertyGraphFetchTree);
+                                                                let isMilestonedProp        = $graphFetchTree.property->instanceOf(QualifiedProperty) && $graphFetchTree.property->hasGeneratedMilestoningPropertyStereotype();
+                                                                let property                = if ($isMilestonedProp,
+                                                                                                  | let cl = $graphFetchTree.property->functionType().parameters->evaluateAndDeactivate()->at(0).genericType.rawType->toOne()->cast(@meta::pure::metamodel::type::Class<Any>);
+                                                                                                    $cl->propertyByName($graphFetchTree.property->edgePointPropertyName()->toOne())->toOne();,
+                                                                                                  | $graphFetchTree.property
+                                                                                               )->cast(@Property<Nil,Any|*>);
+                                                                let otherProperty           = $property.owner->cast(@Association).properties->filter(x | $x != $property)->toOne();
+
+                                                                let allProperties  = $exp->findPropertiesInValueSpecification();
+
+                                                                let parentClass    = $otherProperty.genericType.rawType->cast(@meta::pure::metamodel::type::Class<Any>)->toOne();
+                                                                let parentProperty = $allProperties->filter(x | $x.owner->cast(@meta::pure::metamodel::type::Class<Any>)->_subTypeOf($parentClass) || $parentClass->_subTypeOf($x.owner->cast(@meta::pure::metamodel::type::Class<Any>)))->cast(@Property<Nil,Any|*>)->toOne();
+
+                                                                let childClass     = $property.genericType.rawType->cast(@meta::pure::metamodel::type::Class<Any>)->toOne();
+                                                                let childProperty  = $allProperties->filter(x | $x.owner->cast(@meta::pure::metamodel::type::Class<Any>)->_subTypeOf($childClass) || $childClass->_subTypeOf($x.owner->cast(@meta::pure::metamodel::type::Class<Any>)))->cast(@Property<Nil,Any|*>)->toOne();
+                                                                
+                                                                $ti->addProperties([$parentProperty, $childProperty]);
+                                                             },
+                                                             $context.typeInfos
+                                                          );,
+
+      p : InMemoryGraphFetchExecutionNode[1]            | $context.typeInfos
+   ]);
+   
+   ^$context(
+      typeInfos = $newTypeInfos,
+      nodeInfos = $context.nodeInfos->concatenate($currentNodeInfo)
+   );
 }
 
 function meta::pure::executionPlan::engine::java::graphFetch::inMemory::generateInMemoryStoreGraphFetchProject(node: InMemoryGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], extensions: RouterExtension[*], debug: DebugContext[1]):Project[1]
@@ -270,8 +304,6 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
                                   )->cast(@Property<Nil,Any|*>);
    let otherProperty           = $property.owner->cast(@Association).properties->filter(x | $x != $property)->toOne();
    let xStorePropertyMapping   = $node.xStorePropertyMapping;
-
-   validateXStorePropertyMapping($xStorePropertyMapping);
 
    let currentGraphImpl        = $node->graphImplClass($path, $context);
    let parentPath              = $path->substring(0, $path->substring(0, $path->lastIndexOf('.'))->lastIndexOf('.')) + localGraphFetchNodePathPrefix();

@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2021 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.compiled;
+package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.base.meta;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
-import org.finos.legend.pure.m3.tests.function.base.measure.AbstractTestMeasure;
+import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestNewAssociation;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.junit.After;
 import org.junit.BeforeClass;
 
-public class TestMeasureCompiled extends AbstractTestMeasure
+public class TestNewAssociationCompiled extends AbstractTestNewAssociation
 {
     @BeforeClass
-    public static void setUp()
-    {
+    public static void setUp() {
         setUpRuntime(getFunctionExecution());
     }
-
     @After
-    public void clearRuntime()
-    {
-        runtime.delete("testModel.pure");
-        runtime.delete("testFunc.pure");
+    public void cleanRuntime() {
+        runtime.delete("StandardCall.pure");
     }
-
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
