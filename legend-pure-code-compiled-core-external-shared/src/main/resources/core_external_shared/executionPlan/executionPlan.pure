@@ -42,7 +42,7 @@ function meta::external::shared::format::executionPlan::generateDataTestProject(
 
    let package   = $packageName->pathToElement()->cast(@Package);
    let classes   = $package.children->filter(pe| $pe->instanceOf(meta::pure::metamodel::type::Class))->cast(@meta::pure::metamodel::type::Class<Any>);
-   let typeInfos = $classes->fold({c, ti| $ti->addForClass($c, true, false, true)}, newTypeInfoSet());
+   let typeInfos = $classes->fold({c, ti| $ti->addForClass($c, true, true, false, true)}, newTypeInfoSet());
    let context   = ^GenerationContext(typeInfos=$typeInfos, conventions=$conventions);
 
    let project = mergeProjects(generateTypes($context, noDebug())->concatenate($classes->map(c| $c->createDataClass('node', $context, noDebug())))->toOneMany());
