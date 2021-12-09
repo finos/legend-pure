@@ -597,6 +597,9 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObje
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
+{
+    serverVersion.start='v1_19_0'
+}
 meta::pure::mapping::modelToModel::test::alloy::simple::simpleM2MMappingUsingExplicitAssert() : Boolean[1]
 {
    let tree = #{Name {name}}#;
@@ -613,11 +616,13 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleM2MMappingUsingExp
       []
    );
 
-   println($result.values);
    assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"s\\":\\"test string data\\"}"},"value":{"s":"test string data"}},"value":{"name":"ok"}}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
+{
+    serverVersion.start='v1_19_0'
+}
 meta::pure::mapping::modelToModel::test::alloy::simple::simpleM2MMappingUsingImplicitAssert() : Boolean[1]
 {
    let tree = #{Name {name}}#;
@@ -634,7 +639,6 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleM2MMappingUsingImp
       []
    );
 
-   println($result.values);
    assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"s\\":\\"test string data\\"}"},"value":{"s":"test string data"}},"value":{"name":"ok"}}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
