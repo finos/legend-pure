@@ -14,34 +14,32 @@
 
 package org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr;
 
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.function.Function0;
-import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.block.procedure.Procedure2;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.factory.Stacks;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.list.mutable.ListAdapter;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.ListIterate;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningClassProcessor;
-import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.PackageInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpressionInstance;
@@ -116,7 +114,11 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpressionInstance;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AllOrFunctionContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ArithmeticPartContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AssociationContext;
@@ -138,7 +140,6 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.De
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DerivedPropertyContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.DslContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumDefinitionContext;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumReferenceContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EnumValueContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.EqualNotEqualContext;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ExpressionContext;
@@ -205,16 +206,12 @@ import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineD
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLTextContent;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.serialization.runtime.SourceState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
-import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.misc.Interval;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 import java.util.List;
 
@@ -242,41 +239,6 @@ public class AntlrContextToM3CoreInstance
 
     private boolean hasImportChanged;
 
-
-    private static final Function<PackagePathContext, MutableList<String>> PACKAGE_TO_STRING = new Function<PackagePathContext, MutableList<String>>()
-    {
-        @Override
-        public MutableList<String> valueOf(PackagePathContext path)
-        {
-            return ListAdapter.adapt(path.identifier()).collect(IDENTIFIER_TO_STRING);
-        }
-    };
-
-    private static final Function<IdentifierContext, String> IDENTIFIER_TO_STRING = new Function<IdentifierContext, String>()
-    {
-        @Override
-        public String valueOf(IdentifierContext identifierContext)
-        {
-            return identifierContext.getText();
-        }
-    };
-
-    private static final Function<String, IdentifierContext> newIdentifierContext = new Function<String, IdentifierContext>()
-    {
-        @Override
-        public IdentifierContext valueOf(final String s)
-        {
-            return new IdentifierContext(null, 1)
-            {
-                @Override
-                public String getText()
-                {
-                    return s;
-                }
-            };
-        }
-    };
-
     public AntlrContextToM3CoreInstance(Context context, ModelRepository repository, ProcessorSupport processorSupport, AntlrSourceInformation sourceInformation, InlineDSLLibrary inlineDSLLibrary, MutableList<CoreInstance> coreInstancesResult, int count, boolean addLines, SourceState oldState)
     {
         this.context = context;
@@ -289,7 +251,7 @@ public class AntlrContextToM3CoreInstance
         this.addLines = addLines;
         this.oldState = oldState;
         this.newSourceInfoMap = Maps.mutable.empty();
-        this.oldInstances = this.oldState == null ? Sets.mutable.<CoreInstance>empty() : this.oldState.getInstances().toSet();
+        this.oldInstances = this.oldState == null ? Sets.mutable.empty() : this.oldState.getInstances().toSet();
     }
 
 
@@ -308,50 +270,21 @@ public class AntlrContextToM3CoreInstance
             else
             {
                 final String importGroupID = importId._name();
-                RichIterable<? extends PackageableElement> oldImportGroups = this.oldState.getImportGroups().select(new Predicate<PackageableElement>()
-                {
-                    @Override
-                    public boolean accept(PackageableElement packageableElement)
-                    {
-                        return packageableElement._name().equals(importGroupID);
-                    }
-                });
+                RichIterable<? extends PackageableElement> oldImportGroups = this.oldState.getImportGroups().select(e -> importGroupID.equals(e._name()));
 
                 if (oldImportGroups.size() == 1)
                 {
-                    ImportGroup oldImportGroup = (ImportGroup)oldImportGroups.toList().get(0);
+                    ImportGroup oldImportGroup = (ImportGroup) oldImportGroups.toList().get(0);
 
-                    MutableSet<String> oldPaths = oldImportGroup._imports().collect(new Function<Import, String>()
-                    {
-                        @Override
-                        public String valueOf(Import importInstance)
-                        {
-                            return importInstance._path();
-                        }
-                    }).toSet();
-
-                    MutableSet<String> newPaths = importId._imports().collect(new Function<Import, String>()
-                    {
-                        @Override
-                        public String valueOf(Import importInstance)
-                        {
-                            return importInstance._path();
-                        }
-                    }).toSet();
+                    MutableSet<String> oldPaths = oldImportGroup._imports().collect(Import::_path, Sets.mutable.empty());
+                    MutableSet<String> newPaths = importId._imports().collect(Import::_path, Sets.mutable.empty());
 
                     if (oldPaths.equals(newPaths))
                     {
                         this.hasImportChanged = false;
                         final ImportGroup finalIG = importId;
-                        PackageInstance parent = (PackageInstance)this.processorSupport.package_getByUserPath("system::imports");
-                        parent._children(parent._children().reject(new Predicate<PackageableElement>()
-                        {
-                            @Override
-                            public boolean accept(PackageableElement packageableElement)
-                            {
-                                return packageableElement._name().equals(finalIG._name());
-                            }
-                        }));
+                        PackageInstance parent = (PackageInstance) this.processorSupport.package_getByUserPath("system::imports");
+                        parent._children(parent._children().reject(e -> finalIG._name().equals(e._name())));
                         parent._childrenAdd(oldImportGroup);
                         oldImportGroup._package(parent);
                         oldImportGroup.setSourceInformation(importId.getSourceInformation());
@@ -379,16 +312,9 @@ public class AntlrContextToM3CoreInstance
                 }
                 else
                 {
-                    final String importGroupID = importId._name();
-                    final String newContent = Lists.mutable.with(pCtx.start.getInputStream().getText(new Interval(pCtx.start.getStartIndex(), pCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
-                    List<CoreInstance> oldInstances = this.oldInstances.select(new Predicate<CoreInstance>()
-                    {
-                        @Override
-                        public boolean accept(CoreInstance coreInstance)
-                        {
-                            return AntlrContextToM3CoreInstance.this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(coreInstance, importGroupID) && AntlrContextToM3CoreInstance.this.oldState.instanceContentInSourceEqualsNewContent(coreInstance, newContent);
-                        }
-                    }).toList();
+                    String importGroupID = importId._name();
+                    String newContent = Lists.mutable.with(pCtx.start.getInputStream().getText(new Interval(pCtx.start.getStartIndex(), pCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
+                    MutableList<CoreInstance> oldInstances = this.oldInstances.select(i -> this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(i, importGroupID) && this.oldState.instanceContentInSourceEqualsNewContent(i, newContent), Lists.mutable.empty());
 
                     if (oldInstances.size() == 1)
                     {
@@ -399,8 +325,8 @@ public class AntlrContextToM3CoreInstance
                         {
                             this.offsetSourceInformationForInstanceAndChildren(thisInstance, newSourceInfo.getStartLine() - thisInstance.getSourceInformation().getStartLine());
                             PackageInstance packageInstance = this.buildPackage(pCtx.qualifiedName().packagePath());
-                            ((PackageableElement)thisInstance)._package(packageInstance);
-                            packageInstance._childrenAdd((PackageableElement)thisInstance);
+                            ((PackageableElement) thisInstance)._package(packageInstance);
+                            packageInstance._childrenAdd((PackageableElement) thisInstance);
                             result = thisInstance;
                         }
                         else
@@ -426,16 +352,9 @@ public class AntlrContextToM3CoreInstance
                 }
                 else
                 {
-                    final String importGroupID = importId._name();
-                    final String newContent = Lists.mutable.with(dCtx.start.getInputStream().getText(new Interval(dCtx.start.getStartIndex(), dCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
-                    List<CoreInstance> oldInstances = this.oldInstances.select(new Predicate<CoreInstance>()
-                    {
-                        @Override
-                        public boolean accept(CoreInstance coreInstance)
-                        {
-                            return AntlrContextToM3CoreInstance.this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(coreInstance, importGroupID) && AntlrContextToM3CoreInstance.this.oldState.instanceContentInSourceEqualsNewContent(coreInstance, newContent);
-                        }
-                    }).toList();
+                    String importGroupID = importId._name();
+                    String newContent = Lists.mutable.with(dCtx.start.getInputStream().getText(new Interval(dCtx.start.getStartIndex(), dCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
+                    List<CoreInstance> oldInstances = this.oldInstances.select(i -> this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(i, importGroupID) && this.oldState.instanceContentInSourceEqualsNewContent(i, newContent), Lists.mutable.empty());
 
                     if (oldInstances.size() == 1)
                     {
@@ -446,8 +365,8 @@ public class AntlrContextToM3CoreInstance
                         {
                             this.offsetSourceInformationForInstanceAndChildren(thisInstance, newSourceInfo.getStartLine() - thisInstance.getSourceInformation().getStartLine());
                             PackageInstance packageInstance = this.buildPackage(dCtx.qualifiedName().packagePath());
-                            ((PackageableElement)thisInstance)._package(packageInstance);
-                            packageInstance._childrenAdd((PackageableElement)thisInstance);
+                            ((PackageableElement) thisInstance)._package(packageInstance);
+                            packageInstance._childrenAdd((PackageableElement) thisInstance);
                             result = thisInstance;
                         }
                         else
@@ -473,46 +392,36 @@ public class AntlrContextToM3CoreInstance
                 }
                 else
                 {
-                    final String importGroupID = importId._name();
-                    final String newContent = Lists.mutable.with(dCtx.start.getInputStream().getText(new Interval(dCtx.start.getStartIndex(), dCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
-                    List<CoreInstance> oldInstances = this.oldInstances.select(new Predicate<CoreInstance>()
-                    {
-                        @Override
-                        public boolean accept(CoreInstance coreInstance)
-                        {
-                            return AntlrContextToM3CoreInstance.this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(coreInstance, importGroupID) && AntlrContextToM3CoreInstance.this.oldState.instanceContentInSourceEqualsNewContent(coreInstance, newContent);
-                        }
-                    }).toList();
+                    String importGroupID = importId._name();
+                    String newContent = Lists.mutable.with(dCtx.start.getInputStream().getText(new Interval(dCtx.start.getStartIndex(), dCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
+                    List<CoreInstance> oldInstances = this.oldInstances.select(i -> this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(i, importGroupID) && this.oldState.instanceContentInSourceEqualsNewContent(i, newContent), Lists.mutable.empty());
 
-                    Predicate2<CoreInstance, SourceInformation> matchesOldInstance = new Predicate2<CoreInstance, SourceInformation>()
+                    Predicate2<CoreInstance, SourceInformation> matchesOldInstance = (oldMeasureInstance, newSourceInfo) ->
                     {
-                        @Override
-                        public boolean accept(CoreInstance oldMeasureInstance, SourceInformation newSourceInfo)
+                        if (newSourceInfo == null || oldMeasureInstance.getSourceInformation().getStartColumn() == newSourceInfo.getStartColumn())
                         {
-                            if (newSourceInfo == null || oldMeasureInstance.getSourceInformation().getStartColumn() == newSourceInfo.getStartColumn())
+                            PackageInstance packageInstance;
+                            if (newSourceInfo != null)
                             {
-                                PackageInstance packageInstance;
-                                if (newSourceInfo != null)
-                                {
-                                    offsetSourceInformationForInstanceAndChildren(oldMeasureInstance, newSourceInfo.getStartLine() - oldMeasureInstance.getSourceInformation().getStartLine());
-                                }
-                                packageInstance = buildPackage(Lists.mutable.with(newIdentifierContext.valueOf(oldMeasureInstance.getValueForMetaPropertyToOne(M3Properties._package).getName())));
-                                ((PackageableElement)oldMeasureInstance)._package(packageInstance);
-                                packageInstance._childrenAdd((PackageableElement)oldMeasureInstance);
-                                return true;
+                                offsetSourceInformationForInstanceAndChildren(oldMeasureInstance, newSourceInfo.getStartLine() - oldMeasureInstance.getSourceInformation().getStartLine());
                             }
-                            return false;
+                            Function<String, IdentifierContext> newIdentifierContext = s -> new IdentifierContext(null, 1)
+                            {
+                                @Override
+                                public String getText()
+                                {
+                                    return s;
+                                }
+                            };
+                            packageInstance = buildPackage(Lists.mutable.with(newIdentifierContext.valueOf(oldMeasureInstance.getValueForMetaPropertyToOne(M3Properties._package).getName())));
+                            ((PackageableElement) oldMeasureInstance)._package(packageInstance);
+                            packageInstance._childrenAdd((PackageableElement) oldMeasureInstance);
+                            return true;
                         }
+                        return false;
                     };
 
-                    CoreInstance oldMeasureInstance = ListIterate.detect(oldInstances, new Predicate<CoreInstance>()
-                    {
-                        @Override
-                        public boolean accept(CoreInstance coreInstance)
-                        {
-                            return Instance.instanceOf(coreInstance, M3Paths.Measure, processorSupport);
-                        }
-                    });
+                    CoreInstance oldMeasureInstance = ListIterate.detect(oldInstances, i -> Instance.instanceOf(i, M3Paths.Measure, this.processorSupport));
 
                     if (oldMeasureInstance != null)
                     {
@@ -520,13 +429,13 @@ public class AntlrContextToM3CoreInstance
                         SourceInformation newSourceInfo = this.sourceInformation.getPureSourceInformation(dCtx.getStart(), dCtx.qualifiedName().identifier().getStart(), dCtx.getStop());
                         if (matchesOldInstance.accept(oldMeasureInstance, newSourceInfo))
                         {
-                            MeasureInstance mI = (MeasureInstance)oldMeasureInstance;
+                            MeasureInstance mI = (MeasureInstance) oldMeasureInstance;
                             result = mI;
 
                             MutableList<Unit> units = Lists.mutable.with(mI._canonicalUnit()).withAll(mI._nonCanonicalUnits());
                             for (Unit unit : units)
                             {
-                                PackageInstance packageInstance = buildPackage(Lists.mutable.withAll(dCtx.qualifiedName().packagePath() == null ? Lists.mutable.<IdentifierContext>empty() : ListAdapter.adapt(dCtx.qualifiedName().packagePath().identifier())));
+                                PackageInstance packageInstance = buildPackage(Lists.mutable.withAll(dCtx.qualifiedName().packagePath() == null ? Lists.mutable.empty() : ListAdapter.adapt(dCtx.qualifiedName().packagePath().identifier())));
                                 unit._package(packageInstance);
                                 packageInstance._childrenAdd(unit);
                             }
@@ -541,7 +450,7 @@ public class AntlrContextToM3CoreInstance
                         result = this.measureParser(dCtx, importId, this.addLines);
                     }
                 }
-                MeasureInstance mI = (MeasureInstance)result;
+                MeasureInstance mI = (MeasureInstance) result;
                 List<Unit> allMeasureUnitInstances = Lists.mutable.<Unit>withAll(mI._nonCanonicalUnits()).with(mI._canonicalUnit()).toList();
                 this.coreInstancesResult.add(result);
                 this.coreInstancesResult.addAll(allMeasureUnitInstances);
@@ -558,16 +467,9 @@ public class AntlrContextToM3CoreInstance
                 }
                 else
                 {
-                    final String importGroupID = importId._name();
-                    final String newContent = Lists.mutable.with(pCtx.start.getInputStream().getText(new Interval(pCtx.start.getStartIndex(), pCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
-                    List<CoreInstance> oldInstances = this.oldInstances.select(new Predicate<CoreInstance>()
-                    {
-                        @Override
-                        public boolean accept(CoreInstance coreInstance)
-                        {
-                            return AntlrContextToM3CoreInstance.this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(coreInstance, importGroupID) && AntlrContextToM3CoreInstance.this.oldState.instanceContentInSourceEqualsNewContent(coreInstance, newContent);
-                        }
-                    }).toList();
+                    String importGroupID = importId._name();
+                    String newContent = Lists.mutable.with(pCtx.start.getInputStream().getText(new Interval(pCtx.start.getStartIndex(), pCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
+                    List<CoreInstance> oldInstances = this.oldInstances.select(i -> this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(i, importGroupID) && this.oldState.instanceContentInSourceEqualsNewContent(i, newContent), Lists.mutable.empty());
 
                     if (oldInstances.size() == 1)
                     {
@@ -578,8 +480,8 @@ public class AntlrContextToM3CoreInstance
                         {
                             this.offsetSourceInformationForInstanceAndChildren(thisInstance, newSourceInfo.getStartLine() - thisInstance.getSourceInformation().getStartLine());
                             PackageInstance packageInstance = this.buildPackage(pCtx.qualifiedName().packagePath());
-                            ((PackageableElement)thisInstance)._package(packageInstance);
-                            packageInstance._childrenAdd((PackageableElement)thisInstance);
+                            ((PackageableElement) thisInstance)._package(packageInstance);
+                            packageInstance._childrenAdd((PackageableElement) thisInstance);
                             result = thisInstance;
                         }
                         else
@@ -605,16 +507,9 @@ public class AntlrContextToM3CoreInstance
                 }
                 else
                 {
-                    final String importGroupID = importId._name();
-                    final String newContent = Lists.mutable.with(pCtx.start.getInputStream().getText(new Interval(pCtx.start.getStartIndex(), pCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
-                    List<CoreInstance> oldInstances = this.oldInstances.select(new Predicate<CoreInstance>()
-                    {
-                        @Override
-                        public boolean accept(CoreInstance coreInstance)
-                        {
-                            return AntlrContextToM3CoreInstance.this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(coreInstance, importGroupID) && AntlrContextToM3CoreInstance.this.oldState.instanceContentInSourceEqualsNewContent(coreInstance, newContent);
-                        }
-                    }).toList();
+                    String importGroupID = importId._name();
+                    String newContent = Lists.mutable.with(pCtx.start.getInputStream().getText(new Interval(pCtx.start.getStartIndex(), pCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
+                    List<CoreInstance> oldInstances = this.oldInstances.select(i -> this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(i, importGroupID) && this.oldState.instanceContentInSourceEqualsNewContent(i, newContent), Lists.mutable.empty());
 
                     if (oldInstances.size() == 1)
                     {
@@ -625,8 +520,8 @@ public class AntlrContextToM3CoreInstance
                         {
                             this.offsetSourceInformationForInstanceAndChildren(thisInstance, newSourceInfo.getStartLine() - thisInstance.getSourceInformation().getStartLine());
                             PackageInstance packageInstance = this.buildPackage(pCtx.qualifiedName().packagePath());
-                            ((PackageableElement)thisInstance)._package(packageInstance);
-                            packageInstance._childrenAdd((PackageableElement)thisInstance);
+                            ((PackageableElement) thisInstance)._package(packageInstance);
+                            packageInstance._childrenAdd((PackageableElement) thisInstance);
                             result = thisInstance;
                         }
                         else
@@ -652,16 +547,9 @@ public class AntlrContextToM3CoreInstance
                 }
                 else
                 {
-                    final String importGroupID = importId._name();
-                    final String newContent = Lists.mutable.with(pCtx.start.getInputStream().getText(new Interval(pCtx.start.getStartIndex(), pCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
-                    List<CoreInstance> oldInstances = this.oldInstances.select(new Predicate<CoreInstance>()
-                    {
-                        @Override
-                        public boolean accept(CoreInstance coreInstance)
-                        {
-                            return AntlrContextToM3CoreInstance.this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(coreInstance, importGroupID) && AntlrContextToM3CoreInstance.this.oldState.instanceContentInSourceEqualsNewContent(coreInstance, newContent);
-                        }
-                    }).toList();
+                    String importGroupID = importId._name();
+                    String newContent = Lists.mutable.with(pCtx.start.getInputStream().getText(new Interval(pCtx.start.getStartIndex(), pCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
+                    List<CoreInstance> oldInstances = this.oldInstances.select(i -> this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(i, importGroupID) && this.oldState.instanceContentInSourceEqualsNewContent(i, newContent), Lists.mutable.empty());
 
                     if (oldInstances.size() == 1)
                     {
@@ -673,8 +561,8 @@ public class AntlrContextToM3CoreInstance
                             this.functionCounter++;
                             this.offsetSourceInformationForInstanceAndChildren(thisInstance, newSourceInfo.getStartLine() - thisInstance.getSourceInformation().getStartLine());
                             PackageInstance packageInstance = this.buildPackage(pCtx.qualifiedName().packagePath());
-                            ((PackageableElement)thisInstance)._package(packageInstance);
-                            packageInstance._childrenAdd((PackageableElement)thisInstance);
+                            ((PackageableElement) thisInstance)._package(packageInstance);
+                            packageInstance._childrenAdd((PackageableElement) thisInstance);
                             this.coreInstancesResult.add(thisInstance);
                         }
                         else
@@ -699,16 +587,9 @@ public class AntlrContextToM3CoreInstance
                 }
                 else
                 {
-                    final String importGroupID = importId._name();
-                    final String newContent = Lists.mutable.with(pCtx.start.getInputStream().getText(new Interval(pCtx.start.getStartIndex(), pCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
-                    List<CoreInstance> oldInstances = this.oldInstances.select(new Predicate<CoreInstance>()
-                    {
-                        @Override
-                        public boolean accept(CoreInstance coreInstance)
-                        {
-                            return AntlrContextToM3CoreInstance.this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(coreInstance, importGroupID) && AntlrContextToM3CoreInstance.this.oldState.instanceContentInSourceEqualsNewContent(coreInstance, newContent);
-                        }
-                    }).toList();
+                    String importGroupID = importId._name();
+                    String newContent = Lists.mutable.with(pCtx.start.getInputStream().getText(new Interval(pCtx.start.getStartIndex(), pCtx.stop.getStopIndex())).split("\\r?\\n")).makeString("", System.lineSeparator(), System.lineSeparator());
+                    List<CoreInstance> oldInstances = this.oldInstances.select(i -> this.oldState.instanceImportGroupInSourceEqualsNewImportGroup(i, importGroupID) && this.oldState.instanceContentInSourceEqualsNewContent(i, newContent), Lists.mutable.empty());
 
                     if (oldInstances.size() == 1)
                     {
@@ -720,8 +601,8 @@ public class AntlrContextToM3CoreInstance
                             this.functionCounter++;
                             this.offsetSourceInformationForInstanceAndChildren(thisInstance, newSourceInfo.getStartLine() - thisInstance.getSourceInformation().getStartLine());
                             PackageInstance packageInstance = this.buildPackage(pCtx.qualifiedName().packagePath());
-                            ((PackageableElement)thisInstance)._package(packageInstance);
-                            packageInstance._childrenAdd((PackageableElement)thisInstance);
+                            ((PackageableElement) thisInstance)._package(packageInstance);
+                            packageInstance._childrenAdd((PackageableElement) thisInstance);
                             this.coreInstancesResult.add(thisInstance);
                             result = thisInstance;
                         }
@@ -745,21 +626,14 @@ public class AntlrContextToM3CoreInstance
                 this.coreInstancesResult.add(result);
             }
         }
-        this.newSourceInfoMap.forEachKeyValue(new Procedure2<CoreInstance, SourceInformation>()
-        {
-            @Override
-            public void value(CoreInstance instance, SourceInformation newSourceInfo)
-            {
-                instance.setSourceInformation(newSourceInfo);
-            }
-        });
+        this.newSourceInfoMap.forEachKeyValue(CoreInstance::setSourceInformation);
         return result;
     }
 
     private void offsetSourceInformationForInstanceAndChildren(CoreInstance instance, int offset)
     {
         SourceInformation oldSourceInfo = instance.getSourceInformation();
-        MutableSet<CoreInstance> visited = UnifiedSet.newSet(1);
+        MutableSet<CoreInstance> visited = Sets.mutable.empty();
         MutableStack<CoreInstance> searchStack = Stacks.mutable.with(instance);
         while (!searchStack.isEmpty())
         {
@@ -793,7 +667,7 @@ public class AntlrContextToM3CoreInstance
 
     private ImportGroup imports(ImportsContext ctx)
     {
-        MutableList<Import> imports = FastList.newList();
+        MutableList<Import> imports = Lists.mutable.empty();
         int importGroupStartLine = -1;
         int importGroupStartColumn = -1;
         int importGroupEndLine = -1;
@@ -838,20 +712,20 @@ public class AntlrContextToM3CoreInstance
         CoreInstance result = this.expressionOrExpressionGroup(ctx.expressionOrExpressionGroup(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
         CoreInstance boolResult = result;
         CoreInstance arithResult = result;
-        
+
         if (ctx.expressionPart() != null)
         {
-            MutableList<ArithmeticPartContext> arth = FastList.newList();
-            MutableList<BooleanPartContext> bool = FastList.newList();
+            MutableList<ArithmeticPartContext> arth = Lists.mutable.empty();
+            MutableList<BooleanPartContext> bool = Lists.mutable.empty();
 
             // Invariant: arth.isEmpty() || bool.isEmpty ie they can't both contains elements at the same time
             for (ExpressionPartContext epCtx : ctx.expressionPart())
             {
                 if (epCtx.arithmeticPart() != null)
                 {
-                    if(!bool.isEmpty())
+                    if (!bool.isEmpty())
                     {
-                        boolResult = this.booleanPart(bool, (ValueSpecification)arithResult, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                        boolResult = this.booleanPart(bool, (ValueSpecification) arithResult, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
                         bool.clear();
                     }
                     arth.add(epCtx.arithmeticPart());
@@ -866,15 +740,15 @@ public class AntlrContextToM3CoreInstance
                     bool.add(epCtx.booleanPart());
                 }
             }
-            
+
             // Invariant allows us to make the choice here - either we still have arth to process or bool to process but not both 
             if (!arth.isEmpty())
             {
                 result = this.arithmeticPart(arth, boolResult, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
-            else if(!bool.isEmpty())
+            else if (!bool.isEmpty())
             {
-                result = this.booleanPart(bool, (ValueSpecification)arithResult, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+                result = this.booleanPart(bool, (ValueSpecification) arithResult, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
             }
         }
         return result;
@@ -885,61 +759,67 @@ public class AntlrContextToM3CoreInstance
         return this.expression(ctx.expression(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
     }
 
-    private enum BoolOp {
+    private enum BoolOp
+    {
         AND, OR
     }
-    
+
     private boolean isLowerPrecedenceBoolean(String boolOp1, String boolOp2)
     {
-        return boolOp1.equals("or") && boolOp2.equals("and");
+        return "or".equals(boolOp1) && "and".equals(boolOp2);
     }
-    
+
     private SimpleFunctionExpression buildBoolean(BooleanPartContext ctx, BoolOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParamtersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
-        TerminalNode terminalNode; 
-        
-        switch(op) 
+        TerminalNode terminalNode;
+        switch (op)
         {
-            case AND: terminalNode=ctx.AND(); break;
-            case OR: terminalNode=ctx.OR(); break;
-            default: 
-                throw new IllegalArgumentException("Unexpected boolean operation in buildBoolean" + op); 
+            case AND:
+            {
+                terminalNode = ctx.AND();
+                break;
+            }
+            case OR:
+            {
+                terminalNode = ctx.OR();
+                break;
+            }
+            default:
+            {
+                throw new IllegalArgumentException("Unexpected boolean operation in buildBoolean" + op);
+            }
         }
-        
+
         CoreInstance other = this.expression(ctx.expression(), exprName, typeParamtersNames, lambdaContext, space, wrapFlag, importId, addLines);
         SimpleFunctionExpression sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(terminalNode.getSymbol()), null, null, importId, null);
         sfe._functionName(op.name().toLowerCase());
         sfe._parametersValues(Lists.mutable.of((ValueSpecification) initialValue, (ValueSpecification) other));
         return sfe;
     }
-  
+
     private SimpleFunctionExpression processBooleanOp(SimpleFunctionExpression sfe, BooleanPartContext ctx, BoolOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParamtersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
-        String opStr = op.name().toLowerCase();
-        if(sfe == null)
+        if (sfe == null)
         {
-            sfe = buildBoolean(ctx, op, initialValue, exprName, typeParamtersNames, lambdaContext, space, wrapFlag, importId, addLines);
-            
-        } 
-        else if(sfe!=null && isLowerPrecedenceBoolean(sfe.getValueForMetaPropertyToOne("functionName").getName(), opStr)) 
+            return buildBoolean(ctx, op, initialValue, exprName, typeParamtersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        }
+
+        if (isLowerPrecedenceBoolean(sfe.getValueForMetaPropertyToOne("functionName").getName(), op.name().toLowerCase()))
         {
             ListIterable<? extends CoreInstance> params = sfe.getValueForMetaPropertyToMany("parametersValues");
             SimpleFunctionExpression newSfe = buildBoolean(ctx, op, params.getLast(), exprName, typeParamtersNames, lambdaContext, space, wrapFlag, importId, addLines);
-            MutableList<CoreInstance> l = Lists.mutable.withAll(params.subList(0, params.size() -1));
-            sfe._parametersValues(Lists.mutable.of((ValueSpecification) l.get(0), (ValueSpecification) newSfe));
-        } 
-        else
-        {
-            sfe = buildBoolean(ctx, op, sfe, exprName, typeParamtersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            MutableList<CoreInstance> l = Lists.mutable.withAll(params.subList(0, params.size() - 1));
+            sfe._parametersValues(Lists.mutable.of((ValueSpecification) l.get(0), newSfe));
+            return sfe;
         }
-        
-        return sfe;
+
+        return buildBoolean(ctx, op, sfe, exprName, typeParamtersNames, lambdaContext, space, wrapFlag, importId, addLines);
     }
-    
+
     private SimpleFunctionExpression booleanPart(List<BooleanPartContext> bList, ValueSpecification input, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         SimpleFunctionExpression sfe = null;
-        for(BooleanPartContext ctx : bList)
+        for (BooleanPartContext ctx : bList)
         {
             if (ctx.AND() != null)
             {
@@ -963,7 +843,7 @@ public class AntlrContextToM3CoreInstance
         CoreInstance end = null;
         CoreInstance step = null;
         MutableList<CoreInstance> expressions = Lists.mutable.of();
-        MutableList<ValueSpecification> parameters = FastList.newList();
+        MutableList<ValueSpecification> parameters = Lists.mutable.empty();
         if (ctx.combinedExpression() != null)
         {
             return this.combinedExpression(ctx.combinedExpression(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
@@ -994,24 +874,32 @@ public class AntlrContextToM3CoreInstance
             switch (ctx.sliceExpression().expression().size())
             {
                 case 1: //:end
+                {
                     end = this.expression(ctx.sliceExpression().expression(0), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
                     break;
+                }
                 case 2: //start:end
+                {
                     result = this.expression(ctx.sliceExpression().expression(0), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
                     expressions.add(result);
                     end = this.expression(ctx.sliceExpression().expression(1), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
                     break;
+                }
                 case 3: //start:end:step
+                {
                     result = this.expression(ctx.sliceExpression().expression(0), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
                     expressions.add(result);
                     end = this.expression(ctx.sliceExpression().expression(1), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
                     step = this.expression(ctx.sliceExpression().expression(2), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
                     break;
+                }
                 default:
+                {
                     //Not reachable. coded just for comment
                     break;
+                }
             }
-            MutableList params = Lists.mutable.of();
+            MutableList<ValueSpecification> params = Lists.mutable.empty();
             if (result != null)
             {
                 params.add(this.doWrap(Lists.mutable.of(result)));
@@ -1032,14 +920,14 @@ public class AntlrContextToM3CoreInstance
             {
                 if (pfCtx.propertyExpression() != null)
                 {
-                   result = propertyExpression(pfCtx.propertyExpression(), result, parameters, typeParametersNames, lambdaContext, space, importId);
+                    result = propertyExpression(pfCtx.propertyExpression(), result, parameters, typeParametersNames, lambdaContext, space, importId);
                 }
                 else
                 {
                     for (int i = 0; i < pfCtx.functionExpression().qualifiedName().size(); i++)
                     {
                         parameters = this.functionExpressionParameters(pfCtx.functionExpression().functionExpressionParameters(i), typeParametersNames, importId, lambdaContext, addLines, space + this.tabs(4));
-                        parameters.add(0, (ValueSpecification)result);
+                        parameters.add(0, (ValueSpecification) result);
                         result = this.functionExpression(pfCtx.functionExpression().qualifiedName(i), parameters, importId);
                     }
                 }
@@ -1049,7 +937,7 @@ public class AntlrContextToM3CoreInstance
 
         if (ctx.equalNotEqual() != null)
         {
-            result = this.equalNotEqual(ctx.equalNotEqual(), (ValueSpecification)result, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            result = this.equalNotEqual(ctx.equalNotEqual(), (ValueSpecification) result, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
         }
         return result;
     }
@@ -1069,7 +957,7 @@ public class AntlrContextToM3CoreInstance
                 for (CombinedExpressionContext ceCtx : fepCtx.combinedExpression())
                 {
                     parameter = this.combinedExpression(ceCtx, "param", typeParametersNames, lambdaContext, space + this.tabs(4), true, importId, addLines);
-                    parameters.add((ValueSpecification)parameter);
+                    parameters.add((ValueSpecification) parameter);
                 }
             }
         }
@@ -1095,7 +983,7 @@ public class AntlrContextToM3CoreInstance
             instanceValue.setName(lambdaContext.getLambdaFunctionUniqueName());
             instanceValue._multiplicity(this.getPureOne());
             GenericTypeInstance gt = GenericTypeInstance.createPersistent(this.repository);
-            Type ti = (Type)this.processorSupport.package_getByUserPath("String");
+            Type ti = (Type) this.processorSupport.package_getByUserPath("String");
             gt._rawTypeCoreInstance(ti);
             instanceValue._genericType(gt);
             sfe._propertyName(instanceValue);
@@ -1110,7 +998,7 @@ public class AntlrContextToM3CoreInstance
             instanceValue.setName(lambdaContext.getLambdaFunctionUniqueName());
             instanceValue._multiplicity(this.getPureOne());
             GenericTypeInstance gt = GenericTypeInstance.createPersistent(this.repository);
-            Type ti = (Type)this.processorSupport.package_getByUserPath("String");
+            Type ti = (Type) this.processorSupport.package_getByUserPath("String");
             gt._rawTypeCoreInstance(ti);
             instanceValue._genericType(gt);
             sfe._qualifiedPropertyName(instanceValue);
@@ -1327,7 +1215,7 @@ public class AntlrContextToM3CoreInstance
         Token endLine = null;
         Token endColumn = null;
         CoreInstance instance;
-        renderedTypeArguments = ctx.typeArguments() == null ? null : this.typeArguments(ctx.typeArguments(), FastList.<String>newList(), importId, addLines);
+        renderedTypeArguments = ctx.typeArguments() == null ? null : this.typeArguments(ctx.typeArguments(), Lists.mutable.empty(), importId, addLines);
         renderedMultiplicityArguments = ctx.multiplicityArguments() == null ? null : this.multiplicityArguments(ctx.multiplicityArguments());
         if (ctx.FILE_NAME() != null)
         {
@@ -1358,7 +1246,7 @@ public class AntlrContextToM3CoreInstance
 
         if (topLevel)
         {
-            MutableList<IdentifierContext> packagePath = FastList.newList();
+            MutableList<IdentifierContext> packagePath = Lists.mutable.empty();
             if (ctx.qualifiedName().size() > 1)
             {
                 if (ctx.qualifiedName(1).packagePath() != null)
@@ -1432,110 +1320,65 @@ public class AntlrContextToM3CoreInstance
 
     private CoreInstance instanceParserAtomicRightSide(InstanceAtomicRightSideContext ctx, boolean wrapFlag, ImportGroup importId, boolean addLines, String space, boolean useImportStubsInInstanceParser) throws PureParserException
     {
-        CoreInstance result = null;
         if (ctx.instanceLiteral() != null)
         {
-            result = this.instanceLiteral(ctx.instanceLiteral());
+            return this.instanceLiteral(ctx.instanceLiteral());
         }
-        else if (ctx.LATEST_DATE() != null)
+        if (ctx.LATEST_DATE() != null)
         {
-            result = this.repository.newLatestDateCoreInstance();
+            return this.repository.newLatestDateCoreInstance();
         }
-        else if (ctx.instance() != null)
+        if (ctx.instance() != null)
         {
-            result = this.instanceParser(ctx.instance(), wrapFlag, importId, addLines, space, false, useImportStubsInInstanceParser);
+            return this.instanceParser(ctx.instance(), wrapFlag, importId, addLines, space, false, useImportStubsInInstanceParser);
         }
-        else if (ctx.qualifiedName() != null)
+        if (ctx.qualifiedName() != null)
         {
-            if (useImportStubsInInstanceParser)
-            {
-                result = ImportStubInstance.createPersistent(this.repository, this.getQualifiedNameString(ctx.qualifiedName()), importId);
-            }
-            else
-            {
-                result = org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.findPackageableElement(this.getQualifiedNameString(ctx.qualifiedName()), this.repository);
-            }
+            return useImportStubsInInstanceParser ?
+                    ImportStubInstance.createPersistent(this.repository, this.getQualifiedNameString(ctx.qualifiedName()), importId) :
+                    org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.findPackageableElement(this.getQualifiedNameString(ctx.qualifiedName()), this.repository);
         }
-        else if (ctx.enumReference() != null)
+        if (ctx.enumReference() != null)
         {
             String enumeration = this.getQualifiedNameString(ctx.enumReference().qualifiedName());
             String enumValue = ctx.enumReference().identifier().getText();
-            if (useImportStubsInInstanceParser)
-            {
-                ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, enumeration, importId);
-                result = EnumStubInstance.createPersistent(this.repository, enumValue, is);
-            }
-            else
-            {
-                result = findEnum(enumeration, enumValue, this.repository);
-            }
+            return useImportStubsInInstanceParser ?
+                    EnumStubInstance.createPersistent(this.repository, enumValue, ImportStubInstance.createPersistent(this.repository, enumeration, importId)) :
+                    findEnum(enumeration, enumValue, this.repository);
         }
-        else if (ctx.stereotypeReference() != null)
+        if (ctx.stereotypeReference() != null)
         {
-            result = ImportStubInstance.createPersistent(this.repository, this.getQualifiedNameString(ctx.stereotypeReference().qualifiedName()) + "@" + ctx.stereotypeReference().identifier().getText(), importId);
+            return ImportStubInstance.createPersistent(this.repository, this.getQualifiedNameString(ctx.stereotypeReference().qualifiedName()) + "@" + ctx.stereotypeReference().identifier().getText(), importId);
         }
-        else if (ctx.tagReference() != null)
+        if (ctx.tagReference() != null)
         {
-            result = ImportStubInstance.createPersistent(this.repository, this.getQualifiedNameString(ctx.tagReference().qualifiedName()) + "%" + ctx.tagReference().identifier().getText(), importId);
+            return ImportStubInstance.createPersistent(this.repository, this.getQualifiedNameString(ctx.tagReference().qualifiedName()) + "%" + ctx.tagReference().identifier().getText(), importId);
         }
-        else
-        {
-            //instanceReference
-            result = this.repository.newStringCoreInstance_cached(ctx.identifier().getText());
-        }
-        return result;
+        //instanceReference
+        return this.repository.newStringCoreInstance_cached(ctx.identifier().getText());
     }
 
     private CoreInstance instanceLiteral(InstanceLiteralContext ctx)
     {
-        CoreInstance result;
         if (ctx.instanceLiteralToken() != null)
         {
-            result = this.instanceLiteralToken(ctx.instanceLiteralToken(), false);
+            return this.instanceLiteralToken(ctx.instanceLiteralToken(), false);
         }
-        else if (ctx.MINUS() != null)
+        String sign = (ctx.MINUS() == null) ? "+" : "-";
+        if (ctx.INTEGER() != null)
         {
-            if (ctx.INTEGER() != null)
-            {
-                result = this.repository.newIntegerCoreInstance("-" + ctx.INTEGER().getText());
-            }
-            else if (ctx.DECIMAL() != null)
-            {
-                result = this.repository.newDecimalCoreInstance("-" + ctx.DECIMAL().getText());
-            }
-            else
-            {
-                result = this.repository.newFloatCoreInstance("-" + ctx.FLOAT().getText());
-            }
+            return this.repository.newIntegerCoreInstance(sign + ctx.INTEGER().getText());
         }
-        else
+        if (ctx.DECIMAL() != null)
         {
-            if (ctx.INTEGER() != null)
-            {
-                result = this.repository.newIntegerCoreInstance("+" + ctx.INTEGER().getText());
-            }
-            else if (ctx.DECIMAL() != null)
-            {
-                result = this.repository.newDecimalCoreInstance("+" + ctx.DECIMAL().getText());
-            }
-            else
-            {
-                result = this.repository.newFloatCoreInstance("+" + ctx.FLOAT().getText());
-            }
+            return this.repository.newDecimalCoreInstance(sign + ctx.DECIMAL().getText());
         }
-        return result;
+        return this.repository.newFloatCoreInstance(sign + ctx.FLOAT().getText());
     }
 
     private CoreInstance processWithParser(final InlineDSLTextContent code, ImportGroup importId)
     {
-        RichIterable<InlineDSL> results = this.inlineDSLLibrary.getInlineDSLs().select(new Predicate<InlineDSL>()
-        {
-            @Override
-            public boolean accept(InlineDSL inlineDSL)
-            {
-                return inlineDSL.match(code.getText());
-            }
-        });
+        RichIterable<InlineDSL> results = this.inlineDSLLibrary.getInlineDSLs().select(dsl -> dsl.match(code.getText()));
 
         if (results.isEmpty())
         {
@@ -1543,14 +1386,7 @@ public class AntlrContextToM3CoreInstance
         }
         if (results.size() > 1)
         {
-            throw new RuntimeException("Found " + results.size() + " parsers (" + results.collect(new Function<InlineDSL, String>()
-            {
-                @Override
-                public String valueOf(InlineDSL inlineDSL)
-                {
-                    return inlineDSL.getName();
-                }
-            }).makeString(",") + ") for the String '" + code + "'");
+            throw new RuntimeException("Found " + results.size() + " parsers (" + results.collect(InlineDSL::getName).makeString(",") + ") for the String '" + code + "'");
         }
         return results.getFirst().parse(code.getText(), importId, this.sourceInformation.getSourceName(), code.getColumn(), code.getLine(), this.repository, this.context);
     }
@@ -1569,7 +1405,7 @@ public class AntlrContextToM3CoreInstance
         }
 
         GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        Type type = (Type)this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction);
+        Type type = (Type) this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction);
         genericTypeInstance._rawTypeCoreInstance(type);
         GenericTypeInstance genericTypeInstanceTa = GenericTypeInstance.createPersistent(this.repository);
         genericTypeInstanceTa._rawTypeCoreInstance(signature);
@@ -1582,7 +1418,7 @@ public class AntlrContextToM3CoreInstance
 
     private ListIterable<ValueSpecification> codeBlock(CodeBlockContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, String space)
     {
-        MutableList<ValueSpecification> lines = FastList.newList();
+        MutableList<ValueSpecification> lines = Lists.mutable.empty();
         for (ProgramLineContext plCtx : ctx.programLine())
         {
             lines.add(this.programLine(plCtx, M3Properties.line, typeParametersNames, lambdaContext, importId, addLines, space + "  "));
@@ -1594,7 +1430,7 @@ public class AntlrContextToM3CoreInstance
     {
         if (ctx.combinedExpression() != null)
         {
-            return (ValueSpecification)this.combinedExpression(ctx.combinedExpression(), exprName, typeParametersNames, lambdaContext, space, true, importId, addLines);
+            return (ValueSpecification) this.combinedExpression(ctx.combinedExpression(), exprName, typeParametersNames, lambdaContext, space, true, importId, addLines);
         }
         else
         {
@@ -1610,7 +1446,7 @@ public class AntlrContextToM3CoreInstance
 
         iv._values(Lists.mutable.of(this.repository.newStringCoreInstance_cached(ctx.identifier().getText())));
         GenericTypeInstance gt = GenericTypeInstance.createPersistent(this.repository, instanceValueSourceInfo);
-        Type ti = (Type)this.processorSupport.package_getByUserPath("String");
+        Type ti = (Type) this.processorSupport.package_getByUserPath("String");
         gt._rawTypeCoreInstance(ti);
         iv._genericType(gt);
         iv._multiplicity(this.getPureOne());
@@ -1629,93 +1465,74 @@ public class AntlrContextToM3CoreInstance
             type = this.type(ctx.type(), typeParametersNames, space + this.tabs(3), importId, false);
             multiplicity = this.buildMultiplicity(ctx.multiplicity().multiplicityArgument());
         }
-        VariableExpressionInstance vei = VariableExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(var.getStart()), type, multiplicity, var.getText());
-        return vei;
+        return VariableExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(var.getStart()), type, multiplicity, var.getText());
     }
 
     private SimpleFunctionExpression allOrFunction(AllOrFunctionContext ctx, MutableList<? extends ValueSpecification> params, QualifiedNameContext funcName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, ImportGroup importId, boolean addLines)
     {
-        MutableList<ValueSpecification> parameters;
-        MutableList<ValueSpecification> milestoningParams = FastList.newList();
         if (ctx.allFunction() != null)
         {
-            SimpleFunctionExpressionInstance sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.allFunction().getStart()), null, null, importId, null);
-            sfe._functionName("getAll");
-            sfe._parametersValues((ListIterable<ValueSpecification>)params);
-            return sfe;
-        }
-        else if (ctx.allVersionsFunction() != null)
-        {
-            SimpleFunctionExpressionInstance sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.allVersionsFunction().getStart()), null, null, importId, null);
-            sfe._functionName("getAllVersions");
-            sfe._parametersValues((ListIterable<ValueSpecification>)params);
-            return sfe;
+            return SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.allFunction().getStart()), null, null, importId, null)
+                    ._functionName("getAll")
+                    ._parametersValues(params);
         }
 
-        else if (ctx.allVersionsInRangeFunction() != null)
+        if (ctx.allVersionsFunction() != null)
         {
-            milestoningParams.addAll(this.buildMilestoningVariableExpression(ctx.allVersionsInRangeFunction().buildMilestoningVariableExpression()));
-            SimpleFunctionExpressionInstance sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.allVersionsInRangeFunction().getStart()), null, null, importId, null);
-            sfe._functionName("getAllVersionsInRange");
-            sfe._parametersValues(((MutableList<ValueSpecification>)Lists.mutable.withAll(params)).withAll(milestoningParams));
-            return sfe;
+            return SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.allVersionsFunction().getStart()), null, null, importId, null)
+                    ._functionName("getAllVersions")
+                    ._parametersValues(params);
         }
 
-        else if (ctx.allFunctionWithMilestoning() != null)
+        if (ctx.allVersionsInRangeFunction() != null)
         {
-            milestoningParams.addAll(this.buildMilestoningVariableExpression(ctx.allFunctionWithMilestoning().buildMilestoningVariableExpression()));
-            SimpleFunctionExpressionInstance sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.allFunctionWithMilestoning().getStart()), null, null, importId, null);
-            sfe._functionName("getAll");
-            sfe._parametersValues(Lists.mutable.<ValueSpecification>withAll(params).withAll(milestoningParams));
-            return sfe;
+            MutableList<ValueSpecification> milestoningParams = this.buildMilestoningVariableExpression(ctx.allVersionsInRangeFunction().buildMilestoningVariableExpression());
+            return SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.allVersionsInRangeFunction().getStart()), null, null, importId, null)
+                    ._functionName("getAllVersionsInRange")
+                    ._parametersValues(Lists.mutable.<ValueSpecification>withAll(params).withAll(milestoningParams));
         }
-        else
+
+        if (ctx.allFunctionWithMilestoning() != null)
         {
-            parameters = this.functionExpressionParameters(ctx.functionExpressionParameters(), typeParametersNames, importId, lambdaContext, addLines, space);
-            return this.functionExpression(funcName, parameters, importId);
+            MutableList<ValueSpecification> milestoningParams = this.buildMilestoningVariableExpression(ctx.allFunctionWithMilestoning().buildMilestoningVariableExpression());
+            return SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.allFunctionWithMilestoning().getStart()), null, null, importId, null)
+                    ._functionName("getAll")
+                    ._parametersValues(Lists.mutable.<ValueSpecification>withAll(params).withAll(milestoningParams));
         }
+
+        MutableList<ValueSpecification> parameters = this.functionExpressionParameters(ctx.functionExpressionParameters(), typeParametersNames, importId, lambdaContext, addLines, space);
+        return this.functionExpression(funcName, parameters, importId);
     }
 
     private MutableList<ValueSpecification> buildMilestoningVariableExpression(List<BuildMilestoningVariableExpressionContext> ctxs)
     {
-        return ListIterate.collect(ctxs, new Function<BuildMilestoningVariableExpressionContext, ValueSpecification>()
+        return ListIterate.collect(ctxs, ctx ->
         {
-
-            @Override
-            public ValueSpecification valueOf(BuildMilestoningVariableExpressionContext ctx)
+            if (ctx.DATE() != null)
             {
-                if (ctx.DATE() != null)
-                {
-                    InstanceValueInstance iv = InstanceValueInstance.createPersistent(repository, sourceInformation.getPureSourceInformation(ctx.DATE().getSymbol()), null, null);
-                    iv._values(Lists.mutable.of(repository.newDateCoreInstance(ctx.DATE().getText())));
-                    return iv;
-                }
-                else if (ctx.LATEST_DATE() != null)
-                {
-                    InstanceValueInstance iv = InstanceValueInstance.createPersistent(repository, sourceInformation.getPureSourceInformation(ctx.LATEST_DATE().getSymbol()), null, null);
-                    iv._values(Lists.mutable.of(repository.newLatestDateCoreInstance()));
-                    return iv;
-                }
-                else
-                {
-                    return variable(ctx.variable());
-                }
+                return InstanceValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.DATE().getSymbol()), null, null)
+                        ._values(Lists.mutable.of(this.repository.newDateCoreInstance(ctx.DATE().getText())));
             }
+            if (ctx.LATEST_DATE() != null)
+            {
+                return InstanceValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.LATEST_DATE().getSymbol()), null, null)
+                        ._values(Lists.mutable.of(this.repository.newLatestDateCoreInstance()));
+            }
+            return variable(ctx.variable());
         });
     }
 
     private VariableExpression variable(VariableContext ctx)
     {
-        VariableExpressionInstance result = VariableExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart()), null, null, ctx.identifier().getText());
-        return result;
+        return VariableExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart()), null, null, ctx.identifier().getText());
     }
 
     private MutableList<ValueSpecification> functionExpressionParameters(FunctionExpressionParametersContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, String space)
     {
-        MutableList<ValueSpecification> parameters = FastList.newList();
+        MutableList<ValueSpecification> parameters = Lists.mutable.empty();
         for (CombinedExpressionContext ceCtx : ctx.combinedExpression())
         {
-            parameters.add((ValueSpecification)this.combinedExpression(ceCtx, "param", typeParametersNames, lambdaContext, space + this.tabs(4), true, importId, addLines));
+            parameters.add((ValueSpecification) this.combinedExpression(ceCtx, "param", typeParametersNames, lambdaContext, space + this.tabs(4), true, importId, addLines));
         }
         return parameters;
     }
@@ -1731,7 +1548,7 @@ public class AntlrContextToM3CoreInstance
         genericTypeInstance._rawTypeCoreInstance(typeImportStub);
         InstanceValueInstance iv = InstanceValueInstance.createPersistent(this.repository, genericTypeInstance, this.getPureOne());
 
-        CoreInstance result;
+        PrimitiveCoreInstance<?> result;
         if (uctx.MINUS() != null)
         {
             if (uctx.INTEGER() != null)
@@ -1763,19 +1580,14 @@ public class AntlrContextToM3CoreInstance
             }
         }
 
-        FastList valueList = new FastList();
-        valueList.add(((PrimitiveCoreInstance)result).getValue());
-
         iv._genericType(genericTypeInstance);
         iv._multiplicity(this.getPureOne());
-        iv._values(valueList);
+        iv._values(Lists.mutable.with(result.getValue()));
 
         InstanceValueInstance wrapperIv = InstanceValueInstance.createPersistent(this.repository, genericTypeInstance, this.getPureOne());
         wrapperIv._genericType(genericTypeInstance);
         wrapperIv._multiplicity(this.getPureOne());
-        FastList ivList = new FastList();
-        ivList.add(iv);
-        wrapperIv._values(ivList);
+        wrapperIv._values(Lists.mutable.with(iv));
 
         return wrapperIv;
     }
@@ -1787,12 +1599,11 @@ public class AntlrContextToM3CoreInstance
         return measureQualifiedName.packagePath() != null ? this.packageToString(measureQualifiedName.packagePath()).concat("::").concat(nameWithoutPath) : nameWithoutPath;
     }
 
-    private SimpleFunctionExpression expressionInstanceParser(ExpressionInstanceContext
-                                                                      ctx, MutableList<String> typeParametersNames, LambdaContext lambdaContext, ImportGroup importId, boolean addLines, String space)
+    private SimpleFunctionExpression expressionInstanceParser(ExpressionInstanceContext ctx, MutableList<String> typeParametersNames, LambdaContext lambdaContext, ImportGroup importId, boolean addLines, String space)
     {
         ListIterable<GenericType> renderedTypeArguments = null;
         ListIterable<Multiplicity> renderedMultiplicityArguments = null;
-        MutableList<CoreInstance> keyExpressions = FastList.newList();
+        MutableList<CoreInstance> keyExpressions = Lists.mutable.empty();
         Token end = ctx.getStop();
         if (ctx.expressionInstanceParserPropertyAssignment() != null)
         {
@@ -1817,7 +1628,7 @@ public class AntlrContextToM3CoreInstance
         if (ctx.variable() == null)
         {
             GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.NEW_SYMBOL().getSymbol()));
-            Type type = (Type)this.processorSupport.package_getByUserPath(M3Paths.Class);
+            Type type = (Type) this.processorSupport.package_getByUserPath(M3Paths.Class);
             genericTypeInstance._rawTypeCoreInstance(type);
             GenericTypeInstance ta = GenericTypeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.qualifiedName().getStop(), ctx.qualifiedName().getStop()));
             ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.qualifiedName().getStop(), ctx.qualifiedName().getStop()), this.getQualifiedNameString(ctx.qualifiedName()), importId);
@@ -1859,33 +1670,24 @@ public class AntlrContextToM3CoreInstance
 
     private CoreInstance expressionInstanceParserPropertyAssignment(ExpressionInstanceParserPropertyAssignmentContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, boolean addLines, String space, LambdaContext lambdaContext)
     {
-        MutableList<IdentifierContext> properties = FastList.newList();
-        CoreInstance result;
-        for (IdentifierContext idCtx : ctx.identifier())
-        {
-            properties.add(idCtx);
-        }
-        result = this.expressionInstanceParserRightSide(ctx.expressionInstanceRightSide(), typeParametersNames, importId, lambdaContext, addLines, space);
+        MutableList<IdentifierContext> properties = Lists.mutable.withAll(ctx.identifier());
+        CoreInstance result = this.expressionInstanceParserRightSide(ctx.expressionInstanceRightSide(), typeParametersNames, importId, lambdaContext, addLines, space);
         InstanceValue instanceVal = properties.size() == 1 ? this.doWrap(properties.getFirst(), false) : this.doWrap(properties, false);
-        KeyExpressionInstance keyExpr = KeyExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.EQUAL().getSymbol()), (ValueSpecification)result, instanceVal);
-        keyExpr._add(ctx.PLUS() != null ? true : false);
-        return keyExpr;
+        return KeyExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.EQUAL().getSymbol()), (ValueSpecification) result, instanceVal)
+                ._add(ctx.PLUS() != null);
     }
 
     private CoreInstance expressionInstanceParserAtomicRightSide(ExpressionInstanceAtomicRightSideContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, String space)
     {
         if (ctx.combinedExpression() != null)
         {
-            return this.combinedExpression(ctx.combinedExpression(), "", FastList.<String>newList(), lambdaContext, space + this.tabs(4), true, importId, addLines);
+            return this.combinedExpression(ctx.combinedExpression(), "", Lists.mutable.empty(), lambdaContext, space + this.tabs(4), true, importId, addLines);
         }
-        else if (ctx.expressionInstance() != null)
+        if (ctx.expressionInstance() != null)
         {
             return this.expressionInstanceParser(ctx.expressionInstance(), typeParametersNames, lambdaContext, importId, addLines, space);
         }
-        else
-        {
-            return this.processorSupport.package_getByUserPath(this.getQualifiedNameString(ctx.qualifiedName()));
-        }
+        return this.processorSupport.package_getByUserPath(this.getQualifiedNameString(ctx.qualifiedName()));
     }
 
     private CoreInstance expressionInstanceParserRightSide(ExpressionInstanceRightSideContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, LambdaContext lambdaContext, boolean addLines, String space)
@@ -1922,12 +1724,15 @@ public class AntlrContextToM3CoreInstance
     {
         CoreInstance result = this.expressionOrExpressionGroup(ctx.expressionOrExpressionGroup(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
         if (Iterate.notEmpty(ctx.arithmeticPart()))
+        {
             return this.arithmeticPart(ctx.arithmeticPart(), result, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+        }
 
         return result;
     }
-    
-    enum ArithOp {
+
+    enum ArithOp
+    {
         PLUS,
         MINUS,
         TIMES,
@@ -1935,29 +1740,38 @@ public class AntlrContextToM3CoreInstance
         LESSTHAN,
         LESSTHANEQUAL,
         GREATERTHAN,
-        GREATERTHANEQUAL         
+        GREATERTHANEQUAL
     }
-    
+
     // Build arithmetic op which can handle list of params (like lisp eg (+ u v z y z))
     private SimpleFunctionExpression buildArithmeticWithListParam(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
-        MutableList<CoreInstance> others = FastList.newList();
-        
-        Function0<List<TerminalNode>> getTokens;
-        Function<Integer, TerminalNode>  getToken;
+        MutableList<CoreInstance> others = Lists.mutable.empty();
 
-        switch(op)
+        Function0<List<TerminalNode>> getTokens;
+        Function<Integer, TerminalNode> getToken;
+
+        switch (op)
         {
-            case PLUS: getTokens = ctx::PLUS; getToken = ctx::PLUS; break;
-            case TIMES: getTokens = ctx::STAR; getToken = ctx::STAR; break;
-            case MINUS: getTokens = ctx::MINUS; getToken = ctx::MINUS; break;
+            case PLUS:
+                getTokens = ctx::PLUS;
+                getToken = ctx::PLUS;
+                break;
+            case TIMES:
+                getTokens = ctx::STAR;
+                getToken = ctx::STAR;
+                break;
+            case MINUS:
+                getTokens = ctx::MINUS;
+                getToken = ctx::MINUS;
+                break;
             default:
                 throw new IllegalStateException("Unexpected arithmetic operation for buildArithmeticWithListParam: " + op);
         }
 
         String op_str = op.toString().toLowerCase();
 
-        for(ExpressionContext eCtx : ctx.expression())
+        for (ExpressionContext eCtx : ctx.expression())
         {
             others.add(this.expression(eCtx, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines));
         }
@@ -1971,7 +1785,7 @@ public class AntlrContextToM3CoreInstance
     // Handles divide, since dive is built up in a tree: eg x / y /z is div(x, div(y,z))
     private SimpleFunctionExpression buildArithmeticDivide(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
-        MutableList<CoreInstance> others = FastList.newList();
+        MutableList<CoreInstance> others = Lists.mutable.empty();
 
         for (ExpressionContext eCtx : ctx.expression())
         {
@@ -1982,7 +1796,7 @@ public class AntlrContextToM3CoreInstance
         {
             sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.DIVIDE(ctx.DIVIDE().size() - 1).getSymbol()), null, null, importId, null);
             sfe._functionName("divide");
-            sfe._parametersValues(Lists.mutable.of((ValueSpecification)initialValue, (ValueSpecification)other));
+            sfe._parametersValues(Lists.mutable.of((ValueSpecification) initialValue, (ValueSpecification) other));
             initialValue = sfe;
         }
         return sfe;
@@ -1994,24 +1808,36 @@ public class AntlrContextToM3CoreInstance
 
         Function0<TerminalNode> getToken;
 
-        switch(op)
+        switch (op)
         {
-            case LESSTHAN: getToken = ctx::LESSTHAN; op_str = "lessThan";  break;
-            case LESSTHANEQUAL: getToken = ctx::LESSTHANEQUAL; op_str = "lessThanEqual"; break;
-            case GREATERTHAN: getToken = ctx::GREATERTHAN;  op_str = "greaterThan"; break;
-            case GREATERTHANEQUAL: getToken = ctx::GREATERTHANEQUAL;  op_str = "greaterThanEqual"; break;
+            case LESSTHAN:
+                getToken = ctx::LESSTHAN;
+                op_str = "lessThan";
+                break;
+            case LESSTHANEQUAL:
+                getToken = ctx::LESSTHANEQUAL;
+                op_str = "lessThanEqual";
+                break;
+            case GREATERTHAN:
+                getToken = ctx::GREATERTHAN;
+                op_str = "greaterThan";
+                break;
+            case GREATERTHANEQUAL:
+                getToken = ctx::GREATERTHANEQUAL;
+                op_str = "greaterThanEqual";
+                break;
 
             default:
                 throw new IllegalStateException("Unexpected arithmetic operation for buildComparisonOp: " + op);
         }
-        
+
         CoreInstance other = this.expression(ctx.expression(0), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
         SimpleFunctionExpression sfe = SimpleFunctionExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(getToken.value().getSymbol()), null, null, importId, null);
         sfe._functionName(op_str);
-        sfe._parametersValues(Lists.mutable.of((ValueSpecification)initialValue, (ValueSpecification)other));
+        sfe._parametersValues(Lists.mutable.of((ValueSpecification) initialValue, (ValueSpecification) other));
         return sfe;
     }
-    
+
     private boolean isAdditiveOp(String op)
     {
         return op.equals("plus") || op.equals("minus");
@@ -2022,16 +1848,17 @@ public class AntlrContextToM3CoreInstance
         return op.equals("times") || op.equals("star") || op.equals("divide");
     }
 
-    private boolean isRelationalComparison(String operator){
+    private boolean isRelationalComparison(String operator)
+    {
         return "lessThan".equals(operator) || "lessThanEqual".equals(operator) || "greaterThan".equals(operator) || "greaterThanEqual".equals(operator);
     }
-    
+
     private boolean isStrictlyLowerPrecendence(String operator1, String operator2)
     {
-        return (isRelationalComparison(operator1) && (isAdditiveOp(operator2) || isProductOp(operator2))) 
+        return (isRelationalComparison(operator1) && (isAdditiveOp(operator2) || isProductOp(operator2)))
                 || (isAdditiveOp(operator1) && isProductOp(operator2));
     }
-    
+
     private ListIterable<? extends CoreInstance> getParams(SimpleFunctionExpression sfe)
     {
         boolean isValueSpecificationFunc = "divide".equals(sfe.getValueForMetaPropertyToOne("functionName").getName()) || this.isRelationalComparison(sfe.getValueForMetaPropertyToOne("functionName").getName());
@@ -2044,53 +1871,49 @@ public class AntlrContextToM3CoreInstance
             return sfe.getValueForMetaPropertyToOne("parametersValues").getValueForMetaPropertyToMany("values");
         }
     }
-    
-    private interface BuildArithmeticExpression 
+
+    private interface BuildArithmeticExpression
     {
-        SimpleFunctionExpression build(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines);        
-    }   
-    
+        SimpleFunctionExpression build(ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines);
+    }
+
     // Antlr grammar as currently defined does not handle precedence for arithmetic ops
     // We take care of precedence here. 
     // Intuition: if we are processing an expression and the previous expression is of lower precedence, we 'snatch' the last argument from the previous expression and make it part of the current one
     // For example: 1 + 2 * 4. The grammar will have led us to build plus(1,2). When looking at the multiplication, the expression should snatch 2, and replace it with mult(2,4), 
     // so we end up with plus(1, mult(2,4))
-    private SimpleFunctionExpression processOp(BuildArithmeticExpression builder, SimpleFunctionExpression sfe, ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines )
+    private SimpleFunctionExpression processOp(BuildArithmeticExpression builder, SimpleFunctionExpression sfe, ArithmeticPartContext ctx, ArithOp op, CoreInstance initialValue, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         String opStr = op.name().toLowerCase();
         // Case where we are building from scratch
         if (sfe == null)
         {
-            sfe = builder.build(ctx, op, initialValue, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
+            return builder.build(ctx, op, initialValue, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
         }
         //Case where we are in the middle of an expression, and currently looking at something of higher precedence than previous expression
         //Some processing to replace the last argument of the previous expression with the current expression (where current expression
         //has the last param as it's initial parameter).
-        else if (sfe != null && isStrictlyLowerPrecendence(sfe.getValueForMetaPropertyToOne("functionName").getName(), opStr))
+        if (isStrictlyLowerPrecendence(sfe.getValueForMetaPropertyToOne("functionName").getName(), opStr))
         {
             ListIterable<? extends CoreInstance> params = getParams(sfe);
             SimpleFunctionExpression newSfe = builder.build(ctx, op, params.getLast(), exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
             MutableList<CoreInstance> l = Lists.mutable.withAll(params.subList(0, params.size() - 1));
             // division and relational ops handle parameter values differently.
-            if (sfe._functionName().equals("divide") || isRelationalComparison(sfe._functionName()))
+            if ("divide".equals(sfe._functionName()) || isRelationalComparison(sfe._functionName()))
             {
-                sfe._parametersValues(Lists.mutable.of((ValueSpecification)l.get(0), (ValueSpecification)newSfe));
+                sfe._parametersValues(Lists.mutable.of((ValueSpecification) l.get(0), newSfe));
             }
             else
             {
                 sfe._parametersValues(Lists.mutable.<ValueSpecification>of(this.doWrap(l.with(newSfe))));
             }
+            return sfe;
         }
         // Case where are in the middle of an expression, but currently looking at something of lower or equal precedence
         // Add the previously processed expression as the initial argument to this expression 
-        else
-        {
-            sfe = builder.build(ctx, op, sfe, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
-        }
-        
-        return sfe;
+        return builder.build(ctx, op, sfe, exprName, typeParametersNames, lambdaContext, space, wrapFlag, importId, addLines);
     }
-    
+
     private SimpleFunctionExpression arithmeticPart(List<ArithmeticPartContext> aList, CoreInstance result, String exprName, MutableList<String> typeParametersNames, LambdaContext lambdaContext, String space, boolean wrapFlag, ImportGroup importId, boolean addLines)
     {
         SimpleFunctionExpression sfe = null;
@@ -2192,7 +2015,7 @@ public class AntlrContextToM3CoreInstance
         enumValue.addKeyValue(Lists.immutable.of("Root", "children", "meta", "children", "pure", "children", "metamodel", "children", "type", "children", "Enum", "properties", "name"), this.repository.newStringCoreInstance_cached(ctx.identifier().getText()));
         if (stereotypes != null)
         {
-            enumValue.setKeyValues(Lists.immutable.of("Root", "children", "meta", "children", "pure", "children", "metamodel", "children", "extension", "children", "ElementWithStereotypes", "properties", "stereotypes"), Lists.mutable.<CoreInstance>withAll(stereotypes));
+            enumValue.setKeyValues(Lists.immutable.of("Root", "children", "meta", "children", "pure", "children", "metamodel", "children", "extension", "children", "ElementWithStereotypes", "properties", "stereotypes"), Lists.mutable.withAll(stereotypes));
         }
         if (tags != null)
         {
@@ -2201,11 +2024,11 @@ public class AntlrContextToM3CoreInstance
         return enumValue;
     }
 
-    private Enumeration enumParser(EnumDefinitionContext ctx, ImportGroup importId) throws PureParserException
+    private Enumeration<?> enumParser(EnumDefinitionContext ctx, ImportGroup importId) throws PureParserException
     {
         EnumerationInstance enumerationInstance;
         CoreInstance value;
-        MutableList<CoreInstance> values = FastList.newList();
+        MutableList<CoreInstance> values = Lists.mutable.empty();
         ListIterable<CoreInstance> stereotypes = Lists.mutable.empty();
         ListIterable<TaggedValue> tags = Lists.mutable.empty();
 
@@ -2223,7 +2046,7 @@ public class AntlrContextToM3CoreInstance
         PackageInstance packageInstance = this.buildPackage(ctx.qualifiedName().packagePath());
 
         GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance enumerationType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.Enumeration);
+        ClassInstance enumerationType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Enumeration);
         genericTypeInstance._rawTypeCoreInstance(enumerationType);
 
         enumerationInstance = EnumerationInstance.createPersistent(this.repository, ctx.qualifiedName().identifier().getText());
@@ -2245,7 +2068,7 @@ public class AntlrContextToM3CoreInstance
         enumerationInstance._classifierGenericType(genericTypeInstance);
 
         GenericTypeInstance general = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance enumType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.Enum);
+        ClassInstance enumType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Enum);
         general._rawTypeCoreInstance(enumType);
         GeneralizationInstance gen = GeneralizationInstance.createPersistent(this.repository, general, enumerationInstance);
         enumerationInstance._generalizations(Lists.mutable.<Generalization>of(gen));
@@ -2269,12 +2092,12 @@ public class AntlrContextToM3CoreInstance
         UnitInstance canonicalUnit;
         MutableList<UnitInstance> nonCanonicalUnits;
 
-        MutableList<GenericType> superTypesGenericTypes = FastList.newList();
-        MutableList<String> typeParameterNames = FastList.newList();
-        MutableList<Boolean> contravariants = FastList.newList();
-        MutableList<String> multiplicityParameterNames = FastList.newList();
-        ListIterable<CoreInstance> stereotypes = FastList.newList();
-        ListIterable<TaggedValue> tags = FastList.newList();
+        MutableList<GenericType> superTypesGenericTypes = Lists.mutable.empty();
+        MutableList<String> typeParameterNames = Lists.mutable.empty();
+        MutableList<Boolean> contravariants = Lists.mutable.empty();
+        MutableList<String> multiplicityParameterNames = Lists.mutable.empty();
+        ListIterable<CoreInstance> stereotypes = Lists.mutable.empty();
+        ListIterable<TaggedValue> tags = Lists.mutable.empty();
         MeasureInstance measureInstance;
 
         String measureName = ctx.qualifiedName().identifier().getText();
@@ -2297,7 +2120,7 @@ public class AntlrContextToM3CoreInstance
         }
 
         GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance measureType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.Measure);
+        ClassInstance measureType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Measure);
         classifierGT._rawTypeCoreInstance(measureType);
 
 
@@ -2347,7 +2170,7 @@ public class AntlrContextToM3CoreInstance
             measureInstance._taggedValues(tags);
         }
 
-        MutableList<Generalization> generalizations = FastList.newList();
+        MutableList<Generalization> generalizations = Lists.mutable.empty();
         for (GenericType superType : superTypesGenericTypes)
         {
             GeneralizationInstance generalizationInstance = GeneralizationInstance.createPersistent(this.repository, superType, measureInstance);
@@ -2370,7 +2193,7 @@ public class AntlrContextToM3CoreInstance
         else
         {
             // non-convertible unit pattern
-            MutableList<UnitInstance> nonConvertibleUnits = FastList.newList();
+            MutableList<UnitInstance> nonConvertibleUnits = Lists.mutable.empty();
             for (org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NonConvertibleMeasureExprContext ncctx : ctx.measureBody().nonConvertibleMeasureExpr())
             {
                 UnitInstance currentUnit = this.nonConvertibleUnitParser(ncctx, importId, measureInstance, ctx);
@@ -2398,13 +2221,7 @@ public class AntlrContextToM3CoreInstance
      */
     private MutableList<UnitInstance> nonCanonicalUnitsParser(List<org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MeasureExprContext> ctxList, ImportGroup importId, MeasureInstance measureInstance, org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MeasureDefinitionContext mctx) throws PureParserException
     {
-        MutableList<UnitInstance> result = FastList.newList();
-        for (org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MeasureExprContext ctx : ctxList)
-        {
-            UnitInstance currentUnit = this.unitParser(ctx, importId, measureInstance, mctx);
-            result.add(currentUnit);
-        }
-        return result;
+        return ListIterate.collect(ctxList, ctx -> unitParser(ctx, importId, measureInstance, mctx));
     }
 
     /**
@@ -2414,21 +2231,21 @@ public class AntlrContextToM3CoreInstance
     {
         UnitInstance unitInstance;
 
-        MutableList<GenericType> superTypesGenericTypes = FastList.newList();
+        MutableList<GenericType> superTypesGenericTypes = Lists.mutable.empty();
 
         this.checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
 
         String unitName = mctx.qualifiedName().identifier().getText().concat(tilde).concat(ctx.qualifiedName().identifier().getText());
         unitInstance = UnitInstance.createPersistent(this.repository, unitName);
 
-        PackageInstance packageInstance = buildPackage(Lists.mutable.withAll(mctx.qualifiedName().packagePath() == null ? Lists.mutable.<IdentifierContext>empty() : ListAdapter.adapt(mctx.qualifiedName().packagePath().identifier())));
+        PackageInstance packageInstance = buildPackage(Lists.mutable.withAll(mctx.qualifiedName().packagePath() == null ? Lists.mutable.empty() : ListAdapter.adapt(mctx.qualifiedName().packagePath().identifier())));
         unitInstance._package(packageInstance);
         packageInstance._childrenAdd(unitInstance);
 
         unitInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
 
         GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance unitType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.Unit);
+        ClassInstance unitType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Unit);
         classifierGT._rawTypeCoreInstance(unitType);
 
         unitInstance._classifierGenericType(classifierGT);
@@ -2441,7 +2258,7 @@ public class AntlrContextToM3CoreInstance
             genericTypeInstance._rawTypeCoreInstance(measureInstance); // set unit super type to be its measure (Kilogram -> Mass)
             superTypesGenericTypes.add(genericTypeInstance);
         }
-        MutableList<Generalization> generalizations = FastList.newList();
+        MutableList<Generalization> generalizations = Lists.mutable.empty();
         for (GenericType superType : superTypesGenericTypes)
         {
             GeneralizationInstance generalizationInstance = GeneralizationInstance.createPersistent(this.repository, superType, unitInstance);
@@ -2457,7 +2274,7 @@ public class AntlrContextToM3CoreInstance
         VariableExpression expr;
         String fullName = this.getQualifiedNameString(ctx.qualifiedName());
         LambdaContext lambdaContext = new LambdaContext(fullName.replace("::", "_"));
-        MutableList<String> typeParametersNames = FastList.<String>newList();
+        MutableList<String> typeParametersNames = Lists.mutable.empty();
         FunctionTypeInstance signature;
 
         signature = FunctionTypeInstance.createPersistent(this.repository, null, null);
@@ -2479,7 +2296,7 @@ public class AntlrContextToM3CoreInstance
         }
 
         GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        Type type = (Type)this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction);
+        Type type = (Type) this.processorSupport.package_getByUserPath(M3Paths.LambdaFunction);
         genericTypeInstance._rawTypeCoreInstance(type);
         GenericTypeInstance genericTypeInstanceTa = GenericTypeInstance.createPersistent(this.repository);
         genericTypeInstanceTa._rawTypeCoreInstance(signature);
@@ -2499,21 +2316,21 @@ public class AntlrContextToM3CoreInstance
     private UnitInstance nonConvertibleUnitParser(org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.NonConvertibleMeasureExprContext ctx, ImportGroup importId, MeasureInstance measureInstance, org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.MeasureDefinitionContext mctx) throws PureParserException
     {
         UnitInstance unitInstance;
-        MutableList<GenericType> superTypesGenericTypes = FastList.newList();
+        MutableList<GenericType> superTypesGenericTypes = Lists.mutable.empty();
 
         this.checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
 
         String unitName = mctx.qualifiedName().identifier().getText().concat(tilde).concat(ctx.qualifiedName().identifier().getText());
         unitInstance = UnitInstance.createPersistent(this.repository, unitName);
 
-        PackageInstance packageInstance = buildPackage(Lists.mutable.withAll(mctx.qualifiedName().packagePath() == null ? Lists.mutable.<IdentifierContext>empty() : ListAdapter.adapt(mctx.qualifiedName().packagePath().identifier())));
+        PackageInstance packageInstance = buildPackage(Lists.mutable.withAll(mctx.qualifiedName().packagePath() == null ? Lists.mutable.empty() : ListAdapter.adapt(mctx.qualifiedName().packagePath().identifier())));
         unitInstance._package(packageInstance);
         packageInstance._childrenAdd(unitInstance);
 
         unitInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
 
         GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance unitType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.Unit);
+        ClassInstance unitType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Unit);
         classifierGT._rawTypeCoreInstance(unitType);
 
         unitInstance._classifierGenericType(classifierGT);
@@ -2526,7 +2343,7 @@ public class AntlrContextToM3CoreInstance
             genericTypeInstance._rawTypeCoreInstance(measureInstance);
             superTypesGenericTypes.add(genericTypeInstance);
         }
-        MutableList<Generalization> generalizations = FastList.newList();
+        MutableList<Generalization> generalizations = Lists.mutable.empty();
         for (GenericType superType : superTypesGenericTypes)
         {
             GeneralizationInstance generalizationInstance = GeneralizationInstance.createPersistent(this.repository, superType, unitInstance);
@@ -2541,13 +2358,13 @@ public class AntlrContextToM3CoreInstance
 
     private CoreInstance classParser(ClassDefinitionContext ctx, ImportGroup importId, boolean addLines) throws PureParserException
     {
-        MutableList<Property<? extends CoreInstance, ?>> properties = FastList.newList();
-        MutableList<QualifiedProperty<? extends CoreInstance>> qualifiedProperties = FastList.newList();
-        MutableList<GenericType> superTypesGenericTypes = FastList.newList();
+        MutableList<Property<? extends CoreInstance, ?>> properties = Lists.mutable.empty();
+        MutableList<QualifiedProperty<? extends CoreInstance>> qualifiedProperties = Lists.mutable.empty();
+        MutableList<GenericType> superTypesGenericTypes = Lists.mutable.empty();
         boolean isDirectSubTypeofAny = false;
-        MutableList<String> typeParameterNames = FastList.newList();
-        MutableList<Boolean> contravariants = FastList.newList();
-        MutableList<String> multiplicityParameterNames = FastList.newList();
+        MutableList<String> typeParameterNames = Lists.mutable.empty();
+        MutableList<Boolean> contravariants = Lists.mutable.empty();
+        MutableList<String> multiplicityParameterNames = Lists.mutable.empty();
         ImportStubInstance ownerType;
         ListIterable<CoreInstance> stereotypes = null;
         ListIterable<TaggedValue> tags = null;
@@ -2587,8 +2404,8 @@ public class AntlrContextToM3CoreInstance
             String fullName = this.getQualifiedNameString(ctx.qualifiedName());
             ownerType = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()), fullName, importId);
 
-            LambdaContext lambdaContext = new LambdaContext(fullName.replace("::","_"));
-            MutableList<Constraint> constraints = this.constraints(classInstance,ctx.constraints(), importId, lambdaContext, addLines);
+            LambdaContext lambdaContext = new LambdaContext(fullName.replace("::", "_"));
+            MutableList<Constraint> constraints = this.constraints(classInstance, ctx.constraints(), importId, lambdaContext, addLines);
             this.propertyParser(ctx.classBody().properties(), properties, qualifiedProperties, typeParameterNames, multiplicityParameterNames, ownerType, importId, 0);
             classInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
 
@@ -2601,7 +2418,7 @@ public class AntlrContextToM3CoreInstance
             }
 
             GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository);
-            ClassInstance classType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.Class);
+            ClassInstance classType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Class);
             classifierGT._rawTypeCoreInstance(classType);
             GenericTypeInstance classifierGTTA = GenericTypeInstance.createPersistent(this.repository);
             classifierGTTA._rawTypeCoreInstance(classInstance);
@@ -2670,7 +2487,7 @@ public class AntlrContextToM3CoreInstance
                 classInstance._constraints(constraints);
             }
 
-            MutableList<Generalization> generalizations = FastList.newList();
+            MutableList<Generalization> generalizations = Lists.mutable.empty();
             for (GenericType superType : superTypesGenericTypes)
             {
                 GeneralizationInstance generalizationInstance = GeneralizationInstance.createPersistent(this.repository, superType, classInstance);
@@ -2688,14 +2505,14 @@ public class AntlrContextToM3CoreInstance
 
     private MutableList<Constraint> constraints(CoreInstance owner, ConstraintsContext ctx, ImportGroup importId, LambdaContext lambdaContext, boolean addLines)
     {
-        MutableList<Constraint> constraints = FastList.newList();
+        MutableList<Constraint> constraints = Lists.mutable.empty();
         if (ctx != null)
         {
             int i = 0;
 
             for (ConstraintContext cCtx : ctx.constraint())
             {
-                constraints.add(this.constraint(owner,cCtx, i, importId, lambdaContext, addLines,false));
+                constraints.add(this.constraint(owner, cCtx, i, importId, lambdaContext, addLines, false));
                 i++;
             }
         }
@@ -2709,49 +2526,49 @@ public class AntlrContextToM3CoreInstance
         String constraintExternalId = null;
         CoreInstance constraintFunctionDefinition;
         String constraintLevel = null;
-        LambdaFunction constraintMessageFunction = null;
+        LambdaFunction<?> constraintMessageFunction = null;
         SourceInformation constraintSourceInformation;
 
 
-        if(ctx.simpleConstraint() != null)
+        if (ctx.simpleConstraint() != null)
         {
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.SimpleConstraintContext simpleConstraintContext = ctx.simpleConstraint();
             constraintName = simpleConstraintContext.constraintId() != null ? simpleConstraintContext.constraintId().VALID_STRING().getText() : String.valueOf(position);
-            constraintFunctionDefinition = this.combinedExpression(simpleConstraintContext.combinedExpression(), "", FastList.<String>newList(), lambdaContext, "", true, importId, addLines);
+            constraintFunctionDefinition = this.combinedExpression(simpleConstraintContext.combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, addLines);
             constraintSourceInformation = this.sourceInformation.getPureSourceInformation(simpleConstraintContext.getStart(), simpleConstraintContext.getStart(), simpleConstraintContext.getStop());
         }
         else
         {
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.ComplexConstraintContext complexConstraintContext = ctx.complexConstraint();
             constraintSourceInformation = this.sourceInformation.getPureSourceInformation(complexConstraintContext.getStart(), complexConstraintContext.VALID_STRING().getSymbol(), complexConstraintContext.getStop());
-            if(this.processorSupport.instance_instanceOf(owner, M3Paths.Class))
+            if (this.processorSupport.instance_instanceOf(owner, M3Paths.Class))
             {
                 constraintName = complexConstraintContext.VALID_STRING().getText();
 
-                if(complexConstraintContext.constraintOwner() != null)
+                if (complexConstraintContext.constraintOwner() != null)
                 {
                     constraintOwner = complexConstraintContext.constraintOwner().VALID_STRING().getText();
                 }
 
-                if(complexConstraintContext.constraintExternalId() != null)
+                if (complexConstraintContext.constraintExternalId() != null)
                 {
                     constraintExternalId = this.removeQuotes(complexConstraintContext.constraintExternalId().STRING());
                 }
 
-                constraintFunctionDefinition = this.combinedExpression(complexConstraintContext.constraintFunction().combinedExpression(), "", FastList.<String>newList(), lambdaContext, "", true, importId, addLines);
+                constraintFunctionDefinition = this.combinedExpression(complexConstraintContext.constraintFunction().combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, addLines);
 
-                if(complexConstraintContext.constraintEnforcementLevel() != null)
+                if (complexConstraintContext.constraintEnforcementLevel() != null)
                 {
                     constraintLevel = complexConstraintContext.constraintEnforcementLevel().ENFORCEMENT_LEVEL().getText();
                 }
 
-                if(complexConstraintContext.constraintMessage() != null)
+                if (complexConstraintContext.constraintMessage() != null)
                 {
-                    CoreInstance messageFunction = this.combinedExpression(complexConstraintContext.constraintMessage().combinedExpression(), "", FastList.<String>newList(), lambdaContext, "", true, importId, addLines);
+                    CoreInstance messageFunction = this.combinedExpression(complexConstraintContext.constraintMessage().combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, addLines);
                     SourceInformation messageSourceInformation = messageFunction.getSourceInformation();
 
                     CoreInstance messageFunctionType = this.repository.newAnonymousCoreInstance(messageSourceInformation, this.processorSupport.package_getByUserPath(M3Paths.FunctionType), true);
-                    CoreInstance param = VariableExpressionInstance.createPersistent(this.repository, messageSourceInformation, (GenericType)org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(owner, this.processorSupport), this.pureOne, "this");
+                    CoreInstance param = VariableExpressionInstance.createPersistent(this.repository, messageSourceInformation, (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(owner, this.processorSupport), this.pureOne, "this");
                     Instance.addValueToProperty(messageFunctionType, M3Properties.parameters, param, this.processorSupport);
                     Instance.setValueForProperty(messageFunctionType, M3Properties.returnMultiplicity, this.getPureOne(), this.processorSupport);
                     Instance.setValueForProperty(messageFunctionType, M3Properties.returnType, org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(this.processorSupport.package_getByUserPath(M3Paths.String), this.processorSupport), this.processorSupport);
@@ -2772,25 +2589,24 @@ public class AntlrContextToM3CoreInstance
             {
                 throw new PureParserException(constraintSourceInformation, "Complex constraint specifications are supported only for class definitions");
             }
-
         }
 
         SourceInformation functionSourceInformation = constraintFunctionDefinition.getSourceInformation();
         CoreInstance functionType = this.repository.newAnonymousCoreInstance(functionSourceInformation, this.processorSupport.package_getByUserPath(M3Paths.FunctionType), true);
-        if(this.processorSupport.instance_instanceOf(owner, M3Paths.ElementWithConstraints))
+        if (this.processorSupport.instance_instanceOf(owner, M3Paths.ElementWithConstraints))
         {
-            CoreInstance param = VariableExpressionInstance.createPersistent(this.repository, functionSourceInformation, (GenericType)org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(owner, this.processorSupport), this.pureOne, "this");
+            CoreInstance param = VariableExpressionInstance.createPersistent(this.repository, functionSourceInformation, (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(owner, this.processorSupport), this.pureOne, "this");
             Instance.addValueToProperty(functionType, M3Properties.parameters, param, this.processorSupport);
         }
 
-        if(this.processorSupport.instance_instanceOf(owner, M3Paths.FunctionDefinition))
+        if (this.processorSupport.instance_instanceOf(owner, M3Paths.FunctionDefinition))
         {
-            FunctionType ft =(FunctionType) this.processorSupport.function_getFunctionType(owner);
-            MutableList<CoreInstance> params = FastList.newList();
+            FunctionType ft = (FunctionType) this.processorSupport.function_getFunctionType(owner);
+            MutableList<CoreInstance> params = Lists.mutable.empty();
             params.addAll(Instance.getValueForMetaPropertyToManyResolved(ft, M3Properties.parameters, this.processorSupport).toList());
-            if(postConstraint)
+            if (postConstraint)
             {
-                CoreInstance returnParam = VariableExpressionInstance.createPersistent(this.repository, functionSourceInformation, (GenericType)ft.getValueForMetaPropertyToOne(M3Properties.returnType), (Multiplicity)ft.getValueForMetaPropertyToOne(M3Properties.returnMultiplicity), "return");
+                CoreInstance returnParam = VariableExpressionInstance.createPersistent(this.repository, functionSourceInformation, (GenericType) ft.getValueForMetaPropertyToOne(M3Properties.returnType), (Multiplicity) ft.getValueForMetaPropertyToOne(M3Properties.returnMultiplicity), "return");
                 params.add(returnParam);
             }
             Instance.addValueToProperty(functionType, M3Properties.parameters, params, this.processorSupport);
@@ -2807,7 +2623,7 @@ public class AntlrContextToM3CoreInstance
         Instance.setValueForProperty(lambdaGenericType, M3Properties.typeArguments, functionTypeGt, this.processorSupport);
 
 
-        LambdaFunction constraintFunctionLambda = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), functionSourceInformation);
+        LambdaFunction<?> constraintFunctionLambda = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), functionSourceInformation);
         Instance.setValueForProperty(constraintFunctionLambda, M3Properties.expressionSequence, constraintFunctionDefinition, this.processorSupport);
         Instance.setValueForProperty(constraintFunctionLambda, M3Properties.classifierGenericType, lambdaGenericType, this.processorSupport);
         Instance.setValueForProperty(functionType, M3Properties.function, constraintFunctionLambda, this.processorSupport);
@@ -2815,20 +2631,20 @@ public class AntlrContextToM3CoreInstance
         Constraint constraint = ConstraintInstance.createPersistent(this.repository, null, null, null);
         constraint.setSourceInformation(constraintSourceInformation);
         constraint._name(constraintName);
-        if(constraintOwner != null)
+        if (constraintOwner != null)
         {
             constraint._owner(constraintOwner);
         }
-        if(constraintExternalId != null)
+        if (constraintExternalId != null)
         {
             constraint._externalId(constraintExternalId);
         }
         constraint._functionDefinition(constraintFunctionLambda);
-        if(constraintLevel != null)
+        if (constraintLevel != null)
         {
             constraint._enforcementLevel(constraintLevel);
         }
-        if(constraintMessageFunction != null)
+        if (constraintMessageFunction != null)
         {
             constraint._messageFunction(constraintMessageFunction);
         }
@@ -2843,7 +2659,7 @@ public class AntlrContextToM3CoreInstance
 
         this.checkExists(ctx.qualifiedName().packagePath(), ctx.qualifiedName().identifier(), null);
 
-        RootRouteNode rootNode = (RootRouteNode)treePath;
+        RootRouteNode rootNode = (RootRouteNode) treePath;
 
         String name = ctx.qualifiedName().identifier().getText();
         ClassProjectionInstance projection = ClassProjectionInstance.createPersistent(this.repository, name, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()), rootNode);
@@ -2855,7 +2671,7 @@ public class AntlrContextToM3CoreInstance
         packageInstance._childrenAdd(projection);
 
         GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository);
-        ClassInstance classType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.ClassProjection);
+        ClassInstance classType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.ClassProjection);
         classifierGT._rawTypeCoreInstance(classType);
         GenericTypeInstance classifierGTTA = GenericTypeInstance.createPersistent(this.repository);
         classifierGTTA._rawTypeCoreInstance(projection);
@@ -2867,7 +2683,7 @@ public class AntlrContextToM3CoreInstance
         GeneralizationInstance generalizationInstance = GeneralizationInstance.createPersistent(this.repository, superType, projection);
         projection._generalizations(Lists.mutable.<Generalization>of(generalizationInstance));
         String fullName = this.getQualifiedNameString(ctx.qualifiedName());
-        MutableList<Constraint> constraints = this.constraints(projection,ctx.constraints(), importId, new LambdaContext(fullName.replace("::","_")), addLines);
+        MutableList<Constraint> constraints = this.constraints(projection, ctx.constraints(), importId, new LambdaContext(fullName.replace("::", "_")), addLines);
 
         if (!Iterate.isEmpty(stereotypes))
         {
@@ -2886,8 +2702,8 @@ public class AntlrContextToM3CoreInstance
 
     private CoreInstance associationParser(AssociationContext ctx, ImportGroup importId) throws PureParserException
     {
-        MutableList<Property<? extends CoreInstance, ?>> properties = FastList.newList();
-        MutableList<QualifiedProperty<? extends CoreInstance>> qualifiedProperties = FastList.newList();
+        MutableList<Property<? extends CoreInstance, ?>> properties = Lists.mutable.empty();
+        MutableList<QualifiedProperty<? extends CoreInstance>> qualifiedProperties = Lists.mutable.empty();
         ListIterable<CoreInstance> stereotypes = null;
         ListIterable<TaggedValue> tags = null;
         AssociationInstance associationInstance;
@@ -2935,14 +2751,14 @@ public class AntlrContextToM3CoreInstance
             packageInstance._childrenAdd(associationInstance);
 
             GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository);
-            ClassInstance assocationType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.Association);
+            ClassInstance assocationType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Association);
             classifierGT._rawTypeCoreInstance(assocationType);
             associationInstance._classifierGenericType(classifierGT);
 
             associationInstance._stereotypesCoreInstance(stereotypes);
             associationInstance._taggedValues(tags);
             is = ImportStubInstance.createPersistent(this.repository, this.getQualifiedNameString(ctx.qualifiedName()), importId);
-            this.propertyParser(ctx.associationBody().properties(), properties, qualifiedProperties, Lists.fixedSize.<String>of(), Lists.fixedSize.<String>of(), is, importId, 0);
+            this.propertyParser(ctx.associationBody().properties(), properties, qualifiedProperties, Lists.fixedSize.empty(), Lists.fixedSize.empty(), is, importId, 0);
             associationInstance.setSourceInformation(this.sourceInformation.getPureSourceInformation(ctx.ASSOCIATION().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.getStop()));
             associationInstance._properties(properties);
 
@@ -2983,7 +2799,7 @@ public class AntlrContextToM3CoreInstance
         DefaultValue defaultValue = null;
         GenericType genericType;
         Multiplicity multiplicity;
-        String aggregation = "None";
+        String aggregation;
         String propertyName = ctx.identifier().getText();
 
         if (ctx.stereotypes() != null)
@@ -3004,6 +2820,14 @@ public class AntlrContextToM3CoreInstance
             {
                 aggregation = "Shared";
             }
+            else
+            {
+                aggregation = "None";
+            }
+        }
+        else
+        {
+            aggregation = "None";
         }
         if (ctx.defaultValue() != null)
         {
@@ -3012,16 +2836,8 @@ public class AntlrContextToM3CoreInstance
         genericType = this.type(ctx.propertyReturnType().type(), typeParameterNames, "", importId, addLines);
         multiplicity = this.buildMultiplicity(ctx.propertyReturnType().multiplicity().multiplicityArgument());
 
-        Enumeration<CoreInstance> agg = (Enumeration<CoreInstance>)this.processorSupport.package_getByUserPath(M3Paths.AggregationKind);
-        Enum aggKind = null;
-        for (CoreInstance value : agg._values())
-        {
-            if (aggregation.equals(value.getName()))
-            {
-                aggKind = (Enum)value;
-                break;
-            }
-        }
+        Enumeration<?> agg = (Enumeration<?>) this.processorSupport.package_getByUserPath(M3Paths.AggregationKind);
+        Enum aggKind = (Enum) agg._values().detect(v -> aggregation.equals(((Enum) v).getName()));
         SourceInformation propertySourceInfo = this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart(), ctx.identifier().getStart(), ctx.getStop());
         PropertyInstance propertyInstance = PropertyInstance.createPersistent(this.repository, propertyName, propertySourceInfo, aggKind, genericType, multiplicity, null);
         propertyInstance._stereotypesCoreInstance(stereotypes);
@@ -3030,7 +2846,7 @@ public class AntlrContextToM3CoreInstance
         propertyInstance._defaultValue(defaultValue);
 
         GenericTypeInstance classifierGT = GenericTypeInstance.createPersistent(this.repository, propertySourceInfo);
-        ClassInstance propertyType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.Property);
+        ClassInstance propertyType = (ClassInstance) this.processorSupport.package_getByUserPath(M3Paths.Property);
         classifierGT._rawTypeCoreInstance(propertyType);
         classifierGT._multiplicityArguments(Lists.mutable.of(multiplicity));
         GenericTypeInstance classifierGTTA = GenericTypeInstance.createPersistent(this.repository);
@@ -3072,7 +2888,7 @@ public class AntlrContextToM3CoreInstance
             if (rawType instanceof ImportStub)
             {
                 ImportStub gtis = (ImportStub) rawType;
-                ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, gtis.getSourceInformation(), gtis._idOrPath(), (ImportGroup)gtis._importGroup());
+                ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, gtis.getSourceInformation(), gtis._idOrPath(), gtis._importGroup());
 //                ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, gtis.getSourceInformation(), ((ImportStubInstance)gtis)._idOrPathAsCoreInstance().getName(), (ImportGroup)gtis._importGroup());
                 ngt._rawTypeCoreInstance(is);
             }
@@ -3170,13 +2986,13 @@ public class AntlrContextToM3CoreInstance
 
         GenericTypeInstance ngt = GenericTypeInstance.createPersistent(this.repository);
 
-        CoreInstance rawType = ((GenericTypeInstance)genericType)._rawTypeCoreInstance();
+        CoreInstance rawType = ((GenericTypeInstance) genericType)._rawTypeCoreInstance();
         if (rawType != null)
         {
             if (rawType instanceof ImportStub)
             {
                 ImportStub gtis = (ImportStub) rawType;
-                ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, gtis.getSourceInformation(), gtis._idOrPath(), (ImportGroup)gtis._importGroup());
+                ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, gtis.getSourceInformation(), gtis._idOrPath(), gtis._importGroup());
 //                ImportStubInstance is = ImportStubInstance.createPersistent(this.repository, gtis.getSourceInformation(), ((ImportStubInstance)gtis)._idOrPathAsCoreInstance().getName(), (ImportGroup)gtis._importGroup());
                 ngt._rawTypeCoreInstance(is);
             }
@@ -3224,8 +3040,8 @@ public class AntlrContextToM3CoreInstance
     private void nativeFunction(NativeFunctionContext ctx, ImportGroup importId, String space, MutableList<CoreInstance> coreInstancesResult)
     {
         FunctionType signature;
-        MutableList<String> typeParametersNames = FastList.newList();
-        MutableList<String> multiplicityParametersNames = FastList.newList();
+        MutableList<String> typeParametersNames = Lists.mutable.empty();
+        MutableList<String> multiplicityParametersNames = Lists.mutable.empty();
         if (ctx.typeAndMultiplicityParameters() != null)
         {
             this.typeParametersAndMultiplicityParameters(ctx.typeAndMultiplicityParameters(), typeParametersNames, multiplicityParametersNames);
@@ -3242,7 +3058,7 @@ public class AntlrContextToM3CoreInstance
         function._package(packageInstance);
         packageInstance._childrenAdd(function);
         GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        Type type = (Type)this.processorSupport.package_getByUserPath("meta::pure::metamodel::function::NativeFunction");
+        Type type = (Type) this.processorSupport.package_getByUserPath("meta::pure::metamodel::function::NativeFunction");
         genericTypeInstance._rawTypeCoreInstance(type);
         GenericTypeInstance genericTypeInstanceTa = GenericTypeInstance.createPersistent(this.repository);
         genericTypeInstanceTa._rawTypeCoreInstance(signature);
@@ -3257,8 +3073,8 @@ public class AntlrContextToM3CoreInstance
         ListIterable<ValueSpecification> block;
         ListIterable<CoreInstance> stereotypes = null;
         ListIterable<TaggedValue> tags = null;
-        MutableList<String> typeParametersNames = FastList.newList();
-        MutableList<String> multiplicityParameterNames = FastList.newList();
+        MutableList<String> typeParametersNames = Lists.mutable.empty();
+        MutableList<String> multiplicityParameterNames = Lists.mutable.empty();
 
         if (ctx.stereotypes() != null)
         {
@@ -3276,8 +3092,7 @@ public class AntlrContextToM3CoreInstance
 
         //Reset the lambda function counter - we count within the Concrete definition
         this.functionCounter++;
-        String name = this.getQualifiedNameString(ctx.qualifiedName());
-        LambdaContext lambdaContext = new LambdaContext(name.replace("::","_") + this.functionCounter);
+        LambdaContext lambdaContext = new LambdaContext(getFunctionUniqueId(ctx.qualifiedName(), this.functionCounter, importId));
 
         block = this.codeBlock(ctx.codeBlock(), typeParametersNames, importId, lambdaContext, addLines, space + this.tabs(2));
 
@@ -3289,31 +3104,31 @@ public class AntlrContextToM3CoreInstance
         cfdi._package(packageInstance);
         packageInstance._childrenAdd(cfdi);
         GenericTypeInstance genericTypeInstance = GenericTypeInstance.createPersistent(this.repository);
-        Type type = (Type)this.processorSupport.package_getByUserPath("meta::pure::metamodel::function::ConcreteFunctionDefinition");
+        Type type = (Type) this.processorSupport.package_getByUserPath("meta::pure::metamodel::function::ConcreteFunctionDefinition");
         genericTypeInstance._rawTypeCoreInstance(type);
         GenericTypeInstance genericTypeInstanceTa = GenericTypeInstance.createPersistent(this.repository);
         genericTypeInstanceTa._rawTypeCoreInstance(signature);
         genericTypeInstance._typeArguments(Lists.mutable.<GenericType>of(genericTypeInstanceTa));
         cfdi._classifierGenericType(genericTypeInstance);
 
-        MutableList<Constraint> preConstraints = FastList.newList();
-        MutableList<Constraint> postConstraints = FastList.newList();
+        MutableList<Constraint> preConstraints = Lists.mutable.empty();
+        MutableList<Constraint> postConstraints = Lists.mutable.empty();
         if (ctx.constraints() != null)
         {
             int i = 0;
             for (ConstraintContext cCtx : ctx.constraints().constraint())
             {
-                if(cCtx.simpleConstraint() == null)
+                if (cCtx.simpleConstraint() == null)
                 {
                     throw new PureParserException(this.sourceInformation.getPureSourceInformation(cCtx.getStart()), "Complex constraint specifications are supported only for class definitions");
                 }
                 if (cCtx.simpleConstraint().combinedExpression().getText().contains("$return"))
                 {
-                    postConstraints.add(this.constraint(cfdi,cCtx, i, importId, lambdaContext, addLines,true));
+                    postConstraints.add(this.constraint(cfdi, cCtx, i, importId, lambdaContext, addLines, true));
                 }
                 else
                 {
-                    preConstraints.add(this.constraint(cfdi,cCtx, i, importId, lambdaContext, addLines,false));
+                    preConstraints.add(this.constraint(cfdi, cCtx, i, importId, lambdaContext, addLines, false));
                 }
                 i++;
             }
@@ -3412,7 +3227,7 @@ public class AntlrContextToM3CoreInstance
             InstanceValueInstance iv = InstanceValueInstance.createPersistent(this.repository, null, null);
             iv._values(Lists.mutable.of(this.repository.newStringCoreInstance_cached(multParameter)));
             GenericTypeInstance gt = GenericTypeInstance.createPersistent(this.repository);
-            Type ti = (Type)this.processorSupport.package_getByUserPath("String");
+            Type ti = (Type) this.processorSupport.package_getByUserPath("String");
             gt._rawTypeCoreInstance(ti);
             iv._genericType(gt);
             iv._multiplicity(this.getPureOne());
@@ -3423,15 +3238,7 @@ public class AntlrContextToM3CoreInstance
 
     private ListIterable<TypeParameter> processTypeParametersInstance(final ModelRepository repository, MutableList<String> typeParameters)
     {
-        return typeParameters.collect(new Function<String, TypeParameter>()
-        {
-            @Override
-            public TypeParameterInstance valueOf(String typeParameter)
-            {
-                TypeParameterInstance tp = TypeParameterInstance.createPersistent(repository, typeParameter);
-                return tp;
-            }
-        });
+        return typeParameters.collect(tp -> TypeParameterInstance.createPersistent(repository, tp));
     }
 
     private VariableExpression functionVariableExpression(FunctionVariableExpressionContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, String space)
@@ -3440,40 +3247,32 @@ public class AntlrContextToM3CoreInstance
         Multiplicity multiplicity;
         type = this.type(ctx.type(), typeParametersNames, space + this.tabs(3), importId, true);
         multiplicity = this.buildMultiplicity(ctx.multiplicity().multiplicityArgument());
-        VariableExpressionInstance variableExpressionInstance = VariableExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart()), type, multiplicity, ctx.identifier().getText());
-        return variableExpressionInstance;
+        return VariableExpressionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.identifier().getStart()), type, multiplicity, ctx.identifier().getText());
     }
 
     private VariableExpression typeFunctionTypePureType(FunctionTypePureTypeContext ctx, MutableList<String> typeParametersNames, String space, ImportGroup importId, boolean addLines)
     {
         GenericType type = this.type(ctx.type(), typeParametersNames, space + this.tabs(3), importId, addLines);
         Multiplicity multiplicity = this.buildMultiplicity(ctx.multiplicity().multiplicityArgument());
-        VariableExpressionInstance variableExpressionInstance = VariableExpressionInstance.createPersistent(this.repository, type, multiplicity, "");
-        return variableExpressionInstance;
+        return VariableExpressionInstance.createPersistent(this.repository, type, multiplicity, "");
     }
 
     private ListIterable<Multiplicity> multiplicityArguments(MultiplicityArgumentsContext ctx)
     {
-        MutableList<Multiplicity> results = Lists.mutable.of();
+        MutableList<Multiplicity> results = Lists.mutable.empty();
         if (ctx != null && ctx.multiplicityArgument() != null)
         {
-            for (MultiplicityArgumentContext maCtx : ctx.multiplicityArgument())
-            {
-                results.add(this.buildMultiplicity(maCtx));
-            }
+            ListIterate.collect(ctx.multiplicityArgument(), this::buildMultiplicity, results);
         }
         return results;
     }
 
     private ListIterable<GenericType> typeArguments(TypeArgumentsContext ctx, MutableList<String> typeParametersNames, ImportGroup importId, boolean addLines)
     {
-        MutableList<GenericType> result = Lists.mutable.of();
+        MutableList<GenericType> result = Lists.mutable.empty();
         if (ctx != null && ctx.type() != null)
         {
-            for (TypeContext typeCtx : ctx.type())
-            {
-                result.add(this.type(typeCtx, typeParametersNames, "", importId, addLines));
-            }
+            ListIterate.collect(ctx.type(), typeCtx -> type(typeCtx, typeParametersNames, "", importId, addLines), result);
         }
         return result;
     }
@@ -3543,41 +3342,28 @@ public class AntlrContextToM3CoreInstance
 
     private ListIterable<CoreInstance> stereotypes(StereotypesContext ctx, ImportGroup importId)
     {
-        MutableList<CoreInstance> stereos = FastList.newList();
-        for (StereotypeContext stereotypeContext : ctx.stereotype())
-        {
-            stereos.add(this.stereotype(importId, stereotypeContext));
-        }
-        return stereos;
+        return ListIterate.collect(ctx.stereotype(), stereotypeContext -> stereotype(importId, stereotypeContext));
     }
 
     private ImportStub stereotype(ImportGroup importId, StereotypeContext ctx)
     {
-        ImportStubInstance importStubInstance = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.identifier().getStart(), ctx.identifier().getStop()), this.getQualifiedNameString(ctx.qualifiedName()) + "@" + ctx.identifier().getText(), importId);
-        return importStubInstance;
+        return ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.identifier().getStart(), ctx.identifier().getStop()), this.getQualifiedNameString(ctx.qualifiedName()) + "@" + ctx.identifier().getText(), importId);
     }
 
     private ListIterable<TaggedValue> taggedValues(TaggedValuesContext ctx, ImportGroup importId)
     {
-        MutableList<TaggedValue> taggedValues = FastList.newList();
-        for (TaggedValueContext tvContext : ctx.taggedValue())
-        {
-            taggedValues.add(this.taggedValue(importId, tvContext));
-        }
-        return taggedValues;
+        return ListIterate.collect(ctx.taggedValue(), tvContext -> taggedValue(importId, tvContext));
     }
 
     private TaggedValue taggedValue(ImportGroup importId, TaggedValueContext ctx)
     {
         ImportStubInstance importStubInstance = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart(), ctx.identifier().getStart(), ctx.identifier().getStop()), this.getQualifiedNameString(ctx.qualifiedName()) + "%" + ctx.identifier().getText(), importId);
-        TaggedValueInstance taggedValueInstance = TaggedValueInstance.createPersistent(this.repository,
-                this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().getSymbol(), ctx.STRING().getSymbol()), importStubInstance, this.removeQuotes(ctx.STRING()));
-        return taggedValueInstance;
+        return TaggedValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.STRING().getSymbol(), ctx.STRING().getSymbol()), importStubInstance, this.removeQuotes(ctx.STRING()));
     }
 
     private DefaultValue defaultValue(DefaultValueContext ctx, ImportGroup importId, String propertyName)
     {
-        LambdaFunction defaultValueFunctionLambda = null;
+        LambdaFunction<?> defaultValueFunctionLambda = null;
 
         DefaultValueExpressionContext expression = ctx.defaultValueExpression();
 
@@ -3588,7 +3374,7 @@ public class AntlrContextToM3CoreInstance
                 this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.EQUAL().getSymbol(), ctx.getStop()));
 
         CoreInstance defaultValueExpression = this.defaultValueExpression(ctx.defaultValueExpression(), importId, lambdaContext);
-        if ( defaultValueExpression != null )
+        if (defaultValueExpression != null)
         {
             SourceInformation source = defaultValueExpression.getSourceInformation();
             defaultValueFunctionLambda = LambdaFunctionInstance.createPersistent(this.repository, lambdaContext.getLambdaFunctionUniqueName(), source);
@@ -3618,12 +3404,14 @@ public class AntlrContextToM3CoreInstance
         if (ctx.instanceLiteralToken() != null)
         {
             result = this.instanceLiteralToken(ctx.instanceLiteralToken(), true);
-        }  else if(ctx.instanceReference() != null)
+        }
+        else if (ctx.instanceReference() != null)
         {
             result = instanceReference(ctx.instanceReference(), Lists.mutable.empty(), lambdaContext, importId, this.tabs(4), addLines);
-        } else if (ctx.expressionInstance() != null)
+        }
+        else if (ctx.expressionInstance() != null)
         {
-            result = this.expressionInstanceParser(ctx.expressionInstance(), FastList.<String>newList(), lambdaContext, importId, addLines, this.tabs(4));
+            result = this.expressionInstanceParser(ctx.expressionInstance(), Lists.mutable.empty(), lambdaContext, importId, addLines, this.tabs(4));
         }
         else if (ctx.defaultValueExpressionsArray() != null)
         {
@@ -3633,12 +3421,11 @@ public class AntlrContextToM3CoreInstance
                 expressions.add(this.defaultValueExpression(eCtx, importId, lambdaContext));
             }
             result = this.doWrap(expressions, ctx.defaultValueExpressionsArray().getStart().getLine(), ctx.defaultValueExpressionsArray().getStart().getCharPositionInLine(), ctx.getStop().getLine(), ctx.getStop().getCharPositionInLine());
-
         }
 
-        if(ctx.propertyExpression() != null)
+        if (ctx.propertyExpression() != null)
         {
-            result = propertyExpression(ctx.propertyExpression(), result, FastList.newList(), Lists.mutable.empty(), lambdaContext, this.tabs(4), importId);
+            result = propertyExpression(ctx.propertyExpression(), result, Lists.mutable.empty(), Lists.mutable.empty(), lambdaContext, this.tabs(4), importId);
         }
         return result;
     }
@@ -3658,6 +3445,19 @@ public class AntlrContextToM3CoreInstance
         return ctx.packagePath() != null ? this.packageToString(ctx.packagePath()).concat("::").concat(ctx.identifier().getText()) : ctx.identifier().getText();
     }
 
+
+    private String getFunctionUniqueId(QualifiedNameContext qualifiedNameCtx, int functionCounter, ImportGroup importId)
+    {
+        StringBuilder builder = new StringBuilder();
+        if (qualifiedNameCtx.packagePath() != null)
+        {
+            qualifiedNameCtx.packagePath().identifier().forEach(i -> builder.append(i.getText()).append('$'));
+        }
+        builder.append(qualifiedNameCtx.identifier().getText()).append('$').append(functionCounter).append('$');
+        org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.writeUserPathForPackageableElement(builder, importId, "$");
+        return builder.toString();
+    }
+
     private ProfileInstance profile(ProfileContext ctx)
     {
         PackageInstance packageInstance = this.buildPackage(ctx.qualifiedName().packagePath());
@@ -3674,8 +3474,11 @@ public class AntlrContextToM3CoreInstance
 
     private ListIterable<Stereotype> buildStereoTypes(StereotypeDefinitionsContext ctx, ProfileInstance profileInstance)
     {
-        if (ctx == null) return Lists.fixedSize.empty();
-        MutableList<Stereotype> stereotypes = FastList.newList();
+        if (ctx == null)
+        {
+            return Lists.fixedSize.empty();
+        }
+        MutableList<Stereotype> stereotypes = Lists.mutable.empty();
         for (IdentifierContext identifierContext : ctx.identifier())
         {
             stereotypes.add(StereotypeInstance.createPersistent(this.repository, identifierContext.getText(), this.sourceInformation.getPureSourceInformation(identifierContext.getStart()), profileInstance, identifierContext.getText()));
@@ -3685,8 +3488,11 @@ public class AntlrContextToM3CoreInstance
 
     private ListIterable<Tag> buildTags(TagDefinitionsContext ctx, ProfileInstance profileInstance)
     {
-        if (ctx == null) return Lists.fixedSize.empty();
-        MutableList<Tag> tags = FastList.newList();
+        if (ctx == null)
+        {
+            return Lists.fixedSize.empty();
+        }
+        MutableList<Tag> tags = Lists.mutable.empty();
         for (IdentifierContext identifierContext : ctx.identifier())
         {
             tags.add(TagInstance.createPersistent(this.repository, identifierContext.getText(), this.sourceInformation.getPureSourceInformation(identifierContext.getStart()), profileInstance, identifierContext.getText()));
@@ -3696,7 +3502,7 @@ public class AntlrContextToM3CoreInstance
 
     public CoreInstance treePath(TreePathContext ctx, ImportGroup importId)
     {
-        GenericType treePathGT = this.type(ctx.type(), Lists.mutable.<String>empty(), "", importId, true);
+        GenericType treePathGT = this.type(ctx.type(), Lists.mutable.empty(), "", importId, true);
         if (Iterate.notEmpty(treePathGT._typeArguments()))
         {
             throw new PureParserException(treePathGT.getSourceInformation(), "TreePath doesn't support GenericTypes");
@@ -3721,11 +3527,11 @@ public class AntlrContextToM3CoreInstance
 
     private void treepathBody(TreePathClassBodyContext ctx, RouteNode routeNode, ImportGroup importId, LambdaContext lambdaContext, String space)
     {
-        MutableList<PropertyRouteNode> complexProperties = FastList.newList();
+        MutableList<PropertyRouteNode> complexProperties = Lists.mutable.empty();
 
         if (ctx.simplePropertyFilter() != null)
         {
-            MutableList<RouteNodePropertyStub> propertyStubs = FastList.newList();
+            MutableList<RouteNodePropertyStub> propertyStubs = Lists.mutable.empty();
             if (ctx.simplePropertyFilter().PLUS() != null || ctx.simplePropertyFilter().MINUS() != null)
             {
                 for (SimplePropertyContext spCtx : ctx.simplePropertyFilter().simpleProperty())
@@ -3803,9 +3609,9 @@ public class AntlrContextToM3CoreInstance
         String propertyName = ctx.alias() != null ? ctx.alias().identifier().getText() : ctx.propertyRef().identifier().getText();
         boolean includeAll = ctx.treePathClassBody() != null && ctx.treePathClassBody().simplePropertyFilter() != null && ctx.treePathClassBody().simplePropertyFilter().STAR() != null;
         NewPropertyRouteNode dpRouteNode = NewPropertyRouteNodeInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.getStart(), ctx.propertyRef().getStart(), ctx.getStop()), null, String.valueOf(includeAll), propertyName, ctx.propertyRef().identifier().getText(), null, null);
-        ListIterable<ValueSpecification> codeSpecifications = this.codeBlock(ctx.codeBlock(), Lists.mutable.<String>empty(), importId, lambdaContext, true, space);
+        ListIterable<ValueSpecification> codeSpecifications = this.codeBlock(ctx.codeBlock(), Lists.mutable.empty(), importId, lambdaContext, true, space);
         dpRouteNode._specifications(codeSpecifications);
-        NewPropertyRouteNodeFunctionDefinition functionDefinition = NewPropertyRouteNodeFunctionDefinitionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.codeBlock().getStart()), dpRouteNode);
+        NewPropertyRouteNodeFunctionDefinition<?, ?> functionDefinition = NewPropertyRouteNodeFunctionDefinitionInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.codeBlock().getStart()), dpRouteNode);
         functionDefinition._expressionSequence(codeSpecifications);
         dpRouteNode._functionDefinition(functionDefinition);
         if (ctx.treePathClassBody() != null)
@@ -3835,7 +3641,7 @@ public class AntlrContextToM3CoreInstance
             MutableList<InstanceValue> params = Lists.mutable.of();
             for (TreePathPropertyParameterTypeContext fCtx : ctx.treePathPropertyParameterType())
             {
-                GenericType type = this.type(fCtx.type(), Lists.mutable.<String>empty(), space + this.tabs(3), importId, true);
+                GenericType type = this.type(fCtx.type(), Lists.mutable.empty(), space + this.tabs(3), importId, true);
                 Multiplicity multiplicity = this.buildMultiplicity(fCtx.multiplicity().multiplicityArgument());
                 InstanceValue iv = InstanceValueInstance.createPersistent(this.repository, type, multiplicity);
                 params.add(iv);
@@ -3848,12 +3654,12 @@ public class AntlrContextToM3CoreInstance
 
     private PackageInstance buildPackage(PackagePathContext paths)
     {
-        return this.buildPackage(paths == null ? Lists.mutable.<IdentifierContext>empty() : ListAdapter.adapt(paths.identifier()));
+        return this.buildPackage(paths == null ? Lists.mutable.empty() : ListAdapter.adapt(paths.identifier()));
     }
 
     private PackageInstance buildPackage(MutableList<IdentifierContext> paths)
     {
-        PackageInstance parent = (PackageInstance)this.repository.getTopLevel(M3Paths.Root);
+        PackageInstance parent = (PackageInstance) this.repository.getTopLevel(M3Paths.Root);
         if (parent == null)
         {
             throw new RuntimeException("Cannot find Root in model repository");
@@ -3875,16 +3681,16 @@ public class AntlrContextToM3CoreInstance
                     PackageInstance package_ = PackageInstance.createPersistent(this.repository, childName, null);
                     package_._name(childName);
                     package_._package(parent);
-                    package_._children(Lists.immutable.<PackageableElement>empty());
+                    package_._children(Lists.immutable.empty());
                     parent._childrenAdd(package_);
                     child = package_;
                 }
                 else if (!(child instanceof PackageInstance))
                 {
-                    throw new PureParserException(this.sourceInformation.getSourceName(), childToken.getStart().getLine(), childToken.getStart().getCharPositionInLine(), "\'" + org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.getUserPathForPackageableElement(child)
-                            + "\' is a " + child.getClassifier().getName() + ", should be a Package", paths.collect(IDENTIFIER_TO_STRING).makeString("::"));
+                    throw new PureParserException(this.sourceInformation.getSourceName(), childToken.getStart().getLine(), childToken.getStart().getCharPositionInLine(), "'" + org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.getUserPathForPackageableElement(child)
+                            + "' is a " + child.getClassifier().getName() + ", should be a Package", paths.collect(RuleContext::getText).makeString("::"));
                 }
-                parent = (PackageInstance)child;
+                parent = (PackageInstance) child;
             }
         }
         return parent;
@@ -3921,10 +3727,10 @@ public class AntlrContextToM3CoreInstance
         return TemporaryPurePropertyMapping.build(
                 this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart()),
                 ctx.PLUS() != null,
-                ctx.type() == null ? null : this.type(ctx.type(), FastList.<String>newList(), "", importId, true),
+                ctx.type() == null ? null : this.type(ctx.type(), Lists.mutable.empty(), "", importId, true),
                 ctx.multiplicity() == null ? null : this.buildMultiplicity(ctx.multiplicity().multiplicityArgument()),
                 ctx.qualifiedName().getText(),
-                this.combinedExpression(ctx.combinedExpression(), "", FastList.<String>newList(), lambdaContext, "", true, importId, true),
+                this.combinedExpression(ctx.combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, true),
                 sourceMappingId,
                 targetMappingId,
                 ctx.STAR() != null,
@@ -3939,13 +3745,13 @@ public class AntlrContextToM3CoreInstance
         {
             src = ImportStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().getStart()), this.getQualifiedNameString(ctx.qualifiedName()), importId);
         }
-        MutableList<TemporaryPurePropertyMapping> res = FastList.newList();
+        MutableList<TemporaryPurePropertyMapping> res = Lists.mutable.empty();
 
         CoreInstance filter = null;
 
         if (ctx.combinedExpression() != null)
         {
-            filter = this.combinedExpression(ctx.combinedExpression(), "", FastList.<String>newList(), lambdaContext, "", true, importId, true);
+            filter = this.combinedExpression(ctx.combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
         }
         for (MappingLineContext mlc : ctx.mappingLine())
         {
@@ -3967,7 +3773,7 @@ public class AntlrContextToM3CoreInstance
         {
             for (org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.GroupByFunctionSpecificationContext groupByFunctionSpecificationContext : groupByFunctionSpecificationsContext.groupByFunctionSpecification())
             {
-                CoreInstance groupByExpression = this.combinedExpression(groupByFunctionSpecificationContext.combinedExpression(), "", FastList.<String>newList(), lambdaContext, "", true, importId, true);
+                CoreInstance groupByExpression = this.combinedExpression(groupByFunctionSpecificationContext.combinedExpression(), "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
                 SourceInformation sourceInformation = this.sourceInformation.getPureSourceInformation(groupByFunctionSpecificationContext.getStart(), groupByFunctionSpecificationContext.getStart(), groupByFunctionSpecificationContext.getStop());
 
                 groupByFunctionSpecifications.add(TemporaryPureGroupByFunctionSpecification.build(sourceInformation, groupByExpression));
@@ -3979,8 +3785,8 @@ public class AntlrContextToM3CoreInstance
         {
             for (org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.AggregationFunctionSpecificationContext aggregationFunctionSpecificationContext : aggregationFunctionSpecificationsContext.aggregationFunctionSpecification())
             {
-                CoreInstance mapExpression = this.combinedExpression(aggregationFunctionSpecificationContext.combinedExpression(0), "", FastList.<String>newList(), lambdaContext, "", true, importId, true);
-                CoreInstance aggregateExpression = this.combinedExpression(aggregationFunctionSpecificationContext.combinedExpression(1), "", FastList.<String>newList(), lambdaContext, "", true, importId, true);
+                CoreInstance mapExpression = this.combinedExpression(aggregationFunctionSpecificationContext.combinedExpression(0), "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
+                CoreInstance aggregateExpression = this.combinedExpression(aggregationFunctionSpecificationContext.combinedExpression(1), "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
                 SourceInformation sourceInformation = this.sourceInformation.getPureSourceInformation(aggregationFunctionSpecificationContext.getStart(), aggregationFunctionSpecificationContext.getStart(), aggregationFunctionSpecificationContext.getStop());
 
                 aggregationFunctionSpecifications.add(TemporaryPureAggregationFunctionSpecification.build(sourceInformation, mapExpression, aggregateExpression));
@@ -3993,7 +3799,7 @@ public class AntlrContextToM3CoreInstance
 
     public TemporaryPurePropertyMapping combinedExpression(CombinedExpressionContext ctx, String property, LambdaContext lambdaContext, ImportGroup importId)
     {
-        CoreInstance expression = this.combinedExpression(ctx, "", FastList.<String>newList(), lambdaContext, "", true, importId, true);
+        CoreInstance expression = this.combinedExpression(ctx, "", Lists.mutable.empty(), lambdaContext, "", true, importId, true);
         return TemporaryPurePropertyMapping.build(
                 this.sourceInformation.getPureSourceInformation(ctx.getStart()),
                 false,
@@ -4015,7 +3821,7 @@ public class AntlrContextToM3CoreInstance
             {
                 if (this.pureOne == null)
                 {
-                    this.pureOne = (Multiplicity)this.processorSupport.package_getByUserPath(M3Paths.PureOne);
+                    this.pureOne = (Multiplicity) this.processorSupport.package_getByUserPath(M3Paths.PureOne);
                 }
                 return this.pureOne;
             }
@@ -4023,7 +3829,7 @@ public class AntlrContextToM3CoreInstance
             {
                 if (this.zeroMany == null)
                 {
-                    this.zeroMany = (Multiplicity)this.processorSupport.package_getByUserPath(M3Paths.ZeroMany);
+                    this.zeroMany = (Multiplicity) this.processorSupport.package_getByUserPath(M3Paths.ZeroMany);
                 }
                 return this.zeroMany;
             }
@@ -4031,7 +3837,7 @@ public class AntlrContextToM3CoreInstance
             {
                 if (this.pureZero == null)
                 {
-                    this.pureZero = (Multiplicity)this.processorSupport.package_getByUserPath(M3Paths.PureZero);
+                    this.pureZero = (Multiplicity) this.processorSupport.package_getByUserPath(M3Paths.PureZero);
                 }
                 return this.pureZero;
             }
@@ -4039,7 +3845,7 @@ public class AntlrContextToM3CoreInstance
             {
                 if (this.zeroOne == null)
                 {
-                    this.zeroOne = (Multiplicity)this.processorSupport.package_getByUserPath(M3Paths.ZeroOne);
+                    this.zeroOne = (Multiplicity) this.processorSupport.package_getByUserPath(M3Paths.ZeroOne);
                 }
                 return this.zeroOne;
             }
@@ -4047,7 +3853,7 @@ public class AntlrContextToM3CoreInstance
             {
                 if (this.oneMany == null)
                 {
-                    this.oneMany = (Multiplicity)this.processorSupport.package_getByUserPath(M3Paths.OneMany);
+                    this.oneMany = (Multiplicity) this.processorSupport.package_getByUserPath(M3Paths.OneMany);
                 }
                 return this.oneMany;
             }
@@ -4078,18 +3884,18 @@ public class AntlrContextToM3CoreInstance
 
     private MutableList<String> packageToList(PackagePathContext pkgCtx)
     {
-        return pkgCtx == null ? Lists.mutable.<String>of() : PACKAGE_TO_STRING.valueOf(pkgCtx);
+        return (pkgCtx == null) ? Lists.mutable.empty() : ListIterate.collect(pkgCtx.identifier(), RuleContext::getText);
     }
 
     private MutableList<String> qualifiedNameToList(QualifiedNameContext qualifiedName)
     {
-        return qualifiedName == null ? Lists.mutable.<String>empty() : qualifiedName.packagePath() == null ? Lists.mutable.with(qualifiedName.identifier().getText()) : PACKAGE_TO_STRING.valueOf(qualifiedName.packagePath()).with(qualifiedName.identifier().getText());
+        return (qualifiedName == null) ? Lists.mutable.empty() : packageToList(qualifiedName.packagePath()).with(qualifiedName.identifier().getText());
     }
 
     private void checkExists(PackagePathContext pkgCtx, IdentifierContext identifierCtx, SourceInformation sourceInfo) throws PureParserException
     {
         boolean exists;
-        MutableList<String> allPaths = FastList.newList();
+        MutableList<String> allPaths = Lists.mutable.empty();
         MutableList<String> packagePaths = this.packageToList(pkgCtx);
         allPaths.addAll(packagePaths);
         allPaths.add(identifierCtx.getText());
@@ -4118,7 +3924,7 @@ public class AntlrContextToM3CoreInstance
     private void checkExists(QualifiedNameContext pkgCtx, IdentifierContext identifierCtx, SourceInformation sourceInfo) throws PureParserException
     {
         boolean exists;
-        MutableList<String> allPaths = FastList.newList();
+        MutableList<String> allPaths = Lists.mutable.empty();
         if (pkgCtx != null)
         {
             MutableList<String> packagePaths = this.packageToList(pkgCtx.packagePath());
@@ -4152,9 +3958,9 @@ public class AntlrContextToM3CoreInstance
     {
         String id = createImportGroupId(fileName, count);
         ImportGroupInstance ig = ImportGroupInstance.createPersistent(this.repository, id, sourceInfo);
-        ig._imports((ListIterable<Import>)imports);
+        ig._imports(imports);
 
-        PackageInstance parent = (PackageInstance)this.processorSupport.package_getByUserPath("system::imports");
+        PackageInstance parent = (PackageInstance) this.processorSupport.package_getByUserPath("system::imports");
         parent._childrenAdd(ig);
         ig._package(parent);
         ig._name(id);
@@ -4163,41 +3969,32 @@ public class AntlrContextToM3CoreInstance
 
     public static String createImportGroupId(String fileName, int count)
     {
+        // TODO fix this to ensure ids are unique
         return Source.importForSourceName(fileName) + "_" + count;
     }
 
     private static CoreInstance findEnum(String enumerationFullPath, final String enumName, ModelRepository repository)
     {
         EnumerationInstance enumerationInstance = (EnumerationInstance) org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.findPackageableElement(enumerationFullPath, repository);
-        return enumerationInstance._values().select(new Predicate<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance each)
-            {
-                return enumName.equals(each.getName());
-            }
-        }).getFirst();
+        return enumerationInstance._values().detect(each -> enumName.equals(each.getName()));
     }
 
     private InstanceValue doWrap(ListIterable<? extends CoreInstance> content, int beginLine, int beginColumn, int endLine, int endColumn)
     {
-        InstanceValueInstance iv = InstanceValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(beginLine, beginColumn, endLine, endColumn), null, null);
-        iv._values((ListIterable<CoreInstance>)content);
-        return iv;
+        return InstanceValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(beginLine, beginColumn, endLine, endColumn), null, null)
+                ._values(content);
     }
 
     private InstanceValue doWrap(ListIterable<? extends CoreInstance> content)
     {
-        InstanceValueInstance iv = InstanceValueInstance.createPersistent(this.repository, null, null);
-        iv._values((ListIterable<CoreInstance>)content);
-        return iv;
+        return InstanceValueInstance.createPersistent(this.repository, null, null)
+                ._values(content);
     }
 
     private InstanceValue doWrap(CoreInstance content)
     {
-        InstanceValueInstance iv = InstanceValueInstance.createPersistent(this.repository, null, null);
-        iv._values(Lists.fixedSize.of(content));
-        return iv;
+        return InstanceValueInstance.createPersistent(this.repository, null, null)
+                ._values(Lists.fixedSize.of(content));
     }
 
     private InstanceValue doWrap(CoreInstance content, Token token)
@@ -4207,9 +4004,8 @@ public class AntlrContextToM3CoreInstance
 
     private InstanceValue doWrap(ListIterable<? extends CoreInstance> content, Token token)
     {
-        InstanceValueInstance iv = InstanceValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(token), null, null);
-        iv._values((ListIterable<CoreInstance>)content);
-        return iv;
+        return InstanceValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(token), null, null)
+                ._values(content);
     }
 
     private InstanceValue doWrap(IdentifierContext content, boolean addQuote)
@@ -4218,19 +4014,11 @@ public class AntlrContextToM3CoreInstance
         return this.doWrap(Lists.mutable.with(stringInstance), content.getStart());
     }
 
-    private InstanceValue doWrap(MutableList<IdentifierContext> content, final boolean addQuote)
+    private InstanceValue doWrap(MutableList<IdentifierContext> content, boolean addQuote)
     {
-        ListIterable<CoreInstance> values = content.collect(new Function<IdentifierContext, CoreInstance>()
-        {
-            @Override
-            public CoreInstance valueOf(IdentifierContext val)
-            {
-                return AntlrContextToM3CoreInstance.this.repository.newStringCoreInstance_cached(addQuote ? "'" + val.getText() + "'" : val.getText());
-            }
-        });
-        InstanceValue iv = InstanceValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(content.getFirst().getStart(), content.getFirst().getStart(), content.getLast().getStart()), null, null);
-        iv._values(values);
-        return iv;
+        ListIterable<CoreInstance> values = content.collect(val -> this.repository.newStringCoreInstance_cached(addQuote ? "'" + val.getText() + "'" : val.getText()));
+        return InstanceValueInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(content.getFirst().getStart(), content.getFirst().getStart(), content.getLast().getStart()), null, null)
+                ._values(values);
     }
 
     private boolean userPathDefined(RichIterable<String> paths)
@@ -4265,7 +4053,7 @@ public class AntlrContextToM3CoreInstance
     {
         if (this.pureOne == null)
         {
-            this.pureOne = (Multiplicity)this.processorSupport.package_getByUserPath(M3Paths.PureOne);
+            this.pureOne = (Multiplicity) this.processorSupport.package_getByUserPath(M3Paths.PureOne);
         }
         return this.pureOne;
     }
@@ -4274,7 +4062,7 @@ public class AntlrContextToM3CoreInstance
     {
         if (this.oneMany == null)
         {
-            this.oneMany = (Multiplicity)this.processorSupport.package_getByUserPath(M3Paths.OneMany);
+            this.oneMany = (Multiplicity) this.processorSupport.package_getByUserPath(M3Paths.OneMany);
         }
         return this.oneMany;
     }
@@ -4291,10 +4079,7 @@ public class AntlrContextToM3CoreInstance
 
         public String getLambdaFunctionUniqueName()
         {
-            String name = this.lambdaFunctionOwnerId + '$' + this.lambdaFunctionCounter;
-            this.lambdaFunctionCounter++;
-            return name;
+            return this.lambdaFunctionOwnerId + '$' + this.lambdaFunctionCounter++;
         }
     }
-
 }

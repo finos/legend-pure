@@ -27,7 +27,8 @@ import org.junit.Test;
 public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -40,7 +41,7 @@ public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
     @Test
     public void testEnsurePropertySourceTypeIsNotResolved()
     {
-        compileTestSource("testSource.pure","Class A{name:String[1];}\n" +
+        compileTestSource("testSource.pure", "Class A{name:String[1];}\n" +
                 "function\n" +
                 "   {doc.doc = 'Get the property with the given name from the given class. Note that this searches only properties defined directly on the class, not those inherited from super-classes or those which come from associations.'}\n" +
                 "   meta::pure::functions::meta::classPropertyByName(class:Class<Any>[1], name:String[1]):Property<Nil,Any|*>[0..1]\n" +
@@ -51,7 +52,7 @@ public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
                 "{\n" +
                 "    print(A->classPropertyByName('name'),10);\n" +
                 "}\n");
-        this.execute("test():Nil[0]");
+        execute("test():Nil[0]");
         Assert.assertEquals("name instance Property\n" +
                 "    aggregation(Property):\n" +
                 "        None instance AggregationKind\n" +
@@ -103,7 +104,7 @@ public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
                 "    name(Property):\n" +
                 "        name instance String\n" +
                 "    owner(Property):\n" +
-                "        [X] A instance Class", this.functionExecution.getConsole().getLine(0));
+                "        [X] A instance Class", functionExecution.getConsole().getLine(0));
     }
 
     @Test
@@ -115,7 +116,7 @@ public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "    |^A();\n" +
                         "}\n");
-        CoreInstance func = this.runtime.getFunction("testMany():FunctionDefinition[1]");
+        CoreInstance func = runtime.getFunction("testMany():FunctionDefinition[1]");
         Assert.assertEquals("Anonymous_StripedId instance InstanceValue\n" +
                         "    genericType(Property):\n" +
                         "        Anonymous_StripedId instance GenericType\n" +
@@ -146,7 +147,7 @@ public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
                         "            offset(Property):\n" +
                         "                0 instance Integer\n" +
                         "    values(Property):\n" +
-                        "        testMany1$0 instance LambdaFunction\n" +
+                        "        testMany$1$system$imports$import_testSource_pure_1$0 instance LambdaFunction\n" +
                         "            classifierGenericType(Property):\n" +
                         "                Anonymous_StripedId instance GenericType\n" +
                         "                    rawType(Property):\n" +
@@ -156,7 +157,7 @@ public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
                         "                            rawType(Property):\n" +
                         "                                Anonymous_StripedId instance FunctionType\n" +
                         "                                    function(Property):\n" +
-                        "                                        testMany1$0 instance LambdaFunction\n" +
+                        "                                        testMany$1$system$imports$import_testSource_pure_1$0 instance LambdaFunction\n" +
                         "                                    returnMultiplicity(Property):\n" +
                         "                                        PureOne instance PackageableMultiplicity\n" +
                         "                                    returnType(Property):\n" +
@@ -256,7 +257,7 @@ public class TestSyntheticNodeCut extends AbstractPureTestWithCoreCompiled
                         "                    usageContext(Property):\n" +
                         "                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                         "                            functionDefinition(Property):\n" +
-                        "                                testMany1$0 instance LambdaFunction\n" +
+                        "                                testMany$1$system$imports$import_testSource_pure_1$0 instance LambdaFunction\n" +
                         "                            offset(Property):\n" +
                         "                                0 instance Integer\n" +
                         "            referenceUsages(Property):\n" +
