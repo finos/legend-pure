@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -25,7 +25,8 @@ import org.junit.Test;
 public class TestIncrementalCompiler extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
@@ -37,37 +38,37 @@ public class TestIncrementalCompiler extends AbstractPureTestWithCoreCompiledPla
     public void testInstanceDefinedBeforeClassWillCompile()
     {
 
-        MutableList<Source> sources = new FastList<>();
+        MutableList<Source> sources = Lists.mutable.empty();
         sources.add(new Source("1", false, false, "^my::Table instance\n" +
-                                            "(\n" +
-                                            "    name = 'Hello'\n" +
-                                            ")"));
+                "(\n" +
+                "    name = 'Hello'\n" +
+                ")"));
         sources.add(new Source("2", false, false, "Class my::Table\n" +
-                                "{\n" +
-                                "    name : String[1];\n" +
-                                "}\n"));
-        this.runtime.getIncrementalCompiler().compile(sources);
+                "{\n" +
+                "    name : String[1];\n" +
+                "}\n"));
+        runtime.getIncrementalCompiler().compile(sources);
 
         Assert.assertEquals("instance instance Table\n" +
                 "    name(Property):\n" +
-                "        Hello instance String", this.runtime.getCoreInstance("instance").printWithoutDebug(""));
+                "        Hello instance String", runtime.getCoreInstance("instance").printWithoutDebug(""));
     }
 
     @Test
     public void testClassInstanceUsedBeforeClassWillCompile()
     {
 
-        MutableList<Source> sources = new FastList<>();
+        MutableList<Source> sources = Lists.mutable.empty();
         sources.add(new Source("1.pure", false, false, "function my::tableName():String[1]\n" +
-                                            "{\n" +
-                                            "    let t = ^my::Table(name = 'Hello');\n" +
-                                            "    $t.name;\n" +
-                                            "}\n"));
+                "{\n" +
+                "    let t = ^my::Table(name = 'Hello');\n" +
+                "    $t.name;\n" +
+                "}\n"));
         sources.add(new Source("2.pure", false, false, "Class my::Table\n" +
-                                "{\n" +
-                                "    name : String[1];\n" +
-                                "}\n"));
-        this.runtime.getIncrementalCompiler().compile(sources);
+                "{\n" +
+                "    name : String[1];\n" +
+                "}\n"));
+        runtime.getIncrementalCompiler().compile(sources);
 
         Assert.assertEquals("tableName__String_1_ instance ConcreteFunctionDefinition\n" +
                 "    classifierGenericType(Property):\n" +
@@ -113,7 +114,7 @@ public class TestIncrementalCompiler extends AbstractPureTestWithCoreCompiledPla
                 "                Anonymous_StripedId instance VariableExpression\n" +
                 "                    [... >1]\n" +
                 "            propertyName(Property):\n" +
-                "                my_tableName1$0 instance InstanceValue\n" +
+                "                my$tableName$1$system$imports$import_1_pure_1$0 instance InstanceValue\n" +
                 "                    [... >1]\n" +
                 "            usageContext(Property):\n" +
                 "                Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
@@ -123,27 +124,27 @@ public class TestIncrementalCompiler extends AbstractPureTestWithCoreCompiledPla
                 "    name(Property):\n" +
                 "        tableName__String_1_ instance String\n" +
                 "    package(Property):\n" +
-                "        my instance Package", this.runtime.getFunction("my::tableName():String[1]").printWithoutDebug("",1));
+                "        my instance Package", runtime.getFunction("my::tableName():String[1]").printWithoutDebug("", 1));
     }
 
     @Test
     public void testInstanceWithPropertyReferencingEnumBeforeEnumDefinedWillCompile()
     {
 
-        MutableList<Source> sources = new FastList<>();
+        MutableList<Source> sources = Lists.mutable.empty();
         sources.add(new Source("1.pure", false, false, "Class my::myClass\n" +
-                                        "{\n" +
-                                        "    value : my::myEnum[1];\n" +
-                                        "}\n" +
-                                        "^my::myClass instance\n" +
-                                            "(\n" +
-                                            "    value = my::myEnum.VAL1\n" +
-                                            ")"));
+                "{\n" +
+                "    value : my::myEnum[1];\n" +
+                "}\n" +
+                "^my::myClass instance\n" +
+                "(\n" +
+                "    value = my::myEnum.VAL1\n" +
+                ")"));
         sources.add(new Source("2.pure", false, false, "Enum my::myEnum\n" +
-                                "{\n" +
-                                "    VAL1, VAL2\n" +
-                                "}\n"));
-        this.runtime.getIncrementalCompiler().compile(sources);
+                "{\n" +
+                "    VAL1, VAL2\n" +
+                "}\n"));
+        runtime.getIncrementalCompiler().compile(sources);
 
         Assert.assertEquals("instance instance myClass\n" +
                 "    value(Property):\n" +
@@ -155,6 +156,6 @@ public class TestIncrementalCompiler extends AbstractPureTestWithCoreCompiledPla
                 "                    idOrPath(Property):\n" +
                 "                        my::myEnum instance String\n" +
                 "                    importGroup(Property):\n" +
-                "                        import_1_pure_1 instance ImportGroup", this.runtime.getCoreInstance("instance").printWithoutDebug("",1));
+                "                        import_1_pure_1 instance ImportGroup", runtime.getCoreInstance("instance").printWithoutDebug("", 1));
     }
 }

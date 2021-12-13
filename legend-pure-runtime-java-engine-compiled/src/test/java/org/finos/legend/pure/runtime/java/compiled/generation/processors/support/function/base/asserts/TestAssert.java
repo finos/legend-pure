@@ -22,7 +22,8 @@ import org.junit.BeforeClass;
 public class TestAssert extends AbstractTestAssert
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -30,5 +31,4 @@ public class TestAssert extends AbstractTestAssert
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
-
 }

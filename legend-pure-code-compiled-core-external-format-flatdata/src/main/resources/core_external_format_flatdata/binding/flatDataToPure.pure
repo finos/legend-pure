@@ -36,6 +36,7 @@ import meta::xml::metamodel::*;
 Class meta::external::format::flatdata::binding::toPure::FlatDataToModelConfiguration extends meta::external::shared::format::binding::toPure::SchemaToModelConfiguration
 {
    purifyNames: Boolean[1];
+   schemaClassName: String[0..1];
 }
 
 function meta::external::format::flatdata::binding::toPure::flatDataToPure(schemaSet:SchemaSet[1], config:FlatDataToModelConfiguration[1]): Binding[1]
@@ -99,11 +100,23 @@ function <<access.private>> meta::external::format::flatdata::binding::toPure::c
 function <<access.private>> meta::external::format::flatdata::binding::toPure::generate(context:GenerationContext[1], debug:DebugContext[1]): PackageableElement[*]
 {
    let withRecords = $context.flatData.sections->filter(s| $s.recordType->isNotEmpty());
-   assert($withRecords->size() == 1, |'Only single record types supported');
-   let section = $withRecords->toOne();
+   assert($withRecords->size() > 0, |'No record types found in schema');
+   let fromRecords = $withRecords->map({section| 
+      let sectionClass = $section->generateSection($context, $debug);
+      pair($section, $sectionClass);
+   });
    
+   let schemaElements = if($context.config.schemaClassName->isNotEmpty(),
+                           | $fromRecords->generateSchemaClassAndAssociations($context, $debug),
+                           | []
+                        );
+   $schemaElements->concatenate($fromRecords.second);
+}
+
+function <<access.private>> meta::external::format::flatdata::binding::toPure::generateSection(section:FlatDataSection[1], context:GenerationContext[1], debug:DebugContext[1]): Class<Any>[1]
+{
    $debug->log(|'generate for section '+$section.name);
-   let className      = $context.package + if($context.config.purifyNames, |$section.name->purifyClassName(), |$section.name);
+   let className      = $context.package + if($context.config.purifyNames, |$section.name->purifyClassName(), |$section.name)+'Record';
    let cls            = newClass($className);   
    let clsGenericType = $cls.classifierGenericType->toOne().typeArguments->at(0);      
    let properties = $section.recordType.fields->map(f|
@@ -123,6 +136,32 @@ function <<access.private>> meta::external::format::flatdata::binding::toPure::g
       newProperty($pName, $clsGenericType, ^GenericType(rawType=$pType), $pMult);
    );
    $cls->mutateAdd('properties', $properties);
+}
+
+function <<access.private>> meta::external::format::flatdata::binding::toPure::generateSchemaClassAndAssociations(fromRecords:Pair<FlatDataSection,Class<Any>>[*], context:GenerationContext[1], debug:DebugContext[1]): PackageableElement[*]
+{
+   $debug->log(|'generate schema class');
+   
+   let schemaClassName = $context.config.schemaClassName->toOne();
+   let cls             = newClass($context.package + $schemaClassName);   
+   
+   let associations = $fromRecords->map({pair|
+      let section      = $pair.first;
+      let sectionClass = $pair.second;
+      
+      let p1           = newProperty($schemaClassName->toLowerFirstCharacter()->toOne(), ^GenericType(rawType=$sectionClass), ^GenericType(rawType=$cls), PureOne);
+      
+      let pName        = if($context.config.purifyNames, |$section.name->purifyPropertyName(), |$section.name);
+      let pMult        = $section.sectionProperties
+                            ->filter(sp| $sp.name == 'scope.forNumberOfLines').value->cast(@Integer)
+                            ->map(n|  ^Multiplicity(lowerBound=^MultiplicityValue(value=$n), upperBound=^MultiplicityValue(value=$n)))
+                            ->first()->orElse(ZeroMany);
+      let p2           = newProperty($pName, ^GenericType(rawType=$cls), ^GenericType(rawType=$sectionClass), $pMult);
+      
+      newAssociation($context.package + $schemaClassName+'_'+$sectionClass.name->toOne(), $p1, $p2);
+   });
+
+   $cls->concatenate($associations);
 }
 
 function <<access.private>> meta::external::format::flatdata::binding::toPure::createOperation(model:PackageableElement[*], context:GenerationContext[1]): Binding[1]

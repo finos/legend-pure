@@ -19,6 +19,7 @@ import meta::pure::lineage::scanProperties::*;
 import meta::pure::mapping::*;
 import meta::pure::metamodel::constraint::*;
 import meta::pure::metamodel::serialization::grammar::*;
+import meta::pure::milestoning::*;
 
 
 function meta::pure::executionPlan::engine::java::typeInfo::newTypeInfoSet(): TypeInfoSet[1]
@@ -48,9 +49,9 @@ function meta::pure::executionPlan::engine::java::typeInfo::addForClassesWithAll
 
 function meta::pure::executionPlan::engine::java::typeInfo::addForClassWithAllProperties(info:TypeInfoSet[1], class: Class<Any>[1]): TypeInfoSet[1]
 {
-   let basic             = $info->addBasicTypeInfoIfMissing($class);
-   let plusNonPrimatives = $class.properties->filter(p|!$p->isPrimitiveValueProperty())->fold({p, i| $i->addPropertyForClassIfMissing($class, $p)}, $basic);
-   $class.qualifiedProperties->fold({q, i| $i->addQualifiedPropertyForClassIfMissing($class, $q)}, $plusNonPrimatives);
+   let basic          = $info->addBasicTypeInfoIfMissing($class);
+   let plusProperties = $class.properties->fold({p, i| $i->addPropertyForClassIfMissing($class, $p)}, $basic);
+   $class.qualifiedProperties->fold({q, i| $i->addQualifiedPropertyForClassIfMissing($class, $q)}, $plusProperties);
 }
 
 function meta::pure::executionPlan::engine::java::typeInfo::addForClassWithAllPropertiesViaAssociations(info:TypeInfoSet[1], class:Class<Any>[1]) : TypeInfoSet[1]
@@ -59,21 +60,38 @@ function meta::pure::executionPlan::engine::java::typeInfo::addForClassWithAllPr
    $class.propertiesFromAssociations->fold({p,i | $i->addPropertyForClassIfMissing($class, $p)}, $basic);
 }
 
-function meta::pure::executionPlan::engine::java::typeInfo::addForClass(info:TypeInfoSet[1], class:Class<Any>[1], includeComplex:Boolean[1], includeDerived:Boolean[1], includeAssociations:Boolean[1]) : TypeInfoSet[1]
+function meta::pure::executionPlan::engine::java::typeInfo::addForClass(info:TypeInfoSet[1], class:Class<Any>[1], includeSimple:Boolean[1], includeComplex:Boolean[1], includeDerived:Boolean[1], includeAssociations:Boolean[1]) : TypeInfoSet[1]
 {
    let basic       = $info->addBasicTypeInfoIfMissing($class);
-   let plusComplex = if($includeComplex,
-                        | $class.properties->filter(p|!$p->isPrimitiveValueProperty())->fold({p, i| $i->addPropertyForClassIfMissing($class, $p)}, $basic),
+   let plusSimple  = if($includeSimple,
+                        | $class.properties->filter(p|$p->isPrimitiveValueProperty())->fold(
+                             {p, i|
+                                $i->addBasicTypeInfoIfMissing($p.genericType.rawType->toOne())
+                                  ->addPropertyForClassIfMissing($class, $p);
+                             }, 
+                             $basic
+                          ),
                         | $basic
+                     );
+   let plusComplex = if($includeComplex,
+                        | $class.properties->filter(p|!$p->isPrimitiveValueProperty())->fold({p, i| $i->addPropertyForClassIfMissing($class, $p)}, $plusSimple),
+                        | $plusSimple
                      );
    let plusDerived = if($includeDerived,
                         | $class.qualifiedProperties->fold({q, i| $i->addQualifiedPropertyForClassIfMissing($class, $q)}, $plusComplex),
                         | $plusComplex
                      );
-   if($includeAssociations,
-      | $class.propertiesFromAssociations->fold({p,i | $i->addPropertyForClassIfMissing($class, $p)}, $plusDerived),
-      | $plusDerived
-   );
+   let withAssoc   = if($includeAssociations,
+                        | $class.propertiesFromAssociations->fold({p,i | $i->addPropertyForClassIfMissing($class, $p)}, $plusDerived),
+                        | $plusDerived
+                     );
+   
+   $withAssoc->forClass($class).supertypes->fold({c, set | $set->addForClass($c, $includeSimple, $includeComplex, $includeDerived, $includeAssociations)}, $withAssoc);
+}
+
+function meta::pure::executionPlan::engine::java::typeInfo::addProperties(info:TypeInfoSet[1], properties:Property<Nil,Any|*>[*]): TypeInfoSet[1]
+{
+   $properties->fold({p, ti| $ti->addPropertyForTypeIfMissing($p, false)}, $info);
 }
 
 function meta::pure::executionPlan::engine::java::typeInfo::addForGraphFetchTree(info:TypeInfoSet[1], tree: GraphFetchTree[1]): TypeInfoSet[1]
@@ -233,28 +251,33 @@ function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::c
 
 function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::typeInfoFromTree(info:TypeInfoSet[1], tree:GraphFetchTree[1]): TypeInfoSet[1]
 {
-   let withThisType = $tree->match([
-      r: RoutedGraphFetchTree[1] | $info->typeInfoFromInstanceSetImplementations($r.sets->cast(@InstanceSetImplementation)),
-      r: RootGraphFetchTree<Any>[1] | $info->addBasicTypeInfoIfMissing($r.class),
-      p: PropertyGraphFetchTree[1]  | let pInfo = $info->addBasicTypeInfoIfMissing($p.property.genericType.rawType->toOne()); if ($p.subType->isNotEmpty(), | $pInfo->addBasicTypeInfoIfMissing($p.subType->toOne()), | $pInfo); 
+   let types = $tree->match([
+      r: RoutedGraphFetchTree[1]    | $r.sets->cast(@InstanceSetImplementation)->map(set| if($set.mappingClass->isNotEmpty(), | $set.mappingClass->toOne(), | $set.class)),
+      r: RootGraphFetchTree<Any>[1] | $r.class,
+      p: PropertyGraphFetchTree[1]  | $p.property.genericType.rawType->concatenate($p.subType) 
    ]);
+   let withThisType = $types->fold({t, tis| $tis->addBasicTypeInfoIfMissing($t)}, $info);
+   
+   let classes = $types->filter(t| $t->instanceOf(Class))->cast(@Class<Any>);
+   
+   let milestoneProperties = $classes.properties->filter(p|$p->isPrimitiveValueProperty() && $p->hasGeneratedMilestoningPropertyStereotype());
+   let withMilestoning     = $withThisType->addProperties($milestoneProperties);
 
-   let requiredQP             = $tree->match([
-                                   ergft: ExtendedRootGraphFetchTree<Any>[1] | $ergft.requiredQualifiedProperties,
-                                   epgft: ExtendedPropertyGraphFetchTree[1]  | $epgft.requiredQualifiedProperties,
-                                   rrgft: RoutedRootGraphFetchTree<Any>[1]   | $rrgft.requiredQualifiedProperties,
-                                   rpgft: RoutedPropertyGraphFetchTree[1]    | $rpgft.requiredQualifiedProperties,
-                                   gft  : GraphFetchTree[1]                  | []
-                                ]);
-   let withRequiredQualifiers = $requiredQP->fold({qp,tis |$tis->addQualifiedPropertyForTypeIfMissing($qp)}, $withThisType);
+   let requiredQP = $tree->match([
+      ergft: ExtendedRootGraphFetchTree<Any>[1] | $ergft.requiredQualifiedProperties,
+      epgft: ExtendedPropertyGraphFetchTree[1]  | $epgft.requiredQualifiedProperties,
+      rrgft: RoutedRootGraphFetchTree<Any>[1]   | $rrgft.requiredQualifiedProperties,
+      rpgft: RoutedPropertyGraphFetchTree[1]    | $rpgft.requiredQualifiedProperties,
+      gft  : GraphFetchTree[1]                  | []
+   ]);
+   let withRequiredQualifiers = $requiredQP->fold({qp,tis |$tis->addQualifiedPropertyForTypeIfMissing($qp)}, $withMilestoning);
    
-   let nonePrimitiveSubTreesReturningClasses = $tree.subTrees->map(x | $x->meta::pure::graphFetch::routing::byPassClusteringInfo())->cast(@PropertyGraphFetchTree)->filter(pgft| $pgft.property->instanceOf(Property) && $pgft.property.genericType.rawType->toOne()->instanceOf(Class));
-    
-   let qualifiedSubTrees = $tree.subTrees->map(x | $x->meta::pure::graphFetch::routing::byPassClusteringInfo())->cast(@PropertyGraphFetchTree)->filter(pgft| $pgft.property->instanceOf(QualifiedProperty));
-   
-   $nonePrimitiveSubTreesReturningClasses->concatenate($qualifiedSubTrees)->fold(
+   $tree.subTrees->map(x | $x->meta::pure::graphFetch::routing::byPassClusteringInfo())->cast(@PropertyGraphFetchTree)->fold(
       {pgft, tis|
-         if($pgft.property->instanceOf(QualifiedProperty), | $tis->addQualifiedPropertyForTypeIfMissing($pgft.property->cast(@QualifiedProperty<Any>)), | $tis->addPropertyForTypeIfMissing($pgft.property->cast(@Property<Nil,Any|*>)))->typeInfoFromTree($pgft);
+         if($pgft.property->instanceOf(QualifiedProperty), 
+            | $tis->addQualifiedPropertyForTypeIfMissing($pgft.property->cast(@QualifiedProperty<Any>)), 
+            | $classes->fold({c, tis2| $tis2->addPropertyForClassIfDefined($c, $pgft.property.name->toOne(), false)}, $tis)
+         )->typeInfoFromTree($pgft);
       }, 
       $withRequiredQualifiers
    );
@@ -321,7 +344,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::t
                        | $set.mappingClass->toOne(),
                        | $set.class
                     );
-         $updatedTypes->addBasicTypeInfoIfMissing($type);
+         $updatedTypes->addForClass($type, true, false, false, false);
       }, 
       $info
    );
@@ -350,6 +373,32 @@ function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::a
    ]);
 }
 
+function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::addPropertyForClassIfDefined(info:TypeInfoSet[1], class:Class<Any>[1], propertyName:String[1], isNewInstanceAllowed:Boolean[1]): TypeInfoSet[1]
+{
+   let property = $class.properties->concatenate($class.propertiesFromAssociations)->filter(p| $p.name == $propertyName);
+   
+   $property->match([
+      {p:Property<Nil,Any|*>[1] | 
+         $p.owner->match([
+            {c: Class<Any>[1] |
+               $info->addPropertyForClassIfMissing($c, $p, $isNewInstanceAllowed);
+            },
+            {a: Association[1] |
+               let p1 = $a.properties->at(0);
+               let c1 = $a.properties->at(1).genericType.rawType->cast(@Class<Any>)->toOne();
+               let p2 = $a.properties->at(1);
+               let c2 = $a.properties->at(0).genericType.rawType->cast(@Class<Any>)->toOne();
+            
+               $info->addPropertyForClassIfMissing($c1, $p1)->addPropertyForClassIfMissing($c2, $p2, $isNewInstanceAllowed);
+            }
+         ]);
+      },
+      {none:Property<Nil,Any|*>[0] | 
+         $class->getGeneralizations()->fold({c, tis| $tis->addPropertyForClassIfDefined($c, $propertyName, $isNewInstanceAllowed)}, $info);
+      }
+   ]);
+}
+
 function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::addPropertyForClassIfMissing(info:TypeInfoSet[1], class:Class<Any>[1], property:Property<Nil,Any|*>[1]): TypeInfoSet[1]
 {
   addPropertyForClassIfMissing($info, $class, $property, false);  
@@ -357,14 +406,24 @@ function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::a
 
 function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::addPropertyForClassIfMissing(info:TypeInfoSet[1], class:Class<Any>[1], property:Property<Nil,Any|*>[1], isNewInstanceAllowed:Boolean[1]): TypeInfoSet[1]
 {   
-   let enriched = $info->addBasicTypeInfoIfMissing($class, $isNewInstanceAllowed);
-   let ti       = $enriched->forClass($class);
-   let enriched2 = if($property->functionReturnType().rawType->toOne()->instanceOf(Class), | $enriched->addBasicTypeInfoIfMissing($property->functionReturnType().rawType->toOne()->cast(@Class<Any>), $isNewInstanceAllowed), | $enriched);
+   let enriched  = $info->addBasicTypeInfoIfMissing($class, $isNewInstanceAllowed);
+   let ti        = $enriched->forClass($class);
+   let rtnType   = $property->functionReturnType().rawType->toOne();
+   let enriched2 = if($rtnType->instanceOf(Class) || $rtnType->instanceOf(Enumeration), | $enriched->addBasicTypeInfoIfMissing($rtnType, $isNewInstanceAllowed), | $enriched);
 
-   if($ti.properties->exists(p| $p.name == $property.name), 
+   let withProperty = if($ti.properties->exists(p| $p.name == $property.name), 
       | $enriched2, 
-      | $enriched2->addOrReplace(^$ti(properties=$ti.properties->concatenate($property)));
+      |$enriched2->addOrReplace(^$ti(properties=$ti.properties->concatenate($property)->sortProperties($class)))
    );
+
+   $ti.supertypes->fold({c, tis| $tis->addPropertyForClassIfDefined($c, $property.name->toOne(), $isNewInstanceAllowed)}, $withProperty);
+}
+
+function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::sortProperties(properties:Property<Nil,Any|*>[*], class:Class<Any>[1]): Property<Nil,Any|*>[*]
+{
+   let allProperties = $class->allProperties();
+   let ordinal = {p:Property<Nil,Any|*>[1]| $allProperties->indexOf($p)};
+   $properties->sort({p1,p2| $ordinal->eval($p1) - $ordinal->eval($p2)});
 }
 
 function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::addQualifiedPropertyForTypeIfMissing(info:TypeInfoSet[1], qualifiedProperty:QualifiedProperty<Any>[1]): TypeInfoSet[1]
@@ -479,22 +538,13 @@ function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::a
 
 function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::addBasicClassTypeInfo(info:TypeInfoSet[1], class:Class<Any>[1], seenClasses:Class<Any>[*], isNewInstanceAllowed:Boolean[1]): TypeInfoSet[1]
 {
-   let supertypes = $class->getGeneralizations();
+   let supertypes          = $class->getGeneralizations();
+   let newSeenClasses      = $seenClasses->concatenate($class);
+   let withSupertypes      = $supertypes->fold({c, set | $set->addBasicTypeInfoIfMissing($newSeenClasses, $c)}, $info);
 
-   //TODO: tests fail due to this line, temporarily disabling to fix build.
-   //let byDefaultProperties = $class.properties->filter(p|$p->isPrimitiveValueProperty() || !$p.genericType.rawType->in($seenClasses));
-   let byDefaultProperties = $class.properties->filter(p|$p->isPrimitiveValueProperty());
-
-
-   let newSeenClasses = $seenClasses->concatenate($class);
-   let withPropertyTypes   = $byDefaultProperties->map(p| $p.genericType.rawType)->fold({t, set | $set->addBasicTypeInfoIfMissing($newSeenClasses, $t)}, $info);
-   let withSupertypes      = $supertypes->fold({c, set | $set->addBasicTypeInfoIfMissing($newSeenClasses, $c)}, $withPropertyTypes);
-
-   // TODO Types due to qualified properties 
    let classInfo = ^ClassTypeInfo(
-      type       = $class, 
-      supertypes = $supertypes,
-      properties = $byDefaultProperties,
+      type                 = $class,
+      supertypes           = $supertypes,
       isNewInstanceAllowed = $isNewInstanceAllowed
    );
 

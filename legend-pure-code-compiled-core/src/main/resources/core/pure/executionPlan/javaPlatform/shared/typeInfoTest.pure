@@ -93,28 +93,23 @@ Class meta::alloy::test::runtime::java::typeInfo::I extends B, H
    s: String[1];
 }
 
-function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testGraphAddsDefaultProperty(): Boolean[1]
+Class meta::alloy::test::runtime::java::typeInfo::Trade
+[
+   if($this.side->isEmpty() || $this.side == Side.BUY, |$this.quantity > 0, |$this.quantity < 0)
+]
 {
-   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{A {s, f}}#);
-   assertEquals(2, $typeInfos.typeInfos->size());
-   
-   assertTypeInfo(['s', 'f', 'sd', 'c'], [], $typeInfos->forClass(A));
-   assertEquals(Colour, $typeInfos->forEnumeration(Colour).enumeration());
+   quantity: Integer[1];
+   side: Side[0..1];
 }
 
-function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testGraphAddsInheritedDefaultProperties(): Boolean[1]
+Enum meta::alloy::test::runtime::java::typeInfo::Side
 {
-   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{B {s, i}}#);
-   assertEquals(3, $typeInfos.typeInfos->size());
-   
-   assertTypeInfo(['s', 'f', 'sd', 'c'], [], $typeInfos->forClass(A));
-   assertTypeInfo(['i', 'd'], [A], $typeInfos->forClass(B));
-   assertEquals(Colour, $typeInfos->forEnumeration(Colour).enumeration());
+   BUY, SELL
 }
 
 function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testGraphAddsInheritesOnlyOnce(): Boolean[1]
 {
-   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{I {s}}#);
+   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{I {s, f, sd, c, i, d, b}}#);
    assertEquals(5, $typeInfos.typeInfos->size());
    
    assertTypeInfo(['s', 'f', 'sd', 'c'], [], $typeInfos->forClass(A));
@@ -126,23 +121,9 @@ function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testGraphAdds
    assertProperties(['s', 'f', 'sd', 'c', 'i', 'd', 'b'], $typeInfos->allProperties(I), I);
 }
 
-function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testGraphAllPropertiesWithInheritedDefaultProperties(): Boolean[1]
-{
-   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{B {s, i, ram, disk}}#);
-   assertProperties(['s', 'f', 'sd', 'c', 'ram'], $typeInfos->allProperties(A), A);
-   assertProperties(['s', 'f', 'sd', 'c', 'ram', 'i', 'd', 'disk'], $typeInfos->allProperties(B), B);
-}
-
-function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testGraphValuePropertiesWithInheritedDefaultProperties(): Boolean[1]
-{
-   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{B {s, i, ram, disk}}#);
-   assertProperties(['s', 'f', 'sd', 'c'], $typeInfos->valueProperties(A), A);
-   assertProperties(['s', 'f', 'sd', 'c', 'i', 'd'], $typeInfos->valueProperties(B), B);
-}
-
 function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testGraphIncludesOnlySpecifiedClassProperties(): Boolean[1]
 {
-   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{C {someAs}}#);
+   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{C {s, someAs {s, f, sd, c}}}#);
    assertEquals(3, $typeInfos.typeInfos->size());
    
    assertTypeInfo(['s', 'f', 'sd', 'c'], [], $typeInfos->forClass(A));
@@ -152,7 +133,7 @@ function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testGraphIncl
 
 function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testGraphMergesForTrees(): Boolean[1]
 {
-   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{C {someAs}}#)->addForGraphFetchTree(#{C {moreAs}}#);
+   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{C {s, someAs {s, f}}}#)->addForGraphFetchTree(#{C {moreAs {sd, c}}}#);
    assertEquals(3, $typeInfos.typeInfos->size());
    
    assertTypeInfo(['s', 'f', 'sd', 'c'], [], $typeInfos->forClass(A));
@@ -162,7 +143,7 @@ function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testGraphMerg
 
 function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testGraphIncludesOnlySpecifiedAssociations(): Boolean[1]
 {
-   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{E {fs}}#);
+   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{E {s, fs {s}}}#);
    assertEquals(2, $typeInfos.typeInfos->size());
    
    assertTypeInfo(['s', 'fs'], [], $typeInfos->forClass(E));
@@ -177,8 +158,15 @@ function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testClassDepe
 
 function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testEnumDependenciesViaProperties(): Boolean[1]
 {
-   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{E {fs {ssd}}}#);
+   let typeInfos = newTypeInfoSet()->addForGraphFetchTree(#{E {fs {ssd {amount,measure}}}}#);
    assert($typeInfos->enumDependenciesViaProperties(E)->containsAll(meta::alloy::test::runtime::java::typeInfo::Measure), |'Unexpected enums: ' + $typeInfos->enumDependenciesViaProperties(E)->map(e| $e->enumName())->joinStrings(','));
+}
+
+function <<test.Test>> meta::alloy::test::runtime::java::typeInfo::testAddingConstraintsAddsEnum(): Boolean[1]
+{
+   let tree      = #{Trade {quantity}}#;
+   let typeInfos = newTypeInfoSet()->addForGraphFetchTree($tree)->addConstraintsForGraphFetchTree($tree);
+   assertEquals(Side, $typeInfos->forEnumeration(Side).enumeration());
 }
 
 function <<access.private>> meta::alloy::test::runtime::java::typeInfo::assertTypeInfo(expectedProperties:String[*], expectedSupertypes:Type[*], actual:ClassTypeInfo[1]): Boolean[1]
