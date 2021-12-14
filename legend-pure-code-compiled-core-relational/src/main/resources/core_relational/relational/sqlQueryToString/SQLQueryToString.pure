@@ -392,11 +392,13 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::conve
 function <<access.private>> meta::relational::functions::sqlQueryToString::getPrefixAndSuffixForType(type:Type[1], processors:Map<Type, LiteralProcessor>[1]):Pair<String, String>[1]
 {
    let lp           = $processors->get($type)->toOne();
-
-   let lpFormat     = $lp.format;
-   let prefixSuffix = $lpFormat->split('%');
-   let prefix       = if($prefixSuffix->size() == 1, | '', |$prefixSuffix->at(0));
-   let suffix       = if($prefixSuffix->size() == 1, | $prefixSuffix->at(0), |$prefixSuffix->at(1))->substring(1);
+   // We need this replace here to mimic what we would have done if we had executed the format string on input.
+   // %% is used in format to escape a required % symbol. We don't need to do this while building freemarker context
+   let lpFormat     = $lp.format->replace('%%', '%');  
+   
+   let index        = $lpFormat->indexOf('%s');
+   let prefix       = $lpFormat->substring(0, $index);
+   let suffix       = $lpFormat->substring($index+2);
 
    ^Pair<String, String>(first = $prefix, second = $suffix);
 }
@@ -803,7 +805,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::table
 function meta::relational::functions::sqlQueryToString::functions::stringCat(vals : String[*], dbType:DatabaseType[1], separator : String[1]):String[1]
 {
    let emptyStr = if ($dbType == DatabaseType.Postgres, | 'Text\'\'', | '\'\'');
-   if ($dbType->in([DatabaseType.H2, DatabaseType.Postgres, DatabaseType.MemSQL, DatabaseType.Presto, DatabaseType.BigQuery, DatabaseType.Redshift]),
+   if ($dbType->in([DatabaseType.H2, DatabaseType.Postgres, DatabaseType.MemSQL, DatabaseType.Presto, DatabaseType.BigQuery, DatabaseType.Redshift, DatabaseType.Snowflake]),
       |$vals->joinStrings('concat(', if($emptyStr == $separator, |', ', | ',' + $separator + ',') , ')'),
       |if($dbType == DatabaseType.DB2,
           | $vals->joinStrings('(',if($emptyStr == $separator, |' concat ', | ' concat ' + $separator + ' concat '), ')'),
@@ -1104,7 +1106,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='concat%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='%s', transform={p:String[*]|$p->joinStrings(' + ')})),
                                                  choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='%s', transform={p:String[*]|$p->joinStrings(' + ')})),
-                                                 choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='%s', transform={p:String[*]|$p->joinStrings(' + ')})) ]),
+                                                 choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='concat%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})) ]),
       forDynafunction('contains',              [ choice($allTypes,                 $allStates,            ^ToSql(format=likePattern('%%%s%%'), transform={p:String[2]|$p->transformLikeParams($dbType)}))]),
       forDynafunction('convertDate',           [ choice($aSybase,                  $allStates,            ^ToSql(format='%s', transform={p:String[*] | $p->convertToDateIQ()})),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='%s', transform={p:String[*] | $p->convertToDateDB2()})),
@@ -1245,7 +1247,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='listagg(%s,%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='group_concat(%s separator %s)')),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='string_agg(%s, %s)')),
-                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='string_agg(%s, %s)')),
+                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='listagg(%s, %s)')),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='group_concat(%s separator %s)')),
                                                  choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='listagg(%s, %s)')),
                                                  choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='string_agg(%s, %s)'))]),

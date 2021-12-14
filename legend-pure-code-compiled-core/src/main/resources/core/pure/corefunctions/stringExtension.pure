@@ -42,6 +42,15 @@ function {doc.doc = 'Upper cases the first charater of the provided string'} met
          })
 }
 
+function {doc.doc = 'Lower cases the first charater of the provided string'} meta::pure::functions::string::toLowerFirstCharacter(values : String[*]) : String[*] {
+      $values->map({s|
+         if($s->length() == 0, 
+            |$s, 
+            |$s->substring(0, 1)->toLower() + $s->substring(1)
+            )
+         })
+}
+
 function meta::pure::functions::string::lastIndexOf(str:String[1], value : String[1]):Integer[1] {
    let i = $str->indexOf($value);
    if ($i < 0, 

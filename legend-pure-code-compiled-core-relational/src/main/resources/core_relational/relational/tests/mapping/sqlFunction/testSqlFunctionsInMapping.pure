@@ -95,6 +95,20 @@ function <<test.Test>> meta::relational::tests::mapping::sqlFunction::concat::te
     assertEquals('select concat("root".string1, "root".string2) as "concat" from dataTable as "root" where concat("root".string1, "root".string2) = \'Joe Bloggs \'',$snowflakeSql);
 }
 
+function <<test.Test>> meta::relational::tests::mapping::sqlFunction::joinStrings::testToSQLStringjoinStringsMappingSnowflake():Boolean[1]
+{
+    let snowflakeSql = toSQLString(|SqlFunctionDemo.all()->project([s | $s.joinStringsResult], ['aggregatedCol']), testMapping, meta::relational::runtime::DatabaseType.Snowflake, meta::pure::router::extension::defaultRelationalExtensions());
+    assertEquals('select listagg("root".string1, \':\') as "aggregatedCol" from dataTable as "root"',$snowflakeSql);
+}
+
+function <<test.Test>> meta::relational::tests::mapping::sqlFunction::joinStrings::testToSQLStringjoinStringsExpressionSnowflake():Boolean[1]
+{
+    let stringVals = ['Joe Bloggs', 'Mrs.Smith', 'John'];
+    let separator = ':';
+    let snowflakeSql = toSQLString(|SqlFunctionDemo.all()->project([s|joinStrings($stringVals, $separator)], ['concatenatedCOL']),testMapping, meta::relational::runtime::DatabaseType.Snowflake, meta::pure::router::extension::defaultRelationalExtensions());
+    assertEquals('select concat(\'Joe Bloggs\',\':\',\'Mrs.Smith\',\':\',\'John\') as "concatenatedCOL" from dataTable as "root"',$snowflakeSql);
+}
+
 function <<test.Test>> meta::relational::tests::mapping::sqlFunction::rtrim::testProject():Boolean[1]
 {
     let result = execute(|SqlFunctionDemo.all()->project([s | $s.rtrimResult], ['rtrim']), testMapping, testDataTypeMappingRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
@@ -1107,6 +1121,7 @@ function <<test.Test>> meta::relational::tests::mapping::sqlFunction::date::test
 Class meta::relational::tests::mapping::sqlFunction::model::domain::SqlFunctionDemo
 {
    concatResult :String[1];
+   joinStringsResult :String[1];
    rtrimResult  :String[1];
    ltrimResult  :String[1];
    trimResult: String[1];
@@ -1208,6 +1223,7 @@ Mapping meta::relational::tests::mapping::sqlFunction::model::mapping::testMappi
        scope([myDB] dataTable)
        (
           concatResult : concat(string1, string2),
+          joinStringsResult : joinStrings(string1,':'),
           rtrimResult  :rtrim(string2),
           ltrimResult  :ltrim(string2),
           trimResult   :trim(string2),

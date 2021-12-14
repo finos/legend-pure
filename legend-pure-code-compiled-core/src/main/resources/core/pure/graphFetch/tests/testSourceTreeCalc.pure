@@ -1308,3 +1308,66 @@ Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::SourceToTarg
     id : if($src.a->size()==1, | $src.a->filter(a|$a.b.id->isNotEmpty() && $a->meta::pure::graphFetch::tests::sourceTreeCalc::withSubType::f()).b.id, | $src.accessClassBProperties())
   }
 )
+
+###Pure
+import meta::pure::graphFetch::tests::sourceTreeCalc::withFilters::*;
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withFilters::Source
+{
+  s : String[*];
+  x : String[0..1];
+  y : String[0..1];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withFilters::Target_A
+{
+  id : String[*];
+  b  : Target_B[1];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withFilters::Target_B
+{
+  id : String[*];
+}
+
+function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testFiltersAddProperties():Boolean[1]
+{
+  let tree = #{
+      Target_A {
+         id,
+         b
+      }
+   }#;
+
+  let expectedString = 'Source\n' +
+                        '(\n' +
+                        '  s\n' +
+                        '  x\n' +
+                        '  y\n' +
+                        ')';
+
+   let sourceTree = meta::pure::graphFetch::calculateSourceTree($tree, 
+                                                                meta::pure::graphFetch::tests::sourceTreeCalc::withFilters::SourceToTargetMappingWithFilters,
+                                                                meta::pure::router::extension::defaultExtensions());
+   assertEquals($expectedString, $sourceTree->meta::pure::graphFetch::sortTree()->meta::pure::graphFetch::treeToString());
+}
+
+###Mapping
+Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withFilters::SourceToTargetMappingWithFilters
+(
+  meta::pure::graphFetch::tests::sourceTreeCalc::withFilters::Target_A : Pure
+  {
+    ~src meta::pure::graphFetch::tests::sourceTreeCalc::withFilters::Source
+    ~filter $src.x->isNotEmpty()
+    id : $src.s,
+    b  : $src
+  }
+
+  meta::pure::graphFetch::tests::sourceTreeCalc::withFilters::Target_B : Pure
+  {
+    ~src meta::pure::graphFetch::tests::sourceTreeCalc::withFilters::Source
+    ~filter $src.y->isNotEmpty()
+    id : $src.s
+  }
+)
+

@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.compiled;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.measure.AbstractTestMeasure;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -24,15 +23,19 @@ import org.junit.BeforeClass;
 public class TestMeasureCompiled extends AbstractTestMeasure
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("testModel.pure");
         runtime.delete("testFunc.pure");
     }
-     protected static FunctionExecution getFunctionExecution()
+
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

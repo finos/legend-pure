@@ -58,6 +58,8 @@ function meta::external::language::java::factory::javaObjects():                
 function meta::external::language::java::factory::javaList():                   meta::external::language::java::metamodel::Class[1] { javaClass('java.util.List'); }
 function meta::external::language::java::factory::javaArrayList():              meta::external::language::java::metamodel::Class[1] { javaClass('java.util.ArrayList'); }
 function meta::external::language::java::factory::javaLinkedList():             meta::external::language::java::metamodel::Class[1] { javaClass('java.util.LinkedList'); }
+function meta::external::language::java::factory::javaSet():                    meta::external::language::java::metamodel::Class[1] { javaClass('java.util.Set'); }
+function meta::external::language::java::factory::javaEnumSet():                meta::external::language::java::metamodel::Class[1] { javaClass('java.util.EnumSet'); }
 function meta::external::language::java::factory::javaHashMap():                meta::external::language::java::metamodel::Class[1] { javaClass('java.util.HashMap'); }
 function meta::external::language::java::factory::javaTreeMap():                meta::external::language::java::metamodel::Class[1] { javaClass('java.util.TreeMap'); }
 function meta::external::language::java::factory::javaCalendar():               meta::external::language::java::metamodel::Class[1] { javaClass('java.util.Calendar'); }
@@ -111,7 +113,12 @@ function meta::external::language::java::factory::javaLinkedList(t:meta::externa
 
 function meta::external::language::java::factory::javaSet(t:meta::external::language::java::metamodel::Type[1]) : meta::external::language::java::metamodel::Type[1]
 {
-   ^meta::external::language::java::metamodel::ParameterizedType(rawType=javaClass('java.util.Set'), typeArguments=$t->toBoxed());
+   ^meta::external::language::java::metamodel::ParameterizedType(rawType=javaSet(), typeArguments=$t->toBoxed());
+}
+
+function meta::external::language::java::factory::javaEnumSet(t:meta::external::language::java::metamodel::Type[1]) : meta::external::language::java::metamodel::Type[1]
+{
+   ^meta::external::language::java::metamodel::ParameterizedType(rawType=javaEnumSet(), typeArguments=$t->toBoxed());
 }
 
 function meta::external::language::java::factory::javaMap(key:meta::external::language::java::metamodel::Type[1], value:meta::external::language::java::metamodel::Type[1]) : meta::external::language::java::metamodel::Type[1]
@@ -1026,6 +1033,7 @@ function meta::external::language::java::factory::inferImports(class:meta::exter
                                     ->concatenate($class.methods.returnType)
                                     ->concatenate($class.methods.parameters.type)
                                     ->typesToClasses()
+                                    ->filter(c| $c.package != anonymousPackage())
                                     ->removeDuplicates();
 
          let inSamePackage = $classesUsed->filter(c| $c.package == $class.package);
@@ -1720,6 +1728,26 @@ function meta::external::language::java::factory::j_not(expression:Code[1]):Code
    ^PrefixExpression(op='!', expression=$expression, type=javaBoolean());
 }
 
+function meta::external::language::java::factory::j_bitwiseAnd(left:Code[1], right:Code[1]):Code[1]
+{
+   ^InfixExpression(left=$left, op='&', right=$right, type=$left.type);
+}
+
+function meta::external::language::java::factory::j_bitwiseOr(left:Code[1], right:Code[1]):Code[1]
+{
+   ^InfixExpression(left=$left, op='|', right=$right, type=$left.type);
+}
+
+function meta::external::language::java::factory::j_bitwiseXor(left:Code[1], right:Code[1]):Code[1]
+{
+   ^InfixExpression(left=$left, op='^', right=$right, type=$left.type);
+}
+
+function meta::external::language::java::factory::j_bitwiseNot(left:Code[1], right:Code[1]):Code[1]
+{
+   ^InfixExpression(left=$left, op='~', right=$right, type=$left.type);
+}
+
 function meta::external::language::java::factory::j_plus(left:Code[1], right:Code[1]):Code[1]
 {
    ^InfixExpression(left=$left, op='+', right=$right, type=$left.type);
@@ -1871,6 +1899,11 @@ function meta::external::language::java::factory::j_newAnon(type:meta::external:
       pt:meta::external::language::java::metamodel::ParameterizedType[1] | ^NewAnonymous(type=$pt.rawType, typeArguments=$pt.typeArguments, arguments=$args, methods=$methods->cast(@CodeMethod)),
       cl:meta::external::language::java::metamodel::Class[1]             | ^NewAnonymous(type=$cl, arguments=$args, methods=$methods->cast(@CodeMethod))
    ]);
+}
+
+function meta::external::language::java::factory::j_method(modifiers:String[*], returnType:meta::external::language::java::metamodel::Type[1], name:String[1], parameters:Code[*], body:Code[*]):Code[1]
+{
+   j_method($modifiers, $returnType, $name, $parameters, $body->j_block());
 }
 
 function meta::external::language::java::factory::j_method(modifiers:String[*], returnType:meta::external::language::java::metamodel::Type[1], name:String[1], parameters:Code[*], body:Code[1]):Code[1]
@@ -2060,7 +2093,7 @@ function meta::external::language::java::factory::j_streamOf(of: Code[1]):Code[1
          if($of.type->isJavaStream(),
             | $of,
             |
-         if($of.type->isJavaList(),
+         if($of.type->isJavaCollection(),
             | $of->j_invoke('stream', [], javaStream($c.type->elementType())),
             |
          if($of.type->isJavaPrimitive(),
@@ -2956,11 +2989,18 @@ function meta::external::language::java::factory::javaTimePackage(): meta::exter
 function meta::external::language::java::factory::apiKnowledge(from:meta::external::language::java::metamodel::Type[1]):meta::external::language::java::metamodel::Class[1]
 {
    let inferFrom = $from->match([
+      en:meta::external::language::java::metamodel::Enumeration[1]       | $en->apiKnowledge(),
       pt:meta::external::language::java::metamodel::ParameterizedType[1] | $pt->apiKnowledge(),
       cl:meta::external::language::java::metamodel::Class[1]             | $cl->apiKnowledge(),
       cl:meta::external::language::java::metamodel::Array[1]             | arrayKnowledge(),
-      a :Any[1]                                      | javaObject()
+      a :Any[1]                                                          | javaObject()
    ])->addObjectMethods();
+}
+
+function meta::external::language::java::factory::apiKnowledge(in:meta::external::language::java::metamodel::Enumeration[1]): meta::external::language::java::metamodel::Class[1]
+{
+   $in->addMethodIfMissing(javaMethod(javaString(), 'name',    []))
+      ->addMethodIfMissing(javaMethod(javaInt(),    'ordinal', []))
 }
 
 function meta::external::language::java::factory::apiKnowledge(in:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
@@ -3037,21 +3077,22 @@ function <<access.private>> meta::external::language::java::factory::smartJavaMa
 function <<access.private>> meta::external::language::java::factory::smartJavaLang(in:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]
 {
    if($in.simpleName == 'String',
-      | $in->addMethodIfMissing(javaMethod(javaChar(),    'charAt',      [javaParam(javaInt(), 'x')]))
-           ->addMethodIfMissing(javaMethod(javaBoolean(), 'contains',    [javaParam(javaString(), 'x')]))
-           ->addMethodIfMissing(javaMethod(javaInt(),     'compareTo',   [javaParam(javaString(), 'x')]))
-           ->addMethodIfMissing(javaMethod(javaBoolean(), 'endsWith',    [javaParam(javaString(), 'x')]))
-           ->addMethodIfMissing(javaMethod(javaInt(),     'indexOf',     [javaParam(javaString(), 'x')]))
-           ->addMethodIfMissing(javaMethod(javaInt(),     'length',      []))
-           ->addMethodIfMissing(javaMethod(javaBoolean(), 'matches',     [javaParam(javaString(), 'str'), javaParam(javaString(), 'regexp')]))
-           ->addMethodIfMissing(javaMethod(javaString(),  'replace',     [javaParam(javaString(), 'x'), javaParam(javaString(), 'y')]))
-           ->addMethodIfMissing(javaMethod(javaString(),  'replaceAll',  [javaParam(javaString(), 'x'), javaParam(javaString(), 'y')]))
-           ->addMethodIfMissing(javaMethod(javaBoolean(), 'startsWith',  [javaParam(javaString(), 'x')]))
-           ->addMethodIfMissing(javaMethod(javaString(),  'substring',   [javaParam(javaInt(), 'x')]))
-           ->addMethodIfMissing(javaMethod(javaString(),  'substring',   [javaParam(javaInt(), 'x'), javaParam(javaInt(), 'y')]))
-           ->addMethodIfMissing(javaMethod(javaString(),  'toLowerCase', []))
-           ->addMethodIfMissing(javaMethod(javaString(),  'toUpperCase', []))
-           ->addMethodIfMissing(javaMethod(javaString(),  'trim',        [])),
+      | $in->addMethodIfMissing(javaMethod(javaChar(),    'charAt',           [javaParam(javaInt(), 'x')]))
+           ->addMethodIfMissing(javaMethod(javaBoolean(), 'contains',         [javaParam(javaString(), 'x')]))
+           ->addMethodIfMissing(javaMethod(javaInt(),     'compareTo',        [javaParam(javaString(), 'x')]))
+           ->addMethodIfMissing(javaMethod(javaBoolean(), 'endsWith',         [javaParam(javaString(), 'x')]))
+           ->addMethodIfMissing(javaMethod(javaBoolean(), 'equalsIgnoreCase', [javaParam(javaString(), 'x')]))
+           ->addMethodIfMissing(javaMethod(javaInt(),     'indexOf',          [javaParam(javaString(), 'x')]))
+           ->addMethodIfMissing(javaMethod(javaInt(),     'length',           []))
+           ->addMethodIfMissing(javaMethod(javaBoolean(), 'matches',          [javaParam(javaString(), 'str'), javaParam(javaString(), 'regexp')]))
+           ->addMethodIfMissing(javaMethod(javaString(),  'replace',          [javaParam(javaString(), 'x'), javaParam(javaString(), 'y')]))
+           ->addMethodIfMissing(javaMethod(javaString(),  'replaceAll',       [javaParam(javaString(), 'x'), javaParam(javaString(), 'y')]))
+           ->addMethodIfMissing(javaMethod(javaBoolean(), 'startsWith',       [javaParam(javaString(), 'x')]))
+           ->addMethodIfMissing(javaMethod(javaString(),  'substring',        [javaParam(javaInt(), 'x')]))
+           ->addMethodIfMissing(javaMethod(javaString(),  'substring',        [javaParam(javaInt(), 'x'), javaParam(javaInt(), 'y')]))
+           ->addMethodIfMissing(javaMethod(javaString(),  'toLowerCase',      []))
+           ->addMethodIfMissing(javaMethod(javaString(),  'toUpperCase',      []))
+           ->addMethodIfMissing(javaMethod(javaString(),  'trim',             [])),
       |
    if($in.simpleName == 'Boolean',
       | $in->addMethodIfMissing(javaMethod(javaBoolean(), 'parseBoolean', javaParam(javaString(), 'x'))),

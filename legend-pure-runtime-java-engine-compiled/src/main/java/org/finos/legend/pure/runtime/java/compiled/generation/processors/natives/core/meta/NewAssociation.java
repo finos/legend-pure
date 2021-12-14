@@ -17,8 +17,8 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.native
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.NativeFunctionProcessor;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 
 public class NewAssociation extends AbstractNative
 {
@@ -29,18 +29,17 @@ public class NewAssociation extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "new " + FullJavaPaths.Association_Impl + "(\"NOID\")";
+            return "CoreGen.newAssociation(" + transformedParams.get(0) + "," + transformedParams.get(1) + "," + transformedParams.get(2) + ",((CompiledExecutionSupport)es).getMetadataAccessor(), " + NativeFunctionProcessor.buildM4SourceInformation(functionExpression.getSourceInformation()) + ")";
     }
 
     @Override
     public String buildBody() {
-
         return "new SharedPureFunction<Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
                 "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return new " + FullJavaPaths.Association_Impl + "(\"NOID\");" +
+                "                return CoreGen.newAssociation((String) vars.get(0), (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property) vars.get(1), (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property) vars.get(2), ((CompiledExecutionSupport) es).getMetadataAccessor(), null);\n" +
                 "            }\n" +
                 "        }";
     }

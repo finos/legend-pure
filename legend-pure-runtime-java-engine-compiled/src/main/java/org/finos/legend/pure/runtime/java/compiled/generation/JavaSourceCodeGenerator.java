@@ -475,13 +475,15 @@ public final class JavaSourceCodeGenerator
         return
                 "public class " + name + "\n" +
                         "{\n" +
-                        "    public static MutableMap<String, SharedPureFunction> __functions = UnifiedMap.newMap();\n" +
+                        ((lambdaFunctions != null || nativeFunctions != null) ?
+                        "    public static MutableMap<String, SharedPureFunction<?>> __functions = Maps.mutable.empty();\n" +
                         "    static\n" +
                         "    {\n" +
-                        (lambdaFunctions == null ? "" : lambdaFunctions.keyValuesView().collect(keyValuePair -> "    __functions.put(\"" + keyValuePair.getOne() + "\", " + keyValuePair.getTwo() + ");\n").makeString("")) +
-                        (nativeFunctions == null ? "" : nativeFunctions.keyValuesView().collect(keyValuePair -> "    __functions.put(\"" + keyValuePair.getOne() + "\", " + keyValuePair.getTwo() + ");\n").makeString("")) +
-                        "    }\n" +
-                        "\n" +
+                        (lambdaFunctions == null ? "" : lambdaFunctions.keyValuesView().collect(keyValuePair -> "        __functions.put(\"" + keyValuePair.getOne() + "\", " + keyValuePair.getTwo() + ");\n").makeString("")) +
+                        (nativeFunctions == null ? "" : nativeFunctions.keyValuesView().collect(keyValuePair -> "        __functions.put(\"" + keyValuePair.getOne() + "\", " + keyValuePair.getTwo() + ");\n").makeString("")) +
+                        "    }\n" :
+                        "    public static MutableMap<String, SharedPureFunction<?>> __functions = Maps.fixedSize.empty();\n"
+                        ) +
                         (functionDefinitions == null || functionDefinitions.isEmpty() ? "" : functionDefinitions.makeString("\n", "\n\n", "\n")) +
                         "}";
     }

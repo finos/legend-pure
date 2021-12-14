@@ -24,6 +24,7 @@ import meta::pure::executionPlan::engine::java::graphFetch::common::*;
 import meta::pure::executionPlan::engine::java::naming::*;
 import meta::pure::executionPlan::engine::java::platform::*;
 import meta::pure::executionPlan::engine::java::typeInfo::*;
+import meta::pure::functions::hash::*;
 import meta::pure::mapping::*;
 import meta::pure::mapping::modelToModel::inMemory::*;
 import meta::pure::milestoning::*;
@@ -70,16 +71,6 @@ function meta::pure::executionPlan::engine::java::graphFetch::common::generateCo
    );
 }
 
-function meta::pure::executionPlan::engine::java::graphFetch::common::classSizeIdentifier():String[1]
-{
-   'classSize$'
-}
-
-function meta::pure::executionPlan::engine::java::graphFetch::common::instanceSizeIdentifier():String[1]
-{
-   'instanceSize$'
-}
-
 function meta::pure::executionPlan::engine::java::graphFetch::common::typeFromStoreLocalNode(storeLocalNode: LocalGraphFetchExecutionNode[1]):meta::pure::metamodel::type::Class<Any>[1]
 {
    if ($storeLocalNode.resultType->cast(@ClassResultType).setImplementations->size() > 1,
@@ -111,9 +102,12 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
    let propertiesProject = $implClass->updateImplementationClassWithProperties($node, $resultClass, $context);
    let storeProject      = $implClass->updateImplementationClassWithStoreSpecificFieldsAndMethods($node, $context, $extensions, $debug);
    let mergedProject     = mergeProjects([$implProject, $propertiesProject, $storeProject]);
-   let withSizeMethods   = $mergedProject->resolve($implClass)->updateImplementationClassWithInstanceSizeMethods($resultClass, $context);
+   let withSizeMethods   = $mergedProject->resolve($implClass)->updateImplementationClassWithInstanceSizeMethods($context);
 
-   mergeProjects([$mergedProject, $withSizeMethods]);
+   let mergedProjectWithSizeMethods = mergeProjects([$mergedProject, $withSizeMethods]);
+   let withSerializableMethods      = $mergedProjectWithSizeMethods->resolve($implClass)->updateImplementationClassWithSerializableMethods($context);
+
+   mergeProjects([$mergedProjectWithSizeMethods, $withSerializableMethods]);
 }
 
 function meta::pure::executionPlan::engine::java::graphFetch::common::createGraphInstance(conventions: Conventions[1], impl: meta::external::language::java::metamodel::Class[1], value: Code[1]): Code[1]
@@ -188,70 +182,28 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
    ]->concatenate($extensions.java_graphFetch_graphFetchCommon_updateImplementationClassWithStoreSpecificFieldsAndMethods->map(f|$f->eval($implClass, $context, $extensions, $debug)))->toOneMany())
 }
 
-function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::common::updateImplementationClassWithInstanceSizeMethods(implClass: meta::external::language::java::metamodel::Class[1], nodeType: meta::pure::metamodel::type::Class<Any>[1], context: GenerationContext[1]): Project[1]
-{
-   let conventions = $context.conventions;
-
-   let typePathToSizeMap = newMap([
-      pair($conventions->pureTypeToJavaType(String, ZeroOne)->typeToString(), 24),
-      pair($conventions->pureTypeToJavaType(Integer, PureOne)->typeToString(), 8),
-      pair($conventions->pureTypeToJavaType(Integer, ZeroOne)->typeToString(), 24),
-      pair($conventions->pureTypeToJavaType(Float, PureOne)->typeToString(), 8),
-      pair($conventions->pureTypeToJavaType(Float, ZeroOne)->typeToString(), 24),
-      pair($conventions->pureTypeToJavaType(Boolean, PureOne)->typeToString(), 1),
-      pair($conventions->pureTypeToJavaType(Boolean, ZeroOne)->typeToString(), 17),
-      pair($conventions->pureTypeToJavaType(Decimal, ZeroOne)->typeToString(), 92),
-      pair($conventions->pureTypeToJavaType(Date, ZeroOne)->typeToString(), 64)
-   ]);
-
-   let jThis = j_this($implClass);
-   let size  = javaLong()->j_variable('size');
-   
-   let classSizeMethod = javaMethod(
-      ['private', 'static'], javaLong(), $conventions->getterName(classSizeIdentifier()), [],
-      j_long(
-         $implClass.fields
-            ->filter(x | !$x.modifiers->contains(meta::external::language::java::metamodel::Modifier.Static))
-            ->map(x | let size = $typePathToSizeMap->get($x.type->typeToString());if($size->isEmpty(), | 24, | $size->toOne());)
-            ->sum() + 12
-      )->j_return()
-   );
-
-   let instanceSizeMethod = javaMethod(
-      ['public'], javaLong(), $conventions->getterName(instanceSizeIdentifier()), [],
-      $size->j_declare($implClass->j_invoke($conventions->getterName(classSizeIdentifier()), [], javaLong()))->concatenate(
-         $implClass.fields
-            ->filter(x | !$x.modifiers->contains(meta::external::language::java::metamodel::Modifier.Static))
-            ->filter(x | $x.type->typeToString() ==  $conventions->pureTypeToJavaType(String, ZeroOne)->typeToString())
-            ->map(x | j_if($jThis->j_field($x.name, javaString())->j_ne(j_null()), $size->j_assign($size->j_plus($jThis->j_field($x.name, javaString())->j_invoke('length', [], javaLong())))))
-      )->concatenate(
-         $implClass.fields
-            ->filter(x | !$x.modifiers->contains(meta::external::language::java::metamodel::Modifier.Static))
-            ->filter(x | $x.type->isJavaList())
-            ->map(x |
-               let elType = $x.type->elementTypeOfJavaList();
-               j_if($jThis->j_field($x.name, javaString())->j_ne(j_null()),
-                  j_for(j_parameter($elType, 'i'), $jThis->j_field($x.name),
-                     j_if(j_parameter($elType, 'i')->j_ne(j_null()),
-                        $size->j_assign($size->j_plus(if($typePathToSizeMap->get($elType->typeToString())->isEmpty(), | j_long(20), | j_long($typePathToSizeMap->get($elType->typeToString())->toOne() - 4))))->concatenate(
-                           if ($elType->typeToString() == $conventions->pureTypeToJavaType(String, ZeroOne)->typeToString(),
-                               | $size->j_assign($size->j_plus(j_parameter($elType, 'i')->j_invoke('length', [], javaLong()))),
-                               | []
-                           )
-                        )->toOneMany()
-                     )->j_block()
-                  )->j_block()
-               );
-            )
-      )->concatenate(
-         $size->j_return()
-      )
-   );
-
-   newProject()->addClasses($implClass->addMethods([$classSizeMethod, $instanceSizeMethod]));
-}
-
 function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::common::passThruProperty(setImpl:SetImplementation[1], property:AbstractProperty<Any>[1]):Boolean[1]
 {
    $setImpl->meta::pure::mapping::modelToModel::inMemory::isNoMappingPassThru($property)
+}
+
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::common::updateImplementationClassWithSerializableMethods(implClass: meta::external::language::java::metamodel::Class[1], context: GenerationContext[1]): Project[1]
+{
+   let codeString  = $implClass->meta::external::language::java::serialization::classToString();
+   let codeHash    = $codeString->hash(HashType.SHA256);
+
+   let charToIntMap = newMap([
+      pair('0', 0), pair('1', 1), pair('2', 2), pair('3', 3),
+      pair('4', 4), pair('5', 5), pair('6', 6), pair('7', 7),
+      pair('8', 8), pair('9', 9), pair('a', 10), pair('b', 11),
+      pair('c', 12), pair('d', 13), pair('e', 14), pair('f', 15)
+   ]);
+   let prime    = floor(pow(2, 31) - 1);
+   let uidValue = $codeHash->toLower()->chunk(1)->fold({c, h | (31 * $h) + $charToIntMap->get($c)->toOne() + 47}, 0)->mod($prime);
+
+   newProject()->addClasses(
+      $implClass
+         ->implements(javaSerializable())
+         ->addField(javaField(['private', 'static', 'final'], javaLong(), 'serialVersionUID', j_long($uidValue)->codeToString()))
+   );
 }

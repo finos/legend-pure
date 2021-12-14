@@ -15,6 +15,9 @@
 package org.finos.legend.pure.runtime.java.compiled.generation;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
@@ -23,12 +26,8 @@ import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.block.factory.Functions0;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.finos.legend.pure.m3.bootstrap.generator.M3CoreInstanceGenerator;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -59,7 +58,7 @@ public class ProcessorContext
     private final IdBuilder idBuilder;
 
     private int id = 0;
-    private final MutableMap<String, Object> objects = UnifiedMap.newMap();
+    private final MutableMap<String, Object> objects = Maps.mutable.empty();
 
     public ProcessorContext(ProcessorSupport support, Iterable<? extends CompiledExtension> compiledExtensions, IdBuilder idBuilder, boolean includePureStackTrace)
     {
@@ -113,17 +112,17 @@ public class ProcessorContext
 
     public MutableSet<CoreInstance> getProcessedClasses(Class<?> processorClass)
     {
-        return this.processedClasses.getIfAbsentPut(processorClass, Functions0.newUnifiedSet());
+        return this.processedClasses.getIfAbsentPut(processorClass, Sets.mutable::empty);
     }
 
     public MutableSet<CoreInstance> getProcessedMeasures(Class<?> processorClass)
     {
-        return this.processedMeasures.getIfAbsentPut(processorClass, Functions0.newUnifiedSet());
+        return this.processedMeasures.getIfAbsentPut(processorClass, Sets.mutable::empty);
     }
 
     public MutableSet<CoreInstance> getProcessedUnits(Class<?> processorClass)
     {
-        return this.processedUnits.getIfAbsentPut(processorClass, Functions0.newUnifiedSet());
+        return this.processedUnits.getIfAbsentPut(processorClass, Sets.mutable::empty);
     }
 
     public void registerFunctionDefinition(CoreInstance function, String javaCode)
@@ -149,7 +148,7 @@ public class ProcessorContext
 
     public void registerLambdaFunction(String sourceId, String lambdaId, String javaCode)
     {
-        String oldJavaCode = this.lambdaFunctionsByIdBySource.getIfAbsentPut(sourceId, Functions0.newUnifiedMap()).put(lambdaId, javaCode);
+        String oldJavaCode = this.lambdaFunctionsByIdBySource.getIfAbsentPut(sourceId, Maps.mutable::empty).put(lambdaId, javaCode);
         if ((oldJavaCode != null) && !oldJavaCode.equals(javaCode))
         {
             throw new RuntimeException("Lambda " + lambdaId + " defined more than once with different Java code in " + sourceId + ".\n\nCODE 1:\n" + oldJavaCode + "\n\n\n==================\nCODE 2:\n" + javaCode);
@@ -169,7 +168,7 @@ public class ProcessorContext
 
     public void registerNativeLambdaFunction(CoreInstance nativeFunction, Native nat)
     {
-        this.nativeLambdaFunctionsByNameBySource.getIfAbsentPut(IdBuilder.sourceToId(nativeFunction.getSourceInformation()), Functions0.newUnifiedMap()).put(nativeFunction.getName(), nat.buildBody());
+        this.nativeLambdaFunctionsByNameBySource.getIfAbsentPut(IdBuilder.sourceToId(nativeFunction.getSourceInformation()), Maps.mutable::empty).put(nativeFunction.getName(), nat.buildBody());
     }
 
     public RichIterable<String> getSourcesWithNativeLambdaFunctions()
