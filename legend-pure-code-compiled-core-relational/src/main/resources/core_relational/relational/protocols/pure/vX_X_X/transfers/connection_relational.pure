@@ -129,6 +129,13 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
          _type = 'delegatedKerberos',
          serverPrincipal = $d.serverPrincipal
       ),
+      u:meta::pure::alloy::connections::alloy::authentication::UserNamePasswordAuthenticationStrategy[1] |
+      ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::UserNamePasswordAuthenticationStrategy(
+         _type = 'userNamePassword',
+         baseVaultReference = $u.baseVaultReference,
+         userNameVaultReference = $u.userNameVaultReference,
+         passwordVaultReference = $u.passwordVaultReference
+      ),
       d:meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DefaultH2AuthenticationStrategy(
             _type = 'h2Default'
