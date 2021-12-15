@@ -234,7 +234,7 @@ meta::relational::tests::tds::tdsWindow::testSingleWindowWithSortWithRankAlloyOn
 }
 
 
-function <<test.Test, test.AlloyOnly>> {meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X'}
+function <<test.Test, test.AlloyOnly>> {meta::pure::executionPlan::profiles::serverVersion.start='v1_22_0'}
 meta::relational::tests::tds::tdsWindow::testPercentileWindowFunction():Boolean[1]
 {
    let result1 = execute(
