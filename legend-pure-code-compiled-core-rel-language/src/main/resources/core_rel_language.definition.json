@@ -1,0 +1,5 @@
+{
+    "name" : "core_rel_language",
+    "pattern" : "(meta)(::.*)?",
+    "dependencies" : ["platform", "core"]
+}

@@ -31,33 +31,24 @@
 
     <modules>
         <module>legend-pure-m4</module>
-
         <module>legend-pure-m3-bootstrap-generator</module>
         <module>legend-pure-m3-core</module>
         <module>legend-pure-m3-dsl-path</module>
         <module>legend-pure-m3-dsl-graph</module>
         <module>legend-pure-m3-platform</module>
-
         <module>legend-pure-runtime-java-engine-interpreted</module>
         <module>legend-pure-runtime-java-engine-compiled</module>
         <module>legend-pure-runtime-java-engine-shared</module>
-
         <module>legend-pure-m2-external-json</module>
         <module>legend-pure-runtime-java-extension-external-json</module>
-
         <module>legend-pure-m2-dsl-mapping</module>
         <module>legend-pure-runtime-java-extension-dsl-mapping</module>
-
         <module>legend-pure-m2-dsl-diagram</module>
         <module>legend-pure-runtime-java-extension-dsl-diagram</module>
-
         <module>legend-pure-m2-store-relational</module>
         <module>legend-pure-runtime-java-extension-store-relational</module>
-
         <module>legend-pure-runtime-java-extension-external-shared</module>
-
         <module>legend-pure-configuration-external</module>
-
         <module>legend-pure-code-compiled-platform</module>
         <module>legend-pure-code-compiled-core</module>
         <module>legend-pure-code-compiled-core-relational</module>
@@ -66,15 +57,12 @@
         <module>legend-pure-code-compiled-core-external-format-flatdata</module>
         <module>legend-pure-code-compiled-core-external-format-json</module>
         <module>legend-pure-code-compiled-core-external-format-xml</module>
-
         <module>legend-pure-code-java-compiled-core</module>
-
         <module>legend-pure-maven-compilation-par</module>
         <module>legend-pure-maven-java-compiled</module>
-
         <module>legend-pure-ide-light</module>
-
         <module>legend-pure-test-reports</module>
+        <module>legend-pure-code-compiled-core-rel-language</module>
     </modules>
 
     <properties>
@@ -431,6 +419,11 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-code-compiled-core-relational</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-code-compiled-core-rel-language</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

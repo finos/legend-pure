@@ -1,0 +1,64 @@
+import meta::rel::utils::*;
+
+Class meta::rel::utils::Result { }
+
+Class meta::rel::utils::Ok<T|m> extends Result {
+  value: T[m];
+}
+
+Class meta::rel::utils::Error<T|m> extends Result {
+  error: T[m];
+}
+
+function meta::rel::utils::ok<T|m>(value: T[m]): Ok<T|m>[1] {
+  ^Ok<T|m>(value=$value);
+}
+
+function meta::rel::utils::error<T|m>(error: T[m]): Error<T|m>[1] {
+  ^Error<T|m>(error=$error);
+}
+
+// function meta::rel::utils::ok<T>(v:T[1]):meta::rel::utils::Result<T>[1] {
+//  ^meta::rel::utils::Result<T>(value=$v)
+// }
+
+//function meta::rel::utils::error(error:Any[1]):meta::rel::utils::Result<Any>[1] {
+//    ^meta::rel::utils::Result<Any>(error=$error)
+//}
+
+// function meta::rel::utils::and_then():String[1] {
+//  'and_then';
+// }
+
+function meta::rel::utils::and_then<S>(value: Result[1], fn: FunctionDefinition<{S[1]->Result[1]}>[1]): Result[1] {
+  $value->match([
+    v:Ok<S|m>[1] | eval($fn, $v.value),
+    v:Error<Any|m>[1] | $v
+  ]);
+}
+
+function meta::rel::utils::then<S,T|m>(value: Ok<S|m>[1], fn: FunctionDefinition<{S[1]->T[1]}>[1]): Ok<T|m>[1] {
+  //$value->match([
+  //  v:Ok<S|m>[1] | ok(eval($fn, $v.value)),
+  //  v:Error<Any|m>[1] | $v
+  //]);
+  ok(
+    $value.value->map(v | eval($fn, $v))
+  );
+}
+
+function meta::rel::utils::collect(results: Result[*]): Result[1] {
+  let errors = $results->filter(r | $r->instanceOf(Error));
+
+  let collected = if($errors->isEmpty(), |
+    ok(
+      $results->map(r | $r->cast(@Ok<Any|*>).value)
+    ),
+  |
+    error(
+      $errors->map(r | $r->cast(@Error<Any|*>).error)
+    )
+  );
+
+  $collected;
+}
