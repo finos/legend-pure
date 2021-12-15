@@ -647,7 +647,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    //            as "limitoffset_via_window_subquery" where "limitoffset_via_window_subquery".row_number < 10) as x
    // Also see https://www.jooq.org/doc/3.1/manual/sql-building/sql-statements/select-statement/limit-clause/#N467C4
 
-   let s = if($isSubSelect && ($dbConfig.dbType == DatabaseType.SybaseIQ) && ($selectQuery.fromRow->isNotEmpty() || $selectQuery.toRow->isNotEmpty()),
+   let s = if(($isSubSelect && ($dbConfig.dbType == DatabaseType.SybaseIQ) && ($selectQuery.fromRow->isNotEmpty() || $selectQuery.toRow->isNotEmpty())) || ($dbConfig.dbType == DatabaseType.MemSQL && $selectQuery.fromRow->isNotEmpty() && $selectQuery.toRow->isEmpty()),
               | $selectQuery->rewriteSliceAsWindowFunction(),
               | $selectQuery
               );
