@@ -18,39 +18,38 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
-import org.junit.*;
-import org.junit.rules.ExpectedException;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("source.pure");
         runtime.delete("test.pure");
         runtime.delete("domain.pure");
     }
 
-    @Rule
-    public final ExpectedException expectedEx = ExpectedException.none();
-
     //mixed
 
     @Test
-    public void testProcessingDateDoesntPropagateToBusinessContext() throws Exception
+    public void testProcessingDateDoesntPropagateToBusinessContext()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("The property 'exchange' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -66,16 +65,14 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "   {|Product.all(%2015).classification.exchange.name}\n" +
                         "}");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:13 column:40), \"The property 'exchange' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]\"", e.getMessage());
     }
 
     @Test
-    public void testBusinessDateDoesntPropagateToBusinessContext() throws Exception
+    public void testBusinessDateDoesntPropagateToBusinessContext()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("The property 'exchange' is milestoned with stereotypes: [ processingtemporal ] and requires date parameters: [ processingDate ]");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -91,15 +88,16 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "   {|Product.all(%2015).classification.exchange.name}\n" +
                         "}");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:13 column:40), \"The property 'exchange' is milestoned with stereotypes: [ processingtemporal ] and requires date parameters: [ processingDate ]\"", e.getMessage());
     }
 
     // map
 
     @Test
-    public void testProcessingMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughMapToNoArgMilestonedPropertyInLambda() throws Exception
+    public void testProcessingMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughMapToNoArgMilestonedPropertyInLambda()
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -112,13 +110,13 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "   {|Product.all(%2015).classification->map(c|$c.exchangeName)}\n" +
                         "}");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
-    public void testMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughMapToNoArgMilestonedPropertyInLambda() throws Exception
+    public void testMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughMapToNoArgMilestonedPropertyInLambda()
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -137,17 +135,13 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "   {|Product.all(%2015).classification->map(t|$t.exchange.exchangeName)}\n" +
                         "}\n");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
-    public void testMilestoningContextNotAllowedToPropagateFromEdgePointPropertyThroughMapToNoArgMilestonedPropertyInLambda() throws Exception
+    public void testMilestoningContextNotAllowedToPropagateFromEdgePointPropertyThroughMapToNoArgMilestonedPropertyInLambda()
     {
-
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:15 column:61), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -165,16 +159,14 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "   {|Product.all(%2015).classificationAllVersions->map(t|$t.exchange.exchangeName)}\n" +
                         "}");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:15 column:61), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"", e.getMessage());
     }
 
     @Test
-    public void testMilestoningContextNotAllowedToPropagateFromDerivedPropertyThroughMapToNoArgMilestonedPropertyInLambda() throws Exception
+    public void testMilestoningContextNotAllowedToPropagateFromDerivedPropertyThroughMapToNoArgMilestonedPropertyInLambda()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:16 column:59), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -193,16 +185,14 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "   {|Product.all(%2015).myClassification(%2015)->map(t|$t.exchange.exchangeName)}\n" +
                         "}\n");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:16 column:59), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"", e.getMessage());
     }
 
     @Test
-    public void testMilestoningContextNotAllowedToPropagateFromNoArgQualifiedPropertyThroughMapToFilter() throws Exception
+    public void testMilestoningContextNotAllowedToPropagateFromNoArgQualifiedPropertyThroughMapToFilter()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:16 column:97), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -221,40 +211,42 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "   {|Product.all(%2015).classification->map(c|^Classification(businessDate=%2015))->filter(t|$t.exchange.exchangeName == '')}\n" +
                         "}");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:16 column:97), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"", e.getMessage());
     }
 
     // filter
     @Test
-    public void testMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughFilterToNoArgMilestonedPropertyInLambda() throws Exception
+    public void testMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughFilterToNoArgMilestonedPropertyInLambda()
     {
         testMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughFilterToNoArgMilestonedPropertyInLambda(false);
         testMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughFilterToNoArgMilestonedPropertyInLambda(true);
     }
 
     @Test
-    public void testMilestoningContextNotAllowedToPropagateFromAllThroughEdgePointPropertyToNoArgMilestonedPropertyInFilter() throws Exception
+    public void testMilestoningContextNotAllowedToPropagateFromAllThroughEdgePointPropertyToNoArgMilestonedPropertyInFilter()
     {
         testMilestoningContextNotAllowedToPropagateFromAllThroughEdgePointPropertyToNoArgMilestonedPropertyInFilter(false, 66);
-        testMilestoningContextNotAllowedToPropagateFromAllThroughEdgePointPropertyToNoArgMilestonedPropertyInFilter(true, 70);
+        testMilestoningContextNotAllowedToPropagateFromAllThroughEdgePointPropertyToNoArgMilestonedPropertyInFilter(true, 91);
     }
 
     @Test
-    public void testMilestoningContextNotAllowedToPropagateFromAllThroughDerivedPropertyToNoArgMilestonedPropertyInFilter() throws Exception
+    public void testMilestoningContextNotAllowedToPropagateFromAllThroughDerivedPropertyToNoArgMilestonedPropertyInFilter()
     {
         testMilestoningContextNotAllowedToPropagateFromAllThroughDerivedPropertyToNoArgMilestonedPropertyInFilter(false, 62);
-        testMilestoningContextNotAllowedToPropagateFromAllThroughDerivedPropertyToNoArgMilestonedPropertyInFilter(true, 73);
+        testMilestoningContextNotAllowedToPropagateFromAllThroughDerivedPropertyToNoArgMilestonedPropertyInFilter(true, 87);
     }
 
-    public void testMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughFilterToNoArgMilestonedPropertyInLambda(boolean extraFilter) throws Exception
+    public void testMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughFilterToNoArgMilestonedPropertyInLambda(boolean extraFilter)
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
-                        "   myClassification(bd:Date[1]){^Classification(businessDate=$bd)} : Classification[*];\n" +
+                        "   myClassification(bd:Date[1]){^Classification(name='',businessDate=$bd)} : Classification[*];\n" +
                         "}\n" +
                         "Class  <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
+                        "   name : String[1];\n" +
                         "   exchange : Exchange[0..1];\n" +
                         "}\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::ExtendedClassification extends Classification{\n" +
@@ -264,25 +256,22 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
-                        "   {|Product.all(%2015).classification" + (extraFilter ? "->filter(t|$t.exchange.exchangeName == '')" : "") + "->filter(t2|$t2.exchange.exchangeName == '')}\n" +
+                        "   {|Product.all(%2015).classification" + (extraFilter ? "->filter(t|$t.name == '')" : "") + "->filter(t2|$t2.exchange.exchangeName == '')}\n" +
                         "}");
 
-        this.runtime.compile();
-        this.runtime.delete("sourceId.pure");
+        runtime.compile();
+        runtime.delete("sourceId.pure");
     }
 
-    public void testMilestoningContextNotAllowedToPropagateFromAllThroughEdgePointPropertyToNoArgMilestonedPropertyInFilter(boolean extraFilter, int colErrorNo) throws Exception
+    public void testMilestoningContextNotAllowedToPropagateFromAllThroughEdgePointPropertyToNoArgMilestonedPropertyInFilter(boolean extraFilter, int colErrorNo)
     {
-
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:15 column:" + colErrorNo + "), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
                         "}\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
+                        "   name : String[1];\n" +
                         "   exchange : Exchange[0..1];\n" +
                         "}\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::ExtendedClassification extends Classification{\n" +
@@ -292,24 +281,24 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
-                        "   {|Product.all(%2015).classificationAllVersions" + (extraFilter ? "->filter(t|$t.exchange.exchangeName == ''" : "") + "->filter(t2|$t2.exchange.exchangeName == '')}\n" +
+                        "   {|Product.all(%2015).classificationAllVersions" + (extraFilter ? "->filter(t|$t.name == '')" : "") + "->filter(t2|$t2.exchange.exchangeName == '')}\n" +
                         "}");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:16 column:" + colErrorNo + "), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"", e.getMessage());
+        runtime.delete("sourceId.pure");
     }
 
-    public void testMilestoningContextNotAllowedToPropagateFromAllThroughDerivedPropertyToNoArgMilestonedPropertyInFilter(boolean extraFilter, int colErrorNo) throws Exception
+    public void testMilestoningContextNotAllowedToPropagateFromAllThroughDerivedPropertyToNoArgMilestonedPropertyInFilter(boolean extraFilter, int colErrorNo)
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:16 column:" + colErrorNo + "), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
-                        "   myClassification(bd:Date[1]){^Classification(businessDate=$bd)} : Classification[*];\n" +
+                        "   myClassification(bd:Date[1]){^Classification(name='',businessDate=$bd)} : Classification[*];\n" +
                         "}\n" +
                         "Class  <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
+                        "   name : String[1];\n" +
                         "   exchange : Exchange[0..1];\n" +
                         "}\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::ExtendedClassification extends Classification{\n" +
@@ -319,18 +308,19 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
-                        "   {|Product.all(%2015).myClassification(%2015)" + (extraFilter ? "->filter(t|$t.exchange.exchangeName == ''" : "") + "->filter(t|$t.exchange.exchangeName == '')}\n" +
+                        "   {|Product.all(%2015).myClassification(%2015)" + (extraFilter ? "->filter(t|$t.name == '')" : "") + "->filter(t|$t.exchange.exchangeName == '')}\n" +
                         "}");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:17 column:" + colErrorNo + "), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"", e.getMessage());
+        runtime.delete("sourceId.pure");
     }
 
     // exists
     @Test
-    public void testMilestoningContextAllowedToPropagateFromAllThroughFilterThroughExistsToNoArgMilestonedPropertyInLambda() throws Exception
+    public void testMilestoningContextAllowedToPropagateFromAllThroughFilterThroughExistsToNoArgMilestonedPropertyInLambda()
     {
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -348,16 +338,13 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "{\n" +
                         "   {|Product.all(%2015)->filter(p|$p.classification->exists(c|$c.exchange.exchangeName == ''))}\n" +
                         "}");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
-    public void testMilestoningContextNotAllowedToPropagateFromEdgePointPropertyThroughExistsToNoArgMilestonedPropertyInLambda() throws Exception
+    public void testMilestoningContextNotAllowedToPropagateFromEdgePointPropertyThroughExistsToNoArgMilestonedPropertyInLambda()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:15 column:77), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -374,17 +361,15 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "{\n" +
                         "   {|Product.all(%2015)->filter(p|$p.classificationAllVersions->exists(c|$c.exchange.exchangeName == ''))}\n" +
                         "}");
-        this.runtime.compile();
 
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:15 column:77), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"", e.getMessage());
     }
 
     @Test
-    public void testMilestoningContextNotAllowedToPropagateFromDerivedPropertyThroughExistsToNoArgMilestonedPropertyInLambda() throws Exception
+    public void testMilestoningContextNotAllowedToPropagateFromDerivedPropertyThroughExistsToNoArgMilestonedPropertyInLambda()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:16 column:75), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -403,13 +388,14 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "   {|Product.all(%2015)->filter(p|$p.myClassification(%2015)->exists(c|$c.exchange.exchangeName == ''))}\n" +
                         "}");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:16 column:75), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"", e.getMessage());
     }
 
     @Test
-    public void testMilestoningContextAllowedToPropagateThroughSubTypeToNoArgMilestonedProperty() throws Exception
+    public void testMilestoningContextAllowedToPropagateThroughSubTypeToNoArgMilestonedProperty()
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
@@ -430,13 +416,13 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}" +
                         "");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
-    public void testMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughMapThroughSubTypeToNoArgMilestonedPropertyInLambda() throws Exception
+    public void testMilestoningContextAllowedToPropagateFromNoArgQualifiedPropertyThroughMapThroughSubTypeToNoArgMilestonedPropertyInLambda()
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
@@ -456,16 +442,13 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "   {|Product.all(%2015).classification->map(t|$t->subType(@ExtendedClassification).exchange.exchangeName)}\n" +
                         "}");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
-    public void testMilestoningContextNotAllowedToPropagateThroughFunctionWhichDoesNotAllowMilestoningContextPropagation() throws Exception
+    public void testMilestoningContextNotAllowedToPropagateThroughFunctionWhichDoesNotAllowMilestoningContextPropagation()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:10 column:50), \"No-Arg milestoned property: 'classification' must be either called in a milestoning context or supplied with [businessDate] parameters\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -479,13 +462,14 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}" +
                         "function outOfScopeFunction<T>(value:T[*], func:Function<{T[1]->Boolean[1]}>[1]):T[*]{$value}\n");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:10 column:50), \"No-Arg milestoned property: 'classification' must be either called in a milestoning context or supplied with [businessDate] parameters\"", e.getMessage());
     }
 
     @Test
-    public void testMilestoningContextAllowedToPropagateFromAllToMultipleNoArgQualifiedProperties() throws Exception
+    public void testMilestoningContextAllowedToPropagateFromAllToMultipleNoArgQualifiedProperties()
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -502,13 +486,13 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}" +
                         "");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
-    public void testMilestoningContextAllowedToPropagateAsVariableFromAllToNoArgQualifiedProperty() throws Exception
+    public void testMilestoningContextAllowedToPropagateAsVariableFromAllToNoArgQualifiedProperty()
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -523,16 +507,13 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}" +
                         "");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
-    public void testMilestoningContextAllowedToPropagateFromMilestonedQualifiedPropertyToNoArgMilestonedProperty() throws Exception
+    public void testMilestoningContextAllowedToPropagateFromMilestonedQualifiedPropertyToNoArgMilestonedProperty()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:14 column:49), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -549,16 +530,14 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "   {|Product.all(%2015).myClassification(%2015).exchange.exchangeName}\n" +
                         "}");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:14 column:49), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"", e.getMessage());
     }
 
     @Test
-    public void testMilestoningContextNotAllowedToPropagateFromAllThroughEdgePointPropertyToNoArgMilestonedProperty() throws Exception
+    public void testMilestoningContextNotAllowedToPropagateFromAllThroughEdgePointPropertyToNoArgMilestonedProperty()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:13 column:51), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[1];\n" +
@@ -575,16 +554,14 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}" +
                         "");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:13 column:51), \"No-Arg milestoned property: 'exchange' must be either called in a milestoning context or supplied with [businessDate] parameters\"", e.getMessage());
     }
 
     @Test
-    public void testProcessingErrorWhenMilestoningContextIsNotAvailableToNoArgMilestonedProperty() throws Exception
+    public void testProcessingErrorWhenMilestoningContextIsNotAvailableToNoArgMilestonedProperty()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:10 column:18), \"The property 'product' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class meta::test::milestoning::domain::Order{\n" +
                         "   product : Product[1];\n" +
@@ -598,13 +575,14 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}" +
                         "");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:10 column:18), \"The property 'product' is milestoned with stereotypes: [ businesstemporal ] and requires date parameters: [ businessDate ]\"", e.getMessage());
     }
 
     @Test
-    public void testNoProcessingErrorWhenMilestoningContextIsNotAvailableFromSourceQualifiedMilestonedPropertyWithDateParam() throws Exception
+    public void testNoProcessingErrorWhenMilestoningContextIsNotAvailableFromSourceQualifiedMilestonedPropertyWithDateParam()
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class meta::test::milestoning::domain::Order{\n" +
                         "   product : Product[1];\n" +
@@ -618,13 +596,13 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}" +
                         "");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
-    public void testMilestoningContextAllowedToPropagateThroughAutoMappedQualifiedMilestonedPropertyWithDateParam() throws Exception
+    public void testMilestoningContextAllowedToPropagateThroughAutoMappedQualifiedMilestonedPropertyWithDateParam()
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class meta::test::milestoning::domain::Order{\n" +
                         "   orderEvents : OrderEvents[*];\n" +
@@ -641,14 +619,13 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}" +
                         "");
 
-        this.runtime.compile();
-
+        runtime.compile();
     }
 
     @Test
-    public void testMilestoningContextAllowedToPropagateFromAllThroughProjectToNoArgMilestonedPropertyInLambda() throws Exception
+    public void testMilestoningContextAllowedToPropagateFromAllThroughProjectToNoArgMilestonedPropertyInLambda()
     {
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[1];\n" +
@@ -669,16 +646,13 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         " []" +
                         "}"
         );
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
-    public void testLatestDateIsNotUsableInANonMilestonedPropertyExpression() throws Exception
+    public void testLatestDateIsNotUsableInANonMilestonedPropertyExpression()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:11 column:25), \"%latest may only be used as an argument to milestoned properties\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class  <<temporal.processingtemporal>> meta::test::milestoning::domain::Order{\n" +
                         "   product : Product[0..1];\n" +
@@ -693,39 +667,41 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "}\n"
         );
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:11 column:25), \"%latest may only be used as an argument to milestoned properties\"", e.getMessage());
     }
 
-    /** bitemporal */
+    /**
+     * bitemporal
+     */
     @Test
-    public void testBiTemporalDatesNotSupplied() throws Exception
+    public void testBiTemporalDatesNotSupplied()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:domain.pure line:4 column:38), \"The property 'createdLocation' is milestoned with stereotypes: [ bitemporal ] and requires date parameters: [ processingDate, businessDate ]\"");
-
         String domain = "import meta::relational::tests::milestoning::*;\n" +
                 "Class meta::relational::tests::milestoning::Order { createdLocation : Location[0..1]; }\n" +
                 "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Location{ place : String[1];}\n" +
                 "function go():Any[*] { {|Order.all().createdLocation.place} }";
 
-        this.runtime.createInMemorySource("domain.pure", domain);
-        this.runtime.compile();
+        runtime.createInMemorySource("domain.pure", domain);
+
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:domain.pure line:4 column:38), \"The property 'createdLocation' is milestoned with stereotypes: [ bitemporal ] and requires date parameters: [ processingDate, businessDate ]\"", e.getMessage());
     }
 
     @Test
-    public void testBiTemporalDatesArePropagatedFromBiTemporalRoot() throws Exception
+    public void testBiTemporalDatesArePropagatedFromBiTemporalRoot()
     {
         String domain = "import meta::relational::tests::milestoning::*;\n" +
                 "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Order { createdLocation : Location[0..1]; }\n" +
                 "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Location{ place : String[1];}\n" +
                 "function go():Any[*] { {|Order.all(%9999,%2017).createdLocation.place} }";
 
-        this.runtime.createInMemorySource("domain.pure", domain);
-        this.runtime.compile();
+        runtime.createInMemorySource("domain.pure", domain);
+        runtime.compile();
     }
 
     @Test
-    public void testBiTemporalDatesArePropagatedFromBiTemporalToBiTemporalInProject() throws Exception
+    public void testBiTemporalDatesArePropagatedFromBiTemporalToBiTemporalInProject()
     {
         String domain = "import meta::relational::tests::milestoning::*;\n" +
                 "Class  meta::relational::tests::milestoning::Order { createdLocation : Location[0..1]; }\n" +
@@ -733,12 +709,12 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                 "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Place{ name : String[1];}\n" +
                 "function go():Any[*] { {|Order.all().createdLocation(%9999,%2017).place.name} }\n";
 
-        this.runtime.createInMemorySource("domain.pure", domain);
-        this.runtime.compile();
+        runtime.createInMemorySource("domain.pure", domain);
+        runtime.compile();
     }
 
     @Test
-    public void testBusinessTemporalDatesArePropagatedFromBiTemporalToBiTemporalInProject() throws Exception
+    public void testBusinessTemporalDatesArePropagatedFromBiTemporalToBiTemporalInProject()
     {
         String domain = "import meta::relational::tests::milestoning::*;\n" +
                 "Class  meta::relational::tests::milestoning::Order { createdLocation : Location[0..1]; }\n" +
@@ -746,50 +722,48 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                 "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::Place{ name : String[1];}\n" +
                 "function go():Any[*] { {|Order.all().createdLocation(%9999).place.name} }"; //Order.all(%2017)->map(v_automap|$v_automap.createdLocation(%9999))->map(v_automap|$v_automap.place)
 
-        this.runtime.createInMemorySource("domain.pure", domain);
-        this.runtime.compile();
+        runtime.createInMemorySource("domain.pure", domain);
+        runtime.compile();
     }
 
     @Test
-    public void testBiTemporalPropertyUsageWhenOnlyOneDatePropagated() throws Exception
+    public void testBiTemporalPropertyUsageWhenOnlyOneDatePropagated()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:domain.pure line:4 column:43), \"The property 'createdLocation' is milestoned with stereotypes: [ bitemporal ] and requires date parameters: [ processingDate, businessDate ]\"");
-
         String domain = "import meta::relational::tests::milestoning::*;\n" +
                 "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::Order { createdLocation : Location[0..1]; }\n" +
                 "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Location{ place : String[1];}\n" +
                 "function go():Any[*] { {|Order.all(%2017).createdLocation.place} }";
 
-        this.runtime.createInMemorySource("domain.pure", domain);
-        this.runtime.compile();
+        runtime.createInMemorySource("domain.pure", domain);
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:domain.pure line:4 column:43), \"The property 'createdLocation' is milestoned with stereotypes: [ bitemporal ] and requires date parameters: [ processingDate, businessDate ]\"", e.getMessage());
     }
 
     @Test
-    public void testBusinessDatePropagatedToBiTemporalTypeWhenProcessingDateSupplied() throws Exception
+    public void testBusinessDatePropagatedToBiTemporalTypeWhenProcessingDateSupplied()
     {
         String domain = "import meta::relational::tests::milestoning::*;\n" +
                 "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::Order { createdLocation : Location[0..1]; }\n" +
                 "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Location{ place : String[1];}\n" +
                 "function go():Any[*] { {|Order.all(%2017).createdLocation(%2016).place} }"; //Order.all(%2017)->map(v_automap|$v_automap.createdLocation(%9999))->map(v_automap|$v_automap.place)
 
-        this.runtime.createInMemorySource("domain.pure", domain);
-        this.runtime.compile();
+        runtime.createInMemorySource("domain.pure", domain);
+        runtime.compile();
     }
 
     @Test
-    public void testProcessingDatePropagatedToBiTemporalTypeWhenBusinessDateSupplied() throws Exception
+    public void testProcessingDatePropagatedToBiTemporalTypeWhenBusinessDateSupplied()
     {
         String domain = "import meta::relational::tests::milestoning::*;\n" +
                 "Class <<temporal.processingtemporal>> meta::relational::tests::milestoning::Order { createdLocation : Location[0..1]; }\n" +
                 "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Location{ place : String[1];}\n" +
                 "function go():Any[*] { {|Order.all(%2017).createdLocation(%2016).place} }";
-        this.runtime.createInMemorySource("domain.pure", domain);
-        this.runtime.compile();
+        runtime.createInMemorySource("domain.pure", domain);
+        runtime.compile();
     }
 
     @Test
-    public void testPropagationOfSingleDateFromBiTemporalAll() throws Exception
+    public void testPropagationOfSingleDateFromBiTemporalAll()
     {
         String domain = "import meta::relational::tests::milestoning::*;\n" +
                 "Class <<temporal.bitemporal>> meta::relational::tests::milestoning::Product { exchange : Exchange[0..1]; }\n" +
@@ -797,16 +771,16 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                 "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::Location{ street : String[1];}\n" +
                 "function go():Any[*] { {|Product.all(%9999, %2017-8-14).exchange.location.street} }";
 
-        this.runtime.createInMemorySource("domain.pure", domain);
-        this.runtime.compile();
+        runtime.createInMemorySource("domain.pure", domain);
+        runtime.compile();
 
         CoreInstance locationMilestonedQp = getLocationQualifiedProperty();
         Assert.assertEquals("location", locationMilestonedQp.getValueForMetaPropertyToOne(M3Properties.qualifiedPropertyName).getValueForMetaPropertyToOne(M3Properties.values).getName());
-        Assert.assertEquals(DateFunctions.newPureDate(2017, 8, 14), ((DateCoreInstance)locationMilestonedQp.getValueForMetaPropertyToMany(M3Properties.parametersValues).get(1).getValueForMetaPropertyToOne(M3Properties.values)).getValue());
+        Assert.assertEquals(DateFunctions.newPureDate(2017, 8, 14), ((DateCoreInstance) locationMilestonedQp.getValueForMetaPropertyToMany(M3Properties.parametersValues).get(1).getValueForMetaPropertyToOne(M3Properties.values)).getValue());
     }
 
     @Test
-    public void testPropagationOfSingleDateFromBiTemporalQualifiedProperty() throws Exception
+    public void testPropagationOfSingleDateFromBiTemporalQualifiedProperty()
     {
         String domain = "import meta::relational::tests::milestoning::*;\n" +
                 "Class meta::relational::tests::milestoning::Product { exchange : Exchange[0..1]; }\n" +
@@ -814,18 +788,18 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                 "Class <<temporal.businesstemporal>> meta::relational::tests::milestoning::Location{ street : String[1];}\n" +
                 "function go():Any[*] { {|Product.all().exchange(%9999, %2017-8-14).location.street} }";
 
-        this.runtime.createInMemorySource("domain.pure", domain);
-        this.runtime.compile();
+        runtime.createInMemorySource("domain.pure", domain);
+        runtime.compile();
 
         CoreInstance locationMilestonedQp = getLocationQualifiedProperty();
         Assert.assertEquals("location", locationMilestonedQp.getValueForMetaPropertyToOne(M3Properties.qualifiedPropertyName).getValueForMetaPropertyToOne(M3Properties.values).getName());
-        Assert.assertEquals(DateFunctions.newPureDate(2017, 8, 14), ((DateCoreInstance)locationMilestonedQp.getValueForMetaPropertyToMany(M3Properties.parametersValues).get(1).getValueForMetaPropertyToOne(M3Properties.values)).getValue());
+        Assert.assertEquals(DateFunctions.newPureDate(2017, 8, 14), ((DateCoreInstance) locationMilestonedQp.getValueForMetaPropertyToMany(M3Properties.parametersValues).get(1).getValueForMetaPropertyToOne(M3Properties.values)).getValue());
     }
 
     @Test
     public void testAllVersionsInRangePropertyUsageForBusinessTemporal()
     {
-        this.runtime.createInMemorySource("source.pure",
+        runtime.createInMemorySource("source.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -833,51 +807,48 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "Class  <<temporal.businesstemporal>> meta::test::milestoning::domain::Classification{\n" +
                         "   exchangeName : String[0..1];\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:test.pure line:4 column:55), \"The property 'classificationAllVersionsInRange' is milestoned with stereotypes: [ businesstemporal ] and requires 2 date parameters : [start, end]\"");
-        this.runtime.createInMemorySource("test.pure",
+        runtime.createInMemorySource("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange}\n" +
                         "}\n");
-        this.runtime.compile();
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:test.pure line:4 column:55), \"The property 'classificationAllVersionsInRange' is milestoned with stereotypes: [ businesstemporal ] and requires 2 date parameters : [start, end]\"", e1.getMessage());
 
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:test.pure line:4 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1])");
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1)}\n" +
                         "}\n");
-        this.runtime.compile();
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:test.pure line:4 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1])\"", e2.getMessage());
 
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:test.pure line:4 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1],_:StrictDate[1],_:StrictDate[1])");
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-5, %2018-1-9)}\n" +
                         "}\n");
-        this.runtime.compile();
+        PureCompilationException e3 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:test.pure line:4 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1],_:StrictDate[1],_:StrictDate[1])\"", e3.getMessage());
 
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testAllVersionsInRangePropertyUsageForProcessingTemporal()
     {
-        this.runtime.createInMemorySource("source.pure",
+        runtime.createInMemorySource("source.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -885,54 +856,48 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "Class  <<temporal.processingtemporal>> meta::test::milestoning::domain::Classification{\n" +
                         "   exchangeName : String[0..1];\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:test.pure line:4 column:55), \"The property 'classificationAllVersionsInRange' is milestoned with stereotypes: [ processingtemporal ] and requires 2 date parameters : [start, end]\"");
-        this.runtime.createInMemorySource("test.pure",
+        runtime.createInMemorySource("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange}\n" +
                         "}\n");
-        this.runtime.compile();
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:test.pure line:4 column:55), \"The property 'classificationAllVersionsInRange' is milestoned with stereotypes: [ processingtemporal ] and requires 2 date parameters : [start, end]\"", e1.getMessage());
 
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:test.pure line:4 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1])");
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1)}\n" +
                         "}\n");
-        this.runtime.compile();
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:test.pure line:4 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1])\"", e2.getMessage());
 
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:test.pure line:4 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1],_:StrictDate[1],_:StrictDate[1])");
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-5, %2018-1-9)}\n" +
                         "}\n");
-        this.runtime.compile();
+        PureCompilationException e3 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:test.pure line:4 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1],_:StrictDate[1],_:StrictDate[1])\"", e3.getMessage());
 
-        this.runtime.createInMemorySource("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "function go():Any[*]\n" +
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testAllVersionsInRangePropertyUsageForLatestDate()
     {
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:sourceId.pure line:10 column:55), \"%latest not a valid parameter for AllVersionsInRange()");
-
-        this.runtime.createInMemorySource("sourceId.pure",
+        runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -944,9 +909,10 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%latest, %latest)}\n" +
                         "}\n");
-        this.runtime.compile();
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:10 column:55), \"%latest not a valid parameter for AllVersionsInRange()\"", e1.getMessage());
 
-        this.runtime.modify("sourceId.pure",
+        runtime.modify("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -958,7 +924,8 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%latest, %latest)}\n" +
                         "}\n");
-        this.runtime.compile();
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:10 column:55), \"%latest not a valid parameter for AllVersionsInRange()\"", e2.getMessage());
     }
 
     @ToFix
@@ -966,7 +933,7 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
     @Test
     public void testAllVersionsInRangePropertyUsageForCrossTemporal()
     {
-        this.runtime.createInMemorySource("test.pure",
+        runtime.createInMemorySource("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -978,9 +945,9 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.bitemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -992,9 +959,9 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "{\n" +
                         "   {|Product.all(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.bitemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -1006,11 +973,9 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "{\n" +
                         "   {|Product.all(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:test.pure line:10 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1],_:StrictDate[1])");
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -1022,11 +987,10 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
                         "}\n");
-        this.runtime.compile();
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:test.pure line:10 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1],_:StrictDate[1])", e1.getMessage());
 
-        this.expectedEx.expect(PureCompilationException.class);
-        this.expectedEx.expectMessage("Compilation error at (resource:test.pure line:10 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1],_:StrictDate[1])");
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -1038,9 +1002,10 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
                         "}\n");
-        this.runtime.compile();
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:test.pure line:10 column:55), \"The system can't find a match for the function: classificationAllVersionsInRange(_:Product[1],_:StrictDate[1],_:StrictDate[1])", e2.getMessage());
 
-        this.runtime.modify("test.pure",
+        runtime.modify("test.pure",
                 "import meta::test::milestoning::domain::*;\n" +
                         "Class <<temporal.processingtemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
@@ -1052,14 +1017,13 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
                         "{\n" +
                         "   {|Product.allVersionsInRange(%2018-1-1, %2018-1-9).classificationAllVersionsInRange(%2018-1-1, %2018-1-9)}\n" +
                         "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     private CoreInstance getLocationQualifiedProperty()
     {
-        CoreInstance lambda = this.runtime.getFunction("go__Any_MANY_").getValueForMetaPropertyToOne(M3Properties.expressionSequence).getValueForMetaPropertyToOne(M3Properties.values);
+        CoreInstance lambda = runtime.getFunction("go__Any_MANY_").getValueForMetaPropertyToOne(M3Properties.expressionSequence).getValueForMetaPropertyToOne(M3Properties.values);
         CoreInstance exprSeq = lambda.getValueForMetaPropertyToOne(M3Properties.expressionSequence);
         return exprSeq.getValueForMetaPropertyToMany(M3Properties.parametersValues).get(0).getValueForMetaPropertyToMany(M3Properties.parametersValues).get(1).getValueForMetaPropertyToOne(M3Properties.values).getValueForMetaPropertyToOne(M3Properties.expressionSequence);
     }
-
 }

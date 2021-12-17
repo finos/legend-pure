@@ -15,12 +15,8 @@
 package org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.utility.Iterate;
-
-import java.util.Collection;
+import org.eclipse.collections.api.factory.Maps;
 
 public class InlineDSLLibrary
 {
@@ -32,14 +28,7 @@ public class InlineDSLLibrary
 
     public InlineDSLLibrary(Iterable<? extends InlineDSL> parsers)
     {
-        Iterate.forEach(parsers, new Procedure<InlineDSL>()
-        {
-            @Override
-            public void value(InlineDSL inlineDSL)
-            {
-                registerInLineDSL(inlineDSL);
-            }
-        });
+        parsers.forEach(this::registerInLineDSL);
     }
 
     public void registerInLineDSL(InlineDSL inlineDSL)

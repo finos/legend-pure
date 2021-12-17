@@ -16,33 +16,30 @@ package org.finos.legend.pure.m3.compiler.postprocessing.processor;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.compiler.postprocessing.VariableContext;
 import org.finos.legend.pure.m3.compiler.postprocessing.VariableContext.VariableNameConflictException;
 import org.finos.legend.pure.m3.compiler.postprocessing.inference.TypeInference;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.compiler.validation.validator.FunctionDefinitionValidator;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.constraint.Constraint;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ExpressionSequenceValueSpecificationContext;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.serialization.runtime.pattern.URLPatternLibrary;
-import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
-import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class FunctionDefinitionProcessor implements MatchRunner<FunctionDefinition<CoreInstance>>
+public class FunctionDefinitionProcessor extends Processor<FunctionDefinition<?>>
 {
     @Override
     public String getClassName()
@@ -51,31 +48,37 @@ public class FunctionDefinitionProcessor implements MatchRunner<FunctionDefiniti
     }
 
     @Override
-    public void run(FunctionDefinition functionDefinition, MatcherState state, Matcher matcher, ModelRepository repository, Context context) throws PureCompilationException
+    public void process(FunctionDefinition<?> instance, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
-        process(functionDefinition, state, matcher, repository);
+        process(instance, state, matcher, repository);
     }
 
-    public static void process(FunctionDefinition<CoreInstance> functionDefinition, MatcherState state, Matcher matcher, ModelRepository repository) throws PureCompilationException
+    @Override
+    public void populateReferenceUsages(FunctionDefinition<?> instance, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        ProcessorState processorState = (ProcessorState)state;
-        ProcessorSupport processorSupport = processorState.getProcessorSupport();
-        VariableContext variableContext = processorState.getVariableContext();
-        FunctionType functionType = (FunctionType)processorSupport.function_getFunctionType(functionDefinition);
-        processorState.getObserver().startProcessingFunction(functionDefinition, functionType);
+    }
 
-        URLPatternLibrary urlPatternLibrary = processorState.getURLPatternLibrary();
+    public static void process(FunctionDefinition<?> functionDefinition, ProcessorState state, Matcher matcher, ModelRepository repository)
+    {
+        ProcessorSupport processorSupport = state.getProcessorSupport();
+        VariableContext variableContext = state.getVariableContext();
+        FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(functionDefinition);
+
+        state.getObserver().startProcessingFunction(functionDefinition, functionType);
+
+        URLPatternLibrary urlPatternLibrary = state.getURLPatternLibrary();
         if (urlPatternLibrary != null)
         {
             urlPatternLibrary.possiblyRegister(functionDefinition, processorSupport);
         }
 
-        if (functionDefinition._classifierGenericType() != null && functionDefinition._classifierGenericType()._rawTypeCoreInstance() != null && "ConcreteFunctionDefinition".equals(functionDefinition._classifierGenericType()._rawTypeCoreInstance().getName()))
+        boolean shouldSetTypeInferenceContext = (functionDefinition instanceof ConcreteFunctionDefinition) && (functionDefinition._classifierGenericType() != null) && (functionDefinition._classifierGenericType()._rawTypeCoreInstance() != null) && "ConcreteFunctionDefinition".equals(functionDefinition._classifierGenericType()._rawTypeCoreInstance().getName());
+        if (shouldSetTypeInferenceContext)
         {
-            processorState.newTypeInferenceContext(functionType);
+            state.newTypeInferenceContext(functionType);
         }
 
-        for (VariableExpression var : functionType._parameters())
+        functionType._parameters().forEach(var ->
         {
             try
             {
@@ -92,7 +95,7 @@ public class FunctionDefinitionProcessor implements MatchRunner<FunctionDefiniti
                 // We resolve because we want to fail fast if a given type is unknown...
                 org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveGenericTypeUsingImports(propertyType, repository, processorSupport);
             }
-        }
+        });
 
         ListIterable<? extends ValueSpecification> expressions = functionDefinition._expressionSequence().toList();
         if (expressions.isEmpty())
@@ -103,66 +106,57 @@ public class FunctionDefinitionProcessor implements MatchRunner<FunctionDefiniti
         // We can only perform the analysis if the type of the function parameters have been specified or inferred.
         // We have to skip if the function parameter is a Lambda and it is processed (as part of an InstanceValue bound variable) before the functionExpression is matched to a Function and we have enough information to infer...
         // The function is going to be processed again after inference
-        if (TypeInference.canProcessLambda(functionDefinition, processorState, processorSupport))
+        if (TypeInference.canProcessLambda(functionDefinition, state, processorSupport))
         {
-            processorState.getObserver().shiftTab();
-            processorState.getObserver().startProcessingFunctionBody();
-            processExpressions(functionDefinition, expressions, matcher, processorState, processorSupport);
+            state.getObserver().shiftTab();
+            state.getObserver().startProcessingFunctionBody();
+            processExpressions(functionDefinition, expressions, matcher, state, processorSupport);
             findReturnTypesForLambda(functionDefinition, functionType, processorSupport);
             FunctionDefinitionValidator.validateFunctionReturnType(functionDefinition, functionType, processorSupport);
-            processorState.getObserver().finishedProcessingFunctionBody();
-            processorState.getObserver().unShiftTab();
-            processorState.addFunctionDefinition(functionDefinition);
+            state.getObserver().finishedProcessingFunctionBody();
+            state.getObserver().unShiftTab();
+            state.addFunctionDefinition(functionDefinition);
         }
 
-        if (functionDefinition._classifierGenericType() != null && functionDefinition._classifierGenericType()._rawTypeCoreInstance() != null && "ConcreteFunctionDefinition".equals(functionDefinition._classifierGenericType()._rawTypeCoreInstance().getName()))
+        if (shouldSetTypeInferenceContext)
         {
-            processorState.deleteTypeInferenceContext();
+            state.deleteTypeInferenceContext();
         }
 
-        ((ProcessorState)state).getVariableContext().buildAndRegister("return", functionType._returnType(), functionType._returnMultiplicity(), repository, processorSupport);
+        state.getVariableContext().buildAndRegister("return", functionType._returnType(), functionType._returnMultiplicity(), processorSupport);
 
         RichIterable<? extends Constraint> constraints = functionDefinition._preConstraints();
         if (constraints.notEmpty())
         {
-            processConstraints(functionDefinition, constraints.toList(), matcher, processorState, processorSupport);
+            processConstraints(functionDefinition, constraints.toList(), matcher, state, processorSupport);
         }
         RichIterable<? extends Constraint> postConstraints = functionDefinition._postConstraints();
         if (postConstraints.notEmpty())
         {
-            processConstraints(functionDefinition, postConstraints.toList(), matcher, processorState, processorSupport);
+            processConstraints(functionDefinition, postConstraints.toList(), matcher, state, processorSupport);
         }
 
-        processorState.getObserver().finishedProcessingFunction(functionType);
+        state.getObserver().finishedProcessingFunction(functionType);
     }
 
-    private static void processExpressions(FunctionDefinition functionDefinition, ListIterable<? extends ValueSpecification> expressions, Matcher matcher, ProcessorState processorState, ProcessorSupport processorSupport) throws PureCompilationException
+    private static void processExpressions(FunctionDefinition<?> functionDefinition, ListIterable<? extends ValueSpecification> expressions, Matcher matcher, ProcessorState processorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        for (int i = 0; i < expressions.size(); i++)
-        {
-            ValueSpecification expression = expressions.get(i);
-            processExpression(functionDefinition, matcher, processorState, processorSupport, i, expression);
-        }
+        expressions.forEachWithIndex((expression, i) -> processExpression(functionDefinition, matcher, processorState, processorSupport, i, expression));
     }
 
-    private static void processConstraints(FunctionDefinition functionDefinition, ListIterable<? extends Constraint> constraints, Matcher matcher, ProcessorState processorState, ProcessorSupport processorSupport) throws PureCompilationException
+    private static void processConstraints(FunctionDefinition<?> functionDefinition, ListIterable<? extends Constraint> constraints, Matcher matcher, ProcessorState processorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        for (int i = 0; i < constraints.size(); i++)
-        {
-            Constraint constraint = constraints.get(i);
-            ValueSpecification expression = constraint._functionDefinition()._expressionSequence().toList().getFirst();
-            processExpression(functionDefinition, matcher, processorState, processorSupport, i, expression);
-        }
+        constraints.forEachWithIndex((constraint, i) -> processExpression(functionDefinition, matcher, processorState, processorSupport, i, constraint._functionDefinition()._expressionSequence().getOnly()));
     }
 
-    private static void processExpression(FunctionDefinition functionDefinition, Matcher matcher, ProcessorState processorState, ProcessorSupport processorSupport, int i, ValueSpecification expression)
+    private static void processExpression(FunctionDefinition<?> functionDefinition, Matcher matcher, ProcessorState processorState, ProcessorSupport processorSupport, int i, ValueSpecification expression)
     {
         processorState.resetVariables();
         PostProcessor.processElement(matcher, expression, processorState, processorSupport);
 
-        if (expression != null && expression._usageContext() == null)
+        if (expression._usageContext() == null)
         {
-            ExpressionSequenceValueSpecificationContext usageContext = (ExpressionSequenceValueSpecificationContext)processorSupport.newAnonymousCoreInstance(null, M3Paths.ExpressionSequenceValueSpecificationContext);
+            ExpressionSequenceValueSpecificationContext usageContext = (ExpressionSequenceValueSpecificationContext) processorSupport.newAnonymousCoreInstance(null, M3Paths.ExpressionSequenceValueSpecificationContext);
             usageContext._offset(i);
             usageContext._functionDefinition(functionDefinition);
             expression._usageContext(usageContext);
@@ -171,17 +165,10 @@ public class FunctionDefinitionProcessor implements MatchRunner<FunctionDefiniti
 
     public static boolean shouldInferTypesForFunctionParameters(FunctionType functionType)
     {
-        for (VariableExpression parameter : functionType._parameters())
-        {
-            if (parameter._genericType() == null)
-            {
-                return true;
-            }
-        }
-        return false;
+        return functionType._parameters().anySatisfy(p -> p._genericType() == null);
     }
 
-    private static void findReturnTypesForLambda(FunctionDefinition<CoreInstance> function, FunctionType functionType, ProcessorSupport processorSupport) throws PureCompilationException
+    private static void findReturnTypesForLambda(FunctionDefinition<?> function, FunctionType functionType, ProcessorSupport processorSupport) throws PureCompilationException
     {
         ValueSpecification lastExpression = function._expressionSequence().toList().getLast();
         if (functionType._returnType() == null)
@@ -191,10 +178,10 @@ public class FunctionDefinitionProcessor implements MatchRunner<FunctionDefiniti
             {
                 throw new PureCompilationException(lastExpression.getSourceInformation(), "Final expression has no generic type");
             }
-            GenericType lambdaReturnType = (GenericType)org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericTypeAsInferredGenericType(lastExpressionGenericType, function.getSourceInformation(), processorSupport);
+            GenericType lambdaReturnType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericTypeAsInferredGenericType(lastExpressionGenericType, function.getSourceInformation(), processorSupport);
             if (function._classifierGenericType() != null && function._classifierGenericType()._typeArguments() != null && function._classifierGenericType()._typeArguments().size() > 0 && function._classifierGenericType()._typeArguments().toList().getFirst()._rawTypeCoreInstance() != null)
             {
-                ((FunctionType)ImportStub.withImportStubByPass(function._classifierGenericType()._typeArguments().toList().getFirst()._rawTypeCoreInstance(), processorSupport))._returnType(lambdaReturnType);
+                ((FunctionType) ImportStub.withImportStubByPass(function._classifierGenericType()._typeArguments().toList().getFirst()._rawTypeCoreInstance(), processorSupport))._returnType(lambdaReturnType);
             }
         }
         if (functionType._returnMultiplicity() == null)
@@ -206,7 +193,7 @@ public class FunctionDefinitionProcessor implements MatchRunner<FunctionDefiniti
             }
             if (function._classifierGenericType() != null && function._classifierGenericType()._typeArguments() != null && function._classifierGenericType()._typeArguments().size() > 0 && function._classifierGenericType()._typeArguments().toList().getFirst()._rawTypeCoreInstance() != null)
             {
-                ((FunctionType)ImportStub.withImportStubByPass(function._classifierGenericType()._typeArguments().toList().getFirst()._rawTypeCoreInstance(), processorSupport))._returnMultiplicity(lastExpressionMultiplicity);
+                ((FunctionType) ImportStub.withImportStubByPass(function._classifierGenericType()._typeArguments().toList().getFirst()._rawTypeCoreInstance(), processorSupport))._returnMultiplicity(lastExpressionMultiplicity);
             }
         }
     }

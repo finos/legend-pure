@@ -719,9 +719,7 @@ public class GraphLoader
                 SourceInformation sourceInfo = instance.getSourceInformation();
                 if (sourceInfo != null)
                 {
-                    errorMessage.append(" (");
-                    sourceInfo.writeMessage(errorMessage);
-                    errorMessage.append(')');
+                    sourceInfo.appendMessage(errorMessage.append(" (")).append(')');
                 }
                 throw new RuntimeException(errorMessage.toString(), e);
             }

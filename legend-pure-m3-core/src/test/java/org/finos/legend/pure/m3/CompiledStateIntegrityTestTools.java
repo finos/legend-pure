@@ -14,30 +14,25 @@
 
 package org.finos.legend.pure.m3;
 
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.block.procedure.Procedure2;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.factory.Procedures;
-import org.eclipse.collections.impl.block.factory.Procedures2;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.tuple.Tuples;
-import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.property.Property;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.junit.Assert;
 
 import java.util.Formatter;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class CompiledStateIntegrityTestTools
 {
@@ -60,23 +55,14 @@ public class CompiledStateIntegrityTestTools
      */
     public static void testInstanceIntegrity(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
     {
-        runIntegrityTest(instances, new IntegrityTest()
-        {
-            @Override
-            protected void forEachViolation(CoreInstance instance, Procedure<? super String> violationProcedure, ProcessorSupport processorSupport)
-            {
-                forEachClassifierGenericTypeViolation(instance, violationProcedure, processorSupport);
-                forEachPropertyClassifierViolation(instance, violationProcedure, processorSupport);
-                forEachPropertyValueTypeViolation(instance, violationProcedure, processorSupport);
-                forEachPropertyValueMultiplicityViolation(instance, violationProcedure, processorSupport);
-            }
-
-            @Override
-            protected String getViolationDescription()
-            {
-                return "instance integrity";
-            }
-        }, processorSupport);
+        runIntegrityTest(instances, "instance integrity",
+                (instance, violationConsumer) ->
+                {
+                    forEachClassifierGenericTypeViolation(instance, violationConsumer, processorSupport);
+                    forEachPropertyClassifierViolation(instance, violationConsumer, processorSupport);
+                    forEachPropertyValueTypeViolation(instance, violationConsumer, processorSupport);
+                    forEachPropertyValueMultiplicityViolation(instance, violationConsumer, processorSupport);
+                });
     }
 
     /**
@@ -103,20 +89,8 @@ public class CompiledStateIntegrityTestTools
      */
     public static void testInstanceClassifierGenericType(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
     {
-        runIntegrityTest(instances, new IntegrityTest()
-        {
-            @Override
-            protected void forEachViolation(CoreInstance instance, Procedure<? super String> violationProcedure, ProcessorSupport processorSupport)
-            {
-                forEachClassifierGenericTypeViolation(instance, violationProcedure, processorSupport);
-            }
-
-            @Override
-            protected String getViolationDescription()
-            {
-                return "instance classifierGenericType integrity";
-            }
-        }, processorSupport);
+        runIntegrityTest(instances, "instance classifierGenericType integrity",
+                (instance, violationConsumer) -> forEachClassifierGenericTypeViolation(instance, violationConsumer, processorSupport));
     }
 
     /**
@@ -143,22 +117,13 @@ public class CompiledStateIntegrityTestTools
      */
     public static void testPropertyIntegrity(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
     {
-        runIntegrityTest(instances, new IntegrityTest()
-        {
-            @Override
-            protected void forEachViolation(CoreInstance instance, Procedure<? super String> violationProcedure, ProcessorSupport processorSupport)
-            {
-                forEachPropertyClassifierViolation(instance, violationProcedure, processorSupport);
-                forEachPropertyValueTypeViolation(instance, violationProcedure, processorSupport);
-                forEachPropertyValueMultiplicityViolation(instance, violationProcedure, processorSupport);
-            }
-
-            @Override
-            protected String getViolationDescription()
-            {
-                return "property integrity";
-            }
-        }, processorSupport);
+        runIntegrityTest(instances, "property integrity",
+                (instance, violationConsumer) ->
+                {
+                    forEachPropertyClassifierViolation(instance, violationConsumer, processorSupport);
+                    forEachPropertyValueTypeViolation(instance, violationConsumer, processorSupport);
+                    forEachPropertyValueMultiplicityViolation(instance, violationConsumer, processorSupport);
+                });
     }
 
     public static void testClassifierProperties(CoreInstance instance, ProcessorSupport processorSupport)
@@ -168,20 +133,8 @@ public class CompiledStateIntegrityTestTools
 
     public static void testClassifierProperties(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
     {
-        runIntegrityTest(instances, new IntegrityTest()
-        {
-            @Override
-            protected void forEachViolation(CoreInstance instance, Procedure<? super String> violationProcedure, ProcessorSupport processorSupport)
-            {
-                forEachPropertyClassifierViolation(instance, violationProcedure, processorSupport);
-            }
-
-            @Override
-            protected String getViolationDescription()
-            {
-                return "property classifier";
-            }
-        }, processorSupport);
+        runIntegrityTest(instances, "property classifier",
+                (instance, violationConsumer) -> forEachPropertyClassifierViolation(instance, violationConsumer, processorSupport));
     }
 
     public static void testPropertyValueMultiplicities(CoreInstance instance, ProcessorSupport processorSupport)
@@ -191,20 +144,8 @@ public class CompiledStateIntegrityTestTools
 
     public static void testPropertyValueMultiplicities(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
     {
-        runIntegrityTest(instances, new IntegrityTest()
-        {
-            @Override
-            protected void forEachViolation(CoreInstance instance, Procedure<? super String> violationProcedure, ProcessorSupport processorSupport)
-            {
-                forEachPropertyValueMultiplicityViolation(instance, violationProcedure, processorSupport);
-            }
-
-            @Override
-            protected String getViolationDescription()
-            {
-                return "property value multiplicity";
-            }
-        }, processorSupport);
+        runIntegrityTest(instances, "property value multiplicity",
+                (instance, violationConsumer) -> forEachPropertyValueMultiplicityViolation(instance, violationConsumer, processorSupport));
     }
 
     public static void testPropertyValueTypes(CoreInstance instance, ProcessorSupport processorSupport)
@@ -214,53 +155,39 @@ public class CompiledStateIntegrityTestTools
 
     public static void testPropertyValueTypes(Iterable<? extends CoreInstance> instances, ProcessorSupport processorSupport)
     {
-        runIntegrityTest(instances, new IntegrityTest()
-        {
-            @Override
-            protected void forEachViolation(CoreInstance instance, Procedure<? super String> violationProcedure, ProcessorSupport processorSupport)
-            {
-                forEachPropertyValueTypeViolation(instance, violationProcedure, processorSupport);
-            }
-
-            @Override
-            protected String getViolationDescription()
-            {
-                return "property value type";
-            }
-        }, processorSupport);
+        runIntegrityTest(instances, "property value type",
+                (instance, violationConsumer) -> forEachPropertyValueTypeViolation(instance, violationConsumer, processorSupport));
     }
 
-    private static void runIntegrityTest(Iterable<? extends CoreInstance> instances, IntegrityTest test, ProcessorSupport processorSupport)
+    private static void runIntegrityTest(Iterable<? extends CoreInstance> instances, String violationDescription, BiConsumer<CoreInstance, Consumer<? super String>> test)
     {
         MutableList<String> errorMessages = Lists.mutable.empty();
-        Procedure<String> violationProcedure = Procedures.bind(Procedures2.<String>addToCollection(), errorMessages);
-        Iterate.forEachWith(instances, test, Tuples.pair(violationProcedure, processorSupport));
+        instances.forEach(i -> test.accept(i, errorMessages::add));
         int errorCount = errorMessages.size();
         if (errorCount > 0)
         {
             StringBuilder message = new StringBuilder(errorCount * 128);
-            new Formatter(message).format("There %s %,d %s violation", (errorCount == 1) ? "is" : "are", errorCount, test.getViolationDescription());
+            new Formatter(message).format("There %s %,d %s violation", (errorCount == 1) ? "is" : "are", errorCount, violationDescription);
             if (errorCount != 1)
             {
                 message.append('s');
             }
-            message.append(":\n\t");
-            errorMessages.appendString(message, "\n\t");
+            errorMessages.appendString(message, ":\n\t", "\n\t", "");
             Assert.fail(message.toString());
         }
     }
 
     /**
-     * Apply the given procedure to each error message for a violation related the instance's
+     * Apply the given consumer to each error message for a violation related the instance's
      * classifierGenericType. A violation occurs if the rawType of the classifierGenericType
      * does not match the instance's classifier or if the number of type and multiplicity
      * arguments differs from the required number.
      *
-     * @param instance           instance to test
-     * @param violationProcedure violation procedure
-     * @param processorSupport   processor support
+     * @param instance          instance to test
+     * @param violationConsumer violation consumer
+     * @param processorSupport  processor support
      */
-    public static void forEachClassifierGenericTypeViolation(CoreInstance instance, Procedure<? super String> violationProcedure, ProcessorSupport processorSupport)
+    public static void forEachClassifierGenericTypeViolation(CoreInstance instance, Consumer<? super String> violationConsumer, ProcessorSupport processorSupport)
     {
         CoreInstance classifier = instance.getClassifier();
         ListIterable<? extends CoreInstance> typeParams = classifier.getValueForMetaPropertyToMany(M3Properties.typeParameters);
@@ -276,13 +203,11 @@ public class CompiledStateIntegrityTestTools
                 SourceInformation sourceInfo = instance.getSourceInformation();
                 if (sourceInfo != null)
                 {
-                    message.append(" (");
-                    sourceInfo.writeMessage(message);
-                    message.append(")");
+                    sourceInfo.appendMessage(message.append(" (")).append(')');
                 }
                 message.append("; classifierGenericType: null; problem: classifierGenericType required when there are type or multiplicity parameters: ");
                 _Class.print(message, classifier, true);
-                violationProcedure.value(message.toString());
+                violationConsumer.accept(message.toString());
             }
         }
         else
@@ -298,12 +223,9 @@ public class CompiledStateIntegrityTestTools
                 SourceInformation sourceInfo = instance.getSourceInformation();
                 if (sourceInfo != null)
                 {
-                    message.append(" (");
-                    sourceInfo.writeMessage(message);
-                    message.append(")");
+                    sourceInfo.appendMessage(message.append(" (")).append(')');
                 }
-                message.append("; classifierGenericType: ");
-                GenericType.print(message, classifierGenericType, processorSupport);
+                GenericType.print(message.append("; classifierGenericType: "), classifierGenericType, processorSupport);
                 message.append("; problem: mismatch between rawType (");
                 if (rawType == null)
                 {
@@ -316,7 +238,7 @@ public class CompiledStateIntegrityTestTools
                 message.append(") and instance classifier (");
                 PackageableElement.writeUserPathForPackageableElement(message, instance.getClassifier());
                 message.append(")");
-                violationProcedure.value(message.toString());
+                violationConsumer.accept(message.toString());
             }
 
             if (typeParams.size() != typeArgs.size())
@@ -326,20 +248,12 @@ public class CompiledStateIntegrityTestTools
                 SourceInformation sourceInfo = instance.getSourceInformation();
                 if (sourceInfo != null)
                 {
-                    message.append(" (");
-                    sourceInfo.writeMessage(message);
-                    message.append(")");
+                    sourceInfo.appendMessage(message.append(" (")).append(')');
                 }
-                message.append("; classifierGenericType: ");
-                GenericType.print(message, classifierGenericType, processorSupport);
-                message.append("; classifier: ");
-                _Class.print(message, rawType, true);
-                message.append("; problem: mismatch between the number of type parameters (");
-                message.append(typeParams.size());
-                message.append(") and the number of type arguments (");
-                message.append(typeArgs.size());
-                message.append(")");
-                violationProcedure.value(message.toString());
+                GenericType.print(message.append("; classifierGenericType: "), classifierGenericType, processorSupport);
+                _Class.print(message.append("; classifier: "), classifier, true);
+                message.append("; problem: mismatch between the number of type parameters (").append(typeParams.size()).append(") and the number of type arguments (").append(typeArgs.size()).append(")");
+                violationConsumer.accept(message.toString());
             }
 
             if (multParams.size() != multArgs.size())
@@ -349,44 +263,29 @@ public class CompiledStateIntegrityTestTools
                 SourceInformation sourceInfo = instance.getSourceInformation();
                 if (sourceInfo != null)
                 {
-                    message.append(" (");
-                    sourceInfo.writeMessage(message);
-                    message.append(")");
+                    sourceInfo.appendMessage(message.append(" (")).append(")");
                 }
-                message.append("; classifierGenericType: ");
-                GenericType.print(message, classifierGenericType, processorSupport);
-                message.append("; classifier: ");
-                _Class.print(message, rawType, true);
-                message.append("; problem: mismatch between the number of multiplicity parameters (");
-                message.append(multParams.size());
-                message.append(") and the number of multiplicity arguments (");
-                message.append(multArgs.size());
-                message.append(")");
-                violationProcedure.value(message.toString());
+                GenericType.print(message.append("; classifierGenericType: "), classifierGenericType, processorSupport);
+                _Class.print(message.append("; classifier: "), classifier, true);
+                message.append("; problem: mismatch between the number of multiplicity parameters (").append(multParams.size()).append(") and the number of multiplicity arguments (").append(multArgs.size()).append(")");
+                violationConsumer.accept(message.toString());
             }
         }
     }
 
     /**
-     * Apply the given procedure to each error message related to a property classifier
+     * Apply the given consumer to each error message related to a property classifier
      * violation. A property classifier violation is a case where the instance has a
      * property not defined for its classifier.
      *
-     * @param instance           instance to test
-     * @param violationProcedure violation procedure
-     * @param processorSupport   processor support
+     * @param instance          instance to test
+     * @param violationConsumer violation consumer
+     * @param processorSupport  processor support
      */
-    public static void forEachPropertyClassifierViolation(CoreInstance instance, Procedure<? super String> violationProcedure, ProcessorSupport processorSupport)
+    public static void forEachPropertyClassifierViolation(CoreInstance instance, Consumer<? super String> violationConsumer, ProcessorSupport processorSupport)
     {
         MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(instance.getClassifier());
-        MutableList<String> invalidProperties = Lists.mutable.empty();
-        for (String key : instance.getKeys())
-        {
-            if (!propertiesByName.containsKey(key))
-            {
-                invalidProperties.add(key);
-            }
-        }
+        MutableList<String> invalidProperties = instance.getKeys().reject(propertiesByName::containsKey, Lists.mutable.empty());
         if (invalidProperties.notEmpty())
         {
             StringBuilder message = new StringBuilder("Instance: ");
@@ -394,37 +293,30 @@ public class CompiledStateIntegrityTestTools
             SourceInformation sourceInfo = instance.getSourceInformation();
             if (sourceInfo != null)
             {
-                message.append(" (");
-                sourceInfo.writeMessage(message);
-                message.append(")");
+                sourceInfo.appendMessage(message.append(" (")).append(')');
             }
-            message.append("; invalid ");
-            message.append((invalidProperties.size() == 1) ? "property" : "properties");
+            message.append("; invalid ").append((invalidProperties.size() == 1) ? "property" : "properties");
             invalidProperties.sortThis().appendString(message, ": ", ", ", "");
-            violationProcedure.value(message.toString());
+            violationConsumer.accept(message.toString());
         }
     }
 
     /**
-     * Apply the given procedure to each error message related to a property multiplicity
+     * Apply the given consumer to each error message related to a property multiplicity
      * violation. A property multiplicity violation is a case where the number of values
      * for a property is inconsistent with its multiplicity.
      *
-     * @param instance           instance to test
-     * @param violationProcedure violation procedure
-     * @param processorSupport   processor support
+     * @param instance          instance to test
+     * @param violationConsumer violation consumer
+     * @param processorSupport  processor support
      */
-    public static void forEachPropertyValueMultiplicityViolation(CoreInstance instance, Procedure<? super String> violationProcedure, ProcessorSupport processorSupport)
+    public static void forEachPropertyValueMultiplicityViolation(CoreInstance instance, Consumer<? super String> violationConsumer, ProcessorSupport processorSupport)
     {
         MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(instance.getClassifier());
-        for (Pair<String, CoreInstance> pair : propertiesByName.keyValuesView())
+        propertiesByName.forEachKeyValue((propertyName, property) ->
         {
-            String propertyName = pair.getOne();
             ListIterable<? extends CoreInstance> values = instance.getValueForMetaPropertyToMany(propertyName);
-
-            CoreInstance property = pair.getTwo();
             CoreInstance multiplicity = Property.resolveInstancePropertyReturnMultiplicity(instance, property, processorSupport);
-
             if (Multiplicity.isMultiplicityConcrete(multiplicity))
             {
                 int count = values.size();
@@ -435,17 +327,12 @@ public class CompiledStateIntegrityTestTools
                     SourceInformation sourceInfo = instance.getSourceInformation();
                     if (sourceInfo != null)
                     {
-                        message.append(" (");
-                        sourceInfo.writeMessage(message);
-                        message.append(")");
+                        sourceInfo.appendMessage(message.append(" (")).append(')');
                     }
-                    message.append("; property: ");
-                    message.append(propertyName);
-                    message.append("; multiplicity: ");
-                    Multiplicity.print(message, multiplicity, false);
-                    message.append("; count: ");
-                    message.append(count);
-                    violationProcedure.value(message.toString());
+                    message.append("; property: ").append(propertyName);
+                    Multiplicity.print(message.append("; multiplicity: "), multiplicity, false);
+                    message.append("; count: ").append(count);
+                    violationConsumer.accept(message.toString());
                 }
             }
             else
@@ -455,44 +342,35 @@ public class CompiledStateIntegrityTestTools
                 SourceInformation sourceInfo = instance.getSourceInformation();
                 if (sourceInfo != null)
                 {
-                    message.append(" (");
-                    sourceInfo.writeMessage(message);
-                    message.append(")");
+                    sourceInfo.appendMessage(message.append(" (")).append(')');
                 }
-                message.append("; property: ");
-                message.append(propertyName);
-                message.append("; multiplicity: ");
-                Multiplicity.print(message, multiplicity, false);
+                message.append("; property: ").append(propertyName);
+                Multiplicity.print(message.append("; multiplicity: "), multiplicity, false);
                 message.append("; problem: non-concrete");
-                violationProcedure.value(message.toString());
+                violationConsumer.accept(message.toString());
             }
-        }
+        });
     }
 
     /**
-     * Apply the given procedure to each error message related to a property type
+     * Apply the given consumer to each error message related to a property type
      * violation. A property type violation is a case where the type of the values
      * for a property is inconsistent with the property's type.
      *
-     * @param instance           instance to test
-     * @param violationProcedure violation procedure
-     * @param processorSupport   processor support
+     * @param instance          instance to test
+     * @param violationConsumer violation consumer
+     * @param processorSupport  processor support
      */
-    public static void forEachPropertyValueTypeViolation(CoreInstance instance, Procedure<? super String> violationProcedure, ProcessorSupport processorSupport)
+    public static void forEachPropertyValueTypeViolation(CoreInstance instance, Consumer<? super String> violationConsumer, ProcessorSupport processorSupport)
     {
         MapIterable<String, CoreInstance> propertiesByName = processorSupport.class_getSimplePropertiesByName(instance.getClassifier());
-        for (Pair<String, CoreInstance> pair : propertiesByName.keyValuesView())
+        propertiesByName.forEachKeyValue((propertyName, property) ->
         {
-            String propertyName = pair.getOne();
             ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(instance, propertyName, processorSupport);
-
-            CoreInstance property = pair.getTwo();
             CoreInstance genericType = GenericType.resolvePropertyReturnType(Instance.extractGenericTypeFromInstance(instance, processorSupport), property, processorSupport);
-
             if (GenericType.isGenericTypeFullyConcrete(genericType, processorSupport))
             {
-                int i = 0;
-                for (CoreInstance value : values)
+                values.forEachWithIndex((value, i) ->
                 {
                     CoreInstance valueGenericType = Instance.extractGenericTypeFromInstance(value, processorSupport);
                     if (!GenericType.isGenericTypeFullyConcrete(valueGenericType, processorSupport))
@@ -504,19 +382,15 @@ public class CompiledStateIntegrityTestTools
 //                            if (sourceInfo != null)
 //                            {
 //                                message.append(" (");
-//                                sourceInfo.writeMessage(message);
+//                                sourceInfo.appendMessage(message);
 //                                message.append(")");
 //                            }
-//                            message.append("; property: ");
-//                            message.append(propertyName);
-//                            message.append("; value: ");
-//                            message.append(value);
-//                            message.append("; index: ");
-//                            message.append(i);
-//                            message.append("; value generic type: ");
-//                            GenericType.print(message, valueGenericType, context, processorSupport);
+//                            message.append("; property: ").append(propertyName);
+//                            message.append("; value: ").append(value);
+//                            message.append("; index: ").append(i);
+//                            GenericType.print(message.append("; value generic type: "), valueGenericType, context, processorSupport);
 //                            message.append("; problem: non-concrete value generic type");
-//                            errorMessages.add(message.toString());
+//                            violationConsumer.accept(message.toString());
                     }
                     else if (!GenericType.isGenericCompatibleWith(valueGenericType, genericType, processorSupport))
                     {
@@ -525,24 +399,16 @@ public class CompiledStateIntegrityTestTools
                         SourceInformation sourceInfo = instance.getSourceInformation();
                         if (sourceInfo != null)
                         {
-                            message.append(" (");
-                            sourceInfo.writeMessage(message);
-                            message.append(")");
+                            sourceInfo.appendMessage(message.append(" (")).append(')');
                         }
-                        message.append("; property: ");
-                        message.append(propertyName);
-                        message.append("; value: ");
-                        message.append(value);
-                        message.append("; index: ");
-                        message.append(i);
-                        message.append("; value generic type: ");
-                        GenericType.print(message, valueGenericType, processorSupport);
-                        message.append("; property generic type: ");
-                        GenericType.print(message, genericType, processorSupport);
-                        violationProcedure.value(message.toString());
+                        message.append("; property: ").append(propertyName);
+                        message.append("; value: ").append(value);
+                        message.append("; index: ").append(i);
+                        GenericType.print(message.append("; value generic type: "), valueGenericType, processorSupport);
+                        GenericType.print(message.append("; property generic type: "), genericType, processorSupport);
+                        violationConsumer.accept(message.toString());
                     }
-                    i++;
-                }
+                });
             }
             else
             {
@@ -553,30 +419,14 @@ public class CompiledStateIntegrityTestTools
 //                    if (sourceInfo != null)
 //                    {
 //                        message.append(" (");
-//                        sourceInfo.writeMessage(message);
+//                        sourceInfo.appendMessage(message);
 //                        message.append(")");
 //                    }
-//                    message.append("; property: ");
-//                    message.append(propertyName);
-//                    message.append("; property generic type: ");
-//                    GenericType.print(message, genericType, context, processorSupport);
+//                    message.append("; property: ").append(propertyName);
+//                    GenericType.print(message.append("; property generic type: "), genericType, context, processorSupport);
 //                    message.append("; problem: non-concrete property generic type");
-//                    errorMessages.add(message.toString());
+//                    violationConsumer.accept(message.toString());
             }
-        }
-    }
-
-    private static abstract class IntegrityTest implements Procedure2<CoreInstance, Pair<? extends Procedure<? super String>, ? extends ProcessorSupport>>
-    {
-
-        @Override
-        public void value(CoreInstance instance, Pair<? extends Procedure<? super String>, ? extends ProcessorSupport> violationProcedureAndProcessorSupport)
-        {
-            forEachViolation(instance, violationProcedureAndProcessorSupport.getOne(), violationProcedureAndProcessorSupport.getTwo());
-        }
-
-        protected abstract void forEachViolation(CoreInstance instance, Procedure<? super String> violationProcedure, ProcessorSupport processorSupport);
-
-        protected abstract String getViolationDescription();
+        });
     }
 }

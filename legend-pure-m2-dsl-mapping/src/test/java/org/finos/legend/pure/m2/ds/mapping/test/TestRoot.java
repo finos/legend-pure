@@ -23,7 +23,8 @@ import org.junit.Test;
 public class TestRoot extends AbstractPureMappingTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime();
     }
 
@@ -34,7 +35,7 @@ public class TestRoot extends AbstractPureMappingTestWithCoreCompiled
     }
 
     @Test
-    public void testRoot() throws Exception
+    public void testRoot()
     {
         String source = "Class Person{name:String[1];}\n" +
                 "function a():meta::pure::mapping::SetImplementation[*]{[]}\n" +
@@ -53,46 +54,40 @@ public class TestRoot extends AbstractPureMappingTestWithCoreCompiled
                 "               a__SetImplementation_MANY_()\n" +
                 "           }\n" +
                 ")\n";
-        this.runtime.createInMemorySource("userId.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("userId.pure", source);
+        runtime.compile();
         assertSetSourceInformation(source, "Person");
     }
 
     @Test
     public void testRootError() throws Exception
     {
-        this.runtime.createInMemorySource("userId.pure", "Class Person{name:String[1];}\n" +
-                                                    "function a():meta::pure::mapping::SetImplementation[*]{[]}\n" +
-                                                    "###Mapping\n" +
-                                                    "Mapping myMap(\n" +
-                                                    "   *Person[op]: Operation\n" +
-                                                    "           {\n" +
-                                                    "               a__SetImplementation_MANY_(rel1,rel2)\n" +
-                                                    "           }\n" +
-                                                    "   *Person[rel1]: Operation\n" +
-                                                    "           {\n" +
-                                                    "               a__SetImplementation_MANY_()\n" +
-                                                    "           }\n" +
-                                                    "   Person[rel2]: Operation\n" +
-                                                    "           {\n" +
-                                                    "               a__SetImplementation_MANY_()\n" +
-                                                    "           }\n" +
-                                                    ")\n"
+        runtime.createInMemorySource("userId.pure",
+                "Class Person{name:String[1];}\n" +
+                        "function a():meta::pure::mapping::SetImplementation[*]{[]}\n" +
+                        "###Mapping\n" +
+                        "Mapping myMap(\n" +
+                        "   *Person[op]: Operation\n" +
+                        "           {\n" +
+                        "               a__SetImplementation_MANY_(rel1,rel2)\n" +
+                        "           }\n" +
+                        "   *Person[rel1]: Operation\n" +
+                        "           {\n" +
+                        "               a__SetImplementation_MANY_()\n" +
+                        "           }\n" +
+                        "   Person[rel2]: Operation\n" +
+                        "           {\n" +
+                        "               a__SetImplementation_MANY_()\n" +
+                        "           }\n" +
+                        ")\n"
         );
-        try
-        {
-            this.runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The class 'Person' is mapped by 3 set implementations and has 2 roots. There should be exactly one root set implementation for the class, and it should be marked with a '*'.", "userId.pure", 4, 9, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "The class 'Person' is mapped by 3 set implementations and has 2 roots. There should be exactly one root set implementation for the class, and it should be marked with a '*'.", "userId.pure", 4, 9, e);
     }
 
 
     @Test
-    public void testRootWithInclude() throws Exception
+    public void testRootWithInclude()
     {
         String source = "Class Person{name:String[1];}\n" +
                 "function a():meta::pure::mapping::SetImplementation[*]{[]}\n" +
@@ -122,13 +117,13 @@ public class TestRoot extends AbstractPureMappingTestWithCoreCompiled
                 "   include myMap1" +
                 "   include myMap2" +
                 ")\n";
-        this.runtime.createInMemorySource("userId.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("userId.pure", source);
+        runtime.compile();
         assertSetSourceInformation(source, "Person");
     }
 
     @Test
-    public void testRootWithIncludeDuplicate() throws Exception
+    public void testRootWithIncludeDuplicate()
     {
         String source = "Class Person{name:String[1];}\n" +
                 "Enum OK {e_true,e_false}\n" +
@@ -169,37 +164,31 @@ public class TestRoot extends AbstractPureMappingTestWithCoreCompiled
                 "   include myMap2\n" +
                 "   include myMap3\n" +
                 ")\n";
-        this.runtime.createInMemorySource("userId.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("userId.pure", source);
+        runtime.compile();
         assertSetSourceInformation(source, "Person");
     }
 
     @Test
-    public void testDuplicateError() throws Exception
+    public void testDuplicateError()
     {
-        this.runtime.createInMemorySource("userId.pure", "Class Person{name:String[1];}\n" +
-                                                    "function a():meta::pure::mapping::SetImplementation[*]{[]}\n" +
-                                                    "###Mapping\n" +
-                                                    "Mapping myMap1(\n" +
-                                                    "   *Person[one]: Operation\n" +
-                                                    "           {\n" +
-                                                    "               a__SetImplementation_MANY_()\n" +
-                                                    "           }\n" +
-                                                    "   Person[one]: Operation\n" +
-                                                    "           {\n" +
-                                                    "               a__SetImplementation_MANY_()\n" +
-                                                    "           }\n" +
-                                                    ")\n");
-        try
-        {
-            this.runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Duplicate mapping found with id: 'one' in mapping myMap1", 9, 4, e);
-        }
+        runtime.createInMemorySource("userId.pure",
+                "Class Person{name:String[1];}\n" +
+                        "function a():meta::pure::mapping::SetImplementation[*]{[]}\n" +
+                        "###Mapping\n" +
+                        "Mapping myMap1(\n" +
+                        "   *Person[one]: Operation\n" +
+                        "           {\n" +
+                        "               a__SetImplementation_MANY_()\n" +
+                        "           }\n" +
+                        "   Person[one]: Operation\n" +
+                        "           {\n" +
+                        "               a__SetImplementation_MANY_()\n" +
+                        "           }\n" +
+                        ")\n");
 
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "Duplicate mapping found with id: 'one' in mapping myMap1", 9, 4, e);
     }
 }
 

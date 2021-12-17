@@ -16,22 +16,24 @@ package org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning;
 
 import org.eclipse.collections.api.list.ListIterable;
 
-public class MilestonedPropertyMetaData {
+public class MilestonedPropertyMetaData
+{
+    private final ListIterable<String> classTemporalStereotypes;
+    private final ListIterable<String> temporalDatePropertyNamesForStereotypes;
 
-    private ListIterable<String> classTemporalStereotypes;
-    private ListIterable<String> temporalDatePropertyNamesForStereotypes;
-
-    MilestonedPropertyMetaData(ListIterable<String> classTemporalStereotypes, ListIterable<String> temporalDatePropertyNamesForStereotypes) {
+    MilestonedPropertyMetaData(ListIterable<String> classTemporalStereotypes, ListIterable<String> temporalDatePropertyNamesForStereotypes)
+    {
         this.classTemporalStereotypes = classTemporalStereotypes;
         this.temporalDatePropertyNamesForStereotypes = temporalDatePropertyNamesForStereotypes;
     }
 
-    public ListIterable<String> getClassTemporalStereotypes() {
+    public ListIterable<String> getClassTemporalStereotypes()
+    {
         return this.classTemporalStereotypes;
     }
 
-    public ListIterable<String> getTemporalDatePropertyNamesForStereotypes() {
+    public ListIterable<String> getTemporalDatePropertyNamesForStereotypes()
+    {
         return this.temporalDatePropertyNamesForStereotypes;
     }
-
 }

@@ -15,17 +15,18 @@
 package org.finos.legend.pure.m3.navigation.function;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.impl.utility.ArrayIterate;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
-import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,76 +89,71 @@ public class FunctionDescriptor
      */
     public static String getFunctionDescriptor(CoreInstance function, ProcessorSupport processorSupport)
     {
-        StringBuilder builder = new StringBuilder();
-        writeFunctionDescriptor(builder, function, processorSupport);
-        return builder.toString();
+        return writeFunctionDescriptor(new StringBuilder(), function, processorSupport).toString();
     }
 
     /**
      * Write the descriptor for a function to the given appendable.
-     *  @param appendable       appendable to write to
+     *
+     * @param appendable       appendable to write to
      * @param function         function
      * @param processorSupport processor support
      */
-    public static void writeFunctionDescriptor(Appendable appendable, CoreInstance function, ProcessorSupport processorSupport)
+    public static <T extends Appendable> T writeFunctionDescriptor(T appendable, CoreInstance function, ProcessorSupport processorSupport)
     {
-        try
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+
+        // Write package
+        CoreInstance pkg = function.getValueForMetaPropertyToOne(M3Properties._package);
+        if ((pkg != null) && !M3Paths.Root.equals(pkg.getName()))
         {
-            // Write package
-            CoreInstance pkg = function.getValueForMetaPropertyToOne(M3Properties._package);
-            if ((pkg != null) && !M3Paths.Root.equals(pkg.getName()))
-            {
-                PackageableElement.writeUserPathForPackageableElement(appendable, pkg);
-                appendable.append(PackageableElement.DEFAULT_PATH_SEPARATOR);
-            }
+            PackageableElement.writeUserPathForPackageableElement(appendable, pkg);
+            safeAppendable.append(PackageableElement.DEFAULT_PATH_SEPARATOR);
+        }
 
-            // Write function name
-            CoreInstance functionName = function.getValueForMetaPropertyToOne(M3Properties.functionName);
-            if (functionName == null)
-            {
-                throw new IllegalArgumentException("Anonymous functions do not have descriptors");
-            }
-            appendable.append(PrimitiveUtilities.getStringValue(functionName));
+        // Write function name
+        CoreInstance functionName = function.getValueForMetaPropertyToOne(M3Properties.functionName);
+        if (functionName == null)
+        {
+            throw new IllegalArgumentException("Anonymous functions do not have descriptors");
+        }
+        safeAppendable.append(PrimitiveUtilities.getStringValue(functionName));
 
-            // Write parameter types and multiplicities
-            CoreInstance functionType = processorSupport.function_getFunctionType(function);
-            appendable.append('(');
-            ListIterable<? extends CoreInstance> parameters = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
-            if (parameters.notEmpty())
+        // Write parameter types and multiplicities
+        CoreInstance functionType = processorSupport.function_getFunctionType(function);
+        safeAppendable.append('(');
+        ListIterable<? extends CoreInstance> parameters = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
+        if (parameters.notEmpty())
+        {
+            boolean first = true;
+            for (CoreInstance parameter : parameters)
             {
-                boolean first = true;
-                for (CoreInstance parameter : parameters)
+                if (first)
                 {
-                    if (first)
-                    {
-                        first = false;
-                    }
-                    else
-                    {
-                        appendable.append(", ");
-                    }
-                    CoreInstance parameterType = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.genericType, processorSupport);
-                    CoreInstance parameterMultiplicity = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, processorSupport);
-                    writeDescriptorTypeAndMultiplicity(appendable, parameterType, parameterMultiplicity, processorSupport);
+                    first = false;
                 }
+                else
+                {
+                    safeAppendable.append(", ");
+                }
+                CoreInstance parameterType = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.genericType, processorSupport);
+                CoreInstance parameterMultiplicity = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, processorSupport);
+                writeDescriptorTypeAndMultiplicity(safeAppendable, parameterType, parameterMultiplicity, processorSupport);
             }
-            appendable.append(')');
+        }
+        safeAppendable.append(')');
 
-            // Write return type and multiplicity
-            appendable.append(':');
-            CoreInstance returnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport);
-            CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
-            writeDescriptorTypeAndMultiplicity(appendable, returnType, returnMultiplicity, processorSupport);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        // Write return type and multiplicity
+        safeAppendable.append(':');
+        CoreInstance returnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport);
+        CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
+        writeDescriptorTypeAndMultiplicity(safeAppendable, returnType, returnMultiplicity, processorSupport);
+        return appendable;
     }
 
-    private static void writeDescriptorTypeAndMultiplicity(Appendable appendable, CoreInstance genericType, CoreInstance multiplicity, ProcessorSupport processorSupport) throws IOException
+    private static void writeDescriptorTypeAndMultiplicity(SafeAppendable appendable, CoreInstance genericType, CoreInstance multiplicity, ProcessorSupport processorSupport)
     {
-        if (GenericType.isGenericTypeConcrete(genericType, processorSupport))
+        if (GenericType.isGenericTypeConcrete(genericType))
         {
             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
             if (FunctionType.isFunctionType(rawType, processorSupport))
@@ -171,7 +167,7 @@ public class FunctionDescriptor
         }
         else
         {
-            appendable.append(GenericType.getTypeParameterName(genericType, processorSupport));
+            appendable.append(GenericType.getTypeParameterName(genericType));
         }
 
         Multiplicity.print(appendable, multiplicity, true);
@@ -217,11 +213,7 @@ public class FunctionDescriptor
             }
             else
             {
-                String[] paramStrings = PARAMETER_DELIMITER.split(paramsString);
-                for (int i = 0; i < paramStrings.length; i++)
-                {
-                    typeWithMultiplicityDescriptorToId(builder, paramStrings[i]);
-                }
+                ArrayIterate.forEach(PARAMETER_DELIMITER.split(paramsString), p -> typeWithMultiplicityDescriptorToId(builder, p));
             }
 
             typeWithMultiplicityDescriptorToId(builder, matcher.group(3));
@@ -238,29 +230,21 @@ public class FunctionDescriptor
         Matcher matcher = TYPE_WITH_MULTIPLICITY_NUM.matcher(typeWithMultiplicityDescriptor);
         if (matcher.matches())
         {
-            builder.append('_');
-            builder.append(matcher.group(1));
-            builder.append('_');
-            builder.append(Integer.parseInt(matcher.group(2)));
-            builder.append('_');
+            builder.append('_').append(matcher.group(1)).append('_').append(Integer.parseInt(matcher.group(2))).append('_');
             return;
         }
 
         matcher = TYPE_WITH_MULTIPLICITY_MANY.matcher(typeWithMultiplicityDescriptor);
         if (matcher.matches())
         {
-            builder.append('_');
-            builder.append(matcher.group(1));
-            builder.append("_MANY_");
+            builder.append('_').append(matcher.group(1)).append("_MANY_");
             return;
         }
 
         matcher = TYPE_WITH_MULTIPLICITY_NUM_TO_NUM.matcher(typeWithMultiplicityDescriptor);
         if (matcher.matches())
         {
-            builder.append('_');
-            builder.append(matcher.group(1));
-            builder.append('_');
+            builder.append('_').append(matcher.group(1)).append('_');
             int num1 = Integer.parseInt(matcher.group(2));
             int num2 = Integer.parseInt(matcher.group(3));
             if (num1 == num2)
@@ -269,11 +253,7 @@ public class FunctionDescriptor
             }
             else
             {
-                builder.append('$');
-                builder.append(num1);
-                builder.append('_');
-                builder.append(num2);
-                builder.append('$');
+                builder.append('$').append(num1).append('_').append(num2).append('$');
             }
             builder.append('_');
             return;
@@ -282,9 +262,7 @@ public class FunctionDescriptor
         matcher = TYPE_WITH_MULTIPLICITY_NUM_TO_MANY.matcher(typeWithMultiplicityDescriptor);
         if (matcher.matches())
         {
-            builder.append('_');
-            builder.append(matcher.group(1));
-            builder.append('_');
+            builder.append('_').append(matcher.group(1)).append('_');
             int num = Integer.parseInt(matcher.group(2));
             if (num == 0)
             {
@@ -292,9 +270,7 @@ public class FunctionDescriptor
             }
             else
             {
-                builder.append('$');
-                builder.append(num);
-                builder.append("_MANY$_");
+                builder.append('$').append(num).append("_MANY$_");
             }
             return;
         }
@@ -302,11 +278,7 @@ public class FunctionDescriptor
         matcher = TYPE_WITH_MULTIPLICITY_PARAMETER.matcher(typeWithMultiplicityDescriptor);
         if (matcher.matches())
         {
-            builder.append('_');
-            builder.append(matcher.group(1));
-            builder.append('_');
-            builder.append(matcher.group(2));
-            builder.append('_');
+            builder.append('_').append(matcher.group(1)).append('_').append(matcher.group(2)).append('_');
             return;
         }
 

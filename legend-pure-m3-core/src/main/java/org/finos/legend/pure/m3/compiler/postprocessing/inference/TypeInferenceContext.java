@@ -14,20 +14,14 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.inference;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
-import org.finos.legend.pure.m3.navigation.function.FunctionType;
-import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m3.navigation.typeparameter.TypeParameter;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
@@ -35,9 +29,15 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.G
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.function.FunctionType;
+import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.type.Type;
+import org.finos.legend.pure.m3.navigation.typeparameter.TypeParameter;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -51,9 +51,9 @@ public class TypeInferenceContext
     private final TypeInferenceContext parent;
     private final ProcessorSupport processorSupport;
     private CoreInstance scope;
-    private MutableList<TypeInferenceContextState> states = FastList.newList();
+    private MutableList<TypeInferenceContextState> states = Lists.mutable.empty();
 
-    private MutableSet<String> tops = UnifiedSet.newSet();
+    private final MutableSet<String> tops = Sets.mutable.empty();
 
     public TypeInferenceContext(CoreInstance owner, ProcessorSupport processorSupport)
     {
@@ -63,21 +63,25 @@ public class TypeInferenceContext
         this.processorSupport = processorSupport;
         if (owner != null)
         {
-            ListIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameter> typeParameters = Lists.immutable.empty();
+            ListIterable<? extends org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameter> typeParameters;
             if (owner instanceof Class)
             {
-                typeParameters = ((Class)owner)._typeParameters().toList();
+                typeParameters = ListHelper.wrapListIterable(((Class<?>) owner)._typeParameters());
             }
             else if (owner instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)
             {
-                typeParameters = ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)owner)._typeParameters().toList();
+                typeParameters = ListHelper.wrapListIterable(((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType) owner)._typeParameters());
             }
-            for (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameter typeParameter : typeParameters)
+            else
+            {
+                typeParameters = Lists.immutable.empty();
+            }
+            typeParameters.forEach(typeParameter ->
             {
                 String paramName = typeParameter._name();
                 this.states.getLast().putTypeParameterValue(paramName, TypeParameter.wrapGenericType(typeParameter, processorSupport), this, true);
                 this.tops.add(paramName);
-            }
+            });
         }
     }
 
@@ -124,13 +128,13 @@ public class TypeInferenceContext
 
     public boolean isTypeParameterResolved(CoreInstance genericType)
     {
-        if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType, this.processorSupport))
+        if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType))
         {
             return true;
         }
-        ParameterValueWithFlag gf = this.states.getLast().getTypeParameterValueWithFlag(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(genericType, this.processorSupport));
+        ParameterValueWithFlag gf = this.states.getLast().getTypeParameterValueWithFlag(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(genericType));
 
-        if (gf != null && (gf.isTerminal(this.processorSupport) || org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(gf.getParameterValue(), this.processorSupport)))
+        if (gf != null && (gf.isTerminal(this.processorSupport) || org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(gf.getParameterValue())))
         {
             return true;
         }
@@ -138,56 +142,46 @@ public class TypeInferenceContext
         TypeInferenceContext top = getTopContext();
         if (top != null)
         {
-            ParameterValueWithFlag parentGf = top.states.getLast().getTypeParameterValueWithFlag(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(genericType, this.processorSupport));
-            return (parentGf != null && (parentGf.isTerminal(this.processorSupport) || org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(parentGf.getParameterValue(), this.processorSupport)));
+            ParameterValueWithFlag parentGf = top.states.getLast().getTypeParameterValueWithFlag(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(genericType));
+            return (parentGf != null && (parentGf.isTerminal(this.processorSupport) || org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(parentGf.getParameterValue())));
         }
         return false;
     }
 
     public TypeInferenceContext getTopContext()
     {
-        return this.parent == null? this : this.parent.getTopContext();
+        return this.parent == null ? this : this.parent.getTopContext();
     }
 
     @Override
     public String toString()
     {
-        StringBuilder builder = new StringBuilder(128);
-        print(builder);
-        return builder.toString();
+        return print(new StringBuilder(128)).toString();
     }
 
-    public void print(Appendable appendable)
+    public <T extends Appendable> T print(T appendable)
     {
-        try
-        {
-            appendable.append("##>");
-            printRecursive(appendable);
-            appendable.append("<##");
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        safeAppendable.append("##>");
+        printRecursive(safeAppendable);
+        safeAppendable.append("<##");
+        return appendable;
     }
 
-    private void printRecursive(Appendable appendable) throws IOException
+    private void printRecursive(SafeAppendable appendable)
     {
-        appendable.append('[');
-        appendable.append(getId());
-        appendable.append(":");
+        appendable.append('[').append(getId()).append(":");
         printScope(appendable);
         appendable.append(" ~ ");
         printStates(appendable);
         appendable.append(']');
         if (this.parent != null)
         {
-            appendable.append(" -> ");
-            this.parent.printRecursive(appendable);
+            this.parent.printRecursive(appendable.append(" -> "));
         }
     }
 
-    private void printScope(Appendable appendable) throws IOException
+    private void printScope(SafeAppendable appendable)
     {
         if (this.scope == null)
         {
@@ -202,18 +196,18 @@ public class TypeInferenceContext
             String functionName = null;
             if (this.scope instanceof FunctionExpression)
             {
-                functionName = ((FunctionExpression)this.scope)._functionName();
+                functionName = ((FunctionExpression) this.scope)._functionName();
             }
             else if (this.scope instanceof Function)
             {
-                functionName = ((Function)this.scope)._functionName();
+                functionName = ((Function<?>) this.scope)._functionName();
             }
             appendable.append(functionName == null ? "null" : functionName);
             FunctionType.print(appendable, this.processorSupport.function_getFunctionType(this.scope), this.processorSupport);
         }
     }
 
-    private void printStates(Appendable appendable) throws IOException
+    private void printStates(SafeAppendable appendable)
     {
         boolean firstState = true;
         for (TypeInferenceContextState state : this.states)
@@ -230,7 +224,7 @@ public class TypeInferenceContext
         }
     }
 
-    private void printState(Appendable appendable, TypeInferenceContextState state) throws IOException
+    private void printState(SafeAppendable appendable, TypeInferenceContextState state)
     {
         boolean firstTypeParam = true;
         appendable.append('[');
@@ -244,15 +238,14 @@ public class TypeInferenceContext
             {
                 appendable.append(", ");
             }
-            appendable.append(parameter);
-            appendable.append(" = ");
+            appendable.append(parameter).append(" = ");
             ParameterValueWithFlag valueWithFlag = state.getTypeParameterValueWithFlag(parameter);
             if (valueWithFlag.isTerminal(this.processorSupport))
             {
                 appendable.append('*');
             }
             org.finos.legend.pure.m3.navigation.generictype.GenericType.print(appendable, valueWithFlag.getParameterValue(), this.processorSupport);
-            if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(valueWithFlag.getParameterValue(), processorSupport))
+            if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(valueWithFlag.getParameterValue()))
             {
                 appendable.append(':').append(valueWithFlag.getTargetGenericsContext().getId());
             }
@@ -270,8 +263,7 @@ public class TypeInferenceContext
             {
                 appendable.append(", ");
             }
-            appendable.append(parameter);
-            appendable.append(" = ");
+            appendable.append(parameter).append(" = ");
             ParameterValueWithFlag valueWithFlag = state.getMultiplicityParameterValueWithFlag(parameter);
             if (valueWithFlag.isTerminal(this.processorSupport))
             {
@@ -297,10 +289,10 @@ public class TypeInferenceContext
                 // New registration
                 this.states.getLast().putMultiplicityParameterValue(name, valueMul, targetGenericsContext, false);
             }
-            else  if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(existing.getParameterValue()) && org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(valueMul))
+            else if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(existing.getParameterValue()) && org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(valueMul))
             {
                 // Merge two concrete multiplicities
-                CoreInstance mul = org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.minSubsumingMultiplicity(FastList.newListWith(valueMul, existing.getParameterValue()), this.processorSupport);
+                CoreInstance mul = org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.minSubsumingMultiplicity(Lists.mutable.with(valueMul, existing.getParameterValue()), this.processorSupport);
                 this.states.getLast().putMultiplicityParameterValue(name, mul, targetGenericsContext, false);
             }
             else if (this.states.size() > 1)
@@ -309,13 +301,13 @@ public class TypeInferenceContext
                 // be processed by TypeInference.potentiallyUpdateParentTypeParamForInstanceValueWithManyElements later
                 this.states.getLast().putMultiplicityParameterValue(name, valueMul, targetGenericsContext, false);
             }
-            else  if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(existing.getParameterValue()))
+            else if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(existing.getParameterValue()))
             {
                 // Replace the existing concrete registration with a generic one and move the concrete one to the referenced type
                 this.states.getLast().putMultiplicityParameterValue(name, valueMul, targetGenericsContext, false);
-                forward = new RegistrationRequest(targetGenericsContext, valueMul, (Multiplicity) existing.getParameterValue());
+                forward = new RegistrationRequest(targetGenericsContext, valueMul, existing.getParameterValue());
             }
-            else  if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(valueMul))
+            else if (org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isMultiplicityConcrete(valueMul))
             {
                 // forward the registration of this concrete type to the already referenced type
                 forward = new RegistrationRequest(existing.getTargetGenericsContext(), existing.getParameterValue(), valueMul);
@@ -352,8 +344,8 @@ public class TypeInferenceContext
 
         if (valueForMetaPropertyToOne != null)
         {
-            valueForMetaPropertyToOne = (GenericType)org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(valueForMetaPropertyToOne, this.processorSupport);
-            String name = org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(templateGenType, this.processorSupport);
+            valueForMetaPropertyToOne = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(valueForMetaPropertyToOne, this.processorSupport);
+            String name = org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(templateGenType);
             if (name != null)
             {
                 ParameterValueWithFlag existing = this.states.getLast().getTypeParameterValueWithFlag(name);
@@ -365,10 +357,10 @@ public class TypeInferenceContext
                     // New registration
                     this.states.getLast().putTypeParameterValue(name, valueForMetaPropertyToOne, targetGenericsContext, false);
                 }
-                else  if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(existing.getParameterValue(), this.processorSupport) && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(valueForMetaPropertyToOne))
+                else if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(existing.getParameterValue()) && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(valueForMetaPropertyToOne))
                 {
                     // Merge two concrete types
-                    GenericType res = (GenericType)org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(FastList.newListWith(existing.getParameterValue(), valueForMetaPropertyToOne), TypeParameter.isCovariant(templateGenType), false, this.processorSupport);
+                    GenericType res = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(Lists.mutable.with(existing.getParameterValue(), valueForMetaPropertyToOne), TypeParameter.isCovariant(templateGenType), false, this.processorSupport);
                     this.states.getLast().putTypeParameterValue(name, res, targetGenericsContext, false);
 
                     // See if the replacement is the more concrete version of a previously semi-concrete type (List<T> replaced by List<String>)
@@ -376,7 +368,7 @@ public class TypeInferenceContext
                     CoreInstance replacementRawType = res._rawType();
                     if (existingRawType.equals(replacementRawType))
                     {
-                        Iterator<? extends GenericType> existingTypeArguments = ((GenericType)existing.getParameterValue())._typeArguments().iterator();
+                        Iterator<? extends GenericType> existingTypeArguments = ((GenericType) existing.getParameterValue())._typeArguments().iterator();
                         Iterator<? extends GenericType> replacementTypeArguments = res._typeArguments().iterator();
                         while (existingTypeArguments.hasNext())
                         {
@@ -395,13 +387,13 @@ public class TypeInferenceContext
                     // be processed by TypeInference.potentiallyUpdateParentTypeParamForInstanceValueWithManyElements later
                     this.states.getLast().putTypeParameterValue(name, valueForMetaPropertyToOne, targetGenericsContext, false);
                 }
-                else  if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(existing.getParameterValue(), this.processorSupport))
+                else if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(existing.getParameterValue()))
                 {
                     // Replace the existing concrete registration with a generic one and move the concrete one to the referenced type
                     this.states.getLast().putTypeParameterValue(name, valueForMetaPropertyToOne, targetGenericsContext, false);
                     forwards.add(new RegistrationRequest(targetGenericsContext, valueForMetaPropertyToOne, existing.getParameterValue()));
                 }
-                else  if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(valueForMetaPropertyToOne, this.processorSupport))
+                else if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(valueForMetaPropertyToOne))
                 {
                     if (!existing.getTargetGenericsContext().equals(this))
                     {
@@ -420,19 +412,19 @@ public class TypeInferenceContext
                 observer.register(templateGenType, valueForMetaPropertyToOne, this, targetGenericsContext);
 
                 observer.shiftTab();
-                for (RegistrationRequest request: forwards)
+                for (RegistrationRequest request : forwards)
                 {
                     request.context.register((GenericType) request.template, (GenericType) request.value, targetGenericsContext, observer);
                 }
                 observer.unShiftTab();
             }
 
-            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenType, this.processorSupport) && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(valueForMetaPropertyToOne, this.processorSupport))
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenType) && org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(valueForMetaPropertyToOne))
             {
                 if (!Type.isBottomType(ImportStub.withImportStubByPass(templateGenType._rawTypeCoreInstance(), this.processorSupport), this.processorSupport) &&
-                    !Type.isBottomType(ImportStub.withImportStubByPass(valueForMetaPropertyToOne._rawTypeCoreInstance(), this.processorSupport), this.processorSupport) &&
-                    !Type.isTopType(ImportStub.withImportStubByPass(templateGenType._rawTypeCoreInstance(), this.processorSupport), this.processorSupport) &&
-                    !Type.isTopType(ImportStub.withImportStubByPass(valueForMetaPropertyToOne._rawTypeCoreInstance(), this.processorSupport), this.processorSupport))
+                        !Type.isBottomType(ImportStub.withImportStubByPass(valueForMetaPropertyToOne._rawTypeCoreInstance(), this.processorSupport), this.processorSupport) &&
+                        !Type.isTopType(ImportStub.withImportStubByPass(templateGenType._rawTypeCoreInstance(), this.processorSupport), this.processorSupport) &&
+                        !Type.isTopType(ImportStub.withImportStubByPass(valueForMetaPropertyToOne._rawTypeCoreInstance(), this.processorSupport), this.processorSupport))
                 {
                     ListIterable<? extends CoreInstance> typeValues;
                     ListIterable<? extends CoreInstance> mulValues;
@@ -443,8 +435,7 @@ public class TypeInferenceContext
                         typeTemplates = extractTypes(org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveClassTypeParameterUsingInheritance(templateGenType, valueForMetaPropertyToOne, this.processorSupport));
                         mulTemplates = extractMuls(org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveClassMultiplicityParameterUsingInheritance(templateGenType, ImportStub.withImportStubByPass(valueForMetaPropertyToOne._rawTypeCoreInstance(), this.processorSupport), this.processorSupport));
                         typeValues = valueForMetaPropertyToOne._typeArguments().toList();
-                        mulValues =  valueForMetaPropertyToOne._multiplicityArguments().toList();
-
+                        mulValues = valueForMetaPropertyToOne._multiplicityArguments().toList();
                     }
                     else
                     {
@@ -456,19 +447,19 @@ public class TypeInferenceContext
 
                     for (int z = 0; z < mulValues.size(); z++)
                     {
-                        registerMul((Multiplicity)mulTemplates.get(z), (Multiplicity)mulValues.get(z), targetGenericsContext, observer);
+                        registerMul((Multiplicity) mulTemplates.get(z), (Multiplicity) mulValues.get(z), targetGenericsContext, observer);
                     }
 
                     for (int z = 0; z < typeValues.size(); z++)
                     {
-                        GenericType first = (GenericType)typeTemplates.get(z);
-                        GenericType second = (GenericType)typeValues.get(z);
+                        GenericType first = (GenericType) typeTemplates.get(z);
+                        GenericType second = (GenericType) typeValues.get(z);
 
-                        if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(first, this.processorSupport) && first._rawTypeCoreInstance() instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType &&
-                                org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(second, this.processorSupport) && second._rawTypeCoreInstance() instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)
+                        if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(first) && first._rawTypeCoreInstance() instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType &&
+                                org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(second) && second._rawTypeCoreInstance() instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)
                         {
-                            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType firstFuncType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)first._rawTypeCoreInstance();
-                            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType secondFuncType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType)second._rawTypeCoreInstance();
+                            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType firstFuncType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType) first._rawTypeCoreInstance();
+                            org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType secondFuncType = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType) second._rawTypeCoreInstance();
                             observer.register(first, second, this, targetGenericsContext);
                             observer.shiftTab();
 
@@ -496,11 +487,11 @@ public class TypeInferenceContext
 
     public CoreInstance resolve(CoreInstance genericType)
     {
-        if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType, this.processorSupport))
+        if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType))
         {
             return genericType;
         }
-        ParameterValueWithFlag gf = this.states.getLast().getTypeParameterValueWithFlag(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(genericType, this.processorSupport));
+        ParameterValueWithFlag gf = this.states.getLast().getTypeParameterValueWithFlag(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(genericType));
         if (gf != null)
         {
             return gf.getParameterValue();
@@ -508,7 +499,7 @@ public class TypeInferenceContext
         TypeInferenceContext top = getTopContext();
         if (top != null)
         {
-            ParameterValueWithFlag parentGf = top.states.getLast().getTypeParameterValueWithFlag(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(genericType, this.processorSupport));
+            ParameterValueWithFlag parentGf = top.states.getLast().getTypeParameterValueWithFlag(org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(genericType));
             if (parentGf != null)
             {
                 return parentGf.getParameterValue();
@@ -542,7 +533,7 @@ public class TypeInferenceContext
         TypeInferenceContextState state = this.states.getLast();
         MutableMap<String, CoreInstance> result = Maps.mutable.empty();
 
-        for (String parameter: state.getTypeParameters())
+        for (String parameter : state.getTypeParameters())
         {
             result.put(parameter, this.resolveTypeParameter(parameter));
         }
@@ -554,7 +545,7 @@ public class TypeInferenceContext
         TypeInferenceContextState state = this.states.getLast();
         MutableMap<String, CoreInstance> result = Maps.mutable.empty();
 
-        for (String parameter: state.getMultiplicityParameters())
+        for (String parameter : state.getMultiplicityParameters())
         {
             result.put(parameter, this.resolveMultiplicityParameter(parameter));
         }
@@ -564,9 +555,9 @@ public class TypeInferenceContext
     CoreInstance resolveTypeParameter(String parameter)
     {
         ParameterValueWithFlag value = this.states.getLast().getTypeParameterValueWithFlag(parameter);
-        if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(value.getParameterValue(), this.processorSupport))
+        if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(value.getParameterValue()))
         {
-            String referencedName = org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(value.getParameterValue(), this.processorSupport);
+            String referencedName = org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(value.getParameterValue());
             TypeInferenceContext referencedContext = value.getTargetGenericsContext();
             if (!this.equals(referencedContext) && referencedContext.containsTypeParameter(referencedName))
             {
@@ -608,11 +599,11 @@ public class TypeInferenceContext
 
     private static class RegistrationRequest
     {
-        TypeInferenceContext context = null;
-        CoreInstance template = null;
-        CoreInstance value = null;
+        private final TypeInferenceContext context;
+        private final CoreInstance template;
+        private final CoreInstance value;
 
-        public RegistrationRequest(TypeInferenceContext context, CoreInstance template,  CoreInstance value)
+        private RegistrationRequest(TypeInferenceContext context, CoreInstance template, CoreInstance value)
         {
             this.value = value;
             this.template = template;

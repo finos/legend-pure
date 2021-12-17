@@ -27,6 +27,7 @@ import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 import java.util.Iterator;
 import java.util.List;
@@ -122,9 +123,9 @@ public class GraphPath
         return getDescription(this.startNodePath, this.edges);
     }
 
-    public StringBuilder writeDescription(StringBuilder builder)
+    public <T extends Appendable> T writeDescription(T appendable)
     {
-        return writeDescription(builder, this.startNodePath, this.edges);
+        return writeDescription(appendable, this.startNodePath, this.edges);
     }
 
     public String getPureExpression()
@@ -132,9 +133,9 @@ public class GraphPath
         return getPureExpression(this.startNodePath, this.edges);
     }
 
-    public StringBuilder writePureExpression(StringBuilder builder)
+    public <T extends Appendable> T writePureExpression(T appendable)
     {
-        return writeDescription(builder, this.startNodePath, this.edges);
+        return writePureExpression(appendable, this.startNodePath, this.edges);
     }
 
     public boolean startsWith(GraphPath other)
@@ -419,11 +420,11 @@ public class GraphPath
         return writeDescription(new StringBuilder(startNodePath.length() + (16 * edges.size())), startNodePath, edges).toString();
     }
 
-    private static StringBuilder writeDescription(StringBuilder builder, String startNodePath, ListIterable<? extends Edge> edges)
+    private static <T extends Appendable> T writeDescription(T appendable, String startNodePath, ListIterable<? extends Edge> edges)
     {
-        builder.append(startNodePath);
-        edges.forEachWith(Edge::writeMessage, builder);
-        return builder;
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable).append(startNodePath);
+        edges.forEachWith(Edge::writeMessage, safeAppendable);
+        return appendable;
     }
 
     private static String getPureExpression(String startNodePath, ListIterable<? extends Edge> edges)
@@ -431,11 +432,11 @@ public class GraphPath
         return writePureExpression(new StringBuilder(startNodePath.length() + (16 * edges.size())), startNodePath, edges).toString();
     }
 
-    private static StringBuilder writePureExpression(StringBuilder builder, String startNodePath, ListIterable<? extends Edge> edges)
+    private static <T extends Appendable> T writePureExpression(T appendable, String startNodePath, ListIterable<? extends Edge> edges)
     {
-        builder.append(startNodePath);
-        edges.forEachWith(Edge::writePureExpression, builder);
-        return builder;
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable).append(startNodePath);
+        edges.forEachWith(Edge::writePureExpression, safeAppendable);
+        return appendable;
     }
 
     public static class Builder
@@ -573,14 +574,20 @@ public class GraphPath
 
         abstract CoreInstance apply(CoreInstance node);
 
-        StringBuilder writeMessage(StringBuilder message)
+        <T extends Appendable> T writeMessage(T appendable)
         {
-            return message.append('.').append(this.property);
+            writeMessage(SafeAppendable.wrap(appendable));
+            return appendable;
         }
 
-        StringBuilder writePureExpression(StringBuilder expression)
+        SafeAppendable writeMessage(SafeAppendable appendable)
         {
-            return expression.append('.').append(this.property);
+            return appendable.append('.').append(this.property);
+        }
+
+        SafeAppendable writePureExpression(SafeAppendable appendable)
+        {
+            return appendable.append('.').append(this.property);
         }
     }
 
@@ -632,20 +639,20 @@ public class GraphPath
         }
 
         @Override
-        final StringBuilder writeMessage(StringBuilder message)
+        final SafeAppendable writeMessage(SafeAppendable appendable)
         {
-            return writeToManySelectMessage(super.writeMessage(message).append('[')).append(']');
+            return writeToManySelectMessage(super.writeMessage(appendable).append('[')).append(']');
         }
 
         @Override
-        final StringBuilder writePureExpression(StringBuilder expression)
+        final SafeAppendable writePureExpression(SafeAppendable appendable)
         {
-            return writePureSelectExpression(super.writePureExpression(expression));
+            return writePureSelectExpression(super.writePureExpression(appendable));
         }
 
-        abstract StringBuilder writeToManySelectMessage(StringBuilder message);
+        abstract SafeAppendable writeToManySelectMessage(SafeAppendable appendable);
 
-        abstract StringBuilder writePureSelectExpression(StringBuilder expression);
+        abstract SafeAppendable writePureSelectExpression(SafeAppendable appendable);
     }
 
     private static class ToManyPropertyAtIndexEdge extends ToManyPropertyEdge
@@ -689,15 +696,15 @@ public class GraphPath
         }
 
         @Override
-        StringBuilder writeToManySelectMessage(StringBuilder message)
+        SafeAppendable writeToManySelectMessage(SafeAppendable appendable)
         {
-            return message.append(this.index);
+            return appendable.append(this.index);
         }
 
         @Override
-        StringBuilder writePureSelectExpression(StringBuilder expression)
+        SafeAppendable writePureSelectExpression(SafeAppendable appendable)
         {
-            return expression.append("->at(").append(this.index).append(')');
+            return appendable.append("->at(").append(this.index).append(')');
         }
 
         static ToManyPropertyAtIndexEdge tryParse(String string, int start, int end)
@@ -754,15 +761,15 @@ public class GraphPath
         }
 
         @Override
-        StringBuilder writeToManySelectMessage(StringBuilder message)
+        SafeAppendable writeToManySelectMessage(SafeAppendable appendable)
         {
-            return message.append('\'').append(this.valueName).append('\'');
+            return appendable.append('\'').append(this.valueName).append('\'');
         }
 
         @Override
-        StringBuilder writePureSelectExpression(StringBuilder expression)
+        SafeAppendable writePureSelectExpression(SafeAppendable appendable)
         {
-            return expression.append("->get('").append(this.valueName).append("')->toOne()");
+            return appendable.append("->get('").append(this.valueName).append("')->toOne()");
         }
 
         static ToManyPropertyWithNameEdge tryParse(String string, int start, int end)
@@ -821,15 +828,15 @@ public class GraphPath
         }
 
         @Override
-        StringBuilder writeToManySelectMessage(StringBuilder message)
+        SafeAppendable writeToManySelectMessage(SafeAppendable appendable)
         {
-            return message.append(this.keyProperty).append("='").append(this.key).append('\'');
+            return appendable.append(this.keyProperty).append("='").append(this.key).append('\'');
         }
 
         @Override
-        StringBuilder writePureSelectExpression(StringBuilder expression)
+        SafeAppendable writePureSelectExpression(SafeAppendable appendable)
         {
-            return expression.append("->filter(x | $x.").append(this.keyProperty).append(" == '").append(this.key).append("')->toOne()");
+            return appendable.append("->filter(x | $x.").append(this.keyProperty).append(" == '").append(this.key).append("')->toOne()");
         }
 
         static ToManyPropertyWithStringKeyEdge tryParse(String string, int start, int end)

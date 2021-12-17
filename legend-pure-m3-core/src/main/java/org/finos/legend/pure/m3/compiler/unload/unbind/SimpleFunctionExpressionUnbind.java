@@ -15,22 +15,21 @@
 package org.finos.legend.pure.m3.compiler.unload.unbind;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Automap;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningDatesPropagationFunctions;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.SimpleFunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
@@ -50,7 +49,7 @@ public class SimpleFunctionExpressionUnbind implements MatchRunner<SimpleFunctio
     {
         ProcessorSupport processorSupport = state.getProcessorSupport();
 
-        Function function = (Function)ImportStub.withImportStubByPass(functionExpression._funcCoreInstance(), processorSupport);
+        Function<?> function = (Function<?>) ImportStub.withImportStubByPass(functionExpression._funcCoreInstance(), processorSupport);
         if (function != null)
         {
             function._applicationsRemove(functionExpression);
@@ -60,24 +59,20 @@ public class SimpleFunctionExpressionUnbind implements MatchRunner<SimpleFunctio
             }
         }
 
-        cleanAutoMapPropertyIfNecessary(functionExpression, state, matcher, processorSupport);
+        cleanAutoMapPropertyIfNecessary(functionExpression, state, matcher);
         MilestoningDatesPropagationFunctions.undoAutoGenMilestonedQualifier(functionExpression, modelRepository, processorSupport);
 
         functionExpression._funcRemove();
         functionExpression._resolvedTypeParametersRemove();
         functionExpression._resolvedMultiplicityParametersRemove();
-        for (ValueSpecification parameterValue : functionExpression._parametersValues())
-        {
-            matcher.fullMatch(parameterValue, state);
-        }
-
+        functionExpression._parametersValues().forEach(pv -> matcher.fullMatch(pv, state));
     }
 
-    private static void cleanAutoMapPropertyIfNecessary(FunctionExpression functionExpression, MatcherState state, Matcher matcher,
-                                                        ProcessorSupport processorSupport)
+    private static void cleanAutoMapPropertyIfNecessary(FunctionExpression functionExpression, MatcherState state, Matcher matcher)
     {
-        ValueSpecification possiblePropertySfe = (ValueSpecification)Automap.getAutoMapExpressionSequence(functionExpression);
-        if (possiblePropertySfe != null){
+        ValueSpecification possiblePropertySfe = (ValueSpecification) Automap.getAutoMapExpressionSequence(functionExpression);
+        if (possiblePropertySfe != null)
+        {
             functionExpression._functionNameRemove();
             ListIterable<? extends ValueSpecification> params = functionExpression._parametersValues().toList();
             ValueSpecification firstParam = params.get(0);
@@ -85,28 +80,31 @@ public class SimpleFunctionExpressionUnbind implements MatchRunner<SimpleFunctio
             matcher.fullMatch(secondParam, state);
 
             RichIterable<? extends ValueSpecification> possiblePropertySfeParams = possiblePropertySfe instanceof FunctionExpression ?
-                    ((FunctionExpression)possiblePropertySfe)._parametersValues() : Lists.fixedSize.<ValueSpecification>empty(); //params may have changed after unbinding for the Lambda
-            ((UnbindState)state).freeProcessedAndValidated(secondParam);
+                    ((FunctionExpression) possiblePropertySfe)._parametersValues() : Lists.fixedSize.empty(); //params may have changed after unbinding for the Lambda
+            ((UnbindState) state).freeProcessedAndValidated(secondParam);
 
             GenericType secondParamGenericType = secondParam._genericType();
             if (secondParamGenericType != null)
             {
-                ((UnbindState)state).freeValidated(secondParamGenericType);
+                ((UnbindState) state).freeValidated(secondParamGenericType);
             }
 
             functionExpression._parametersValuesRemove();
 
-            MutableList<ValueSpecification> allVars = FastList.newListWith(firstParam);
+            MutableList<ValueSpecification> allVars = Lists.mutable.with(firstParam);
             //add back qualified properties params
             allVars.addAllIterable(possiblePropertySfeParams.toList().subList(1, possiblePropertySfeParams.size()));
 
             functionExpression._parametersValues(allVars);
 
-            InstanceValue propertyName = possiblePropertySfe instanceof FunctionExpression ? ((FunctionExpression)possiblePropertySfe)._propertyName() : null;
-            if(propertyName == null){
-                InstanceValue qualifiedPropertyName = possiblePropertySfe instanceof FunctionExpression ? ((FunctionExpression)possiblePropertySfe)._qualifiedPropertyName(): null;
+            InstanceValue propertyName = possiblePropertySfe instanceof FunctionExpression ? ((FunctionExpression) possiblePropertySfe)._propertyName() : null;
+            if (propertyName == null)
+            {
+                InstanceValue qualifiedPropertyName = possiblePropertySfe instanceof FunctionExpression ? ((FunctionExpression) possiblePropertySfe)._qualifiedPropertyName() : null;
                 functionExpression._qualifiedPropertyName(qualifiedPropertyName);
-            }else{
+            }
+            else
+            {
                 functionExpression._propertyName(propertyName);
             }
         }
