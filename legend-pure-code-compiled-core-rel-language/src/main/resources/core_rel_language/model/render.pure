@@ -1,0 +1,25 @@
+import meta::rel::model::*;
+import meta::rel::model::render::*;
+
+
+
+function meta::rel::model::render::render(def: Def[1]): String[1] {
+  'def ' + $def.defines.identifier + ' = ' + $def.body;
+}
+
+function meta::rel::model::render::render(rules: Rule[1]): String[1] {
+  $rules->match([
+    def: Def[1] | $def->render()
+  ])
+}
+
+function meta::rel::model::render::render(def: Rule[*]): String[1] {
+  $def->fold({d, accum | 
+    $accum + $d->render() + '\n'
+  }, '');
+}
+
+function meta::rel::model::render::render(program: Program[1]): String[1] {
+  '// ' + $program.identifier->toOne() + '\n' + 
+  $program.rules->render();
+}

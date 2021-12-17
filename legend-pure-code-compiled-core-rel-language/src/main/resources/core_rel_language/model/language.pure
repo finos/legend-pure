@@ -1,0 +1,58 @@
+import meta::rel::model::*;
+
+
+Class meta::rel::model::Relation {
+  identifier: String[1];
+}
+
+Class meta::rel::model::Rule {
+
+}
+
+Class meta::rel::model::Def extends Rule { 
+  defines: Relation[1];
+  body: String[1];
+}
+
+Class meta::rel::model::EntityDef extends Def {
+  defines: Relation[1];
+  constructor: Relation[1];
+}
+
+Class meta::rel::model::Module {
+  identifier: String[0..1];
+  rules: Rule[*];
+}
+
+Class meta::rel::model::Program {
+  identifier: String[0..1];
+  rules: Rule[*];
+}
+
+
+function meta::rel::model::relation(identifier: String[1]): Relation[1] {
+  ^Relation(identifier=$identifier);
+}
+
+function meta::rel::model::def(defines: Relation[1], body: String[1]): Def[1] {
+  ^Def(defines=$defines, body=$body);
+}
+
+function meta::rel::model::program(identifier: String[0..1], rules: Rule[*]): Program[1] {
+  ^Program(identifier=$identifier, rules=$rules);
+}
+
+function meta::rel::model::program(identifier: String[0..1]): Program[1] {
+  ^Program(identifier=$identifier, rules=[]);
+}
+
+function meta::rel::model::withRules(program: Program[1], rules: Rule[*]): Program[1] {
+  ^Program(identifier=$program.identifier, rules=$program.rules->concatenate($rules));
+}
+
+function meta::rel::model::withRule(program: Program[1], rule: Rule[1]): Program[1] {
+  $program->withRules([$rule]);
+}
+
+
+

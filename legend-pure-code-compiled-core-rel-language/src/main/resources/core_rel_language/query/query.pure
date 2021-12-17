@@ -1,0 +1,105 @@
+import meta::rel::query::*;
+
+
+Class meta::rel::query::Queryable<T> {
+  phantom: T[*];
+}
+
+Class meta::rel::query::Entity<T> extends Queryable<T> {
+  inner: T[1];
+}
+
+Class meta::rel::query::EntityClass<T> extends Queryable<T> {
+  class: Class<T>[1];
+}
+
+Class meta::rel::query::EntityCollection<T> extends Queryable<T> {
+  inner: T[*];
+}
+
+Class meta::rel::query::Operator<S, T> extends Queryable<T> {
+  phantom1: S[*];
+  phantom2: T[*];
+}
+
+Class meta::rel::query::Where<T> extends Operator<T, T> {
+  parent: Queryable<T>[1];
+  logic: FunctionDefinition<{T[1]->Boolean[1]}>[1];
+}
+
+Class meta::rel::query::Select<S, T> extends Operator<S, T> {
+  parent: Queryable<S>[1];
+  logic: FunctionDefinition<{S[1]->T[1]}>[1];
+}
+
+function meta::rel::query::intoQuery<T>(object: T[1]): Entity<T>[1] {
+  ^Entity<T>(inner = $object);
+}
+
+function meta::rel::query::intoQuery<T>(objects: T[*]): EntityCollection<T>[1] {
+  ^EntityCollection<T>(inner = $objects);
+}
+
+function meta::rel::query::intoQuery<T>(class: Class<T>[1]): EntityClass<T>[1] {
+  ^EntityClass<T>(class = $class);
+}
+
+function meta::rel::query::where<T>(
+  query: Queryable<T>[1], 
+  logic: FunctionDefinition<{T[1]->Boolean[1]}>[1]
+): Where<T>[1] {
+  ^Where<T>(parent=$query, logic=$logic);
+}
+
+function meta::rel::query::select<S,T>(
+  query: Queryable<S>[1],
+  logic: FunctionDefinition<{S[1]->T[1]}>[1]
+): Select<S, T>[1] {
+  ^Select<S, T>(parent=$query, logic=$logic);
+}
+
+
+function meta::rel::query::execute<S, T>(select: Select<S, T>[1]): T[*] {
+  $select.parent
+    ->execute()
+    ->map(o | eval($select.logic, $o));
+}
+
+function meta::rel::query::execute<T>(where: Where<T>[1]): T[*] {
+  $where.parent
+    ->execute()
+    ->filter(o | eval($where.logic, $o));
+}
+
+function meta::rel::query::execute<S, T>(query: Operator<S, T>[1]): T[*] {
+  // It is weird that we have to do this, but type matching in parameters does 
+  // not seem to work properly in Pure.
+  $query->match([
+    {where: Where<T>[1] | $where->execute();},
+    {select: Select<S, T>[1] | $select->execute();}
+  ]);
+}
+
+function meta::rel::query::execute<T>(entity: Entity<T>[1]): T[*] {
+  [$entity.inner];
+}
+
+function meta::rel::query::execute<T>(class: EntityClass<T>[1]): T[*] {
+  [];
+}
+
+function meta::rel::query::execute<T>(entities: EntityCollection<T>[1]): T[*] {
+  $entities.inner;
+}
+
+function meta::rel::query::execute<T>(query: Queryable<T>[1]): T[*] {
+  $query->match([
+    {where: Where<T>[1] | $where->execute();},
+    {collection: EntityCollection<T>[1] | $collection->execute();},
+    {entity: Entity<T>[1] | $entity->execute();},
+    {class: EntityClass<T>[1] | $class->execute();}
+  ]);
+}
+
+
+
