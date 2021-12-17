@@ -16,12 +16,13 @@ package org.finos.legend.pure.m3.tools;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.procedure.Procedure;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 import org.eclipse.collections.impl.utility.ArrayIterate;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -37,15 +38,15 @@ import java.util.regex.Pattern;
 
 public class GraphPath
 {
-    private static final Pattern VALID_START_NODE_PATH = Pattern.compile("\\w++(::\\w[\\w$]*+)*+");
+    private static final Pattern VALID_START_NODE_PATH = Pattern.compile("(::)|((\\w[\\w$]*+::)*+)*+\\w[\\w$~]*+");
 
     private final String startNodePath;
     private final ImmutableList<Edge> edges;
 
-    private GraphPath(String startNodePath, ListIterable<Edge> edges)
+    private GraphPath(String startNodePath, ImmutableList<Edge> edges)
     {
         this.startNodePath = startNodePath;
-        this.edges = (edges == null) ? Lists.immutable.empty() : edges.toImmutable();
+        this.edges = (edges == null) ? Lists.immutable.empty() : edges;
     }
 
     public int getNodeCount()
@@ -73,14 +74,44 @@ public class GraphPath
         return this.edges;
     }
 
-    public CoreInstance resolve(ProcessorSupport processorSupport)
+    public CoreInstance resolveUpTo(int end, ProcessorSupport processorSupport)
     {
+        int resolvedEnd = (end < 0) ? (this.edges.size() + end) : end;
+        if ((resolvedEnd > this.edges.size()) || (resolvedEnd < 0))
+        {
+            throw new IndexOutOfBoundsException("Index: " + end + "; size: " + this.edges.size());
+        }
         CoreInstance node = getStartNode(processorSupport);
-        for (int i = 0; i < this.edges.size(); i++)
+        for (int i = 0; i < resolvedEnd; i++)
         {
             node = applyPathElementAtIndex(node, i);
         }
         return node;
+    }
+
+    public CoreInstance resolve(ProcessorSupport processorSupport)
+    {
+        return resolveUpTo(getEdgeCount(), processorSupport);
+    }
+
+    public GraphPath subpath(int end)
+    {
+        if (end == this.edges.size())
+        {
+            return this;
+        }
+
+        int resolvedEnd = (end < 0) ? (this.edges.size() + end) : end;
+        if (resolvedEnd == 0)
+        {
+            return new GraphPath(this.startNodePath, null);
+        }
+
+        if ((resolvedEnd > this.edges.size()) || (resolvedEnd < 0))
+        {
+            throw new IndexOutOfBoundsException("Index: " + end + "; size: " + this.edges.size());
+        }
+        return new GraphPath(this.startNodePath, this.edges.subList(0, resolvedEnd));
     }
 
     public GraphPath reduce(ProcessorSupport processorSupport)
@@ -92,15 +123,15 @@ public class GraphPath
         }
 
         CoreInstance node = getStartNode(processorSupport);
-        CoreInstance lastPackaged = node;
+        CoreInstance lastPackagedOrTopLevel = node;
         int newStartIndex = 0;
         int pathElementCount = this.edges.size();
         for (int i = 0; i < pathElementCount; i++)
         {
             node = applyPathElementAtIndex(node, i);
-            if ((node.getValueForMetaPropertyToOne(M3Properties._package) != null) && processorSupport.instance_instanceOf(node, M3Paths.PackageableElement))
+            if (isPackagedOrTopLevel(node, processorSupport))
             {
-                lastPackaged = node;
+                lastPackagedOrTopLevel = node;
                 newStartIndex = i + 1;
             }
         }
@@ -109,13 +140,14 @@ public class GraphPath
             // Not reducible
             return this;
         }
+        String newStartNodePath = PackageableElement.getUserPathForPackageableElement(lastPackagedOrTopLevel);
         if (newStartIndex == pathElementCount)
         {
             // Reduced to a new start node with no path elements
-            return new GraphPath(PackageableElement.getUserPathForPackageableElement(lastPackaged), null);
+            return new GraphPath(newStartNodePath, null);
         }
         // Reduced to a new start node with a reduced set of path elements
-        return new GraphPath(PackageableElement.getUserPathForPackageableElement(lastPackaged), Lists.immutable.with(this.edges.subList(newStartIndex, pathElementCount).toArray(new Edge[pathElementCount - newStartIndex])));
+        return new GraphPath(newStartNodePath, Lists.immutable.with(this.edges.subList(newStartIndex, pathElementCount).toArray(new Edge[pathElementCount - newStartIndex])));
     }
 
     public String getDescription()
@@ -145,7 +177,7 @@ public class GraphPath
             return true;
         }
 
-        if (!this.startNodePath.equals(other.startNodePath) || (this.edges.size() < other.edges.size()))
+        if ((this.edges.size() < other.edges.size()) || !this.startNodePath.equals(other.startNodePath))
         {
             return false;
         }
@@ -325,12 +357,6 @@ public class GraphPath
             this.currentEdge++;
             return this.node;
         }
-
-        @Override
-        public void remove()
-        {
-            throw new UnsupportedOperationException();
-        }
     }
 
     public static Builder newPathBuilder(String startNodePath)
@@ -478,7 +504,7 @@ public class GraphPath
 
         public GraphPath build()
         {
-            return new GraphPath(this.startNodePath, this.pathElements);
+            return new GraphPath(this.startNodePath, Lists.immutable.withAll(this.pathElements));
         }
 
         public Builder addToOneProperty(String property)
@@ -852,5 +878,33 @@ public class GraphPath
             String key = matcher.group(3);
             return new ToManyPropertyWithStringKeyEdge(property, keyProperty, key);
         }
+    }
+
+    static boolean isPackagedOrTopLevel(CoreInstance node, ProcessorSupport processorSupport)
+    {
+        return isPackaged(node, processorSupport) || isTopLevel(node, processorSupport);
+    }
+
+    static boolean isPackaged(CoreInstance node, ProcessorSupport processorSupport)
+    {
+        if (node instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement)
+        {
+            return ((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) node)._package() != null;
+        }
+        return !(node instanceof Any) && (node.getValueForMetaPropertyToOne(M3Properties._package) != null) && processorSupport.instance_instanceOf(node, M3Paths.PackageableElement);
+    }
+
+    static boolean isTopLevel(CoreInstance node, ProcessorSupport processorSupport)
+    {
+        CoreInstance topLevel;
+        try
+        {
+            topLevel = processorSupport.repository_getTopLevel(node.getName());
+        }
+        catch (Exception ignore)
+        {
+            return false;
+        }
+        return node == topLevel;
     }
 }
