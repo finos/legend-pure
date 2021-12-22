@@ -121,3 +121,18 @@ function <<meta::pure::profiles::test.Test>> meta::external::store::service::rou
    let routed = $query->routeFunction(serviceStoreMapping(), serviceStoreRuntime(), ^meta::pure::runtime::ExecutionContext(), defaultServiceStoreExtensions(), noDebug());
    assertEquals(' | {Platform> {meta::external::store::service::tests::store::TradeProductServiceStore> [1 s_trade_set/[1 s_trade_set/[1 s_trade_set/Class S_Trade].all()] -> graphFetch({meta::external::store::service::tests::store::TradeProductServiceStore> [s_trade_set / meta::external::store::service::tests::domain::S_Trade] {@(s_trade_set->)@ [ / s_tradeId], @(s_trade_set->)@ [ / s_traderDetails], @(s_trade_set->)@ [ / s_tradeDetails], {meta::external::store::service::tests::store::TradeProductServiceStore> @(s_trade_set->s_prod_set)@ [s_prod_set / s_product] {@(s_prod_set->)@ [ / s_productId], @(s_prod_set->)@ [ / s_productName], @(s_prod_set->)@ [ / s_description], @(s_prod_set->s_synonym_set)@ [s_synonym_set / s_synonyms] {@(s_synonyms->)@ [ / s_name], @(s_synonyms->)@ [ / s_type]}, @(s_prod_set->)@ [ / s_tradeId]}}}})]} -> serialize(meta::external::store::service::tests::domain::S_Trade {s_tradeId, s_traderDetails, s_tradeDetails, s_product {s_productId, s_productName, s_description, s_synonyms {s_name, s_type}}})};', $routed.functions->at(0)->meta::pure::router::printer::asString());
 }
+
+function <<meta::pure::profiles::test.Test>> meta::external::store::service::router::test::testServiceStoreRoutingWithToOne():Boolean[1]
+{
+   let tree = #{
+      S_Trade {
+         s_tradeId,
+         s_traderDetails,
+         s_tradeDetails
+      }
+   }#;
+   
+   let query  = {|S_Trade.all()->toOne()->graphFetch($tree)->serialize($tree)};
+   let routed = $query->routeFunction(serviceStoreMapping(), serviceStoreRuntime(), ^meta::pure::runtime::ExecutionContext(), defaultServiceStoreExtensions(), noDebug());
+   assertEquals(' | {Platform> {meta::external::store::service::tests::store::TradeProductServiceStore> [1 s_trade_set/[1 s_trade_set/[1 s_trade_set/[1 s_trade_set/Class S_Trade].all()] -> toOne()] -> graphFetch({meta::external::store::service::tests::store::TradeProductServiceStore> [s_trade_set / meta::external::store::service::tests::domain::S_Trade] {@(s_trade_set->)@ [ / s_tradeId], @(s_trade_set->)@ [ / s_traderDetails], @(s_trade_set->)@ [ / s_tradeDetails]}})]} -> serialize(meta::external::store::service::tests::domain::S_Trade {s_tradeId, s_traderDetails, s_tradeDetails})};', $routed.functions->at(0)->meta::pure::router::printer::asString());
+}
