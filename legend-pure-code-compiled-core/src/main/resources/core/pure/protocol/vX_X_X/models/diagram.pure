@@ -36,9 +36,9 @@ Class meta::protocols::pure::vX_X_X::metamodel::diagram::view::ClassView
    position : Point[0..1];
    rectangle : Rectangle[0..1];
 
-   hiddenStereotypes : Boolean[0..1];
-   hiddenTaggedValues : Boolean[0..1];
-   hiddenProperties : Boolean[0..1];
+   hideStereotypes : Boolean[0..1];
+   hideTaggedValues : Boolean[0..1];
+   hideProperties : Boolean[0..1];
 
    <<doc.deprecated>> rendering : Rendering[0..1];
    <<doc.deprecated>> visibility : TypeVisibility[0..1];
