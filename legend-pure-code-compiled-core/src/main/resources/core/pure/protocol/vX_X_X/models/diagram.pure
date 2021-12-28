@@ -36,8 +36,12 @@ Class meta::protocols::pure::vX_X_X::metamodel::diagram::view::ClassView
    position : Point[0..1];
    rectangle : Rectangle[0..1];
 
-   rendering : Rendering[0..1];
-   visibility : TypeVisibility[0..1];
+   hiddenStereotypes : Boolean[0..1];
+   hiddenTaggedValues : Boolean[0..1];
+   hiddenProperties : Boolean[0..1];
+
+   <<doc.deprecated>> rendering : Rendering[0..1];
+   <<doc.deprecated>> visibility : TypeVisibility[0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::diagram::view::RelationshipView
@@ -45,13 +49,13 @@ Class meta::protocols::pure::vX_X_X::metamodel::diagram::view::RelationshipView
    sourceView : String[1];
    targetView : String[1];
    line : Line[0..1];
-   rendering : Rendering[0..1];
+   <<doc.deprecated>> rendering : Rendering[0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::diagram::view::PropertyView extends meta::protocols::pure::vX_X_X::metamodel::diagram::view::RelationshipView
 {
    property : meta::protocols::pure::vX_X_X::metamodel::domain::PropertyPtr[1];
-   visibility : PropertyVisibility[0..1];
+   <<doc.deprecated>> visibility : PropertyVisibility[0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::diagram::view::GeneralizationView extends meta::protocols::pure::vX_X_X::metamodel::diagram::view::RelationshipView
@@ -60,26 +64,26 @@ Class meta::protocols::pure::vX_X_X::metamodel::diagram::view::GeneralizationVie
 
 // Visibility
 
-Class meta::protocols::pure::vX_X_X::metamodel::diagram::visibility::Visibility
+Class <<doc.deprecated>> meta::protocols::pure::vX_X_X::metamodel::diagram::visibility::Visibility
 {
    stereotypes: Boolean[0..1];
    taggedValues : Boolean[0..1];
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::diagram::visibility::PropertyVisibility extends Visibility
+Class <<doc.deprecated>> meta::protocols::pure::vX_X_X::metamodel::diagram::visibility::PropertyVisibility extends Visibility
 {
    type: Boolean[0..1];
    multiplicity : Boolean[0..1];
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::diagram::visibility::TypeVisibility extends Visibility
+Class <<doc.deprecated>> meta::protocols::pure::vX_X_X::metamodel::diagram::visibility::TypeVisibility extends Visibility
 {
    attributes: Boolean[0..1];
 }
 
 // Rendering
 
-Class meta::protocols::pure::vX_X_X::metamodel::diagram::rendering::Rendering
+Class <<doc.deprecated>> meta::protocols::pure::vX_X_X::metamodel::diagram::rendering::Rendering
 {
    color : String[1];
    lineWidth : Float[1];
@@ -101,11 +105,11 @@ Class meta::protocols::pure::vX_X_X::metamodel::diagram::geometry::Rectangle
 
 Class meta::protocols::pure::vX_X_X::metamodel::diagram::geometry::Line
 {
-   style : LineType[1];
+   <<doc.deprecated>> style : LineType[0..1];
    points : Point[*];
 }
 
-Enum meta::protocols::pure::vX_X_X::metamodel::diagram::geometry::LineType
+Enum <<doc.deprecated>> meta::protocols::pure::vX_X_X::metamodel::diagram::geometry::LineType
 {
    SIMPLE,
    RIGHT_ANGLE
