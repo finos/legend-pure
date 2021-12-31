@@ -1,0 +1,151 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+###Pure
+import meta::external::query::graphQL::metamodel::*;
+import meta::external::query::graphQL::metamodel::typeSystem::*;
+import meta::external::query::graphQL::binding::toPure::*;
+
+function meta::external::query::graphQL::binding::toPure::graphQLTypeSystemtoPure(doc:Document[1], package:String[1]) : meta::pure::metamodel::type::Type[*]
+{
+  let pack = buildTransientPackageFromString($package);
+
+  // Pass 1
+  let typesByName = $doc.definitions->map(def|
+    $def->match(
+      [
+        o : ObjectTypeDefinition[1] | let no = newClass($o.name);
+                                      let cp = ^$no(package = $pack);
+                                      pair($o.name, $cp);,
+        e : EnumTypeDefinition[1] | let ne = newEnumeration($e.name, $e.values.value);
+                                    let ep = ^$ne(package = $pack);
+                                    pair($e.name, $ep);
+      ]
+    )
+  )->concatenate([
+    pair('String', String),
+    pair('Boolean', Boolean)
+  ]
+  )->newMap();
+
+  // Pass 2
+  $doc.definitions->map(def|
+    $def->match(
+      [
+        o : ObjectTypeDefinition[1] | let ownerType = $typesByName->get($o.name)->toOne();
+                                      let ownerGType = ^GenericType(rawType=$ownerType);
+                                      let properties = $o.fields->map(f |
+                                          let targetName = $f.type->match([
+                                            o:NamedTypeReference[1] | pair(if($o.nullable,|ZeroOne,|PureOne), $o.name),
+                                            l:ListTypeReference[1] | pair(ZeroMany, $l.itemType->cast(@NamedTypeReference).name)
+                                          ]);
+                                          let targeType = $typesByName->get($targetName.second)->toOne();
+                                          meta::pure::functions::meta::newProperty($f.name, $ownerGType, ^GenericType(rawType=$targeType), $targetName.first);
+                                      );
+                                      $ownerType->mutateAdd('properties', $properties);,
+        e : EnumTypeDefinition[1] | $typesByName->get($e.name)->toOne();
+      ]
+    )
+  );
+}
+
+function <<access.private>> meta::external::query::graphQL::binding::toPure::buildTransientPackageFromString(package:String[1]) : Package[1]
+{
+  $package->split('::')->fold({a,b|^Package(name = $a, package=$b)}, ^Package());
+}
+
+
+
+###Pure
+import meta::external::query::graphQL::metamodel::*;
+import meta::external::query::graphQL::metamodel::executable::*;
+import meta::external::query::graphQL::transformation::queryToPure::*;
+import meta::pure::graphFetch::*;
+
+function meta::external::query::graphQL::transformation::queryToPure::graphQLExecutableToPure(query:Document[1], root: Class<Any>[1]) : GraphFetchTree[1]
+{
+  let types = $root->meta::external::query::graphQL::introspection::scanTypes([]);
+  let fragments = $query.definitions->map(d|
+    $d->match([
+      
+      f : FragmentDefinition[1]| pair($f.name, list($f.selectionSet->transformSelectionToPure($types->filter(c|$c.name == $f.typeCondition)->toOne()->cast(@Class<Any>))));,
+      o : OperationDefinition[1]| pair('__Query', list($o.selectionSet->transformSelectionToPure($root)->toOne()));
+    ])    
+  )->newMap();
+
+  ^RootGraphFetchTree<Any>
+  (
+    class = $root,
+    subTrees = $fragments->get('__Query')->toOne().values->buildGraphFetchFromIntermediateNodes($fragments)
+  );
+}
+
+
+
+Class <<access.private>> meta::external::query::graphQL::transformation::queryToPure::IntermediateNode
+{
+}
+
+Class <<access.private>> meta::external::query::graphQL::transformation::queryToPure::IntermediatePropertyNode extends IntermediateNode
+{
+  children :  meta::external::query::graphQL::transformation::queryToPure::IntermediateNode[*];
+  propertyFetch : PropertyGraphFetchTree[1];
+}
+
+Class <<access.private>> meta::external::query::graphQL::transformation::queryToPure::IntermediateFragmentNode extends IntermediateNode
+{
+  name : String[1];
+}
+
+function <<access.private>> meta::external::query::graphQL::transformation::queryToPure::transformSelectionToPure(selection:Selection[*], root:Class<Any>[1]) : meta::external::query::graphQL::transformation::queryToPure::IntermediateNode[*]
+{
+  $selection->map(s|$s->match(
+    [
+      field : Field[1] | let property = $root->meta::pure::functions::meta::hierarchicalProperties()->filter(p|$p.name == $field.name)->toOne();
+                        ^meta::external::query::graphQL::transformation::queryToPure::IntermediatePropertyNode
+                        (
+                          propertyFetch = ^PropertyGraphFetchTree(property = $property),
+                          children = if ($field.selectionSet->isEmpty(),|[],|$field.selectionSet->transformSelectionToPure($property->functionReturnType().rawType->cast(@Class<Any>)->toOne()))
+                        );,
+      fragmentId : FragmentSpread[1] | ^meta::external::query::graphQL::transformation::queryToPure::IntermediateFragmentNode(name = $fragmentId.name);
+    ]
+  ));
+}
+
+function <<access.private>> meta::external::query::graphQL::transformation::queryToPure::buildGraphFetchFromIntermediateNodes(nodes : meta::external::query::graphQL::transformation::queryToPure::IntermediateNode[*], fragments : Map<String, List<meta::external::query::graphQL::transformation::queryToPure::IntermediateNode>>[1]) : PropertyGraphFetchTree[*]
+{
+  $nodes->map(n | $n->match(
+      [
+        p : meta::external::query::graphQL::transformation::queryToPure::IntermediatePropertyNode[1] | let val = $p.propertyFetch;
+                                                                                           ^$val
+                                                                                           (
+                                                                                             subTrees = $p.children->buildGraphFetchFromIntermediateNodes($fragments)
+                                                                                           );,
+        f : meta::external::query::graphQL::transformation::queryToPure::IntermediateFragmentNode[1] | $fragments->get($f.name).values->buildGraphFetchFromIntermediateNodes($fragments)
+      ]
+    )
+  )
+}
+
+function meta::external::query::graphQL::introspection::scanTypes(t:Type[1], processed:Type[*]):Type[*]
+{
+   if (!$processed->contains($t),
+       |$t->concatenate(if($t->instanceOf(Class),
+                         |$t->cast(@Class<Any>).properties.genericType.rawType->distinct()->concatenate($t->cast(@Class<Any>)->meta::pure::functions::meta::findAllSpecializations())->filter(t|($t->instanceOf(Class) || $t->instanceOf(meta::pure::metamodel::type::Enumeration)) && $t != Any)->map(c|$c->meta::external::query::graphQL::introspection::scanTypes($processed->concatenate($t)))->distinct(),
+                         |[]
+                       )),
+       |[]
+   );
+}
