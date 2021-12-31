@@ -64,7 +64,7 @@ function meta::external::query::graphQL::serialization::graphQLtoString(s: Scala
 
 function meta::external::query::graphQL::serialization::graphQLtoString(type: EnumTypeDefinition[1]):String[1]
 {
-  'enum ' + $type.name + $type.directives->graphQLtoString() + ' {\n' + $type.values->map(v | '  '+$v.value + $v.directives->graphQLtoString())->joinStrings(',\n')+'\n}';
+  'enum ' + $type.name + $type.directives->graphQLtoString() + ' {\n' + $type.values->map(v | '  '+$v.value + $v.directives->graphQLtoString())->joinStrings('\n')+'\n}';
 }
 
 function meta::external::query::graphQL::serialization::graphQLtoString(type: UnionTypeDefinition[1]):String[1]
@@ -82,11 +82,6 @@ function meta::external::query::graphQL::serialization::graphQLtoString(type: Ob
 function meta::external::query::graphQL::serialization::graphQLtoString(field: FieldDefinition[1]):String[1]
 {
   $field.name + $field.argumentDefinitions->graphQLtoString() + ': ' + $field.type->graphQLtoString() + $field.directives->graphQLtoString()
-}
-
-function meta::external::query::graphQL::serialization::graphQLtoString(type: TypeReference[1]):String[1]
-{
-  if($type.list,|'[',|'') + $type.name + if($type.list,|']',|'') + if($type.nullable,|'!',|'')
 }
 
 function meta::external::query::graphQL::serialization::graphQLtoString(type: InterfaceTypeDefinition[1]):String[1]
@@ -113,13 +108,23 @@ function meta::external::query::graphQL::serialization::graphQLtoString(operatio
             |'',
             |'(' + 
               $operation.variables->map(v |
-                    $v.name + ': ' + $v.type.name + if($v.defaultValue->isEmpty(),|'',|' = ' + $v.defaultValue->toOne()->graphQLtoString())
+                    $v.name + ': ' + $v.type->graphQLtoString() + if($v.defaultValue->isEmpty(),|'',|' = ' + $v.defaultValue->toOne()->graphQLtoString())
                   )->joinStrings(', ') 
              +')'
          )
   ) +
   $operation.directives->graphQLtoString() + 
   $operation.selectionSet->graphQLtoString('');
+}
+
+function meta::external::query::graphQL::serialization::graphQLtoString(typeReference: TypeReference[1]):String[1]
+{
+  $typeReference->match(
+    [
+      type : NamedTypeReference[1] | $type.name , 
+      list : ListTypeReference[1] | '[' + $list.itemType->graphQLtoString() + ']'
+    ]
+  ) + if ($typeReference.nullable,|'',|'!')
 }
 
 function meta::external::query::graphQL::serialization::graphQLtoString(selections: Selection[*], space: String[1]):String[1]
