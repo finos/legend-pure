@@ -19,7 +19,7 @@ import meta::pure::metamodel::serialization::grammar::*;
 import meta::pure::metamodel::path::*;
 import meta::pure::router::printer::*;
 import meta::pure::router::clustering::*;
-import meta::pure::router::store::platform::*;
+import meta::pure::store::platform::metamodel::*;
 import meta::pure::router::store::embedded::*;
 import meta::pure::router::analytics::*;
 import meta::pure::router::systemMapping::*;
@@ -514,7 +514,8 @@ function <<access.private>> meta::pure::router::clustering::willBeVarExp(param:V
 
 function <<access.private>> meta::pure::router::clustering::clusteredVSToBeReplaced(allParams:ValueSpecification[*]):ClusteredValueSpecification[*]
 {
-  $allParams->filter(p|$p->instanceOf(ClusteredValueSpecification))->cast(@ClusteredValueSpecification)->filter(c|!$c.store->instanceOf( meta::pure::mapping::aggregationAware::AggregationAwareStore))->init();
+   let clusteredVSToBeReplaced = $allParams->filter(p|$p->instanceOf(ClusteredValueSpecification))->cast(@ClusteredValueSpecification)->filter(c|!$c.store->instanceOf( meta::pure::mapping::aggregationAware::AggregationAwareStore))->init();
+   if($clusteredVSToBeReplaced->forAll(c | $c.val->instanceOf(FunctionExpression)), | $clusteredVSToBeReplaced, | []);
 }
 
 
