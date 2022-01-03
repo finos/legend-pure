@@ -79,7 +79,7 @@ public final class DateWithHour extends AbstractDateWithHour
     }
 
     @Override
-    public PureDate addMicroseconds(int microseconds)
+    public PureDate addMicroseconds(long microseconds)
     {
         throw new UnsupportedOperationException();
     }

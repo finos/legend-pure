@@ -164,7 +164,7 @@ public class LatestDate implements PureDate
     }
 
     @Override
-    public PureDate addMicroseconds(int microseconds)
+    public PureDate addMicroseconds(long microseconds)
     {
         throw new UnsupportedOperationException("Invalid operation for LatestDate");
     }

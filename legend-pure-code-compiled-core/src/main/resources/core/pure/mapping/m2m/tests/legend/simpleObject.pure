@@ -665,6 +665,31 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleM2MMappingUsingImp
    assert(jsonEquivalent('{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"s\\":\\"test string data\\"}"},"value":{"s":"test string data"}},"value":{"name":"ok"}}'->parseJSON(), $result.values->toOne()->parseJSON()));
 }
 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
+{
+    serverVersion.start='v1_20_0'
+}
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleM2MMappingEpochDateInMicrosecondsToDate() : Boolean[1]
+{
+  let tree = #{meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::FromEpochDate{d}}#;
+  
+   let result = execute(
+      | meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::FromEpochDate.all()->graphFetchChecked($tree)->serialize($tree),
+      meta::pure::mapping::modelToModel::test::alloy::simple::simpleEpochToDate,
+      ^Runtime(connections = ^JsonModelConnection(
+                              element=^ModelStore(),
+                              class = meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::EpochDate,
+                              url = 'data:application/json,{"epochDate":1624268257499000000}'
+                             )
+         ),
+      []
+   );
+
+  let expected = '{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"epochDate\\":1624268257499000000}"},"value":{"epochDate":1624268257499000000}},"value":{"d":"2021-06-21T09:37:37.4990000"}}';
+
+  assert(jsonEquivalent($expected->parseJSON(), $result.values->toOne()->parseJSON()));
+  
+}
 
 ###Pure
 import meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::*;
@@ -778,6 +803,32 @@ Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::Fri
    friendA    : meta::pure::mapping::modelToModel::test::shared::dest::Person[1];
    friendB    : meta::pure::mapping::modelToModel::test::shared::dest::Person[1];
 }
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::EpochDate
+{
+  epochDate : Integer[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::FromEpochDate
+{
+  epochDate: Integer[1];
+  d : Date[1];
+}
+
+###Mapping 
+import meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::*;
+import meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::*;
+
+Mapping meta::pure::mapping::modelToModel::test::alloy::simple::simpleEpochToDate
+(
+  FromEpochDate : Pure
+  {
+    ~src EpochDate
+    epochDate : $src.epochDate,
+    d: %1970-01-01T00:00:00.0000000->adjust(floor($src.epochDate/1000), DurationUnit.MICROSECONDS)
+  }
+)
+
 
 ###Mapping
 import meta::pure::mapping::modelToModel::test::shared::src::*;

@@ -2729,7 +2729,7 @@ public class CompiledSupport
             }
             case "MICROSECONDS":
             {
-                return date.addMicroseconds((int)number);
+                return date.addMicroseconds(number);
             }
             case "NANOSECONDS":
             {
