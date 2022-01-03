@@ -84,7 +84,7 @@ function meta::external::format::json::executionPlan::engine::java::jsonDeserial
    let readableEnums      = $context.typeInfos->enumDependenciesViaProperties($pureClass);
    let dataClassesProject = $readableClasses->map(rc | $rc->createStreamReadingDataClass($path, $context, true, $debug->indent()));
 
-   let storeReaderProject = createJsonReading($pureClass, $conventions->className($pureClass), $path, $readableClasses, $readableEnums, $context, $debug->indent());
+   let storeReaderProject = createJsonReading($pureClass, $conventions->className($pureClass), $path, $node.pathOffset->cast(@JsonPathReference).path, $readableClasses, $readableEnums, $context, $debug->indent());
 
    let sourceStreamParam       = j_parameter(javaInputStream(), 'sourceStream');
    let streamReaderMethodCodes = $conventions->jsonReaderClass($path, $pureClass)

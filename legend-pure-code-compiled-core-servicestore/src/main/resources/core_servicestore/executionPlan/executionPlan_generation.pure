@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::external::shared::format::executionPlan::*;
+import meta::external::shared::format::router::extension::*;
 
 import meta::pure::executionPlan::*;
 
@@ -224,8 +225,13 @@ function meta::external::store::service::executionPlan::generation::nodeFromServ
                                     | ^SequenceExecutionNode(executionNodes = $allNodes, resultType = $serviceStoreNode.resultType), 
                                     | $allNodes)->toOne();
       
+                  let pathOffset               = if($serviceMapping.path->isNotEmpty(),
+                                                    |$extensions.moduleExtension('externalFormat')->cast(@ExternalFormatModuleExtension).generatePathReference->toOne()->eval($serviceMapping.service.response.binding, $serviceMapping.path->toOne()),
+                                                    |[]);
+             
                   let externalFormatConnection = ^ExternalFormatConnection(element        = $serviceMapping.service.response.binding,
-                                                                           externalSource = ^UrlStreamExternalSource(url = 'dummy Url For Service Store Processing'));
+                                                                           externalSource = ^UrlStreamExternalSource(url = 'dummy url'),
+                                                                           pathOffset     = $pathOffset);
       
                   $externalFormatConnection->meta::pure::executionPlan::nodeFromConnection($tree, $node, $enableConstraints, $checked, $extensions);,
       c: Connection[1]            | fail('Expected ServiceStoreConnection for Service Store execution. Found : ' + $c->meta::pure::executionPlan::toString::connectionToString($extensions)); @ExecutionNode;
