@@ -108,10 +108,7 @@ Class meta::pure::mapping::modelToModel::JsonFeWithPropertyPaths
 
 function meta::pure::mapping::modelToModel::inMemory::isNoMappingPassThru(setImpl:SetImplementation[1], property:AbstractProperty<Any>[1]):Boolean[1]
 {
-   $setImpl->match([
-      pisi:PureInstanceSetImplementation[1] | $pisi->noMappingPassThruSourceProperty($property)->isNotEmpty(),
-      si: SetImplementation[1]              | false;
-   ])
+   $setImpl->noMappingPassThruSourceProperty($property)->isNotEmpty();
 }
 
 function meta::pure::mapping::modelToModel::inMemory::isNoMappingDefaultToEmpty(setImpl:SetImplementation[1], property:AbstractProperty<Any>[1]):Boolean[1]
@@ -119,17 +116,22 @@ function meta::pure::mapping::modelToModel::inMemory::isNoMappingDefaultToEmpty(
    !$property.multiplicity->hasLowerBound() && $property.owner->instanceOf(Class);
 }
 
-function meta::pure::mapping::modelToModel::inMemory::noMappingPassThruSourceProperty(setImpl:PureInstanceSetImplementation[1], property:AbstractProperty<Any>[1]):AbstractProperty<Any>[0..1]
+function meta::pure::mapping::modelToModel::inMemory::noMappingPassThruSourceProperty(setImpl:SetImplementation[1], property:AbstractProperty<Any>[1]):AbstractProperty<Any>[0..1]
 {
-   let propertyType = $property.genericType.rawType->toOne();
-   let srcProperty  = $setImpl.srcClass->filter(c| $c->instanceOf(Class))->cast(@Class<Any>)->map(c | $c->propertyByName($property.name->toOne()));
-   
-   let valid = $propertyType->instanceOf(DataType) && $srcProperty->match([
-      s:Property<Nil,Any|*>[1] | $s.genericType.rawType->toOne()->_subTypeOf($propertyType) && $property.multiplicity->multiplicitySubsumes($s.multiplicity),
-      a:Any[*]                 | false
+   $setImpl->match([
+      {pisi:PureInstanceSetImplementation[1] | 
+         let propertyType = $property.genericType.rawType->toOne();
+         let srcProperty  = $pisi.srcClass->filter(c| $c->instanceOf(Class))->cast(@Class<Any>)->map(c | $c->propertyByName($property.name->toOne()));
+
+         let valid = $propertyType->instanceOf(DataType) && $srcProperty->match([
+            s:Property<Nil,Any|*>[1] | $s.genericType.rawType->toOne()->_subTypeOf($propertyType) && $property.multiplicity->multiplicitySubsumes($s.multiplicity),
+            a:Any[*]                 | false
+         ]);
+
+         if($valid, |$srcProperty->toOne(), |[]);
+      },
+      si: SetImplementation[1] | [];
    ]);
-   
-   if($valid, |$srcProperty->toOne(), |[]);
 }
 
 

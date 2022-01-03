@@ -1,0 +1,20 @@
+import meta::external::query::graphQL::introspection::tests::*;
+
+Class meta::external::query::graphQL::introspection::tests::Firm
+{
+  legalName : String[1];
+  employees : meta::external::query::graphQL::introspection::tests::Person[*];
+}
+
+Class meta::external::query::graphQL::introspection::tests::Person
+{
+  firstName : String[1];
+  lastName : String[1];
+}
+
+function <<test.Test>> meta::external::query::graphQL::introspection::tests::testSimpleIntrospection():Boolean[1]
+{
+  let query = meta::external::query::graphQL::transformation::queryToPure::tests::buildIntrospectionQuery();
+  let strSresult = meta::external::query::graphQL::introspection::graphQLIntrospectionQuery(Firm, $query);
+  assertJsonStringsEqual('{"__schema":{"mutationType":null,"types":[{"inputFields":[],"interfaces":[],"name":"String","enumValues":[],"fields":[],"kind":"SCALAR","possibleTypes":[]},{"inputFields":[],"interfaces":[],"name":"Firm","enumValues":[],"fields":[{"deprecationReason":null,"args":[],"isDeprecated":false,"type":{"name":"String","ofType":null,"kind":"SCALAR"},"name":"legalName"},{"deprecationReason":null,"args":[],"isDeprecated":false,"type":{"name":"Person","ofType":null,"kind":"OBJECT"},"name":"employees"}],"kind":"OBJECT","possibleTypes":[]},{"inputFields":[],"interfaces":[],"name":"Person","enumValues":[],"fields":[{"deprecationReason":null,"args":[],"isDeprecated":false,"type":{"name":"String","ofType":null,"kind":"SCALAR"},"name":"firstName"},{"deprecationReason":null,"args":[],"isDeprecated":false,"type":{"name":"String","ofType":null,"kind":"SCALAR"},"name":"lastName"}],"kind":"OBJECT","possibleTypes":[]}],"directives":[],"queryType":{"name":"Firm"}}}', $strSresult);
+}

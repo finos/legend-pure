@@ -19,12 +19,15 @@ import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class TestGraphPath extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
         compileTestSource("/test/testModel.pure",
                 "import test::domain::*;\n" +
@@ -113,26 +116,26 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiledPlatform
     public void testResolve()
     {
         Assert.assertSame(
-                this.runtime.getCoreInstance("test::domain::ClassA"),
-                GraphPath.buildPath("test::domain::ClassA").resolve(this.processorSupport));
+                runtime.getCoreInstance("test::domain::ClassA"),
+                GraphPath.buildPath("test::domain::ClassA").resolve(processorSupport));
         Assert.assertSame(
-                this.runtime.getCoreInstance("test::domain::ClassA").getValueForMetaPropertyToOne("classifierGenericType"),
-                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType").resolve(this.processorSupport));
+                runtime.getCoreInstance("test::domain::ClassA").getValueForMetaPropertyToOne("classifierGenericType"),
+                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType").resolve(processorSupport));
         Assert.assertSame(
-                this.runtime.getCoreInstance(M3Paths.Class),
-                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType", "rawType").resolve(this.processorSupport));
+                runtime.getCoreInstance(M3Paths.Class),
+                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType", "rawType").resolve(processorSupport));
         Assert.assertSame(
-                this.runtime.getCoreInstance(M3Paths.String),
-                GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueAtIndex("properties", 0).addToOneProperties("genericType", "rawType").build().resolve(this.processorSupport));
+                runtime.getCoreInstance(M3Paths.String),
+                GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueAtIndex("properties", 0).addToOneProperties("genericType", "rawType").build().resolve(processorSupport));
         Assert.assertSame(
-                this.runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2").getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType"),
-                GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolve(this.processorSupport));
+                runtime.getCoreInstance("test::domain::ClassA").getValueInValueForMetaPropertyToMany("properties", "prop2").getValueForMetaPropertyToOne("genericType").getValueForMetaPropertyToOne("rawType"),
+                GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithName("properties", "prop2").addToOneProperties("genericType", "rawType").build().resolve(processorSupport));
         Assert.assertSame(
-                this.runtime.getCoreInstance("test::domain::ClassB"),
-                ImportStub.withImportStubByPass(GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType").build().resolve(this.processorSupport), this.processorSupport));
+                runtime.getCoreInstance("test::domain::ClassB"),
+                ImportStub.withImportStubByPass(GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType").build().resolve(processorSupport), processorSupport));
         Assert.assertSame(
-                this.runtime.getCoreInstance("test::domain::ClassB"),
-                GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType", "resolvedNode").build().resolve(this.processorSupport));
+                runtime.getCoreInstance("test::domain::ClassB"),
+                GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType", "resolvedNode").build().resolve(processorSupport));
     }
 
     @Test
@@ -140,22 +143,22 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiledPlatform
     {
         Assert.assertEquals(
                 GraphPath.buildPath("test::domain::ClassA"),
-                GraphPath.buildPath("test::domain::ClassA").reduce(this.processorSupport));
+                GraphPath.buildPath("test::domain::ClassA").reduce(processorSupport));
         Assert.assertEquals(
                 GraphPath.buildPath("test::domain::ClassA", "classifierGenericType"),
-                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType").reduce(this.processorSupport));
+                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType").reduce(processorSupport));
         Assert.assertEquals(
                 GraphPath.buildPath(M3Paths.Class),
-                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType", "rawType").reduce(this.processorSupport));
+                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType", "rawType").reduce(processorSupport));
         Assert.assertEquals(
                 GraphPath.buildPath(M3Paths.Class, "name"),
-                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType", "rawType", "name").reduce(this.processorSupport));
+                GraphPath.buildPath("test::domain::ClassA", "classifierGenericType", "rawType", "name").reduce(processorSupport));
         Assert.assertEquals(
                 GraphPath.newPathBuilder("test::domain::ClassB").addToManyPropertyValueWithKey("properties", "name", "prop3").build(),
-                GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType", "resolvedNode").addToManyPropertyValueWithKey("properties", "name", "prop3").build().reduce(this.processorSupport));
+                GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType", "resolvedNode").addToManyPropertyValueWithKey("properties", "name", "prop3").build().reduce(processorSupport));
         Assert.assertEquals(
                 GraphPath.buildPath(M3Paths.Class, "name"),
-                GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType", "resolvedNode", "classifierGenericType", "rawType", "name").build().reduce(this.processorSupport));
+                GraphPath.newPathBuilder("test::domain::ClassA").addToManyPropertyValueWithKey("properties", "name", "prop2").addToOneProperties("genericType", "rawType", "resolvedNode", "classifierGenericType", "rawType", "name").build().reduce(processorSupport));
     }
 
     @Test

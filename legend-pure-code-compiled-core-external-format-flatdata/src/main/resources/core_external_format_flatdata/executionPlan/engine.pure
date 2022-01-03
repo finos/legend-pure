@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
- * Generated extension externalFormatFlatdata class definitions: see org.finos.legend.engine.external.shared.ExternalFormatJavaCompilerExtension
+ * Generated extension externalFormatFlatdata class definitions: see org.finos.legend.engine.external.format.flatdata.FlatDataJavaCompilerExtension
  */
 
 import meta::external::format::flatdata::executionPlan::engine::*;
@@ -124,30 +124,46 @@ function meta::external::format::flatdata::executionPlan::engine::extendJavaEngi
       ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatData'), 'withSection', [javaParam($jFlatDataSection, 'p0')]))
       ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatData'), 'withSections', [javaParam(javaParameterizedType(javaClass('java.lang.Iterable'), [$jFlatDataSection]), 'p0')]));
 
-   let jFlatDataString = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataString');
+   let jFlatDataString = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataString')
+      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []));
 
    let jFlatDataBoolean = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataBoolean')
       ->addMethod(javaMethod('public', javaString(), 'getFalseString', []))
       ->addMethod(javaMethod('public', javaString(), 'getTrueString', []))
+      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []))
       ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataBoolean'), 'withFalseString', [javaParam(javaString(), 'p0')]))
       ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataBoolean'), 'withTrueString', [javaParam(javaString(), 'p0')]));
 
-   let jFlatDataInteger = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataInteger');
-
-   let jFlatDataDecimal = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataDecimal');
-
-   let jFlatDataDate = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataDate');
-
    let jFlatDataNumber = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataNumber')
       ->addMethod(javaMethod('public', javaString(), 'getFormat', []))
+      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []))
       ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataNumber'), 'withFormat', [javaParam(javaString(), 'p0')]));
+
+   let jFlatDataInteger = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataInteger')
+      ->addMethod(javaMethod('public', javaString(), 'getFormat', []))
+      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []))
+      ->addMethod(javaMethod('public', $jFlatDataNumber, 'withFormat', [javaParam(javaString(), 'p0')]));
+
+   let jFlatDataDecimal = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataDecimal')
+      ->addMethod(javaMethod('public', javaString(), 'getFormat', []))
+      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []))
+      ->addMethod(javaMethod('public', $jFlatDataNumber, 'withFormat', [javaParam(javaString(), 'p0')]));
 
    let jFlatDataTemporal = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataTemporal')
       ->addMethod(javaMethod('public', javaString(), 'getFormat', []))
+      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []))
       ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataTemporal'), 'withFormat', [javaParam(javaString(), 'p0')]));
 
+   let jFlatDataDate = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataDate')
+      ->addMethod(javaMethod('public', javaString(), 'getFormat', []))
+      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []))
+      ->addMethod(javaMethod('public', $jFlatDataTemporal, 'withFormat', [javaParam(javaString(), 'p0')]));
+
    let jFlatDataDateTime = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataDateTime')
+      ->addMethod(javaMethod('public', javaString(), 'getFormat', []))
       ->addMethod(javaMethod('public', javaString(), 'getTimeZone', []))
+      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []))
+      ->addMethod(javaMethod('public', $jFlatDataTemporal, 'withFormat', [javaParam(javaString(), 'p0')]))
       ->addMethod(javaMethod('public', $jFlatDataTemporal, 'withTimeZone', [javaParam(javaString(), 'p0')]));
 
    $conventions
