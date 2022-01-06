@@ -43,7 +43,7 @@ Class meta::external::format::flatdata::executionPlan::FlatDataSerializeExecutio
 {
 }
 
-Class meta::external::format::flatdata::executionPlan::FlatDataDeserializeExecutionNode extends ExecutionNode
+Class meta::external::format::flatdata::executionPlan::FlatDataDeserializeExecutionNode extends ExternalFormatDeserializeExecutionNode
 {
    binding : Binding[1];
    tree    : RootGraphFetchTree<Any>[0..1]; 

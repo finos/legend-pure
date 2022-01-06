@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::pure::mapping::*;
+import meta::pure::metamodel::path::*;
 import meta::external::shared::format::metamodel::*;
 import meta::external::store::service::metamodel::*;
 import meta::external::store::service::metamodel::mapping::*;
@@ -32,6 +33,7 @@ Class meta::external::store::service::metamodel::mapping::ServiceMapping
    owner             : RootServiceInstanceSetImplementation[1];
    
    service           : Service[1];
+   path              : Path<Nil,Any|*>[0..1];
    parameterMappings : ServiceParameterMapping[*];
 }
 

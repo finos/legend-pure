@@ -13,13 +13,19 @@
 // limitations under the License.
 
 import meta::protocols::pure::vX_X_X::metamodel::executionPlan::*;
+import meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::*;
 
-Class meta::protocols::pure::vX_X_X::metamodel::external::format::json::executionPlan::JsonSerializeExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalFormatSerializeExecutionNode
+Class meta::protocols::pure::vX_X_X::metamodel::external::format::json::executionPlan::JsonSerializeExecutionNode extends ExternalFormatSerializeExecutionNode
 {   
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::external::format::json::executionPlan::JsonDeserializeExecutionNode extends ExecutionNode
+Class meta::protocols::pure::vX_X_X::metamodel::external::format::json::executionPlan::JsonDeserializeExecutionNode extends ExternalFormatDeserializeExecutionNode
 {
    binding : String[1];
    tree    : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RootGraphFetchTree[0..1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::external::format::json::executionPlan::JsonPathReference extends PathReference
+{
+   path : String[1];
 }

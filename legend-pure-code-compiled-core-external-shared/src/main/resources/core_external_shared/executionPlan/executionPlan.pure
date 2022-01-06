@@ -69,12 +69,18 @@ function meta::external::shared::format::executionPlan::planPrepareDataQuality(p
    };
 }
 
-function meta::external::shared::format::executionPlan::generateUrlStreamExecutionNode(connection:ExternalFormatConnection[1]): ExecutionNode[1]
+function meta::external::shared::format::executionPlan::getSourceNodeFromExternalSource(externalSource:ExternalSource[1]): ExecutionNode[1]
 {
-   assert($connection.externalSource->instanceOf(UrlStreamExternalSource), | 'Only UrlStreamExternalSource is supported !!');
+   $externalSource->match([
+      u:UrlStreamExternalSource[1]     | generateUrlStreamExecutionNode($u),
+      e:ExternalSource[1]              | fail('External source format not supported !!'); @ExecutionNode;
+   ]);
+}
 
-   let sourceUrl = $connection.externalSource->cast(@UrlStreamExternalSource).url;
-
+function meta::external::shared::format::executionPlan::generateUrlStreamExecutionNode(externalSource:UrlStreamExternalSource[1]): ExecutionNode[1]
+{
+   let sourceUrl = $externalSource->cast(@UrlStreamExternalSource).url;
+   
    ^UrlStreamExecutionNode(
       resultType = ^DataTypeResultType(type = String),
       url        = $sourceUrl
