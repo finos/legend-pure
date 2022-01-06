@@ -65,7 +65,7 @@ public interface PureDate extends Comparable<PureDate>
 
     PureDate addMilliseconds(int milliseconds);
 
-    PureDate addMicroseconds(int microseconds);
+    PureDate addMicroseconds(long microseconds);
 
     PureDate addNanoseconds(long nanoseconds);
 

@@ -79,7 +79,7 @@ abstract class AbstractDateWithDay extends AbstractDateWithMonth
     @Override
     public abstract AbstractDateWithDay clone();
 
-    void incrementDay(int delta)
+    void incrementDay(long delta)
     {
         if (delta < 0)
         {

@@ -54,7 +54,7 @@ abstract class AbstractDateWithMinute extends AbstractDateWithHour
     @Override
     public abstract AbstractDateWithMinute clone();
 
-    void incrementMinute(int delta)
+    void incrementMinute(long delta)
     {
         incrementHour(delta / 60);
         this.minute += (delta % 60);
