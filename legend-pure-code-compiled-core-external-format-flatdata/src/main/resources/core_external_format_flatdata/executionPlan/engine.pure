@@ -48,6 +48,8 @@ Class meta::external::format::flatdata::executionPlan::engine::_FlatDataTemporal
 function meta::external::format::flatdata::executionPlan::engine::extendJavaEngineDependencies(conventions:Conventions[1]):Conventions[1]
 {
 
+   let jIChecked = $conventions->className(meta::pure::dataQuality::Checked);
+
    let jRawFlatDataValue = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.driver.spi.RawFlatDataValue')
       ->addMethod(javaMethod('public', javaObject(), 'getAddress', []))
       ->addMethod(javaMethod('public', javaString(), 'getRawValue', []));
@@ -84,7 +86,10 @@ function meta::external::format::flatdata::executionPlan::engine::extendJavaEngi
       ->addMethod(javaMethod('public', javaBoolean(), 'hasStringValue', [javaParam($jFlatDataRecordField, 'p0')]));
 
    let jParsedFlatDataToObject = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.driver.spi.ParsedFlatDataToObject')
-      ->addMethod(javaMethod('public', javaTypeVar('T'), 'make', [javaParam($jParsedFlatData, 'p0')]));
+      ->addMethod(javaMethod('public', javaVoid(), 'finished', []))
+      ->addMethod(javaMethod('public', javaBoolean(), 'isReturnable', []))
+      ->addMethod(javaMethod('public', javaTypeVar('T'), 'make', [javaParam($jParsedFlatData, 'p0')]))
+      ->addMethod(javaMethod('public', javaParameterizedType($jIChecked, [javaTypeVar('T')]), 'makeChecked', [javaParam($jParsedFlatData, 'p0')]));
 
    let jObjectToParsedFlatData = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.driver.spi.ObjectToParsedFlatData')
       ->addMethod(javaMethod('public', $jParsedFlatData, 'make', [javaParam(javaTypeVar('T'), 'p0')]));
@@ -106,7 +111,8 @@ function meta::external::format::flatdata::executionPlan::engine::extendJavaEngi
       ->addMethod(javaMethod('public', javaParameterizedType($jFlatDataContext, [javaTypeVar('T')]), 'createContext', []));
 
    let jIFlatDataDeserializeExecutionNodeSpecifics = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.read.IFlatDataDeserializeExecutionNodeSpecifics')
-      ->addMethod(javaMethod('public', javaParameterizedType($jFlatDataContext, [javaTypeVar('T')]), 'createContext', []));
+      ->addMethod(javaMethod('public', javaParameterizedType($jFlatDataContext, [javaTypeVar('T')]), 'createContext', []))
+      ->addMethod(javaMethod('public', javaVoid(), 'setMaximumSchemaObjectSize', [javaParam(javaLong(), 'p0')]));
 
    let jFlatDataSection = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataSection')
       ->addMethod(javaMethod('public', javaString(), 'getDriverId', []))
@@ -150,20 +156,20 @@ function meta::external::format::flatdata::executionPlan::engine::extendJavaEngi
       ->addMethod(javaMethod('public', $jFlatDataNumber, 'withFormat', [javaParam(javaString(), 'p0')]));
 
    let jFlatDataTemporal = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataTemporal')
-      ->addMethod(javaMethod('public', javaString(), 'getFormat', []))
-      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []))
-      ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataTemporal'), 'withFormat', [javaParam(javaString(), 'p0')]));
+      ->addMethod(javaMethod('public', javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataTemporal'), 'addFormat', [javaParam(javaString(), 'p0')]))
+      ->addMethod(javaMethod('public', javaList(javaString()), 'getFormat', []))
+      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []));
 
    let jFlatDataDate = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataDate')
-      ->addMethod(javaMethod('public', javaString(), 'getFormat', []))
-      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []))
-      ->addMethod(javaMethod('public', $jFlatDataTemporal, 'withFormat', [javaParam(javaString(), 'p0')]));
+      ->addMethod(javaMethod('public', $jFlatDataTemporal, 'addFormat', [javaParam(javaString(), 'p0')]))
+      ->addMethod(javaMethod('public', javaList(javaString()), 'getFormat', []))
+      ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []));
 
    let jFlatDataDateTime = javaClass('public', 'org.finos.legend.engine.external.format.flatdata.shared.model.FlatDataDateTime')
-      ->addMethod(javaMethod('public', javaString(), 'getFormat', []))
+      ->addMethod(javaMethod('public', $jFlatDataTemporal, 'addFormat', [javaParam(javaString(), 'p0')]))
+      ->addMethod(javaMethod('public', javaList(javaString()), 'getFormat', []))
       ->addMethod(javaMethod('public', javaString(), 'getTimeZone', []))
       ->addMethod(javaMethod('public', javaBoolean(), 'isOptional', []))
-      ->addMethod(javaMethod('public', $jFlatDataTemporal, 'withFormat', [javaParam(javaString(), 'p0')]))
       ->addMethod(javaMethod('public', $jFlatDataTemporal, 'withTimeZone', [javaParam(javaString(), 'p0')]));
 
    $conventions

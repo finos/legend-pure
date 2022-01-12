@@ -58,7 +58,7 @@ abstract class AbstractDateWithHour extends AbstractDateWithDay implements DateT
     @Override
     public abstract AbstractDateWithHour clone();
 
-    void incrementHour(int delta)
+    void incrementHour(long delta)
     {
         incrementDay(delta / 24);
         this.hour += (delta % 24);

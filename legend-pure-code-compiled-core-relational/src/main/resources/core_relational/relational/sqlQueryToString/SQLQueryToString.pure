@@ -936,7 +936,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    let processedParams = $func.parameters->map(p | $p->processOperation($dbConfig, $format, $generationState, $config, $extensions));
    let processedLeft = $processedParams->at(0);
    let processedRight = $processedParams->at(1);
-   '(' + $processedLeft + ' not in ' + $processedRight + ' OR ' + $processedLeft + ' is null)';
+   '(' + $processedLeft + ' not in ' + if($processedRight->startsWith('(') && $processedRight->endsWith(')'), | $processedRight, | '(' + $processedRight + ')') + ' OR ' + $processedLeft + ' is null)';
 }
 
 Class <<access.private>> meta::relational::functions::sqlQueryToString::DynaFunctionToSql

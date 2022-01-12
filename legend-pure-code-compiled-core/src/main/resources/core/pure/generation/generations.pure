@@ -106,11 +106,11 @@ function meta::pure::generation::pathToFileName(path:String[0..1],extension:Stri
 }
 
 
-function  meta::pure::generation::describeConfiguration(configClass:Class<Any>[1], configCreator:Function<{->GenerationConfiguration[1]}>[1],excludedProperties:String[*]):GenerationParameter[*]
+function  meta::pure::generation::describeConfiguration(configClass:Class<Any>[1], configCreator:Function<{->Any[1]}>[1],excludedProperties:String[*]):GenerationParameter[*]
 {
   let defaultConfig = $configCreator->eval();
   let ignoredProperties = $excludedProperties->concatenate(['class','package']);
-  let properties = $configClass.properties->filter(p| !$p.name->in($ignoredProperties));
+  let properties = $configClass->configProperties($ignoredProperties);
   
    
   let propertiesDef = $properties->map(p | let value=$p->evaluate(^List<Any>(values=[$defaultConfig]));
@@ -151,6 +151,17 @@ function  meta::pure::generation::describeConfiguration(configClass:Class<Any>[1
                                          );
 }
 
+function <<access.private>> meta::pure::generation::configProperties(configClass:Class<Any>[1], excludedProperties:String[*]):Property<Nil,Any|*>[*]
+{
+   if($configClass == Any || $configClass == GenerationConfiguration,
+      | [],
+      {|
+         let props  = $configClass.properties->filter(p| !$p.name->in($excludedProperties));
+         let supers = $configClass.generalizations->map(g| $g.general.rawType->cast(@Class<Any>)->toOne()->configProperties($excludedProperties));
+         $supers->concatenate($props);
+      }
+   );
+}
 
 function <<access.private>> meta::pure::generation::typeMap(type: Type[1]): Type[1]
 {

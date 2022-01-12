@@ -37,8 +37,13 @@ function meta::pure::executionPlan::engine::java::graphFetch::json::jsonReaderCl
 
 function meta::pure::executionPlan::engine::java::graphFetch::json::createJsonReading(pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], readableClasses:meta::pure::metamodel::type::Class<Any>[*], readableEnums:meta::pure::metamodel::type::Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
 {
+   createJsonReading($pureClass, $javaInterface, $path, [], $readableClasses, $readableEnums, $context, $debug);
+}
+
+function meta::pure::executionPlan::engine::java::graphFetch::json::createJsonReading(pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], pathOffset:String[0..1], readableClasses:meta::pure::metamodel::type::Class<Any>[*], readableEnums:meta::pure::metamodel::type::Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+{
    newProject()
-      ->addClasses(createJsonReadingClass($pureClass, $javaInterface, $path, $readableClasses, $readableEnums, $context, $debug))
+      ->addClasses(createJsonReadingClass($pureClass, $javaInterface, $path, $pathOffset, $readableClasses, $readableEnums, $context, $debug))
       ->addMavenDependency('com.fasterxml.jackson.core', 'jackson-core', '2.10.3');
 }
 
@@ -47,7 +52,7 @@ function meta::pure::executionPlan::engine::java::graphFetch::json::hasDecimal(t
   $typeInfos.typeInfos->filter(ti | $ti->instanceOf(ClassTypeInfo))->cast(@ClassTypeInfo)->exists(cti| $cti.properties->exists(p | $p.genericType.rawType == Decimal));
 }
 
-function meta::pure::executionPlan::engine::java::graphFetch::json::createJsonReadingClass(pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], readableClasses:meta::pure::metamodel::type::Class<Any>[*], readableEnums:meta::pure::metamodel::type::Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): meta::external::language::java::metamodel::Class[1]
+function meta::pure::executionPlan::engine::java::graphFetch::json::createJsonReadingClass(pureClass:meta::pure::metamodel::type::Class<Any>[1], javaInterface:meta::external::language::java::metamodel::Class[1], path:String[1], pathOffset:String[0..1], readableClasses:meta::pure::metamodel::type::Class<Any>[*], readableEnums:meta::pure::metamodel::type::Enumeration<Any>[*], context:GenerationContext[1], debug:DebugContext[1]): meta::external::language::java::metamodel::Class[1]
 {
    let proto = $context.conventions->jsonReaderClass($path, $pureClass)
       ->implements($context.conventions->className(StoreStreamReader))
@@ -85,7 +90,7 @@ function meta::pure::executionPlan::engine::java::graphFetch::json::createJsonRe
       ->addField(javaField('private', javaLong(), 'recordCount', '0'))
       ->addField(javaField('private', javaInputStream(), 'in'))
       ->addConstructor()
-      ->addInitReading($context.typeInfos->hasDecimal())
+      ->addInitReading($context.typeInfos->hasDecimal(), $pathOffset)
       ->addMethodExist()
       ->addMethodInvoke()
       ->addMethod(
@@ -533,7 +538,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
    );
 }
 
-function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::addInitReading(class:meta::external::language::java::metamodel::Class[1], useBigDecimalForFloats:Boolean[0..1]): meta::external::language::java::metamodel::Class[1]
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::addInitReading(class:meta::external::language::java::metamodel::Class[1], useBigDecimalForFloats:Boolean[0..1], pathOffset:String[0..1]): meta::external::language::java::metamodel::Class[1]
 {
    let jThis  = j_this($class);
    let parser = $jThis->j_field('parser');
@@ -543,12 +548,22 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
                                       | $objectMapper->j_assign(objectMapper()->j_new([]))
                                     );
 
-   $class->addMethod(javaMethod('public', javaVoid(), 'initReading', [],
-      [
-         $parser->j_assign(jsonFactory()->j_new([])->j_invoke('createParser', $jThis->j_field('in'), jsonParser())),
-         $objectMapperInstantiation
-      ]->j_ioExTryCatch()
-   ));
+   $class->imports(javaClass('com.fasterxml.jackson.core.filter.FilteringParserDelegate'))
+         ->imports(javaClass('com.fasterxml.jackson.core.filter.JsonPointerBasedFilter'))
+         ->addMethod(javaMethod('public', javaVoid(), 'initReading', [],
+                     if($pathOffset->isEmpty(),
+                       |[
+                           $parser->j_assign(jsonFactory()->j_new([])->j_invoke('createParser', $jThis->j_field('in'), jsonParser())),
+                           $objectMapperInstantiation
+                        ],
+                       |let baseParserVar = j_variable(jsonParser(), 'baseParser');
+                        [
+                           $baseParserVar->j_declare(jsonFactory()->j_new([])->j_invoke('createParser', $jThis->j_field('in'), jsonParser())),
+                           $parser->j_assign(jsonFilteringParserDelegate()->j_new([$baseParserVar, jsonPointerBasedFilter()->j_new(j_string($pathOffset->toOne())), j_boolean(false), j_boolean(false)])),
+                           $objectMapperInstantiation
+                        ];
+                     )->j_ioExTryCatch()
+           ));
 }
 
 function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::json::addMethodExist(class:meta::external::language::java::metamodel::Class[1]): meta::external::language::java::metamodel::Class[1]

@@ -98,7 +98,7 @@ public class AdjustDate extends NativeFunction
             }
             case "MICROSECONDS":
             {
-                result = date.addMicroseconds(number.intValue());
+                result = date.addMicroseconds(number.longValue());
                 break;
             }
             case "NANOSECONDS":

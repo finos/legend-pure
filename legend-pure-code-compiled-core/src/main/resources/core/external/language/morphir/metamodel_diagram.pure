@@ -1,5 +1,5 @@
 ###Diagram
-Diagram meta::external::language::morphir::metamodel::diagram(width=0.0, height=0.0)
+Diagram meta::external::language::morphir::Morphir_Diagram(width=0.0, height=0.0)
 {
     TypeView cview_0(
         type=meta::external::language::morphir::metamodel::Name::Name,

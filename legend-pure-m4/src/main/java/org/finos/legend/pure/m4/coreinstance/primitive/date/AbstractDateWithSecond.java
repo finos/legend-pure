@@ -52,7 +52,7 @@ abstract class AbstractDateWithSecond extends AbstractDateWithMinute
     @Override
     public abstract AbstractDateWithSecond clone();
 
-    void incrementSecond(int delta)
+    void incrementSecond(long delta)
     {
         incrementMinute(delta / 60);
         this.second += (delta % 60);

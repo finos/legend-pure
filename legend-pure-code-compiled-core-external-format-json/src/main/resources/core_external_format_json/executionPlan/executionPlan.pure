@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::external::shared::format::binding::*;
+import meta::pure::metamodel::path::*;
 import meta::external::shared::format::executionPlan::*;
 
 import meta::external::format::json::executionPlan::*;
@@ -30,10 +31,15 @@ Class meta::external::format::json::executionPlan::JsonSerializeExecutionNode ex
 {
 }
 
-Class meta::external::format::json::executionPlan::JsonDeserializeExecutionNode extends ExecutionNode
+Class meta::external::format::json::executionPlan::JsonDeserializeExecutionNode extends ExternalFormatDeserializeExecutionNode
 {
    binding : Binding[1];
    tree    : RootGraphFetchTree<Any>[0..1]; 
+}
+
+Class meta::external::format::json::executionPlan::JsonPathReference extends meta::external::shared::format::executionPlan::PathReference
+{
+   path    : String[1];
 }
 
 function meta::external::format::json::executionPlan::generateSerializeNode(checked:Boolean[1], binding:Binding[1], children:ExecutionNode[*]): ExternalFormatSerializeExecutionNode[1]
@@ -60,9 +66,18 @@ function meta::external::format::json::executionPlan::generateDeserializeNode(co
                             propertiesWithParameters = $tree.subTrees->cast(@PropertyGraphFetchTree)->map(x | $x->map(x | ^PropertyWithParameters(property = $x.property, parameters = $x.parameters)))
                          ),
       resultSizeRange = ZeroMany,
+      pathOffset      = $connection->cast(@ExternalFormatConnection).pathOffset->cast(@JsonPathReference),
       binding         = $connection->cast(@ExternalFormatConnection).element->cast(@Binding),
       tree            = $tree,
       executionNodes  = $children
+   );
+}
+
+function meta::external::format::json::executionPlan::generatePathReference(path:Path<Nil,Any|*>[1]): PathReference[1]
+{
+   let pathString = $path.path->filter(ele | $ele->instanceOf(PropertyPathElement))->cast(@PropertyPathElement).property.name->joinStrings('/', '/', '');
+   ^JsonPathReference(
+      path = $pathString
    );
 }
 
@@ -82,6 +97,7 @@ function meta::external::format::json::executionPlan::printPlanNodeToString(spac
          'JSON_Deserialize\n' + 
          $space + '(' + header($node, $space, $extensions) + '\n' +
          $space + '  binding = ' + $node.binding->elementToPath() + '\n' +
+         if($node.pathOffset->isEmpty(), | '', | $space + '  pathOffset = ' + $node.pathOffset->cast(@JsonPathReference).path->toOne() + '\n')  +
          $node->childrenToString($space+'  ', $extensions) + '\n' +
          $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
          $space + ')\n'
