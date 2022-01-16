@@ -1,0 +1,409 @@
+import meta::legend::service::metamodel::*;
+
+import meta::pure::persist::metamodel::*;
+import meta::pure::persist::metamodel::batch::*;
+import meta::pure::persist::metamodel::batch::deduplication::*;
+import meta::pure::persist::metamodel::batch::milestoned::*;
+import meta::pure::persist::metamodel::batch::milestoned::delta::*;
+import meta::pure::persist::metamodel::batch::milestoned::delta::merge::*;
+import meta::pure::persist::metamodel::batch::milestoned::snapshot::*;
+import meta::pure::persist::metamodel::batch::milestoned::transaction::*;
+import meta::pure::persist::metamodel::batch::milestoned::validity::*;
+import meta::pure::persist::metamodel::batch::milestoned::validity::derivation::*;
+import meta::pure::persist::metamodel::batch::nonmilestoned::*;
+import meta::pure::persist::metamodel::batch::nonmilestoned::audit::*;
+import meta::pure::persist::metamodel::event::*;
+
+import meta::pure::runtime::*;
+
+Class
+{doc.doc = 'A service persistence specification. This consists of a trigger event type, a reference to a service that sources and transforms data in response to incoming events, and a specification of how to persist the service output to a datastore.'}
+meta::pure::persist::metamodel::ServicePersistence extends PackageableElement
+{
+   {doc.doc = 'A functional description of this service persistence specification.'}
+   documentation: String[1];
+
+   {doc.doc = 'Owners of this service persistence specification.'}
+   owners: String[1..*];
+
+   {doc.doc = 'The type of event that serves as a trigger for service execution and then persistence.'}
+   trigger: EventType[1];
+
+   {doc.doc = 'The service that specifies sourcing and transformation logic to run for incoming events.' }
+   service: Service[1];
+
+   {doc.doc = 'The persistence approach to be applied to the output of the service.'}
+   persistence: Persistence[1];
+}
+
+/**********
+ * event type
+ **********/
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'Types of events that may trigger a persistence pipeline.'}
+meta::pure::persist::metamodel::event::EventType
+{
+}
+
+Class meta::pure::persist::metamodel::event::ScheduleTriggered extends EventType
+{
+}
+
+Class meta::pure::persist::metamodel::event::RegistryDatasetAvailable extends EventType
+{
+}
+
+/**********
+ * persistence
+ **********/
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'The persistence logic to run on the output of the engine service.'}
+meta::pure::persist::metamodel::Persistence
+{
+   inputShape: DataShape[1];
+   inputClass: Class<Any>[1];
+}
+
+Enum
+{doc.doc = 'The shape of the service output and thus the expected shape of the persistence input.'}
+meta::pure::persist::metamodel::DataShape
+{
+   {doc.doc = 'A flat object whose properties are primitive types with single multiplicity.'}
+   FLAT,
+
+   {doc.doc = 'An object nested one level deep. Each property of the root object is a flat object whose properties are primitive types with single multiplicity.'}
+   GROUPED_FLAT,
+
+   {doc.doc = 'An arbitrarily deeply nested object.'}
+   NESTED
+}
+
+Class meta::pure::persist::metamodel::streaming::StreamingPersistence extends Persistence
+{
+}
+
+Class meta::pure::persist::metamodel::batch::BatchPersistence extends Persistence
+{
+   transactionMode: BatchTransactionMode[1];
+   targetSpecification: BatchDatastoreSpecification[1];
+}
+
+Enum
+{doc.doc = 'The transaction granularity for the persistence'}
+meta::pure::persist::metamodel::batch::BatchTransactionMode
+{
+   {doc.doc = 'Each dataset in the datastore executes in its own transaction; each succeeds or fails independently.'}
+   SINGLE_DATASET,
+
+   {doc.doc = 'All datasets in the datastore execute in a single transaction; all succeed or fail together.'}
+   ALL_DATASETS
+}
+
+Class
+{doc.doc = 'A target datastore for a batch persistence.'}
+meta::pure::persist::metamodel::batch::BatchDatastoreSpecification
+{
+   datastoreName: String[1];
+   datasets: BatchDatasetSpecification[1..*];
+   runtime: Runtime[0..1];
+}
+
+Class
+{doc.doc = 'A target dataset for a batch persistence.'}
+meta::pure::persist::metamodel::batch::BatchDatasetSpecification
+{
+   datasetName: String[1];
+   partitionProperties: Property<Nil, Any|1>[*];
+   deduplicationStrategy: DeduplicationStrategy[1];
+   milestoningMode: BatchMilestoningMode[1];
+}
+
+/**********
+ * deduplication strategy
+ **********/
+
+Class
+<<typemodifiers.abstract>>
+meta::pure::persist::metamodel::batch::deduplication::DeduplicationStrategy
+{
+}
+
+Class meta::pure::persist::metamodel::batch::deduplication::NoDeduplicationStrategy extends DeduplicationStrategy
+{
+}
+
+Class meta::pure::persist::metamodel::batch::deduplication::AnyDeduplicationStrategy extends DeduplicationStrategy
+{
+}
+
+Class meta::pure::persist::metamodel::batch::deduplication::CountDeduplicationStrategy extends DeduplicationStrategy
+{
+   duplicateCountPropertyName: String[1];
+}
+
+Class meta::pure::persist::metamodel::batch::deduplication::MaxVersionDeduplicationStrategy extends DeduplicationStrategy
+{
+   versionProperty: Property<Nil, Any|1>[1];
+}
+
+/**********
+ * batch mode
+ **********/
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'The batch milestoning strategy to apply.'}
+meta::pure::persist::metamodel::batch::BatchMilestoningMode
+{
+}
+
+/**********
+ * batch mode: non-milestoned
+ **********/
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'Values in the incoming batch are applied destructively; it is only possible to see current values in the target dataset.'}
+meta::pure::persist::metamodel::batch::nonmilestoned::NonMilestoned extends BatchMilestoningMode
+{
+   auditScheme: AuditScheme[1];
+}
+
+// audit scheme
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'Strategy for representing audit information in the underlying system.'}
+meta::pure::persist::metamodel::batch::nonmilestoned::audit::AuditScheme
+{
+}
+
+Class
+{doc.doc = 'Audit information is not captured in the underlying system.'}
+meta::pure::persist::metamodel::batch::nonmilestoned::audit::NoAuditScheme extends AuditScheme
+{
+}
+
+Class
+{doc.doc = 'Audit information is represented via a transaction datetime in the underlying system.'}
+meta::pure::persist::metamodel::batch::nonmilestoned::audit::BatchDateTimeAuditScheme extends AuditScheme
+{
+   transactionDateTimePropertyName: String[1];
+}
+
+Class
+{doc.doc = 'Audit information is represented at the discretion of the underlying system.'}
+meta::pure::persist::metamodel::batch::nonmilestoned::audit::OpaqueAuditScheme extends AuditScheme
+{
+}
+
+/**********
+ * batch mode: non-milestoned - types
+ **********/
+
+Class
+{doc.doc = 'Values in the incoming batch represent the full dataset and will replace the existing dataset destructively.'}
+meta::pure::persist::metamodel::batch::nonmilestoned::SnapshotNonMilestoned extends NonMilestoned
+{
+}
+
+Class
+{doc.doc = 'Values in the incoming batch represent a delta to be applied on top of the existing dataset destructively. New incoming values are appended. Updated incoming values overwrite existing ones. Missing incoming values result in a no-op.'}
+meta::pure::persist::metamodel::batch::nonmilestoned::DeltaNonMilestoned extends NonMilestoned
+{
+}
+
+Class
+{doc.doc = 'Values in the incoming batch are appended to the existing dataset. No updates or deletes occur. Duplicates may optionally be filtered out.'}
+meta::pure::persist::metamodel::batch::nonmilestoned::AppendOnlyNonMilestoned extends NonMilestoned
+{
+   filterDuplicates: Boolean[1];
+}
+
+/**********
+ * batch mode: milestoned
+ **********/
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'Values in the incoming batch are applied non-destructively; it is always possible to see historical values in the transaction (processing) dimension.'}
+meta::pure::persist::metamodel::batch::milestoned::Milestoned extends BatchMilestoningMode
+{
+   tranactionMilestoningScheme: TransactionMilestoningScheme[1];
+}
+
+// transaction dimension
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'Strategy for representing the transaction (processing) temporal dimension in the underlying system.'}
+meta::pure::persist::metamodel::batch::milestoned::transaction::TransactionMilestoningScheme
+{
+}
+
+Class
+{doc.doc = 'The representation of the transaction (processing) temporal dimension is via integral "in" and "out" batch ids.'}
+meta::pure::persist::metamodel::batch::milestoned::transaction::BatchIdTransactionMilestoningScheme extends TransactionMilestoningScheme
+{
+   {doc.doc = 'The name of the property representing the "in" batch id in the underlying system.'}
+   batchIdInName: String[1];
+
+   {doc.doc = 'The name of the property representing the "out" batch id in the underlying system.'}
+   batchIdOutName: String[1];
+}
+
+Class
+{doc.doc = 'The representation of the transaction (processing) temporal dimension is via "in" and "out" datetimes.'}
+meta::pure::persist::metamodel::batch::milestoned::transaction::DateTimeTransactionMilestoningScheme extends TransactionMilestoningScheme
+{
+   {doc.doc = 'The name of the property representing the "in" datetime in the underlying system.'}
+   transactionDateTimeInName: String[1];
+
+   {doc.doc = 'The name of the property representing the "out" datetime in the underlying system.'}
+   transactionDateTimeOutName: String[1];
+}
+
+Class
+{doc.doc = 'The representation of the transaction (processing) temporal dimension is via integral "in" and "out" batch ids and "in" and "out" datetimes.'}
+meta::pure::persist::metamodel::batch::milestoned::transaction::BatchIdAndDateTimeTransactionMilestoningScheme extends TransactionMilestoningScheme
+{
+   {doc.doc = 'The name of the property representing the "in" batch id in the underlying system.'}
+   batchIdInName: String[1];
+
+   {doc.doc = 'The name of the property representing the "out" batch id in the underlying system.'}
+   batchIdOutName: String[1];
+
+   {doc.doc = 'The name of the property representing the "in" datetime in the underlying system.'}
+   transactionDateTimeInName: String[1];
+
+   {doc.doc = 'The name of the property representing the "out" datetime in the underlying system.'}
+   transactionDateTimeOutName: String[1];
+}
+
+Class
+{doc.doc = 'The representation of the transaction (processing) temporal dimension is at the discretion of the implementing system.'}
+meta::pure::persist::metamodel::batch::milestoned::transaction::OpaqueTransactionMilestoningScheme extends TransactionMilestoningScheme
+{
+}
+
+// validity dimension
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'Strategy for representing the valid (business) temporal dimension in the underlying system.'}
+meta::pure::persist::metamodel::batch::milestoned::validity::ValidityMilestoningScheme
+{
+}
+
+Class
+{doc.doc = 'The representation of the validity (business) temporal dimension is via "from" and "thru" datetimes.'}
+meta::pure::persist::metamodel::batch::milestoned::validity::DateTimeValidityMilestoningScheme extends ValidityMilestoningScheme
+{
+   {doc.doc = 'The name of the property representing the "in" datetime in the underlying system.'}
+   validDateTimeFromName: String[1];
+
+   {doc.doc = 'The name of the property representing the "out" datetime in the underlying system.'}
+   validDateTimeThruName: String[1];
+}
+
+Class
+{doc.doc = 'The representation of the validity (business) temporal dimension is at the discretion of the implementing system.'}
+meta::pure::persist::metamodel::batch::milestoned::validity::OpaqueValidityMilestoningScheme extends ValidityMilestoningScheme
+{
+}
+
+// validity provider
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'Strategy for representing the valid (business) temporal dimension in the underlying system.'}
+meta::pure::persist::metamodel::batch::milestoned::validity::derivation::ValidityDerivation
+{
+}
+
+Class
+{doc.doc = 'Source data provide valid from datetime.'}
+meta::pure::persist::metamodel::batch::milestoned::validity::derivation::SourceSpecifiesValidFromDate extends ValidityDerivation
+{
+   sourceValidDateTimeFromProperty: Property<Nil, DateTime|1>[1];
+}
+
+Class
+{doc.doc = 'Source data provide valid from and thru datetimes.'}
+meta::pure::persist::metamodel::batch::milestoned::validity::derivation::SourceSpecifiesValidFromAndThruDate extends ValidityDerivation
+{
+   sourceValidDateTimeFromProperty: Property<Nil, Any|1>[1];
+   sourceValidDateTimeThruProperty: Property<Nil, Any|1>[1];
+}
+
+/**********
+ * batch mode: milestoned - snapshot
+ **********/
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'Values in the incoming batch represent the full dataset and will replace the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a logical delete in the transaction (processing) dimension.' }
+meta::pure::persist::metamodel::batch::milestoned::snapshot::SnapshotMilestoned extends Milestoned
+{
+}
+
+Class
+{doc.doc = 'Values in the incoming batch represent the full dataset and will replace the existing dataset non-destructively. The data have only a transaction (processing) dimension and no validity (business) dimension.'}
+meta::pure::persist::metamodel::batch::milestoned::snapshot::UnitemporalSnapshotMilestoned extends SnapshotMilestoned
+{
+}
+
+Class
+{doc.doc = 'Values in the incoming batch represent the full dataset and will replace the existing dataset non-destructively. The data have a transaction (processing) dimension and a validity (business) dimension.'}
+meta::pure::persist::metamodel::batch::milestoned::snapshot::BitemporalSnapshotMilestoned extends SnapshotMilestoned
+{
+   validityMilestoningScheme: ValidityMilestoningScheme[1];
+   validityDerivation: ValidityDerivation[1];
+}
+
+/**********
+ * batch mode: milestoned - delta
+ **********/
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'Values in the incoming batch represent a delta to be applied on top of the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a no-op in the transaction (processing) dimension. Additional merge semantics, including logical deletes, can be supported via a merge scheme.' }
+meta::pure::persist::metamodel::batch::milestoned::delta::DeltaMilestoned extends Milestoned
+{
+}
+
+Class
+<<typemodifiers.abstract>>
+meta::pure::persist::metamodel::batch::milestoned::delta::merge::MergeScheme
+{
+}
+
+Class
+meta::pure::persist::metamodel::batch::milestoned::delta::merge::DefaultMergeScheme extends MergeScheme
+{
+}
+
+Class
+meta::pure::persist::metamodel::batch::milestoned::delta::merge::DeleteIndicatorMergeScheme extends MergeScheme
+{
+   deleteProperty: Property<Nil, Any|1>[1];
+   deleteValues: String[1..*];
+}
+
+Class
+{doc.doc = 'Values in the incoming batch represent a delta to be applied on top of the existing dataset non-destructively. The data have only a transaction (processing) dimension and no validity (business) dimension.' }
+meta::pure::persist::metamodel::batch::milestoned::delta::UnitemporalDeltaMilestoned extends DeltaMilestoned
+{
+}
+
+Class
+{doc.doc = 'Values in the incoming batch represent a delta to be applied on top of the existing dataset non-destructively. The data have a transaction (processing) dimension and a validity (business) dimension.' }
+meta::pure::persist::metamodel::batch::milestoned::delta::BitemporalDeltaMilestoned extends DeltaMilestoned
+{
+   validityMilestoningScheme: ValidityMilestoningScheme[1];
+   validityDerivation: ValidityDerivation[1];
+}
