@@ -73,6 +73,7 @@ function meta::external::shared::format::executionPlan::getSourceNodeFromExterna
 {
    $externalSource->match([
       u:UrlStreamExternalSource[1]     | generateUrlStreamExecutionNode($u),
+      p:ParameterExternalSource[1]     | generateParameterExternalSourceExecutionNode($p),
       e:ExternalSource[1]              | fail('External source format not supported !!'); @ExecutionNode;
    ]);
 }
@@ -84,6 +85,17 @@ function meta::external::shared::format::executionPlan::generateUrlStreamExecuti
    ^UrlStreamExecutionNode(
       resultType = ^DataTypeResultType(type = String),
       url        = $sourceUrl
+   );
+}
+
+function meta::external::shared::format::executionPlan::generateParameterExternalSourceExecutionNode(externalSource:ParameterExternalSource[1]): ExecutionNode[1]
+{
+   let paramName = $externalSource.name;
+   
+   ^ParameterExternalSourceExecutionNode
+   (
+      resultType = ^DataTypeResultType(type = String),
+      name       = $paramName
    );
 }
 
@@ -103,6 +115,13 @@ function meta::external::shared::format::executionPlan::printPlanNodeToString(sp
          'UrlStream\n' +
          $space + '(' + header($node, $space, $extensions) + '\n' +
          $space + '  url = ' + $node.url + '\n' +
+         $node->childrenToString($space+'  ', $extensions) + '\n' +
+         $space + ')\n'
+      },
+      {node:ParameterExternalSourceExecutionNode[1] |
+         'ParameterExternalSource\n' + 
+         $space + '(' + header($node, $space, $extensions) + '\n' +
+         $space + '  name = ' + $node.name + '\n' +
          $node->childrenToString($space+'  ', $extensions) + '\n' +
          $space + ')\n'
       }
@@ -411,7 +430,8 @@ function meta::external::shared::format::executionPlan::printConnection(extensio
    [
       {ext:ExternalFormatConnection[1] |
          let source = $ext.externalSource->match([
-            u:UrlStreamExternalSource[1] | 'url="'+$u.url+'"'
+            u:UrlStreamExternalSource[1] | 'url="'+$u.url+'"',
+            p:ParameterExternalSource[1] | 'parameter="'+$p.name+'"'
          ]);
          'binding="'+$ext.element->cast(@Binding)->elementToPath()+'", source=('+$source+')';
       }

@@ -27,8 +27,9 @@ function meta::protocols::pure::vX_X_X::external::shared::format::serializerExte
       transfers_executionPlan_transformNode = 
          {mapping:Mapping[1], extensions:RouterExtension[*] |
             [
-               d:meta::external::shared::format::executionPlan::DataQualityExecutionNode[1] | transformDataQualityNode($d, $mapping, $extensions),
-               u:meta::external::shared::format::executionPlan::UrlStreamExecutionNode[1]   | transformUrlStreamNode($u, $mapping, $extensions)
+               d:meta::external::shared::format::executionPlan::DataQualityExecutionNode[1]             | transformDataQualityNode($d, $mapping, $extensions),
+               u:meta::external::shared::format::executionPlan::UrlStreamExecutionNode[1]               | transformUrlStreamNode($u, $mapping, $extensions),
+               p:meta::external::shared::format::executionPlan::ParameterExternalSourceExecutionNode[1] | transformParameterExternalSourceNode($p, $mapping, $extensions)
             ]
          }   
    );
@@ -49,13 +50,24 @@ Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::execut
    url : String[1];
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ParameterExternalSource extends meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalSource
+{
+   name : String[1];
+}
+
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::shared::format::transformExternalFormatConnection(extConnection:meta::external::shared::format::executionPlan::ExternalFormatConnection[1]): meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalFormatConnection[1]
 {
    let source = $extConnection.externalSource->match([
       u:meta::external::shared::format::executionPlan::UrlStreamExternalSource[1] | ^meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::UrlStreamExternalSource(
                                                                          _type = 'urlStream',
                                                                          url   = $u.url
-                                                                      )
+                                                                      ),
+      p:meta::external::shared::format::executionPlan::ParameterExternalSource[1] |
+         ^meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ParameterExternalSource
+         (
+            _type = 'parameter',
+            name  = $p.name
+         ) 
    ]);
    
    ^meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalFormatConnection(
@@ -74,6 +86,11 @@ Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::execut
 Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::UrlStreamExecutionNode extends ExecutionNode
 {
    url : String[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ParameterExternalSourceExecutionNode extends ExecutionNode
+{
+   name : String[1];
 }
 
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::shared::format::transformDataQualityNode(node:meta::external::shared::format::executionPlan::DataQualityExecutionNode[1], mapping:meta::pure::mapping::Mapping[1], extensions:RouterExtension[*]): ExecutionNode[1]
@@ -96,6 +113,15 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external:
    );
 }
 
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::shared::format::transformParameterExternalSourceNode(node:meta::external::shared::format::executionPlan::ParameterExternalSourceExecutionNode[1], mapping:meta::pure::mapping::Mapping[1], extensions:RouterExtension[*]): ExecutionNode[1]
+{
+   ^meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ParameterExternalSourceExecutionNode
+   (
+      _type      = 'parameterExternalSource',
+      resultType = $node.resultType->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformResultType($mapping, $extensions),
+      name       = $node.name
+   );
+}
 
 Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalFormatSerializeExecutionNode extends ExecutionNode
 {
