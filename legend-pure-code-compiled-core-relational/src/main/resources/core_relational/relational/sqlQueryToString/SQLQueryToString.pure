@@ -1226,6 +1226,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='LOCATE(%s)', transform={p:String[2] | $p->at(1) + ', ' + $p->at(0)})),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='strpos(%s)', transform={p:String[2] | $p->at(0) + ', ' + $p->at(1)})),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='CHARINDEX(%s)', transform={p:String[2] | $p->at(0) + ', ' + $p->at(1)}))]),
+      forDynafunction('isDistinct',            [ choice($allTypes,                 $allStates,            ^ToSql(format='count(distinct(%s)) = count(%s)', transform={p:String[*]|assert($p->isNotEmpty(), |'"isDistinct" aggregation can be applied on primitive values only'); $p->concatenate($p);}))]),
       forDynafunction('isEmpty',               [ choice($aSybase,                  $selectOutsideWhen,    ^ToSql(format='case when (%s is null) then \'true\' else \'false\' end', parametersWithinWhenClause=true)),
                                                  choice($aSybase,                  $notSelectOutsideWhen, ^ToSql(format='%s is null')),
                                                  choice($notASybase,               $allStates,            ^ToSql(format='%s is null'))]),
