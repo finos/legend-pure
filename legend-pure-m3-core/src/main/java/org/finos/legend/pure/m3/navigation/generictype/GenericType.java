@@ -911,7 +911,7 @@ public class GenericType
     {
         if (processorSupport.instance_instanceOf(type, M3Paths.FunctionType))
         {
-            CoreInstance functionType = processorSupport.newAnonymousCoreInstance(replaceSourceInfo ? newSourceInfo : null, M3Paths.FunctionType);
+            CoreInstance functionType = processorSupport.newAnonymousCoreInstance(replaceSourceInfo ? newSourceInfo : type.getSourceInformation(), M3Paths.FunctionType);
             CoreInstance returnType = type.getValueForMetaPropertyToOne(M3Properties.returnType);
             if (returnType != null)
             {
@@ -928,7 +928,7 @@ public class GenericType
             {
                 MutableList<CoreInstance> processedParameters = parameters.collect(parameter ->
                 {
-                    CoreInstance varExpression = processorSupport.newAnonymousCoreInstance(replaceSourceInfo ? newSourceInfo : null, M3Paths.VariableExpression);
+                    CoreInstance varExpression = processorSupport.newAnonymousCoreInstance(replaceSourceInfo ? newSourceInfo : parameter.getSourceInformation(), M3Paths.VariableExpression);
                     CoreInstance varName = parameter.getValueForMetaPropertyToOne(M3Properties.name);
                     if (varName != null)
                     {
@@ -970,14 +970,14 @@ public class GenericType
         return findBestCommonGenericType(genericTypeSet, null, covariant, isFunction, false, null, processorSupport);
     }
 
+    public static CoreInstance findBestCommonGenericType(ListIterable<CoreInstance> genericTypeSet, boolean covariant, boolean isFunction, SourceInformation sourceInformation, ProcessorSupport processorSupport)
+    {
+        return findBestCommonGenericType(genericTypeSet, null, covariant, isFunction, sourceInformation != null, sourceInformation, processorSupport);
+    }
+
     static CoreInstance findBestCommonGenericType(ListIterable<CoreInstance> genericTypeSet, boolean covariant, boolean isFunction, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport)
     {
         return findBestCommonGenericType(genericTypeSet, null, covariant, isFunction, replaceSourceInfo, newSourceInfo, processorSupport);
-    }
-
-    private static CoreInstance findBestCommonGenericType(ListIterable<CoreInstance> genericTypeSet, CoreInstance knownMostGeneralGenericTypeBound, boolean covariant, boolean isFunction, ProcessorSupport processorSupport)
-    {
-        return findBestCommonGenericType(genericTypeSet, knownMostGeneralGenericTypeBound, covariant, isFunction, false, null, processorSupport);
     }
 
     private static CoreInstance findBestCommonGenericType(ListIterable<CoreInstance> genericTypeSet, CoreInstance knownMostGeneralGenericTypeBound, boolean covariant, boolean isFunction, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport)
@@ -1024,7 +1024,7 @@ public class GenericType
                 returnTypes.add(Instance.getValueForMetaPropertyToOneResolved(rawType, M3Properties.returnType, processorSupport));
                 returnMultiplicities.add(Instance.getValueForMetaPropertyToOneResolved(rawType, M3Properties.returnMultiplicity, processorSupport));
             });
-            Instance.addValueToProperty(functionType, M3Properties.returnType, findBestCommonGenericType(returnTypes, true, false, processorSupport), processorSupport);
+            Instance.addValueToProperty(functionType, M3Properties.returnType, findBestCommonGenericType(returnTypes, true, false, replaceSourceInfo, newSourceInfo, processorSupport), processorSupport);
             Instance.addValueToProperty(functionType, M3Properties.returnMultiplicity, returnMultiplicities.contains(null) ? null : Multiplicity.minSubsumingMultiplicity(returnMultiplicities, processorSupport), processorSupport);
 
             return Type.wrapGenericType(functionType, processorSupport);

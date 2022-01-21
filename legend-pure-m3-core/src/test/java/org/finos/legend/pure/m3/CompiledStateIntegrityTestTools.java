@@ -15,9 +15,14 @@
 package org.finos.legend.pure.m3;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
+import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -26,6 +31,9 @@ import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.property.Property;
+import org.finos.legend.pure.m3.tools.GraphPath;
+import org.finos.legend.pure.m3.tools.GraphPathIterable;
+import org.finos.legend.pure.m3.tools.GraphStatistics;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.junit.Assert;
@@ -33,6 +41,7 @@ import org.junit.Assert;
 import java.util.Formatter;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class CompiledStateIntegrityTestTools
 {
@@ -157,6 +166,86 @@ public class CompiledStateIntegrityTestTools
     {
         runIntegrityTest(instances, "property value type",
                 (instance, violationConsumer) -> forEachPropertyValueTypeViolation(instance, violationConsumer, processorSupport));
+    }
+
+    public static <T extends CoreInstance> void testHasSourceInformation(Iterable<T> instances, String instanceDescription, Function<? super T, ? extends String> instancePrinter, boolean findPaths, ProcessorSupport processorSupport)
+    {
+        testHasSourceInformation(instances, instanceDescription, (sb, t) -> sb.append(instancePrinter.apply(t)), findPaths, processorSupport);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends CoreInstance> void testHasSourceInformation(Iterable<T> instances, String instanceDescription, BiConsumer<? super StringBuilder, ? super T> instancePrinter, boolean findPaths, ProcessorSupport processorSupport)
+    {
+        MutableSet<T> noSourceInfo = Iterate.select(instances, i -> i.getSourceInformation() == null, Sets.mutable.empty());
+        if (noSourceInfo.notEmpty())
+        {
+            MutableList<String> errorMessages = Lists.mutable.empty();
+            BiConsumer<? super StringBuilder, ? super T> resolvedInstancePrinter = (instancePrinter == null) ? StringBuilder::append : instancePrinter;
+            if (findPaths)
+            {
+                MutableMap<T, GraphPath> graphPaths = Maps.mutable.withInitialCapacity(noSourceInfo.size());
+                GraphPathIterable.SearchFilter searchFilter = GraphPathIterable.getExcludePropertiesFilter(M3Properties.applications, M3Properties.referenceUsages, M3Properties._package)
+                        .join(GraphPathIterable.getStopAtPackagedOrTopLevelNodeFilter());
+                if (noSourceInfo.size() == 1)
+                {
+                    T instance = noSourceInfo.getAny();
+                    searchFilter = searchFilter.join(GraphPathIterable.getStopAtNodeFilter(instance::equals));
+                }
+                // We resolve the set of starts to a list up front to conserve memory during the graph path searches
+                for (String start : GraphStatistics.allTopLevelAndPackagedElementPaths(processorSupport).toList())
+                {
+                    for (GraphPathIterable.ResolvedGraphPath resolvedGraphPath : GraphPathIterable.newGraphPathIterable(Sets.immutable.with(start), searchFilter, processorSupport).asResolvedGraphPathIterable())
+                    {
+                        CoreInstance node = resolvedGraphPath.getLastResolvedNode();
+                        if (noSourceInfo.remove(node))
+                        {
+                            graphPaths.put((T) node, resolvedGraphPath.getGraphPath().reduce(processorSupport));
+                            if (noSourceInfo.isEmpty())
+                            {
+                                break;
+                            }
+                            if (noSourceInfo.size() == 1)
+                            {
+                                T instance = noSourceInfo.getAny();
+                                searchFilter = searchFilter.join(GraphPathIterable.getStopAtNodeFilter(instance::equals));
+                            }
+                        }
+                    }
+                    if (noSourceInfo.isEmpty())
+                    {
+                        break;
+                    }
+                }
+                graphPaths.forEachKeyValue((instance, path) ->
+                {
+                    StringBuilder builder = new StringBuilder((instanceDescription == null) ? "Instance" : instanceDescription).append(": ");
+                    resolvedInstancePrinter.accept(builder, instance);
+                    path.writeDescription(builder.append("\n\t\tpath: "));
+                    errorMessages.add(builder.toString());
+                });
+            }
+            noSourceInfo.forEach(instance ->
+            {
+                StringBuilder builder = new StringBuilder((instanceDescription == null) ? "Instance" : instanceDescription).append(": ");
+                resolvedInstancePrinter.accept(builder, instance);
+                errorMessages.add(builder.toString());
+            });
+            int errorCount = errorMessages.size();
+            StringBuilder message = new StringBuilder(errorCount * 128).append("There ").append((errorCount == 1) ? "is" : "are");
+            new Formatter(message).format(" %,d", errorCount);
+            if (instanceDescription != null)
+            {
+                message.append(' ').append(instanceDescription);
+            }
+            message.append(" instance");
+            if (errorCount != 1)
+            {
+                message.append('s');
+            }
+            message.append(" with no source information:\n\t");
+            errorMessages.appendString(message, "\n\t");
+            Assert.fail(message.toString());
+        }
     }
 
     private static void runIntegrityTest(Iterable<? extends CoreInstance> instances, String violationDescription, BiConsumer<CoreInstance, Consumer<? super String>> test)

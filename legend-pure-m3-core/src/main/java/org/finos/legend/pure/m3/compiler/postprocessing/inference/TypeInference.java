@@ -35,7 +35,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Mu
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.TypeParameter;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
@@ -77,32 +76,35 @@ public class TypeInference
         // Store the inferred params in the FunctionExpression
         if (!(foundFunction instanceof QualifiedProperty))
         {
+            TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
             FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(foundFunction);
-            for (TypeParameter typeParameter : functionType._typeParameters())
+            functionType._typeParameters().forEach(typeParameter ->
             {
-                if (state.getTypeInferenceContext().getTypeParameterToGenericType().get(typeParameter._name()) == null)
+                CoreInstance value = typeInferenceContext.getTypeParameterValue(typeParameter._name());
+                if (value != null)
                 {
-                    if (state.getTypeInferenceContext().getParent() == null)
-                    {
-                        throw new PureCompilationException(functionExpression.getSourceInformation(), "The type parameter " + typeParameter._name() + " was not resolved (" + foundFunction._functionName() + " / " + org.finos.legend.pure.m3.navigation.function.FunctionType.print(functionType, processorSupport) + ")!");
-                    }
+                    functionExpression._resolvedTypeParametersAdd((GenericType) value);
+                }
+                else if (typeInferenceContext.getParent() == null)
+                {
+                    StringBuilder builder = new StringBuilder("The type parameter ").append(typeParameter._name()).append(" was not resolved (").append(foundFunction._functionName()).append(" / ");
+                    org.finos.legend.pure.m3.navigation.function.FunctionType.print(builder, functionType, processorSupport).append(")!");
+                    throw new PureCompilationException(functionExpression.getSourceInformation(), builder.toString());
+                }
+            });
+            functionType._multiplicityParameters().forEach(multiplicityParameter ->
+            {
+                String parameterName = multiplicityParameter._valuesCoreInstance().getFirst().getName();
+                CoreInstance value = typeInferenceContext.getMultiplicityParameterValue(parameterName);
+                if (value != null)
+                {
+                    functionExpression._resolvedMultiplicityParametersAdd((Multiplicity) value);
                 }
                 else
                 {
-                    functionExpression._resolvedTypeParametersAdd((GenericType) state.getTypeInferenceContext().getTypeParameterToGenericType().get(typeParameter._name()));
+                    throw new PureCompilationException(functionExpression.getSourceInformation(), "The multiplicity parameter " + parameterName + " was not resolved!");
                 }
-            }
-            for (InstanceValue multiplicityParameter : ((FunctionType) processorSupport.function_getFunctionType(foundFunction))._multiplicityParameters())
-            {
-                if (state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity().get(multiplicityParameter._valuesCoreInstance().getFirst().getName()) == null)
-                {
-                    throw new PureCompilationException(functionExpression.getSourceInformation(), "The multiplicity parameter " + multiplicityParameter._valuesCoreInstance().getFirst().getName() + " was not resolved!");
-                }
-                else
-                {
-                    functionExpression._resolvedMultiplicityParametersAdd((Multiplicity) state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity().get(multiplicityParameter._valuesCoreInstance().getFirst().getName()));
-                }
-            }
+            });
         }
     }
 

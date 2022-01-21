@@ -15,33 +15,26 @@
 package org.finos.legend.pure.m3.compiler.postprocessing.inference;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function2;
-import org.eclipse.collections.api.map.MapIterable;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.eclipse.collections.impl.tuple.Tuples;
+import org.eclipse.collections.impl.set.mutable.UnmodifiableMutableSet;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 class TypeInferenceContextState
 {
-    private static final Function2<String, ParameterValueWithFlag, Pair<String, CoreInstance>> UNBOX = new Function2<String, ParameterValueWithFlag, Pair<String, CoreInstance>>()
-    {
-        @Override
-        public Pair<String, CoreInstance> value(String parameter, ParameterValueWithFlag valueWithFlag)
-        {
-            return Tuples.pair(parameter, valueWithFlag.getParameterValue());
-        }
-    };
-
-    private final MutableMap<String, ParameterValueWithFlag> typeParameterToGenericType = UnifiedMap.newMap();
-    private final MutableMap<String, ParameterValueWithFlag> multiplicityParameterToMultiplicity = UnifiedMap.newMap();
+    private final MutableMap<String, ParameterValueWithFlag> typeParameterToGenericType = Maps.mutable.empty();
+    private final MutableMap<String, ParameterValueWithFlag> multiplicityParameterToMultiplicity = Maps.mutable.empty();
     private boolean ahead = false;
     private boolean aheadConsumed = false;
 
-    public RichIterable<String> getTypeParameters()
+    RichIterable<String> getTypeParameters()
     {
-        return this.typeParameterToGenericType.keysView();
+        return UnmodifiableMutableSet.of(this.typeParameterToGenericType.keySet());
+    }
+
+    boolean hasTypeParameter(String parameter)
+    {
+        return this.typeParameterToGenericType.containsKey(parameter);
     }
 
     ParameterValueWithFlag getTypeParameterValueWithFlag(String parameter)
@@ -60,14 +53,14 @@ class TypeInferenceContextState
         this.typeParameterToGenericType.put(parameter, new ParameterValueWithFlag(genericType, targetGenericsContext, isFinal));
     }
 
-    MapIterable<String, CoreInstance> getGenericTypeByParameter()
+    RichIterable<String> getMultiplicityParameters()
     {
-        return this.typeParameterToGenericType.collect(UNBOX);
+        return UnmodifiableMutableSet.of(this.multiplicityParameterToMultiplicity.keySet());
     }
 
-    public RichIterable<String> getMultiplicityParameters()
+    boolean hasMultiplicityParameter(String parameter)
     {
-        return this.multiplicityParameterToMultiplicity.keysView();
+        return this.multiplicityParameterToMultiplicity.containsKey(parameter);
     }
 
     ParameterValueWithFlag getMultiplicityParameterValueWithFlag(String parameter)
@@ -84,11 +77,6 @@ class TypeInferenceContextState
     void putMultiplicityParameterValue(String parameter, CoreInstance multiplicity, TypeInferenceContext targetGenericsContext, boolean isFinal)
     {
         this.multiplicityParameterToMultiplicity.put(parameter, new ParameterValueWithFlag(multiplicity, targetGenericsContext, isFinal));
-    }
-
-    MapIterable<String, CoreInstance> getMultiplicityByParameter()
-    {
-        return this.multiplicityParameterToMultiplicity.collect(UNBOX);
     }
 
     boolean isAhead()
