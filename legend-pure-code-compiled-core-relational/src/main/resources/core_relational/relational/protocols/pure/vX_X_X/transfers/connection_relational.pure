@@ -189,7 +189,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
        d:meta::pure::alloy::connections::alloy::specification::DatabricksDatasourceSpecification[1] |
           ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatabricksDatasourceSpecification(
               _type = 'databricks',
-              hostname = $d.hostname,
+              host = $d.host,
               port = $d.port,
               protocol = $d.protocol,
               httpPath = $d.httpPath
