@@ -161,7 +161,7 @@ function <<access.private>> meta::pure::router::extension::relationalExtension(t
       },
       
       graphFetch_executionPlan_addCrossStoreChildren = {
-         clusteredTree: ClusteredGraphFetchTree[1], orderedPaths: String[*], parentPath: String[1], inScopeVars: Map<String, List<Any>>[1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions: RouterExtension[*], debug: DebugContext[1] |
+         clusteredTree: ClusteredGraphFetchTree[1], orderedPaths: String[*], parentPath: String[1], inScopeVars: Map<String, List<Any>>[1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], enableConstraints: Boolean[1], checked: Boolean[1], extensions: RouterExtension[*], debug: DebugContext[1] |
          {db : meta::relational::metamodel::Database[1] | meta::relational::graphFetch::executionPlan::planCrossRootGraphFetchExecutionRelational($clusteredTree, $orderedPaths, $parentPath, $inScopeVars, $mapping, $runtime, $exeCtx, $extensions, $debug)}
       },
       
@@ -206,14 +206,18 @@ function <<access.private>> meta::pure::router::extension::relationalExtension(t
                                                                                                             let sizeProcessedSql      = $b->replace($paramName->buildVariableCollectionSizeString(), if($a.second->instanceOf(List), |$a.second->cast(@List<Any>).values->size()->toString(), |$a.second->size()->toString();));
                                                                                                             let connection            = $r.executionNodes->at(0)->cast(@SQLExecutionNode).connection;
                                                                                                             
-                                                                                                            let freemarkerTemplate    = $paramName->buildVariableTemplateString($a.second, $paramType, $runtime, $extensions);
-                                                                                                            let freemarkerValue       = $a.second->processLiteralDefaultForPlanService($connection.type, $connection.timeZone, $connection.quoteIdentifiers);
-                                                                                                            
-                                                                                                            //Need to remove quotes to allow execution of freemarkerConditional node and cases like strtsWith where we remove quotes in sqlQueryToString
-                                                                                                            let removeQuotePadding    = ($freemarkerTemplate->startsWith('\'') && $freemarkerTemplate->endsWith('\'')) && ($freemarkerValue->startsWith('\'') && $freemarkerValue->endsWith('\''));
-                                                                                                            let processedTemplate     = if($removeQuotePadding, | $freemarkerTemplate->substring(1, $freemarkerTemplate->length()-1), |$freemarkerTemplate);
-                                                                                                            let processedValue        = if($removeQuotePadding, | $freemarkerValue->substring(1, $freemarkerValue->length()-1), |$freemarkerValue);
-                                                                                                            $sizeProcessedSql->replace($processedTemplate, $processedValue);}
+                                                                                                            let paramTypeListOfList   = $paramType == List && $paramType.classifierGenericType.typeArguments.rawType == List;
+                                                                                                            if(!$paramTypeListOfList,  // Need this check because we are trying to build freemarker exp for all params and we can't build freemarker exp for params of type List<List<Any>>
+                                                                                                               |
+                                                                                                                let freemarkerTemplate    = $paramName->buildVariableTemplateString($a.second, $paramType, $runtime, $extensions);
+                                                                                                                let freemarkerValue       = $a.second->processLiteralDefaultForPlanService($connection.type, $connection.timeZone, $connection.quoteIdentifiers);
+
+                                                                                                                //Need to remove quotes to allow execution of freemarkerConditional node and cases like strtsWith where we remove quotes in sqlQueryToString
+                                                                                                                let removeQuotePadding    = ($freemarkerTemplate->startsWith('\'') && $freemarkerTemplate->endsWith('\'')) && ($freemarkerValue->startsWith('\'') && $freemarkerValue->endsWith('\''));
+                                                                                                                let processedTemplate     = if($removeQuotePadding, | $freemarkerTemplate->substring(1, $freemarkerTemplate->length()-1), |$freemarkerTemplate);
+                                                                                                                let processedValue        = if($removeQuotePadding, | $freemarkerValue->substring(1, $freemarkerValue->length()-1), |$freemarkerValue);
+                                                                                                                $sizeProcessedSql->replace($processedTemplate, $processedValue);,
+                                                                                                               |$sizeProcessedSql);}
                                                                                                       , $r.executionNodes->at(0)->cast(@SQLExecutionNode).sqlQuery);
 
                                                                                    let pathInfoPairs = if ($r.resultType->instanceOf(TDSResultType),
@@ -250,7 +254,17 @@ function <<access.private>> meta::pure::router::extension::relationalExtension(t
                                                                                         , []->cast(@Integer)
                                                                                         , ^ExecutionContext()
                                                                                         , $extensions
-                                                                                        , noDebug());
+                                                                                        , noDebug());,
+                                       c:CreateAndPopulateTempTableExecutionNode[1] | assert($c.inputVarNames->size() == 1, 'CreateAndPopulateTempTableExecutionNode with more than 1 inputs are only supported in engine execution flow and not in pure flow');
+                                                                                      assert($c.tempTableColumnMetaData->size() == 1, 'CreateAndPopulateTempTableExecutionNode with more than 1 columns are only supported in engine execution flow and not in pure flow');
+                                                                                      let column = ^Column(name = $c.tempTableColumnMetaData->toOne().column.label, type = $c.tempTableColumnMetaData.column.dataType->toOne());
+                                                                                      meta::relational::metamodel::execute::createTempTable($c.tempTableName, $column, meta::relational::functions::toDDL::createTempTableStatement(), true, $c.connection);
+
+                                                                                      let srcvalue = $parametersValues->filter(p | $p.first->evaluateAndDeactivate().name == $c.inputVarNames).second->toOne();
+                                                                                      let values   = meta::pure::executionPlan::execution::flattenList($srcvalue);
+                                                                                      let insertStatement = 'INSERT INTO '+ $c.tempTableName + '(' + $column.name + ') values ' + $values->map(v | '(' + $v->processLiteralDefaultForPlanService(DatabaseType.H2, [], []) + ')')->joinStrings(', ') + ';';
+                                                                                      meta::relational::metamodel::execute::executeInDb($insertStatement, $c.connection);
+                                                                                      [];
                                    ]
                                 },
       executionPlan_execution_allNodes = 
@@ -416,6 +430,16 @@ function meta::pure::router::clustering::getResolvedStore(rr: 	meta::relational:
    $rr->map(r | let mainTableAlias = $r.mainTableAlias;
                 if ($mainTableAlias.database->isEmpty(), | $r.mainTable.schema.database, | $mainTableAlias.database->toOne());
    )->map(s|$mapping.resolveStore($s))->removeDuplicates();
+}
+
+function meta::pure::executionPlan::execution::flattenList(value:Any[1]):Any[*]
+{
+   if($value->instanceOf(Boolean) || $value->instanceOf(Date) || $value->instanceOf(Integer) || $value->instanceOf(Float) || $value->instanceOf(Number) || $value->instanceOf(String),
+      |$value,
+      |
+   if($value->instanceOf(List),
+      |$value->cast(@List<Any>).values->map(v | $v->meta::pure::executionPlan::execution::flattenList());,
+      |fail('Pure flow supports primitive values only for CreateAndPopulateTempTableFlow')))
 }
 
 function meta::pure::executionPlan::toString::databaseConnectionTypeToString(connection: DatabaseConnection[1]):String[1]

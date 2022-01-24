@@ -315,54 +315,7 @@ function meta::pure::router::clustering::cluster(v:ValueSpecification[1], mappin
                                               let pre_y = $result->match(
                                                     [
                                                        c: ClusteredValueSpecification[1]|^$c(val = ^$r(value = $c.val)),
-                                                       a : Any[1]| $r.sets->match([
-                                                                                   pure: meta::pure::mapping::modelToModel::PureInstanceSetImplementation[1]|
-                                                                                     ^ClusteredValueSpecification(
-                                                                                        genericType  = $r.genericType,
-                                                                                        multiplicity = $r.multiplicity,
-                                                                                        s = meta::pure::router::systemMapping::pureMappingSystemMapping(),
-                                                                                        store = ^meta::pure::mapping::modelToModel::ModelStore(name='MODEL', package=::),
-                                                                                        mapping = $r.mapping,
-                                                                                        runtime = $r.runtime,
-                                                                                        openVars = $openVariables,
-                                                                                        val = $r,
-                                                                                        exeCtx = $r.executionContext,
-                                                                                        executable = false
-                                                                                     );,
-                                                                                   agg: meta::pure::mapping::aggregationAware::AggregationAwareSetImplementation[1]|
-                                                                                     ^ClusteredValueSpecification(
-                                                                                        genericType  = $r.genericType,
-                                                                                        multiplicity = $r.multiplicity,
-                                                                                        s = meta::pure::router::systemMapping::aggregationAwareSystemMapping(),
-                                                                                        store = ^meta::pure::mapping::aggregationAware::AggregationAwareStore(name='AGGREGATION_AWARE', package=::),
-                                                                                        mapping = $r.mapping,
-                                                                                        runtime = $r.runtime,
-                                                                                        openVars = $openVariables,
-                                                                                        val = $r,
-                                                                                        exeCtx = $r.executionContext,
-                                                                                        executable = false
-                                                                                     );,
-                                                                                   o: meta::pure::mapping::OperationSetImplementation[1]|
-                                                                                     let roots = $o->resolveInstanceSetImplementations($extensions);
-                                                                                     $roots->match(
-                                                                                        [
-                                                                                           p:PureInstanceSetImplementation[*]|
-                                                                                                 ^ClusteredValueSpecification(
-                                                                                                    genericType  = $r.genericType,
-                                                                                                    multiplicity = $r.multiplicity,
-                                                                                                    s = meta::pure::router::systemMapping::pureMappingSystemMapping(),
-                                                                                                    store = ^meta::pure::mapping::modelToModel::ModelStore(name='MODEL', package=::),
-                                                                                                    mapping = $r.mapping,
-                                                                                                    runtime = $r.runtime,
-                                                                                                    openVars = $openVariables,
-                                                                                                    val = $r,
-                                                                                                    exeCtx = $r.executionContext,
-                                                                                                    executable = false
-                                                                                                 );
-                                                                                        ]->concatenate($extensions.cluster_cluster_ExtendedRoutedValueSpecification_Operation->map(e|$e->eval($r, $openVariables, $mapping)))->toOneMany()
-                                                                                     );
-                                                                                   ]->concatenate($extensions.cluster_cluster_ExtendedRoutedValueSpecification->map(e|$e->eval($r, $openVariables, $mapping)))->toOneMany()
-                                                                   );
+                                                       a : Any[1]| $r->meta::pure::router::clustering::getClusterVSFromSets($r.sets, $openVariables, $mapping, $extensions)
                                                     ]
                                               );
                                               let y = if($crossPropertyAccesses->isNotEmpty(),
@@ -439,7 +392,56 @@ function meta::pure::router::clustering::cluster(v:ValueSpecification[1], mappin
    )->cast(@ClusterResponse);
 }
 
-
+function meta::pure::router::clustering::getClusterVSFromSets(r:ExtendedRoutedValueSpecification[1], setImpl:SetImplementation[*], openVariables:Map<String, List<Any>>[1], mapping:Mapping[1], extensions:meta::pure::router::extension::RouterExtension[*]):ClusteredValueSpecification[1]
+{
+   $setImpl->match([
+      pure: meta::pure::mapping::modelToModel::PureInstanceSetImplementation[1]|
+         ^ClusteredValueSpecification(
+            genericType  = $r.genericType,
+            multiplicity = $r.multiplicity,
+            s = meta::pure::router::systemMapping::pureMappingSystemMapping(),
+            store = ^meta::pure::mapping::modelToModel::ModelStore(name='MODEL', package=::),
+            mapping = $r.mapping,
+            runtime = $r.runtime,
+            openVars = $openVariables,
+            val = $r,
+            exeCtx = $r.executionContext,
+            executable = false
+         );,
+      agg: meta::pure::mapping::aggregationAware::AggregationAwareSetImplementation[1]|
+         ^ClusteredValueSpecification(
+            genericType  = $r.genericType,
+            multiplicity = $r.multiplicity,
+            s = meta::pure::router::systemMapping::aggregationAwareSystemMapping(),
+            store = ^meta::pure::mapping::aggregationAware::AggregationAwareStore(name='AGGREGATION_AWARE', package=::),
+            mapping = $r.mapping,
+            runtime = $r.runtime,
+            openVars = $openVariables,
+            val = $r,
+            exeCtx = $r.executionContext,
+            executable = false
+         );,
+      o: meta::pure::mapping::OperationSetImplementation[1]|
+         let roots = $o->resolveInstanceSetImplementations($extensions);
+         $roots->match(
+            [
+               p:PureInstanceSetImplementation[*]|
+                  ^ClusteredValueSpecification(
+                     genericType  = $r.genericType,
+                     multiplicity = $r.multiplicity,
+                     s = meta::pure::router::systemMapping::pureMappingSystemMapping(),
+                     store = ^meta::pure::mapping::modelToModel::ModelStore(name='MODEL', package=::),
+                     mapping = $r.mapping,
+                     runtime = $r.runtime,
+                     openVars = $openVariables,
+                     val = $r,
+                     exeCtx = $r.executionContext,
+                     executable = false
+                  );
+            ]->concatenate($extensions.cluster_cluster_ExtendedRoutedValueSpecification_Operation->map(e|$e->eval($r, $openVariables, $mapping)))->toOneMany()
+         );
+   ]->concatenate($extensions.cluster_cluster_ExtendedRoutedValueSpecification->map(e|$e->eval($r, $openVariables, $mapping)))->toOneMany());
+}
 
 function meta::pure::router::clustering::getDistinctClusterVSByStore(params:ValueSpecification[*], extensions:meta::pure::router::extension::RouterExtension[*]):ClusteredValueSpecification[*]
 {

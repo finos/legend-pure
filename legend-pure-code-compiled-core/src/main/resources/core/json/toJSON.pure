@@ -42,12 +42,12 @@ function meta::json::defaultConfigWithDecipher(secret:String[1]):Config[1]
 
 function meta::json::defaultConfigWithCipher(secret:String[1], cipherStereotypes: Stereotype[*]):Config[1]
 {
-   config(false, true, false, false, '__TYPE', true, $secret,  $cipherStereotypes, [], []);
+   config(false, true, false, false, '__TYPE', true, $secret,  $cipherStereotypes, [], [], false);
 }
 
 function meta::json::defaultConfigWithDecipher(secret:String[1], decipherStereotypes: Stereotype[*]):Config[1]
 {
-   config(false, true, false, false, '__TYPE', true, [], [], $secret, $decipherStereotypes);
+   config(false, true, false, false, '__TYPE', true, [], [], $secret, $decipherStereotypes, false);
 }
 
 function {service.contentType='application/json'} meta::json::toJSON(obj:Any[*]):String[1]
@@ -126,6 +126,7 @@ Class meta::json::Config
    decipher() {$this.decipherSecret->isNotEmpty()} :Boolean[1];
    decipherSecret:String[0..1];
    decipherStereotypes: Stereotype[*];
+   fullyRespectGraphFetchTree : Boolean[1];
 }
 
 function meta::json::config(includeType:Boolean[1], includeEnumType:Boolean[1], removePropertiesWithNullValues:Boolean[1],  removePropertiesWithEmptySets:Boolean[1]):meta::json::Config[1]
@@ -133,14 +134,24 @@ function meta::json::config(includeType:Boolean[1], includeEnumType:Boolean[1], 
    config($includeType, $includeEnumType, $removePropertiesWithNullValues, $removePropertiesWithEmptySets, '__TYPE', true);
 }
 
+function meta::json::config(includeType:Boolean[1], includeEnumType:Boolean[1], removePropertiesWithNullValues:Boolean[1],  removePropertiesWithEmptySets:Boolean[1], fullyRespectDepfetchTree:Boolean[1]):meta::json::Config[1]
+{
+   config($includeType, $includeEnumType, $removePropertiesWithNullValues, $removePropertiesWithEmptySets, '__TYPE', true, [], [], [], [], $fullyRespectDepfetchTree);
+}
+
 function meta::json::config(includeType:Boolean[1], includeEnumType:Boolean[1], removePropertiesWithNullValues:Boolean[1],  removePropertiesWithEmptySets:Boolean[1], typeString:String[1], fullyQualifiedTypePath:Boolean[1]):meta::json::Config[1]
 {
-   config($includeType, $includeEnumType, $removePropertiesWithNullValues, $removePropertiesWithEmptySets, $typeString, $fullyQualifiedTypePath, [], [], [], []);
+   config($includeType, $includeEnumType, $removePropertiesWithNullValues, $removePropertiesWithEmptySets, $typeString, $fullyQualifiedTypePath, [], [], [], [], false);
+}
+
+function meta::json::config(includeType:Boolean[1], includeEnumType:Boolean[1], removePropertiesWithNullValues:Boolean[1],  removePropertiesWithEmptySets:Boolean[1], typeString:String[1], fullyQualifiedTypePath:Boolean[1], fullyRespectDepfetchTree:Boolean[1]):meta::json::Config[1]
+{
+   config($includeType, $includeEnumType, $removePropertiesWithNullValues, $removePropertiesWithEmptySets, $typeString, $fullyQualifiedTypePath, [], [], [], [], $fullyRespectDepfetchTree);
 }
 
 function meta::json::config(includeType:Boolean[1], includeEnumType:Boolean[1], removePropertiesWithNullValues:Boolean[1],  removePropertiesWithEmptySets:Boolean[1], typeString:String[1], fullyQualifiedTypePath:Boolean[1], 
                             cipherSecret: String[0..1], cipherStereotypes: Stereotype[*],
-                            decipherSecret: String[0..1], decipherStereotypes: Stereotype[*]):meta::json::Config[1]
+                            decipherSecret: String[0..1], decipherStereotypes: Stereotype[*], fullyRespectGraphFetchTree:Boolean[1]):meta::json::Config[1]
 {
    ^meta::json::Config
    (
@@ -153,7 +164,8 @@ function meta::json::config(includeType:Boolean[1], includeEnumType:Boolean[1], 
       cipherSecret = $cipherSecret,
       cipherStereotypes = $cipherStereotypes,
       decipherSecret = $decipherSecret,
-      decipherStereotypes = $decipherStereotypes
+      decipherStereotypes = $decipherStereotypes,
+      fullyRespectGraphFetchTree = $fullyRespectGraphFetchTree
    );
 }
 
@@ -355,7 +367,7 @@ function <<access.private>> meta::json::buildLambdas(extraSerializers:Function<{
 
 function meta::json::anyToJSON(k:Any[1], state:JSONState[1], max:Integer[0..1], config:Config[1]):JSONElement[1]
 {
-   let evalProp = {p:Property<Nil,Any|*>[1], k:Any[1], s:JSONState[1]| 
+    let evalProp = {p:Property<Nil,Any|*>[1], k:Any[1], s:JSONState[1]| 
       let values = $p->eval($k->evaluateAndDeactivate());
       let allowedTypes = $s.graphFetchTrees->map(gft|$gft->match([
                                                               rgft: RootGraphFetchTree<Any>[1] | $rgft.class,
@@ -393,28 +405,30 @@ function meta::json::anyToJSON(k:Any[1], state:JSONState[1], max:Integer[0..1], 
       pgft: PropertyGraphFetchTree[1] | $pgft.subType->isEmpty() || $k->instanceOf($pgft.subType->toOne()),
       gft:  GraphFetchTree[1]         | true
    ]));
-
    if ($max->isEmpty() || ($state.currentDepth < $max->toOne()),
        | let pairs = if($state.propertyPathTree->isNotEmpty(),
                         {| 
-                           let simpleProperties = $k->genericType()->properties()->filter(p | $p->isDataTypeProperty() && $p->isToJSONProperty());
-                           let simplePairs = $simpleProperties->map(p|$evalProp->eval($p, $k, $state));
-                           let cptns = $state.propertyPathTree.children->filter(cptn | $cptn.property->toOne()->instanceOf(Property) && $cptn.property->toOne()->cast(@Property<Nil,Any|*>)->isToJSONProperty());
-                           let complexDfPairs = $cptns->map(cptn|$evalProp->eval($cptn.property, $k, ^$state(propertyPathTree=$cptn)));
-                           $simplePairs->concatenate($complexDfPairs);
+                            let simpleProperties = $k->genericType()->properties()->filter(p | $p->isDataTypeProperty() && $p->isToJSONProperty());
+                            let simplePairs = $simpleProperties->map(p|$evalProp->eval($p, $k, $state));
+                            let cptns = $state.propertyPathTree.children->filter(cptn | $cptn.property->toOne()->instanceOf(Property) && $cptn.property->toOne()->cast(@Property<Nil,Any|*>)->isToJSONProperty());
+                            let complexDfPairs = $cptns->map(cptn|$evalProp->eval($cptn.property, $k, ^$state(propertyPathTree=$cptn)));
+                            $simplePairs->concatenate($complexDfPairs);
                         },
                         |
                      if($gft->isNotEmpty(),
                         {| 
-                           let simpleProperties = $k->genericType()->properties()->filter(p | $p->isDataTypeProperty() && $p->isToJSONProperty());
-                           let simplePairs      = $simpleProperties->map(p|$evalProp->eval($p, $k, ^$state(graphFetchTrees=[])));
                            let pgfts            = $gft.subTrees
                                                      ->filter(st | $st->instanceOf(PropertyGraphFetchTree))
                                                      ->cast(@PropertyGraphFetchTree)
                                                      ->filter(pgft | $pgft.property->cast(@Property<Nil,Any|*>)->isToJSONProperty());
                            let pgftsByProperty  = $pgfts->groupBy(pgft | $pgft.property);
                            let complexDfPairs   = $pgftsByProperty->keys()->map(p|$evalProp->eval($p, $k, ^$state(graphFetchTrees=$pgftsByProperty->get($p).values)));
-                           $simplePairs->concatenate($complexDfPairs);
+                           if ($config.fullyRespectGraphFetchTree,
+                                |$complexDfPairs,
+                                |let simpleProperties = $k->genericType()->properties()->filter(p | $p->isDataTypeProperty() && $p->isToJSONProperty());
+                                 let simplePairs      = $simpleProperties->map(p|$evalProp->eval($p, $k, ^$state(graphFetchTrees=[])));
+                                 $simplePairs->concatenate($complexDfPairs);
+                           );
                         },
                         {|
                            let properties = $k->genericType()->properties()->filter(p | $p->isToJSONProperty());

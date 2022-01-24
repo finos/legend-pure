@@ -308,30 +308,7 @@ public class ClassImplProcessor
                 "    {\n" +
                 "        return Lists.immutable." + (simplePropertiesByName.isEmpty() ? "empty()" : simplePropertiesByName.keysView().makeString("with(\"", "\", \"", "\")")) + ";\n" +
                 "    }\n" +
-                "\n" +
-                "    @Override\n" +
-                "    public ListIterable<String> getRealKeyByName(String name)\n" +
-                "    {\n" +
-                (simplePropertiesByName.isEmpty() ? "" :
-                        ("        switch (name)\n" +
-                                "        {\n" + simplePropertiesByName.keyValuesView().collect((kv) ->
-                                "            case \"" + kv.getOne() + "\":\n" +
-                                        "            {\n" +
-                                        "                return " + getPropertyRealKeyString(kv.getTwo(), processorSupport) + ";\n" +
-                                        "            }\n").makeString("") +
-                                "            default:\n" +
-                                "            {\n" +
-                                "                return null;\n" +
-                                "            }\n" +
-                                "        }\n")) +
-                "    }\n" +
                 "\n";
-    }
-
-    private static String getPropertyRealKeyString(CoreInstance property, ProcessorSupport processorSupport)
-    {
-        return PackageableElement.getUserObjectPathForPackageableElementAsList(Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.owner, processorSupport), true)
-                .makeString("Lists.immutable.with(\"", "\", \"children\", \"", "\", \"properties\", \"" + Property.getPropertyName(property) + "\")");
     }
 
     static String buildFactoryConstructor(String className)
@@ -435,11 +412,11 @@ public class ClassImplProcessor
         }).makeString("    ", "\n    ", "\n");
     }
 
-    public static String buildCopy(final CoreInstance classGenericType, final String suffix, boolean copyGetterOverride, final ProcessorSupport processorSupport)
+    public static String buildCopy(CoreInstance classGenericType, String suffix, boolean copyGetterOverride, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        final String className = TypeProcessor.javaInterfaceForType(_class);
-        final String implClassName = JavaPackageAndImportBuilder.buildImplClassNameFromType(_class, suffix);
+        String className = TypeProcessor.javaInterfaceForType(_class);
+        String implClassName = JavaPackageAndImportBuilder.buildImplClassNameFromType(_class, suffix);
         String typeParams = ClassProcessor.typeParameters(_class);
         String classNamePlusTypeParams = className + (typeParams.isEmpty() ? "" : "<" + typeParams + "> ");
 
@@ -451,51 +428,47 @@ public class ClassImplProcessor
                 "    public " + implClassName + "(" + className + (typeParams.isEmpty() ? "" : "<" + typeParams + ">") + " src)\n" +
                 "    {\n" +
                 "        this(\"Anonymous_NoCounter\");\n" +
-                "        this.classifier = ((" + implClassName + ")src).classifier;" +
+                "        this.classifier = ((" + implClassName + ")src).classifier;\n" +
                 (copyGetterOverride ?
                         "        this.__getterOverrideToOneExec = ((" + implClassName + ")src).__getterOverrideToOneExec;\n" +
                                 "        this.__getterOverrideToManyExec = ((" + implClassName + ")src).__getterOverrideToManyExec;\n" : "") +
-                processorSupport.class_getSimpleProperties(_class).collect(new Function<CoreInstance, Object>()
+                processorSupport.class_getSimpleProperties(_class).collect(property ->
                 {
-                    @Override
-                    public Object valueOf(CoreInstance property)
+                    String name = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport).getName();
+                    CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport);
+
+                    CoreInstance associationClass = processorSupport.package_getByUserPath(M3Paths.Association);
+                    CoreInstance propertyOwner = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.owner, processorSupport);
+                    String reversePropertyName = null;
+                    if (Instance.instanceOf(propertyOwner, associationClass, processorSupport))
                     {
-                        String name = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport).getName();
-                        CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.multiplicity, processorSupport);
-
-                        CoreInstance associationClass = processorSupport.package_getByUserPath(M3Paths.Association);
-                        CoreInstance propertyOwner = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.owner, processorSupport);
-                        String reversePropertyName = null;
-                        if (Instance.instanceOf(propertyOwner, associationClass, processorSupport))
-                        {
-                            ListIterable<? extends CoreInstance> associationProperties = Instance.getValueForMetaPropertyToManyResolved(propertyOwner, M3Properties.properties, processorSupport);
-                            CoreInstance reverseProperty = associationProperties.get(property == associationProperties.get(0) ? 1 : 0);
-                            reversePropertyName = Property.getPropertyName(reverseProperty);
-                        }
-
-                        CoreInstance returnType = ClassProcessor.getPropertyResolvedReturnType(classGenericType, property, processorSupport);
-                        String typeObject = TypeProcessor.typeToJavaObjectSingle(returnType, true, processorSupport);
-
-                        boolean isToOne = Multiplicity.isToOne(multiplicity, false);
-                        return "        this._" + name + " = " + (isToOne ? "(" + typeObject + ")((" + implClassName + ")src)._" + name : "Lists.mutable.ofAll(((" + implClassName + ")src)._" + name + ")") + ";\n" +
-                                (reversePropertyName == null ? "" :
-                                        isToOne ?
-                                                "        if (this._" + name + " != null)\n" +
-                                                        "        {\n" +
-                                                        "            this._" + name + "._reverse_" + reversePropertyName + "(this);\n" +
-                                                        "        }\n"
-                                                :
-                                                "        for (" + typeObject + " v : (RichIterable<? extends " + typeObject + ">) this._" + name + ")\n" +
-                                                        "        {\n" +
-                                                        "            v._reverse_" + reversePropertyName + "(this);\n" +
-                                                        "        }\n");
+                        ListIterable<? extends CoreInstance> associationProperties = Instance.getValueForMetaPropertyToManyResolved(propertyOwner, M3Properties.properties, processorSupport);
+                        CoreInstance reverseProperty = associationProperties.get(property == associationProperties.get(0) ? 1 : 0);
+                        reversePropertyName = Property.getPropertyName(reverseProperty);
                     }
+
+                    CoreInstance returnType = ClassProcessor.getPropertyResolvedReturnType(classGenericType, property, processorSupport);
+                    String typeObject = TypeProcessor.typeToJavaObjectSingle(returnType, true, processorSupport);
+
+                    boolean isToOne = Multiplicity.isToOne(multiplicity, false);
+                    return "        this._" + name + " = " + (isToOne ? "(" + typeObject + ")((" + implClassName + ")src)._" + name : "Lists.mutable.ofAll(((" + implClassName + ")src)._" + name + ")") + ";\n" +
+                            (reversePropertyName == null ? "" :
+                                    isToOne ?
+                                            "        if (this._" + name + " != null)\n" +
+                                                    "        {\n" +
+                                                    "            this._" + name + "._reverse_" + reversePropertyName + "(this);\n" +
+                                                    "        }\n"
+                                            :
+                                            "        for (" + typeObject + " v : (RichIterable<? extends " + typeObject + ">) this._" + name + ")\n" +
+                                                    "        {\n" +
+                                                    "            v._reverse_" + reversePropertyName + "(this);\n" +
+                                                    "        }\n");
                 }).makeString("") +
                 "    }\n";
 
     }
 
-    static String buildEquality(CoreInstance classGenericType, String suffix, final boolean useMethodForEquals, final boolean useMethodForHashcode, boolean lazy, ProcessorContext processorContext, final ProcessorSupport processorSupport)
+    static String buildEquality(CoreInstance classGenericType, String suffix, boolean useMethodForEquals, boolean useMethodForHashcode, boolean lazy, ProcessorContext processorContext, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
         String className = TypeProcessor.javaInterfaceForType(_class);
@@ -516,25 +489,21 @@ public class ClassImplProcessor
                 "        return false;\n" +
                 "    }\n" +
                 "    " + className + (useMethodForEquals ? "" : suffix) + " that = (" + className + (useMethodForEquals ? "" : suffix) + ")o;\n" +
-                equalityProperties.collect(new Function<CoreInstance, String>()
+                equalityProperties.collect(coreInstance ->
                 {
-                    @Override
-                    public String valueOf(CoreInstance coreInstance)
+                    CoreInstance functionType = processorSupport.function_getFunctionType(coreInstance);
+                    CoreInstance returnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, M3Properties.rawType, processorSupport);
+                    CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
+                    if (returnType != null &&
+                            Multiplicity.isToOne(returnMultiplicity, true) &&
+                            Lists.immutable.with(M3Paths.Boolean, M3Paths.Float, M3Paths.Integer).contains(PackageableElement.getUserPathForPackageableElement(returnType)))
                     {
-                        CoreInstance functionType = processorSupport.function_getFunctionType(coreInstance);
-                        CoreInstance returnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, M3Properties.rawType, processorSupport);
-                        CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
-                        if (returnType != null &&
-                                Multiplicity.isToOne(returnMultiplicity, true) &&
-                                Lists.immutable.with(M3Paths.Boolean, M3Paths.Float, M3Paths.Integer).contains(PackageableElement.getUserPathForPackageableElement(returnType)))
-                        {
-                            // Java primitive
-                            return "    if (this._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + " != that._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + ")\n    {\n        return false;\n    }\n";
-                        }
-                        else
-                        {
-                            return "    if (!CompiledSupport.equal(this._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + ", that._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + "))\n    {\n        return false;\n    }\n";
-                        }
+                        // Java primitive
+                        return "    if (this._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + " != that._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + ")\n    {\n        return false;\n    }\n";
+                    }
+                    else
+                    {
+                        return "    if (!CompiledSupport.equal(this._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + ", that._" + coreInstance.getName() + (useMethodForEquals ? "()" : "") + "))\n    {\n        return false;\n    }\n";
                     }
                 }).makeString("") +
                 "    return true;\n" +
@@ -542,14 +511,7 @@ public class ClassImplProcessor
                 "\n" +
                 "public int pureHashCode()\n" +
                 "{\n" +
-                equalityProperties.collect(new Function<CoreInstance, String>()
-                {
-                    @Override
-                    public String valueOf(CoreInstance property)
-                    {
-                        return "CompiledSupport.safeHashCode(this._" + property.getName() + (useMethodForHashcode ? "()" : "") + ")";
-                    }
-                }).makeString("    int result = ", ";\n    result = 31 * result + ", ";\n    return result;\n") +
+                equalityProperties.collect(property -> "CompiledSupport.safeHashCode(this._" + property.getName() + (useMethodForHashcode ? "()" : "") + ")").makeString("    int result = ", ";\n    result = 31 * result + ", ";\n    return result;\n") +
                 "}\n";
     }
 

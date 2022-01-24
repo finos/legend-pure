@@ -75,7 +75,15 @@ Class meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::
     warehouseName : String[1];
     databaseName : String[1];
     cloudType : String[0..1];
+    accountType: String[0..1];
+    organization: String[0..1];
+
     quotedIdentifiersIgnoreCase : Boolean[0..1];
+
+    proxyHost: String[0..1];
+    proxyPort: String[0..1];
+    nonProxyHosts: String[0..1];
+
 }
 
 Class meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::alloy::specification::BigQueryDatasourceSpecification extends meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification

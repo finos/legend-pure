@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.compiled.constraints;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.constraints.AbstractTestConstraintsHandler;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -24,7 +23,8 @@ import org.junit.BeforeClass;
 public class TestConstraintHandlerCompiled extends AbstractTestConstraintsHandler
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -38,6 +38,4 @@ public class TestConstraintHandlerCompiled extends AbstractTestConstraintsHandle
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
-
-
 }

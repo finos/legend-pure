@@ -129,6 +129,13 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
          _type = 'delegatedKerberos',
          serverPrincipal = $d.serverPrincipal
       ),
+      u:meta::pure::alloy::connections::alloy::authentication::UserNamePasswordAuthenticationStrategy[1] |
+      ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::UserNamePasswordAuthenticationStrategy(
+         _type = 'userNamePassword',
+         baseVaultReference = $u.baseVaultReference,
+         userNameVaultReference = $u.userNameVaultReference,
+         passwordVaultReference = $u.passwordVaultReference
+      ),
       d:meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DefaultH2AuthenticationStrategy(
             _type = 'h2Default'
@@ -195,7 +202,13 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
             warehouseName = $s.warehouseName,
             databaseName = $s.databaseName,
             cloudType = $s.cloudType,
-            quotedIdentifiersIgnoreCase = $s.quotedIdentifiersIgnoreCase
+            quotedIdentifiersIgnoreCase = $s.quotedIdentifiersIgnoreCase,
+            proxyHost = $s.proxyHost,
+            proxyPort = $s.proxyPort,
+            nonProxyHosts = $s.nonProxyHosts,
+            accountType = if($s.accountType->isEmpty(),|[],|$s.accountType->toOne()->toString()),
+            organization = $s.organization,
+            role = $s.role
         ),
       b:meta::pure::alloy::connections::alloy::specification::BigQueryDatasourceSpecification[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::BigQueryDatasourceSpecification(

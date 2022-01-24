@@ -108,7 +108,7 @@ Class meta::external::query::graphQL::metamodel::executable::ExecutableDefinitio
 
 Class meta::external::query::graphQL::metamodel::ExecutableDocument extends meta::external::query::graphQL::metamodel::Document
 [
-  $this.executableDefinitions->size() > 0
+  $this.executableDefinitions()->size() > 0
 ]
 {
   executableDefinitions() {$this.definitions->filter(c|$c->instanceOf(meta::external::query::graphQL::metamodel::executable::ExecutableDefinition))}: meta::external::query::graphQL::metamodel::Definition[*];
@@ -244,9 +244,17 @@ Class meta::external::query::graphQL::metamodel::typeSystem::Type extends meta::
 
 Class meta::external::query::graphQL::metamodel::typeSystem::TypeReference
 {
-  name: String[1];
-  list: Boolean[1];
   nullable: Boolean[1];
+}
+
+Class meta::external::query::graphQL::metamodel::typeSystem::ListTypeReference extends meta::external::query::graphQL::metamodel::typeSystem::TypeReference
+{
+  itemType: meta::external::query::graphQL::metamodel::typeSystem::TypeReference[1];
+}
+
+Class meta::external::query::graphQL::metamodel::typeSystem::NamedTypeReference extends meta::external::query::graphQL::metamodel::typeSystem::TypeReference
+{
+  name: String[1];
 }
 
 Class meta::external::query::graphQL::metamodel::typeSystem::TypeSystemDefinition extends meta::external::query::graphQL::metamodel::Definition

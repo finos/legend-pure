@@ -18,15 +18,12 @@ import meta::external::shared::format::metamodel::*;
 import meta::external::shared::format::utils::*;
 import meta::external::format::flatdata::metamodel::*;
 import meta::external::format::flatdata::binding::fromPure::*;
+import meta::pure::generation::metamodel::*;
 import meta::pure::model::unit::*;
 
-/// ========================================================================================================================================================
+// ========================================================================================================================================================
 // Entry points 
 // ========================================================================================================================================================
-
-Class meta::external::format::flatdata::binding::fromPure::ModelToFlatDataConfiguration extends meta::external::shared::format::binding::fromPure::ModelToSchemaConfiguration
-{
-}
 
 function meta::external::format::flatdata::binding::fromPure::pureToFlatData(config:ModelToFlatDataConfiguration[1]): Binding[1]
 {
@@ -43,8 +40,26 @@ function meta::external::format::flatdata::binding::fromPure::pureToFlatData(con
    let generatedFlatData = generate($config, $debug);
    let result            = createBinding($generatedFlatData, $config);
       
-   $debug->log(|'\nGenerated the following:\n\n'+$result->bindingToString()); //+'\n\n'+$result->modelToString());
+   $debug->log(|'\nGenerated the following:\n\n'+$result->bindingToString());
    $result;
+}
+
+// ========================================================================================================================================================
+// Configuration 
+// ========================================================================================================================================================
+
+Class meta::external::format::flatdata::binding::fromPure::ModelToFlatDataConfiguration extends meta::external::shared::format::binding::fromPure::ModelToSchemaConfiguration
+{
+}
+
+function meta::external::format::flatdata::binding::fromPure::defaultConfig(): ModelToFlatDataConfiguration[1]
+{
+  ^ModelToFlatDataConfiguration(targetSchemaSet='target::package::GeneratedSchemaSet', targetBinding='target::package::GeneratedBinding');
+}
+
+function <<Generation.Configuration>>  meta::external::format::flatdata::binding::fromPure::describeConfiguration(): GenerationParameter[*]
+{  
+  meta::pure::generation::describeConfiguration(ModelToFlatDataConfiguration, meta::external::format::flatdata::binding::fromPure::defaultConfig__ModelToFlatDataConfiguration_1_, []);
 }
 
 // ========================================================================================================================================================
@@ -62,7 +77,7 @@ function <<access.private>> meta::external::format::flatdata::binding::fromPure:
          let label      = $p.name->toOne();
          let optional   = $p.multiplicity == ZeroOne;
          let returnType = $p->functionReturnType().rawType->toOne();
-         if($returnType == String,
+         if($returnType == String || $returnType->instanceOf(Enumeration),
             | ^FlatDataRecordField(label=$label, type=^FlatDataString(optional=$optional)),
             |
          if($returnType == Boolean,

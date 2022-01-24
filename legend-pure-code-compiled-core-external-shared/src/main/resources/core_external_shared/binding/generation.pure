@@ -16,25 +16,28 @@ import meta::external::shared::format::binding::*;
 
 Class meta::external::shared::format::binding::GenerationConfiguration
 [
-  validTargetOperationName: $this.targetBinding->matches('[A-Za-z0-9_]+(::[A-Za-z0-9_]+)+')
-   
+  validTargetOperationName: $this.targetBinding->matches('[A-Za-z0-9_]+(::[A-Za-z0-9_]+)+')   
 ]
 {
+  {doc.doc='Full name of the Binding to be generated'}
   targetBinding : String[1];
 }
 
 Class meta::external::shared::format::binding::toPure::SchemaToModelConfiguration extends GenerationConfiguration
 {
+  {doc.doc='The id of the schema within the SchemaSet that will drive the generation'}
   sourceSchemaId  : String[0..1];
+  {doc.doc='The package name into which the generated model classes will be created'}
   targetPackage   : String[1];
 }
 
 Class meta::external::shared::format::binding::fromPure::ModelToSchemaConfiguration extends GenerationConfiguration
 [
-  validTargetSchemaName: $this.targetSchemaSet->matches('[A-Za-z0-9_]+(::[A-Za-z0-9_]+)+')
-   
+  validTargetSchemaName: $this.targetSchemaSet->matches('[A-Za-z0-9_]+(::[A-Za-z0-9_]+)+')   
 ]
 {
+  {doc.doc='Full name of the SchemaSet to be generated'}
   targetSchemaSet : String[1];
+  {doc.doc='The model elements from which the schema will be generated'}
   sourceModel     : PackageableElement[*];
 }

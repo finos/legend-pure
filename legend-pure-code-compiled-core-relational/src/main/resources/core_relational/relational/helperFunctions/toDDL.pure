@@ -57,7 +57,7 @@ function meta::relational::functions::toDDL::dropAndCreateTableInDb(database:Dat
 function meta::relational::functions::toDDL::dropAndCreateTableInDb(database:Database[1], schema: String[1], tableName: String[1], tablePostProcess: Function<{Table[1]->Table[1]}>[1], c:DatabaseConnection[1], applyConstraints:Boolean[1], debug:Boolean[1]) : Boolean[1]
 {
    executeInDb(dropTableStatement($database, $schema, $tableName, $tablePostProcess), $c, $debug);
-   executeInDb(createTableStatement($database, $schema, $tableName, $tablePostProcess, $applyConstraints), $c, $debug);
+   executeInDb(createTableStatement($database, $c.type, $schema, $tableName, $tablePostProcess, $applyConstraints), $c, $debug);
    true;
 }
 
@@ -112,12 +112,20 @@ function meta::relational::functions::toDDL::createTableStatement(database:Datab
 
 function <<access.private>> meta::relational::functions::toDDL::createTableStatement(database:Database[1], schema: String[1], tableName: String[1], tablePostProcess: Function<{Table[1]->Table[1]}>[1], applyConstraints:Boolean[1]) : String[1]
 {
+   // if no db type provided, then assume we are doing this for H2
+   let dbConfig = createDbConfig(DatabaseType.H2);
+   createTableStatement($database, DatabaseType.H2, $schema, $tableName, $tablePostProcess, $applyConstraints);
+}
+
+function <<access.private>> meta::relational::functions::toDDL::createTableStatement(database:Database[1], dbType:DatabaseType[1], schema: String[1], tableName: String[1], tablePostProcess: Function<{Table[1]->Table[1]}>[1], applyConstraints:Boolean[1]) : String[1]
+{
+   let dbConfig = createDbConfig($dbType);
    let t = $tablePostProcess->eval(getTable($database, $schema, $tableName));
 
    'Create Table '+if($t.schema.name == 'default',|'',|$t.schema.name+'.')+$t.name+
       + '('
       + $t.columns->cast(@meta::relational::metamodel::Column)
-        ->map(c | $c.name->possiblyQuoteColumn() + ' ' + meta::relational::metamodel::datatype::dataTypeToSqlText($c.type) + if($c.nullable->isEmpty() || $applyConstraints == false, | '', | if($c.nullable == true , | ' NULL', | ' NOT NULL' )))
+         ->map(c | $c.name->meta::relational::functions::sqlQueryToString::processColumnName($dbConfig) + ' ' + meta::relational::metamodel::datatype::dataTypeToSqlText($c.type) + if($c.nullable->isEmpty() || $applyConstraints == false, | '', | if($c.nullable == true , | ' NULL', | ' NOT NULL' )))
         ->joinStrings(',')
       + if ($t.primaryKey->isEmpty() || $applyConstraints == false, | '', | ', PRIMARY KEY(' + $t.primaryKey->map(c | $c.name)->joinStrings(',') + ')')
       +');';
@@ -151,16 +159,6 @@ function meta::relational::functions::toDDL::createTempTableStatement() : meta::
 function meta::relational::functions::toDDL::getTableToTableIdentityFunction():Function<{Table[1]->Table[1]}>[1]
 {
    {t:Table[1] |$t}
-}
-
-function meta::relational::functions::toDDL::possiblyQuoteColumn(col: String[1]):String[1]
-{
-   if($col->toLower()->in(reservedKeywords()),|'"'+ $col +'"',|$col);
-}
-
-function <<access.private>> meta::relational::functions::toDDL::reservedKeywords():String[*]
-{
-   ['window','limit','order'];
 }
 
 function <<access.private>> meta::relational::functions::toDDL::getTable(database:Database[1], schemaName: String[1], tableName: String[1]):Table[1]

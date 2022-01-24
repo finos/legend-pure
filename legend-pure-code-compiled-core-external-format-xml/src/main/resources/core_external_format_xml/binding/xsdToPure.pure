@@ -24,6 +24,7 @@ import meta::json::*;
 import meta::pure::functions::collection::*;
 import meta::pure::functions::meta::*;
 import meta::pure::functions::tests::collection::*;
+import meta::pure::generation::metamodel::*;
 import meta::pure::graphFetch::*;
 import meta::pure::metamodel::serialization::grammar::*;
 import meta::pure::model::unit::*;
@@ -31,12 +32,6 @@ import meta::pure::model::unit::*;
 /// ========================================================================================================================================================
 // Entry points 
 // ========================================================================================================================================================
-
-Class meta::external::format::xml::binding::toPure::XsdToModelConfiguration extends meta::external::shared::format::binding::toPure::SchemaToModelConfiguration
-{
-   inlineCollectionClasses   : Boolean[1];
-   includeUnreachableClasses : Boolean[1];
-}
 
 function meta::external::format::xml::binding::toPure::xsdToPure(schemaSet:SchemaSet[1], config:XsdToModelConfiguration[1]): Binding[1]
 {
@@ -74,6 +69,28 @@ function meta::external::format::xml::binding::toPure::xsdToPure(schemaSet:Schem
       
    $debug->log(|'\nGenerated the following model:\n\n'+$result->bindingToString());
    $result;
+}
+
+// ========================================================================================================================================================
+// Configuration
+// ========================================================================================================================================================
+
+Class meta::external::format::xml::binding::toPure::XsdToModelConfiguration extends meta::external::shared::format::binding::toPure::SchemaToModelConfiguration
+{
+   {doc.doc = 'Should classes that represent only a collection be eliminated from the structure? For example, if true, <things><thing/><thing/></things> becomes Thing[*] rather than a class Things with a single property of type Thing[*].'}
+   inlineCollectionClasses   : Boolean[1];
+   {doc.doc = 'Should classes derived from types included in the XSD but not reachable from the document root still be generated? These are usually structures included into the XSD but not used in the specific document(s) described.'}
+   includeUnreachableClasses : Boolean[1];
+}
+
+function meta::external::format::xml::binding::toPure::defaultConfig(): XsdToModelConfiguration[1]
+{
+  ^XsdToModelConfiguration(targetPackage='target::package::GeneratedBinding', targetBinding='target::package::GeneratedBinding', inlineCollectionClasses=true, includeUnreachableClasses=false);
+}
+
+function <<Generation.Configuration>>  meta::external::format::xml::binding::toPure::describeConfiguration(): GenerationParameter[*]
+{  
+  meta::pure::generation::describeConfiguration(XsdToModelConfiguration, meta::external::format::xml::binding::toPure::defaultConfig__XsdToModelConfiguration_1_, []);
 }
 
 // ========================================================================================================================================================

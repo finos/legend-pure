@@ -29,6 +29,13 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
    serverPrincipal: String[0..1];
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::UserNamePasswordAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
+{
+   baseVaultReference: String[0..1];
+   userNameVaultReference: String[1];
+   passwordVaultReference: String[1];
+}
+
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DefaultH2AuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
 {
 }
@@ -88,7 +95,16 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
     warehouseName : String[1];
     databaseName : String[1];
     cloudType : String[0..1];
+    accountType: String[0..1];
+    organization: String[0..1];
+
     quotedIdentifiersIgnoreCase : Boolean[0..1];
+
+    proxyHost: String[0..1];
+    proxyPort: String[0..1];
+    nonProxyHosts: String[0..1];
+   
+    role: String [0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::BigQueryDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification

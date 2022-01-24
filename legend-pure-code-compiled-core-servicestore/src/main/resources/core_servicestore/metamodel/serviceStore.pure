@@ -14,9 +14,9 @@
 
 import meta::external::shared::format::binding::*;
 import meta::pure::functions::io::http::*;
-import meta::servicestore::metamodel::*;
+import meta::external::store::service::metamodel::*;
 
-Class meta::servicestore::metamodel::ServiceStore extends meta::pure::store::set::SetBasedStore
+Class meta::external::store::service::metamodel::ServiceStore extends meta::pure::store::set::SetBasedStore
 {
    description : String[0..1];
    elements    : ServiceStoreElement[*];
@@ -26,7 +26,7 @@ Class meta::servicestore::metamodel::ServiceStore extends meta::pure::store::set
    }: ServiceStoreElement[1];
 }
 
-Class <<typemodifiers.abstract>> meta::servicestore::metamodel::ServiceStoreElement
+Class <<typemodifiers.abstract>> meta::external::store::service::metamodel::ServiceStoreElement
 {
    owner    : ServiceStore[1];
    parent   : ServiceGroup[0..1];
@@ -41,7 +41,7 @@ Class <<typemodifiers.abstract>> meta::servicestore::metamodel::ServiceStoreElem
    }: String[1];
 }
 
-Class meta::servicestore::metamodel::ServiceGroup extends ServiceStoreElement
+Class meta::external::store::service::metamodel::ServiceGroup extends ServiceStoreElement
 {
    elements : ServiceStoreElement[*];
 
@@ -50,7 +50,7 @@ Class meta::servicestore::metamodel::ServiceGroup extends ServiceStoreElement
    }: ServiceStoreElement[1];
 }
 
-Class meta::servicestore::metamodel::Service extends ServiceStoreElement
+Class meta::external::store::service::metamodel::Service extends ServiceStoreElement
 [
    supportedMethodTypes
    (
@@ -67,12 +67,12 @@ Class meta::servicestore::metamodel::Service extends ServiceStoreElement
    security    : SecurityScheme[*];
 }
 
-function meta::servicestore::metamodel::supportedServiceMethods():HTTPMethod[*]
+function meta::external::store::service::metamodel::supportedServiceMethods():HTTPMethod[*]
 {
    [HTTPMethod.GET, HTTPMethod.POST]
 }
 
-Class meta::servicestore::metamodel::ServiceParameter
+Class meta::external::store::service::metamodel::ServiceParameter
 {
    name                 : String[1];
    type                 : TypeReference[1];
@@ -82,44 +82,44 @@ Class meta::servicestore::metamodel::ServiceParameter
    serializationFormat  : SerializationFormat[0..1];
 }
 
-Enum meta::servicestore::metamodel::Location
+Enum meta::external::store::service::metamodel::Location
 {
    PATH,
    QUERY
 }
 
-Class <<typemodifiers.abstract>> meta::servicestore::metamodel::TypeReference
+Class <<typemodifiers.abstract>> meta::external::store::service::metamodel::TypeReference
 {
   list     : Boolean[1];
 }
 
-Class meta::servicestore::metamodel::StringTypeReference extends meta::servicestore::metamodel::TypeReference
+Class meta::external::store::service::metamodel::StringTypeReference extends meta::external::store::service::metamodel::TypeReference
 {
 }
 
-Class meta::servicestore::metamodel::BooleanTypeReference extends meta::servicestore::metamodel::TypeReference
+Class meta::external::store::service::metamodel::BooleanTypeReference extends meta::external::store::service::metamodel::TypeReference
 {
 }
 
-Class meta::servicestore::metamodel::IntegerTypeReference extends meta::servicestore::metamodel::TypeReference
+Class meta::external::store::service::metamodel::IntegerTypeReference extends meta::external::store::service::metamodel::TypeReference
 {
 }
 
-Class meta::servicestore::metamodel::FloatTypeReference extends meta::servicestore::metamodel::TypeReference
+Class meta::external::store::service::metamodel::FloatTypeReference extends meta::external::store::service::metamodel::TypeReference
 {
 }
 
-Class meta::servicestore::metamodel::ComplexTypeReference extends meta::servicestore::metamodel::TypeReference
+Class meta::external::store::service::metamodel::ComplexTypeReference extends meta::external::store::service::metamodel::TypeReference
 {
    type    : Class<Any>[1];
    binding : Binding[1];
 }
 
-Class <<typemodifiers.abstract>> meta::servicestore::metamodel::SecurityScheme
+Class <<typemodifiers.abstract>> meta::external::store::service::metamodel::SecurityScheme
 {
 }
 
-Class meta::servicestore::metamodel::SerializationFormat
+Class meta::external::store::service::metamodel::SerializationFormat
 {
    style   : String[0..1];
    explode : Boolean[0..1];

@@ -136,10 +136,7 @@ function meta::pure::router::builder::build(v:ValueSpecification[1], l:List<Perm
                                                                              let setImplementation = $params->at(0)->cast(@ExtendedRoutedValueSpecification).sets->toOne();
                                                                              let property = $f.func->cast(@Property<Nil,Any|*>);
                                                                              let propertyMappings = $setImplementation->match([
-                                                                                               i:InstanceSetImplementation[1]|let pMapping = $i->match([e:EmbeddedSetImplementation[1]| $e->propertyMappingsByPropertyName($propertyName),
-                                                                                                                                                        a:InstanceSetImplementation[1]| $i.propertyMappingsByPropertyName($propertyName)
-                                                                                                                                                       ]);
-
+                                                                                               i:InstanceSetImplementation[1]|let pMapping = $i->propertyMappingsByPropertyName($propertyName);
 
                                                                                                                               if($pMapping->isEmpty() && ($i->isNoMappingPassThru($property) || $i->isNoMappingDefaultToEmpty($property)),
                                                                                                                                  | [],
@@ -158,7 +155,7 @@ function meta::pure::router::builder::build(v:ValueSpecification[1], l:List<Perm
                                                                                                                                                                           $pMapping->toOne();
                                                                                                                                                                         }
                                                                                                                                                                       );
-                                                                                               )
+                                                                                                                                         )
                                                                                                                            ]);
 
                                                                              print(if($debug.debug,|$debug.space+'  propertyMappings found "'+$propertyMappings->size()->toString() +'" \n',|''));

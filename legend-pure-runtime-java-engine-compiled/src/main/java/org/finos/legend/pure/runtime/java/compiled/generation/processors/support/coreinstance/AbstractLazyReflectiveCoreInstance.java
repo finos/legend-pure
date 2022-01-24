@@ -20,6 +20,7 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -91,7 +92,7 @@ public abstract class AbstractLazyReflectiveCoreInstance extends PersistentRefle
         CoreInstance result = this.classifier;
         if (result == null)
         {
-            this.classifier = result = this.metadataLazy.getMetadata(M3Paths.Class, getFullSystemPath());
+            this.classifier = result = this.metadataLazy.getMetadata((this instanceof Enum) ? M3Paths.Enumeration : M3Paths.Class, getFullSystemPath());
         }
         return result;
     }
@@ -100,28 +101,34 @@ public abstract class AbstractLazyReflectiveCoreInstance extends PersistentRefle
     protected <T> T loadValueFromMetadata(String property)
     {
         Object value = this.propertyValues.get(property);
-        RValue rValue;
-        try
+        if (value == null)
         {
-            rValue = (RValue) value;
+            return null;
         }
-        catch (ClassCastException e)
+
+        if (value instanceof RValue)
         {
-            String message;
-            try
-            {
-                ListIterable<RValue> values = (ListIterable<RValue>) value;
-                StringBuilder builder = new StringBuilder("Error loading value for property '").append(property).append("': expected 1 value, got ").append(values.size());
-                values.appendString(builder, " (", ", ", ")");
-                message = builder.toString();
-            }
-            catch (Exception ignore)
-            {
-                message = "Error loading value for property '" + property + "'";
-            }
-            throw new IllegalStateException(message, e);
+            return (T) this.metadataLazy.valueToObject((RValue) value);
         }
-        return (T) this.metadataLazy.valueToObject(rValue);
+
+        ListIterable<RValue> rValues = (ListIterable<RValue>) value;
+        switch (rValues.size())
+        {
+            case 0:
+            {
+                return null;
+            }
+            case 1:
+            {
+                return (T) this.metadataLazy.valueToObject(rValues.get(0));
+            }
+            default:
+            {
+                StringBuilder builder = new StringBuilder("Error loading value for property '").append(property).append("': expected 1 value, got ").append(rValues.size());
+                rValues.appendString(builder, " (", ", ", ")");
+                throw new IllegalStateException(builder.toString());
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

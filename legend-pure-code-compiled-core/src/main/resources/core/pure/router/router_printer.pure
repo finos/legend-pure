@@ -147,9 +147,8 @@ function meta::pure::graphFetch::routing::asString(r: GraphFetchTree[1], spaceSt
          if($rp.subTrees->isEmpty(), | '', | $rp.subTrees->map(x | $x->asString($space + '    ', $multiLine))->joinStrings(' {'+$newLine, ', '+$newLine, $newLine + $space + '}')),
 
       rp: PropertyGraphFetchTree[1] |
-         $space +  $rp.property.name->toOne() + if($rp.property->instanceOf(QualifiedProperty), |'('+$rp.parameters->map(p|$p->asString())->joinStrings(', ')+
-      ')', |'') + 
-         if($rp.subTrees->isEmpty(), | '', | $rp.subTrees->map(x | $x->asString($space + '    ', $multiLine))->joinStrings(' {'+$newLine, ', '+$newLine, $newLine + $space + '}'))
+         $space +  $rp.property.name->toOne() + if($rp.property->instanceOf(QualifiedProperty), |'('+$rp.parameters->evaluateAndDeactivate()->map(p|$p->asString())->joinStrings(', ')+')', |'') +
+         if($rp.subTrees->isEmpty(), | '', | $rp.subTrees->map(x | $x->asString($space + '    ', $multiLine))->joinStrings(' {'+$newLine, ', '+$newLine, $newLine + $space + '}'));
  ]); 
 }
 

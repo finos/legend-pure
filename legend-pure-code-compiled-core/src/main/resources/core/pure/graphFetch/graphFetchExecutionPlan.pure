@@ -16,7 +16,6 @@ import meta::pure::dataQuality::*;
 import meta::pure::graphFetch::*;
 import meta::pure::store::*;
 import meta::pure::router::extension::*;
-import meta::pure::router::clustering::*;
 import meta::pure::graphFetch::routing::*;
 import meta::pure::graphFetch::execution::*;
 import meta::pure::graphFetch::executionPlan::*;
@@ -45,6 +44,19 @@ Class meta::pure::graphFetch::executionPlan::GlobalGraphFetchExecutionNode exten
    xStorePropertyMapping        : meta::pure::mapping::xStore::XStorePropertyMapping[0..1];
    enableConstraints            : Boolean[0..1];
    checked                      : Boolean[0..1];
+   xStorePropertyFetchDetails   : XStorePropertyFetchDetails[0..1];
+}
+
+Class meta::pure::graphFetch::executionPlan::XStorePropertyFetchDetails
+{
+   supportsCaching         : Boolean[1];
+   propertyPath            : String[1];
+   sourceMappingId         : String[1];
+   sourceSetId             : String[1];
+   targetMappingId         : String[1];
+   targetSetId             : String[1];
+   targetPropertiesOrdered : String[*];
+   subTree                 : String[1];
 }
 
 Class meta::pure::graphFetch::executionPlan::LocalGraphFetchExecutionNode extends ExecutionNode
@@ -67,8 +79,8 @@ function meta::pure::graphFetch::executionPlan::planGraphFetchExecution(sq: Stor
    let rootTree                 = $clusterTreesWithParents->filter(x | $x.second.values->isEmpty()).first->toOne();
    let rootTreeOneCluster       = $rootTree->recursivelyRemoveClusterTrees();
 
-   let enableConstraints = $exeCtx.enableConstraints->isEmpty() || $exeCtx.enableConstraints->toOne();
-   let checked           = $fe.genericType.rawType == Checked;
+   let enableConstraints        = $exeCtx.enableConstraints->isEmpty() || $exeCtx.enableConstraints->toOne();
+   let checked                  = $fe.genericType.rawType == Checked;
 
    let localRoot = $rootTree.store->match([
       model : ModelStore[1] | planRootGraphFetchExecutionInMemory($sq, $ext, $rootTreeOneCluster, $orderedPaths, $mapping, $runtime, $exeCtx, $enableConstraints, $checked, $extensions, $debug)
@@ -87,13 +99,56 @@ function meta::pure::graphFetch::executionPlan::planGraphFetchExecution(sq: Stor
                            checked                      = $checked
                         );
 
-   $rootGlobalNode->addCrossStoreChildren([], $rootTree, $orderedPaths, $clusterTreesWithParents, $sq.inScopeVars, $mapping, $runtime, $exeCtx, $extensions, $debug);
+   $rootGlobalNode->addCrossStoreChildren([], $rootTree, $orderedPaths, $clusterTreesWithParents, $sq.inScopeVars, $mapping, $runtime, $exeCtx, $enableConstraints, $checked, $extensions, $debug);
 }
 
-function <<access.private>> meta::pure::graphFetch::executionPlan::addCrossStoreChildren(currentNode: GlobalGraphFetchExecutionNode[1], parentPath: String[0..1], currentTree: ClusteredGraphFetchTree[1], orderedPaths: String[*], clusterNodesWithParents: Pair<ClusteredGraphFetchTree, List<RoutedGraphFetchTree>>[*], inScopeVars: Map<String, List<Any>>[1], m: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions:RouterExtension[*], debug: DebugContext[1]):GlobalGraphFetchExecutionNode[1]
+function meta::pure::graphFetch::executionPlan::planStoreUnionGraphFetchExecution(sq: StoreQuery[1], ext: RoutedValueSpecification[0..1], sets: InstanceSetImplementation[*], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions: meta::pure::router::extension::RouterExtension[*], debug: DebugContext[1]): ExecutionNode[1]
+{
+   let fe     = $sq.fe->evaluateAndDeactivate();
+   let params = $fe.parametersValues->evaluateAndDeactivate();
+   let p1     = $params->at(0);
+   let p2     = $params->at(1)->cast(@InstanceValue);
+   let tree   = $p2.values->at(0)->cast(@ClusteredGraphFetchTree);
+   let rf     = {set: InstanceSetImplementation[1] | ^$fe(parametersValues = [$p1, ^$p2(values = ^$tree(tree = $tree->byPassClusteringInfoDeep()->cast(@RootGraphFetchTree<Any>)->routeRootGraphFetchTree($set, $mapping, $exeCtx, $extensions)))]->evaluateAndDeactivate())->evaluateAndDeactivate()};
+   
+   let newFe  = $sets->tail()->fold({set, agg |
+      ^SimpleFunctionExpression
+      (
+         func = union_T_MANY__T_MANY__T_MANY_,
+         functionName = 'union',
+         genericType = $fe.genericType,
+         multiplicity = ZeroMany,
+         importGroup = system::imports::coreImport,
+         resolvedTypeParameters = ^GenericType(rawType=Any),
+         parametersValues = [$agg, $rf->eval($set)]->evaluateAndDeactivate()
+      )->evaluateAndDeactivate()
+   }, $rf->eval($sets->at(0)));
+
+   planRouterUnionGraphFetchExecution(^$sq(fe = $newFe), $ext, $mapping, $runtime, $exeCtx, $extensions, $debug);
+}
+
+function meta::pure::graphFetch::executionPlan::planRouterUnionGraphFetchExecution(sq: StoreQuery[1], ext: RoutedValueSpecification[0..1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions: RouterExtension[*], debug: DebugContext[1]): ExecutionNode[1]
+{
+   let fe = $sq.fe->evaluateAndDeactivate();
+   assert($fe->isUnionOnGraphFetch(), | 'Non union graphFetch function encountered');
+
+   let subClusters  = $fe.parametersValues->evaluateAndDeactivate()->map({p | $p->meta::pure::router::clustering::cluster($mapping, $runtime, $sq.inScopeVars, $exeCtx, $extensions, $debug).cluster->evaluateAndDeactivate()})->cast(@meta::pure::router::clustering::ClusteredValueSpecification);
+   let firstCluster = $subClusters->at(0);
+   let childNodes   = $subClusters->map(cls | $cls->plan($runtime, $sq.inScopeVars, $sq.advancedRouting, $exeCtx, $extensions, $debug));
+   
+   ^PureExpressionPlatformExecutionNode
+   (
+      fromCluster    = ^$firstCluster(val = $fe),
+      expression     = $fe,
+      resultType     = $childNodes->at(0).resultType,
+      executionNodes = $childNodes
+   );
+}
+
+function <<access.private>> meta::pure::graphFetch::executionPlan::addCrossStoreChildren(currentNode: GlobalGraphFetchExecutionNode[1], parentPath: String[0..1], currentTree: ClusteredGraphFetchTree[1], orderedPaths: String[*], clusterNodesWithParents: Pair<ClusteredGraphFetchTree, List<RoutedGraphFetchTree>>[*], inScopeVars: Map<String, List<Any>>[1], m: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], enableConstraints: Boolean[1], checked: Boolean[1], extensions:RouterExtension[*], debug: DebugContext[1]):GlobalGraphFetchExecutionNode[1]
 {
    let currentNonClusterTrees = $currentTree->recursivelyFindNonClusterTrees();
-   let childrenClusterNodes = $clusterNodesWithParents->filter(x | $x.second.values->isNotEmpty() && $x.second.values->toOne()->in($currentNonClusterTrees));
+   let childrenClusterNodes   = $clusterNodesWithParents->filter(x | $x.second.values->isNotEmpty() && $x.second.values->toOne()->in($currentNonClusterTrees));
    if($childrenClusterNodes->isEmpty(),
       | $currentNode,
       | let children = $childrenClusterNodes->map({ch |
@@ -103,22 +158,95 @@ function <<access.private>> meta::pure::graphFetch::executionPlan::addCrossStore
                                         |$currentTree->toOne()->getPathTo($ch.first)->toOne(),
                                         |$parentPath->toOne()+'.'+$currentTree->getPathTo($ch.first)->toOne()
                                      );
-           let crossLocalNode      = $ch.first.store->match($extensions.graphFetch_executionPlan_addCrossStoreChildren->map(f|$f->evaluate([list($childTreeOneCluster), list($orderedPaths), list($newParentPath), list($inScopeVars), list($m), list($runtime), list($exeCtx), list($extensions), list($debug)])->cast(@Function<{Nil[1]->LocalGraphFetchExecutionNode[1]}>))->toOneMany());
+           let crossLocalNode      = $ch.first.store->match([
+                                                                model : ModelStore[1] | planCrossStoreGraphFetchExecutionInMemory($childTreeOneCluster, $orderedPaths, $newParentPath, $inScopeVars, $m, $runtime, $exeCtx, $enableConstraints, $checked, $extensions, $debug);
+                                                            ]->concatenate(
+                                                                $extensions.graphFetch_executionPlan_addCrossStoreChildren->map(f|$f->evaluate([list($childTreeOneCluster), list($orderedPaths), list($newParentPath), list($inScopeVars), list($m), list($runtime), list($exeCtx), list($enableConstraints), list($checked), list($extensions), list($debug)])->cast(@Function<{Nil[1]->LocalGraphFetchExecutionNode[1]}>))
+                                                            )->toOneMany())->toOne()->cast(@LocalGraphFetchExecutionNode);
+           let propertyMapping     = $routedTree.propertyMapping->toOne()->cast(@meta::pure::mapping::xStore::XStorePropertyMapping);
            let newCrossNode        = ^GlobalGraphFetchExecutionNode
                                      (
                                         resultType                   = $routedTree->resultTypeFromGraphFetchTree(),
                                         graphFetchTree               = $ch.first,
                                         parentIndex                  = $orderedPaths->indexOf($newParentPath),
-                                        xStorePropertyMapping        = $routedTree.propertyMapping->toOne()->cast(@meta::pure::mapping::xStore::XStorePropertyMapping),
+                                        xStorePropertyMapping        = $propertyMapping,
                                         store                        = $ch.first.store,
-                                        localGraphFetchExecutionNode = $crossLocalNode
+                                        localGraphFetchExecutionNode = $crossLocalNode,
+                                        xStorePropertyFetchDetails   = $propertyMapping->buildXStorePropertyFetchDetails($ch.first, $newParentPath, $m)
                                      );
          
-           $newCrossNode->addCrossStoreChildren($newParentPath, $ch.first, $orderedPaths, $clusterNodesWithParents, $inScopeVars, $m, $runtime, $exeCtx, $extensions, $debug);
+           $newCrossNode->addCrossStoreChildren($newParentPath, $ch.first, $orderedPaths, $clusterNodesWithParents, $inScopeVars, $m, $runtime, $exeCtx, $enableConstraints, $checked, $extensions, $debug);
         });
       
         ^$currentNode(children = $children);
    );
+}
+
+function <<access.private>> meta::pure::graphFetch::executionPlan::buildXStorePropertyFetchDetails(xStorePropertyMapping: meta::pure::mapping::xStore::XStorePropertyMapping[1], subTree: ClusteredGraphFetchTree[1], parentPath: String[1], mapping: Mapping[1]): XStorePropertyFetchDetails[1]
+{
+   let propertyTree = $subTree->byPassClusteringInfo()->cast(@RoutedPropertyGraphFetchTree);
+   let subTreeString   = '{' + $propertyTree.subTrees->map(st | $st->meta::pure::graphFetch::routing::asString(false))->joinStrings(',') + '}';
+   let propertyPath = $parentPath + '.' + $propertyTree->nodePathName();
+
+   let xStoreExpressionSequence  = $xStorePropertyMapping.crossExpression.expressionSequence->evaluateAndDeactivate();
+   let isXStoreMappingMultiEqual = $xStoreExpressionSequence->size() == 1 && $xStoreExpressionSequence->toOne()->isExpressionMultiEqual();
+
+   let supportsCaching = $isXStoreMappingMultiEqual && !($subTreeString->contains('$'));
+
+   ^XStorePropertyFetchDetails
+   (
+      supportsCaching          = $supportsCaching,
+      propertyPath             = $propertyPath,
+      sourceMappingId          = $mapping.classMappingById($xStorePropertyMapping.sourceSetImplementationId)->toOne().parent->elementToPath(),
+      sourceSetId              = $xStorePropertyMapping.sourceSetImplementationId,
+      targetMappingId          = $mapping.classMappingById($xStorePropertyMapping.targetSetImplementationId)->toOne().parent->elementToPath(),
+      targetSetId              = $xStorePropertyMapping.targetSetImplementationId,
+      targetPropertiesOrdered  = if($supportsCaching, | $xStoreExpressionSequence->toOne()->propertyPairsInMultiEqual().second.name->sort(), | []),
+      subTree                  = $subTreeString
+   );
+}
+
+function meta::pure::graphFetch::executionPlan::isExpressionMultiEqual(v: ValueSpecification[1]):Boolean[1]
+{
+   $v->evaluateAndDeactivate()->match([
+      f: FunctionExpression[1] | let params = $f.parametersValues->evaluateAndDeactivate()->map(x| $x->byPassRouterInfo());
+                                 if($f.func->in([meta::pure::functions::boolean::equal_Any_MANY__Any_MANY__Boolean_1_, meta::pure::functions::boolean::eq_Any_1__Any_1__Boolean_1_]),
+                                    | $params->match([
+                                       sfes: SimpleFunctionExpression[*] | $sfes->at(0).func->instanceOf(Property) && $sfes->at(1).func->instanceOf(Property),
+                                       a: Any[*] | false
+                                      ]),
+                                    | if($f.functionName == 'and',
+                                         | $params->at(0)->isExpressionMultiEqual() && $params->at(1)->isExpressionMultiEqual(),
+                                         | false
+                                      );
+                                 );
+   ])
+}
+
+function meta::pure::graphFetch::executionPlan::propertyPairsInMultiEqual(v: ValueSpecification[1]):Pair<Property<Nil,Any|*>, Property<Nil,Any|*>>[*]
+{
+   $v->evaluateAndDeactivate()->match([
+      f: FunctionExpression[1] | let params = $f.parametersValues->evaluateAndDeactivate()->map(x| $x->byPassRouterInfo());
+                                 if($f.func->in([meta::pure::functions::boolean::equal_Any_MANY__Any_MANY__Boolean_1_, meta::pure::functions::boolean::eq_Any_1__Any_1__Boolean_1_]),
+                                    | $params->match([
+                                       sfes: SimpleFunctionExpression[*] | assert($sfes->at(0).func->instanceOf(Property) && $sfes->at(1).func->instanceOf(Property));
+                                                                           if($sfes->at(0).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'this' &&
+                                                                              $sfes->at(1).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'that',
+                                                                              | pair($sfes->at(0).func->cast(@Property<Nil,Any|*>), $sfes->at(1).func->cast(@Property<Nil,Any|*>)),
+                                                                              | if($sfes->at(0).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'that' &&
+                                                                                   $sfes->at(1).parametersValues->evaluateAndDeactivate()->cast(@VariableExpression).name == 'this',
+                                                                                   | pair($sfes->at(1).func->cast(@Property<Nil,Any|*>), $sfes->at(0).func->cast(@Property<Nil,Any|*>)),
+                                                                                   | assert(false, 'Complex cross expressions not supported yet!'); [];
+                                                                                )
+                                                                           );,
+                                       a: Any[*] | assert(false, 'Complex cross expressions not supported yet!'); [];
+                                      ]),
+                                    | if($f.functionName == 'and',
+                                         | $params->at(0)->propertyPairsInMultiEqual()->concatenate($params->at(1)->propertyPairsInMultiEqual()),
+                                         | assert(false, 'Complex cross expressions not supported yet!'); [];
+                                      );
+                                 );
+   ])
 }
 
 function meta::pure::graphFetch::executionPlan::globalGraphFetchExecutionNodeToString(g: GlobalGraphFetchExecutionNode[1], space: String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]

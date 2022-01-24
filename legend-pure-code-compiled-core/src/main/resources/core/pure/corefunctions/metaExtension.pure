@@ -110,6 +110,24 @@ function {doc.doc = 'Get defined and inheritied properties on the provided class
    );
 }
 
+function {doc.doc = 'Get defined and inheritied properties via associations on the provided class'}
+   meta::pure::functions::meta::hierarchicalPropertiesFromAssociations(class:Class<Any>[1]):Property<Nil,Any|*>[*]
+{
+   if($class==Any,
+      | [],
+      | $class.propertiesFromAssociations->concatenate($class.generalizations->map(g| hierarchicalPropertiesFromAssociations($g.general.rawType->cast(@Class<Any>)->toOne())))->removeDuplicates()
+   );
+}
+
+function {doc.doc = 'Get defined and inheritied qualified properties on the provided class'}
+   meta::pure::functions::meta::hierarchicalQualifiedProperties(class:Class<Any>[1]):AbstractProperty<Any>[*]
+{
+   if($class==Any,
+      | [],
+      | $class.qualifiedProperties->concatenate($class.generalizations->map(g| hierarchicalQualifiedProperties($g.general.rawType->cast(@Class<Any>)->toOne())))->removeDuplicates()
+   );
+}
+
 function
    {doc.doc = 'Returns the named property from the provided class'}
    meta::pure::functions::meta::propertyByName(class : Class<Any>[1], name : String[1]) : AbstractProperty<Any>[0..1]
@@ -289,7 +307,7 @@ function meta::pure::functions::meta::reverseProperties(class:Class<Any>[1]):Pro
 function meta::pure::functions::meta::findExpressionsForFunctionInValueSpecification(vs:ValueSpecification[1], funcs:Function<Any>[*]):FunctionExpression[*]
 {
    $vs->match([fe:FunctionExpression[1] | let res = $fe.parametersValues->map(v | $v->findExpressionsForFunctionInValueSpecification($funcs));
-                                          if ( $fe.func->in($funcs), | [$fe]->concatenate($res), | $res );,
+                                          if ( !($fe.func->instanceOf(Property) || $fe.func->instanceOf(QualifiedProperty)) && ($funcs->isEmpty() || $fe.func->in($funcs)), | [$fe]->concatenate($res), | $res );,
                i:InstanceValue[1] | $i.values->map( v |
                                                          $v->match([a: ValueSpecification[1] | $a->findExpressionsForFunctionInValueSpecification($funcs);,
                                                          k : KeyExpression[1] | $k.expression->findExpressionsForFunctionInValueSpecification($funcs);,
@@ -389,6 +407,34 @@ function meta::pure::functions::meta::reprocessVSWithInScopeVars(v:ValueSpecific
                                ]))
                             ),
       v: VariableExpression[1]|$inScopeVars->keys()->contains($v.name)->if(|^InstanceValue(genericType=$v.genericType, multiplicity=PureOne, values=$inScopeVars->get($v.name).values)->evaluateAndDeactivate(),|$v)
+   ])
+}
+
+function meta::pure::functions::meta::reprocessVariableExpressionsNameInLambda(fd:FunctionDefinition<Any>[1], nameMap: Map<String, String>[1]):FunctionDefinition<Any>[1]
+{
+  ^$fd(expressionSequence = $fd.expressionSequence->evaluateAndDeactivate()->map(e|$e->reprocessVariableExpressionsName($nameMap)) );
+}
+
+function meta::pure::functions::meta::reprocessVariableExpressionsName(v:ValueSpecification[1], nameMap: Map<String, String>[1]):ValueSpecification[1]
+{
+   $v->match([
+      fe:FunctionExpression[1] | ^$fe
+                                  (
+                                     func=$fe.func->match([
+                                        fd:QualifiedProperty<Any>[1]|$fd->reprocessVariableExpressionsNameInLambda($nameMap), 
+                                        v: Function<Any>[1]|$v
+                                     ]),
+                                     parametersValues=$fe.parametersValues->map(v|$v->reprocessVariableExpressionsName($nameMap))
+                                  ),
+      i:InstanceValue[1] | ^$i
+                            (
+                               values = $i.values->evaluateAndDeactivate()->map(v|$v->match([
+                                  e:ValueSpecification[1]|$e->reprocessVariableExpressionsName($nameMap),
+                                  f:FunctionDefinition<Any>[1]|$f->reprocessVariableExpressionsNameInLambda($nameMap),
+                                  a:Any[1]|$a
+                               ]))
+                            ),
+      v: VariableExpression[1]| ^$v(name = if($nameMap->get($v.name)->isNotEmpty(), | $nameMap->get($v.name)->toOne(), | $v.name))
    ])
 }
 

@@ -205,7 +205,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
                         "}");
         runtime.compile();
 
-        CoreInstance func = this.runtime.getFunction("test():Nil[0]");
+        CoreInstance func = runtime.getFunction("test():Nil[0]");
         Assert.assertEquals("test__Nil_0_ instance ConcreteFunctionDefinition\n" +
                 "    classifierGenericType(Property):\n" +
                 "        Anonymous_StripedId instance GenericType\n" +
@@ -570,7 +570,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
                 "                            offset(Property):\n" +
                 "                                1 instance Integer\n" +
                 "                    values(Property):\n" +
-                "                        getValue1$1 instance LambdaFunction\n" +
+                "                        getValue$1$system$imports$import_fromString_pure_1$1 instance LambdaFunction\n" +
                 "                            classifierGenericType(Property):\n" +
                 "                                Anonymous_StripedId instance GenericType\n" +
                 "                                    rawType(Property):\n" +
@@ -580,7 +580,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
                 "                                            rawType(Property):\n" +
                 "                                                Anonymous_StripedId instance FunctionType\n" +
                 "                                                    function(Property):\n" +
-                "                                                        getValue1$1 instance LambdaFunction\n" +
+                "                                                        getValue$1$system$imports$import_fromString_pure_1$1 instance LambdaFunction\n" +
                 "                                                    parameters(Property):\n" +
                 "                                                        Anonymous_StripedId instance VariableExpression\n" +
                 "                                                            functionTypeOwner(Property):\n" +
@@ -729,7 +729,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
                 "                                                            offset(Property):\n" +
                 "                                                                0 instance Integer\n" +
                 "                                            propertyName(Property):\n" +
-                "                                                getValue1$0 instance InstanceValue\n" +
+                "                                                getValue$1$system$imports$import_fromString_pure_1$0 instance InstanceValue\n" +
                 "                                                    genericType(Property):\n" +
                 "                                                        Anonymous_StripedId instance GenericType\n" +
                 "                                                            rawType(Property):\n" +
@@ -762,7 +762,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
                 "                                    usageContext(Property):\n" +
                 "                                        Anonymous_StripedId instance ExpressionSequenceValueSpecificationContext\n" +
                 "                                            functionDefinition(Property):\n" +
-                "                                                getValue1$1 instance LambdaFunction\n" +
+                "                                                getValue$1$system$imports$import_fromString_pure_1$1 instance LambdaFunction\n" +
                 "                                            offset(Property):\n" +
                 "                                                0 instance Integer\n" +
                 "                            referenceUsages(Property):\n" +
@@ -784,7 +784,7 @@ public class TestFunction extends AbstractPureTestWithCoreCompiledPlatform
                 "    name(Property):\n" +
                 "        getValue_Any_1__String_1__Any_MANY_ instance String\n" +
                 "    package(Property):\n" +
-                "        Root instance Package", this.runtime.getCoreInstance("getValue_Any_1__String_1__Any_MANY_").printWithoutDebug("", 10));
+                "        Root instance Package", runtime.getCoreInstance("getValue_Any_1__String_1__Any_MANY_").printWithoutDebug("", 10));
 
     }
 

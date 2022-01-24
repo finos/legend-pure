@@ -89,7 +89,7 @@ function <<test.Test, test.ExcludeAlloy>> meta::relational::tests::projection::f
    let result = execute(|Trade.all()->filter(f| $f.id->in([9,10]))->project([t| datePart($t.settlementDateTime)], ['settlementDateTime']), simpleRelationalMapping, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
    assertSize($result.values.rows, 2);
    assertEquals([%2014-12-05, ^TDSNull()], $result.values.rows.values);
-   assertEquals('select truncate("root".settlementDateTime) as "settlementDateTime" from tradeTable as "root" where "root".ID in (9, 10)', $result->sqlRemoveFormatting());
+   assertEquals('select cast(truncate("root".settlementDateTime) as date) as "settlementDateTime" from tradeTable as "root" where "root".ID in (9, 10)', $result->sqlRemoveFormatting());
 }
 
 function <<test.Test>> meta::relational::tests::projection::function::date::testWeekOfYearWithZeroToOne():Boolean[1]

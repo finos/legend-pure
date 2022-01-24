@@ -57,6 +57,16 @@ function <<test.Test>> meta::relational::tests::projection::exists::testExistsAs
    assertEquals('select "dep_0".mainId is not null as "prop" from main as "root" left outer join (select distinct "dep_1".mainId from dep as "dep_1" where "dep_1".name = \'name2\') as "dep_0" on ("root".id = "dep_0".mainId)', $result->sqlRemoveFormatting());
 }
 
+function <<test.Test>> meta::relational::tests::projection::exists::testExistsEmbeddedOnSameTable():Boolean[1]
+{
+   let result = execute(|MyClass.all()->project(p|$p.dependencies->exists(d|$d.name == 'name2'), 'prop'),
+                         meta::relational::tests::projection::exists::mappingEmbeddedSameTable,                        
+                        testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
+   assertSize($result.values.rows, 3);
+   assertSameElements([true, false, true], $result.values.rows->map(r | $r.values->at(0)));
+   assertEquals('select "root".depName = \'name2\' as "prop" from mainDenorm as "root"', $result->sqlRemoveFormatting());
+}
+
 function <<test.Test>> meta::relational::tests::projection::exists::testExistsAsQualifierWithFilter():Boolean[1]
 {
    let result = execute(|MyClass.all()->project(p|$p.hasMatchingDependencies, 'prop'),
@@ -90,6 +100,11 @@ function <<test.BeforePackage>> meta::relational::tests::projection::exists::set
    executeInDb('insert into main (id, name) values (2, \'name2\');', $connection);
    executeInDb('insert into main (id, name) values (3, \'name3\');', $connection);
 
+   meta::relational::functions::toDDL::dropAndCreateTableInDb(db, 'mainDenorm', $connection);
+
+   executeInDb('insert into mainDenorm (id, name, depName) values (1, \'name1\', \'name2\');', $connection);
+   executeInDb('insert into mainDenorm (id, name, depName) values (2, \'name2\', \'name1\');', $connection);
+   executeInDb('insert into mainDenorm (id, name, depName) values (3, \'name3\', \'name2\');', $connection);
 
    meta::relational::functions::toDDL::dropAndCreateTableInDb(db, 'dep', $connection);
 
@@ -113,6 +128,17 @@ function meta::relational::tests::projection::exists::testRuntime():Runtime[1]
 
 ###Mapping
 import meta::relational::tests::projection::exists::*;
+
+Mapping meta::relational::tests::projection::exists::mappingEmbeddedSameTable
+(
+   MyClass : Relational
+             {
+                name : [db]mainDenorm.name,
+                dependencies(
+                   name: [db]mainDenorm.depName
+                )
+             }  
+)
 
 Mapping meta::relational::tests::projection::exists::mapping
 (
@@ -170,6 +196,7 @@ Mapping meta::relational::tests::projection::exists::mappingWithFilterAndWrongJo
 Database meta::relational::tests::projection::exists::db
 (
    Table main(id INT PRIMARY KEY , name VARCHAR(100))
+   Table mainDenorm(id INT PRIMARY KEY , name VARCHAR(100), depName VARCHAR(200))
    Table dep(id INT PRIMARY KEY , mainId INT, name VARCHAR(200), otherFilter INT)
    Join join(main.id = dep.mainId)
    Join wrongJoin(main.id = dep.mainId and main.name = 'name3' and dep.otherFilter=2)

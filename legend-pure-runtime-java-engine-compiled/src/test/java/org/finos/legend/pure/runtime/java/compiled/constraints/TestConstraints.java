@@ -76,7 +76,7 @@ public class TestConstraints extends AbstractTestConstraints
                 "  ^test::SubClass(name='')\n" +
                 "}\n";
         // The two sources must be compiled together to test the issue
-        this.runtime.createInMemoryAndCompile(Tuples.pair(source1Name, source1Code), Tuples.pair(source2Name, source2Code));
+        runtime.createInMemoryAndCompile(Tuples.pair(source1Name, source1Code), Tuples.pair(source2Name, source2Code));
         try
         {
             this.execute("test::testNew():Any[*]");

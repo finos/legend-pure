@@ -27,7 +27,8 @@ function meta::protocols::pure::v1_21_0::external::shared::format::serializerExt
       transfers_executionPlan_transformNode = 
          {mapping:Mapping[1], extensions:RouterExtension[*] |
             [
-               d:meta::external::shared::format::executionPlan::DataQualityExecutionNode[1] | transformDataQualityNode($d, $mapping, $extensions)
+               d:meta::external::shared::format::executionPlan::DataQualityExecutionNode[1] | transformDataQualityNode($d, $mapping, $extensions),
+               u:meta::external::shared::format::executionPlan::UrlStreamExecutionNode[1]   | transformUrlStreamNode($u, $mapping, $extensions)
             ]
          }   
    );
@@ -70,6 +71,11 @@ Class meta::protocols::pure::v1_21_0::metamodel::external::shared::format::execu
    checked           : Boolean[1];
 }
 
+Class meta::protocols::pure::v1_21_0::metamodel::external::shared::format::executionPlan::UrlStreamExecutionNode extends ExecutionNode
+{
+   url : String[1];
+}
+
 function meta::protocols::pure::v1_21_0::transformation::fromPureGraph::external::shared::format::transformDataQualityNode(node:meta::external::shared::format::executionPlan::DataQualityExecutionNode[1], mapping:meta::pure::mapping::Mapping[1], extensions:RouterExtension[*]): ExecutionNode[1]
 {
    ^meta::protocols::pure::v1_21_0::metamodel::external::shared::format::executionPlan::DataQualityExecutionNode(
@@ -78,6 +84,15 @@ function meta::protocols::pure::v1_21_0::transformation::fromPureGraph::external
       resultSizeRange   = $node.resultSizeRange->map(s| $s->meta::protocols::pure::v1_21_0::transformation::fromPureGraph::domain::transformMultiplicity()),
       enableConstraints = $node.enableConstraints,
       checked           = $node.checked
+   );
+}
+
+function meta::protocols::pure::v1_21_0::transformation::fromPureGraph::external::shared::format::transformUrlStreamNode(node:meta::external::shared::format::executionPlan::UrlStreamExecutionNode[1], mapping:meta::pure::mapping::Mapping[1], extensions:RouterExtension[*]): ExecutionNode[1]
+{
+   ^meta::protocols::pure::v1_21_0::metamodel::external::shared::format::executionPlan::UrlStreamExecutionNode(
+      _type      = 'urlStream',
+      resultType = $node.resultType->meta::protocols::pure::v1_21_0::transformation::fromPureGraph::executionPlan::transformResultType($mapping, $extensions),
+      url        = $node.url
    );
 }
 

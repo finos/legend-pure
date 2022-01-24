@@ -1,0 +1,14 @@
+# skip linting HTML as this is handled by `prettier`
+**/*.html
+**/*.tsx
+**/*.ts
+**/*.jsx
+**/*.js
+**/*.cjs
+**/*.mjs
+
+# Build
+/build/
+/packages/*/build/
+/packages/*/dist/
+/packages/*/lib/

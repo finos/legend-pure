@@ -347,6 +347,8 @@ function meta::pure::executionPlan::engine::java::jsonGenerator(): meta::externa
 
 function meta::pure::executionPlan::engine::java::jsonFactory():                               meta::external::language::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.core.JsonFactory'); }
 function meta::pure::executionPlan::engine::java::jsonParser():                                meta::external::language::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.core.JsonParser'); }
+function meta::pure::executionPlan::engine::java::jsonPointerBasedFilter():                    meta::external::language::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.core.filter.JsonPointerBasedFilter'); }
+function meta::pure::executionPlan::engine::java::jsonFilteringParserDelegate():               meta::external::language::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.core.filter.FilteringParserDelegate'); }
 function meta::pure::executionPlan::engine::java::jsonToken():                                 meta::external::language::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.core.JsonToken'); }
 function meta::pure::executionPlan::engine::java::objectMapper():                              meta::external::language::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.databind.ObjectMapper'); }
 function meta::pure::executionPlan::engine::java::jsonNode():                                  meta::external::language::java::metamodel::Class[1] { javaClass('com.fasterxml.jackson.databind.JsonNode'); }

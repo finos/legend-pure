@@ -13,11 +13,13 @@
 // limitations under the License.
 
 import meta::pure::executionPlan::engine::java::*;
+import meta::pure::metamodel::path::*;
 import meta::external::language::java::factory::*;
 import meta::external::language::java::transform::*;
 import meta::external::shared::format::*;
 import meta::external::shared::format::binding::*;
 import meta::external::shared::format::executionPlan::*;
+import meta::external::shared::format::router::extension::*;
 import meta::external::shared::runtime::*;
 import meta::pure::executionPlan::*;
 import meta::pure::graphFetch::*;
@@ -47,7 +49,19 @@ function meta::external::shared::format::routerExtensions(type:String[1], extern
                {x:ExternalFormatConnection[1] | 
                   let binding         = $x.element->cast(@Binding);
                   let formatExtension = $externalFormatExtensions->getExtensionForContentType($binding.contentType);
-                  let deserializeNode = $formatExtension.generateDeserializeNode->eval($x, $tree);
+                  let sourceNode      = getSourceNodeFromExternalSource($x.externalSource);
+                  let deserializeNode = $formatExtension.generateDeserializeNode->eval($x, $sourceNode, $tree);
+                  generateDataQualityNode($deserializeNode, $enableConstraints, $checked);
+               }
+            ]
+         },
+      executionPlan_generation_nodeFromConnectionWithChildren = 
+         {tree:RootGraphFetchTree<Any>[0..1], children:ExecutionNode[1], enableConstraints:Boolean[1], checked:Boolean[1] |
+            [
+               {x:ExternalFormatConnection[1] | 
+                  let binding         = $x.element->cast(@Binding);
+                  let formatExtension = $externalFormatExtensions->getExtensionForContentType($binding.contentType);
+                  let deserializeNode = $formatExtension.generateDeserializeNode->eval($x, $children, $tree);
                   generateDataQualityNode($deserializeNode, $enableConstraints, $checked);
                }
             ]
@@ -80,7 +94,18 @@ function meta::external::shared::format::routerExtensions(type:String[1], extern
       plan_javaRuntime_main_generatePlatformCode1 = 
          {path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] |
             $externalFormatExtensions.planJavaGenerate->map(x|$x->eval($path, $context, $extensions, $debug));
-         }
+         },
+      moduleExtensions = [
+         ^ExternalFormatModuleExtension(
+            module                = 'externalFormat',
+            generatePathReference = {binding:Binding[1], path:Path<Nil,Any|*>[1] |
+                                       let formatExtension = $externalFormatExtensions->getExtensionForContentType($binding.contentType);
+                                       assert($formatExtension.generatePathReference->isNotEmpty(), | 'Path Offset not supported by : ' + $formatExtension.externalFormat + ' external format');
+               
+                                       $formatExtension.generatePathReference->toOne()->eval($path);
+                                    }
+         )
+      ]
    );
 
    let perFormat = $externalFormatExtensions->map(formatExt| ^RouterExtension(type                                                    = $type+':'+$formatExt.externalFormat, 
@@ -112,16 +137,17 @@ function <<access.private>> meta::external::shared::format::getExtensionForForma
 
 Class meta::external::shared::format::ExternalFormatExtension
 {
-   contentType               : String[1];
-   externalFormat            : String[1];
+   contentType             : String[1];
+   externalFormat          : String[1];
    
-   generateSerializeNode     : Function<{Boolean[1], Binding[1], ExecutionNode[*] -> ExecutionNode[1]}>[1];  
-   generateDeserializeNode   : Function<{Connection[1], RootGraphFetchTree<Any>[0..1] -> ExecutionNode[1]}>[1];  
-   printPlanNodeToString     : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[1];
+   generateSerializeNode   : Function<{Boolean[1], Binding[1], ExecutionNode[*] -> ExecutionNode[1]}>[1];  
+   generateDeserializeNode : Function<{Connection[1], ExecutionNode[1], RootGraphFetchTree<Any>[0..1] -> ExecutionNode[1]}>[1];
+   generatePathReference   : Function<{Path<Nil,Any|*>[1] -> PathReference[1]}>[0..1];
+   printPlanNodeToString   : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[1];
    
-   planJavaPrepare           : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GenerationContext[1]}>[*]}>[1];
-   planJavaGenerate          : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GeneratedCode[1]}>[*]}>[1];
+   planJavaPrepare         : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GenerationContext[1]}>[*]}>[1];
+   planJavaGenerate        : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GeneratedCode[1]}>[*]}>[1];
    plan_javaRuntime_enginePlatformDependencies_conventions : Function<{Conventions[1]->Conventions[1]}>[0..1];
 
-   serializerExtension       : Function<{String[1]->String[1]}>[1];
+   serializerExtension     : Function<{String[1]->String[1]}>[1];
 }

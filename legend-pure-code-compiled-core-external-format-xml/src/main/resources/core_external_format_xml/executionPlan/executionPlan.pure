@@ -40,10 +40,10 @@ Class meta::external::format::xml::executionPlan::XmlSerializeExecutionNode exte
 {
 }
 
-Class meta::external::format::xml::executionPlan::XmlDeserializeExecutionNode extends ExecutionNode
+Class meta::external::format::xml::executionPlan::XmlDeserializeExecutionNode extends ExternalFormatDeserializeExecutionNode
 {
-   connection : Connection[1];
-   tree       : RootGraphFetchTree<Any>[0..1]; 
+   binding : Binding[1];
+   tree    : RootGraphFetchTree<Any>[0..1]; 
 }
 
 function meta::external::format::xml::executionPlan::generateSerializeNode(checked:Boolean[1], binding:Binding[1], children:ExecutionNode[*]): ExecutionNode[1]
@@ -57,7 +57,7 @@ function meta::external::format::xml::executionPlan::generateSerializeNode(check
    );
 }
 
-function meta::external::format::xml::executionPlan::generateDeserializeNode(connection:Connection[1], tree:RootGraphFetchTree<Any>[0..1]): ExecutionNode[1]
+function meta::external::format::xml::executionPlan::generateDeserializeNode(connection:Connection[1], children:ExecutionNode[1], tree:RootGraphFetchTree<Any>[0..1]): ExecutionNode[1]
 {
    assert($tree->isNotEmpty(), 'Deserialization without Graph Fetch Tree not yet supported');
    let returnedClass = $tree.class->toOne();
@@ -68,8 +68,9 @@ function meta::external::format::xml::executionPlan::generateDeserializeNode(con
                            propertiesWithParameters = $tree.subTrees->cast(@PropertyGraphFetchTree)->map(x | $x->map(x | ^PropertyWithParameters(property = $x.property, parameters = $x.parameters)))
                         ),
       resultSizeRange = ZeroMany,
-      connection      = $connection,
-      tree            = $tree
+      tree            = $tree,
+      binding         = $connection->cast(@ExternalFormatConnection).element->cast(@Binding),
+      executionNodes  = $children
    );
 }
 
@@ -88,7 +89,7 @@ function meta::external::format::xml::executionPlan::printPlanNodeToString(space
       {node:XmlDeserializeExecutionNode[1] |
          'XML_Deserialize\n' + 
          $space + '(' + header($node, $space, $extensions) + '\n' +
-         $space + '  connection = ' + $node.connection->meta::pure::executionPlan::toString::connectionToString($extensions) + '\n' +
+         $space + '  binding = ' + $node.binding->elementToPath() + '\n' +
          $node->childrenToString($space+'  ', $extensions) + '\n' +
          $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
          $space + ')\n'

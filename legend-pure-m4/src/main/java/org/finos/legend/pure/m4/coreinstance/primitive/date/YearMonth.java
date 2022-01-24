@@ -112,7 +112,7 @@ public final class YearMonth extends AbstractDateWithMonth
     }
 
     @Override
-    public PureDate addMicroseconds(int microseconds)
+    public PureDate addMicroseconds(long microseconds)
     {
         throw new UnsupportedOperationException();
     }
