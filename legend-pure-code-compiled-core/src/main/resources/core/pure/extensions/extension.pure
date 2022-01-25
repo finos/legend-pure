@@ -49,7 +49,6 @@ Class meta::pure::router::extension::RouterExtension
 
    routing_routeFunctionExpressionFunctionDefinition : Pair<Function<{FunctionExpression[1]->Boolean[1]}>, Function<{FunctionExpression[1], RoutingState[1], Runtime[1], Mapping[1], ExecutionContext[1]->RoutingState[1]}>>[0..1];
    routing_extraShouldStop : Function<Any>[*];
-   routing_extraIsSerialize : Function<{FunctionExpression[1]->Boolean[1]}>[0..1];
 
    main_storeEquals : Function<{Any[1], Any[1]-> Function<{Nil[1]->Boolean[1]}>[1]}>[0..1];
    
@@ -89,7 +88,6 @@ Class meta::pure::router::extension::RouterExtension
    executionPlan_generation_isConnectionForClass : Function<{meta::pure::metamodel::type::Class<Any>[1] -> Function<{Nil[1]->Boolean[1]}>[*]}>[0..1];
    executionPlan_generation_nodeFromConnection : Function<{RootGraphFetchTree<Any>[0..1], Boolean[1], Boolean[1] -> Function<{Nil[1]->ExecutionNode[1]}>[*]}>[0..1];
    executionPlan_generation_nodeFromConnectionWithChildren : Function<{RootGraphFetchTree<Any>[0..1], ExecutionNode[1], Boolean[1], Boolean[1] -> Function<{Nil[1]->ExecutionNode[1]}>[*]}>[0..1];
-   executionPlan_generation_nodeFromFunctionExpression: Function<{FunctionExpression[1], ExecutionNode[*]->ExecutionNode[0..1]}>[*];
    executionPlan_generation_executionOptionParameters : Function<{Nil[1] -> PlanVarPlaceHolder[*]}>[*];
    executionPlan_generation_sourceSupportsBatching : Function<{SetImplementation[*], Map<String, List<Any>>[1]-> Function<{Nil[1]->Boolean[1]}>[*]}>[0..1];
    

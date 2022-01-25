@@ -125,7 +125,6 @@ function meta::external::store::service::functions::pureToServiceStoreQuery::get
 {
    newMap([
       ^PureFunctionToServiceStoreFunctionPair(first=meta::pure::functions::boolean::and_Boolean_1__Boolean_1__Boolean_1_,second=meta::external::store::service::functions::pureToServiceStoreQuery::processNoOp_FunctionExpression_1__ServiceStoreQuery_1__Map_1__DebugContext_1__ServiceStoreQuery_1_),
-      ^PureFunctionToServiceStoreFunctionPair(first=meta::pure::functions::collection::concatenate_T_MANY__T_MANY__T_MANY_,second=meta::external::store::service::functions::pureToServiceStoreQuery::processNoOp_FunctionExpression_1__ServiceStoreQuery_1__Map_1__DebugContext_1__ServiceStoreQuery_1_),
       ^PureFunctionToServiceStoreFunctionPair(first=meta::pure::functions::boolean::equal_Any_MANY__Any_MANY__Boolean_1_, second=meta::external::store::service::functions::pureToServiceStoreQuery::processEqual_FunctionExpression_1__ServiceStoreQuery_1__Map_1__DebugContext_1__ServiceStoreQuery_1_),
       ^PureFunctionToServiceStoreFunctionPair(first=meta::pure::functions::boolean::eq_Any_1__Any_1__Boolean_1_, second=meta::external::store::service::functions::pureToServiceStoreQuery::processEqual_FunctionExpression_1__ServiceStoreQuery_1__Map_1__DebugContext_1__ServiceStoreQuery_1_),
       ^PureFunctionToServiceStoreFunctionPair(first=meta::pure::functions::lang::eval_Function_1__T_n__V_m_,second=meta::external::store::service::functions::pureToServiceStoreQuery::processNoOp_FunctionExpression_1__ServiceStoreQuery_1__Map_1__DebugContext_1__ServiceStoreQuery_1_),
