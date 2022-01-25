@@ -394,3 +394,13 @@ function <<test.Test, test.AlloyOnly>> meta::relational::tests::tds::groupBy::te
    meta::relational::functions::asserts::assertSameSQL('select "producttable_0".NAME as "prodName", percentile_cont(0.9) within group (order by ("root".quantity + 2) asc) as "p1", percentile_disc(0.5) within group (order by ("root".quantity + 2) desc) as "p2", percentile_cont(0.75) within group (order by ("root".quantity + 2) asc) as "p3" from tradeTable as "root" left outer join productSchema.productTable as "producttable_0" on ("root".prodId = "producttable_0".ID) group by "prodName" order by "prodName" desc', $result);
 }
 
+function <<test.Test>> meta::relational::tests::tds::groupBy::testTDSGroupByIsDistinct():Boolean[1]
+{
+   let result = execute(|Firm.all()
+                         ->project([#/Firm/legalName!LegalName#, #/Firm/employees/firstName!firstName#, #/Firm/employees/lastName!lastName#])
+                         ->groupBy('LegalName', [agg('FirstNameIsDistinct', x|$x.getString('firstName'), y|$y->isDistinct()), agg('LastNameIsDistinct', x|$x.getString('lastName'), y|$y->isDistinct())])
+                         ->sort(desc('LegalName')), simpleRelationalMapping, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
+   assertEquals(['Firm X|false|true', 'Firm C|true|true', 'Firm B|true|true', 'Firm A|true|true'], $result.values.rows->map(r|$r.values->makeString('|')));
+   meta::relational::functions::asserts::assertSameSQL('select "root".LEGALNAME as "LegalName", count(distinct("persontable_0".FIRSTNAME)) = count("persontable_0".FIRSTNAME) as "FirstNameIsDistinct", count(distinct("persontable_0".LASTNAME)) = count("persontable_0".LASTNAME) as "LastNameIsDistinct" from firmTable as "root" left outer join personTable as "persontable_0" on ("root".ID = "persontable_0".FIRMID) group by "LegalName" order by "LegalName" desc', $result);
+}
+
