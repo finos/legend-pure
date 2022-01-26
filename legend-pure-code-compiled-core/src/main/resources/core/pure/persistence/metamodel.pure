@@ -1,6 +1,7 @@
 import meta::legend::service::metamodel::*;
 
 import meta::pure::persist::metamodel::*;
+import meta::pure::persist::metamodel::backend::*;
 import meta::pure::persist::metamodel::batch::*;
 import meta::pure::persist::metamodel::batch::deduplication::*;
 import meta::pure::persist::metamodel::batch::milestoned::*;
@@ -13,8 +14,6 @@ import meta::pure::persist::metamodel::batch::milestoned::validity::derivation::
 import meta::pure::persist::metamodel::batch::nonmilestoned::*;
 import meta::pure::persist::metamodel::batch::nonmilestoned::audit::*;
 import meta::pure::persist::metamodel::event::*;
-
-import meta::pure::runtime::*;
 
 Class
 {doc.doc = 'A service persistence specification. This consists of a trigger event type, a reference to a service that sources and transforms data in response to incoming events, and a specification of how to persist the service output to a datastore.'}
@@ -34,6 +33,31 @@ meta::pure::persist::metamodel::ServicePersistence extends PackageableElement
 
    {doc.doc = 'The persistence approach to be applied to the output of the service.'}
    persistence: Persistence[1];
+}
+
+/**********
+ * backend
+ **********/
+
+Class
+{doc.doc = 'The mapping of a service persistence specification to a backend system for execution.'}
+meta::pure::persist::metamodel::ServicePersistenceBackend extends PackageableElement
+{
+   servicePersistence: ServicePersistence[1];
+   backend: Backend[1];
+}
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'Details required for a backend system to execute service persistence pipelines.'}
+meta::pure::persist::metamodel::backend::Backend
+{
+}
+
+Class
+{doc.doc = 'Backend details for executing on the AWS Glue managed ETL service.'}
+meta::pure::persist::metamodel::backend::aws::AwsGlueBackend extends Backend
+{
 }
 
 /**********
@@ -109,7 +133,6 @@ meta::pure::persist::metamodel::batch::BatchDatastoreSpecification
 {
    datastoreName: String[1];
    datasets: BatchDatasetSpecification[1..*];
-   runtime: Runtime[0..1];
 }
 
 Class
@@ -374,6 +397,7 @@ Class
 {doc.doc = 'Values in the incoming batch represent a delta to be applied on top of the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a no-op in the transaction (processing) dimension. Additional merge semantics, including logical deletes, can be supported via a merge scheme.' }
 meta::pure::persist::metamodel::batch::milestoned::delta::DeltaMilestoned extends Milestoned
 {
+   mergeScheme: MergeScheme[1];
 }
 
 Class
@@ -383,7 +407,7 @@ meta::pure::persist::metamodel::batch::milestoned::delta::merge::MergeScheme
 }
 
 Class
-meta::pure::persist::metamodel::batch::milestoned::delta::merge::DefaultMergeScheme extends MergeScheme
+meta::pure::persist::metamodel::batch::milestoned::delta::merge::NoDeletesMergeScheme extends MergeScheme
 {
 }
 
