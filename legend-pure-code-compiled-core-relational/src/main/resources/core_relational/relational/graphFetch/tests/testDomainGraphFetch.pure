@@ -86,7 +86,7 @@ function <<access.private>> meta::relational::graphFetch::tests::domain::checkPl
       'PureExp\n' +
       '(\n' +
       '  type = String\n' +
-      '  expression = [Node Index:0] -> serialize(meta::external::query::graphQL::transformation::queryToPure::tests::Firm {legalName, employees {lastName}})\n' +
+      '  expression = [Node Index:0] -> serialize(#{meta::external::query::graphQL::transformation::queryToPure::tests::Firm {legalName, employees {lastName}}}#)\n' +
       '  (\n' +
       '    GlobalGraphFetch\n' +
       '    (\n' +
@@ -137,7 +137,7 @@ function <<access.private>> meta::relational::graphFetch::tests::domain::checkPl
       'PureExp\n' +
       '(\n' +
       '  type = String\n' +
-      '  expression = [Node Index:0] -> serialize(meta::external::query::graphQL::transformation::queryToPure::tests::Person {firstName})\n' +
+      '  expression = [Node Index:0] -> serialize(#{meta::external::query::graphQL::transformation::queryToPure::tests::Person {firstName}}#)\n' +
       '  (\n' +
       '    GlobalGraphFetch\n' +
       '    (\n' +

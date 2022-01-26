@@ -2792,9 +2792,12 @@ function meta::external::language::java::factory::knownPackage(pkg: meta::extern
       | javaMathPackage(),
       |
    if($pkgName == 'java.time',
-      | javaTimePackage(),
-      | fail('Package ' + $pkgName + ' is not well known'); ^KnownPackage(package=javaPackage(''));
-   )))))))));
+      | javaTimePackage(),      
+      | 
+   if($pkgName == 'com.fasterxml.jackson.annotation',
+      | jacksonAnnotationPackage(),
+      |  fail('Package ' + $pkgName + ' is not well known'); ^KnownPackage(package=javaPackage(''));
+   ))))))))));
 }
 
 function meta::external::language::java::factory::javaLangPackage(): meta::external::language::java::factory::KnownPackage[1]
@@ -2985,6 +2988,27 @@ function meta::external::language::java::factory::javaTimePackage(): meta::exter
       ]
    );
 }
+
+function meta::external::language::java::factory::jacksonAnnotationPackage(): meta::external::language::java::factory::KnownPackage[1]
+{
+   ^meta::external::language::java::factory::KnownPackage(
+      package    = javaPackage('com.fasterxml.jackson.annotation'),
+      classNames = [
+         'JacksonAnnotation',         'JacksonAnnotationsInside',           'JacksonAnnotationValue',
+         'JacksonInject',             'jsonAlias',                          'JsonAnyGetter',                'JsonAnySetter',
+         'JsonAutoDetect',            'JsonBackReferebce',                  'JsonClassDescription',         'JsonCreator',
+         'JsonEnumDefaultValue',      'JsonFilter',                         'JsonFormat',                   'JsonGetter',
+         'JsonIdentityInfo',          'JsonIdentityReference',              'JsonIgnore',                   'JsonIgnoreProperties',
+         'JsonIgnoreType',            'JsonInclude',                        'JsonManagedReference',         'JsonMerge',
+         'JsonProperty',              'JsonPropertyDescription',            'JsonPropertyOrder',            'JsonRawValue',
+         'JsonRootName',              'JsonSetter',                         'JsonSubTypes',                 'JsonTypeId',
+         'JsonTypeInfo',              'JsonTypeName',                       'JsonUnwrapped',                'JsonValue',
+         'JsonView' 
+
+      ]
+   );
+}
+
 
 function meta::external::language::java::factory::apiKnowledge(from:meta::external::language::java::metamodel::Type[1]):meta::external::language::java::metamodel::Class[1]
 {

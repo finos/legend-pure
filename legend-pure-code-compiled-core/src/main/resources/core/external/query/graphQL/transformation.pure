@@ -18,6 +18,17 @@ import meta::external::query::graphQL::metamodel::*;
 import meta::external::query::graphQL::metamodel::typeSystem::*;
 import meta::external::query::graphQL::binding::toPure::*;
 
+function meta::external::query::graphQL::binding::toPure::primitiveTypeMapping() : Pair<String, meta::pure::metamodel::type::Type>[*]
+{
+    [
+      pair('String', String),
+      pair('Boolean', Boolean),
+      pair('Int', Integer),
+      pair('Float', Float),
+      pair('ID', String)
+    ]
+}
+
 function meta::external::query::graphQL::binding::toPure::graphQLTypeSystemtoPure(doc:Document[1], package:String[1]) : meta::pure::metamodel::type::Type[*]
 {
   let pack = buildTransientPackageFromString($package);
@@ -34,11 +45,7 @@ function meta::external::query::graphQL::binding::toPure::graphQLTypeSystemtoPur
                                     pair($e.name, $ep);
       ]
     )
-  )->concatenate([
-    pair('String', String),
-    pair('Boolean', Boolean)
-  ]
-  )->newMap();
+  )->concatenate(meta::external::query::graphQL::binding::toPure::primitiveTypeMapping())->newMap();
 
   // Pass 2
   $doc.definitions->map(def|
@@ -61,7 +68,7 @@ function meta::external::query::graphQL::binding::toPure::graphQLTypeSystemtoPur
   );
 }
 
-function <<access.private>> meta::external::query::graphQL::binding::toPure::buildTransientPackageFromString(package:String[1]) : Package[1]
+function meta::external::query::graphQL::binding::toPure::buildTransientPackageFromString(package:String[1]) : Package[1]
 {
   $package->split('::')->fold({a,b|^Package(name = $a, package=$b)}, ^Package());
 }
@@ -114,12 +121,13 @@ function <<access.private>> meta::external::query::graphQL::transformation::quer
 {
   $selection->map(s|$s->match(
     [
-      field : Field[1] | let property = $root->meta::pure::functions::meta::hierarchicalProperties()->concatenate($root->meta::pure::functions::meta::hierarchicalQualifiedProperties())->filter(p|$p.name == $field.name)->toOne();
+      field : Field[1] |let property = $root->meta::pure::functions::meta::hierarchicalProperties()->concatenate($root->meta::pure::functions::meta::hierarchicalQualifiedProperties())->filter(p|$p.name == $field.name);
+                        assert(!$property->isEmpty(), |'Property "'+$field.name+'" can\'t be found in the type '+$root->elementToPath());
                         ^meta::external::query::graphQL::transformation::queryToPure::IntermediatePropertyNode
                         (
                           propertyFetch = ^PropertyGraphFetchTree
                                           (
-                                            property = $property,
+                                            property = $property->toOne(),
                                             parameters = $field.arguments->map(a|$a.value->match(
                                                                                             [
                                                                                               s:StringValue[1]| ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=String), values=$s.value),
@@ -128,7 +136,7 @@ function <<access.private>> meta::external::query::graphQL::transformation::quer
                                                                                           )
                                                                            )
                                           ),
-                          children = if ($field.selectionSet->isEmpty(),|[],|$field.selectionSet->transformSelectionToPure($property->functionReturnType().rawType->cast(@Class<Any>)->toOne()))
+                          children = if ($field.selectionSet->isEmpty(),|[],|$field.selectionSet->transformSelectionToPure($property->toOne()->functionReturnType().rawType->cast(@Class<Any>)->toOne()))
                         );,
       fragmentId : FragmentSpread[1] | ^meta::external::query::graphQL::transformation::queryToPure::IntermediateFragmentNode(name = $fragmentId.name);
     ]
@@ -188,6 +196,23 @@ function meta::external::query::graphQL::transformation::queryToPure::getPlansFr
         );
 }
 
+Class meta::external::query::graphQL::transformation::queryToPure::GraphFetchResult
+{
+  graphFetchTree : meta::pure::graphFetch::RootGraphFetchTree<Any>[1];
+  explodedDomain : Pair<String, FunctionDefinition<{->Any[*]}>>[*];
+}
+
+function meta::external::query::graphQL::transformation::queryToPure::getGraphFetchFromGraphQL(cl:Class<Any>[1], query:meta::external::query::graphQL::metamodel::Document[1]):GraphFetchResult[1]
+{
+  let graphFetch = meta::external::query::graphQL::transformation::queryToPure::graphQLExecutableToPure($query, $cl);
+  let res = $graphFetch->meta::external::query::graphQL::transformation::queryToPure::extractDomainTypeClassFromGraphFetchTree();
+  ^GraphFetchResult
+  (
+    graphFetchTree = $graphFetch,
+    explodedDomain = $res->map(r|pair($r.first, $r.second))
+  );
+}
+
 function meta::external::query::graphQL::transformation::queryToPure::extractDomainTypeClassFromFunction<T>(func:FunctionDefinition<{->T[*]}>[1]):Pair<String, FunctionDefinition<{->Any[*]}>>[*]
 {
   let main = $func.expressionSequence->evaluateAndDeactivate();
@@ -211,7 +236,7 @@ function <<access.private>> meta::external::query::graphQL::transformation::quer
     let properties = $subTrees.property;
     let result = $properties->findGetAllInQualifiedProperties();
     if ($result->isEmpty(),
-      |fail('Non Domain type is not supported yet!'),
+      |fail('The system can\'t find a \'set definition\' (i.e. .all()) in any property of the query type leveraged in the tree navigation.'),
       |if ($properties->size() == $result->size(),
         | $result->zip($subTrees)->map(x|            
             let parametersValueByName = $x.second.property->functionType().parameters->tail().name->zip($x.second.parameters)->newMap();
@@ -285,7 +310,7 @@ function <<access.private>> meta::external::query::graphQL::transformation::quer
                                       |$s
                                     );,
     i:ValueSpecification[1]|$i
-  ])
+  ]);
 }
 
 

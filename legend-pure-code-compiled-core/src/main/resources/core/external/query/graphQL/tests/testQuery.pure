@@ -26,12 +26,30 @@ Class meta::external::query::graphQL::transformation::queryToPure::tests::Domain
   }:Person[0..1];
 }
 
+Class meta::external::query::graphQL::transformation::queryToPure::tests::SimpleDomain extends meta::external::query::graphQL::introspection::BaseGraphQLType
+{
+  name : String[1];
+  allPersons() {Person.all();}: Person[*];
+}
+
+
 function <<test.Test>> meta::external::query::graphQL::transformation::queryToPure::tests::reprocessGraphFetch():Boolean[1]
 {
-//  let tree = #{Domain{firmByLegalName('ork'){legalName}, employeeByLastName('yro'){firstName}}}#;
-  let r = extractDomainTypeClassFromFunction(|Domain.all()->meta::pure::graphFetch::execution::graphFetch(#{Domain{firmByLegalName('ork'){legalName}, employeeByLastName('yro'){firstName}}}#)->meta::pure::graphFetch::execution::serialize(#{Domain{firmByLegalName('ork'){legalName}, employeeByLastName('yro'){firstName}}}#));
+  let r = extractDomainTypeClassFromFunction(
+              |Domain.all()->meta::pure::graphFetch::execution::graphFetch(#{Domain{firmByLegalName('ork'){legalName}, employeeByLastName('yro'){firstName}}}#)
+                           ->meta::pure::graphFetch::execution::serialize(#{Domain{firmByLegalName('ork'){legalName}, employeeByLastName('yro'){firstName}}}#)
+          );
   assertEquals('firmByLegalName', $r->at(0).first);
-  assertEquals(' | Class Firm.all() -> filter(f:meta::external::query::graphQL::transformation::queryToPure::tests::Firm[1] | $f.legalName == \'ork\';) -> first() -> graphFetch(meta::external::query::graphQL::transformation::queryToPure::tests::Firm {legalName}) -> serialize(meta::external::query::graphQL::transformation::queryToPure::tests::Firm {legalName});', $r->at(0).second->meta::pure::router::printer::asString());
+  assertEquals(' | Class Firm.all() -> filter(f:meta::external::query::graphQL::transformation::queryToPure::tests::Firm[1] | $f.legalName == \'ork\';) -> first() -> graphFetch(#{meta::external::query::graphQL::transformation::queryToPure::tests::Firm {legalName}}#) -> serialize(#{meta::external::query::graphQL::transformation::queryToPure::tests::Firm {legalName}}#);', $r->at(0).second->meta::pure::router::printer::asString());
   assertEquals('employeeByLastName', $r->at(1).first);
-  assertEquals(' | Class Person.all() -> filter(p:meta::external::query::graphQL::transformation::queryToPure::tests::Person[1] | $p.lastName == \'yro\';) -> first() -> graphFetch(meta::external::query::graphQL::transformation::queryToPure::tests::Person {firstName}) -> serialize(meta::external::query::graphQL::transformation::queryToPure::tests::Person {firstName});', $r->at(1).second->meta::pure::router::printer::asString());
+  assertEquals(' | Class Person.all() -> filter(p:meta::external::query::graphQL::transformation::queryToPure::tests::Person[1] | $p.lastName == \'yro\';) -> first() -> graphFetch(#{meta::external::query::graphQL::transformation::queryToPure::tests::Person {firstName}}#) -> serialize(#{meta::external::query::graphQL::transformation::queryToPure::tests::Person {firstName}}#);', $r->at(1).second->meta::pure::router::printer::asString());
 }
+
+function <<test.Test>> meta::external::query::graphQL::transformation::queryToPure::tests::simple():Boolean[1]
+{
+  let r = extractDomainTypeClassFromFunction(
+              |SimpleDomain.all()->meta::pure::graphFetch::execution::graphFetch(#{SimpleDomain{allPersons}}#)
+          );
+  assertEquals('allPersons', $r->at(0).first);
+  assertEquals(' | Class Person.all() -> graphFetch(#{meta::external::query::graphQL::transformation::queryToPure::tests::Person}#) -> serialize(#{meta::external::query::graphQL::transformation::queryToPure::tests::Person}#);', $r->at(0).second->meta::pure::router::printer::asString());
+ }
