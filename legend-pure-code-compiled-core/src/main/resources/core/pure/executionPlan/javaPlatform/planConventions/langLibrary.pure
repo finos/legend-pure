@@ -41,6 +41,10 @@ function meta::pure::executionPlan::engine::java::registerLangLibrary(convention
          fc2(compare_T_1__T_1__Integer_1_,                     {ctx,left,right                | $library->j_invoke('compareInt', [$left, $right], javaInt())}),
 
          fc2(cast_Any_m__T_1__T_m_,                            castCoder_FuncCoderContext_1__Code_1__Code_1__Code_1_),
+         fc2(subType_Any_1__T_1__T_$0_1$_,                     subTypeCoder_FuncCoderContext_1__Code_1__Code_1__Code_1_),
+         fc2(subType_Any_$0_1$__T_1__T_$0_1$_,                 subTypeCoder_FuncCoderContext_1__Code_1__Code_1__Code_1_),
+         fc2(subType_Any_MANY__T_1__T_MANY_,                   subTypeCoder_FuncCoderContext_1__Code_1__Code_1__Code_1_),
+
          fc3(if_Boolean_1__Function_1__Function_1__T_m_,       ifCoder_FuncCoderContext_1__Code_1__Code_1__Code_1__Code_1_),
          fc2(letFunction_String_1__T_m__T_m_,                  letCoder_FuncCoderContext_1__Code_1__Code_1__Code_1_),
          fc(new_Class_1__String_1__KeyExpression_MANY__T_1_,   processNew_FunctionExpression_1__Conventions_1__DebugContext_1__Code_1_),
@@ -51,21 +55,39 @@ function meta::pure::executionPlan::engine::java::registerLangLibrary(convention
    $conventions->registerLibrary($lib);
 }
 
-function meta::pure::executionPlan::engine::java::castCoder(ctx:FuncCoderContext[1], collection:Code[1], exmpl:Code[1]) : Code[1]
+function meta::pure::executionPlan::engine::java::subTypeCoder(ctx:FuncCoderContext[1], collection:Code[1], exmpl:Code[1]) : Code[1]
 {
-   let isHackedUnit = $ctx.params->at(1)->type()->instanceOf(Unit);
-
-   let type   = if($isHackedUnit,
-                   | $ctx.params->at(1)->hackedUnitType($ctx.conventions),
-                   | $ctx.params->at(1)->generateJava($ctx.conventions, $ctx.debug->indent()).type
-                );
+   let type   = resolveHackedUnit($ctx, $ctx.params->at(1));
 
    let castTo = if(isJavaList($collection.type),
                    | javaList($type),
-                   | $type->toBoxed()
+                   | $type
+                );
+
+   let isInstance = $type->j_field('class', javaClassType())->j_methodReference('isInstance', javaFunctionType(javaObject(), javaBoolean()));
+   $collection->j_streamOf()->js_filter($isInstance);
+}
+
+function meta::pure::executionPlan::engine::java::castCoder(ctx:FuncCoderContext[1], collection:Code[1], exmpl:Code[1]) : Code[1]
+{
+   let type   = resolveHackedUnit($ctx, $ctx.params->at(1));
+
+   let castTo = if(isJavaList($collection.type),
+                   | javaList($type),
+                   | $type
                 );
 
    $collection->j_cast($castTo);
+}
+
+function <<access.private>> meta::pure::executionPlan::engine::java::resolveHackedUnit(ctx:FuncCoderContext[1], exmpl:ValueSpecification[1]) : meta::external::language::java::metamodel::Type[1]
+{
+   let isHackedUnit = $exmpl->type()->instanceOf(Unit);
+
+   if($isHackedUnit,
+      | $exmpl->hackedUnitType($ctx.conventions),
+      | $exmpl->generateJava($ctx.conventions, $ctx.debug->indent()).type->toBoxed()
+  );
 }
 
 function meta::pure::executionPlan::engine::java::matchPredicates(ctx:FuncCoderContext[1], object:Code[1]) : Code[1]
@@ -166,11 +188,9 @@ function meta::pure::executionPlan::engine::java::processNew(fe: FunctionExpress
    let processedKV = $kv->map(k|let s = $k.key.values->toOne(); 
                                 let e = $k.expression->generateJava($conventions, $debug);
                                 pair($s,$e););
-         
-   let typeInfo = meta::pure::executionPlan::engine::java::typeInfo::newTypeInfoSet()
-                     ->meta::pure::executionPlan::engine::java::typeInfo::addForClassWithAllProperties($cls)
-                     ->meta::pure::executionPlan::engine::java::typeInfo::addForClassWithAllPropertiesViaAssociations($cls);
-    
+
+   let typeInfo = meta::pure::executionPlan::engine::java::typeInfo::newTypeInfoSet()->meta::pure::executionPlan::engine::java::enrichTypeInfos($cls, []);
+
    let props = $typeInfo->meta::pure::executionPlan::engine::java::typeInfo::allProperties($cls);
    
    let proto = $conventions->implClassName($cls)->addModifiers(['public']);
@@ -230,4 +250,19 @@ function meta::pure::executionPlan::engine::java::processNew(fe: FunctionExpress
                        }, j_new($proto, []));
 
    $invoke->dependsOn($dep);
+}
+
+function meta::pure::executionPlan::engine::java::enrichTypeInfos(infos:meta::pure::executionPlan::engine::java::typeInfo::TypeInfoSet[1], for:meta::pure::metamodel::type::Class<Any>[1], seen:meta::pure::metamodel::type::Class<Any>[*]): meta::pure::executionPlan::engine::java::typeInfo::TypeInfoSet[1]
+{
+   if($seen->contains($for),
+      | $infos,
+      {|
+         let withCls = $infos
+            ->meta::pure::executionPlan::engine::java::typeInfo::addForClassWithAllProperties($for)
+            ->meta::pure::executionPlan::engine::java::typeInfo::addForClassWithAllPropertiesViaAssociations($for);
+
+         let nowSeen = $seen->concatenate($for);
+         $withCls->meta::pure::executionPlan::engine::java::typeInfo::forClass($for).supertypes->fold({super, inf| $inf->meta::pure::executionPlan::engine::java::enrichTypeInfos($super, $nowSeen)}, $withCls);
+      }
+   );
 }

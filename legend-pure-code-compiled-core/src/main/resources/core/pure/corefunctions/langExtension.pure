@@ -42,10 +42,32 @@ function meta::pure::functions::lang::stringIdentity(s:String[1]):String[1]
     $s;
 }
 
-function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m]
+/*
+ * subType not implemented yet due to limitations on the use of the @Type
+ * syntax in compiled mode.  In compiled mode this reduces to null and so
+ * it's not possible to recover type information from it.  If this is fixed
+ * these should work (they do in interpreted mode)  and the libary implementation
+ * in M2M can be removed as it will then impelement these automatically.
+ */
+function meta::pure::functions::lang::subType<T>(source:Any[1], object:T[1]):T[0..1]
 {
    fail('Not implemented yet');
-   $source->cast($object);
+   let type = $object->type();
+   $source->filter(x| $x->instanceOf($type))->first()->cast($object);
+}
+
+function meta::pure::functions::lang::subType<T>(source:Any[0..1], object:T[1]):T[0..1]
+{
+   fail('Not implemented yet');
+   let type = $object->type();
+   $source->filter(x| $x->instanceOf($type))->first()->cast($object);
+}
+
+function meta::pure::functions::lang::subType<T>(source:Any[*], object:T[1]):T[*]
+{
+   fail('Not implemented yet');
+   let type = $object->type();
+   $source->filter(x| $x->instanceOf($type))->cast($object);
 }
 
 
