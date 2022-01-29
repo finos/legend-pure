@@ -14,6 +14,17 @@
 
 import meta::external::format::protobuf::metamodel::*;
 
+Enum meta::external::format::protobuf::metamodel::Syntax
+{
+   proto2,proto3
+}
+
+Class meta::external::format::protobuf::metamodel::ProtoFile
+{
+   syntax:Syntax[1];
+   topLevelDefs:ProtoBufType[*];
+}
+
 Class meta::external::format::protobuf::metamodel::Message extends meta::external::format::protobuf::metamodel::ProtoBufType
 {
    name:String[1];

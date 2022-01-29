@@ -40,13 +40,12 @@ function meta::external::format::protobuf::generation::generateProtobufFromPureW
 {
    $config.scopeElements->filter(e| !$e->instanceOf(Package))->map(e|assert($e->instanceOf(Class),' Protobuf generation of ' + $e->type().name->toOne()+ ' is not currently supported. Tried to generate Protobuf for '+ $e->elementToPath()) ;);
    let classElements = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Class))->cast(@Class<Any>);
-   $classElements->map(c| $config->meta::external::format::protobuf::generation::generateProtobufFromPure($c));
-}
+   let protoFile = ^ProtoFile(syntax=Syntax.proto3, topLevelDefs=$classElements->map(c| $c->classToMessage()));
+   let content = $protoFile->meta::external::format::protobuf::serialization::toString();
+   
+   let name = $config.class;
 
-function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1]):ProtobufOutput[*]
-{
-   let content =$class->map(c|$c->classToMessage())->map(s|$s->meta::external::format::protobuf::serialization::toString())->removeDuplicates()->joinStrings('\n');
-   ^ProtobufOutput(content=$content,fileName=$class->elementToPath()->pathToFileName('proto'), format = 'proto');
+   ^ProtobufOutput(content=$content,fileName=$name->pathToFileName('proto'), format = 'proto');
 }
 
 function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoBufType[*]
