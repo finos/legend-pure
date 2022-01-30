@@ -22,6 +22,7 @@ Enum meta::external::format::protobuf::metamodel::Syntax
 Class meta::external::format::protobuf::metamodel::ProtoFile
 {
    syntax:Syntax[1];
+   imports:String[*];
    topLevelDefs:ProtoBufType[*];
 }
 
@@ -94,8 +95,4 @@ Class meta::external::format::protobuf::metamodel::Double extends ScalarType
 
 Class meta::external::format::protobuf::metamodel::Float extends ScalarType
 { 
-}
-
-Class meta::external::format::protobuf::metamodel::Timestamp extends ScalarType
-{   
 }

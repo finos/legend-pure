@@ -73,7 +73,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
                   )
              )
          );
-    ^ProtoFile(syntax=Syntax.proto3, topLevelDefs=$topLevelDefs);     
+    ^ProtoFile(syntax=Syntax.proto3, topLevelDefs=$topLevelDefs, imports=['google/protobuf/timestamp.proto']);     
 }
 
 function meta::external::format::protobuf::generation::propertyToField(property:Property<Nil,Any|*>[1], index:Integer[1], typesMap:Map<Type, ProtoBufType>[1]):Field[1]
@@ -95,9 +95,9 @@ function <<access.private>> meta::external::format::protobuf::generation::seedPu
          pair(Float, ^meta::external::format::protobuf::metamodel::Double()),
          pair(String, ^meta::external::format::protobuf::metamodel::String()),
          pair(Boolean, ^meta::external::format::protobuf::metamodel::Bool()),
-         pair(DateTime , ^meta::external::format::protobuf::metamodel::Timestamp()),
-         pair(Date , ^meta::external::format::protobuf::metamodel::Timestamp()),
-         pair(StrictDate , ^meta::external::format::protobuf::metamodel::Timestamp()),
+         pair(DateTime , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
+         pair(Date , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
+         pair(StrictDate , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
          pair(Number , ^meta::external::format::protobuf::metamodel::Double()),
          pair(Any, ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Any'))
       ]
