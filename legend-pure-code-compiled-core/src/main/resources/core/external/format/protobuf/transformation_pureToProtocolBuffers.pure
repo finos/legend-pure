@@ -37,22 +37,23 @@ function <<Generation.Transformation>> meta::external::format::protobuf::generat
 }
 
 function meta::external::format::protobuf::generation::generateProtobufFromPureWithScope(config:ProtobufConfig[1]):ProtobufOutput[*]
-{
+{   
    $config.scopeElements->filter(e| !$e->instanceOf(Package))->map(e|assert($e->instanceOf(Class),' Protobuf generation of ' + $e->type().name->toOne()+ ' is not currently supported. Tried to generate Protobuf for '+ $e->elementToPath()) ;);
    let classElements = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Class))->cast(@Class<Any>);
-   let protoFile = ^ProtoFile(syntax=Syntax.proto3, topLevelDefs=$classElements->map(c| $c->classToMessage()));
-   let content = $protoFile->meta::external::format::protobuf::serialization::toString();
-   
-   let name = $config.class;
-
-   ^ProtobufOutput(content=$content,fileName=$name->pathToFileName('proto'), format = 'proto');
+   $classElements->map(c| $config->meta::external::format::protobuf::generation::generateProtobufFromPure($c));
 }
 
-function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoBufType[*]
+function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1]):ProtobufOutput[*]
+{
+   let content =$class->map(c|$c->classToMessage())->map(s|$s->meta::external::format::protobuf::serialization::toString())->removeDuplicates()->joinStrings('\n');
+   ^ProtobufOutput(content=$content,fileName=$class->elementToPath()->pathToFileName('proto'), format = 'proto');
+}
+
+function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[1]
 {
    let allClasses = $class->scanTypes([])->removeDuplicates()->remove(Any);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
-   $allClasses
+   let topLevelDefs = $allClasses
       ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>)
       ->map(c|
          ^Message
@@ -72,6 +73,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
                   )
              )
          );
+    ^ProtoFile(syntax=Syntax.proto3, topLevelDefs=$topLevelDefs);     
 }
 
 function meta::external::format::protobuf::generation::propertyToField(property:Property<Nil,Any|*>[1], index:Integer[1], typesMap:Map<Type, ProtoBufType>[1]):Field[1]

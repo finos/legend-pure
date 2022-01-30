@@ -16,8 +16,7 @@ import meta::external::format::protobuf::metamodel::*;
 
 function meta::external::format::protobuf::serialization::toString(file:ProtoFile[1]):String[1]
 {
-   'syntax = "' + $file.syntax.name + '\n"' + $file.topLevelDefs->map(t | $t->meta::external::format::protobuf::serialization::toString())->joinStrings('\n')
-   
+   'syntax = "' + $file.syntax.name + '"\n' + $file.topLevelDefs->map(t | $t->meta::external::format::protobuf::serialization::toString())->joinStrings('\n')
 }
 
 function meta::external::format::protobuf::serialization::toString(p:ProtoBufType[1]):String[1]
@@ -28,7 +27,6 @@ function meta::external::format::protobuf::serialization::toString(p:ProtoBufTyp
          enum:meta::external::format::protobuf::metamodel::Enumeration[1]| 'enum '+$enum.name+' {\n'+$enum.values->map(v|'   '+$v.constant+' = '+$enum.values->indexOf($v)->toString())->joinStrings(';\n')+';\n}'
       ]
    )
-   
 }
 
 function meta::external::format::protobuf::serialization::toString(field:Field[1]):String[1]
