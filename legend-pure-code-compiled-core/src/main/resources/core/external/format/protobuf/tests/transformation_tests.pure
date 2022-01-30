@@ -42,7 +42,7 @@ Class meta::external::format::protobuf::generation::tests::Account
 function <<test.Test>> meta::external::format::protobuf::generation::tests::testClassToProtoBuf():Boolean[1]
 {
    assertEquals('syntax = "proto3";\n' +
-                'import = google/protobuf/timestamp.proto;\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
                 'message Trade {\n'+
                 ' string type = 1;\n'+
                 ' int64 id = 2;\n'+
@@ -66,7 +66,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
 function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
 {
    assertEquals('syntax = "proto3";\n' +
-                'import = google/protobuf/timestamp.proto;\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
                 'message Trade {\n'+
                 ' string type = 1;\n'+
                 ' int64 id = 2;\n'+
