@@ -199,7 +199,7 @@ Class
 {doc.doc = 'Values in the incoming batch represent the full dataset and will replace the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a logical delete in the transaction (processing) dimension. The data have only a transaction (processing) dimension and no validity (business) dimension.'}
 meta::pure::persist::metamodel::batch::mode::snapshot::UnitemporalSnapshot extends BatchMilestoningMode
 {
-   tranasctionMilestoningScheme: TransactionMilestoningScheme[1];
+   transactionMilestoningScheme: TransactionMilestoningScheme[1];
 }
 
 Class
@@ -399,7 +399,7 @@ Class
 {doc.doc = 'Source data provide validity from datetime.'}
 meta::pure::persist::metamodel::batch::validitymilestoned::derivation::SourceSpecifiesValidFromDate extends ValidityDerivation
 {
-   sourceValidDateTimeFromProperty: Property<Nil, DateTime|1>[1];
+   sourceValidDateTimeFromProperty: Property<Nil,  Any|1>[1];
 }
 
 Class
