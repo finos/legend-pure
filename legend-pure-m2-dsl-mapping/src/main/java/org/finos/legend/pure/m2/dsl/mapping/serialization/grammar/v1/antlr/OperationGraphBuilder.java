@@ -20,8 +20,15 @@ import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.list.mutable.ListAdapter;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.OperationParser;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.OperationParserBaseVisitor;
+import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.AntlrContextToM3CoreInstance;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.TemporaryPureMergeOperationFunctionSpecification;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.antlr.v4.runtime.Token;
+
 
 public class OperationGraphBuilder extends OperationParserBaseVisitor<String>
 {
@@ -33,8 +40,10 @@ public class OperationGraphBuilder extends OperationParserBaseVisitor<String>
     private final String mappingPath;
     private final String importId;
     private final AntlrSourceInformation sourceInformation;
+    private final ModelRepository repository;
+    private final Context context;
 
-    public OperationGraphBuilder(String id, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath, String importId, AntlrSourceInformation sourceInformation)
+    public OperationGraphBuilder(String id, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath, String importId, AntlrSourceInformation sourceInformation, ModelRepository repository, Context context)
     {
         this.id = id;
         this.setSourceInfo = setSourceInfo;
@@ -44,6 +53,8 @@ public class OperationGraphBuilder extends OperationParserBaseVisitor<String>
         this.mappingPath = mappingPath;
         this.importId = importId;
         this.sourceInformation = sourceInformation;
+        this.repository = repository;
+        this.context = context;
     }
 
     @Override
@@ -53,22 +64,64 @@ public class OperationGraphBuilder extends OperationParserBaseVisitor<String>
         Token startToken = ctx.functionPath().qualifiedName().packagePath() == null ? ctx.functionPath().qualifiedName().identifier().getStart() : ctx.functionPath().qualifiedName().packagePath().getStart();
         String idOrPath = ctx.functionPath().qualifiedName().packagePath() == null ? ctx.functionPath().qualifiedName().identifier().getText() : ListAdapter.adapt(ctx.functionPath().qualifiedName().packagePath().identifier()).collect(IDENTIFIER_CONTEXT_STRING_FUNCTION).makeString("::") + "::" + ctx.functionPath().qualifiedName().identifier().getText();
         MutableList<String> parameters = FastList.newList();
-        if (ctx.parameters() != null && ctx.parameters().VALID_STRING() != null)
+
+        if (ctx.mergeParameters() != null)
         {
-            for (int i = 0; i < ctx.parameters().VALID_STRING().size(); i++)
+            OperationParser.MergeParametersContext mergeContext = ctx.mergeParameters();
+            String lambdaText = "";
+            if (mergeContext.setParameter() != null && mergeContext.setParameter().VALID_STRING() != null) ;
             {
-                parameters.add(ctx.parameters().VALID_STRING().get(i).getText());
+                for (int i = 0; i < mergeContext.setParameter().VALID_STRING().size(); i++)
+                {
+                    parameters.add(mergeContext.setParameter().VALID_STRING().get(i).getText());
+                }
             }
+
+            if (mergeContext.validationLambdaInstance() != null)
+            {
+                lambdaText = "{"+ mergeContext.validationLambdaInstance().lambdaElement().get(0).getText() +"}";
+
+            }
+            final M3ProcessorSupport processorSupport = new M3ProcessorSupport(context, repository);
+
+            final M3AntlrParser parser = new M3AntlrParser();
+            final AntlrContextToM3CoreInstance.LambdaContext lambdaContext = new AntlrContextToM3CoreInstance.LambdaContext(setSourceInfo + '_' + (id == null ? "" : '_' + id) + "_MergeOP");
+            TemporaryPureMergeOperationFunctionSpecification temporarySpecification = parser.parseMergeSpecification(lambdaText, lambdaContext, sourceInformation.getSourceName(), sourceInformation.getOffsetLine(), importId, repository, processorSupport, context);
+           String processedMergeFunction = parser.process(temporarySpecification.validationExpression, context, processorSupport);;
+            return "^meta::pure::mapping::MergeOperationSetImplementation" + setSourceInfo +
+                    "(" +
+                    ((id == null) ? "" : ("    id = '" + id + "',")) +
+                    "    root = " + root + "," +
+                    "    operation = ^meta::pure::metamodel::import::ImportStub " + sourceInformation.getPureSourceInformation(startToken, startToken, ctx.functionPath().qualifiedName().identifier().getStop()).toM4String() + " (importGroup=system::imports::" + importId + ", idOrPath='" + idOrPath + "')," +
+                    "    parameters = [" + toSetImplementationContainers(parameters) + "]," +
+                    "    class = ^meta::pure::metamodel::import::ImportStub" + classSourceInfo + " (importGroup=system::imports::" + importId + ", idOrPath='" + classPath + "')," +
+                    "    parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + importId + ", idOrPath='" + mappingPath + "'),\n" +
+                    "    validationFunction=^meta::pure::metamodel::function::LambdaFunction " + temporarySpecification.validationExpression.getSourceInformation().toM4String()+ " (" +
+                    "                                                           classifierGenericType=^meta::pure::metamodel::type::generics::GenericType(rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType(rawType = ^meta::pure::metamodel::type::FunctionType()))," +
+                    "                                                           expressionSequence=" + processedMergeFunction+ ")" +
+                    ")";
+        } else
+        {
+            if (ctx.parameters() != null && ctx.parameters().VALID_STRING() != null)
+            {
+                for (int i = 0; i < ctx.parameters().VALID_STRING().size(); i++)
+                {
+                    parameters.add(ctx.parameters().VALID_STRING().get(i).getText());
+                }
+
+            }
+            return "^meta::pure::mapping::OperationSetImplementation" + setSourceInfo +
+                    "(" +
+                    ((id == null) ? "" : ("    id = '" + id + "',")) +
+                    "    root = " + root + "," +
+                    "    operation = ^meta::pure::metamodel::import::ImportStub " + sourceInformation.getPureSourceInformation(startToken, startToken, ctx.functionPath().qualifiedName().identifier().getStop()).toM4String() + " (importGroup=system::imports::" + importId + ", idOrPath='" + idOrPath + "')," +
+                    "    parameters = [" + toSetImplementationContainers(parameters) + "]," +
+                    "    class = ^meta::pure::metamodel::import::ImportStub" + classSourceInfo + " (importGroup=system::imports::" + importId + ", idOrPath='" + classPath + "')," +
+                    "    parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + importId + ", idOrPath='" + mappingPath + "')" +
+                    ")";
+
         }
-        return "^meta::pure::mapping::OperationSetImplementation" + setSourceInfo +
-                "(" +
-                ((id == null) ? "" : ("    id = '" + id + "',")) +
-                "    root = " + root + "," +
-                "    operation = ^meta::pure::metamodel::import::ImportStub " + sourceInformation.getPureSourceInformation(startToken, startToken, ctx.functionPath().qualifiedName().identifier().getStop()).toM4String() + " (importGroup=system::imports::" + importId + ", idOrPath='" + idOrPath + "')," +
-                "    parameters = [" + toSetImplementationContainers(parameters) + "]," +
-                "    class = ^meta::pure::metamodel::import::ImportStub" + classSourceInfo + " (importGroup=system::imports::" + importId + ", idOrPath='" + classPath + "')," +
-                "    parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + importId + ", idOrPath='" + mappingPath + "')" +
-                ")";
+
     }
 
     private static final Function<OperationParser.IdentifierContext, String> IDENTIFIER_CONTEXT_STRING_FUNCTION = new Function<OperationParser.IdentifierContext, String>()

@@ -66,13 +66,19 @@ Class meta::pure::graphFetch::executionPlan::LocalGraphFetchExecutionNode extend
    graphFetchTree : RoutedGraphFetchTree[1];
 }
 
+function meta::pure::graphFetch::executionPlan::nodeIsMerged(node:LocalGraphFetchExecutionNode[1]): Boolean[1]
+{
+   let set = $node.graphFetchTree.sets;   
+   let mergeOp = $set->filter(m|$m->instanceOf(OperationSetImplementation))->cast(@OperationSetImplementation)->filter(o|$o.operation==meta::pure::router::operations::merge_OperationSetImplementation_1__SetImplementation_MANY_);
+   $mergeOp->map(m | assert($m->instanceOf(MergeOperationSetImplementation),'Please specify a merge function for merge operation on class '+ $m.class->elementToPath()));
+   $mergeOp->isNotEmpty();
+}
 function meta::pure::graphFetch::executionPlan::planGraphFetchExecution(sq: StoreQuery[1], ext: RoutedValueSpecification[0..1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions: RouterExtension[*], debug: DebugContext[1]): ExecutionNode[1]
 {
    let fe = $sq.fe->evaluateAndDeactivate();
    let resultSize = $fe.parametersValues->evaluateAndDeactivate()->at(0)->match([rvs:ExtendedRoutedValueSpecification[1] | $rvs.value.multiplicity->toOne(),
                                                                                           vs: ValueSpecification[1] | $fe.multiplicity->toOne()]);
-   assert($fe.func->in(graphFetchFunctions()) || $fe->isUnionOnGraphFetch());
-   
+   assert($fe.func->in(graphFetchFunctions()) || $fe->isUnionOnGraphFetch()); 
    let clusteredTree            = $fe.parametersValues->evaluateAndDeactivate()->at(1)->cast(@InstanceValue).values->at(0)->cast(@ClusteredGraphFetchTree);
    let orderedPaths             = $clusteredTree->getPathsOrdered();
    let clusterTreesWithParents  = $clusteredTree->findAllClusterTreesWithParents([]);
@@ -87,6 +93,7 @@ function meta::pure::graphFetch::executionPlan::planGraphFetchExecution(sq: Stor
    ]->concatenate(
       $extensions.graphFetch_executionPlan_planGraphFetchExecution->map(f|$f->evaluate([list($sq), list($ext), list($rootTreeOneCluster), list($orderedPaths), list($mapping), list($runtime), list($exeCtx), list($enableConstraints), list($checked), list($extensions), list($debug)])->cast(@Function<{Nil[1]->LocalGraphFetchExecutionNode[1]}>))
    )->toOneMany());
+
 
    let rootGlobalNode = ^GlobalGraphFetchExecutionNode
                         (
@@ -263,7 +270,7 @@ function meta::pure::graphFetch::executionPlan::globalGraphFetchExecutionNodeToS
 }
 
 function meta::pure::graphFetch::executionPlan::localGraphFetchExecutionNodeToString(g: LocalGraphFetchExecutionNode[1], space: String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
-{
+{  
    $g->match([
       i : InMemoryGraphFetchExecutionNode[1] | $i->inMemoryGraphFetchExecutionNodeToString($space, $extensions)
    ]->concatenate(

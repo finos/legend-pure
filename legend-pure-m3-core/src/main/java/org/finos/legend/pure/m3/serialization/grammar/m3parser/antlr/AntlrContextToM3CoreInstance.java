@@ -34,6 +34,7 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.list.mutable.ListAdapter;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.Iterate;
@@ -3811,6 +3812,14 @@ public class AntlrContextToM3CoreInstance
                 null,
                 false,
                 null);
+    }
+
+    public TemporaryPureMergeOperationFunctionSpecification mergeOperationSpecification(CombinedExpressionContext ctx,  LambdaContext lambdaContext, ImportGroup importId)
+    {
+         CoreInstance expression = this.combinedExpression(ctx, "", FastList.<String>newList(), lambdaContext, "", true, importId, true);
+        return TemporaryPureMergeOperationFunctionSpecification.build(
+                this.sourceInformation.getPureSourceInformation(ctx.getStart()),
+                expression);
     }
 
     private Multiplicity buildMultiplicity(MultiplicityArgumentContext ctx)

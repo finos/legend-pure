@@ -605,6 +605,12 @@ Class meta::protocols::pure::vX_X_X::metamodel::mapping::OperationClassMapping e
    operation : meta::protocols::pure::vX_X_X::metamodel::mapping::MappingOperation[1];
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::mapping::MergeOperationClassMapping extends meta::protocols::pure::vX_X_X::metamodel::mapping::OperationClassMapping
+{
+   
+   validationFunction : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::Lambda[1];
+}
+
 Class meta::protocols::pure::vX_X_X::metamodel::mapping::AggregationAwareClassMapping extends meta::protocols::pure::vX_X_X::metamodel::mapping::ClassMapping
 {
    mainSetImplementation:meta::protocols::pure::vX_X_X::metamodel::mapping::ClassMapping[1];
