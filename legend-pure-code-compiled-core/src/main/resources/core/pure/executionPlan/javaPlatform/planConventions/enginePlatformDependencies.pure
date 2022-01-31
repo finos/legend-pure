@@ -42,11 +42,14 @@ Class meta::pure::executionPlan::engine::IReferencedObject {}
 Class meta::pure::executionPlan::engine::IRelationalCreateAndPopulateTempTableExecutionNodeSpecifics {}
 Class meta::pure::executionPlan::engine::IPlatformPureExpressionExecutionNodeSerializeSpecifics {}
 Class meta::pure::executionPlan::engine::IPlatformPureExpressionExecutionNodeGraphFetchUnionSpecifics {}
+Class meta::pure::executionPlan::engine::IPlatformPureExpressionExecutionNodeGraphFetchMergeSpecifics {}
 Class meta::pure::executionPlan::engine::ISerializationWriter {}
 Class meta::pure::executionPlan::engine::IGraphSerializer {}
 Class meta::pure::executionPlan::engine::IStoreStreamReadingExecutionNodeSpecifics {}
 Class meta::pure::executionPlan::engine::IStoreStreamReadingExecutionNodeContext {}
 Class meta::pure::executionPlan::engine::IInMemoryRootGraphFetchExecutionNodeSpecifics {}
+Class meta::pure::executionPlan::engine::IInMemoryRootGraphFetchMergeExecutionNodeSpecifics {}
+
 Class meta::pure::executionPlan::engine::IInMemoryPropertyGraphFetchExecutionNodeSpecifics {}
 Class meta::pure::executionPlan::engine::IRelationalRootQueryTempTableGraphFetchExecutionNodeSpecifics {}
 Class meta::pure::executionPlan::engine::IRelationalCrossRootQueryTempTableGraphFetchExecutionNodeSpecifics {}
@@ -363,6 +366,7 @@ function meta::pure::executionPlan::engine::applyJavaEngineDependencies(conventi
       ->addMethod(javaMethod('public', javaString(), 'getGetterNameForProperty', [javaParam(javaString(), 'p0')]));
 
    let jIPlatformPureExpressionExecutionNodeGraphFetchUnionSpecifics = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.platform.IPlatformPureExpressionExecutionNodeGraphFetchUnionSpecifics');
+   let jIPlatformPureExpressionExecutionNodeGraphFetchMergeSpecifics = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.platform.IPlatformPureExpressionExecutionNodeGraphFetchMergeSpecifics');
 
    let jISerializationWriter = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.platform.ISerializationWriter')
       ->addMethod(javaMethod('public', javaVoid(), 'endObject', []))
@@ -411,6 +415,10 @@ function meta::pure::executionPlan::engine::applyJavaEngineDependencies(conventi
 
    let jIInMemoryRootGraphFetchExecutionNodeSpecifics = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.inMemory.graphFetch.IInMemoryRootGraphFetchExecutionNodeSpecifics')
       ->addMethod(javaMethod('public', javaObject(), 'transform', [javaParam(javaObject(), 'p0')]));
+
+   let jIInMemoryRootGraphFetchMergeExecutionNodeSpecifics = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.inMemory.graphFetch.IInMemoryRootGraphFetchMergeExecutionNodeSpecifics')
+      ->addMethod(javaMethod('public', javaObject(), 'transform', [javaParam(javaObject(), 'p0')]));
+
 
    let jIInMemoryPropertyGraphFetchExecutionNodeSpecifics = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.inMemory.graphFetch.IInMemoryPropertyGraphFetchExecutionNodeSpecifics')
       ->addMethod(javaMethod('public', javaStream($jIGraphInstance), 'transformProperty', [javaParam(javaList(javaWildcard()), 'p0')]));
@@ -497,11 +505,14 @@ function meta::pure::executionPlan::engine::applyJavaEngineDependencies(conventi
       ->addProvidedType(meta::pure::executionPlan::engine::IRelationalCreateAndPopulateTempTableExecutionNodeSpecifics, $jIRelationalCreateAndPopulateTempTableExecutionNodeSpecifics)
       ->addProvidedType(meta::pure::executionPlan::engine::IPlatformPureExpressionExecutionNodeSerializeSpecifics, $jIPlatformPureExpressionExecutionNodeSerializeSpecifics)
       ->addProvidedType(meta::pure::executionPlan::engine::IPlatformPureExpressionExecutionNodeGraphFetchUnionSpecifics, $jIPlatformPureExpressionExecutionNodeGraphFetchUnionSpecifics)
+      ->addProvidedType(meta::pure::executionPlan::engine::IPlatformPureExpressionExecutionNodeGraphFetchMergeSpecifics, $jIPlatformPureExpressionExecutionNodeGraphFetchMergeSpecifics)
+
       ->addProvidedType(meta::pure::executionPlan::engine::ISerializationWriter, $jISerializationWriter)
       ->addProvidedType(meta::pure::executionPlan::engine::IGraphSerializer, $jIGraphSerializer)
       ->addProvidedType(meta::pure::executionPlan::engine::IStoreStreamReadingExecutionNodeSpecifics, $jIStoreStreamReadingExecutionNodeSpecifics)
       ->addProvidedType(meta::pure::executionPlan::engine::IStoreStreamReadingExecutionNodeContext, $jIStoreStreamReadingExecutionNodeContext)
       ->addProvidedType(meta::pure::executionPlan::engine::IInMemoryRootGraphFetchExecutionNodeSpecifics, $jIInMemoryRootGraphFetchExecutionNodeSpecifics)
+      ->addProvidedType(meta::pure::executionPlan::engine::IInMemoryRootGraphFetchMergeExecutionNodeSpecifics, $jIInMemoryRootGraphFetchMergeExecutionNodeSpecifics)
       ->addProvidedType(meta::pure::executionPlan::engine::IInMemoryPropertyGraphFetchExecutionNodeSpecifics, $jIInMemoryPropertyGraphFetchExecutionNodeSpecifics)
       ->addProvidedType(meta::pure::executionPlan::engine::IRelationalRootQueryTempTableGraphFetchExecutionNodeSpecifics, $jIRelationalRootQueryTempTableGraphFetchExecutionNodeSpecifics)
       ->addProvidedType(meta::pure::executionPlan::engine::IRelationalCrossRootQueryTempTableGraphFetchExecutionNodeSpecifics, $jIRelationalCrossRootQueryTempTableGraphFetchExecutionNodeSpecifics)
