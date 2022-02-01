@@ -49,7 +49,7 @@ public class PropertyValidator implements MatchRunner<Property>
     public static void validateProperty(Property property, ProcessorSupport processorSupport) throws PureCompilationException
     {
         GenericTypeValidator.validateGenericType(property._genericType(), processorSupport);
-        validateNonPrimitiveBinaryType(property, processorSupport);
+        validateAllowedPrimitiveType(property, processorSupport);
 
         if(property._defaultValue() != null) {
             validateDefaultValue(property, property._defaultValue(), processorSupport);
@@ -111,12 +111,16 @@ public class PropertyValidator implements MatchRunner<Property>
         }
     }
 
-    private static void validateNonPrimitiveBinaryType(Property property, ProcessorSupport processorSupport) throws PureCompilationException
+    private static void validateAllowedPrimitiveType(Property property, ProcessorSupport processorSupport) throws PureCompilationException
     {
         CoreInstance type = ImportStub.withImportStubByPass(property._genericType()._rawTypeCoreInstance(), processorSupport);
         if (processorSupport.type_isPrimitiveType(type) && ModelRepository.BINARY_TYPE_NAME.equals(type.getName()))
         {
             throw new PureCompilationException(property.getSourceInformation(), "The property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' has type of 'Binary'. 'Binary' type is not supported for property.");
+        }
+        if (processorSupport.type_isPrimitiveType(type) && ModelRepository.BYTE_STREAM_TYPE_NAME.equals(type.getName()))
+        {
+            throw new PureCompilationException(property.getSourceInformation(), "The property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property) + "' has type of 'ByteStream'. 'ByteStream' type is not supported for property.");
         }
     }
 }
