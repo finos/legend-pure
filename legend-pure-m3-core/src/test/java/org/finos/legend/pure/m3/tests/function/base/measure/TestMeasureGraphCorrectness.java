@@ -19,6 +19,7 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
@@ -26,19 +27,23 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestMeasureGraphCorrectness  extends AbstractPureTestWithCoreCompiled
+public class TestMeasureGraphCorrectness extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("testModel.pure");
         runtime.delete("testSource.pure");
+        runtime.compile();
     }
 
-    private static String massDefinition =
+    private static final String massDefinition =
             "Measure pkg::Mass\n" +
                     "{\n" +
                     "   *Gram: x -> $x;\n" +
@@ -46,13 +51,13 @@ public class TestMeasureGraphCorrectness  extends AbstractPureTestWithCoreCompil
                     "   Pound: x -> $x*453.59;\n" +
                     "}";
 
-    private static String distanceDefinition =
+    private static final String distanceDefinition =
             "Measure pkg::Distance\n" +
                     "{\n" +
                     "   *Meter: x -> $x;\n" +
                     "}\n";
 
-    private static String currencyDefinition =
+    private static final String currencyDefinition =
             "Measure pkg::Currency\n" +
                     "{\n" +
                     "   USD;\n" +
@@ -60,7 +65,7 @@ public class TestMeasureGraphCorrectness  extends AbstractPureTestWithCoreCompil
                     "   EUR;\n" +
                     "}\n";
 
-    private static String currencyDefinitionWithConversions =
+    private static final String currencyDefinitionWithConversions =
             "Measure pkg::Currency\n" +
                     "{\n" +
                     "   USD: x -> $x * 10;\n" +
@@ -68,7 +73,7 @@ public class TestMeasureGraphCorrectness  extends AbstractPureTestWithCoreCompil
                     "   EUR;\n" +
                     "}\n";
 
-    private static String currencyDefinitionWithCanonicalUnit =
+    private static final String currencyDefinitionWithCanonicalUnit =
             "Measure pkg::Currency\n" +
                     "{\n" +
                     "   *USD;\n" +
@@ -80,10 +85,10 @@ public class TestMeasureGraphCorrectness  extends AbstractPureTestWithCoreCompil
     public void testMeasureBuildsCorrectlyInGraph()
     {
         compileTestSource("testModel.pure", massDefinition);
-        CoreInstance massCoreInstance = this.runtime.getCoreInstance("pkg::Mass");
+        CoreInstance massCoreInstance = runtime.getCoreInstance("pkg::Mass");
         Assert.assertEquals("Mass", massCoreInstance.getName());
         Assert.assertTrue(massCoreInstance instanceof Measure);
-        Assert.assertEquals("Measure", massCoreInstance.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToOne("rawType").getName());
+        Assert.assertEquals("Measure", massCoreInstance.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.rawType).getName());
         CoreInstance canonicalUnit = massCoreInstance.getValueForMetaPropertyToOne("canonicalUnit");
         Assert.assertEquals("Mass~Gram", canonicalUnit.getName());
         Assert.assertTrue(canonicalUnit instanceof Unit);
@@ -92,36 +97,36 @@ public class TestMeasureGraphCorrectness  extends AbstractPureTestWithCoreCompil
         Assert.assertTrue(nonCanonicalUnits.get(0) instanceof Unit);
         Assert.assertEquals("Mass~Pound", nonCanonicalUnits.get(1).getName());
         Assert.assertTrue(nonCanonicalUnits.get(1) instanceof Unit);
-        Assert.assertEquals("pkg", massCoreInstance.getValueForMetaPropertyToOne("package").getName());
+        Assert.assertEquals("pkg", massCoreInstance.getValueForMetaPropertyToOne(M3Properties._package).getName());
     }
 
     @Test
     public void testMeasureWithOnlyCanonicalUnitBuildsCorrectlyInGraph()
     {
         compileTestSource("testModel.pure", distanceDefinition);
-        CoreInstance distanceCoreInstance = this.runtime.getCoreInstance("pkg::Distance");
+        CoreInstance distanceCoreInstance = runtime.getCoreInstance("pkg::Distance");
         Assert.assertEquals("Distance", distanceCoreInstance.getName());
         Assert.assertTrue(distanceCoreInstance instanceof Measure);
-        Assert.assertEquals("Measure", distanceCoreInstance.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToOne("rawType").getName());
+        Assert.assertEquals("Measure", distanceCoreInstance.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.rawType).getName());
         CoreInstance canonicalUnit = distanceCoreInstance.getValueForMetaPropertyToOne("canonicalUnit");
         Assert.assertEquals("Distance~Meter", canonicalUnit.getName());
         Assert.assertTrue(canonicalUnit instanceof Unit);
-        Assert.assertEquals("pkg", distanceCoreInstance.getValueForMetaPropertyToOne("package").getName());
+        Assert.assertEquals("pkg", distanceCoreInstance.getValueForMetaPropertyToOne(M3Properties._package).getName());
     }
 
     @Test
     public void testUnitBuildsCorrectlyInGraph()
     {
         compileTestSource("testModel.pure", massDefinition);
-        CoreInstance kilogramCoreInstance = this.runtime.getCoreInstance("pkg::Mass~Kilogram");
+        CoreInstance kilogramCoreInstance = runtime.getCoreInstance("pkg::Mass~Kilogram");
         Assert.assertEquals("Mass~Kilogram", kilogramCoreInstance.getName());
         Assert.assertTrue(kilogramCoreInstance instanceof Unit);
-        Assert.assertEquals("Unit", kilogramCoreInstance.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToOne("rawType").getName());
-        Assert.assertTrue(kilogramCoreInstance.getValueForMetaPropertyToOne("conversionFunction") instanceof LambdaFunction);
-        CoreInstance myMeasure = kilogramCoreInstance.getValueForMetaPropertyToOne("measure");
+        Assert.assertEquals("Unit", kilogramCoreInstance.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.rawType).getName());
+        Assert.assertTrue(kilogramCoreInstance.getValueForMetaPropertyToOne(M3Properties.conversionFunction) instanceof LambdaFunction);
+        CoreInstance myMeasure = kilogramCoreInstance.getValueForMetaPropertyToOne(M3Properties.measure);
         Assert.assertEquals("Mass", myMeasure.getName());
         Assert.assertTrue(myMeasure instanceof Measure);
-        CoreInstance myPackage = kilogramCoreInstance.getValueForMetaPropertyToOne("package");
+        CoreInstance myPackage = kilogramCoreInstance.getValueForMetaPropertyToOne(M3Properties._package);
         Assert.assertEquals("pkg", myPackage.getName());
     }
 
@@ -129,43 +134,29 @@ public class TestMeasureGraphCorrectness  extends AbstractPureTestWithCoreCompil
     public void testNonConvertibleUnitBuildsCorrectlyInGraph()
     {
         compileTestSource("testModel.pure", currencyDefinition);
-        CoreInstance dollarCoreInstance = this.runtime.getCoreInstance("pkg::Currency~USD");
+        CoreInstance dollarCoreInstance = runtime.getCoreInstance("pkg::Currency~USD");
         Assert.assertEquals("Currency~USD", dollarCoreInstance.getName());
         Assert.assertTrue(dollarCoreInstance instanceof Unit);
-        Assert.assertEquals("Unit", dollarCoreInstance.getValueForMetaPropertyToOne("classifierGenericType").getValueForMetaPropertyToOne("rawType").getName());
-        Assert.assertNull(dollarCoreInstance.getValueForMetaPropertyToOne("conversionFunction"));
-        CoreInstance myMeasure = dollarCoreInstance.getValueForMetaPropertyToOne("measure");
+        Assert.assertEquals("Unit", dollarCoreInstance.getValueForMetaPropertyToOne(M3Properties.classifierGenericType).getValueForMetaPropertyToOne(M3Properties.rawType).getName());
+        Assert.assertNull(dollarCoreInstance.getValueForMetaPropertyToOne(M3Properties.conversionFunction));
+        CoreInstance myMeasure = dollarCoreInstance.getValueForMetaPropertyToOne(M3Properties.measure);
         Assert.assertEquals("Currency", myMeasure.getName());
         Assert.assertTrue(myMeasure instanceof Measure);
-        CoreInstance myPackage = dollarCoreInstance.getValueForMetaPropertyToOne("package");
+        CoreInstance myPackage = dollarCoreInstance.getValueForMetaPropertyToOne(M3Properties._package);
         Assert.assertEquals("pkg", myPackage.getName());
     }
 
     @Test
     public void testNonConvertibleUnitWithConversionFunctionFailsToCompile()
     {
-        try
-        {
-            compileTestSource("testSource.pure", currencyDefinitionWithConversions);
-            Assert.fail("Expected parser exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureParserException.class, "expected: a valid identifier text; found: '}'", 6, 1, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource("testSource.pure", currencyDefinitionWithConversions));
+        assertPureException(PureParserException.class, "expected: a valid identifier text; found: '}'", 6, 1, e);
     }
 
     @Test
     public void testNonConvertibleUnitWithCanonicalUnitUnitFailsToCompile()
     {
-        try
-        {
-            compileTestSource("testSource.pure", currencyDefinitionWithCanonicalUnit);
-            Assert.fail("Expected parser exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureParserException.class, "expected: ':' found: ';'", 3, 8, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource("testSource.pure", currencyDefinitionWithCanonicalUnit));
+        assertPureException(PureParserException.class, "expected: ':' found: ';'", 3, 8, e);
     }
 }

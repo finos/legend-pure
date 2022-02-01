@@ -16,22 +16,16 @@ package org.finos.legend.pure.runtime.java.interpreted;
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.measure.AbstractTestMeasure;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestMeasureInterpreted extends AbstractTestMeasure
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
-    @After
-    public void cleanRuntime() {
-        runtime.delete("testModel.pure");
-        runtime.delete("testFunc.pure");
-    }
+
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();

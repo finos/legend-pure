@@ -17,55 +17,49 @@ package org.finos.legend.pure.m3.tests.incremental.measure;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlatform
 {
-
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
         runtime.delete("testFunc.pure");
-
-        try
-        {
-            runtime.compile();
-        } catch (PureCompilationException e) {
-            setUp();
-        }
+        runtime.compile();
     }
 
 
-    private String measureSource = "Measure pkg::Mass \n" +
+    private final String measureSource = "Measure pkg::Mass \n" +
             "{\n" +
             "   *Gram: x -> $x; \n" +
             "   Kilogram: x -> $x*1000;\n" +
             "   Pound: x -> $x*453.59;\n" +
             "}\n";
 
-    private String updatedMeasure = "Measure pkg::Mass \n" +
+    private final String updatedMeasure = "Measure pkg::Mass \n" +
             "{\n" +
             "   *Gram: x -> $x; \n" +
             "   Pound: x -> $x*453.59;\n" +
             "}\n";
 
-    private String nonConvertibleMeasure = "Measure pkg::Currency\n" +
+    private final String nonConvertibleMeasure = "Measure pkg::Currency\n" +
             "{\n" +
             "   USD;\n" +
             "   GBP;\n" +
             "   EUR;\n" +
             "}\n";
 
-    private String updatedNonConvertibleMeasure = "Measure pkg::Currency\n" +
+    private final String updatedNonConvertibleMeasure = "Measure pkg::Currency\n" +
             "{\n" +
             "   USD;\n" +
             "   EUR;\n" +
@@ -83,7 +77,7 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .compileWithExpectedCompileFailure("pkg::Mass has not been defined!", "testFunc.pure", 1, 43)
                         .createInMemorySource("sourceId.pure", this.measureSource)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -98,7 +92,7 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .compileWithExpectedCompileFailure("pkg::Mass~Kilogram has not been defined!", "testFunc.pure", 1, 60)
                         .createInMemorySource("sourceId.pure", this.measureSource)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -115,7 +109,7 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .compileWithExpectedCompileFailure("pkg::Mass~Kilogram has not been defined!", "testFunc.pure", 1, 60)
                         .updateSource("sourceId.pure", this.measureSource)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -130,7 +124,7 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .compile()
                         .updateSource("sourceId.pure", this.measureSource)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -145,15 +139,15 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                 "   let a = 10 pkg::Mass~Pound;\n" +
                 "}";
 
-        String source1 =  this.measureSource + "\n" + testFunc1;
-        String source2 =  this.measureSource + "\n" + testFunc2;
+        String source1 = this.measureSource + "\n" + testFunc1;
+        String source2 = this.measureSource + "\n" + testFunc2;
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", source1)
                         .compile(), new RuntimeTestScriptBuilder()
                         .updateSource("sourceId.pure", source2)
                         .compile()
                         .updateSource("sourceId.pure", source1)
                         .compile()
-                , this.runtime, this.functionExecution, this.getAdditionalVerifiers(), false, 1);
+                , runtime, functionExecution, this.getAdditionalVerifiers(), false, 1);
     }
 
     @Test
@@ -182,7 +176,7 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .compile()
                         .updateSource("sourceId.pure", this.measureSource)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -199,7 +193,7 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .compileWithExpectedCompileFailure("pkg::Currency~GBP has not been defined!", "testFunc.pure", 1, 64)
                         .updateSource("sourceId.pure", this.nonConvertibleMeasure)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -214,7 +208,6 @@ public class TestPureRuntimeMeasure extends AbstractPureTestWithCoreCompiledPlat
                         .compile()
                         .updateSource("sourceId.pure", this.nonConvertibleMeasure)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
-
 }
