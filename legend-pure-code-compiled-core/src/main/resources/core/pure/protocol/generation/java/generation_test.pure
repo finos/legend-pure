@@ -319,7 +319,8 @@ function <<test.Test>> meta::protocols::generation::java::tests::testProtocolJav
 
   assertEquals('package org.finos;\n' +
             '\n' +
-            'import com.fasterxml.jackson.annotation.*;\n' +
+            'import com.fasterxml.jackson.annotation.JsonSubTypes;\n' +
+            'import com.fasterxml.jackson.annotation.JsonTypeInfo;\n' +
             '\n' +
             '@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, property="_type")\n'+
             '@JsonSubTypes({@JsonSubTypes.Type(value=org.finos.Message.class, name="message"), @JsonSubTypes.Type(value=org.finos.MessagePtr.class, name="messagePtr"), @JsonSubTypes.Type(value=org.finos.EnumPtr.class, name="enumPtr"), @JsonSubTypes.Type(value=org.finos.Enumeration.class, name="enumeration"), @JsonSubTypes.Type(value=org.finos.ScalarType.class, name="scalarType"), @JsonSubTypes.Type(value=org.finos.scalar.Int32.class, name="int32"), @JsonSubTypes.Type(value=org.finos.scalar.Bool.class, name="bool"), @JsonSubTypes.Type(value=org.finos.scalar.String.class, name="string")})\n'+

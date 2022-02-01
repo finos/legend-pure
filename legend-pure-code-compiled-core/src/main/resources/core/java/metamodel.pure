@@ -195,6 +195,11 @@ function meta::external::language::java::metamodel::assignmentOperators():String
    ['=','+=','-=','*=','/=','%=','&=','^=','|=','<<=','>>=','>>>='];
 }
 
+Profile meta::external::language::java::metamodel::annotations::AnnotationJavaInfo
+{
+  tags : [javaClass];
+}
+
 Class meta::external::language::java::metamodel::annotations::json::JsonIgnoreProperties extends meta::external::language::java::metamodel::Annotation
 {
    ignoreUnknown : Boolean[1];
@@ -244,7 +249,11 @@ Class meta::external::language::java::metamodel::annotations::json::EnumValue
    value: String[1];
 }
 
-Class meta::external::language::java::metamodel::annotations::json::JsonSubTypes extends meta::external::language::java::metamodel::Annotation
+Class
+{
+  meta::external::language::java::metamodel::annotations::AnnotationJavaInfo.javaClass = 'com.fasterxml.jackson.annotation.JsonSubTypes'
+}
+meta::external::language::java::metamodel::annotations::json::JsonSubTypes extends meta::external::language::java::metamodel::Annotation
 {
    subTypes : meta::external::language::java::metamodel::annotations::json::JsonSubType[*];
 }
@@ -256,7 +265,11 @@ Class meta::external::language::java::metamodel::annotations::json::JsonSubType
 }
 
 
-Class meta::external::language::java::metamodel::annotations::json::JsonTypeInfo extends meta::external::language::java::metamodel::Annotation
+Class
+{
+  meta::external::language::java::metamodel::annotations::AnnotationJavaInfo.javaClass = 'com.fasterxml.jackson.annotation.JsonTypeInfo'
+}
+meta::external::language::java::metamodel::annotations::json::JsonTypeInfo extends meta::external::language::java::metamodel::Annotation
 {
     use        : meta::external::language::java::metamodel::annotations::json::EnumValue[1];
     include    : meta::external::language::java::metamodel::annotations::json::EnumValue[0..1];

@@ -1026,22 +1026,36 @@ function meta::external::language::java::factory::inferImports(class:meta::exter
    let canInfer  = $class.additionalImports->isEmpty() && !$allCodes->containsSimpleCode();
    if($canInfer,
       {| 
+          let annotationsTypes = $class.annotations
+                                  ->concatenate($class.fields.annotations)
+                                  ->concatenate($class.methods.annotations)
+                                  ->concatenate($class.methods.parameters.annotations)
+                                  ->concatenate($class.constructors.annotations)
+                                  ->concatenate($class.constructors.parameters.annotations)
+                                  ->map(x|
+                                          let javaClass = $x->genericType().rawType->toOne()->meta::pure::functions::meta::value4Tag('javaClass', meta::external::language::java::metamodel::annotations::AnnotationJavaInfo);
+                                          assert(!$javaClass->isEmpty(), 'Error: Please provide the Java class that supports the annotation "'+$x->genericType().rawType->toOne()->elementToPath()+'"" using the profile "meta::external::language::java::metamodel::annotations::AnnotationJavaInfo"');
+                                          $javaClass.value;
+                                        )
+                                  ->removeDuplicates()
+                                  ->map(x|javaClass($x));
          let classesUsed = $allCodes->classesUsed()
                                     ->concatenate($class.interfaces)
                                     ->concatenate($class.superType)
                                     ->concatenate($class.fields.type)
                                     ->concatenate($class.methods.returnType)
                                     ->concatenate($class.methods.parameters.type)
+                                    ->concatenate($class.constructors.parameters.type)
                                     ->typesToClasses()
+                                    ->concatenate($annotationsTypes)
                                     ->filter(c| $c.package != anonymousPackage())
                                     ->removeDuplicates();
-
          let inSamePackage = $classesUsed->filter(c| $c.package == $class.package);
          let toImport      = $classesUsed->filter(c| !$c.simpleName->in($inSamePackage.simpleName));
          let withImports   = $toImport->fold({i, c| $c->imports($i)}, $class);
          ^$withImports(additionalImports=$withImports.additionalImports->sort());
       },
-      | ^$class(additionalImports=$class.additionalImports->map(c| javaClass($c))->filter(c| $c.package != $class.package)->map(c| $c->typeToString()));
+      |^$class(additionalImports=$class.additionalImports->map(c| javaClass($c))->filter(c| $c.package != $class.package)->map(c| $c->typeToString()));
    );   
 }
 
@@ -2792,12 +2806,9 @@ function meta::external::language::java::factory::knownPackage(pkg: meta::extern
       | javaMathPackage(),
       |
    if($pkgName == 'java.time',
-      | javaTimePackage(),      
-      | 
-   if($pkgName == 'com.fasterxml.jackson.annotation',
-      | jacksonAnnotationPackage(),
-      |  fail('Package ' + $pkgName + ' is not well known'); ^KnownPackage(package=javaPackage(''));
-   ))))))))));
+      | javaTimePackage(),
+      | fail('Package ' + $pkgName + ' is not well known'); ^KnownPackage(package=javaPackage(''));
+   )))))))));
 }
 
 function meta::external::language::java::factory::javaLangPackage(): meta::external::language::java::factory::KnownPackage[1]
@@ -2988,27 +2999,6 @@ function meta::external::language::java::factory::javaTimePackage(): meta::exter
       ]
    );
 }
-
-function meta::external::language::java::factory::jacksonAnnotationPackage(): meta::external::language::java::factory::KnownPackage[1]
-{
-   ^meta::external::language::java::factory::KnownPackage(
-      package    = javaPackage('com.fasterxml.jackson.annotation'),
-      classNames = [
-         'JacksonAnnotation',         'JacksonAnnotationsInside',           'JacksonAnnotationValue',
-         'JacksonInject',             'jsonAlias',                          'JsonAnyGetter',                'JsonAnySetter',
-         'JsonAutoDetect',            'JsonBackReferebce',                  'JsonClassDescription',         'JsonCreator',
-         'JsonEnumDefaultValue',      'JsonFilter',                         'JsonFormat',                   'JsonGetter',
-         'JsonIdentityInfo',          'JsonIdentityReference',              'JsonIgnore',                   'JsonIgnoreProperties',
-         'JsonIgnoreType',            'JsonInclude',                        'JsonManagedReference',         'JsonMerge',
-         'JsonProperty',              'JsonPropertyDescription',            'JsonPropertyOrder',            'JsonRawValue',
-         'JsonRootName',              'JsonSetter',                         'JsonSubTypes',                 'JsonTypeId',
-         'JsonTypeInfo',              'JsonTypeName',                       'JsonUnwrapped',                'JsonValue',
-         'JsonView' 
-
-      ]
-   );
-}
-
 
 function meta::external::language::java::factory::apiKnowledge(from:meta::external::language::java::metamodel::Type[1]):meta::external::language::java::metamodel::Class[1]
 {

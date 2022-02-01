@@ -256,8 +256,7 @@ function <<access.private>> meta::protocols::generation::java::generateClass(c:m
                                 )
                               ]
                            )
-                     )->imports(javaPackage('com.fasterxml.jackson.annotation'));
-,
+                     );,
     | $pbase
   );
 
