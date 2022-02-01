@@ -139,6 +139,12 @@ Class ActivationQuery
 Class ActivationReadInput
 {
 }
+Enum ActivationStatus
+{
+  PENDING,
+  AVAILABLE,
+  MANUAL
+}
 Class ActivationValidateInput
 {
 }
@@ -255,6 +261,12 @@ Class AdviseMessage
   external : ExternalMessage[0..1];
   correlationID : String[1];
 }
+Enum AdviseMessageLevel
+{
+  WARN,
+  ERROR,
+  INFO
+}
 Class AgeRange
 {
   min : Integer[1];
@@ -307,6 +319,11 @@ Class Alert
   createdAt : String[1];
   updatedAt : String[1];
 }
+Enum AlertAmountBy
+{
+  NIGHT,
+  TOTAL
+}
 Class AlertAverageTimeAbsoluteByRequestsInput
 {
 }
@@ -337,6 +354,12 @@ Class AlertAverageTimeRelativeConfigurationByRequestsInput
 Class AlertAverageTimeRelativeConfigurationByTimeInput
 {
 }
+Enum AlertBound
+{
+  UPPER,
+  LOWER,
+  BOTH
+}
 Class AlertBounds
 {
   bound : AlertBound[1];
@@ -345,6 +368,17 @@ Class AlertBounds
 }
 Class AlertBoundsInput
 {
+}
+Enum AlertCheckPrice
+{
+  AMOUNT,
+  COMMISSION,
+  BOTH
+}
+Enum AlertComercialType
+{
+  SELLER,
+  BUYER
 }
 Class AlertCommonByRequestsInput
 {
@@ -416,6 +450,11 @@ Class AlertEdge
 Class AlertEmailInput
 {
 }
+Enum AlertEmailType
+{
+  BCC,
+  TO
+}
 Class AlertEmails
 {
   isActive : Boolean[1];
@@ -475,14 +514,54 @@ Class AlertEventEdge
   node : AlertEvent[0..1];
   cursor : String[1];
 }
+Enum AlertEventType
+{
+  OK,
+  ALERTING
+}
 Class AlertFilterInput
 {
 }
 Class AlertGroupInput
 {
 }
+Enum AlertGroups
+{
+  ACCESS,
+  CLIENT,
+  SUPPLIER,
+  OPERATION,
+  HUB_STATUS,
+  ERROR_CODE,
+  ERROR_TYPE,
+  GROUP_ORG_SELLER,
+  GROUP_ORG_BUYER,
+  GROUP_FOLDER_SELLER,
+  GROUP_FOLDER_BUYER,
+  GROUP_PRODUCT_SELLER,
+  GROUP_PRODUCT_BUYER
+}
+Enum AlertGroupsInsights
+{
+  ACCESS,
+  CLIENT,
+  SUPPLIER,
+  OPERATION,
+  GROUP_ORG_SELLER,
+  GROUP_ORG_BUYER,
+  GROUP_FOLDER_SELLER,
+  GROUP_FOLDER_BUYER,
+  GROUP_PRODUCT_SELLER,
+  GROUP_PRODUCT_BUYER
+}
 Class AlertHubStatusInput
 {
+}
+Enum AlertMode
+{
+  RELATIVE,
+  ABSOLUTE,
+  COMPARATIVE
 }
 Class AlertNotifications
 {
@@ -545,6 +624,16 @@ Class AlertPriceRelativeConfigurationByRequestsInput
 Class AlertPriceRelativeConfigurationByTimeInput
 {
 }
+Enum AlertRangePrice
+{
+  LESS,
+  GREATER
+}
+Enum AlertSharedType
+{
+  TGX,
+  GROUP
+}
 Class AlertSlack
 {
   isActive : Boolean[1];
@@ -572,6 +661,14 @@ Class AlertSlackTitles
 }
 Class AlertSlackTitlesInput
 {
+}
+Enum AlertType
+{
+  ERROR_RATE,
+  AVERAGE_TIME,
+  PEAK_TRAFFIC,
+  PRICE,
+  BUSINESS_METRIC
 }
 Class AlertTypeConfiguration
 {
@@ -697,6 +794,17 @@ Class AlertUpdatePriceRelativeConfigurationByTimeInput
 Class AlertUpdateSlackInput
 {
 }
+Enum AlertVariation
+{
+  INCREASE,
+  DECREASE,
+  BOTH
+}
+Enum AlertWindowType
+{
+  REQUESTS,
+  TIME
+}
 Class AlertsXMutation
 {
   createAlertErrorRateRelativeByTime : Alert[0..1];
@@ -758,6 +866,13 @@ Class AmountType
   amount : Float[0..1];
   curCode : String[0..1];
 }
+Enum ApplicationAreaType
+{
+  HOTEL,
+  ROOM,
+  SERVICE,
+  GENERAL
+}
 Class AuditData
 {
   transactions : Transactions[1];
@@ -797,6 +912,19 @@ Class AuditRuleEdge
 {
   cursor : String[1];
   node : AuditRule[0..1];
+}
+Enum AuditRuleProductInput
+{
+  legacy,
+  hotelX
+}
+Enum AuditRuleStatus
+{
+  Scheduled,
+  InProcess,
+  Finalized,
+  Deleted,
+  ALL
 }
 Class AuditRuleWhereInput
 {
@@ -854,6 +982,15 @@ Class BookReferenceInput
 Class BookRoomInput
 {
 }
+Enum BookStatusType
+{
+  OK,
+  KO,
+  ON_REQUEST,
+  CANCELLED,
+  UNKNOWN,
+  PENDING_COMMIT
+}
 Class BookableOptionSearch
 {
 }
@@ -877,6 +1014,11 @@ Class BookingAggregation
   amountCancelPenalties : AmountCancelPenalty[*];
   numBookings : Integer[0..1];
   aggregate : Aggregate[0..1];
+}
+Enum BookingCriteriaType
+{
+  DATES,
+  REFERENCES
 }
 Class BookingDetail
 {
@@ -934,6 +1076,48 @@ Class BookingRoom
   description : String[0..1];
   price : Price[0..1];
 }
+Enum BookingWindowType
+{
+  LAST_SECOND,
+  LAST_MINUTE,
+  ABOUT_ONE_WEEK,
+  ABOUT_TWO_WEEKS,
+  ABOUT_ONE_MONTH,
+  ABOUT_TWO_MONTHS,
+  ABOUT_THREE_MONTHS,
+  MORE_THAN_THREE_MONTHS
+}
+Enum BookingsReportGroupByInput
+{
+  status,
+  clientCode,
+  clientOrganization,
+  supplierCode,
+  supplierOrganization,
+  currency,
+  bookingAt,
+  checkInAt,
+  cancelAt,
+  originMarket,
+  destinationCountry,
+  paxType,
+  lengthOfStay,
+  bookingWindow,
+  hotel
+}
+Enum BookingsReportOrderByInput
+{
+  bookingAt_ASC,
+  checkInAt_ASC,
+  cancelAt_ASC,
+  numBookings_ASC,
+  amountEur_ASC,
+  bookingAt_DES,
+  checkInAt_DES,
+  cancelAt_DES,
+  numBookings_DES,
+  amountEur_DES
+}
 Class BookingsReportWhereInput
 {
 }
@@ -945,6 +1129,11 @@ Class BusinessRules
 Class BusinessRulesInput
 {
 }
+Enum BusinessRulesType
+{
+  CHEAPER_AMOUNT,
+  ROOM_TYPE
+}
 Class CancelPenalty
 {
   deadline : String[0..1];
@@ -952,6 +1141,12 @@ Class CancelPenalty
   penaltyType : CancelPenaltyType[1];
   currency : String[1];
   value : Float[1];
+}
+Enum CancelPenaltyType
+{
+  NIGHTS,
+  PERCENT,
+  IMPORT
 }
 Class CancelPolicy
 {
@@ -982,6 +1177,11 @@ Class CategoryEdge
 {
   node : Category[0..1];
   cursor : String[1];
+}
+Enum ChargeType
+{
+  INCLUDE,
+  EXCLUDE
 }
 Class CheckInformation
 {
@@ -1024,6 +1224,17 @@ Class ClientEdge
 Class ClientFilter
 {
 }
+Enum ClientOrderByInput
+{
+  code_ASC,
+  code_DESC,
+  name_ASC,
+  name_DESC,
+  created_at_ASC,
+  created_at_DESC,
+  updated_at_ASC,
+  updated_at_DESC
+}
 Class ClientWhereInput
 {
 }
@@ -1032,6 +1243,14 @@ Class ClientWhereUniqueInput
 }
 Class ClonePermissionsInput
 {
+}
+Enum CloudEnvironment
+{
+  AZURE,
+  GOOGLE,
+  HETZNER,
+  TOTAL_UPTIME,
+  BLUEKIRI
 }
 Class CompanyCrmData
 {
@@ -1042,6 +1261,33 @@ Class CompanyCrmData
 }
 Class CompanyCrmDataInput
 {
+}
+Enum CompanyRole
+{
+  ACCOUNT_MANAGER_BUYER,
+  ACCOUNT_MANAGER_SELLER,
+  BILLING_BUYER,
+  BILLING_SELLER,
+  CONTRACTING,
+  GENERIC_ACCOUNT,
+  LEGAL,
+  PLATFOR_PRIMARY_ACCOUNT,
+  PRESS,
+  SALES_BUYER,
+  SALES_SELLER,
+  SERVICE_PROVIDER,
+  TECH_BUYER,
+  TECH_SELLER,
+  TEST,
+  TGX_HELPDESK_USER,
+  UNKNOWN
+}
+Enum ConditionType
+{
+  GTE,
+  GT,
+  LTE,
+  LT
 }
 Class ConfigurationInput
 {
@@ -1074,12 +1320,42 @@ Class ConnectionEdge
   node : Connection[0..1];
   cursor : String[1];
 }
+Enum ConnectionType
+{
+  HOTEL_X_BUYER_ONLY,
+  HOTEL_LEGACY_BUYER_ONLY,
+  CHANNEL_X_BUYER_ONLY,
+  HOTEL_PULL_LEGACY_SELLER_ONLY,
+  HOTEL_PULL_SELLER_GENERIC,
+  HOTEL_PUSH_LEGACY_SELLER_ONLY,
+  HOTEL_PUSH_SELLER_GENERIC,
+  DMC_X,
+  FLIGHTS_LEGACY_SELLER_ONLY,
+  PAYMENT_LEGACY_SELLER_ONLY,
+  B2B_VIRTUAL_AGENCY_TOOL_BUYER_ONLY,
+  TRANSPORTATION_FLIGHT_LEGACY_BUYER_ONLY,
+  FLIGHT_X_BUYER_ONLY,
+  DIRECT_X,
+  DISTRIBUTE,
+  INVENTORY,
+  ACTIVITIES_LEGACY,
+  CARS_LEGACY,
+  TRANSFERS_LEGACY,
+  VIRTUAL_ACCOUNT_LEGACY
+}
 Class Contact
 {
   email : String[0..1];
   telephone : String[0..1];
   fax : String[0..1];
   web : String[0..1];
+}
+Enum ContactImportance
+{
+  EXECUTION_LEVEL,
+  DECISION_MAKER,
+  PRIMARY,
+  MINOR
 }
 Class ContactInfo
 {
@@ -1090,6 +1366,18 @@ Class Context
   error : Error[*];
   createdAt : String[1];
   updatedAt : String[1];
+}
+Enum Contract
+{
+  CONTRACT_TCP,
+  CONTRACT_AFFILIATE,
+  CONTRACT_RESELLER,
+  ANNEX_POWER_BUYER,
+  ANNEX_PREMIUM_SELLER,
+  ANNEX_SELECTIVE_PREMIUM_SELLER,
+  ANNEX_STANDARD_SELLER,
+  ANNEX_STANDARD_BUYER,
+  ANNEX_PREFERRED_SELLER
 }
 Class Coordinates
 {
@@ -1134,6 +1422,12 @@ Class CriteriaSearch
   nationality : String[0..1];
   market : String[1];
 }
+Enum CriteriaType
+{
+  CurrentDestination_CurrentMarket,
+  CurrentDestination_NewMarket,
+  NewDestination_CurrentMarket
+}
 Class CrmData
 {
   crmID : String[0..1];
@@ -1148,8 +1442,20 @@ Class CustomerAgent
   type : CustomerAgentType[1];
   user : Member[1];
 }
+Enum CustomerAgentType
+{
+  KAM,
+  TECH_KAM,
+  CUSTOMER_CARE,
+  OTHER
+}
 Class DateRange
 {
+}
+Enum DateType
+{
+  ARRIVAL,
+  BOOKING
 }
 Class DefaultSettings
 {
@@ -1185,6 +1491,18 @@ Class Description
   type : DescriptionType[1];
   texts : Text[*];
 }
+Enum DescriptionType
+{
+  ADDITIONAL,
+  AMENITY,
+  ACTIVITY,
+  RESTAURANT,
+  ROOM,
+  GENERAL,
+  POOL,
+  LOCATION,
+  HOW_TO_GET
+}
 Class Destination
 {
   code : String[1];
@@ -1218,6 +1536,27 @@ Class DestinationEdge
 Class DestinationSearchResult
 {
 }
+Enum DestinationType
+{
+  ZONE,
+  CITY,
+  COUNTRY
+}
+Enum Discount
+{
+  BP,
+  BI,
+  DC,
+  RC,
+  RM,
+  STR,
+  ELB,
+  SDG,
+  SCL,
+  RE,
+  FAMILY1,
+  FAMILY2
+}
 Class Domain
 {
   code : String[1];
@@ -1231,6 +1570,11 @@ Class DomainData
   id : String[1];
   name : String[1];
   organization : Organization[1];
+}
+Enum DurationType
+{
+  RANGE,
+  OPEN
 }
 Class EntitiesInput
 {
@@ -1265,6 +1609,13 @@ Class Environment
   type : CloudEnvironment[1];
   worker : String[1];
 }
+Enum EnvironmentType
+{
+  TEST,
+  LOCAL,
+  DEV,
+  PROD
+}
 Class Error
 {
   code : String[1];
@@ -1273,6 +1624,13 @@ Class Error
 }
 Class ErrorFilter
 {
+}
+Enum ErrorType
+{
+  OK,
+  PROVIDER,
+  TIMEOUT,
+  INTEGRATION
 }
 Class Exchange
 {
@@ -1340,6 +1698,11 @@ Class FlightOfferItemData
   price : FlightPrice[1];
   service : FlightService[1];
 }
+Enum FlightOfferOrderByInput
+{
+  totalPrice_ASC,
+  totalPrice_DESC
+}
 Class FlightOfferWhereInput
 {
 }
@@ -1402,6 +1765,11 @@ Class FlightSegment
   carrier : String[0..1];
   flightNumber : String[0..1];
 }
+Enum FlightSegmentOrderByInput
+{
+  date_ASC,
+  date_DESC
+}
 Class FlightSegmentWhereInput
 {
 }
@@ -1438,12 +1806,29 @@ Class FlightTicket
   number : String[1];
   status : FlightTicketStatusCode[1];
 }
+Enum FlightTicketStatusCode
+{
+  OPEN,
+  CHECKED_IN,
+  VOID,
+  REFUNDED
+}
+Enum FolderTemplate
+{
+  FOLDER_SELLER,
+  FOLDER_BUYER
+}
 Class GeneratedPaymentInfo
 {
   generatedCard : PaymentCardData[0..1];
   id : String[1];
   method : GeneratedPaymentMethodType[0..1];
   supplier : SupplierData[1];
+}
+Enum GeneratedPaymentMethodType
+{
+  VIRTUAL_CARD,
+  WALLET
 }
 Class Geoname
 {
@@ -1537,6 +1922,30 @@ Class GroupEdge
 }
 Class GroupInput
 {
+}
+Enum GroupType
+{
+  ROOT,
+  ORG,
+  GROUP,
+  PROFILE,
+  TEAM,
+  FOLDER,
+  PRODUCT,
+  RESOURCE,
+  SPECIFIC_RESOURCE
+}
+Enum GroupTypeInput
+{
+  ROOT,
+  ORG,
+  GROUP,
+  PROFILE,
+  TEAM,
+  FOLDER,
+  PRODUCT,
+  RESOURCE,
+  SPECIFIC_RESOURCE
 }
 Class Holder
 {
@@ -1709,6 +2118,12 @@ Class HotelOptionSearch
   token : String[1];
   id : String[1];
   amenities : Amenity[*];
+}
+Enum HotelPaxType
+{
+  ADULT,
+  CHILD,
+  INFANT
 }
 Class HotelQuote
 {
@@ -1970,11 +2385,29 @@ Class HotelXUpdateStatusData
   code : String[1];
   isActive : Boolean[1];
 }
+Enum HubStatus
+{
+  OK,
+  EXCEPTION,
+  TIMEOUT,
+  UNDEFINED
+}
+Enum IATA_PTC_CodeType
+{
+  ADT,
+  CHD,
+  INF
+}
 Class IdAccessConfigurationInput
 {
 }
 Class IdGroupAccessInput
 {
+}
+Enum IdentityDocType
+{
+  NATIONAL_ID,
+  PASSPORT
 }
 Class Individual
 {
@@ -2248,6 +2681,15 @@ Class MappingEntity
   code : String[1];
   contexts : Map[*];
 }
+Enum MappingType
+{
+  AMENITY,
+  BOARD,
+  RATE,
+  ROOM,
+  PROMOTION,
+  HOTEL_ROOM
+}
 Class Markup
 {
   channel : String[0..1];
@@ -2257,6 +2699,11 @@ Class Markup
   gross : Float[0..1];
   exchange : Exchange[1];
   rules : Rule[1];
+}
+Enum MarkupRuleType
+{
+  PERCENT,
+  IMPORT
 }
 Class Media
 {
@@ -2300,6 +2747,11 @@ Class MemberEdge
 {
   node : Member[0..1];
   cursor : String[1];
+}
+Enum MemberType
+{
+  USER,
+  SERVICE_ACCOUNT
 }
 Class Metadata
 {
@@ -2434,6 +2886,24 @@ Class MetadataSearchDestinations
   maxNumberHotels : ReviewedInt[1];
   recommendedNumberHotels : ReviewedInt[1];
 }
+Enum MetadataType
+{
+  STRING,
+  NUMERIC,
+  BOOLEAN,
+  XML,
+  URI
+}
+Enum Method
+{
+  ADD,
+  DEL
+}
+Enum ModeType
+{
+  BUYER,
+  SELLER
+}
 Class Mutation
 {
   admin : AdminMutation[0..1];
@@ -2497,6 +2967,20 @@ Class OperationEdge
   node : Operation[0..1];
   cursor : String[1];
 }
+Enum OperationType
+{
+  SEARCH,
+  QUOTE,
+  BOOKING,
+  CANCEL,
+  SCHEDULER,
+  CREATE,
+  READ,
+  UPDATE,
+  DELETE,
+  EXECUTE,
+  OTHER
+}
 Class Organization
 {
   code : String[1];
@@ -2516,6 +3000,14 @@ Class OrganizationContact
 {
   type : OrganizationContactType[1];
   user : Member[1];
+}
+Enum OrganizationContactType
+{
+  ADMIN,
+  BILLING,
+  SALES,
+  TECHNICAL,
+  OTHER
 }
 Class OrganizationData
 {
@@ -2558,6 +3050,31 @@ Class OrganizationEdge
 {
   node : Organization[0..1];
   cursor : String[1];
+}
+Enum OrganizationOrderByInput
+{
+  code_ASC,
+  code_DESC,
+  label_ASC,
+  label_DESC,
+  created_at_ASC,
+  created_at_DESC,
+  owner_ASC,
+  owner_DESC,
+  country_ASC,
+  country_DESC
+}
+Enum OrganizationTemplate
+{
+  ORGANIZATION_BUYER,
+  ORGANIZATION_SELLER,
+  ORGANIZATION_BUYER_SELLER
+}
+Enum OrganizationTypeInput
+{
+  BUYER,
+  SELLER,
+  BOTH
 }
 Class PageInfo
 {
@@ -2606,6 +3123,17 @@ Class PartnerEdge
   node : Partner[0..1];
   cursor : String[1];
 }
+Enum PartnerOrderByInput
+{
+  code_ASC,
+  code_DESC,
+  name_ASC,
+  name_DESC,
+  friendlyName_ASC,
+  friendlyName_DESC,
+  isActive_ASC,
+  isActive_DESC
+}
 Class PartnerUpdateInput
 {
 }
@@ -2621,6 +3149,23 @@ Class Pax
 }
 Class PaxInput
 {
+}
+Enum PaxTypeType
+{
+  SOLO,
+  COUPLE,
+  FAMILY,
+  GROUP,
+  OTHER
+}
+Enum PayerResponseStatusType
+{
+  AUTHENTICATION_SUCCESS,
+  AUTHENTICATION_FAILED,
+  AUTHENTICATION_INCOMPLETE,
+  TRANSACTION_ATTEMPT_SUCCESS_A,
+  TRANSACTION_ATTEMPT_SUCCESS_B,
+  AUTHENTICATION_REJECTED
 }
 Class PaymentCard
 {
@@ -2644,11 +3189,50 @@ Class PaymentCardData
 Class PaymentCardInput
 {
 }
+Enum PaymentCardType
+{
+  VI,
+  AX,
+  BC,
+  CA,
+  CB,
+  CU,
+  DS,
+  DC,
+  T,
+  R,
+  N,
+  L,
+  E,
+  JC,
+  TO,
+  S,
+  EC,
+  EU,
+  TP,
+  OP,
+  ER,
+  XS,
+  O
+}
 Class PaymentInfo
 {
 }
 Class PaymentMethod
 {
+}
+Enum PaymentMethodCodeType
+{
+  CARD,
+  CASH
+}
+Enum PaymentType
+{
+  MERCHANT,
+  DIRECT,
+  CARD_BOOKING,
+  CARD_CHECK_IN,
+  PAYX
 }
 Class PaymentXExpireDate
 {
@@ -2712,11 +3296,41 @@ Class Permission
   resource : Resource[1];
   api : API[1];
 }
+Enum PersonalTitleType
+{
+  MR,
+  MRS,
+  MISS,
+  MS
+}
 Class Phone
 {
 }
 Class PluginStepInput
 {
+}
+Enum PluginStepType
+{
+  REQUEST,
+  REQUEST_ACCESS,
+  RESPONSE_OPTION,
+  RESPONSE_ACCESS,
+  RESPONSE
+}
+Enum PluginType
+{
+  PRE_STEP,
+  HOTEL_MAP,
+  BOARD_MAP,
+  ROOM_MAP,
+  CURRENCY_CONVERSION,
+  MARKUP,
+  AGGREGATION,
+  POST_STEP,
+  COMMISSION,
+  MARKETS_GROUP,
+  AMENITY_MAP,
+  PROMOTION_MAP
 }
 Class PluginsInput
 {
@@ -2776,6 +3390,12 @@ Class PriceStatic
 {
   amount : Float[1];
   currency : String[1];
+}
+Enum PriceType
+{
+  GROSS,
+  NET,
+  AMOUNT
 }
 Class Priceable
 {
@@ -2840,6 +3460,11 @@ Class ProfileEdge
 }
 Class ProfileFilter
 {
+}
+Enum ProfileType
+{
+  BUYER,
+  SELLER
 }
 Class Promotion
 {
@@ -2917,6 +3542,24 @@ Class RatePlan
 Class RateRulesFilterInput
 {
 }
+Enum RateRulesType
+{
+  NORMAL,
+  PACKAGE,
+  OLDER55,
+  OLDER60,
+  OLDER65,
+  CANARY_RESIDENT,
+  BALEARIC_RESIDENT,
+  LARGE_FAMILY,
+  HONEYMOON,
+  PUBLIC_SERVANT,
+  UNEMPLOYED,
+  NON_REFUNDABLE,
+  MOBILE,
+  WARRANTY,
+  ESSENTIAL_WORKER
+}
 Class Ratios
 {
   lookToQuote : Integer[1];
@@ -2950,6 +3593,14 @@ Class RecommendationsConnection
   pageInfo : PageInfo[1];
   totalCount : Integer[1];
   adviseMessage : AdviseMessage[*];
+}
+Enum RecommendationsGroupByInput
+{
+  owner,
+  originMarket,
+  destinationCountry,
+  destinationMainZone,
+  criteria
 }
 Class RecommendationsWhereInput
 {
@@ -3097,6 +3748,14 @@ Class RoleEdge
   node : Role[0..1];
   cursor : String[1];
 }
+Enum RoleType
+{
+  VIEWER,
+  EDITOR,
+  ADMIN,
+  EXECUTOR,
+  SPECIFIC
+}
 Class Room
 {
   occupancyRefId : Integer[1];
@@ -3192,6 +3851,17 @@ Class ServiceApi
 Class ServiceApiFilter
 {
 }
+Enum ServiceApiType
+{
+  HOTEL,
+  TRANSPORTATION,
+  CAR,
+  TRANSFERS,
+  ACTIVITIES,
+  VIRTUALACCOUNT,
+  PAYMENT,
+  PACKAGE
+}
 Class ServiceOperation
 {
   code : String[1];
@@ -3199,11 +3869,23 @@ Class ServiceOperation
   type : String[1];
   travelOperation : Integer[1];
 }
+Enum ServiceOperationType
+{
+  ALL,
+  SEARCH,
+  QUOTE,
+  BOOKING,
+  OTHER
+}
 Class ServiceStatus
 {
   code : String[0..1];
   type : String[0..1];
   description : String[0..1];
+}
+Enum ServiceType
+{
+  SKI_PASS
 }
 Class SettingsBaseInput
 {
@@ -3279,6 +3961,11 @@ Class SpeedQuery
 {
   speedConnectionCollection : SpeedConnectionCollection[1];
   speedAccessCollection : SpeedAccessCollection[1];
+}
+Enum SpeedRQMode
+{
+  STANDARD,
+  FAST
 }
 Class SpeedTtl
 {
@@ -3367,6 +4054,16 @@ Class StatsInfo
   totalTime : String[1];
   assets : StatsAsset[*];
 }
+Enum StatsInfoTypes
+{
+  ALL,
+  OK,
+  INTEGRATION,
+  PROVIDER,
+  COMMUNICATION,
+  HUB,
+  OTHER
+}
 Class StatsQuery
 {
   report : StatsConnection[1];
@@ -3391,6 +4088,11 @@ Class StatsRequest
 Class StatusFilterInput
 {
 }
+Enum StatusType
+{
+  OK,
+  RQ
+}
 Class SuitOrganizationInput
 {
 }
@@ -3411,6 +4113,17 @@ Class Supplement
   end : String[0..1];
   resort : Resort[0..1];
   price : Price[0..1];
+}
+Enum SupplementType
+{
+  SKI_PASS,
+  LESSONS,
+  MEALS,
+  EQUIPMENT,
+  TICKET,
+  TRANSFERS,
+  GALA,
+  ACTIVITY
 }
 Class Supplier extends AlertObjectsUnion,Connection
 {
@@ -3531,6 +4244,16 @@ Class TGXFilter
   transaction_type : String[0..1];
   gstorage_url : String[0..1];
 }
+Enum TagRuntimeType
+{
+  USER,
+  PASSWORD,
+  URLAVAIL,
+  URLVALUATION,
+  URLRESERVATION,
+  URLGENERIC,
+  PARAMETER
+}
 Class TaxSummaryType
 {
   totalTaxAmount : AmountType[0..1];
@@ -3541,6 +4264,14 @@ Class TaxType
   amount : AmountType[0..1];
   descText : TextType[0..1];
 }
+Enum Template
+{
+  FOLDER_DEFAULT
+}
+Enum TermType
+{
+  TEXECT
+}
 Class Text
 {
   text : String[1];
@@ -3549,6 +4280,17 @@ Class Text
 Class TextType
 {
   text : String[0..1];
+}
+Enum ThreeDSCardEnrolledStatusType
+{
+  CARD_ENROLLED,
+  CARD_NOT_ENROLLED,
+  CANT_AUTHENTICATE
+}
+Enum ThreeDSSignatureStatusType
+{
+  SIGNATURE_VALIDATED,
+  SIGNATURE_NOT_VALIDATED
 }
 Class ThreeDomainSecurityInput
 {
@@ -3570,6 +4312,20 @@ Class Timeout
 Class TimeoutInput
 {
 }
+Enum TitleNameType
+{
+  MR,
+  MRS,
+  INF,
+  CHD
+}
+Enum TrafficType
+{
+  BASIC,
+  SPEED,
+  SCHEDULER,
+  OPTIMIZED
+}
 Class Transactions
 {
   request : String[1];
@@ -3584,6 +4340,11 @@ Class TransportDeparture
 {
   location : String[0..1];
   AircraftScheduled : String[0..1];
+}
+Enum UnitTimeType
+{
+  DAY,
+  HOUR
 }
 Class UpdateClientInput
 {
@@ -3644,6 +4405,28 @@ Class __Directive
   locations : __DirectiveLocation[1];
   args : __InputValue[1];
 }
+Enum __DirectiveLocation
+{
+  QUERY,
+  MUTATION,
+  SUBSCRIPTION,
+  FIELD,
+  FRAGMENT_DEFINITION,
+  FRAGMENT_SPREAD,
+  INLINE_FRAGMENT,
+  VARIABLE_DEFINITION,
+  SCHEMA,
+  SCALAR,
+  OBJECT,
+  FIELD_DEFINITION,
+  ARGUMENT_DEFINITION,
+  INTERFACE,
+  UNION,
+  ENUM,
+  ENUM_VALUE,
+  INPUT_OBJECT,
+  INPUT_FIELD_DEFINITION
+}
 Class __EnumValue
 {
   name : String[1];
@@ -3688,4 +4471,15 @@ Class __Type
   enumValues : __EnumValue[*];
   inputFields : __InputValue[*];
   ofType : __Type[0..1];
+}
+Enum __TypeKind
+{
+  SCALAR,
+  OBJECT,
+  INTERFACE,
+  UNION,
+  ENUM,
+  INPUT_OBJECT,
+  LIST,
+  NON_NULL
 }

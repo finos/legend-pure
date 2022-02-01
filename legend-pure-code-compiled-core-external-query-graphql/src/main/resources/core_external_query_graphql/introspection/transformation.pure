@@ -86,7 +86,7 @@ function meta::external::query::graphQL::binding::toPure::introspection::buildPu
                             );
                         )
                   );
-  $typesByName->values()->filter(t|$t->instanceOf(Class));
+  $typesByName->values()->filter(t|!$t->instanceOf(PrimitiveType));
 }
 
 function <<access.private>> meta::external::query::graphQL::binding::toPure::introspection::build(type:__Type[1], typesByName:Map<String,Type>[1]):Pair<Type, Multiplicity>[1] 

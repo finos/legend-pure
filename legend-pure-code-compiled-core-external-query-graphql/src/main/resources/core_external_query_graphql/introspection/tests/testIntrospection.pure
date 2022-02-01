@@ -68,7 +68,12 @@ function <<test.Test>> meta::external::query::graphQL::binding::toPure::introspe
 {
     let str = readFile('/core_external_query_graphql/introspection/tests/continents.json')->toOne();
     let res = $str->meta::json::fromJson(__Schema)->meta::external::query::graphQL::binding::toPure::introspection::buildPureTypesFromGraphQLSchema('');
-    assertEquals( 'Class Continent\n' +
+    assertEquals( 'Enum CacheControlScope\n' +
+                  '{\n' +
+                  '  PUBLIC,\n' +
+                  '  PRIVATE\n' +
+                  '}\n' +
+                  'Class Continent\n' +
                   '{\n' +
                   '  code : String[1];\n' +
                   '  name : String[1];\n' +
@@ -129,6 +134,28 @@ function <<test.Test>> meta::external::query::graphQL::binding::toPure::introspe
                   '  locations : __DirectiveLocation[1];\n' +
                   '  args : __InputValue[1];\n' +
                   '}\n' +
+                  'Enum __DirectiveLocation\n' +
+                  '{\n' +
+                  '  QUERY,\n' +
+                  '  MUTATION,\n' +
+                  '  SUBSCRIPTION,\n' +
+                  '  FIELD,\n' +
+                  '  FRAGMENT_DEFINITION,\n' +
+                  '  FRAGMENT_SPREAD,\n' +
+                  '  INLINE_FRAGMENT,\n' +
+                  '  VARIABLE_DEFINITION,\n' +
+                  '  SCHEMA,\n' +
+                  '  SCALAR,\n' +
+                  '  OBJECT,\n' +
+                  '  FIELD_DEFINITION,\n' +
+                  '  ARGUMENT_DEFINITION,\n' +
+                  '  INTERFACE,\n' +
+                  '  UNION,\n' +
+                  '  ENUM,\n' +
+                  '  ENUM_VALUE,\n' +
+                  '  INPUT_OBJECT,\n' +
+                  '  INPUT_FIELD_DEFINITION\n' +
+                  '}\n' +
                   'Class __EnumValue\n' +
                   '{\n' +
                   '  name : String[1];\n' +
@@ -171,6 +198,17 @@ function <<test.Test>> meta::external::query::graphQL::binding::toPure::introspe
                   '  enumValues : __EnumValue[*];\n' +
                   '  inputFields : __InputValue[*];\n' +
                   '  ofType : __Type[0..1];\n' +
+                  '}\n' +
+                  'Enum __TypeKind\n' +
+                  '{\n' +
+                  '  SCALAR,\n' +
+                  '  OBJECT,\n' +
+                  '  INTERFACE,\n' +
+                  '  UNION,\n' +
+                  '  ENUM,\n' +
+                  '  INPUT_OBJECT,\n' +
+                  '  LIST,\n' +
+                  '  NON_NULL\n' +
                   '}',$res->sortBy(r|$r->elementToPath())->map(r|$r->printType())->joinStrings('\n'));
 }
 
