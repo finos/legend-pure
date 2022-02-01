@@ -41,10 +41,10 @@ import meta::external::query::graphQL::introspection::model::*;
 import meta::pure::metamodel::serialization::grammar::*;
 
 
-function <<test.Test>> meta::external::query::graphQL::introspection::tests::testPureFromIntrospection():Boolean[1]
+function <<test.Test>> meta::external::query::graphQL::binding::toPure::introspection::tests::testPureFromIntrospection():Boolean[1]
 {
-    let str = readFile('/core/external/query/graphQL/introspection/tests/introspectionResult.json')->toOne();
-    let res = $str->meta::json::fromJson(__Schema)->meta::external::query::graphQL::introspection::buildPureTypesFromGraphQLSchema('');
+    let str = readFile('/core_external_query_graphql/introspection/tests/introspectionResult.json')->toOne();
+    let res = $str->meta::json::fromJson(__Schema)->meta::external::query::graphQL::binding::toPure::introspection::buildPureTypesFromGraphQLSchema('');
     assertEquals( 'Class Domain\n' +
                   '{\n' +
                   '  val : String[1];\n' +
@@ -64,10 +64,10 @@ function <<test.Test>> meta::external::query::graphQL::introspection::tests::tes
                   ,$res->sortBy(r|$r->elementToPath())->map(r|$r->printType())->joinStrings('\n'));
 }
 
-function <<test.Test>> meta::external::query::graphQL::introspection::tests::testCountriesFromIntrospection():Boolean[1]
+function <<test.Test>> meta::external::query::graphQL::binding::toPure::introspection::tests::testCountriesFromIntrospection():Boolean[1]
 {
-    let str = readFile('/core/external/query/graphQL/introspection/tests/continents.json')->toOne();
-    let res = $str->meta::json::fromJson(__Schema)->meta::external::query::graphQL::introspection::buildPureTypesFromGraphQLSchema('');
+    let str = readFile('/core_external_query_graphql/introspection/tests/continents.json')->toOne();
+    let res = $str->meta::json::fromJson(__Schema)->meta::external::query::graphQL::binding::toPure::introspection::buildPureTypesFromGraphQLSchema('');
     assertEquals( 'Class Continent\n' +
                   '{\n' +
                   '  code : String[1];\n' +
@@ -174,10 +174,10 @@ function <<test.Test>> meta::external::query::graphQL::introspection::tests::tes
                   '}',$res->sortBy(r|$r->elementToPath())->map(r|$r->printType())->joinStrings('\n'));
 }
 
-function <<test.Test>> meta::external::query::graphQL::introspection::tests::testTravelFromIntrospection():Boolean[1]
+function <<test.Test>> meta::external::query::graphQL::binding::toPure::introspection::tests::testTravelFromIntrospection():Boolean[1]
 {
-    let str = readFile('/core/external/query/graphQL/introspection/tests/travelx.json')->toOne();
-    let expected = readFile('/core/external/query/graphQL/introspection/tests/travelResult.txt')->toOne();
-    let res = $str->meta::json::fromJson(__Schema)->meta::external::query::graphQL::introspection::buildPureTypesFromGraphQLSchema('');
+    let str = readFile('/core_external_query_graphql/introspection/tests/travelx.json')->toOne();
+    let expected = readFile('/core_external_query_graphql/introspection/tests/travelResult.txt')->toOne();
+    let res = $str->meta::json::fromJson(__Schema)->meta::external::query::graphQL::binding::toPure::introspection::buildPureTypesFromGraphQLSchema('');
     assertEquals($expected, $res->sortBy(r|$r->elementToPath())->map(r|$r->printType())->joinStrings('\n'));
 }

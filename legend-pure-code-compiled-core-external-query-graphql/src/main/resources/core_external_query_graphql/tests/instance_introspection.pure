@@ -111,7 +111,7 @@
 // }
 
 
-function meta::external::query::graphQL::binding::toPure::tests::buildIntrospection() : meta::external::query::graphQL::metamodel::Document[1]
+function meta::external::query::graphQL::binding::toPure::typeSystem::tests::buildIntrospection() : meta::external::query::graphQL::metamodel::Document[1]
 {
 ^meta::external::query::graphQL::metamodel::Document (
     definitions = [^meta::external::query::graphQL::metamodel::typeSystem::ObjectTypeDefinition (

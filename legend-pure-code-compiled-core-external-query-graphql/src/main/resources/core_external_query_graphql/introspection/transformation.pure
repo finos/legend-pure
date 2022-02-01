@@ -1,5 +1,4 @@
 import meta::external::query::graphQL::introspection::model::*;
-import meta::external::query::graphQL::introspection::*;
 
 Class meta::external::query::graphQL::introspection::BaseGraphQLType
 {
@@ -8,13 +7,23 @@ Class meta::external::query::graphQL::introspection::BaseGraphQLType
 
 function meta::external::query::graphQL::introspection::graphQLIntrospectionQuery(cl:Class<Any>[1], query:meta::external::query::graphQL::metamodel::Document[1]):String[1]
 {
-  let fullTypeGraph = meta::external::query::graphQL::introspection::buildGraphQLSchemaFromPureTypes($cl);
+  let fullTypeGraph = meta::external::query::graphQL::binding::fromPure::introspection::buildGraphQLSchemaFromPureTypes($cl);
   let graphFetch = meta::external::query::graphQL::transformation::queryToPure::graphQLExecutableToPure($query, meta::external::query::graphQL::introspection::BaseGraphQLType);
   $fullTypeGraph->meta::json::toJSON($graphFetch, meta::json::config(false, false, false, false, true));
 }
 
 
-function meta::external::query::graphQL::introspection::buildPureTypesFromGraphQLSchema(schema:__Schema[1], package:String[1]):Type[*]
+###Pure
+import meta::external::query::graphQL::introspection::model::*;
+import meta::external::query::graphQL::introspection::*;
+import meta::external::query::graphQL::binding::toPure::introspection::*;
+
+Class meta::external::query::graphQL::binding::toPure::introspection::GraphQLIntrospectionContainer extends meta::external::shared::format::metamodel::SchemaDetail
+{
+  schema : meta::external::query::graphQL::introspection::model::__Schema[1];
+}
+
+function meta::external::query::graphQL::binding::toPure::introspection::buildPureTypesFromGraphQLSchema(schema:__Schema[1], package:String[1]):Type[*]
 {  
   let pack = meta::external::query::graphQL::binding::toPure::buildTransientPackageFromString($package);
 
@@ -80,7 +89,7 @@ function meta::external::query::graphQL::introspection::buildPureTypesFromGraphQ
   $typesByName->values()->filter(t|$t->instanceOf(Class));
 }
 
-function <<access.private>> meta::external::query::graphQL::introspection::build(type:__Type[1], typesByName:Map<String,Type>[1]):Pair<Type, Multiplicity>[1] 
+function <<access.private>> meta::external::query::graphQL::binding::toPure::introspection::build(type:__Type[1], typesByName:Map<String,Type>[1]):Pair<Type, Multiplicity>[1] 
 {
   let mul = if ($type.kind == __TypeKind.NON_NULL,
               | PureOne,
@@ -92,7 +101,7 @@ function <<access.private>> meta::external::query::graphQL::introspection::build
    pair(findType($type, $typesByName), $mul);
 }
 
-function <<access.private>> meta::external::query::graphQL::introspection::findType(type:__Type[1], typesByName:Map<String,Type>[1]):Type[1] 
+function <<access.private>> meta::external::query::graphQL::binding::toPure::introspection::findType(type:__Type[1], typesByName:Map<String,Type>[1]):Type[1] 
 {
   if ($type.kind == __TypeKind.NON_NULL,
       | findType($type.ofType->toOne(), $typesByName),
@@ -103,7 +112,23 @@ function <<access.private>> meta::external::query::graphQL::introspection::findT
     );           
 }
 
-function <<access.private>> meta::external::query::graphQL::introspection::buildGraphQLSchemaFromPureTypes(cl:Class<Any>[1]):BaseGraphQLType[1]
+###Pure
+import meta::external::query::graphQL::introspection::model::*;
+import meta::external::query::graphQL::introspection::*;
+import meta::external::query::graphQL::binding::fromPure::introspection::*;
+
+function meta::external::query::graphQL::binding::fromPure::introspection::scanTypes(t:Type[1], processed:Type[*]):Type[*]
+{
+   if (!$processed->contains($t),
+       |$t->concatenate(if($t->instanceOf(Class),
+                         |$t->cast(@Class<Any>)->allProperties().genericType.rawType->distinct()->concatenate($t->cast(@Class<Any>)->meta::pure::functions::meta::findAllSpecializations())->filter(t|($t->instanceOf(Class) || $t->instanceOf(meta::pure::metamodel::type::Enumeration)) && $t != Any)->map(c|$c->meta::external::query::graphQL::binding::fromPure::introspection::scanTypes($processed->concatenate($t)))->distinct(),
+                         |[]
+                       )),
+       |[]
+   );
+}
+
+function meta::external::query::graphQL::binding::fromPure::introspection::buildGraphQLSchemaFromPureTypes(cl:Class<Any>[1]):BaseGraphQLType[1]
 {  
   let classes = $cl->scanTypes([]);
   let res = transformPureToGraphQL($classes);
@@ -116,7 +141,7 @@ function <<access.private>> meta::external::query::graphQL::introspection::build
   );
 }
 
-function <<access.private>> meta::external::query::graphQL::introspection::transformPureToGraphQL(types:Type[*]):__Type[*]
+function <<access.private>> meta::external::query::graphQL::binding::fromPure::introspection::transformPureToGraphQL(types:Type[*]):__Type[*]
 {
   // PASS 1
   let res = $types->map(c|
@@ -169,7 +194,7 @@ function <<access.private>> meta::external::query::graphQL::introspection::trans
   $res->values()->meta::pure::functions::collection::sortBy(t|$t.name->toOne());
 }
 
-function <<access.private>> meta::external::query::graphQL::introspection::buildType(func:Function<Any>[1], map:Map<String,__Type>[1]):__Type[1]
+function <<access.private>> meta::external::query::graphQL::binding::fromPure::introspection::buildType(func:Function<Any>[1], map:Map<String,__Type>[1]):__Type[1]
 {
   let mul = $func->functionReturnMultiplicity();
   let type = $map->get($func->functionReturnType().rawType.name->toOne())->toOne();
@@ -182,7 +207,7 @@ function <<access.private>> meta::external::query::graphQL::introspection::build
   );
 }
 
-function <<access.private>> meta::external::query::graphQL::introspection::wrap(type:__Type[1], kind:__TypeKind[1]):__Type[1]
+function <<access.private>> meta::external::query::graphQL::binding::fromPure::introspection::wrap(type:__Type[1], kind:__TypeKind[1]):__Type[1]
 {
   ^__Type
   (

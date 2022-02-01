@@ -101,6 +101,7 @@ public class PureSession
                     .with(this.buildCore("external-format-flatdata"))
                     .with(this.buildCore("external-format-json"))
                     .with(this.buildCore("external-format-xml"))
+                    .with(this.buildCore("external-query-graphql"))
                     .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
 
             this.codeStorage = new PureCodeStorage(Paths.get(rootPath), repos.toArray(new RepositoryCodeStorage[0]));
