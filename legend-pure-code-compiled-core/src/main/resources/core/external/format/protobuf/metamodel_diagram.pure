@@ -135,17 +135,6 @@ Diagram meta::external::format::protobuf::Protobuf_Diagram(width=0.0, height=0.0
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView Timestamp_$_10(
-        type=meta::external::format::protobuf::metamodel::Timestamp,
-        position=(964.83283, 380.00000),
-        width=83.13477,
-        height=36.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
 
     TypeView String_$_6(
         type=meta::external::format::protobuf::metamodel::String,
@@ -294,14 +283,6 @@ Diagram meta::external::format::protobuf::Protobuf_Diagram(width=0.0, height=0.0
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_11(
-        source=Timestamp_$_10,
-        target=ScalarType_$_1,
-        points=[(999.15808,386.50000),(999.15808,276.50000)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
 
     PropertyView pview_0(
         property=meta::external::format::protobuf::metamodel::Field.type,
