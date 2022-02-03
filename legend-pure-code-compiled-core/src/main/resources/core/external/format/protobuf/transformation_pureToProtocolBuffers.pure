@@ -45,35 +45,45 @@ function meta::external::format::protobuf::generation::generateProtobufFromPureW
 
 function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1]):ProtobufOutput[*]
 {
-   let content =$class->map(c|$c->classToMessage())->map(s|$s->meta::external::format::protobuf::serialization::toString())->removeDuplicates()->joinStrings('\n');
-   ^ProtobufOutput(content=$content,fileName=$class->elementToPath()->pathToFileName('proto'), format = 'proto');
+    $class->map(c|$c->classToMessage())->map(s|
+      let content = $s->meta::external::format::protobuf::serialization::toString();
+      ^ProtobufOutput(content=$content,fileName=$s.package->pathToFileName('proto'), format = 'proto');
+    );
 }
 
-function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[1]
+function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[*]
 {
    let allClasses = $class->scanTypes([])->removeDuplicates()->remove(Any);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
-   let topLevelDefs = $allClasses
-      ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>)
-      ->map(c|
-         ^Message
-         (
-            name = $c.name->toOne(),
-            fields = $c.properties->map(p|$p->propertyToField($c.properties->indexOf($p)+1, $typesMap))
-         )
-      )->concatenate
-         (
-            $allClasses
-            ->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->cast(@meta::pure::metamodel::type::Enumeration<Any>)
-            ->map(e|
-                  ^meta::external::format::protobuf::metamodel::Enumeration
-                  (
-                     name = $e->enumName(),
-                     values = $e->enumValues()->map(v|^meta::external::format::protobuf::metamodel::Enum(constant=$v->toString(), constantNumber=$e->enumValues()->indexOf($v)))
-                  )
-             )
-         );
-    ^ProtoFile(syntax=Syntax.proto3, topLevelDefs=$topLevelDefs, imports=['google/protobuf/timestamp.proto']);     
+   let classesByPackage = $allClasses->groupBy(c | $c.package->toOne()->elementToPath('.'));
+   
+   $classesByPackage->keyValues()->map(p | 
+      let thePackage = $p.first;
+      let packageClasses = $p.second.values;
+
+      let topLevelDefs = $packageClasses
+        ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>)
+        ->map(c|
+            ^Message
+            (
+              name = $c.name->toOne(),
+              fields = $c.properties->map(p|$p->propertyToField($c.properties->indexOf($p)+1, $typesMap))
+            )
+        )->concatenate
+            (
+              $packageClasses
+              ->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->cast(@meta::pure::metamodel::type::Enumeration<Any>)
+              ->map(e|
+                    ^meta::external::format::protobuf::metamodel::Enumeration
+                    (
+                        name = $e->enumName(),
+                        values = $e->enumValues()->map(v|^meta::external::format::protobuf::metamodel::Enum(constant=$v->toString(), constantNumber=$e->enumValues()->indexOf($v)))
+                    )
+                )
+            );
+
+      ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs, imports=['google/protobuf/timestamp.proto']);
+   );        
 }
 
 function meta::external::format::protobuf::generation::propertyToField(property:Property<Nil,Any|*>[1], index:Integer[1], typesMap:Map<Type, ProtoBufType>[1]):Field[1]

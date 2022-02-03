@@ -16,9 +16,9 @@ import meta::external::format::protobuf::metamodel::*;
 
 function meta::external::format::protobuf::serialization::toString(file:ProtoFile[1]):String[1]
 {
-   'syntax = "' + $file.syntax.name + '";\n'
-   + if( $file.package->isEmpty(), | '', | 'package = ' + $file.package->toOne() + ';\n' )
+   'syntax = "' + $file.syntax.name + '";\n'   
    + $file.imports->map( i | 'import "' + $i + '";\n')->joinStrings() 
+   + if( $file.package->isEmpty(), | '', | 'package = ' + $file.package->toOne() + ';\n' )
    + $file.topLevelDefs->map(t | $t->meta::external::format::protobuf::serialization::toString())->joinStrings('\n')
 }
 

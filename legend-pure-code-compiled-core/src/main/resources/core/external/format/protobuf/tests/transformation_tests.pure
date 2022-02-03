@@ -44,6 +44,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
 {
    assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
+                'package = meta.external.format.protobuf.generation.tests.trade;\n' +
                 'message Trade {\n'+
                 ' string type = 1;\n'+
                 ' int64 id = 2;\n'+
@@ -51,23 +52,27 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                 ' repeated double notionals = 4;\n'+
                 ' Account account = 5;\n'+
                 '}\n'+
+                'enum MyEnum {\n'+
+                '   a = 0;\n'+
+                '   b = 1;\n'+
+                '}\n' + 
+                'syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'package = meta.external.format.protobuf.generation.tests.account;\n' +
                 'message Account {\n'+
                 ' string name = 1;\n'+
                 ' Trade t = 2;\n'+
                 ' MyEnum enum = 3;\n'+
                 ' google.protobuf.Timestamp adate = 4;\n'+
-                '}\n'+
-                'enum MyEnum {\n'+
-                '   a = 0;\n'+
-                '   b = 1;\n'+
                 '}'
                 ,classToMessage(Trade)->map(m|$m->meta::external::format::protobuf::serialization::toString())->joinStrings('\n'));
 }
 
 function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
 {
-   assertEquals('syntax = "proto3";\n' +
+   assertEquals([('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
+                'package = meta.external.format.protobuf.generation.tests.trade;\n' +
                 'message Trade {\n'+
                 ' string type = 1;\n'+
                 ' int64 id = 2;\n'+
@@ -75,15 +80,18 @@ function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::p
                 ' repeated double notionals = 4;\n'+
                 ' Account account = 5;\n'+
                 '}\n'+
+                'enum MyEnum {\n'+
+                '   a = 0;\n'+
+                '   b = 1;\n'+
+                '}'),
+                ('syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'package = meta.external.format.protobuf.generation.tests.account;\n' +
                 'message Account {\n'+
                 ' string name = 1;\n'+
                 ' Trade t = 2;\n'+
                 ' MyEnum enum = 3;\n'+
                 ' google.protobuf.Timestamp adate = 4;\n'+
-                '}\n'+
-                'enum MyEnum {\n'+
-                '   a = 0;\n'+
-                '   b = 1;\n'+
-                '}'
+                '}')]
                 ,meta::external::format::protobuf::generation::transform(^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::trade::Trade')).content);
 }
