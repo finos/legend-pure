@@ -43,7 +43,7 @@ Class meta::external::format::flatdata::executionPlan::FlatDataSerializeExecutio
 {
 }
 
-Class meta::external::format::flatdata::executionPlan::FlatDataDeserializeExecutionNode extends ExecutionNode
+Class meta::external::format::flatdata::executionPlan::FlatDataDeserializeExecutionNode extends ExternalFormatDeserializeExecutionNode
 {
    binding : Binding[1];
    tree    : RootGraphFetchTree<Any>[0..1]; 
@@ -711,9 +711,11 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::add
                          {sp, code| 
                             let name  = j_string($sp.name);
                             let value = $sp.value->match([
-                               i:Integer[1]| j_long($i), 
-                               s:String[1] | j_string($s), 
-                               b:Boolean[1]| j_boolean($b)
+                               i:Integer[1]  | j_long($i), 
+                               s:String[1]   | j_string($s), 
+                               b:Boolean[1]  | j_boolean($b),
+                               is:Integer[*] | javaArrays()->j_invoke(javaLongBoxed(), 'asList', $is->map(i|j_long($i)), javaList(javaLongBoxed())),
+                               ss:String[*]  | javaArrays()->j_invoke(javaString(), 'asList', $ss->map(s|j_string($s)), javaList(javaString()))
                             ]);
                             $code->j_invoke('withProperty', [$name, $value], $conventions->className(_FlatDataSection));
                          },
@@ -790,25 +792,21 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::cod
             );
       },
       {date:FlatDataDate[1]|
-         j_new($conventions->className(_FlatDataDate), $optional)
-            ->map(j| $date.format->match([
-                        f0:String[0]| $j,
-                        f :String[1]| $j->j_invoke('withFormat', j_string($f))
-                     ])
-            );
+         $date.format->fold(
+            {fmt, cde | $cde->j_invoke('addFormat', j_string($fmt))}, 
+            j_new($conventions->className(_FlatDataDate), $optional)
+         )
       },
       {dateTime:FlatDataDateTime[1]|
-         j_new($conventions->className(_FlatDataDateTime), $optional)
-            ->map(j| $dateTime.timeZone->match([
-                        z0:String[0]| $j,
-                        z :String[1]| $j->j_invoke('withTimeZone', j_string($z))
-                     ])
+         $dateTime.format->fold(
+            {fmt, cde | $cde->j_invoke('addFormat', j_string($fmt))}, 
+            j_new($conventions->className(_FlatDataDateTime), $optional)
+               ->map(j| $dateTime.timeZone->match([
+                           z0:String[0]| $j,
+                           z :String[1]| $j->j_invoke('withTimeZone', j_string($z))
+                        ])
             )
-            ->map(j| $dateTime.format->match([
-                        f0:String[0]| $j,
-                        f :String[1]| $j->j_invoke('withFormat', j_string($f))
-                     ])
-            );
+         )
       }
    ]);
 }

@@ -81,7 +81,7 @@ abstract class AbstractDateWithSubsecond extends AbstractDateWithSecond
     }
 
     @Override
-    public PureDate addMicroseconds(int microseconds)
+    public PureDate addMicroseconds(long microseconds)
     {
         if (microseconds == 0)
         {
@@ -95,7 +95,7 @@ abstract class AbstractDateWithSubsecond extends AbstractDateWithSecond
         }
 
         AbstractDateWithSubsecond copy = clone();
-        int seconds = microseconds / 1_000_000;
+        long seconds = microseconds / 1_000_000;
         if (seconds != 0)
         {
             copy.incrementSecond(seconds);

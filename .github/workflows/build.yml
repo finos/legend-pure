@@ -69,12 +69,12 @@ jobs:
           git config --global author.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git config --global author.name "${GITHUB_ACTOR}"
       - name: Check Maven version
-        run: mvn -v
+        run: mvn -v -DargLine="-Xmx2000m"
       - name: Download deps and plugins
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -DargLine="-Xmx2000m"
       - name: Build + Test
         if: (github.repository != 'finos/legend-pure') || (github.ref != 'refs/heads/master')
-        run: mvn -B -e install javadoc:javadoc
+        run: mvn -B -e install javadoc:javadoc -DargLine="-Xmx2000m"
       - name: Build + Test + Sonar + Maven Deploy
         if: (github.repository == 'finos/legend-pure') && (github.ref == 'refs/heads/master')
-        run: mvn -B -e deploy javadoc:javadoc -Psonar
+        run: mvn -B -e deploy javadoc:javadoc -Psonar -DargLine="-Xmx2000m"

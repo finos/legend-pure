@@ -20,7 +20,7 @@ import meta::pure::runtime::*;
 import meta::pure::metamodel::path::*;
 import meta::pure::router::printer::*;
 import meta::pure::router::clustering::*;
-import meta::pure::router::store::platform::*;
+import meta::pure::store::platform::metamodel::*;
 import meta::pure::router::store::embedded::*;
 
 Class meta::pure::router::printer::Pref
@@ -131,7 +131,7 @@ function meta::pure::graphFetch::routing::asString(r: GraphFetchTree[1], spaceSt
    let newLine = if($multiLine, | '\n', | '');
    $r->match([
       c: ClusteredGraphFetchTree[1] |
-         let start = '{'+if($c.store->instanceOf(meta::pure::router::store::platform::PlatformStore),|'Platform', |if($c.store->instanceOf(meta::pure::router::store::embedded::EmbeddedStore),|'Embedded',|$c.store->toOne()->elementToPath()))+'> ';
+         let start = '{'+if($c.store->instanceOf(meta::pure::store::platform::metamodel::PlatformStore),|'Platform', |if($c.store->instanceOf(meta::pure::router::store::embedded::EmbeddedStore),|'Embedded',|$c.store->toOne()->elementToPath()))+'> ';
          $space+$start+$c.tree->asString($space, $multiLine)+'}';,
 
       rr: RoutedRootGraphFetchTree<Any>[1] |
@@ -147,9 +147,8 @@ function meta::pure::graphFetch::routing::asString(r: GraphFetchTree[1], spaceSt
          if($rp.subTrees->isEmpty(), | '', | $rp.subTrees->map(x | $x->asString($space + '    ', $multiLine))->joinStrings(' {'+$newLine, ', '+$newLine, $newLine + $space + '}')),
 
       rp: PropertyGraphFetchTree[1] |
-         $space +  $rp.property.name->toOne() + if($rp.property->instanceOf(QualifiedProperty), |'('+$rp.parameters->map(p|$p->asString())->joinStrings(', ')+
-      ')', |'') + 
-         if($rp.subTrees->isEmpty(), | '', | $rp.subTrees->map(x | $x->asString($space + '    ', $multiLine))->joinStrings(' {'+$newLine, ', '+$newLine, $newLine + $space + '}'))
+         $space +  $rp.property.name->toOne() + if($rp.property->instanceOf(QualifiedProperty), |'('+$rp.parameters->evaluateAndDeactivate()->map(p|$p->asString())->joinStrings(', ')+')', |'') +
+         if($rp.subTrees->isEmpty(), | '', | $rp.subTrees->map(x | $x->asString($space + '    ', $multiLine))->joinStrings(' {'+$newLine, ', '+$newLine, $newLine + $space + '}'));
  ]); 
 }
 

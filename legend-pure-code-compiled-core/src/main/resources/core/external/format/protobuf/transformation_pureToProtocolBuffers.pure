@@ -37,7 +37,7 @@ function <<Generation.Transformation>> meta::external::format::protobuf::generat
 }
 
 function meta::external::format::protobuf::generation::generateProtobufFromPureWithScope(config:ProtobufConfig[1]):ProtobufOutput[*]
-{
+{   
    $config.scopeElements->filter(e| !$e->instanceOf(Package))->map(e|assert($e->instanceOf(Class),' Protobuf generation of ' + $e->type().name->toOne()+ ' is not currently supported. Tried to generate Protobuf for '+ $e->elementToPath()) ;);
    let classElements = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Class))->cast(@Class<Any>);
    $classElements->map(c| $config->meta::external::format::protobuf::generation::generateProtobufFromPure($c));
@@ -49,11 +49,11 @@ function meta::external::format::protobuf::generation::generateProtobufFromPure(
    ^ProtobufOutput(content=$content,fileName=$class->elementToPath()->pathToFileName('proto'), format = 'proto');
 }
 
-function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoBufType[*]
+function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[1]
 {
    let allClasses = $class->scanTypes([])->removeDuplicates()->remove(Any);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
-   $allClasses
+   let topLevelDefs = $allClasses
       ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>)
       ->map(c|
          ^Message
@@ -73,6 +73,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
                   )
              )
          );
+    ^ProtoFile(syntax=Syntax.proto3, topLevelDefs=$topLevelDefs, imports=['google/protobuf/timestamp.proto']);     
 }
 
 function meta::external::format::protobuf::generation::propertyToField(property:Property<Nil,Any|*>[1], index:Integer[1], typesMap:Map<Type, ProtoBufType>[1]):Field[1]
@@ -94,9 +95,9 @@ function <<access.private>> meta::external::format::protobuf::generation::seedPu
          pair(Float, ^meta::external::format::protobuf::metamodel::Double()),
          pair(String, ^meta::external::format::protobuf::metamodel::String()),
          pair(Boolean, ^meta::external::format::protobuf::metamodel::Bool()),
-         pair(DateTime , ^meta::external::format::protobuf::metamodel::Timestamp()),
-         pair(Date , ^meta::external::format::protobuf::metamodel::Timestamp()),
-         pair(StrictDate , ^meta::external::format::protobuf::metamodel::Timestamp()),
+         pair(DateTime , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
+         pair(Date , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
+         pair(StrictDate , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
          pair(Number , ^meta::external::format::protobuf::metamodel::Double()),
          pair(Any, ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Any'))
       ]

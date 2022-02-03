@@ -41,7 +41,9 @@ Class meta::external::format::protobuf::generation::tests::Account
 
 function <<test.Test>> meta::external::format::protobuf::generation::tests::testClassToProtoBuf():Boolean[1]
 {
-   assertEquals('message Trade {\n'+
+   assertEquals('syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'message Trade {\n'+
                 ' string type = 1;\n'+
                 ' int64 id = 2;\n'+
                 ' double npv = 3;\n'+
@@ -52,7 +54,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                 ' string name = 1;\n'+
                 ' Trade t = 2;\n'+
                 ' MyEnum enum = 3;\n'+
-                ' timestamp adate = 4;\n'+
+                ' google.protobuf.Timestamp adate = 4;\n'+
                 '}\n'+
                 'enum MyEnum {\n'+
                 '   a = 0;\n'+
@@ -63,7 +65,9 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
 
 function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
 {
-   assertEquals('message Trade {\n'+
+   assertEquals('syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'message Trade {\n'+
                 ' string type = 1;\n'+
                 ' int64 id = 2;\n'+
                 ' double npv = 3;\n'+
@@ -74,7 +78,7 @@ function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::p
                 ' string name = 1;\n'+
                 ' Trade t = 2;\n'+
                 ' MyEnum enum = 3;\n'+
-                ' timestamp adate = 4;\n'+
+                ' google.protobuf.Timestamp adate = 4;\n'+
                 '}\n'+
                 'enum MyEnum {\n'+
                 '   a = 0;\n'+

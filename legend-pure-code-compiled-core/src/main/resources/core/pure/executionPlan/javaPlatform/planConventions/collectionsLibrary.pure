@@ -88,6 +88,8 @@ function meta::pure::executionPlan::engine::java::registerCollectionsLibrary(con
 
          fc1(size_Any_MANY__Integer_1_,                                          {ctx,collection               | $collection->j_streamOf()->js_count()}),
          fc (count_Any_MANY__Integer_1_,                                         fcAlias(                        size_Any_MANY__Integer_1_)),
+         fc1(isDistinct_T_MANY__Boolean_1_,                                      {ctx,collection               | if($collection.type->isJavaList(), | j_eq($library->j_invoke('removeDuplicates', [$collection, j_null(), j_null()], $collection.type)->j_invoke('size', []), $collection->j_invoke('size', [])), | j_boolean(true))}),
+
          fc(meta::pure::functions::collection::isEqual_T_1__T_1__RootGraphFetchTree_1__Boolean_1_, IsEqualCoder_FunctionExpression_1__Conventions_1__DebugContext_1__Code_1_),
          fc(meta::pure::functions::collection::isDistinct_T_MANY__RootGraphFetchTree_1__Boolean_1_, IsDistinctFetchTreeCoder_FunctionExpression_1__Conventions_1__DebugContext_1__Code_1_)
       ]);

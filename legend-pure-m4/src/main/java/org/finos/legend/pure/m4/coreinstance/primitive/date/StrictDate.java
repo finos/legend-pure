@@ -97,7 +97,7 @@ public final class StrictDate extends AbstractDateWithDay
     }
 
     @Override
-    public PureDate addMicroseconds(int microseconds)
+    public PureDate addMicroseconds(long microseconds)
     {
         throw new UnsupportedOperationException();
     }

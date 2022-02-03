@@ -18,7 +18,7 @@ import meta::external::query::graphQL::metamodel::value::*;
 import meta::external::query::graphQL::metamodel::typeSystem::*;
 import meta::external::query::graphQL::serialization::*;
 
-function <<test.Test>> meta::external::query::graphQL::serialization::tests::myTest():Boolean[1]
+function <<test.Test>> meta::external::query::graphQL::serialization::tests::testSimpleSerialization():Boolean[1]
 {
   let res = ^Document(
     definitions = 
@@ -29,7 +29,7 @@ function <<test.Test>> meta::external::query::graphQL::serialization::tests::myT
           variables = [
             ^VariableDefinition(
               name = 'var',
-              type = ^TypeReference(name='Int', list=false, nullable=false),
+              type = ^NamedTypeReference(name='Int', nullable=false),
               defaultValue = ^IntValue(value=3)
             )
           ],
@@ -93,18 +93,18 @@ function <<test.Test>> meta::external::query::graphQL::serialization::tests::myT
               argumentDefinitions = [
                 ^InputValueDefinition(
                   name = 'v',
-                  type = ^TypeReference(name='Int', list=false, nullable=false)
+                  type = ^NamedTypeReference(name='Int', nullable=false)
                 ),
                 ^InputValueDefinition(
                   name = 'x',
-                  type = ^TypeReference(name='String', list=false, nullable=false)
+                  type = ^NamedTypeReference(name='String', nullable=false)
                 )
               ],
-              type = ^TypeReference(name='MyType', list=false, nullable=false)
+              type = ^NamedTypeReference(name='MyType', nullable=false)
             ),
             ^FieldDefinition(
               name = 'other',
-              type = ^TypeReference(name='String', list=false, nullable=false)
+              type = ^NamedTypeReference(name='String', nullable=false)
             )
           ]
         ),
@@ -161,7 +161,7 @@ function <<test.Test>> meta::external::query::graphQL::serialization::tests::myT
       ]
   );
 
-  assertEquals( 'query myQuery(var: Int = 3) @deprecated(reason: \"wow\") {\n' +
+  assertEquals( 'query myQuery(var: Int! = 3) @deprecated(reason: \"wow\") {\n' +
                 '  user(id: \"Pierre\", filter: true) @deprecated(reason: \"because!\") {\n' +
                 '    newName: name(id: \"Bla\") {\n' +
                 '      ... on MyType  {\n' +
@@ -173,14 +173,14 @@ function <<test.Test>> meta::external::query::graphQL::serialization::tests::myT
                 '}\n' +
                 '\n' +
                 'type MyType @deprecated(reason: \"wow\") {\n' +
-                '  prop(v: Int, x: String): MyType\n' +
-                '  other: String\n' +
+                '  prop(v: Int!, x: String!): MyType!\n' +
+                '  other: String!\n' +
                 '}\n' +
                 '\n' +
                 'union UnionTest @deprecated(reason: \"wow\") = a | b\n' +
                 '\n' +
                 'enum IncType @deprecated(reason: \"wow\") {\n' +
-                '  Corp,\n' +
+                '  Corp\n' +
                 '  LLC @deprecated(reason: \"wow\")\n' +
                 '}\n' +
                 '\n' +

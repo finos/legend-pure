@@ -95,25 +95,6 @@ Class meta::pure::router::store::embedded::EmbeddedStore extends meta::pure::sto
 {
 }
 
-Class meta::pure::router::store::platform::PlatformStore extends meta::pure::store::Store
-{
-}
-
-function meta::pure::router::store::platform::planExecution(sq:meta::pure::mapping::StoreQuery[1], ext:RoutedValueSpecification[0..1], m:Mapping[0..1], runtime:Runtime[0..1], exeCtx:ExecutionContext[1], extensions : RouterExtension[*], debug:DebugContext[1]):ExecutionNode[1]
-{
-   let children = $sq.fe->recurse()->map(c|$c->plan($runtime, $sq.inScopeVars, $sq.advancedRouting, $exeCtx, $extensions, $debug));
-   let dflt     = {fe:FunctionExpression[1], ch:ExecutionNode[*]|
-      ^PureExpressionPlatformExecutionNode
-      (
-         expression = $fe,
-         resultType = ^ResultType(type=$fe.genericType.rawType->toOne()),
-         executionNodes = $ch
-      )
-   };
-   
-   meta::pure::executionPlan::nodeFromFunctionExpression($sq.fe, $children, $extensions, $dflt);
-}
-
 function meta::pure::router::permute(var:PermutationSet[*]):List<PermutationSet>[*]
 {
    let l = $var->map(p|^List<PermutationSet>(values=$p.sets->removeDuplicates({a,b|$a.id == $b.id})->map(v|^$p(sets=$v))));
@@ -139,10 +120,11 @@ function meta::pure::router::deepByPassRouterInfo(value:Any[1]):Any[1]
                                              a:Any[1]                              | $a]);
 }
 
-
-function meta::pure::router::store::platform::supports(f:FunctionExpression[1]):Boolean[1]
+function meta::pure::router::byPassValueSpecificationWrapper(v:ValueSpecification[1]):ValueSpecification[1]
 {
-   true;
+   $v->match([ e: RoutedValueSpecification[1]|byPassValueSpecificationWrapper($e.value),
+               c: ClusteredValueSpecification[1]|byPassValueSpecificationWrapper($c.val),
+               v: ValueSpecification[1] | $v]);                               
 }
 
 function meta::pure::router::isSerializeOnGraphFetch(vs:ValueSpecification[1]):Boolean[1]
@@ -156,7 +138,7 @@ function meta::pure::router::isSerializeOnGraphFetch(vs:ValueSpecification[1]):B
 function meta::pure::router::isUnionOnGraphFetch(vs:ValueSpecification[1]):Boolean[1]
 {
    let unionFunctions = [concatenate_T_MANY__T_MANY__T_MANY_, union_T_MANY__T_MANY__T_MANY_];
-   $vs->instanceOf(FunctionExpression) && $unionFunctions->contains($vs->cast(@FunctionExpression).func) && $vs->cast(@FunctionExpression).parametersValues->map(v|$v->byPassRouterInfo())->forAll(v|$v->instanceOf(FunctionExpression) && $v->cast(@FunctionExpression).func->in(meta::pure::graphFetch::execution::graphFetchFunctions()));
+   $vs->instanceOf(FunctionExpression) && $unionFunctions->contains($vs->cast(@FunctionExpression).func) && $vs->cast(@FunctionExpression).parametersValues->map(v|$v->byPassValueSpecificationWrapper())->forAll(v|$v->instanceOf(FunctionExpression) && $v->cast(@FunctionExpression).func->in(meta::pure::graphFetch::execution::graphFetchFunctions()));
 }
 
 function meta::pure::functions::collection::unionLambdas(vs:ValueSpecification[*], concatenate:Boolean[1], genericType:GenericType[1]):ValueSpecification[1]
@@ -225,16 +207,6 @@ function meta::pure::router::isSerializeFunction(fe:ValueSpecification[1]):Boole
 function meta::pure::router::extractLetVariableName(v:ValueSpecification[1]):String[0..1]
 {
  if($v->isLetFunction(),| $v->cast(@FunctionExpression).parametersValues->evaluateAndDeactivate()->at(0)->cast(@InstanceValue).values->at(0)->cast(@String),| []);  
-}
-
-
-function <<access.private>> meta::pure::router::store::platform::recurse(vs:ValueSpecification[1]):ClusteredValueSpecification[*]
-{
-   $vs->match([
-      f:SimpleFunctionExpression[1]|$f.parametersValues->evaluateAndDeactivate()->map(v|$v->recurse()),
-      c:ClusteredValueSpecification[*]|$c,
-      i:InstanceValue[1]|[]
-   ]);
 }
 
 
@@ -451,18 +423,3 @@ function meta::pure::router::routeFunction(f:FunctionDefinition<Any>[1], mapping
    );
 
 }
-
-function meta::pure::router::store::platform::execution(sq:meta::pure::mapping::StoreQuery[1], ext:RoutedValueSpecification[0..1], m:Mapping[0..1], runtime:Runtime[0..1], exeCtx:ExecutionContext[1], extensions:RouterExtension[*], debug:DebugContext[1]):Result<Any|*>[1]
-{
-  let newOne = ^Container(value = $sq.fe)->resolve($sq.inScopeVars, $sq.advancedRouting->toOne(), $extensions, $debug);
-  ^Result<Any|*>(activities = $newOne.activities, values=$newOne.value->reactivate($sq.inScopeVars));
-}
-
-
-
-
-
-
-
-
-

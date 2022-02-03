@@ -119,6 +119,15 @@ function {doc.doc = 'Get defined and inheritied properties via associations on t
    );
 }
 
+function {doc.doc = 'Get defined and inheritied qualified properties on the provided class'}
+   meta::pure::functions::meta::hierarchicalQualifiedProperties(class:Class<Any>[1]):AbstractProperty<Any>[*]
+{
+   if($class==Any,
+      | [],
+      | $class.qualifiedProperties->concatenate($class.generalizations->map(g| hierarchicalQualifiedProperties($g.general.rawType->cast(@Class<Any>)->toOne())))->removeDuplicates()
+   );
+}
+
 function
    {doc.doc = 'Returns the named property from the provided class'}
    meta::pure::functions::meta::propertyByName(class : Class<Any>[1], name : String[1]) : AbstractProperty<Any>[0..1]

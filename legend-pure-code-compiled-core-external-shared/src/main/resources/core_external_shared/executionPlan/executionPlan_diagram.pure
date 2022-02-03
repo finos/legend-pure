@@ -1,0 +1,113 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+###Diagram
+Diagram meta::external::shared::format::executionPlan::diagram::ExternalSharedExecutionNodeDiagram(width=0.0, height=0.0)
+{
+    TypeView cview_3(
+        type=meta::external::shared::format::executionPlan::ExternalFormatSerializeExecutionNode,
+        position=(721.00000, 825.00000),
+        width=244.01492,
+        height=58.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_4(
+        type=meta::external::shared::format::executionPlan::UrlStreamExecutionNode,
+        position=(511.00000, 823.00000),
+        width=165.00000,
+        height=60.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_2(
+        type=meta::external::shared::format::executionPlan::DataQualityExecutionNode,
+        position=(273.00000, 824.00000),
+        width=181.35821,
+        height=58.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_5(
+        type=meta::external::shared::format::executionPlan::ExternalFormatDeserializeExecutionNode,
+        position=(1018.00000, 825.00000),
+        width=258.02985,
+        height=58.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_1(
+        type=meta::pure::executionPlan::ExecutionNode,
+        position=(621.00000, 461.00000),
+        width=264.52238,
+        height=156.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    GeneralizationView gview_0(
+        source=cview_2,
+        target=cview_1,
+        points=[(363.67911,853.00000),(364.00000,747.00000),(624.00000,585.00000)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
+    GeneralizationView gview_1(
+        source=cview_3,
+        target=cview_1,
+        points=[(836.00000,833.00000),(753.26119,539.00000)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
+    GeneralizationView gview_2(
+        source=cview_4,
+        target=cview_1,
+        points=[(593.50000,853.00000),(753.26119,539.00000)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
+    GeneralizationView gview_3(
+        source=cview_5,
+        target=cview_1,
+        points=[(1147.01492,854.00000),(1144.00000,748.00000),(880.00000,580.00000)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+}

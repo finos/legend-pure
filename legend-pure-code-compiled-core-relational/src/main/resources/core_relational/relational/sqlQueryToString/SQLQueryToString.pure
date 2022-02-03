@@ -200,7 +200,7 @@ function meta::relational::functions::sqlQueryToString::processOperation(relatio
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processWindowColumn(w:WindowColumn[1], dbConfig : DbConfig[1], format:Format[1],generationState:GenerationState[1], config:Config[1], extensions:RouterExtension[*]):String[1]
 {
-   let supportedDbs = [DatabaseType.Sybase,DatabaseType.SybaseIQ,DatabaseType.DB2,DatabaseType.Hive,DatabaseType.H2,DatabaseType.MemSQL, DatabaseType.BigQuery, DatabaseType.Redshift];
+   let supportedDbs = [DatabaseType.Sybase,DatabaseType.SybaseIQ,DatabaseType.DB2,DatabaseType.Hive,DatabaseType.H2,DatabaseType.MemSQL, DatabaseType.BigQuery, DatabaseType.Redshift, DatabaseType.Snowflake];
    assert($supportedDbs->contains($dbConfig.dbType), 'Window Columns are not supported for Database Type: '+$dbConfig.dbType->toString() +'. Supported Databases are: '+ $supportedDbs->map(d|$d->toString())->joinStrings(',') +'.') ;
    $w.func->processOperation($dbConfig, $format, $generationState, $config, $extensions) + ' OVER ('
    + if($w.window.partition->isNotEmpty(),
@@ -647,7 +647,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    //            as "limitoffset_via_window_subquery" where "limitoffset_via_window_subquery".row_number < 10) as x
    // Also see https://www.jooq.org/doc/3.1/manual/sql-building/sql-statements/select-statement/limit-clause/#N467C4
 
-   let s = if($isSubSelect && ($dbConfig.dbType == DatabaseType.SybaseIQ) && ($selectQuery.fromRow->isNotEmpty() || $selectQuery.toRow->isNotEmpty()),
+   let s = if(($isSubSelect && ($dbConfig.dbType == DatabaseType.SybaseIQ) && ($selectQuery.fromRow->isNotEmpty() || $selectQuery.toRow->isNotEmpty())) || ($dbConfig.dbType == DatabaseType.MemSQL && $selectQuery.fromRow->isNotEmpty() && $selectQuery.toRow->isEmpty()),
               | $selectQuery->rewriteSliceAsWindowFunction(),
               | $selectQuery
               );
@@ -936,7 +936,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    let processedParams = $func.parameters->map(p | $p->processOperation($dbConfig, $format, $generationState, $config, $extensions));
    let processedLeft = $processedParams->at(0);
    let processedRight = $processedParams->at(1);
-   '(' + $processedLeft + ' not in ' + $processedRight + ' OR ' + $processedLeft + ' is null)';
+   '(' + $processedLeft + ' not in ' + if($processedRight->startsWith('(') && $processedRight->endsWith(')'), | $processedRight, | '(' + $processedRight + ')') + ' OR ' + $processedLeft + ' is null)';
 }
 
 Class <<access.private>> meta::relational::functions::sqlQueryToString::DynaFunctionToSql
@@ -1226,6 +1226,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='LOCATE(%s)', transform={p:String[2] | $p->at(1) + ', ' + $p->at(0)})),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='strpos(%s)', transform={p:String[2] | $p->at(0) + ', ' + $p->at(1)})),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='CHARINDEX(%s)', transform={p:String[2] | $p->at(0) + ', ' + $p->at(1)}))]),
+      forDynafunction('isDistinct',            [ choice($allTypes,                 $allStates,            ^ToSql(format='count(distinct(%s)) = count(%s)', transform={p:String[*]|assert($p->isNotEmpty(), |'"isDistinct" aggregation can be applied on primitive values only'); $p->concatenate($p);}))]),
       forDynafunction('isEmpty',               [ choice($aSybase,                  $selectOutsideWhen,    ^ToSql(format='case when (%s is null) then \'true\' else \'false\' end', parametersWithinWhenClause=true)),
                                                  choice($aSybase,                  $notSelectOutsideWhen, ^ToSql(format='%s is null')),
                                                  choice($notASybase,               $allStates,            ^ToSql(format='%s is null'))]),
