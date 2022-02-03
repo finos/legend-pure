@@ -22,6 +22,7 @@ Enum meta::external::format::protobuf::metamodel::Syntax
 Class meta::external::format::protobuf::metamodel::ProtoFile
 {
    syntax:Syntax[1];
+   package:String[0..1];
    imports:String[*];
    topLevelDefs:ProtoBufType[*];
 }
