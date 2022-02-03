@@ -862,6 +862,7 @@ public abstract class AbstractCompiledStateIntegrityTest
     }
 
     @Test
+    @Ignore
     public void testFunctionTypesHaveSourceInformation()
     {
         testFunctionTypesHaveSourceInformation(true);
