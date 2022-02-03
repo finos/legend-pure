@@ -47,15 +47,26 @@ function meta::external::format::protobuf::generation::generateProtobufFromPure(
 {
     $class->map(c|$c->classToMessage())->map(s|
       let content = $s->meta::external::format::protobuf::serialization::toString();
-      ^ProtobufOutput(content=$content,fileName=$s.package->pathToFileName('proto'), format = 'proto');
+      let fileName = if($s.package->isEmpty(), | $class.name->toOne() + '.proto', | $s.package->toOne()->protoPackageToFileName());
+      ^ProtobufOutput(content=$content,fileName=$fileName, format = 'proto');
     );
+}
+
+function meta::external::format::protobuf::generation::elementToProtoPackage(e:PackageableElement[1]):String[1]
+{
+  $e.package->toOne()->elementToPath('.')
+}
+
+function meta::external::format::protobuf::generation::protoPackageToFileName(p:String[1]):String[1]
+{
+  $p->replace('.', '_') + '.proto'
 }
 
 function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[*]
 {
    let allClasses = $class->scanTypes([])->removeDuplicates()->remove(Any);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
-   let classesByPackage = $allClasses->groupBy(c | $c.package->toOne()->elementToPath('.'));
+   let classesByPackage = $allClasses->groupBy(c | $c->elementToProtoPackage());
    
    $classesByPackage->keyValues()->map(p | 
       let thePackage = $p.first;
@@ -82,7 +93,14 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
                 )
             );
 
-      ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs, imports=['google/protobuf/timestamp.proto']);
+      //If this is a complex type that is not in the current package, we need to import it      
+      let imports = $packageClasses
+        ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>).properties
+        ->filter(p | !$p->isPrimitiveValueProperty() && ($p.genericType.rawType.package->toOne()->elementToPath('.') != $thePackage))
+        ->map( p | $p.genericType.rawType->toOne()->elementToProtoPackage()->protoPackageToFileName());
+                  
+
+      ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs, imports=['google/protobuf/timestamp.proto']->concatenate($imports));
    );        
 }
 
@@ -105,19 +123,19 @@ function <<access.private>> meta::external::format::protobuf::generation::seedPu
          pair(Float, ^meta::external::format::protobuf::metamodel::Double()),
          pair(String, ^meta::external::format::protobuf::metamodel::String()),
          pair(Boolean, ^meta::external::format::protobuf::metamodel::Bool()),
-         pair(DateTime , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
-         pair(Date , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
-         pair(StrictDate , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
+         pair(DateTime , ^meta::external::format::protobuf::metamodel::MessagePtr(package='google.protobuf', name='Timestamp')),
+         pair(Date , ^meta::external::format::protobuf::metamodel::MessagePtr(package='google.protobuf', name='Timestamp')),
+         pair(StrictDate , ^meta::external::format::protobuf::metamodel::MessagePtr(package='google.protobuf', name='Timestamp')),
          pair(Number , ^meta::external::format::protobuf::metamodel::Double()),
-         pair(Any, ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Any'))
+         pair(Any, ^meta::external::format::protobuf::metamodel::MessagePtr(package='google.protobuf', name='Any'))
       ]
       ->concatenate
       (
-         $types->filter(c|$c->instanceOf(Class))->map(c|pair($c, ^meta::external::format::protobuf::metamodel::MessagePtr(name=$c.name->toOne())))
+         $types->filter(c|$c->instanceOf(Class))->map(c|pair($c, ^meta::external::format::protobuf::metamodel::MessagePtr(package=$c->elementToProtoPackage(), name=$c.name->toOne())))
       )
       ->concatenate
       (
-         $types->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->map(c|pair($c, ^meta::external::format::protobuf::metamodel::EnumPtr(name=$c.name->toOne())))
+         $types->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->map(c|pair($c, ^meta::external::format::protobuf::metamodel::EnumPtr(package=$c->elementToProtoPackage(), name=$c.name->toOne())))
       )
    )
 }

@@ -50,11 +50,13 @@ Class meta::external::format::protobuf::metamodel::ProtoBufType
 
 Class meta::external::format::protobuf::metamodel::MessagePtr extends meta::external::format::protobuf::metamodel::ProtoBufType
 {
-   name : String[1];
+  package: String[1];
+  name : String[1];
 }
 
 Class meta::external::format::protobuf::metamodel::EnumPtr extends meta::external::format::protobuf::metamodel::ProtoBufType
 {
+   package: String[1];
    name : String[1];
 }
 

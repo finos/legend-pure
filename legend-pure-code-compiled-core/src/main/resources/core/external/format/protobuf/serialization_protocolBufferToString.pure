@@ -16,28 +16,30 @@ import meta::external::format::protobuf::metamodel::*;
 
 function meta::external::format::protobuf::serialization::toString(file:ProtoFile[1]):String[1]
 {
+  let packageName = if( $file.package->isEmpty(), | '', | $file.package->toOne() );
+
    'syntax = "' + $file.syntax.name + '";\n'   
    + $file.imports->map( i | 'import "' + $i + '";\n')->joinStrings() 
-   + if( $file.package->isEmpty(), | '', | 'package = ' + $file.package->toOne() + ';\n' )
-   + $file.topLevelDefs->map(t | $t->meta::external::format::protobuf::serialization::toString())->joinStrings('\n')
+   + if( $file.package->isEmpty(), | '', | 'package = ' + $packageName + ';\n' )
+   + $file.topLevelDefs->map(t | $t->meta::external::format::protobuf::serialization::toString($packageName))->joinStrings('\n');
 }
 
-function meta::external::format::protobuf::serialization::toString(p:ProtoBufType[1]):String[1]
+function meta::external::format::protobuf::serialization::toString(p:ProtoBufType[1],currentPackage:String[1]):String[1]
 {
    $p->match(
       [
-         message:Message[1]|'message ' + $message.name + ' {\n' + $message.fields->map(f | $f->meta::external::format::protobuf::serialization::toString())->joinStrings(';\n') + ';\n}',
+         message:Message[1]|'message ' + $message.name + ' {\n' + $message.fields->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings(';\n') + ';\n}',
          enum:meta::external::format::protobuf::metamodel::Enumeration[1]| 'enum '+$enum.name+' {\n'+$enum.values->map(v|'   '+$v.constant+' = '+$enum.values->indexOf($v)->toString())->joinStrings(';\n')+';\n}'
       ]
    )
 }
 
-function meta::external::format::protobuf::serialization::toString(field:Field[1]):String[1]
+function meta::external::format::protobuf::serialization::toString(field:Field[1],currentPackage:String[1]):String[1]
 {
    ' ' + if($field.repeated, | 'repeated ', | '') + $field.type->match(
                                                                   [
-                                                                     t:MessagePtr[1]|$t.name,
-                                                                     t:EnumPtr[1]|$t.name,
+                                                                     t:MessagePtr[1]|if($currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
+                                                                     t:EnumPtr[1]|if($currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
                                                                      t:ProtoBufType[1]|$t->genericType().rawType.name->toOne()->toLower()
                                                                   ])+ ' ' + $field.name + ' = ' + $field.binaryFieldNumber->toString()
 }
