@@ -17,10 +17,30 @@ function meta::external::query::graphQL::introspection::graphQLIntrospectionQuer
 import meta::external::query::graphQL::introspection::model::*;
 import meta::external::query::graphQL::introspection::*;
 import meta::external::query::graphQL::binding::toPure::introspection::*;
+import meta::external::shared::format::binding::*;
+import meta::external::shared::format::metamodel::*;
+import meta::external::shared::format::binding::toPure::*;
+import meta::pure::model::unit::*;
 
 Class meta::external::query::graphQL::binding::toPure::introspection::GraphQLIntrospectionContainer extends meta::external::shared::format::metamodel::SchemaDetail
 {
   schema : meta::external::query::graphQL::introspection::model::__Schema[1];
+}
+
+function meta::external::query::graphQL::binding::toPure::introspection::IntrospectionToPure(schemaSet:SchemaSet[1], config:SchemaToModelConfiguration[1]): Binding[1]
+{  
+   let sepPos  = $config.targetBinding->lastIndexOf('::');
+   let pkgName = $config.targetBinding->substring(0, $sepPos);   
+   
+   let generatedElements = buildPureTypesFromGraphQLSchema($schemaSet.schemas->at(0).detail->cast(@GraphQLIntrospectionContainer).schema, $pkgName);   
+
+   ^Binding(
+      package     = meta::external::query::graphQL::binding::toPure::buildTransientPackageFromString($pkgName),
+      name        = $config.targetBinding->substring($sepPos+2),
+      schemaSet   = $schemaSet,
+      contentType = 'application/json',
+      modelUnit   = newModelUnit()->include($generatedElements)
+   );
 }
 
 function meta::external::query::graphQL::binding::toPure::introspection::buildPureTypesFromGraphQLSchema(schema:__Schema[1], package:String[1]):Type[*]
