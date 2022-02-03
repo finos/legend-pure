@@ -64,6 +64,16 @@ Class meta::relational::validation::complex::Firm
    (
       ~function: $this.employeesAddresses->exists(a | !$a.addressId->startsWith('1'))
       ~enforcementLevel: Error
+   ),
+   constraint7
+   (
+      ~function: $this.employees.name->isDistinct()
+      ~enforcementLevel: Error
+   ),
+   constraint8
+   (
+      ~function: $this.employees->map(x | $x.name + '$' + $x.age->toString())->isDistinct()
+      ~enforcementLevel: Error
    )
 ]
 {
@@ -413,4 +423,31 @@ function <<test.Test>> meta::relational::validation::complex::validateComplexVal
    assertEquals('CONSTRAINT_ID,ENFORCEMENT_LEVEL,MESSAGE,ID\n'+
                 'constraint6,Error,,3\n'+
                 'constraint6,Error,,4\n', $validationResult.values->toCSV());
+}
+
+function <<test.Test>> meta::relational::validation::complex::validateComplexValidation9():Boolean[1]
+{
+
+   let validationResult = validate({|Firm.all()},
+                                   validationComplexMapping,
+                                   getRuntime(),
+                                   ['constraint7'], meta::pure::router::extension::defaultRelationalExtensions());
+
+   assertEquals('CONSTRAINT_ID,ENFORCEMENT_LEVEL,MESSAGE,ID\n'+
+                'constraint7,Error,,1\n'+
+                'constraint7,Error,,1\n'+
+                'constraint7,Error,,4\n', $validationResult.values->toCSV());
+}
+
+function <<test.Test>> meta::relational::validation::complex::validateComplexValidation10():Boolean[1]
+{
+
+   let validationResult = validate({|Firm.all()},
+                                   validationComplexMapping,
+                                   getRuntime(),
+                                   ['constraint8'], meta::pure::router::extension::defaultRelationalExtensions());
+
+   assertEquals('CONSTRAINT_ID,ENFORCEMENT_LEVEL,MESSAGE,ID\n'+
+                'constraint8,Error,,1\n'+
+                'constraint8,Error,,1\n', $validationResult.values->toCSV());
 }

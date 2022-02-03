@@ -290,6 +290,27 @@ meta::pure::mapping::modelToModel::test::alloy::constraints::constraintOnUnmappe
                         $result.values->toOne()->parseJSON()));
 }
 
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
+{ serverVersion.start='v1_20_0' }
+meta::pure::mapping::modelToModel::test::alloy::constraints::testIsDistinctConstraintWithPrimitiveValues():Boolean[1]
+{
+   let inputData = '[{"idAndName":"1:Prod1","synonyms":[{"value":"Type1:Name1"},{"value":"Type2:Name2"}]},{"idAndName":"2:Prod2","synonyms":[{"value":"Type1:Name1"},{"value":"Type1:Name2"}]},{"idAndName":"2:Prod2","synonyms":[{"value":"Type1:Name1"},{"value":"Type1:Name1"}]}]';
+   let result = execute(
+      |Product.all()->graphFetchChecked(#{Product{id,name,synonyms{type,name}}}#)->serialize(#{Product{id,name,synonyms{type,name}}}#),
+      meta::pure::mapping::modelToModel::test::alloy::constraints::ProductMapping,
+      ^Runtime(connections = ^JsonModelConnection(element =^ ModelStore(), class = _Product, url = 'data:application/json,' + $inputData)),
+      []
+   );
+
+   let expected = '['+
+      '{"defects":[],"source":{"defects":[],"source":{"number":1,"record":"{\\"idAndName\\":\\"1:Prod1\\",\\"synonyms\\":[{\\"value\\":\\"Type1:Name1\\"},{\\"value\\":\\"Type2:Name2\\"}]}"},"value":{"idAndName":"1:Prod1","synonyms":[{"value":"Type1:Name1"},{"value":"Type2:Name2"}]}},"value":{"synonyms":[{"name":"Name1","type":"Type1"},{"name":"Name2","type":"Type2"}],"name":"Prod1","id":1}},'+
+      '{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"distinctId","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::constraints::Product","message":"Constraint :[distinctId] violated in the Class Product"}],"source":{"defects":[],"source":{"number":2,"record":"{\\"idAndName\\":\\"2:Prod2\\",\\"synonyms\\":[{\\"value\\":\\"Type1:Name1\\"},{\\"value\\":\\"Type1:Name2\\"}]}"},"value":{"idAndName":"2:Prod2","synonyms":[{"value":"Type1:Name1"},{"value":"Type1:Name2"}]}},"value":{"synonyms":[{"name":"Name1","type":"Type1"},{"name":"Name2","type":"Type1"}],"name":"Prod2","id":2}},'+
+      '{"defects":[{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"distinctId","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::constraints::Product","message":"Constraint :[distinctId] violated in the Class Product"},{"path":[],"enforcementLevel":"Error","ruleType":"ClassConstraint","externalId":null,"id":"distinctIdAndNames","ruleDefinerPath":"meta::pure::mapping::modelToModel::test::alloy::constraints::Product","message":"Constraint :[distinctIdAndNames] violated in the Class Product"}],"source":{"defects":[],"source":{"number":3,"record":"{\\"idAndName\\":\\"2:Prod2\\",\\"synonyms\\":[{\\"value\\":\\"Type1:Name1\\"},{\\"value\\":\\"Type1:Name1\\"}]}"},"value":{"idAndName":"2:Prod2","synonyms":[{"value":"Type1:Name1"},{"value":"Type1:Name1"}]}},"value":{"synonyms":[{"name":"Name1","type":"Type1"},{"name":"Name1","type":"Type1"}],"name":"Prod2","id":2}}'+
+   ']';
+   assert(jsonEquivalent($expected->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+
 Class meta::pure::mapping::modelToModel::test::alloy::constraints::TaxonomyValue
 {
    id : String[1];
@@ -506,6 +527,35 @@ Class meta::pure::mapping::modelToModel::test::alloy::constraints::From
   id:Integer[1];
 } 
 
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::Product
+[
+   distinctId: $this.synonyms.type->isDistinct(),
+   distinctIdAndNames: $this.synonyms->map(x | $x.type + '$' + $x.name)->isDistinct()
+]
+{
+   id: Integer[1];
+   name: String[1];
+
+   synonyms: Synonym[*];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::Synonym
+{
+   type: String[1];
+   name: String[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::_Product
+{
+   idAndName: String[1];
+   synonyms: _Synonym[*];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::constraints::_Synonym
+{
+   value: String[1];
+} 
+
 ###Mapping
 Mapping meta::pure::mapping::modelToModel::test::alloy::constraints::isEqualTest
 (
@@ -622,4 +672,24 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::constraints::LoanMapping
     ~src meta::pure::mapping::modelToModel::test::alloy::constraints::From
     id : $src.id
   }
+)
+
+
+###Mapping
+Mapping meta::pure::mapping::modelToModel::test::alloy::constraints::ProductMapping
+(
+   meta::pure::mapping::modelToModel::test::alloy::constraints::Product : Pure
+   {
+      ~src meta::pure::mapping::modelToModel::test::alloy::constraints::_Product
+      id: $src.idAndName->split(':')->at(0)->parseInteger(),
+      name: $src.idAndName->split(':')->at(1),
+      synonyms: $src.synonyms
+   }
+
+   meta::pure::mapping::modelToModel::test::alloy::constraints::Synonym : Pure
+   {
+      ~src meta::pure::mapping::modelToModel::test::alloy::constraints::_Synonym
+      type: $src.value->split(':')->at(0),
+      name: $src.value->split(':')->at(1)
+   }
 )

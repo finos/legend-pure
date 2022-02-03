@@ -56,9 +56,9 @@ Class meta::pure::router::systemMapping::SystemMapping
 function meta::pure::router::systemMapping::purePlatformSystemMapping():SystemMapping[1]
 {
    ^SystemMapping(
-      executeFunctionAsString='meta::pure::router::store::platform::execution_StoreQuery_1__RoutedValueSpecification_$0_1$__Mapping_$0_1$__Runtime_$0_1$__ExecutionContext_1__RouterExtension_MANY__DebugContext_1__Result_1_',
-      supportsFunctionAsString='meta::pure::router::store::platform::supports_FunctionExpression_1__Boolean_1_',
-      planExecutionAsString='meta::pure::router::store::platform::planExecution_StoreQuery_1__RoutedValueSpecification_$0_1$__Mapping_$0_1$__Runtime_$0_1$__ExecutionContext_1__RouterExtension_MANY__DebugContext_1__ExecutionNode_1_',
+      executeFunctionAsString='meta::pure::store::platform::execution::execution_StoreQuery_1__RoutedValueSpecification_$0_1$__Mapping_$0_1$__Runtime_$0_1$__ExecutionContext_1__RouterExtension_MANY__DebugContext_1__Result_1_',
+      supportsFunctionAsString='meta::pure::store::platform::supports_FunctionExpression_1__Boolean_1_',
+      planExecutionAsString='meta::pure::store::platform::executionPlan::generation::planExecution_StoreQuery_1__RoutedValueSpecification_$0_1$__Mapping_$0_1$__Runtime_$0_1$__ExecutionContext_1__RouterExtension_MANY__DebugContext_1__ExecutionNode_1_',
       localGetterOverrideMappedAsString='',
       localGetterOverrideNonMappedAsString=''
    )
