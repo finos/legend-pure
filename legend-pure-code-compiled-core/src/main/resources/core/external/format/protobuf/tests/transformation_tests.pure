@@ -45,7 +45,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
    assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
                 'import "meta_external_format_protobuf_generation_tests_account.proto";\n' + 
-                'package = meta.external.format.protobuf.generation.tests.trade;\n' +
+                'package meta.external.format.protobuf.generation.tests.trade;\n' +
                 'message Trade {\n'+
                 ' string type = 1;\n'+
                 ' int64 id = 2;\n'+
@@ -60,7 +60,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                 'syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
                 'import "meta_external_format_protobuf_generation_tests_trade.proto";\n' +
-                'package = meta.external.format.protobuf.generation.tests.account;\n' +
+                'package meta.external.format.protobuf.generation.tests.account;\n' +
                 'message Account {\n'+
                 ' string name = 1;\n'+
                 ' meta.external.format.protobuf.generation.tests.trade.Trade t = 2;\n'+
@@ -78,7 +78,7 @@ function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::p
   assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
                 'import "meta_external_format_protobuf_generation_tests_account.proto";\n' + 
-                'package = meta.external.format.protobuf.generation.tests.trade;\n' +
+                'package meta.external.format.protobuf.generation.tests.trade;\n' +
                 'message Trade {\n'+
                 ' string type = 1;\n'+
                 ' int64 id = 2;\n'+
@@ -94,7 +94,7 @@ function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::p
   assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
                 'import "meta_external_format_protobuf_generation_tests_trade.proto";\n' +
-                'package = meta.external.format.protobuf.generation.tests.account;\n' +
+                'package meta.external.format.protobuf.generation.tests.account;\n' +
                 'message Account {\n'+
                 ' string name = 1;\n'+
                 ' meta.external.format.protobuf.generation.tests.trade.Trade t = 2;\n'+

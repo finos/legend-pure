@@ -20,7 +20,7 @@ function meta::external::format::protobuf::serialization::toString(file:ProtoFil
 
    'syntax = "' + $file.syntax.name + '";\n'   
    + $file.imports->map( i | 'import "' + $i + '";\n')->joinStrings() 
-   + if( $file.package->isEmpty(), | '', | 'package = ' + $packageName + ';\n' )
+   + if( $file.package->isEmpty(), | '', | 'package ' + $packageName + ';\n' )
    + $file.topLevelDefs->map(t | $t->meta::external::format::protobuf::serialization::toString($packageName))->joinStrings('\n');
 }
 
