@@ -42,7 +42,10 @@ Class meta::external::format::protobuf::generation::tests::account::Account
 
 function <<test.Test>> meta::external::format::protobuf::generation::tests::testClassToProtoBuf():Boolean[1]
 {
-   assertEquals('syntax = "proto3";\n' +
+  let results = Trade->classToMessage();              
+  assertSize($results, 2);
+  let resultForTrade = $results->filter( r | $r.package == 'meta.external.format.protobuf.generation.tests.trade');
+  assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
                 'import "meta_external_format_protobuf_generation_tests_account.proto";\n' + 
                 'package meta.external.format.protobuf.generation.tests.trade;\n' +
@@ -56,8 +59,9 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                 'enum MyEnum {\n'+
                 '   a = 0;\n'+
                 '   b = 1;\n'+
-                '}\n' + 
-                'syntax = "proto3";\n' +
+                '}', $resultForTrade->toOne()->meta::external::format::protobuf::serialization::toString());
+  let resultForAccount = $results->filter( r | $r.package == 'meta.external.format.protobuf.generation.tests.account');              
+  assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
                 'import "meta_external_format_protobuf_generation_tests_trade.proto";\n' +
                 'package meta.external.format.protobuf.generation.tests.account;\n' +
@@ -66,8 +70,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                 ' meta.external.format.protobuf.generation.tests.trade.Trade t = 2;\n'+
                 ' meta.external.format.protobuf.generation.tests.trade.MyEnum enum = 3;\n'+
                 ' google.protobuf.Timestamp adate = 4;\n'+
-                '}'
-                ,classToMessage(Trade)->map(m|$m->meta::external::format::protobuf::serialization::toString())->joinStrings('\n'));
+                '}', $resultForAccount->toOne()->meta::external::format::protobuf::serialization::toString());              
 }
 
 function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
