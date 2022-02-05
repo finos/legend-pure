@@ -16,6 +16,7 @@ import meta::external::format::protobuf::generation::*;
 import meta::pure::executionPlan::profiles::*;
 import meta::external::format::protobuf::serialization::*;
 import meta::external::format::protobuf::generation::tests::*;
+import meta::external::format::protobuf::metamodel::*;
 
 Class meta::external::format::protobuf::generation::tests::Trade
 {
@@ -37,6 +38,11 @@ Class meta::external::format::protobuf::generation::tests::Account
    t : Trade[1];
    enum : meta::external::format::protobuf::generation::tests::MyEnum[1];
    aDate:StrictDate[1];
+}
+
+Class meta::external::format::protobuf::generation::tests::Person
+{
+   name : String[1];
 }
 
 function <<test.Test>> meta::external::format::protobuf::generation::tests::testClassToProtoBuf():Boolean[1]
@@ -85,4 +91,33 @@ function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::p
                 '   b = 1;\n'+
                 '}'
                 ,meta::external::format::protobuf::generation::transform(^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::Trade')).content);
+}
+
+function <<test.Test>> meta::external::format::protobuf::generation::tests::OptionsToString():Boolean[1]
+{
+  let options = ^Options(javaPackage='com.gs.mymodel', 
+                         javaOuterClassname='TestClass', 
+                         javaMultipleFiles=true, 
+                         optimizeFor=OptimizeMode.SPEED,
+                         customOptions=[^CustomOption(name='aString', value='stuff'),
+                                        ^CustomOption(name='aBool', value=true)]);
+  assertEquals('option java_package = "com.gs.mymodel";\n'
+    + 'option java_outer_classname = "TestClass";\n'
+    + 'option java_multiple_files = true;\n'
+    + 'option optimize_for = SPEED;\n'
+    + 'option aString = "stuff";\n'
+    + 'option aBool = true;\n', $options->toString());                       
+}
+
+function <<test.Test>> meta::external::format::protobuf::generation::tests::transform_testClassToProtoBufWithOptions():Boolean[1]
+{
+  let config = ^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::Person',
+                               options=^Options(javaPackage='com.gs.person'));
+   assertEquals('syntax = "proto3";\n'
+      + 'import "google/protobuf/timestamp.proto";\n'
+      + 'option java_package = "com.gs.person";\n'
+      + 'message Person {\n'
+      + ' string name = 1;\n'
+      + '}'
+      ,meta::external::format::protobuf::generation::transform($config).content);
 }

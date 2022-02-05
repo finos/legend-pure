@@ -45,11 +45,16 @@ function meta::external::format::protobuf::generation::generateProtobufFromPureW
 
 function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1]):ProtobufOutput[*]
 {
-   let content =$class->map(c|$c->classToMessage())->map(s|$s->meta::external::format::protobuf::serialization::toString())->removeDuplicates()->joinStrings('\n');
+   let content = $class->classToMessage($config.options)->meta::external::format::protobuf::serialization::toString();
    ^ProtobufOutput(content=$content,fileName=$class->elementToPath()->pathToFileName('proto'), format = 'proto');
 }
 
 function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[1]
+{
+  meta::external::format::protobuf::generation::classToMessage($class, [])
+}
+
+function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1], options:Options[0..1]):ProtoFile[1]
 {
    let allClasses = $class->scanTypes([])->removeDuplicates()->remove(Any);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
@@ -73,7 +78,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
                   )
              )
          );
-    ^ProtoFile(syntax=Syntax.proto3, topLevelDefs=$topLevelDefs, imports=['google/protobuf/timestamp.proto']);     
+    ^ProtoFile(syntax=Syntax.proto3, topLevelDefs=$topLevelDefs, imports=['google/protobuf/timestamp.proto'], options=$options);     
 }
 
 function meta::external::format::protobuf::generation::propertyToField(property:Property<Nil,Any|*>[1], index:Integer[1], typesMap:Map<Type, ProtoBufType>[1]):Field[1]
