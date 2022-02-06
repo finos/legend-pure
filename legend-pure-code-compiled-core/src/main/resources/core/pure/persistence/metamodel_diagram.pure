@@ -1,22 +1,10 @@
 ###Diagram
-Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.0)
+Diagram meta::pure::persistence::PersistencePipe_Diagram(width=0.0, height=0.0)
 {
-    TypeView cview_1(
-        type=meta::pure::persistence::metamodel::ServicePersistence,
-        position=(831.00000, 487.00000),
-        width=298.00000,
-        height=191.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
     TypeView cview_7(
         type=meta::pure::persistence::metamodel::Persistence,
         position=(1354.00000, 541.00000),
-        width=225.11914,
+        width=227.12305,
         height=86.00000,
         stereotypesVisible=true,
         attributesVisible=true,
@@ -61,44 +49,8 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_2(
-        type=meta::pure::persistence::metamodel::ServicePersistenceBackend,
-        position=(863.00000, 250.00000),
-        width=232.46094,
-        height=58.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
-    TypeView cview_6(
-        type=meta::pure::persistence::metamodel::AwsGlueServicePersistenceBackend,
-        position=(1005.00000, 350.00000),
-        width=231.23047,
-        height=44.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
-    TypeView cview_10(
-        type=meta::legend::service::metamodel::Service,
-        position=(881.90492, 773.03376),
-        width=194.81299,
-        height=128.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
     TypeView cview_11(
-        type=meta::pure::persistence::metamodel::batch::TargetSpecification,
+        type=meta::pure::persistence::metamodel::batch::targetspecification::TargetSpecification,
         position=(1253.03636, 823.01688),
         width=219.79883,
         height=86.00000,
@@ -110,7 +62,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=1.0)
 
     TypeView cview_14(
-        type=meta::pure::persistence::metamodel::batch::NestedTargetSpecification,
+        type=meta::pure::persistence::metamodel::batch::targetspecification::NestedTargetSpecification,
         position=(1614.63803, 845.00844),
         width=222.46484,
         height=44.00000,
@@ -122,7 +74,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=1.0)
 
     TypeView cview_15(
-        type=meta::pure::persistence::metamodel::batch::PropertyAndFlatTargetSpecification,
+        type=meta::pure::persistence::metamodel::batch::targetspecification::PropertyAndFlatTargetSpecification,
         position=(1251.63803, 1001.00844),
         width=224.47461,
         height=58.00000,
@@ -134,7 +86,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=1.0)
 
     TypeView cview_12(
-        type=meta::pure::persistence::metamodel::batch::FlatTargetSpecification,
+        type=meta::pure::persistence::metamodel::batch::targetspecification::FlatTargetSpecification,
         position=(1630.03636, 986.01688),
         width=281.55615,
         height=86.00000,
@@ -146,7 +98,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=1.0)
 
     TypeView cview_13(
-        type=meta::pure::persistence::metamodel::batch::GroupedFlatTargetSpecification,
+        type=meta::pure::persistence::metamodel::batch::targetspecification::GroupedFlatTargetSpecification,
         position=(819.99426, 987.98895),
         width=305.22656,
         height=85.99156,
@@ -445,6 +397,78 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         color=#FFFFCC,
         lineWidth=1.0)
 
+    TypeView cview_43(
+        type=meta::pure::persistence::metamodel::PersistencePipe,
+        position=(867.29242, 492.79842),
+        width=225.79297,
+        height=183.89921,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_42(
+        type=meta::pure::persistence::metamodel::PersistencePipeBackend,
+        position=(860.29242, 300.79842),
+        width=235.80078,
+        height=58.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_6(
+        type=meta::pure::persistence::metamodel::AwsGluePersistencePipeBackend,
+        position=(721.00000, 408.00000),
+        width=231.23047,
+        height=44.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_39(
+        type=meta::pure::persistence::metamodel::input::InputSource,
+        position=(868.29242, 771.79842),
+        width=226.46094,
+        height=58.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_41(
+        type=meta::pure::persistence::metamodel::input::ServiceInputSource,
+        position=(727.29242, 874.79842),
+        width=225.13086,
+        height=58.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_44(
+        type=meta::legend::service::metamodel::Service,
+        position=(420.29242, 842.19763),
+        width=194.81299,
+        height=128.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
     GeneralizationView gview_0(
         source=cview_4,
         target=cview_3,
@@ -464,33 +488,24 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineStyle=SIMPLE)
 
     GeneralizationView gview_2(
-        source=cview_6,
-        target=cview_2,
-        points=[(1120.61523,372.00000),(979.23047,279.00000)],
+        source=cview_8,
+        target=cview_7,
+        points=[(1550.06594,699.50761),(1467.56152,584.00000)],
         label='',
         color=#000000,
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
     GeneralizationView gview_3(
-        source=cview_8,
+        source=cview_9,
         target=cview_7,
-        points=[(1550.06594,699.50761),(1466.55957,584.00000)],
+        points=[(1362.41171,700.24876),(1467.56152,584.00000)],
         label='',
         color=#000000,
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
     GeneralizationView gview_4(
-        source=cview_9,
-        target=cview_7,
-        points=[(1362.41171,700.24876),(1466.55957,584.00000)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
-
-    GeneralizationView gview_5(
         source=cview_12,
         target=cview_11,
         points=[(1770.81444,1029.01688),(1362.93578,866.01688)],
@@ -499,7 +514,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_6(
+    GeneralizationView gview_5(
         source=cview_13,
         target=cview_11,
         points=[(972.60754,1030.98473),(1362.93578,866.01688)],
@@ -508,7 +523,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_7(
+    GeneralizationView gview_6(
         source=cview_14,
         target=cview_11,
         points=[(1725.87045,867.00844),(1362.93578,866.01688)],
@@ -517,7 +532,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_8(
+    GeneralizationView gview_7(
         source=cview_26,
         target=cview_24,
         points=[(1623.78253,2101.39523),(1762.34219,1950.84462)],
@@ -526,7 +541,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_9(
+    GeneralizationView gview_8(
         source=cview_27,
         target=cview_24,
         points=[(1906.03843,2101.39523),(1762.34219,1950.84462)],
@@ -535,7 +550,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_10(
+    GeneralizationView gview_9(
         source=cview_28,
         target=cview_24,
         points=[(1762.85727,2182.59685),(1762.34219,1950.84462)],
@@ -544,7 +559,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_11(
+    GeneralizationView gview_10(
         source=cview_29,
         target=cview_25,
         points=[(1649.51420,1760.61635),(1764.59120,1664.60520)],
@@ -553,7 +568,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_12(
+    GeneralizationView gview_11(
         source=cview_30,
         target=cview_25,
         points=[(1885.39162,1746.61635),(1764.59120,1664.60520)],
@@ -562,7 +577,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_13(
+    GeneralizationView gview_12(
         source=cview_32,
         target=cview_31,
         points=[(2507.58197,1576.61167),(2405.67338,1492.16208)],
@@ -571,7 +586,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_14(
+    GeneralizationView gview_13(
         source=cview_33,
         target=cview_31,
         points=[(2319.20085,1564.61167),(2405.67338,1492.16208)],
@@ -580,7 +595,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_15(
+    GeneralizationView gview_14(
         source=cview_35,
         target=cview_34,
         points=[(2146.14923,1100.59225),(2244.59031,1028.72743)],
@@ -589,7 +604,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_16(
+    GeneralizationView gview_15(
         source=cview_36,
         target=cview_34,
         points=[(2244.84774,1157.63706),(2244.59031,1028.72743)],
@@ -598,7 +613,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_17(
+    GeneralizationView gview_16(
         source=cview_37,
         target=cview_34,
         points=[(2368.45426,1106.69606),(2244.59031,1028.72743)],
@@ -607,7 +622,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_18(
+    GeneralizationView gview_17(
         source=cview_17,
         target=cview_38,
         points=[(1772.76108,1378.00422),(1772.51898,1173.79842)],
@@ -616,7 +631,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_19(
+    GeneralizationView gview_18(
         source=cview_22,
         target=cview_38,
         points=[(2103.76108,1373.00422),(1772.51898,1173.79842)],
@@ -625,7 +640,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_20(
+    GeneralizationView gview_19(
         source=cview_20,
         target=cview_38,
         points=[(1512.76108,1490.75317),(1772.51898,1173.79842)],
@@ -634,7 +649,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_21(
+    GeneralizationView gview_20(
         source=cview_23,
         target=cview_38,
         points=[(2021.76108,1490.75317),(1772.51898,1173.79842)],
@@ -643,7 +658,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_22(
+    GeneralizationView gview_21(
         source=cview_19,
         target=cview_38,
         points=[(1435.31053,1372.17279),(1772.51898,1173.79842)],
@@ -652,7 +667,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_23(
+    GeneralizationView gview_22(
         source=cview_21,
         target=cview_38,
         points=[(2202.76108,1273.00422),(1772.51898,1173.79842)],
@@ -661,7 +676,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_24(
+    GeneralizationView gview_23(
         source=cview_18,
         target=cview_38,
         points=[(1335.76108,1269.69380),(1772.51898,1173.79842)],
@@ -670,63 +685,25 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
+    GeneralizationView gview_24(
+        source=cview_41,
+        target=cview_39,
+        points=[(839.85785,903.79842),(981.52289,800.79842)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
+    GeneralizationView gview_25(
+        source=cview_6,
+        target=cview_42,
+        points=[(836.61523,430.00000),(978.19281,329.79842)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
     PropertyView pview_0(
-        property=meta::pure::persistence::metamodel::ServicePersistenceBackend.servicePersistence,
-        source=cview_2,
-        target=cview_1
-,        points=[(979.23047,279.00000),(980.00000,582.50000)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
-
-    PropertyView pview_1(
-        property=meta::pure::persistence::metamodel::ServicePersistence.trigger,
-        source=cview_1,
-        target=cview_3
-,        points=[(980.00000,582.50000),(496.20723,581.00000)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
-
-    PropertyView pview_2(
-        property=meta::pure::persistence::metamodel::ServicePersistence.persistence,
-        source=cview_1,
-        target=cview_7
-,        points=[(980.00000,582.50000),(1466.55957,584.00000)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
-
-    PropertyView pview_3(
-        property=meta::pure::persistence::metamodel::ServicePersistence.service,
-        source=cview_1,
-        target=cview_10
-,        points=[(980.00000,582.50000),(979.31142,837.03376)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
-
-    PropertyView pview_4(
         property=meta::pure::persistence::metamodel::batch::BatchPersistence.targetSpecification,
         source=cview_9,
         target=cview_11
@@ -740,8 +717,8 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_5(
-        property=meta::pure::persistence::metamodel::batch::GroupedFlatTargetSpecification.components,
+    PropertyView pview_1(
+        property=meta::pure::persistence::metamodel::batch::targetspecification::GroupedFlatTargetSpecification.components,
         source=cview_13,
         target=cview_15
 ,        points=[(972.60754,1030.98473),(1363.87533,1030.00844)],
@@ -754,8 +731,8 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_6(
-        property=meta::pure::persistence::metamodel::batch::PropertyAndFlatTargetSpecification.targetSpecification,
+    PropertyView pview_2(
+        property=meta::pure::persistence::metamodel::batch::targetspecification::PropertyAndFlatTargetSpecification.targetSpecification,
         source=cview_15,
         target=cview_12
 ,        points=[(1363.87533,1030.00844),(1770.81443,1029.01688)],
@@ -768,7 +745,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_7(
+    PropertyView pview_3(
         property=meta::pure::persistence::metamodel::batch::mode::snapshot::BitemporalSnapshot.transactionMilestoning,
         source=cview_20,
         target=cview_24
@@ -782,7 +759,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_8(
+    PropertyView pview_4(
         property=meta::pure::persistence::metamodel::batch::mode::delta::UnitemporalDelta.transactionMilestoning,
         source=cview_22,
         target=cview_24
@@ -796,7 +773,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_9(
+    PropertyView pview_5(
         property=meta::pure::persistence::metamodel::batch::mode::snapshot::UnitemporalSnapshot.transactionMilestoning,
         source=cview_19,
         target=cview_24
@@ -810,7 +787,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_10(
+    PropertyView pview_6(
         property=meta::pure::persistence::metamodel::batch::mode::delta::BitemporalDelta.transactionMilestoning,
         source=cview_23,
         target=cview_24
@@ -824,7 +801,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_11(
+    PropertyView pview_7(
         property=meta::pure::persistence::metamodel::batch::mode::delta::BitemporalDelta.validityMilestoning,
         source=cview_23,
         target=cview_25
@@ -838,7 +815,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_12(
+    PropertyView pview_8(
         property=meta::pure::persistence::metamodel::batch::mode::snapshot::BitemporalSnapshot.validityMilestoning,
         source=cview_20,
         target=cview_25
@@ -852,7 +829,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_13(
+    PropertyView pview_9(
         property=meta::pure::persistence::metamodel::batch::mode::delta::UnitemporalDelta.mergeStrategy,
         source=cview_22,
         target=cview_31
@@ -866,7 +843,7 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_14(
+    PropertyView pview_10(
         property=meta::pure::persistence::metamodel::batch::mode::delta::BitemporalDelta.mergeStrategy,
         source=cview_23,
         target=cview_31
@@ -880,8 +857,8 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_15(
-        property=meta::pure::persistence::metamodel::batch::FlatTargetSpecification.deduplicationStrategy,
+    PropertyView pview_11(
+        property=meta::pure::persistence::metamodel::batch::targetspecification::FlatTargetSpecification.deduplicationStrategy,
         source=cview_12,
         target=cview_34
 ,        points=[(1770.81443,1029.01688),(2244.59031,1028.72743)],
@@ -894,11 +871,81 @@ Diagram meta::pure::persistence::ServicePersistence_Diagram(width=0.0, height=0.
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_16(
-        property=meta::pure::persistence::metamodel::batch::FlatTargetSpecification.batchMilestoningMode,
+    PropertyView pview_12(
+        property=meta::pure::persistence::metamodel::batch::targetspecification::FlatTargetSpecification.batchMilestoningMode,
         source=cview_12,
         target=cview_38
 ,        points=[(1770.81444,1029.01688),(1772.51898,1173.79842)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_13(
+        property=meta::pure::persistence::metamodel::PersistencePipe.persistence,
+        source=cview_43,
+        target=cview_7
+,        points=[(980.18891,584.74803),(1467.56153,584.00000)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_14(
+        property=meta::pure::persistence::metamodel::PersistencePipe.trigger,
+        source=cview_43,
+        target=cview_3
+,        points=[(980.18891,584.74803),(496.20722,581.00000)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_15(
+        property=meta::pure::persistence::metamodel::PersistencePipe.inputSource,
+        source=cview_43,
+        target=cview_39
+,        points=[(980.18891,584.74803),(981.52289,800.79842)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_16(
+        property=meta::pure::persistence::metamodel::PersistencePipeBackend.persistencePipe,
+        source=cview_42,
+        target=cview_43
+,        points=[(978.19281,329.79842),(980.18891,584.74803)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_17(
+        property=meta::pure::persistence::metamodel::input::ServiceInputSource.service,
+        source=cview_41,
+        target=cview_44
+,        points=[(839.85785,903.79842),(517.69891,906.19763)],
         label='',
         propertyPosition=(0.0,0.0),
         multiplicityPosition=(0.0,0.0),
