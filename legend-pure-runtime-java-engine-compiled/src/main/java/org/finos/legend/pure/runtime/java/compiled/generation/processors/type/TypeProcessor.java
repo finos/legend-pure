@@ -211,6 +211,10 @@ public class TypeProcessor
             {
                 return "byte[]";
             }
+            case M3Paths.ByteStream:
+            {
+                return "org.finos.legend.pure.m4.coreinstance.primitive.byteStream.PureByteStream";
+            }
             default:
             {
                 return null;
