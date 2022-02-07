@@ -134,6 +134,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::tran
                                options=^Options(javaPackage='com.gs.person'));
    assertEquals('syntax = "proto3";\n'
       + 'import "google/protobuf/timestamp.proto";\n'
+      + 'package meta.external.format.protobuf.generation.tests;\n'
       + 'option java_package = "com.gs.person";\n'
       + 'message Person {\n'
       + ' string name = 1;\n'

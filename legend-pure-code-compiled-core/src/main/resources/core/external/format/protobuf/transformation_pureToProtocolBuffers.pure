@@ -67,7 +67,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
   meta::external::format::protobuf::generation::classToMessage($class, [])
 }
 
-function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1], options:Options[0..1]):ProtoFile[1]
+function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1], options:Options[0..1]):ProtoFile[*]
 {
    let allClasses = $class->scanTypes([])->removeDuplicates()->remove(Any);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
