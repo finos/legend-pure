@@ -17,6 +17,8 @@ import meta::pure::generation::metamodel::*;
 
 Class meta::external::format::protobuf::generation::ProtobufConfig extends GenerationConfiguration
 {
+  {doc.doc='Individual declarations in a .proto file can be annotated with a number of options. Options do not change the overall meaning of a declaration, but may affect the way it is handled in a particular context such as code generation.'}
+  options:meta::external::format::protobuf::metamodel::Options[0..1];
 }
 
 Class meta::external::format::protobuf::generation::ProtobufOutput extends GenerationOutput
