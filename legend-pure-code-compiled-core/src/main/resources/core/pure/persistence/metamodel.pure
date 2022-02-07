@@ -78,6 +78,10 @@ Class meta::pure::persistence::metamodel::event::RegistryDatasetAvailable extend
 {
 }
 
+Class meta::pure::persistence::metamodel::event::OpaqueEventType extends EventType
+{
+}
+
 /**********
  * input
  **********/
@@ -126,9 +130,6 @@ Class
 {doc.doc = 'A target datastore for a batch persistence.'}
 meta::pure::persistence::metamodel::batch::targetspecification::TargetSpecification
 {
-   {doc.doc = 'The name of the target.'}
-   targetName: String[1];
-
    {doc.doc = 'A class that models the persistence target. Concrete target specifications impose specific requirements on the shape of the class.'}
    modelClass: Class<Any>[1];
 }
@@ -137,6 +138,9 @@ Class
 {doc.doc = 'Specification for a single flat dataset. The model class must have primitive properties with single multiplicity.'}
 meta::pure::persistence::metamodel::batch::targetspecification::FlatTargetSpecification extends TargetSpecification
 {
+   {doc.doc = 'The name of the target.'}
+   targetName: String[1];
+
    {doc.doc = 'An optional set of properties in the model class that designate partitioning keys for the dataset.'}
    partitionProperties: Property<Nil, Any|1>[*];
 
@@ -170,6 +174,8 @@ Class
 {doc.doc = 'Specification for a nested data object. The model class may be an arbitrarily deeply nested with primitive or complex properties of any multiplicity.'}
 meta::pure::persistence::metamodel::batch::targetspecification::NestedTargetSpecification extends TargetSpecification
 {
+   {doc.doc = 'The name of the target.'}
+   targetName: String[1];
 }
 
 Enum
@@ -295,6 +301,11 @@ meta::pure::persistence::metamodel::batch::mode::delta::merge::DeleteIndicatorMe
 {
    deleteProperty: Property<Nil, Any|1>[1];
    deleteValues: String[1..*];
+}
+
+Class
+meta::pure::persistence::metamodel::batch::mode::delta::merge::OpaqueMergeStrategy extends MergeStrategy
+{
 }
 
 /**********
