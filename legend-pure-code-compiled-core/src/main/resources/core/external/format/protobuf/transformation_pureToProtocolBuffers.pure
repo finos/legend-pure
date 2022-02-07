@@ -45,7 +45,7 @@ function meta::external::format::protobuf::generation::generateProtobufFromPureW
 
 function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1]):ProtobufOutput[*]
 {
-    $class->map(c|$c->classToMessage())->map(s|
+    $class->map(c|$c->classToMessage($config.options))->map(s|
       let content = $s->meta::external::format::protobuf::serialization::toString();
       let fileName = if($s.package->isEmpty(), | $class.name->toOne() + '.proto', | $s.package->toOne()->protoPackageToFileName());
       ^ProtobufOutput(content=$content,fileName=$fileName, format = 'proto');
@@ -63,6 +63,11 @@ function meta::external::format::protobuf::generation::protoPackageToFileName(p:
 }
 
 function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[*]
+{
+  meta::external::format::protobuf::generation::classToMessage($class, [])
+}
+
+function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1], options:Options[0..1]):ProtoFile[1]
 {
    let allClasses = $class->scanTypes([])->removeDuplicates()->remove(Any);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
@@ -98,10 +103,11 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
         ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>).properties
         ->filter(p | !$p->isPrimitiveValueProperty() && ($p.genericType.rawType.package->toOne()->elementToPath('.') != $thePackage))
         ->map( p | $p.genericType.rawType->toOne()->elementToProtoPackage()->protoPackageToFileName());
-                  
 
-      ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs, imports=['google/protobuf/timestamp.proto']->concatenate($imports));
-   );        
+      ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs,
+                 imports=['google/protobuf/timestamp.proto']->concatenate($imports),
+                 options=$options);
+   );
 }
 
 function meta::external::format::protobuf::generation::propertyToField(property:Property<Nil,Any|*>[1], index:Integer[1], typesMap:Map<Type, ProtoBufType>[1]):Field[1]

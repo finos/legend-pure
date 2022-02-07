@@ -19,8 +19,9 @@ function meta::external::format::protobuf::serialization::toString(file:ProtoFil
   let packageName = if( $file.package->isEmpty(), | '', | $file.package->toOne() );
 
    'syntax = "' + $file.syntax.name + '";\n'   
-   + $file.imports->map( i | 'import "' + $i + '";\n')->joinStrings() 
+   + $file.imports->map( i | 'import "' + $i + '";\n')->joinStrings()
    + if( $file.package->isEmpty(), | '', | 'package ' + $packageName + ';\n' )
+   + if($file.options->isEmpty(), | '', | $file.options->toOne()->meta::external::format::protobuf::serialization::toString())
    + $file.topLevelDefs->map(t | $t->meta::external::format::protobuf::serialization::toString($packageName))->joinStrings('\n');
 }
 
@@ -43,3 +44,22 @@ function meta::external::format::protobuf::serialization::toString(field:Field[1
                                                                      t:ProtoBufType[1]|$t->genericType().rawType.name->toOne()->toLower()
                                                                   ])+ ' ' + $field.name + ' = ' + $field.binaryFieldNumber->toString()
 }
+
+function meta::external::format::protobuf::serialization::toString(o:Options[1]):String[1]
+{
+   ''
+   + if ($o.javaPackage->isEmpty(), | '', | 'option java_package = "' + $o.javaPackage->toOne() + '";\n')
+   + if ($o.javaOuterClassname->isEmpty(), | '', | 'option java_outer_classname = "' + $o.javaOuterClassname->toOne() + '";\n')
+   + if ($o.javaMultipleFiles->isEmpty(), | '', | 'option java_multiple_files = ' + $o.javaMultipleFiles->toOne()->toString() + ';\n')
+   + if ($o.optimizeFor->isEmpty(), | '', | 'option optimize_for = ' + $o.optimizeFor->toOne().name + ';\n')
+   + $o.customOptions->map( co | $co->meta::external::format::protobuf::serialization::toString())->joinStrings()
+}
+
+function meta::external::format::protobuf::serialization::toString(o:CustomOption[1]):String[1]
+{
+  'option ' + $o.name + ' = ' + 
+  $o.value->match([
+    s:String[1] | '"' + $s + '"',
+    p:Any[1] | $p->toString()
+  ]) + ';\n'
+}  
