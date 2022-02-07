@@ -115,7 +115,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObje
 
    let result = execute(
       |Firm.all()->graphFetchChecked($tree)->serialize($tree),
-      simpleModelMappingWithSubTypeWithNestedAssosiation,
+      simpleModelMappingWithSubTypeWithNestedAssociation,
       ^Runtime(connections = ^JsonModelConnection(
                                 element=^ModelStore(), 
                                 class=_S_Firm, 

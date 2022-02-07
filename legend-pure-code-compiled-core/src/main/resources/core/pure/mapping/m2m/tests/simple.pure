@@ -272,7 +272,7 @@ import meta::pure::mapping::modelToModel::test::shared::src::*;
 import meta::pure::mapping::modelToModel::test::shared::dest::*;
 import meta::pure::mapping::modelToModel::test::*;
 
-Mapping meta::pure::mapping::modelToModel::test::simple::simpleModelMappingWithSubTypeWithNestedAssosiation
+Mapping meta::pure::mapping::modelToModel::test::simple::simpleModelMappingWithSubTypeWithNestedAssociation
 (
    meta::pure::mapping::modelToModel::test::shared::dest::Firm : Pure
             {
@@ -284,7 +284,7 @@ Mapping meta::pure::mapping::modelToModel::test::simple::simpleModelMappingWithS
    
    Person[A]  : Pure
    {
-      ~src _S_PersonA      
+      ~src _S_PersonA
       firstName   : $src.fullName->substring(0, $src.fullName->indexOf(' ')),
       lastName    : $src.fullName->substring($src.fullName->indexOf(' ') + 1, $src.fullName->length()),
       description : 'aName:' + $src.aName + ' lives at ' + $src.address->toOne().street + ' and has road vehicle with wheel count:' + $src.vehicle.wheelCount->toString()
