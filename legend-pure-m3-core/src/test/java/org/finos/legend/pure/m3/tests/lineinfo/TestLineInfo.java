@@ -135,7 +135,7 @@ public class TestLineInfo extends AbstractPureTestWithCoreCompiledPlatform
         Assert.assertNotNull(funcType);
         Assert.assertEquals(M3Paths.ConcreteFunctionDefinition, PackageableElement.getUserPathForPackageableElement(funcType, "::"));
         // Note: these source coordinates may change if m3.pure changes
-        assertSourceInformation("/platform/pure/m3.pure", 2145, 1, 2145, 88, 2159, 1, funcType.getSourceInformation());
+        assertSourceInformation("/platform/pure/m3.pure", 2156, 1, 2156, 88, 2170, 1, funcType.getSourceInformation());
     }
 
     @Test
