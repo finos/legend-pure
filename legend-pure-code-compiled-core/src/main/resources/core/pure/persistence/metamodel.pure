@@ -15,7 +15,7 @@ import meta::pure::persistence::metamodel::batch::transactionmilestoning::*;
 import meta::pure::persistence::metamodel::batch::validitymilestoning::*;
 import meta::pure::persistence::metamodel::batch::validitymilestoning::derivation::*;
 import meta::pure::persistence::metamodel::event::*;
-import meta::pure::persistence::metamodel::input::*;
+import meta::pure::persistence::metamodel::reader::*;
 
 /**********
  * persistence pipe
@@ -34,11 +34,11 @@ meta::pure::persistence::metamodel::PersistencePipe extends PackageableElement
    {doc.doc = 'The event that triggers input sourcing and persistence.'}
    trigger: EventType[1];
 
-   {doc.doc = 'The source that provides data to persist.'}
-   inputSource: InputSource[1];
+   {doc.doc = 'The input data provider for the persistence pipe.'}
+   reader: Reader[1];
 
-   {doc.doc = 'The persistence approach to apply to the input data.'}
-   persistence: Persistence[1];
+   {doc.doc = 'The persistence specification to apply to the input data.'}
+   persister: Persister[1];
 }
 
 /**********
@@ -70,53 +70,57 @@ meta::pure::persistence::metamodel::event::EventType
 {
 }
 
-Class meta::pure::persistence::metamodel::event::ScheduleTriggered extends EventType
+Class
+{doc.doc = 'A scheduling condition that triggers a persistence pipeline.'}
+meta::pure::persistence::metamodel::event::ScheduleFired extends EventType
 {
 }
 
-Class meta::pure::persistence::metamodel::event::RegistryDatasetAvailable extends EventType
-{
-}
-
-Class meta::pure::persistence::metamodel::event::OpaqueEventType extends EventType
+Class
+{doc.doc = 'An event type defined by the underlying system that triggers a persistence pipeline.'}
+meta::pure::persistence::metamodel::event::OpaqueEventType extends EventType
 {
 }
 
 /**********
- * input
+ * reader
  **********/
 
 Class
 <<typemodifiers.abstract>>
-{doc.doc = 'The input source that provides data to persist'}
-meta::pure::persistence::metamodel::input::InputSource
+{doc.doc = 'The provider of input data to persist.'}
+meta::pure::persistence::metamodel::reader::Reader
 {
 }
 
 Class
-{doc.doc = 'Input source that uses a service to provide data to a persistent pipe.'}
-meta::pure::persistence::metamodel::input::ServiceInputSource extends InputSource
+{doc.doc = 'A loader that uses a service to provide data.'}
+meta::pure::persistence::metamodel::reader::ServiceReader extends Reader
 {
    {doc.doc = 'The underlying service that provides data.'}
    service: Service[1];
 }
 
 /**********
- * persistence
+ * writer
  **********/
 
 Class
 <<typemodifiers.abstract>>
 {doc.doc = 'The persistence logic to execute on input data.'}
-meta::pure::persistence::metamodel::Persistence
+meta::pure::persistence::metamodel::Persister
 {
 }
 
-Class meta::pure::persistence::metamodel::streaming::StreamingPersistence extends Persistence
+Class
+{doc.doc = 'Persister that writes data in a continuous stream.'}
+meta::pure::persistence::metamodel::streaming::StreamingPersister extends Persister
 {
 }
 
-Class meta::pure::persistence::metamodel::batch::BatchPersistence extends Persistence
+Class
+{doc.doc = 'Persister that writes data in batches.'}
+meta::pure::persistence::metamodel::batch::BatchPersister extends Persister
 {
    targetSpecification: TargetSpecification[1];
 }
@@ -166,7 +170,10 @@ Class
 {doc.doc = 'A property to flat target specification mapping used to specify a component of a GroupedFlatTargetSpecification.'}
 meta::pure::persistence::metamodel::batch::targetspecification::PropertyAndFlatTargetSpecification
 {
+   {doc.doc = 'The property in the parent GroupedFlatTargetSpecification\'s model class that points to the model class for the component FlatTargetSpecification.'}
    property: Property<Nil, Any|1>[1];
+
+   {doc.doc = 'The specification for the component flat dataset.'}
    targetSpecification: FlatTargetSpecification[1];
 }
 
@@ -341,6 +348,7 @@ Class
 {doc.doc = 'Audit information is represented via a transaction datetime in the underlying system.'}
 meta::pure::persistence::metamodel::batch::audit::BatchDateTimeAuditing extends Auditing
 {
+   {doc.doc = 'The name of the property representing the transaction datetime in the underlying system.'}
    dateTimePropertyName: String[1];
 }
 
@@ -447,6 +455,7 @@ Class
 {doc.doc = 'Source data provide validity from datetime.'}
 meta::pure::persistence::metamodel::batch::validitymilestoning::derivation::SourceSpecifiesValidFromDate extends ValidityDerivation
 {
+   {doc.doc = 'The property in the model class that provides the "from" datetime for validity (business) temporal dimension.'}
    sourceDateTimeFromProperty: Property<Nil,  Any|1>[1];
 }
 
@@ -454,6 +463,9 @@ Class
 {doc.doc = 'Source data provide validity from and thru datetimes.'}
 meta::pure::persistence::metamodel::batch::validitymilestoning::derivation::SourceSpecifiesValidFromAndThruDate extends ValidityDerivation
 {
+   {doc.doc = 'The property in the model class that provides the "from" datetime for the validity (business) temporal dimension.'}
    sourceDateTimeFromProperty: Property<Nil, Any|1>[1];
+
+   {doc.doc = 'The property in the model class that provides the "thru" datetime for the validity (business) temporal dimension.'}
    sourceDateTimeThruProperty: Property<Nil, Any|1>[1];
 }
