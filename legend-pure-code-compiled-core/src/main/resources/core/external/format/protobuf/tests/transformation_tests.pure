@@ -53,7 +53,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
   let resultForTrade = $results->filter( r | $r.package == 'meta.external.format.protobuf.generation.tests.trade');
   assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
-                'import "meta_external_format_protobuf_generation_tests_account.proto";\n' + 
+                'import "meta_external_format_protobuf_generation_tests_account_Trade.proto";\n' +
                 'package meta.external.format.protobuf.generation.tests.trade;\n' +
                 'message Trade {\n'+
                 ' string type = 1;\n'+
@@ -69,7 +69,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
   let resultForAccount = $results->filter( r | $r.package == 'meta.external.format.protobuf.generation.tests.account');              
   assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
-                'import "meta_external_format_protobuf_generation_tests_trade.proto";\n' +
+                'import "meta_external_format_protobuf_generation_tests_trade_Trade.proto";\n' +
                 'package meta.external.format.protobuf.generation.tests.account;\n' +
                 'message Account {\n'+
                 ' string name = 1;\n'+
@@ -79,14 +79,86 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                 '}', $resultForAccount->toOne()->meta::external::format::protobuf::serialization::toString());              
 }
 
+function <<test.Test>> meta::external::format::protobuf::generation::tests::testGenerateProtobufFromPureWithScope():Boolean[1]
+{
+  let results = generateProtobufFromPureWithScope(^ProtobufConfig(scopeElements=[meta::external::format::protobuf::generation::tests]));
+  assertSize($results, 5);
+
+  let resultForTradeFromTradeClass = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_trade_Trade.proto');
+  assertEquals('syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'import "meta_external_format_protobuf_generation_tests_account_Trade.proto";\n' +
+                'package meta.external.format.protobuf.generation.tests.trade;\n' +
+                'message Trade {\n'+
+                ' string type = 1;\n'+
+                ' int64 id = 2;\n'+
+                ' double npv = 3;\n'+
+                ' repeated double notionals = 4;\n'+
+                ' meta.external.format.protobuf.generation.tests.account.Account account = 5;\n'+
+                '}\n'+
+                'enum MyEnum {\n'+
+                '   a = 0;\n'+
+                '   b = 1;\n'+
+                '}', $resultForTradeFromTradeClass.content);
+
+  let resultForAccountFromTradeClass = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_account_Trade.proto');
+  assertEquals('syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'import "meta_external_format_protobuf_generation_tests_trade_Trade.proto";\n' +
+                'package meta.external.format.protobuf.generation.tests.account;\n' +
+                'message Account {\n'+
+                ' string name = 1;\n'+
+                ' meta.external.format.protobuf.generation.tests.trade.Trade t = 2;\n'+
+                ' meta.external.format.protobuf.generation.tests.trade.MyEnum enum = 3;\n'+
+                ' google.protobuf.Timestamp adate = 4;\n'+
+                '}', $resultForAccountFromTradeClass.content );
+
+  let resultForTradeFromAccountClass = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_trade_Account.proto');
+  assertEquals('syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'import "meta_external_format_protobuf_generation_tests_account_Account.proto";\n' +
+                'package meta.external.format.protobuf.generation.tests.trade;\n' +
+                'message Trade {\n'+
+                ' string type = 1;\n'+
+                ' int64 id = 2;\n'+
+                ' double npv = 3;\n'+
+                ' repeated double notionals = 4;\n'+
+                ' meta.external.format.protobuf.generation.tests.account.Account account = 5;\n'+
+                '}\n'+
+                'enum MyEnum {\n'+
+                '   a = 0;\n'+
+                '   b = 1;\n'+
+                '}', $resultForTradeFromAccountClass.content);
+
+  let resultForAccountFromAccountClass = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_account_Account.proto');
+  assertEquals('syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'import "meta_external_format_protobuf_generation_tests_trade_Account.proto";\n' +
+                'package meta.external.format.protobuf.generation.tests.account;\n' +
+                'message Account {\n'+
+                ' string name = 1;\n'+
+                ' meta.external.format.protobuf.generation.tests.trade.Trade t = 2;\n'+
+                ' meta.external.format.protobuf.generation.tests.trade.MyEnum enum = 3;\n'+
+                ' google.protobuf.Timestamp adate = 4;\n'+
+                '}', $resultForAccountFromAccountClass.content);
+
+  let resultForPersonFromPersonClass = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_Person.proto');
+  assertEquals('syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'package meta.external.format.protobuf.generation.tests;\n' +
+                'message Person {\n'+
+                ' string name = 1;\n'+
+                '}', $resultForPersonFromPersonClass.content);
+}
+
 function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
 {
   let results = meta::external::format::protobuf::generation::transform(^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::trade::Trade'));
   assertSize($results, 2);
-  let resultForTrade = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_trade.proto');
+  let resultForTrade = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_trade_Trade.proto');
   assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
-                'import "meta_external_format_protobuf_generation_tests_account.proto";\n' + 
+                'import "meta_external_format_protobuf_generation_tests_account_Trade.proto";\n' +
                 'package meta.external.format.protobuf.generation.tests.trade;\n' +
                 'message Trade {\n'+
                 ' string type = 1;\n'+
@@ -99,10 +171,10 @@ function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::p
                 '   a = 0;\n'+
                 '   b = 1;\n'+
                 '}', $resultForTrade.content);
-  let resultForAccount = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_account.proto');              
+  let resultForAccount = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_account_Trade.proto');
   assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
-                'import "meta_external_format_protobuf_generation_tests_trade.proto";\n' +
+                'import "meta_external_format_protobuf_generation_tests_trade_Trade.proto";\n' +
                 'package meta.external.format.protobuf.generation.tests.account;\n' +
                 'message Account {\n'+
                 ' string name = 1;\n'+

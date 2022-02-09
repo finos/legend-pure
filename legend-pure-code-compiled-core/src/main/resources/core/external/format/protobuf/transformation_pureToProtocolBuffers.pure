@@ -47,7 +47,7 @@ function meta::external::format::protobuf::generation::generateProtobufFromPure(
 {
     $class->map(c|$c->classToMessage($config.options))->map(s|
       let content = $s->meta::external::format::protobuf::serialization::toString();
-      let fileName = if($s.package->isEmpty(), | $class.name->toOne() + '.proto', | $s.package->toOne()->protoPackageToFileName());
+      let fileName = if($s.package->isEmpty(), | $class.name->toOne() + '.proto', | $s.package->toOne()->protoPackageToFileName($class));
       ^ProtobufOutput(content=$content,fileName=$fileName, format = 'proto');
     );
 }
@@ -57,9 +57,9 @@ function meta::external::format::protobuf::generation::elementToProtoPackage(e:P
   $e.package->toOne()->elementToPath('.')
 }
 
-function meta::external::format::protobuf::generation::protoPackageToFileName(p:String[1]):String[1]
+function meta::external::format::protobuf::generation::protoPackageToFileName(p:String[1], class: Class<Any>[1]):String[1]
 {
-  $p->replace('.', '_') + '.proto'
+  $p->replace('.', '_') + '_' + $class.name->toOne()+ '.proto'
 }
 
 function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[*]
@@ -102,7 +102,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
       let imports = $packageClasses
         ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>).properties
         ->filter(p | !$p->isPrimitiveValueProperty() && ($p.genericType.rawType.package->toOne()->elementToPath('.') != $thePackage))
-        ->map( p | $p.genericType.rawType->toOne()->elementToProtoPackage()->protoPackageToFileName());
+        ->map( p | $p.genericType.rawType->toOne()->elementToProtoPackage()->protoPackageToFileName($class));
 
       ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs,
                  imports=['google/protobuf/timestamp.proto']->concatenate($imports),
