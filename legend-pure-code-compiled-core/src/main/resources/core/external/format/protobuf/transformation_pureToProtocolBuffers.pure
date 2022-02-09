@@ -40,7 +40,7 @@ function meta::external::format::protobuf::generation::generateProtobufFromPureW
 {   
    $config.scopeElements->filter(e| !$e->instanceOf(Package))->map(e|assert($e->instanceOf(Class),' Protobuf generation of ' + $e->type().name->toOne()+ ' is not currently supported. Tried to generate Protobuf for '+ $e->elementToPath()) ;);
    let classElements = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Class))->cast(@Class<Any>);
-   $classElements->map(c| $config->meta::external::format::protobuf::generation::generateProtobufFromPure($c));
+   $classElements->map(c| $config->meta::external::format::protobuf::generation::generateProtobufFromPure($c))->removeDuplicates( {x, y | $x.fileName == $y.fileName } );
 }
 
 function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1]):ProtobufOutput[*]
