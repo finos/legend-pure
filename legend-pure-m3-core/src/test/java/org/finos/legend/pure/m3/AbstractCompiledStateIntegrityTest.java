@@ -43,6 +43,7 @@ import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
@@ -877,6 +878,62 @@ public abstract class AbstractCompiledStateIntegrityTest
                 (sb, ft) -> org.finos.legend.pure.m3.navigation.function.FunctionType.print(sb, ft, true, processorSupport),
                 findPaths,
                 processorSupport);
+    }
+
+    @Test
+    public void testFunctionTypesDoNotShareFunctions()
+    {
+        MutableMap<CoreInstance, MutableList<CoreInstance>> functionTypesByFunction = Maps.mutable.empty();
+        CoreInstance functionTypeClass = runtime.getCoreInstance(M3Paths.FunctionType);
+        GraphNodeIterable.fromModelRepository(repository)
+                .select(n -> functionTypeClass == n.getClassifier())
+                .forEach(ft -> ft.getValueForMetaPropertyToMany(M3Properties.function).forEach(f -> functionTypesByFunction.getIfAbsentPut(f, Lists.mutable::empty).add(ft)));
+
+        MutableList<String> errorMessages = Lists.mutable.empty();
+        functionTypesByFunction.forEachKeyValue((function, functionTypes) ->
+        {
+            if (functionTypes.size() > 1)
+            {
+                StringBuilder builder = new StringBuilder();
+                if (function.getValueForMetaPropertyToOne(M3Properties._package) != null)
+                {
+                    PackageableElement.writeUserPathForPackageableElement(builder, function);
+                }
+                else
+                {
+                    // TODO improve this for other types of functions
+                    builder.append(function);
+                }
+                SourceInformation functionSourceInfo = function.getSourceInformation();
+                if (functionSourceInfo != null)
+                {
+                    functionSourceInfo.appendMessage(builder.append(" (")).append(')');
+                }
+                builder.append(" has ").append(functionTypes.size()).append(" function types associated with it: ");
+                functionTypes.forEachWithIndex((ft, i) ->
+                {
+                    if (i > 0)
+                    {
+                        builder.append(", ");
+                    }
+                    FunctionType.print(builder, ft, true, processorSupport);
+                    SourceInformation sourceInfo = ft.getSourceInformation();
+                    if (sourceInfo != null)
+                    {
+                        sourceInfo.appendMessage(builder.append(" (")).append(')');
+                    }
+                });
+                errorMessages.add(builder.toString());
+            }
+        });
+        int errorCount = errorMessages.size();
+        if (errorCount > 0)
+        {
+            StringBuilder message = new StringBuilder(errorCount * 128);
+            message.append("There are ").append(errorCount).append(" function type function conflicts:\n\t");
+            errorMessages.appendString(message, "\n\t");
+            Assert.fail(message.toString());
+        }
     }
 
     @Test
