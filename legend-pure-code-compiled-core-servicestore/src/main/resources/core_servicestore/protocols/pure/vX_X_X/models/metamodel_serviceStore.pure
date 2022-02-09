@@ -46,7 +46,8 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::service::ServiceParameter
    name                 : String[1];
    type                 : TypeReference[1];
    location             : String[1];
-   
+   allowReserved        : Boolean[0..1];
+
    _enum                : String[0..1];
    serializationFormat  : SerializationFormat[0..1];
 }

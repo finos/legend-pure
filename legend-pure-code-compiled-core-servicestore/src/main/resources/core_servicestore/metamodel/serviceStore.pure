@@ -77,7 +77,8 @@ Class meta::external::store::service::metamodel::ServiceParameter
    name                 : String[1];
    type                 : TypeReference[1];
    location             : Location[1];
-   
+   allowReserved        : Boolean[0..1];
+
    enum                 : Enumeration<Any>[0..1];
    serializationFormat  : SerializationFormat[0..1];
 }
