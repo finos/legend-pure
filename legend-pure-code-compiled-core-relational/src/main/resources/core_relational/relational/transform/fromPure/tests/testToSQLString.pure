@@ -1594,3 +1594,24 @@ function <<test.Test>> meta::relational::tests::functions::sqlstring::testMemSQL
 
    assertEquals('select 	`root`.LEGALNAME as `legalName`, 	substring(`root`.LEGALNAME, 2 + 1, 3 - 2) as `subname` from firmTable as `root`', $result->replace('\n', ''));
 }
+
+function <<test.Test>> meta::relational::tests::functions::sqlstring::testIsDistinctSQLGeneration():Boolean[1]
+{
+   let func = {|Firm.all()->groupBy(
+      [t|$t.legalName],
+      [agg(x|$x.employees.firstName,y|$y->isDistinct())],
+      ['LegalName', 'IsDistinctFirstName']
+   )};
+
+   let h2 = toSQLString($func, simpleRelationalMapping, DatabaseType.H2, meta::pure::router::extension::defaultRelationalExtensions());
+   assertSameSQL('select "root".LEGALNAME as "LegalName", count(distinct("personTable_d#4_d_m1".FIRSTNAME)) = count("personTable_d#4_d_m1".FIRSTNAME) as "IsDistinctFirstName" from firmTable as "root" left outer join personTable as "personTable_d#4_d_m1" on ("root".ID = "personTable_d#4_d_m1".FIRMID) group by "LegalName"', $h2);
+
+   let iq = toSQLString($func, simpleRelationalMapping, DatabaseType.SybaseIQ, meta::pure::router::extension::defaultRelationalExtensions());
+   assertSameSQL('select "root".LEGALNAME as "LegalName", case when (count(distinct("personTable_d#4_d_m1".FIRSTNAME)) = count("personTable_d#4_d_m1".FIRSTNAME)) then \'true\' else \'false\' end as "IsDistinctFirstName" from firmTable as "root" left outer join personTable as "personTable_d#4_d_m1" on ("root".ID = "personTable_d#4_d_m1".FIRMID) group by "LegalName"', $iq);
+
+   let db2 = toSQLString($func, simpleRelationalMapping, DatabaseType.DB2, meta::pure::router::extension::defaultRelationalExtensions());
+   assertSameSQL('select "root".LEGALNAME as "LegalName", case when (count(distinct("personTable_d#4_d_m1".FIRSTNAME)) = count("personTable_d#4_d_m1".FIRSTNAME)) then \'true\' else \'false\' end as "IsDistinctFirstName" from firmTable as "root" left outer join personTable as "personTable_d#4_d_m1" on ("root".ID = "personTable_d#4_d_m1".FIRMID) group by "root".LEGALNAME', $db2);
+
+   let memSql = toSQLString($func, simpleRelationalMapping, DatabaseType.MemSQL, meta::pure::router::extension::defaultRelationalExtensions());
+   assertSameSQL('select `root`.LEGALNAME as `LegalName`, count(distinct(`personTable_d#4_d_m1`.FIRSTNAME)) = count(`personTable_d#4_d_m1`.FIRSTNAME) as `IsDistinctFirstName` from firmTable as `root` left outer join personTable as `personTable_d#4_d_m1` on (`root`.ID = `personTable_d#4_d_m1`.FIRMID) group by `LegalName`', $memSql);
+}

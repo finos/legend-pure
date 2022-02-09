@@ -1387,6 +1387,17 @@
                                                 }
 }
 
+^Root.children[meta].children[pure].children[metamodel].children[type].children[PrimitiveType] ByteStream
+{
+    Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[PrimitiveType]},
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'ByteStream',
+    Root.children[meta].children[pure].children[metamodel].children[type].children[Type].properties[generalizations] : ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
+                                                {
+                                                    Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[Any]},
+                                                    Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : ByteStream
+                                                }
+}
+
 ^Root.children[meta].children[pure].children[metamodel].children[type].children[PrimitiveType] Number
 {
     Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[PrimitiveType]},

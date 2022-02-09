@@ -69,6 +69,7 @@ public class ModelRepository
 {
     public static final String BOOLEAN_TYPE_NAME = "Boolean";
     public static final String BINARY_TYPE_NAME = "Binary";
+    public static final String BYTE_STREAM_TYPE_NAME = "ByteStream";
     public static final String DATE_TYPE_NAME = "Date";
     public static final String STRICT_DATE_TYPE_NAME = "StrictDate";
     public static final String DATETIME_TYPE_NAME = "DateTime";
@@ -78,7 +79,7 @@ public class ModelRepository
     public static final String DECIMAL_TYPE_NAME = "Decimal";
     public static final String INTEGER_TYPE_NAME = "Integer";
     public static final String STRING_TYPE_NAME = "String";
-    public static final ImmutableSet<String> PRIMITIVE_TYPE_NAMES = Sets.immutable.with(BOOLEAN_TYPE_NAME, DATE_TYPE_NAME, STRICT_DATE_TYPE_NAME, DATETIME_TYPE_NAME, LATEST_DATE_TYPE_NAME, STRICT_TIME_TYPE_NAME, FLOAT_TYPE_NAME, DECIMAL_TYPE_NAME, INTEGER_TYPE_NAME, STRING_TYPE_NAME, BINARY_TYPE_NAME);
+    public static final ImmutableSet<String> PRIMITIVE_TYPE_NAMES = Sets.immutable.with(BOOLEAN_TYPE_NAME, BYTE_STREAM_TYPE_NAME, DATE_TYPE_NAME, STRICT_DATE_TYPE_NAME, DATETIME_TYPE_NAME, LATEST_DATE_TYPE_NAME, STRICT_TIME_TYPE_NAME, FLOAT_TYPE_NAME, DECIMAL_TYPE_NAME, INTEGER_TYPE_NAME, STRING_TYPE_NAME, BINARY_TYPE_NAME);
 
 
     public static final String BOOLEAN_TRUE = "true";
@@ -477,6 +478,8 @@ public class ModelRepository
     {
         return newDateCoreInstance(getPureDate(name), getOrCreateTopLevel(DATETIME_TYPE_NAME, null), internalSyntheticId);
     }
+
+    // TODO [ByteStream] factory for core instance
 
     public DateCoreInstance newDateCoreInstance(PureDate value)
     {
