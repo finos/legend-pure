@@ -30,6 +30,7 @@ import meta::pure::functions::tests::collection::*;
 import meta::pure::graphFetch::*;
 import meta::pure::metamodel::serialization::grammar::*;
 import meta::pure::model::unit::*;
+import meta::pure::generation::metamodel::*;
 
 /// ========================================================================================================================================================
 // Entry points 
@@ -57,6 +58,16 @@ function meta::external::format::json::binding::toPure::jsonSchemaToPure(schemaS
    
    $debug->log(|'\nGenerated the following:\n\n'+$result->bindingToString()+'\n\n'+$result->modelToString());
    $result;
+}
+
+function meta::external::format::json::binding::toPure::defaultConfig(): JsonSchemaToModelConfiguration[1]
+{
+  ^JsonSchemaToModelConfiguration(targetPackage='target::package', targetBinding='target::package::GeneratedBinding');
+}
+
+function <<Generation.Configuration>>  meta::external::format::json::binding::toPure::describeConfiguration(): GenerationParameter[*]
+{  
+  meta::pure::generation::describeConfiguration(JsonSchemaToModelConfiguration, meta::external::format::json::binding::toPure::defaultConfig__JsonSchemaToModelConfiguration_1_, []);
 }
 
 // ========================================================================================================================================================
