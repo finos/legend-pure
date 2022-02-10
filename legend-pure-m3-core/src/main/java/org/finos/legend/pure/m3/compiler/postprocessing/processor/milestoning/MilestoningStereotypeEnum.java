@@ -14,16 +14,13 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning;
 
-import org.eclipse.collections.api.block.function.Function2;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestonePropertyCodeBlock.MilestonePropertyHolderType;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public enum MilestoningStereotypeEnum implements MilestoningStereotype
 {
@@ -32,25 +29,19 @@ public enum MilestoningStereotypeEnum implements MilestoningStereotype
                 @Override
                 public ListIterable<String> getTemporalDatePropertyNames()
                 {
-                    return FastList.newListWith("businessDate");
+                    return Lists.immutable.with(BUSINESS_DATE_PROPERTY_NAME);
                 }
 
                 @Override
                 public MutableList<String> getMilestoningPropertyNames()
                 {
-                    return Lists.mutable.of("from", "thru");
+                    return Lists.mutable.of(FROM_PROPERTY_NAME, THRU_PROPERTY_NAME);
                 }
 
                 @Override
                 public String getMilestoningPropertyClassName()
                 {
                     return "meta::pure::milestoning::BusinessDateMilestoning";
-                }
-
-                @Override
-                public String getPurePlatformStereotypeName()
-                {
-                    return this.name();
                 }
 
                 @Override
@@ -71,25 +62,19 @@ public enum MilestoningStereotypeEnum implements MilestoningStereotype
                 @Override
                 public ListIterable<String> getTemporalDatePropertyNames()
                 {
-                    return FastList.newListWith("processingDate");
+                    return Lists.immutable.with(PROCESSING_DATE_PROPERTY_NAME);
                 }
 
                 @Override
                 public MutableList<String> getMilestoningPropertyNames()
                 {
-                    return Lists.mutable.of("in", "out");
+                    return Lists.mutable.of(IN_PROPERTY_NAME, OUT_PROPERTY_NAME);
                 }
 
                 @Override
                 public String getMilestoningPropertyClassName()
                 {
                     return "meta::pure::milestoning::ProcessingDateMilestoning";
-                }
-
-                @Override
-                public String getPurePlatformStereotypeName()
-                {
-                    return this.name();
                 }
 
                 @Override
@@ -110,7 +95,7 @@ public enum MilestoningStereotypeEnum implements MilestoningStereotype
                 @Override
                 public ListIterable<String> getTemporalDatePropertyNames()
                 {
-                    return LazyIterate.concatenate(processingtemporal.getTemporalDatePropertyNames(), businesstemporal.getTemporalDatePropertyNames()).toList();
+                    return Lists.mutable.withAll(processingtemporal.getTemporalDatePropertyNames()).withAll(businesstemporal.getTemporalDatePropertyNames());
                 }
 
                 @Override
@@ -126,12 +111,6 @@ public enum MilestoningStereotypeEnum implements MilestoningStereotype
                 }
 
                 @Override
-                public String getPurePlatformStereotypeName()
-                {
-                    return this.name();
-                }
-
-                @Override
                 public int positionInTemporalParameterValues()
                 {
                     throw new UnsupportedOperationException("bitemporal specifys two dates, position information is not appropriate");
@@ -143,43 +122,80 @@ public enum MilestoningStereotypeEnum implements MilestoningStereotype
                     MilestoningStereotypeEnum sourceEnum = ownerMilestoneStereotypes.distinct().getFirst();
                     if (sourceEnum == null)
                     {
-                        return FastList.newListWith(getBiTemporalMilestoningPropertyCodeBlockWithParams(new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity)));
+                        return Lists.immutable.with(getBiTemporalMilestoningPropertyCodeBlockWithParams(new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity)));
                     }
-                    else if (sourceEnum == bitemporal)
+                    if (sourceEnum == bitemporal)
                     {
-                        return FastList.newListWith(getBiTemporalMilestoningPropertyCodeBlockWithParams(new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity)),
-                                getBiTemporalMilestoningPropertyCodeBlockWithOneTemporalDateParam(sourceEnum, new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity)), getBiTemporalMilestoningPropertyCodeBlockNoParams(new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity)));
+                        return Lists.immutable.with(getBiTemporalMilestoningPropertyCodeBlockWithParams(new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity)),
+                                getBiTemporalMilestoningPropertyCodeBlockWithOneTemporalDateParam(sourceEnum, new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity)),
+                                getBiTemporalMilestoningPropertyCodeBlockNoParams(new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity)));
                     }
-                    else if (sourceEnum == businesstemporal || sourceEnum == processingtemporal)
+                    if (sourceEnum == businesstemporal || sourceEnum == processingtemporal)
                     {
-                        return FastList.newListWith(getBiTemporalMilestoningPropertyCodeBlockWithParams(new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity)),
+                        return Lists.immutable.with(getBiTemporalMilestoningPropertyCodeBlockWithParams(new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity)),
                                 getBiTemporalMilestoningPropertyCodeBlockWithOneTemporalDateParam(sourceEnum, new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity)));
                     }
-                    else
-                    {
-                        throw new PureCompilationException("Unexpected source milestoning state: " + sourceEnum);
-                    }
+                    throw new PureCompilationException("Unexpected source milestoning state: " + sourceEnum);
                 }
             };
 
     @Override
-    public ListIterable<MilestonePropertyCodeBlock> getDatePropertyCodeBlocks(final SourceInformation sourceInformation)
+    public String getPurePlatformStereotypeName()
     {
-        return Lists.mutable.withAll(this.getTemporalDatePropertyNames().collectWith(DATE_PROPERTY_CODE_BLOCK, sourceInformation)).with(getMilestoningDataPropertyCodeBlock(this.getMilestoningPropertyClassName(), sourceInformation));
+        return name();
     }
 
-    private static final Function2<String, SourceInformation, MilestonePropertyCodeBlock> DATE_PROPERTY_CODE_BLOCK = new Function2<String, SourceInformation, MilestonePropertyCodeBlock>()
+    @Override
+    public ListIterable<MilestonePropertyCodeBlock> getDatePropertyCodeBlocks(SourceInformation sourceInformation)
     {
-        @Override
-        public MilestonePropertyCodeBlock value(String temporalDatePropertyName, SourceInformation sourceInformation)
-        {
-            String propertyTemplate = MilestoningFunctions.GENERATED_MILESTONING_DATE_STEREOTYPE + " %s: Date[1];\n";
-            String codeBlock = String.format(propertyTemplate, temporalDatePropertyName);
-            return new MilestonePropertyCodeBlock(MilestonePropertyHolderType.REGULAR, codeBlock, sourceInformation);
-        }
-    };
+        return getTemporalDatePropertyNames().collect(temporalDatePropertyName -> getDatePropertyCodeBlock(temporalDatePropertyName, sourceInformation), Lists.mutable.empty())
+                .with(getMilestoningDatePropertyCodeBlock(this.getMilestoningPropertyClassName(), sourceInformation));
+    }
 
-    private static MilestonePropertyCodeBlock getMilestoningDataPropertyCodeBlock(String propertyClassName, SourceInformation sourceInformation)
+    private static final String BUSINESS_DATE_PROPERTY_NAME = "businessDate";
+    private static final String PROCESSING_DATE_PROPERTY_NAME = "processingDate";
+
+    private static final String FROM_PROPERTY_NAME = "from";
+    private static final String THRU_PROPERTY_NAME = "thru";
+    private static final String IN_PROPERTY_NAME = "in";
+    private static final String OUT_PROPERTY_NAME = "out";
+
+    public static int compareTemporalDatePropertyNames(String name1, String name2)
+    {
+        // processingDate < businessDate < everything else (though that last case shouldn't really happen)
+        if (PROCESSING_DATE_PROPERTY_NAME.equals(name1))
+        {
+            return PROCESSING_DATE_PROPERTY_NAME.equals(name2) ? 0 : -1;
+        }
+        if (PROCESSING_DATE_PROPERTY_NAME.equals(name2))
+        {
+            return 1;
+        }
+
+        if (BUSINESS_DATE_PROPERTY_NAME.equals(name1))
+        {
+            return BUSINESS_DATE_PROPERTY_NAME.equals(name2) ? 0 : -1;
+        }
+        if (BUSINESS_DATE_PROPERTY_NAME.equals(name2))
+        {
+            return 1;
+        }
+
+        // fall through case, which shouldn't really happen
+        // nulls compare last
+        return (name1 == null) ?
+                ((name2 == null) ? 0 : 1) :
+                ((name2 == null) ? -1 : name1.compareTo(name2));
+    }
+
+    private static MilestonePropertyCodeBlock getDatePropertyCodeBlock(String temporalDatePropertyName, SourceInformation sourceInformation)
+    {
+        String propertyTemplate = MilestoningFunctions.GENERATED_MILESTONING_DATE_STEREOTYPE + " %s: Date[1];\n";
+        String codeBlock = String.format(propertyTemplate, temporalDatePropertyName);
+        return new MilestonePropertyCodeBlock(MilestonePropertyHolderType.REGULAR, codeBlock, sourceInformation);
+    }
+
+    private static MilestonePropertyCodeBlock getMilestoningDatePropertyCodeBlock(String propertyClassName, SourceInformation sourceInformation)
     {
         String propertyTemplate = MilestoningFunctions.GENERATED_MILESTONING_DATE_STEREOTYPE + " " + MilestoningFunctions.MILESTONING + " : %s[0..1];\n";
         String codeBlock = String.format(propertyTemplate, propertyClassName);
@@ -188,7 +204,7 @@ public enum MilestoningStereotypeEnum implements MilestoningStereotype
 
     private static ListIterable<MilestonePropertyCodeBlock> getSingleDateQualifiedPropertyCodeBlocks(ListIterable<MilestoningStereotypeEnum> ownerMilestoneStereotypes, MilestoningStereotypeEnum targetMilestoneingStereotype, CoreInstance property, String multiplicity, String returnType)
     {
-        FastList<MilestonePropertyCodeBlock> qualifiedCodeBlocks = FastList.newList();
+        MutableList<MilestonePropertyCodeBlock> qualifiedCodeBlocks = Lists.mutable.empty();
         MilestoningStereotypeEnum ownerMilestoningStereotype = ownerMilestoneStereotypes.getFirst();
         MilestoningPropertyCodeBlockMetaData milestoningPropertyCodeBlockMetaData = new MilestoningPropertyCodeBlockMetaData(property, returnType, multiplicity);
 

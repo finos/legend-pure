@@ -40,12 +40,12 @@ function meta::external::format::protobuf::generation::generateProtobufFromPureW
 {   
    $config.scopeElements->filter(e| !$e->instanceOf(Package))->map(e|assert($e->instanceOf(Class),' Protobuf generation of ' + $e->type().name->toOne()+ ' is not currently supported. Tried to generate Protobuf for '+ $e->elementToPath()) ;);
    let classElements = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Class))->cast(@Class<Any>);
-   $classElements->map(c| $config->meta::external::format::protobuf::generation::generateProtobufFromPure($c));
+   $config->meta::external::format::protobuf::generation::generateProtobufFromPure($classElements->toOneMany());
 }
 
-function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1]):ProtobufOutput[*]
+function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1..*]):ProtobufOutput[*]
 {
-    $class->map(c|$c->classToMessage($config.options))->map(s|
+  $class->classToMessage($config.options)->map(s|
       let content = $s->meta::external::format::protobuf::serialization::toString();
       let fileName = if($s.package->isEmpty(), | $class.name->toOne() + '.proto', | $s.package->toOne()->protoPackageToFileName());
       ^ProtobufOutput(content=$content,fileName=$fileName, format = 'proto');
@@ -62,14 +62,15 @@ function meta::external::format::protobuf::generation::protoPackageToFileName(p:
   $p->replace('.', '_') + '.proto'
 }
 
+
 function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[*]
 {
-  meta::external::format::protobuf::generation::classToMessage($class, [])
+  meta::external::format::protobuf::generation::classToMessage([$class], [])
 }
 
-function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1], options:Options[0..1]):ProtoFile[*]
+function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1..*], options:Options[0..1]):ProtoFile[*]
 {
-   let allClasses = $class->scanTypes([])->removeDuplicates()->remove(Any);
+   let allClasses = $class->map(c | $c->scanTypes([]))->removeDuplicates()->remove(Any);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
    let classesByPackage = $allClasses->groupBy(c | $c->elementToProtoPackage());
    

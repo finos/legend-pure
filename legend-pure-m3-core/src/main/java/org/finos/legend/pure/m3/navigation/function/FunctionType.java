@@ -15,15 +15,14 @@
 package org.finos.legend.pure.m3.navigation.function;
 
 import org.eclipse.collections.api.list.ListIterable;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-
-import java.io.IOException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class FunctionType
 {
@@ -39,8 +38,8 @@ public class FunctionType
             return true;
         }
 
-        ListIterable<? extends CoreInstance> params1 = Instance.getValueForMetaPropertyToManyResolved(functionType1, M3Properties.parameters, processorSupport);
-        ListIterable<? extends CoreInstance> params2 = Instance.getValueForMetaPropertyToManyResolved(functionType2, M3Properties.parameters, processorSupport);
+        ListIterable<? extends CoreInstance> params1 = functionType1.getValueForMetaPropertyToMany(M3Properties.parameters);
+        ListIterable<? extends CoreInstance> params2 = functionType2.getValueForMetaPropertyToMany(M3Properties.parameters);
         int paramsCount = params1.size();
         if (paramsCount != params2.size())
         {
@@ -51,98 +50,40 @@ public class FunctionType
             CoreInstance param1 = params1.get(i);
             CoreInstance param2 = params2.get(i);
 
-            CoreInstance genericType1 = Instance.getValueForMetaPropertyToOneResolved(param1, M3Properties.genericType, processorSupport);
-            if (genericType1 == null)
-            {
-                return false;
-            }
-
-            CoreInstance genericType2 = Instance.getValueForMetaPropertyToOneResolved(param2, M3Properties.genericType, processorSupport);
-            if (genericType2 == null)
-            {
-                return false;
-            }
-
-            if (!GenericType.genericTypesEqual(genericType1, genericType2, processorSupport))
+            CoreInstance genericType1 = param1.getValueForMetaPropertyToOne(M3Properties.genericType);
+            CoreInstance genericType2 = param2.getValueForMetaPropertyToOne(M3Properties.genericType);
+            if ((genericType1 == null) || (genericType2 == null) || !GenericType.genericTypesEqual(genericType1, genericType2, processorSupport))
             {
                 return false;
             }
 
             CoreInstance multiplicity1 = Instance.getValueForMetaPropertyToOneResolved(param1, M3Properties.multiplicity, processorSupport);
-            if (multiplicity1 == null)
-            {
-                return false;
-            }
-
             CoreInstance multiplicity2 = Instance.getValueForMetaPropertyToOneResolved(param2, M3Properties.multiplicity, processorSupport);
-            if (multiplicity2 == null)
-            {
-                return false;
-            }
-
-            if (!Multiplicity.multiplicitiesEqual(multiplicity1, multiplicity2))
+            if ((multiplicity1 == null) || (multiplicity2 == null) || !Multiplicity.multiplicitiesEqual(multiplicity1, multiplicity2))
             {
                 return false;
             }
         }
 
-        CoreInstance returnType1 = Instance.getValueForMetaPropertyToOneResolved(functionType1, M3Properties.returnType, processorSupport);
-        if (returnType1 == null)
-        {
-            return false;
-        }
-
-        CoreInstance returnType2 = Instance.getValueForMetaPropertyToOneResolved(functionType2, M3Properties.returnType, processorSupport);
-        if (returnType2 == null)
-        {
-            return false;
-        }
-
-        if (!GenericType.genericTypesEqual(returnType1, returnType2, processorSupport))
+        CoreInstance returnType1 = functionType1.getValueForMetaPropertyToOne(M3Properties.returnType);
+        CoreInstance returnType2 = functionType2.getValueForMetaPropertyToOne(M3Properties.returnType);
+        if ((returnType1 == null) || (returnType2 == null) || !GenericType.genericTypesEqual(returnType1, returnType2, processorSupport))
         {
             return false;
         }
 
         CoreInstance returnMult1 = Instance.getValueForMetaPropertyToOneResolved(functionType1, M3Properties.returnMultiplicity, processorSupport);
-        if (returnMult1 == null)
-        {
-            return false;
-        }
-
         CoreInstance returnMult2 = Instance.getValueForMetaPropertyToOneResolved(functionType2, M3Properties.returnMultiplicity, processorSupport);
-        if (returnMult2 == null)
-        {
-            return false;
-        }
-
-        return Multiplicity.multiplicitiesEqual(returnMult1, returnMult2);
+        return (returnMult1 != null) && (returnMult2 != null) && Multiplicity.multiplicitiesEqual(returnMult1, returnMult2);
     }
 
     public static boolean isFunctionTypeFullyConcrete(CoreInstance functionType, ProcessorSupport processorSupport)
     {
-        for (CoreInstance parameter : functionType.getValueForMetaPropertyToMany(M3Properties.parameters))
-        {
-            CoreInstance parameterGenericType = parameter.getValueForMetaPropertyToOne(M3Properties.genericType);
-            if (!GenericType.isGenericTypeFullyConcrete(parameterGenericType, true, processorSupport))
-            {
-                return false;
-            }
-
-            CoreInstance parameterMultiplicity = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, processorSupport);
-            if (!Multiplicity.isMultiplicityConcrete(parameterMultiplicity))
-            {
-                return false;
-            }
-        }
-
-        CoreInstance returnType = functionType.getValueForMetaPropertyToOne(M3Properties.returnType);
-        if (!GenericType.isGenericTypeFullyConcrete(returnType, true, processorSupport))
-        {
-            return false;
-        }
-
-        CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
-        return Multiplicity.isMultiplicityConcrete(returnMultiplicity);
+        return Multiplicity.isMultiplicityConcrete(Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport)) &&
+                GenericType.isGenericTypeFullyConcrete(functionType.getValueForMetaPropertyToOne(M3Properties.returnType), true, processorSupport) &&
+                functionType.getValueForMetaPropertyToMany(M3Properties.parameters).allSatisfy(p ->
+                        Multiplicity.isMultiplicityConcrete(Instance.getValueForMetaPropertyToOneResolved(p, M3Properties.multiplicity, processorSupport)) &&
+                                GenericType.isGenericTypeFullyConcrete(p.getValueForMetaPropertyToOne(M3Properties.genericType), true, processorSupport));
     }
 
     /**
@@ -157,29 +98,11 @@ public class FunctionType
      */
     public static boolean isFunctionTypeFullyDefined(CoreInstance functionType, ProcessorSupport processorSupport)
     {
-        for (CoreInstance parameter : Instance.getValueForMetaPropertyToManyResolved(functionType, M3Properties.parameters, processorSupport))
-        {
-            CoreInstance parameterGenericType = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.genericType, processorSupport);
-            if (!GenericType.isGenericTypeFullyDefined(parameterGenericType, processorSupport))
-            {
-                return false;
-            }
-
-            CoreInstance parameterMultiplicity = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, processorSupport);
-            if (parameterMultiplicity == null)
-            {
-                return false;
-            }
-        }
-
-        CoreInstance returnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport);
-        if (!GenericType.isGenericTypeFullyDefined(returnType, processorSupport))
-        {
-            return false;
-        }
-
-        CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
-        return returnMultiplicity != null;
+        return (Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport) != null) &&
+                GenericType.isGenericTypeFullyDefined(functionType.getValueForMetaPropertyToOne(M3Properties.returnType), processorSupport) &&
+                functionType.getValueForMetaPropertyToMany(M3Properties.parameters).allSatisfy(p ->
+                        (Instance.getValueForMetaPropertyToOneResolved(p, M3Properties.multiplicity, processorSupport) != null) &&
+                                GenericType.isGenericTypeFullyDefined(p.getValueForMetaPropertyToOne(M3Properties.genericType), processorSupport));
     }
 
     public static CoreInstance getParameterGenericType(CoreInstance functionType, int parameterIndex)
@@ -199,7 +122,7 @@ public class FunctionType
 
     public static void resolveImportStubs(CoreInstance functionType, ProcessorSupport processorSupport)
     {
-        for (CoreInstance parameter : functionType.getValueForMetaPropertyToMany(M3Properties.parameters))
+        functionType.getValueForMetaPropertyToMany(M3Properties.parameters).forEach(parameter ->
         {
             CoreInstance parameterGenericType = parameter.getValueForMetaPropertyToOne(M3Properties.genericType);
             if (parameterGenericType != null)
@@ -207,7 +130,7 @@ public class FunctionType
                 GenericType.resolveImportStubs(parameterGenericType, processorSupport);
             }
             Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, processorSupport);
-        }
+        });
 
         CoreInstance returnType = functionType.getValueForMetaPropertyToOne(M3Properties.returnType);
         if (returnType != null)
@@ -256,9 +179,7 @@ public class FunctionType
      */
     public static String print(CoreInstance functionType, boolean fullPaths, boolean markImportStubs, ProcessorSupport processorSupport)
     {
-        StringBuilder builder = new StringBuilder();
-        print(builder, functionType, fullPaths, markImportStubs, processorSupport);
-        return builder.toString();
+        return print(new StringBuilder(), functionType, fullPaths, markImportStubs, processorSupport).toString();
     }
 
     /**
@@ -268,10 +189,11 @@ public class FunctionType
      * @param appendable       appendable to print to
      * @param functionType     function type to print
      * @param processorSupport processor support
+     * @return the appendable
      */
-    public static void print(Appendable appendable, CoreInstance functionType, ProcessorSupport processorSupport)
+    public static <T extends Appendable> T print(T appendable, CoreInstance functionType, ProcessorSupport processorSupport)
     {
-        print(appendable, functionType, false, processorSupport);
+        return print(appendable, functionType, false, processorSupport);
     }
 
     /**
@@ -282,10 +204,11 @@ public class FunctionType
      * @param functionType     function type to print
      * @param fullPaths        whether to print full paths
      * @param processorSupport processor support
+     * @return the appendable
      */
-    public static void print(Appendable appendable, CoreInstance functionType, boolean fullPaths, ProcessorSupport processorSupport)
+    public static <T extends Appendable> T print(T appendable, CoreInstance functionType, boolean fullPaths, ProcessorSupport processorSupport)
     {
-        print(appendable, functionType, fullPaths, false, processorSupport);
+        return print(appendable, functionType, fullPaths, false, processorSupport);
     }
 
     /**
@@ -297,35 +220,31 @@ public class FunctionType
      * @param fullPaths        whether to print full paths
      * @param markImportStubs  whether to mark import stubs with ~
      * @param processorSupport processor support
+     * @return the appendable
      */
-    public static void print(Appendable appendable, CoreInstance functionType, boolean fullPaths, boolean markImportStubs, ProcessorSupport processorSupport)
+    public static <T extends Appendable> T print(T appendable, CoreInstance functionType, boolean fullPaths, boolean markImportStubs, ProcessorSupport processorSupport)
     {
-        try
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        safeAppendable.append('{');
+        ListIterable<? extends CoreInstance> params = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
+        int size = params.size();
+        if (size > 0)
         {
-            appendable.append('{');
-            ListIterable<? extends CoreInstance> params = functionType.getValueForMetaPropertyToMany(M3Properties.parameters);
-            int size = params.size();
-            if (size > 0)
+            CoreInstance param = params.get(0);
+            GenericType.print(safeAppendable, param.getValueForMetaPropertyToOne(M3Properties.genericType), fullPaths, markImportStubs, processorSupport);
+            Multiplicity.print(safeAppendable, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport), true);
+            for (int i = 1; i < size; i++)
             {
-                CoreInstance param = params.get(0);
-                GenericType.print(appendable, param.getValueForMetaPropertyToOne(M3Properties.genericType), fullPaths, markImportStubs, processorSupport);
-                Multiplicity.print(appendable, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport), true);
-                for (int i = 1; i < size; i++)
-                {
-                    appendable.append(", ");
-                    param = params.get(i);
-                    GenericType.print(appendable, param.getValueForMetaPropertyToOne(M3Properties.genericType), fullPaths, markImportStubs, processorSupport);
-                    Multiplicity.print(appendable, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport), true);
-                }
+                safeAppendable.append(", ");
+                param = params.get(i);
+                GenericType.print(safeAppendable, param.getValueForMetaPropertyToOne(M3Properties.genericType), fullPaths, markImportStubs, processorSupport);
+                Multiplicity.print(safeAppendable, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.multiplicity, processorSupport), true);
             }
-            appendable.append("->");
-            GenericType.print(appendable, functionType.getValueForMetaPropertyToOne(M3Properties.returnType), fullPaths, markImportStubs, processorSupport);
-            Multiplicity.print(appendable, Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport), true);
-            appendable.append('}');
         }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        safeAppendable.append("->");
+        GenericType.print(safeAppendable, functionType.getValueForMetaPropertyToOne(M3Properties.returnType), fullPaths, markImportStubs, processorSupport);
+        Multiplicity.print(safeAppendable, Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport), true);
+        safeAppendable.append('}');
+        return appendable;
     }
 }

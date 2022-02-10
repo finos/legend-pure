@@ -684,7 +684,10 @@ function <<test.Test>>   { meta::pure::executionPlan::profiles::serverVersion.st
                                        '    }' +
                                        '  }' +
                                        '}';
-   
+      assert($collectWithNoRelatedTypes.fileName=='model.json');
+      assert($collectOpenAPIYAML.fileName=='model.yaml');
+      assert($collectOpenAPI.fileName=='model.json');
+
       assert(jsonEquivalent($expectedStandardJSONSchema->parseJSON(),$collectWithNoRelatedTypes.content->toOne()->parseJSON()));
       assert(jsonEquivalent($expectedStandardJSONSchema->parseJSON(),$collectWithRelatedTypes.content->toOne()->parseJSON()));
 

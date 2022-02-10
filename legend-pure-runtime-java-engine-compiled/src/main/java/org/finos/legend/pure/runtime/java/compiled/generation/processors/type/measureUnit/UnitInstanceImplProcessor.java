@@ -15,13 +15,12 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
@@ -67,16 +66,6 @@ public class UnitInstanceImplProcessor
 
     public static final String CLASS_IMPL_SUFFIX = "_Impl";
 
-    public static final Predicate2<CoreInstance, ProcessorSupport> IS_TO_ONE = new Predicate2<CoreInstance, ProcessorSupport>()
-    {
-        @Override
-        public boolean accept(CoreInstance coreInstance, ProcessorSupport processorSupport)
-        {
-            CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(coreInstance, M3Properties.multiplicity, processorSupport);
-            return Multiplicity.isToOne(multiplicity, false);
-        }
-    };
-
     public static String buildValSetterAndGetter(String interfaceName)
     {
         return  "    public java.lang.Number _val;\n" +
@@ -117,16 +106,15 @@ public class UnitInstanceImplProcessor
                 "    }\n\n";
     }
 
-    public static StringJavaSource buildImplementation(String _package, String imports, CoreInstance classGenericType, ProcessorContext processorContext, final ProcessorSupport processorSupport, final boolean useJavaInheritance)
+    public static StringJavaSource buildImplementation(String _package, String imports, CoreInstance classGenericType, ProcessorContext processorContext, ProcessorSupport processorSupport, boolean useJavaInheritance)
     {
         processorContext.setClassImplSuffix(CLASS_IMPL_SUFFIX);
-        final CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
+        CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
         String className = UnitProcessor.convertToJavaCompatibleClassName(JavaPackageAndImportBuilder.buildImplUnitInstanceClassNameFromType(unit));
         String typeParams = UnitProcessor.typeParameters(unit);
         String typeParamsString = typeParams.isEmpty() ? "" : "<" + typeParams + ">";
         String classNamePlusTypeParams = className + typeParamsString;
         String interfaceNamePlusTypeParams = UnitProcessor.convertToJavaCompatibleClassName(TypeProcessor.javaInterfaceForType(unit)) + "_Instance" + typeParamsString;
-        String systemPath = PackageableElement.getSystemPathForPackageableElement(unit, "::");
 
         boolean isGetterOverride = M3Paths.GetterOverride.equals(PackageableElement.getUserPathForPackageableElement(unit)) ||
                 M3Paths.ConstraintsGetterOverride.equals(PackageableElement.getUserPathForPackageableElement(unit));
@@ -184,26 +172,19 @@ public class UnitInstanceImplProcessor
                 "     }\n";
     }
 
-    public static String buildGetValueForMetaPropertyToOne(final CoreInstance classGenericType, final ProcessorSupport processorSupport)
+    public static String buildGetValueForMetaPropertyToOne(CoreInstance classGenericType, ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        RichIterable<CoreInstance> toOneProperties = processorSupport.class_getSimpleProperties(_class).selectWith(IS_TO_ONE, processorSupport);
+        RichIterable<CoreInstance> toOneProperties = processorSupport.class_getSimpleProperties(_class).select(p -> Multiplicity.isToOne(Instance.getValueForMetaPropertyToOneResolved(p, M3Properties.multiplicity, processorSupport), false));
         return "    @Override\n" +
                 "    public CoreInstance getValueForMetaPropertyToOne(String keyName)\n" +
                 "    {\n" +
                 "        switch (keyName)\n" +
                 "        {\n" +
-                toOneProperties.collect(new Function<CoreInstance, String>()
-                {
-                    @Override
-                    public String valueOf(CoreInstance property)
-                    {
-                        return "            case \"" + property.getName() + "\":\n" +
-                                "            {\n" +
-                                "                return ValCoreInstance.toCoreInstance(this._" + Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport).getName() + "());\n" +
-                                "            }\n";
-                    }
-                }).makeString("") +
+                toOneProperties.collect(property -> "            case \"" + property.getName() + "\":\n" +
+                "            {\n" +
+                "                return ValCoreInstance.toCoreInstance(this._" + PrimitiveUtilities.getStringValue(property.getValueForMetaPropertyToOne(M3Properties.name)) + "());\n" +
+                "            }\n").makeString("") +
 
                 "            case \"values\":\n" +
                 "            {\n" +
@@ -226,8 +207,6 @@ public class UnitInstanceImplProcessor
                 "    }\n" +
                 "\n";
     }
-
-
 
     public static String buildGetFullSystemPath()
     {

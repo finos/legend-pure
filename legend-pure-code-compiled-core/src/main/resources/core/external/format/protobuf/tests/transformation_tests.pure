@@ -46,6 +46,11 @@ Class meta::external::format::protobuf::generation::tests::Person
    name : String[1];
 }
 
+Class meta::external::format::protobuf::generation::tests::StandaloneThing
+{
+   name : String[1];
+}
+
 function <<test.Test>> meta::external::format::protobuf::generation::tests::testClassToProtoBuf():Boolean[1]
 {
   let results = Trade->classToMessage();              
@@ -79,7 +84,50 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                 '}', $resultForAccount->toOne()->meta::external::format::protobuf::serialization::toString());              
 }
 
-function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
+function <<test.Test>> meta::external::format::protobuf::generation::tests::testGenerateProtobufFromPureWithScope():Boolean[1]
+{
+  let results = generateProtobufFromPureWithScope(^ProtobufConfig(scopeElements=[meta::external::format::protobuf::generation::tests]));
+  assertSize($results, 3);
+  let resultForTrade = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_trade.proto');
+  assertEquals('syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'import "meta_external_format_protobuf_generation_tests_account.proto";\n' + 
+                'package meta.external.format.protobuf.generation.tests.trade;\n' +
+                'message Trade {\n'+
+                ' string type = 1;\n'+
+                ' int64 id = 2;\n'+
+                ' double npv = 3;\n'+
+                ' repeated double notionals = 4;\n'+
+                ' meta.external.format.protobuf.generation.tests.account.Account account = 5;\n'+
+                '}\n'+
+                'enum MyEnum {\n'+
+                '   a = 0;\n'+
+                '   b = 1;\n'+
+                '}', $resultForTrade.content);
+  let resultForAccount = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_account.proto');              
+  assertEquals('syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'import "meta_external_format_protobuf_generation_tests_trade.proto";\n' +
+                'package meta.external.format.protobuf.generation.tests.account;\n' +
+                'message Account {\n'+
+                ' string name = 1;\n'+
+                ' meta.external.format.protobuf.generation.tests.trade.Trade t = 2;\n'+
+                ' meta.external.format.protobuf.generation.tests.trade.MyEnum enum = 3;\n'+
+                ' google.protobuf.Timestamp adate = 4;\n'+
+                '}', $resultForAccount.content );
+  let resultForTestPkg = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests.proto');
+  assertEquals('syntax = "proto3";\n' +
+                'import "google/protobuf/timestamp.proto";\n' +
+                'package meta.external.format.protobuf.generation.tests;\n' + 
+                'message Person {\n' +
+                ' string name = 1;\n' +
+                '}\n' + 
+                'message StandaloneThing {\n' +
+                ' string name = 1;\n' +
+                '}', $resultForTestPkg.content );                         
+}
+
+function <<test.Test, test.ToFix>> {serverVersion.start='v1_20_0'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
 {
   let results = meta::external::format::protobuf::generation::transform(^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::trade::Trade'));
   assertSize($results, 2);
@@ -128,7 +176,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::Opti
     + 'option aBool = true;\n', $options->toString());                       
 }
 
-function <<test.Test>> meta::external::format::protobuf::generation::tests::transform_testClassToProtoBufWithOptions():Boolean[1]
+function <<test.Test, test.ToFix>> meta::external::format::protobuf::generation::tests::transform_testClassToProtoBufWithOptions():Boolean[1]
 {
   let config = ^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::Person',
                                options=^Options(javaPackage='com.gs.person'));

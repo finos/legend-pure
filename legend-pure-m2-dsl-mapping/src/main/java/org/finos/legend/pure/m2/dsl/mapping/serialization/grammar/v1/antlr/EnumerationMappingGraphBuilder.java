@@ -14,18 +14,14 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.antlr;
 
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.impl.list.mutable.ListAdapter;
+import org.antlr.v4.runtime.Token;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.EnumerationMappingParser;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.EnumerationMappingParserBaseVisitor;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
-import org.antlr.v4.runtime.Token;
-
-import static org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils.removeLastCommaCharacterIfPresent;
 
 public class EnumerationMappingGraphBuilder extends EnumerationMappingParserBaseVisitor<String>
 {
-
     private final String classPath;
     private final String classSourceInfo;
     private final String importId;
@@ -33,7 +29,8 @@ public class EnumerationMappingGraphBuilder extends EnumerationMappingParserBase
 
     private final StringBuilder builder = new StringBuilder();
 
-    public EnumerationMappingGraphBuilder(String classPath, String classSourceInfo, String importId, AntlrSourceInformation sourceInformation){
+    public EnumerationMappingGraphBuilder(String classPath, String classSourceInfo, String importId, AntlrSourceInformation sourceInformation)
+    {
         this.classPath = classPath;
         this.classSourceInfo = classSourceInfo;
         this.importId = importId;
@@ -41,71 +38,55 @@ public class EnumerationMappingGraphBuilder extends EnumerationMappingParserBase
     }
 
     @Override
-    public String visitMapping(EnumerationMappingParser.MappingContext ctx){
+    public String visitMapping(EnumerationMappingParser.MappingContext ctx)
+    {
         visitChildren(ctx);
-        removeLastCommaCharacterIfPresent(builder);
-        return builder.toString();
+        ParsingUtils.removeLastCommaCharacterIfPresent(this.builder);
+        return this.builder.toString();
     }
 
     @Override
-    public String visitEnumSingleEntryMapping(EnumerationMappingParser.EnumSingleEntryMappingContext ctx){
-        builder.append("^meta::pure::mapping::EnumValueMapping");
-        builder.append(" " + sourceInformation.getPureSourceInformation(ctx.enumName().getStart(), ctx.enumName().getStart(), ctx.enumName().getStop()).toM4String());
-        builder.append("(enum=^meta::pure::metamodel::import::EnumStub");
-        builder.append(" " + sourceInformation.getPureSourceInformation(ctx.enumName().getStart(), ctx.enumName().getStart(), ctx.enumName().getStop()).toM4String());
-        builder.append(" (enumName='");
-        builder.append(ctx.enumName().getText());
-        builder.append("', ");
-        builder.append(" enumeration=");
-        builder.append("^meta::pure::metamodel::import::ImportStub ");
-        builder.append(classSourceInfo);
-        builder.append(" (importGroup=system::imports::");
-        builder.append(importId);
-        builder.append(", idOrPath='");
-        builder.append(classPath);
-        builder.append("')), sourceValues=");
-        builder.append("[");
+    public String visitEnumSingleEntryMapping(EnumerationMappingParser.EnumSingleEntryMappingContext ctx)
+    {
+        this.builder.append("^meta::pure::mapping::EnumValueMapping ").append(this.sourceInformation.getPureSourceInformation(ctx.enumName().getStart(), ctx.enumName().getStart(), ctx.enumName().getStop()).toM4String());
+        this.builder.append("(enum=^meta::pure::metamodel::import::EnumStub ").append(this.sourceInformation.getPureSourceInformation(ctx.enumName().getStart(), ctx.enumName().getStart(), ctx.enumName().getStop()).toM4String());
+        this.builder.append(" (enumName='").append(ctx.enumName().getText()).append("', ");
+        this.builder.append("enumeration=^meta::pure::metamodel::import::ImportStub ").append(this.classSourceInfo);
+        this.builder.append(" (importGroup=system::imports::").append(this.importId).append(", idOrPath='").append(this.classPath).append("')), ");
+        this.builder.append("sourceValues=[");
         visitChildren(ctx);
-        removeLastCommaCharacterIfPresent(builder);
-        builder.append("]");
-        builder.append(")");
-        builder.append(",");
-
+        ParsingUtils.removeLastCommaCharacterIfPresent(this.builder);
+        this.builder.append("]),");
         return null;
     }
 
     @Override
-    public String visitEnumSourceValue(EnumerationMappingParser.EnumSourceValueContext ctx){
-        if (ctx.STRING() != null) {
-            builder.append(ctx.STRING().getText());
-        } else if (ctx.INTEGER() != null)
-            builder.append(ctx.INTEGER());
+    public String visitEnumSourceValue(EnumerationMappingParser.EnumSourceValueContext ctx)
+    {
+        if (ctx.STRING() != null)
+        {
+            this.builder.append(ctx.STRING().getText());
+        }
+        else if (ctx.INTEGER() != null)
+        {
+            this.builder.append(ctx.INTEGER());
+        }
         else
         {
-            builder.append("^meta::pure::metamodel::import::EnumStub");
-            builder.append(" " + sourceInformation.getPureSourceInformation(ctx.enumReference().identifier().getStart(), ctx.enumReference().identifier().getStart(), ctx.enumReference().identifier().getStop()).toM4String());
-            builder.append("(enumName='");
-            builder.append(ctx.enumReference().identifier().getText());
-            builder.append("', enumeration=^meta::pure::metamodel::import::ImportStub");
+            this.builder.append("^meta::pure::metamodel::import::EnumStub ").append(this.sourceInformation.getPureSourceInformation(ctx.enumReference().identifier().getStart(), ctx.enumReference().identifier().getStart(), ctx.enumReference().identifier().getStop()).toM4String());
+            this.builder.append(" (enumName='").append(ctx.enumReference().identifier().getText()).append("', ");
+            this.builder.append("enumeration=^meta::pure::metamodel::import::ImportStub ");
             Token startToken = ctx.enumReference().qualifiedName().packagePath() == null ? ctx.enumReference().qualifiedName().identifier().getStart() : ctx.enumReference().qualifiedName().packagePath().getStart();
-            builder.append(" "+ sourceInformation.getPureSourceInformation(startToken, startToken, ctx.enumReference().identifier().stop).toM4String());
-            builder.append("(importGroup=system::imports::");
-            builder.append(importId);
-            builder.append(", idOrPath='");
-            String idOrPath = ctx.enumReference().qualifiedName().packagePath() == null ? ctx.enumReference().qualifiedName().identifier().getText() : ListAdapter.adapt(ctx.enumReference().qualifiedName().packagePath().identifier()).collect(IDENTIFIER_CONTEXT_STRING_FUNCTION).makeString("::") + "::" + ctx.enumReference().qualifiedName().identifier().getText();
-            builder.append(idOrPath);
-            builder.append("'))");
+            this.builder.append(this.sourceInformation.getPureSourceInformation(startToken, startToken, ctx.enumReference().identifier().stop).toM4String());
+            this.builder.append("(importGroup=system::imports::").append(this.importId).append(", ");
+            this.builder.append("idOrPath='");
+            if (ctx.enumReference().qualifiedName().packagePath() != null)
+            {
+                ctx.enumReference().qualifiedName().packagePath().identifier().forEach(pkg -> this.builder.append(pkg.getText()).append("::"));
+            }
+            this.builder.append(ctx.enumReference().qualifiedName().identifier().getText()).append("'))");
         }
-        builder.append(",");
+        this.builder.append(",");
         return null;
     }
-
-    private static final Function<EnumerationMappingParser.IdentifierContext, String> IDENTIFIER_CONTEXT_STRING_FUNCTION = new Function<EnumerationMappingParser.IdentifierContext, String>()
-    {
-        @Override
-        public String valueOf(EnumerationMappingParser.IdentifierContext identifierContext)
-        {
-            return identifierContext.getText();
-        }
-    };
 }

@@ -18,7 +18,18 @@ import meta::external::query::graphQL::metamodel::*;
 import meta::external::query::graphQL::metamodel::typeSystem::*;
 import meta::external::query::graphQL::binding::toPure::*;
 
-function meta::external::query::graphQL::binding::toPure::graphQLTypeSystemtoPure(doc:Document[1], package:String[1]) : meta::pure::metamodel::type::Type[*]
+function meta::external::query::graphQL::binding::toPure::primitiveTypeMapping() : Pair<String, meta::pure::metamodel::type::Type>[*]
+{
+    [
+      pair('String', String),
+      pair('Boolean', Boolean),
+      pair('Int', Integer),
+      pair('Float', Float),
+      pair('ID', String)
+    ]
+}
+
+function meta::external::query::graphQL::binding::toPure::typeSystem::graphQLTypeSystemtoPure(doc:Document[1], package:String[1]) : meta::pure::metamodel::type::Type[*]
 {
   let pack = buildTransientPackageFromString($package);
 
@@ -34,11 +45,7 @@ function meta::external::query::graphQL::binding::toPure::graphQLTypeSystemtoPur
                                     pair($e.name, $ep);
       ]
     )
-  )->concatenate([
-    pair('String', String),
-    pair('Boolean', Boolean)
-  ]
-  )->newMap();
+  )->concatenate(meta::external::query::graphQL::binding::toPure::primitiveTypeMapping())->newMap();
 
   // Pass 2
   $doc.definitions->map(def|
@@ -61,7 +68,7 @@ function meta::external::query::graphQL::binding::toPure::graphQLTypeSystemtoPur
   );
 }
 
-function <<access.private>> meta::external::query::graphQL::binding::toPure::buildTransientPackageFromString(package:String[1]) : Package[1]
+function meta::external::query::graphQL::binding::toPure::buildTransientPackageFromString(package:String[1]) : Package[1]
 {
   $package->split('::')->fold({a,b|^Package(name = $a, package=$b)}, ^Package());
 }
@@ -77,7 +84,7 @@ import meta::pure::graphFetch::*;
 
 function meta::external::query::graphQL::transformation::queryToPure::graphQLExecutableToPure(query:Document[1], root: Class<Any>[1]) : RootGraphFetchTree<Any>[1]
 {
-  let types = $root->meta::external::query::graphQL::introspection::scanTypes([]);
+  let types = $root->meta::external::query::graphQL::binding::fromPure::introspection::scanTypes([]);
   let fragments = $query.definitions->map(d|
     $d->match([
       
@@ -114,12 +121,13 @@ function <<access.private>> meta::external::query::graphQL::transformation::quer
 {
   $selection->map(s|$s->match(
     [
-      field : Field[1] | let property = $root->meta::pure::functions::meta::hierarchicalProperties()->concatenate($root->meta::pure::functions::meta::hierarchicalQualifiedProperties())->filter(p|$p.name == $field.name)->toOne();
+      field : Field[1] |let property = $root->meta::pure::functions::meta::hierarchicalProperties()->concatenate($root->meta::pure::functions::meta::hierarchicalQualifiedProperties())->filter(p|$p.name == $field.name);
+                        assert(!$property->isEmpty(), |'Property "'+$field.name+'" can\'t be found in the type '+$root->elementToPath());
                         ^meta::external::query::graphQL::transformation::queryToPure::IntermediatePropertyNode
                         (
                           propertyFetch = ^PropertyGraphFetchTree
                                           (
-                                            property = $property,
+                                            property = $property->toOne(),
                                             parameters = $field.arguments->map(a|$a.value->match(
                                                                                             [
                                                                                               s:StringValue[1]| ^InstanceValue(multiplicity=PureOne, genericType=^GenericType(rawType=String), values=$s.value),
@@ -128,7 +136,7 @@ function <<access.private>> meta::external::query::graphQL::transformation::quer
                                                                                           )
                                                                            )
                                           ),
-                          children = if ($field.selectionSet->isEmpty(),|[],|$field.selectionSet->transformSelectionToPure($property->functionReturnType().rawType->cast(@Class<Any>)->toOne()))
+                          children = if ($field.selectionSet->isEmpty(),|[],|$field.selectionSet->transformSelectionToPure($property->toOne()->functionReturnType().rawType->cast(@Class<Any>)->toOne()))
                         );,
       fragmentId : FragmentSpread[1] | ^meta::external::query::graphQL::transformation::queryToPure::IntermediateFragmentNode(name = $fragmentId.name);
     ]
@@ -150,17 +158,6 @@ function <<access.private>> meta::external::query::graphQL::transformation::quer
   )
 }
 
-function meta::external::query::graphQL::introspection::scanTypes(t:Type[1], processed:Type[*]):Type[*]
-{
-   if (!$processed->contains($t),
-       |$t->concatenate(if($t->instanceOf(Class),
-                         |$t->cast(@Class<Any>)->allProperties().genericType.rawType->distinct()->concatenate($t->cast(@Class<Any>)->meta::pure::functions::meta::findAllSpecializations())->filter(t|($t->instanceOf(Class) || $t->instanceOf(meta::pure::metamodel::type::Enumeration)) && $t != Any)->map(c|$c->meta::external::query::graphQL::introspection::scanTypes($processed->concatenate($t)))->distinct(),
-                         |[]
-                       )),
-       |[]
-   );
-}
-
 
 ###Pure
 import meta::external::query::graphQL::transformation::queryToPure::*;
@@ -174,7 +171,7 @@ function meta::external::query::graphQL::transformation::queryToPure::getPlansFr
                                                                       ):Pair<String, meta::pure::executionPlan::ExecutionPlan>[*]
 {
   let graphFetch = meta::external::query::graphQL::transformation::queryToPure::graphQLExecutableToPure($query, $cl);
-  let res = $graphFetch->meta::external::query::graphQL::transformation::queryToPure::extractDomainTypeClassFromGraphFetchTree();
+  let res = $graphFetch->meta::pure::graphFetch::domain::extractDomainTypeClassFromGraphFetchTree();
   $res->map(r|
               pair(
                 $r.first,
@@ -188,121 +185,20 @@ function meta::external::query::graphQL::transformation::queryToPure::getPlansFr
         );
 }
 
-function meta::external::query::graphQL::transformation::queryToPure::extractDomainTypeClassFromFunction<T>(func:FunctionDefinition<{->T[*]}>[1]):Pair<String, FunctionDefinition<{->Any[*]}>>[*]
+Class meta::external::query::graphQL::transformation::queryToPure::GraphFetchResult
 {
-  let main = $func.expressionSequence->evaluateAndDeactivate();
-  if ($main->size() == 1 && $main->toOne()->instanceOf(FunctionExpression),
-    | let treeContainer = if ($main->toOne()->cast(@FunctionExpression).func == meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__T_MANY_,
-                            | $main->cast(@FunctionExpression).parametersValues->at(1)->cast(@InstanceValue),
-                            | if ($main->toOne()->cast(@FunctionExpression).func == meta::pure::graphFetch::execution::serialize_T_MANY__RootGraphFetchTree_1__String_1_,
-                                | $main->cast(@FunctionExpression).parametersValues->at(1)->cast(@InstanceValue),
-                                | fail('GraphQL translation only supports graphFetch')
-                            )
-                          )->cast(@InstanceValue);
-      let tree = $treeContainer.values->toOne()->cast(@meta::pure::graphFetch::RootGraphFetchTree<Any>);
-      $tree->extractDomainTypeClassFromGraphFetchTree();,
-    | fail('GraphQL translation only supports graphFetch');
-  )->cast(@Pair<String,FunctionDefinition<{->Any[*]}>>);
+  graphFetchTree : meta::pure::graphFetch::RootGraphFetchTree<Any>[1];
+  explodedDomain : Pair<String, FunctionDefinition<{->Any[*]}>>[*];
 }
 
-function <<access.private>> meta::external::query::graphQL::transformation::queryToPure::extractDomainTypeClassFromGraphFetchTree(tree:meta::pure::graphFetch::RootGraphFetchTree<Any>[1]):Pair<String, FunctionDefinition<{->Any[*]}>>[*]
+function meta::external::query::graphQL::transformation::queryToPure::getGraphFetchFromGraphQL(cl:Class<Any>[1], query:meta::external::query::graphQL::metamodel::Document[1]):GraphFetchResult[1]
 {
-    let subTrees = $tree.subTrees->cast(@meta::pure::graphFetch::PropertyGraphFetchTree)->evaluateAndDeactivate();
-    let properties = $subTrees.property;
-    let result = $properties->findGetAllInQualifiedProperties();
-    if ($result->isEmpty(),
-      |fail('Non Domain type is not supported yet!'),
-      |if ($properties->size() == $result->size(),
-        | $result->zip($subTrees)->map(x|            
-            let parametersValueByName = $x.second.property->functionType().parameters->tail().name->zip($x.second.parameters)->newMap();
-            let newFunc = $x.first;
-            let genType = ^GenericType(rawType=meta::pure::graphFetch::RootGraphFetchTree, typeArguments=$x.first.genericType);
-            let newTree = ^InstanceValue(
-                            genericType = $genType,
-                            multiplicity = PureOne,
-                            values = ^meta::pure::graphFetch::RootGraphFetchTree<Any>
-                                     (
-                                        class = $x.first.genericType.rawType->toOne()->cast(@Class<Any>),
-                                        subTrees = $x.second.subTrees
-                                     )
-            );
-
-            let stringType = ^GenericType(rawType=String);
-           
-            let func = ^LambdaFunction<{->Any[*]}>
-            (
-              expressionSequence =
-                  ^$newFunc(
-                    func = meta::pure::graphFetch::execution::serialize_T_MANY__RootGraphFetchTree_1__String_1_,
-                    functionName = 'serialize',
-                    genericType = $stringType,
-                    resolvedTypeParameters = $stringType,
-                    parametersValues = [
-                      ^$newFunc(
-                          func = meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__T_MANY_,
-                          functionName = 'graphFetch',
-                          genericType = $x.first.genericType,
-                          resolvedTypeParameters = $x.first.genericType,
-                          parametersValues = [
-                            $x.first->reprocessVariables($parametersValueByName),
-                            $newTree
-                          ],
-                          usageContext = []
-                        ),
-                      $newTree
-                    ],
-                    usageContext = []
-                  )
-            );
-            pair($x.second.property.name->toOne(), $func);
-
-          );,
-        | fail('All properties need to be getAll');
-      )
-    )->cast(@Pair<String, FunctionDefinition<{->Any[*]}>>);  
-}
-
-function <<access.private>> meta::external::query::graphQL::transformation::queryToPure::findGetAllInQualifiedProperties(properties:AbstractProperty<Any>[*]):SimpleFunctionExpression[*]
-{
-  $properties->map(
-    p | if ($p->instanceOf(QualifiedProperty),
-          | let exp =  $p->cast(@QualifiedProperty<Any>).expressionSequence->evaluateAndDeactivate()->toOne();
-            let val = $exp->lookForGetAll();
-            if ($val->instanceOf(SimpleFunctionExpression) && $val->cast(@SimpleFunctionExpression).func == getAll_Class_1__T_MANY_,
-              |$exp->cast(@SimpleFunctionExpression),
-              |[]
-            );,
-          |[]
-        );
+  let graphFetch = meta::external::query::graphQL::transformation::queryToPure::graphQLExecutableToPure($query, $cl);
+  let res = $graphFetch->meta::pure::graphFetch::domain::extractDomainTypeClassFromGraphFetchTree();
+  ^GraphFetchResult
+  (
+    graphFetchTree = $graphFetch,
+    explodedDomain = $res->map(r|pair($r.first, $r.second))
   );
 }
 
-function <<access.private>> meta::external::query::graphQL::transformation::queryToPure::lookForGetAll(s:ValueSpecification[1]):ValueSpecification[1]
-{
-  $s->match([
-    s:SimpleFunctionExpression[1]|if($s.func != getAll_Class_1__T_MANY_ && !$s.parametersValues->isEmpty(),
-                                      |$s.parametersValues->at(0)->lookForGetAll(),
-                                      |$s
-                                    );,
-    i:ValueSpecification[1]|$i
-  ])
-}
-
-
-function <<access.private>> meta::external::query::graphQL::transformation::queryToPure::reprocessVariables(vs:ValueSpecification[1], vars:Map<String, ValueSpecification>[1]):ValueSpecification[1]
-{
-   $vs->match([
-      fe : FunctionExpression[1] | ^$fe(parametersValues = $fe.parametersValues->evaluateAndDeactivate()->map(x | $x->reprocessVariables($vars))),
-      iv : InstanceValue[1] | ^$iv
-                              (
-                                 values = $iv.values->evaluateAndDeactivate()->map(val | $val->match([
-                                    l : LambdaFunction<Any>[1] | ^$l(expressionSequence = $l.expressionSequence->evaluateAndDeactivate()->at(0)->reprocessVariables($vars)),
-                                    v : ValueSpecification[1] | $v->reprocessVariables($vars),
-                                    a : Any[1] | $a
-                                 ]))
-
-                              ),
-      ve : VariableExpression[1] | let resolved = $vars->get($ve.name); if($resolved->isEmpty(), | $ve, | $resolved->toOne());,
-      v  : ValueSpecification[1] | $v
-   ]);
-}

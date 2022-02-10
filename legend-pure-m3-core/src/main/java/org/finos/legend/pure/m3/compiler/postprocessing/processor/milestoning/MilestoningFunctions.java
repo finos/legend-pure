@@ -14,25 +14,17 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.tuple.Tuples;
+import org.eclipse.collections.impl.set.mutable.SetAdapter;
 import org.eclipse.collections.impl.utility.ArrayIterate;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.compiler.PropertyOwnerStrategy;
-import org.finos.legend.pure.m3.navigation.profile.Profile;
-import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PropertyOwner;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithStereotypes;
@@ -41,9 +33,17 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.proper
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.profile.Profile;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+
+import java.util.EnumSet;
 
 public class MilestoningFunctions
 {
@@ -93,90 +93,46 @@ public class MilestoningFunctions
         }
     }
 
-    public static Function<CoreInstance, ListIterable<CoreInstance>> toInstanceValues(final ProcessorSupport processorSupport)
+    @Deprecated
+    public static Function<CoreInstance, ListIterable<CoreInstance>> toInstanceValues(ProcessorSupport processorSupport)
     {
-        return new Function<CoreInstance, ListIterable<CoreInstance>>()
-        {
-            @Override
-            public ListIterable<CoreInstance> valueOf(CoreInstance coreInstance)
-            {
-                return (ListIterable<CoreInstance>)(coreInstance instanceof InstanceValue ?
-                        ((InstanceValue)coreInstance)._valuesCoreInstance() : FastList.newListWith(coreInstance));
-            }
-        };
+        return MilestoningFunctions::toInstanceValues;
     }
 
-    public static Predicate<CoreInstance> isLatestDate(final ProcessorSupport processorSupport)
+    @Deprecated
+    public static Predicate<CoreInstance> isLatestDate(ProcessorSupport processorSupport)
     {
-        return new Predicate<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance coreInstance)
-            {
-                return Instance.instanceOf(coreInstance, M3Paths.LatestDate, processorSupport);
-            }
-        };
+        return instance -> isLatestDate(instance, processorSupport);
     }
 
-    static final Function<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function, String> TO_FUNCTION_NAME = new Function<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function, String>()
-    {
-        @Override
-        public String valueOf(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function coreInstance)
-        {
-            return coreInstance._functionName();
-        }
-    };
-
-    private static Function<CoreInstance, String> toStereotypeName(final ProcessorSupport processorSupport)
-    {
-        return new Function<CoreInstance, String>()
-        {
-            @Override
-            public String valueOf(CoreInstance stereotype)
-            {
-                if (stereotype instanceof ImportStub)
-                {
-                    String idOrPath = ((ImportStub)stereotype)._idOrPath();
-                    return idOrPath.split("@")[1];
-                }
-                else
-                {
-                    return CoreInstance.GET_NAME.valueOf(stereotype);
-                }
-            }
-        };
-    }
-
-    private static final Function<MilestoningStereotype, ListIterable<String>> GET_DATE_PROPERTY_NAME = new Function<MilestoningStereotype, ListIterable<String>>()
-    {
-        @Override
-        public ListIterable<String> valueOf(MilestoningStereotype milestoningStereotype)
-        {
-            return milestoningStereotype.getTemporalDatePropertyNames();
-        }
-    };
-
-    public static final Function<MilestoningStereotype, String> GET_PLATFORM_NAME = new Function<MilestoningStereotype, String>()
-    {
-        @Override
-        public String valueOf(MilestoningStereotype milestoningStereotype)
-        {
-            return milestoningStereotype.getPurePlatformStereotypeName();
-        }
-    };
-
-
-    private static final Function<MilestoningStereotypeEnum, Pair<String, MilestoningStereotypeEnum>> MILESTONINGSTEREOTYPE_TO_PURE_NAMED_STEREOTYPE_PAIR = new Function<MilestoningStereotypeEnum, Pair<String, MilestoningStereotypeEnum>>()
-    {
-        @Override
-        public Pair<String, MilestoningStereotypeEnum> valueOf(MilestoningStereotypeEnum milestoningStereotype)
-        {
-            return Tuples.pair(milestoningStereotype.getPurePlatformStereotypeName(), milestoningStereotype);
-        }
-    };
+    @Deprecated
+    public static final Function<MilestoningStereotype, String> GET_PLATFORM_NAME = MilestoningStereotype::getPurePlatformStereotypeName;
 
     private MilestoningFunctions()
     {
+    }
+
+    @SuppressWarnings("unchecked")
+    public static ListIterable<CoreInstance> toInstanceValues(CoreInstance instance)
+    {
+        return (instance instanceof InstanceValue) ?
+                (ListIterable<CoreInstance>) ((InstanceValue) instance)._valuesCoreInstance() :
+                Lists.immutable.with(instance);
+    }
+
+    public static boolean isLatestDate(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        return Instance.instanceOf(instance, M3Paths.LatestDate, processorSupport);
+    }
+
+    private static String getStereotypeName(CoreInstance stereotype)
+    {
+        if (stereotype instanceof ImportStub)
+        {
+            String idOrPath = ((ImportStub) stereotype)._idOrPath();
+            return idOrPath.substring(idOrPath.indexOf('@') + 1);
+        }
+        return stereotype.getName();
     }
 
     public static boolean isEdgePointProperty(CoreInstance property, ProcessorSupport processorSupport)
@@ -188,60 +144,45 @@ public class MilestoningFunctions
 
     public static boolean isAllVersionsInRangeProperty(CoreInstance property, ProcessorSupport processorSupport)
     {
-        return isGeneratedMilestoningProperty(property, processorSupport) && property.getValueForMetaPropertyToOne("name").getName().endsWith(RANGE_PROPERTY_NAME_SUFFIX);
+        return isGeneratedMilestoningProperty(property, processorSupport) && property.getValueForMetaPropertyToOne(M3Properties.name).getName().endsWith(RANGE_PROPERTY_NAME_SUFFIX);
     }
 
-    public static boolean isGeneratedMilestoningProperty(CoreInstance property, final ProcessorSupport processorSupport, final String stereotype, final String milestoningPathSuffix)
+    public static boolean isGeneratedMilestoningProperty(CoreInstance property, ProcessorSupport processorSupport, String stereotype, String milestoningPathSuffix)
     {
-        CoreInstance profile = processorSupport.package_getByUserPath(M3Paths.Milestoning);
-        final CoreInstance milestoningStereotype = Profile.findStereotype(profile, stereotype);
-
-        ListIterable<? extends CoreInstance> stereotypes = property instanceof ElementWithStereotypes ? ((ElementWithStereotypes)property)._stereotypesCoreInstance().toList() : Lists.immutable.<CoreInstance>empty();
-        return stereotypes.detect(new Predicate<CoreInstance>()
+        if (property instanceof ElementWithStereotypes)
         {
-            @Override
-            public boolean accept(CoreInstance stereotype)
+            RichIterable<? extends CoreInstance> stereotypes = ((ElementWithStereotypes) property)._stereotypesCoreInstance();
+            if (stereotypes.notEmpty())
             {
-                boolean result;
-                if (stereotype == null)
-                {
-                    result = false;
-                }
-                else if (stereotype instanceof ImportStub)
-                {
-                    String idOrPath = ((ImportStub)stereotype)._idOrPath();
-                    result = idOrPath.endsWith(milestoningPathSuffix);
-                }
-                else
-                {
-                    result = milestoningStereotype.equals(stereotype);
-                }
-                return result;
+                CoreInstance profile = processorSupport.package_getByUserPath(M3Paths.Milestoning);
+                CoreInstance milestoningStereotype = Profile.findStereotype(profile, stereotype);
+                return stereotypes.anySatisfy(st -> (st instanceof ImportStub) ? ((ImportStub) st)._idOrPath().endsWith(milestoningPathSuffix) : milestoningStereotype.equals(st));
             }
-        }) != null;
+        }
+        return false;
     }
 
-    public static boolean isGeneratedMilestoningProperty(CoreInstance property, final ProcessorSupport processorSupport)
+    public static boolean isGeneratedMilestoningProperty(CoreInstance property, ProcessorSupport processorSupport)
     {
         return isGeneratedMilestoningProperty(property, processorSupport, GENERATED_MILESTONING_STEREOTYPE_VALUE, GENERATED_MILESTONING_PATH_SUFFIX);
     }
 
-    public static boolean isGeneratedMilestoningDateProperty(CoreInstance property, final ProcessorSupport processorSupport)
+    public static boolean isGeneratedMilestoningDateProperty(CoreInstance property, ProcessorSupport processorSupport)
     {
         return isGeneratedMilestoningProperty(property, processorSupport, GENERATED_MILESTONING_DATE_STEREOTYPE_VALUE, GENERATED_MILESTONING_DATE_PATH_SUFFIX);
     }
 
-    public static boolean isAutoGeneratedMilestoningNamedDateProperty(Property property, ProcessorSupport processorSupport)
+    public static boolean isAutoGeneratedMilestoningNamedDateProperty(Property<?, ?> property, ProcessorSupport processorSupport)
     {
         return isGeneratedMilestoningDateProperty(property, processorSupport) && MILESTONING.equals(property._name());
     }
 
-    public static MilestonedPropertyMetaData getMilestonedMetaDataForProperty(QualifiedProperty property, ProcessorSupport processorSupport)
+    public static MilestonedPropertyMetaData getMilestonedMetaDataForProperty(QualifiedProperty<?> property, ProcessorSupport processorSupport)
     {
         CoreInstance returnType = org.finos.legend.pure.m3.navigation.importstub.ImportStub.withImportStubByPass(property._genericType()._rawTypeCoreInstance(), processorSupport);
-        ListIterable<MilestoningStereotypeEnum> stereotypes = getTemporalStereoTypesFromTopMostNonTopTypeGeneralizations(returnType, processorSupport);
-        ListIterable<String> classTemporalStereotypes = stereotypes.collect(MILESTONINGSTEREOTYPE_TO_PURE_NAMED_STEREOTYPE_PAIR).collect(Functions.<String>firstOfPair());
-        ListIterable<String> temporalDatePropertyNamesForStereotypes = stereotypes.flatCollect(GET_DATE_PROPERTY_NAME).distinct();
+        MutableSet<MilestoningStereotypeEnum> stereotypes = getTemporalStereotypeSetFromTopMostNonTopTypeGeneralizations(returnType, processorSupport);
+        ListIterable<String> classTemporalStereotypes = stereotypes.collect(MilestoningStereotypeEnum::getPurePlatformStereotypeName, Lists.mutable.ofInitialCapacity(stereotypes.size()));
+        ListIterable<String> temporalDatePropertyNamesForStereotypes = stereotypes.flatCollect(MilestoningStereotype::getTemporalDatePropertyNames).toSortedList(MilestoningStereotypeEnum::compareTemporalDatePropertyNames);
         return new MilestonedPropertyMetaData(classTemporalStereotypes, temporalDatePropertyNamesForStereotypes);
     }
 
@@ -252,71 +193,84 @@ public class MilestoningFunctions
 
     public static boolean isGeneratedQualifiedPropertyWithWithAllMilestoningDatesSpecified(CoreInstance property, ProcessorSupport processorSupport)
     {
-        boolean result = false;
         if (isGeneratedQualifiedProperty(property, processorSupport))
         {
-            return getParametersCount((QualifiedProperty)property, processorSupport) == getCountOfParametersSatisfyingMilestoningDateRequirments((QualifiedProperty)property, processorSupport);
+            return getParametersCount((QualifiedProperty<?>) property, processorSupport) == getCountOfParametersSatisfyingMilestoningDateRequirments((QualifiedProperty<?>) property, processorSupport);
         }
-        return result;
+        return false;
     }
 
     public static boolean isGeneratedMilestonedQualifiedPropertyWithMissingDates(CoreInstance property, ProcessorSupport processorSupport)
     {
         if (isGeneratedQualifiedProperty(property, processorSupport))
         {
-            return getParametersCount((QualifiedProperty)property, processorSupport) != getCountOfParametersSatisfyingMilestoningDateRequirments((QualifiedProperty)property, processorSupport);
+            return getParametersCount((QualifiedProperty<?>) property, processorSupport) != getCountOfParametersSatisfyingMilestoningDateRequirments((QualifiedProperty<?>) property, processorSupport);
         }
         return false;
     }
 
-    private static int getParametersCount(QualifiedProperty qualifiedProperty, ProcessorSupport processorSupport)
+    private static int getParametersCount(QualifiedProperty<?> qualifiedProperty, ProcessorSupport processorSupport)
     {
-        FunctionType functionType = (FunctionType)processorSupport.function_getFunctionType(qualifiedProperty);
+        FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(qualifiedProperty);
         return functionType._parameters().size();
     }
 
-    private static int getCountOfParametersSatisfyingMilestoningDateRequirments(QualifiedProperty milestonedQualifiedProperty, ProcessorSupport processorSupport)
+    private static int getCountOfParametersSatisfyingMilestoningDateRequirments(QualifiedProperty<?> milestonedQualifiedProperty, ProcessorSupport processorSupport)
     {
         if (!isGeneratedMilestoningProperty(milestonedQualifiedProperty, processorSupport))
         {
             throw new PureCompilationException("Unable to get milestoning date parameters for non milestoned QualifiedProperty: " + milestonedQualifiedProperty.getName());
         }
-        Class returnType = (Class)org.finos.legend.pure.m3.navigation.importstub.ImportStub.withImportStubByPass(milestonedQualifiedProperty._genericType()._rawTypeCoreInstance(), processorSupport);
-        MilestoningStereotypeEnum milestoningStereotype = getTemporalStereoTypesFromTopMostNonTopTypeGeneralizations(returnType, processorSupport).getFirst();
+        Class<?> returnType = (Class<?>) org.finos.legend.pure.m3.navigation.importstub.ImportStub.withImportStubByPass(milestonedQualifiedProperty._genericType()._rawTypeCoreInstance(), processorSupport);
+        MilestoningStereotypeEnum milestoningStereotype = getTemporalStereotypeSetFromTopMostNonTopTypeGeneralizations(returnType, processorSupport).getAny();
         return 1 + milestoningStereotype.getTemporalDatePropertyNames().size();
     }
 
-    public static ListIterable<MilestoningStereotypeEnum> getTemporalStereoTypesFromTopMostNonTopTypeGeneralizations(CoreInstance cls, final ProcessorSupport processorSupport)
+    public static ListIterable<MilestoningStereotypeEnum> getTemporalStereoTypesFromTopMostNonTopTypeGeneralizations(CoreInstance cls, ProcessorSupport processorSupport)
     {
-        MutableSet<CoreInstance> leafUserDefTypes = Type.getTopMostNonTopTypeGeneralizations(cls, processorSupport);
+        return getTemporalStereotypeSetFromTopMostNonTopTypeGeneralizations(cls, processorSupport).toList();
+    }
 
-        return leafUserDefTypes.flatCollect(new Function<CoreInstance, ListIterable<MilestoningStereotypeEnum>>()
-        {
-            @Override
-            public ListIterable<MilestoningStereotypeEnum> valueOf(CoreInstance coreInstance)
-            {
-                return getTemporalStereoTypesExcludingParents(coreInstance, processorSupport);
-            }
-        }).toList().distinct();
+    private static MutableSet<MilestoningStereotypeEnum> getTemporalStereotypeSetFromTopMostNonTopTypeGeneralizations(CoreInstance cls, ProcessorSupport processorSupport)
+    {
+        return SetAdapter.adapt(Type.getTopMostNonTopTypeGeneralizations(cls, processorSupport).flatCollect(MilestoningFunctions::getTemporalStereoTypesExcludingParents, EnumSet.noneOf(MilestoningStereotypeEnum.class)));
+    }
+
+    private static MutableSet<String> getTemporalStereotypePropertyNameSetFromTopMostNonTopTypeGeneralizations(CoreInstance cls, ProcessorSupport processorSupport)
+    {
+        return getTemporalStereotypeSetFromTopMostNonTopTypeGeneralizations(cls, processorSupport).flatCollect(MilestoningStereotype::getTemporalDatePropertyNames);
     }
 
     public static ListIterable<String> getTemporalStereoTypePropertyNamesFromTopMostNonTopTypeGeneralizations(CoreInstance cls, ProcessorSupport processorSupport)
     {
-        ListIterable<MilestoningStereotypeEnum> stereotypes = getTemporalStereoTypesFromTopMostNonTopTypeGeneralizations(cls, processorSupport);
-        return stereotypes.flatCollect(GET_DATE_PROPERTY_NAME).distinct();
+        return getTemporalStereotypePropertyNameSetFromTopMostNonTopTypeGeneralizations(cls, processorSupport).toSortedList(MilestoningStereotypeEnum::compareTemporalDatePropertyNames);
     }
 
     public static ListIterable<String> getAllTemporalStereoTypePropertyNamesFromTopMostNonTopTypeGeneralizations(CoreInstance cls, ProcessorSupport processorSupport)
     {
-        return getTemporalStereoTypePropertyNamesFromTopMostNonTopTypeGeneralizations(cls, processorSupport).toList().with(MILESTONING).distinct();
+        return getAllTemporalStereotypePropertyNameSetFromTopMostNonTopTypeGeneralizations(cls, processorSupport).toList();
     }
 
+    public static MutableSet<String> getAllTemporalStereotypePropertyNameSetFromTopMostNonTopTypeGeneralizations(CoreInstance cls, ProcessorSupport processorSupport)
+    {
+        return getTemporalStereotypePropertyNameSetFromTopMostNonTopTypeGeneralizations(cls, processorSupport).with(MILESTONING);
+    }
+
+
+    @Deprecated
     public static ListIterable<MilestoningStereotypeEnum> getTemporalStereoTypesExcludingParents(CoreInstance cls, ProcessorSupport processorSupport)
     {
-        ListIterable<? extends CoreInstance> clsStereotypes = cls instanceof ElementWithStereotypes ? ((ElementWithStereotypes)cls)._stereotypesCoreInstance().toList() : Lists.immutable.<CoreInstance>empty();
-        ListIterable<String> clsStereotypeNames = clsStereotypes.collect(toStereotypeName(processorSupport));
-        MutableList<Pair<String, MilestoningStereotypeEnum>> temporalStereoTypeNames = ArrayIterate.collect(MilestoningStereotypeEnum.values(), MILESTONINGSTEREOTYPE_TO_PURE_NAMED_STEREOTYPE_PAIR);
-        return temporalStereoTypeNames.select(Predicates.attributePredicate(Functions.<String>firstOfPair(), Predicates.in(clsStereotypeNames))).collect(Functions.<MilestoningStereotypeEnum>secondOfPair());
+        return getTemporalStereoTypesExcludingParents(cls);
+    }
+
+    public static ListIterable<MilestoningStereotypeEnum> getTemporalStereoTypesExcludingParents(CoreInstance cls)
+    {
+        if (!(cls instanceof ElementWithStereotypes))
+        {
+            return Lists.immutable.empty();
+        }
+        MutableSet<String> clsStereotypeNames = ((ElementWithStereotypes) cls)._stereotypesCoreInstance().collect(MilestoningFunctions::getStereotypeName, Sets.mutable.empty());
+        return ArrayIterate.select(MilestoningStereotypeEnum.values(), st -> clsStereotypeNames.contains(st.getPurePlatformStereotypeName()));
     }
 
     public static String getEdgePointPropertyName(String propertyName)
@@ -336,7 +290,7 @@ public class MilestoningFunctions
 
     static void setProperties(ListIterable<? extends CoreInstance> properties, PropertyOwner propertyOwner, Context context)
     {
-        if (!properties.equals(PropertyOwnerStrategy.PROPERTY_OWNER_STRATEGY_FUNCTION.valueOf(propertyOwner).properties(propertyOwner)))
+        if (!properties.equals(PropertyOwnerStrategy.getPropertyOwnerStrategy(propertyOwner).properties(propertyOwner)))
         {
             propertyOwner.setKeyValues(M3PropertyPaths.properties, properties);
             updateAndInvalidate(propertyOwner, context);
@@ -345,7 +299,7 @@ public class MilestoningFunctions
 
     static void setQualifiedProperties(ListIterable<? extends CoreInstance> properties, PropertyOwner propertyOwner, Context context)
     {
-        if (!properties.equals(PropertyOwnerStrategy.PROPERTY_OWNER_STRATEGY_FUNCTION.valueOf(propertyOwner).qualifiedProperties(propertyOwner)))
+        if (!properties.equals(PropertyOwnerStrategy.getPropertyOwnerStrategy(propertyOwner).qualifiedProperties(propertyOwner)))
         {
             propertyOwner.setKeyValues(M3PropertyPaths.qualifiedProperties, properties);
             updateAndInvalidate(propertyOwner, context);

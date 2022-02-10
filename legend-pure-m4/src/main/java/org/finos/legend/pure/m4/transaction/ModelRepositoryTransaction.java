@@ -14,12 +14,12 @@
 
 package org.finos.legend.pure.m4.transaction;
 
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.ModelRepository;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.ConcurrentHashSet;
 import org.finos.legend.pure.m4.transaction.framework.Transaction;
 import org.finos.legend.pure.m4.transaction.framework.TransactionManager;
@@ -38,7 +38,7 @@ public class ModelRepositoryTransaction extends Transaction
         super(manager, committable);
         this.modelRepository = modelRepository;
         this.transactionObserver = transactionObserver;
-        this.modelRepository.getTopLevels().groupByUniqueKey(CoreInstance.GET_NAME, this.topLevels);
+        this.modelRepository.getTopLevels().groupByUniqueKey(CoreInstance::getName, this.topLevels);
     }
 
     public ModelRepository getModelRepository()
@@ -92,7 +92,7 @@ public class ModelRepositoryTransaction extends Transaction
     protected void doCommit()
     {
         this.modelRepository.commitTransactionTopLevels(this);
-        this.modifiedInstanceStates.keysView().forEachWith(CoreInstance.COMMIT, this);
+        this.modifiedInstanceStates.forEachKey(instance -> instance.commit(this));
         if (this.transactionObserver != null)
         {
             this.transactionObserver.added(this.newInstances.asUnmodifiable());
@@ -103,7 +103,7 @@ public class ModelRepositoryTransaction extends Transaction
     @Override
     protected void doRollback()
     {
-        this.modifiedInstanceStates.keysView().forEachWith(CoreInstance.ROLL_BACK, this);
+        this.modifiedInstanceStates.forEachKey(instance -> instance.rollback(this));
     }
 
     public static ModelRepositoryTransaction newTransaction(TransactionManager<? super ModelRepositoryTransaction> manager, boolean committable, ModelRepository modelRepository, TransactionObserver transactionObserver)

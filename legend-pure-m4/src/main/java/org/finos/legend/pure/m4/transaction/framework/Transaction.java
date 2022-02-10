@@ -97,10 +97,10 @@ public abstract class Transaction
                 throw new TransactionStateException("Unexpected transaction state while committing", COMMITTING, this.state.get());
             }
         }
-        catch (RuntimeException e)
+        catch (Throwable t)
         {
             this.state.set(INVALID);
-            throw e;
+            throw t;
         }
     }
 
@@ -119,10 +119,10 @@ public abstract class Transaction
                 throw new TransactionStateException("Unexpected transaction state while rolling back", ROLLING_BACK, this.state.get());
             }
         }
-        catch (RuntimeException e)
+        catch (Throwable t)
         {
             this.state.set(INVALID);
-            throw e;
+            throw t;
         }
     }
 

@@ -14,116 +14,119 @@
 
 package org.finos.legend.pure.m3.navigation.PackageableElement;
 
-import org.finos.legend.pure.m3.navigation._package._Package;
-import org.finos.legend.pure.m4.ModelRepository;
 import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation._package._Package;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
-import java.io.IOException;
 import java.util.Collection;
+import java.util.function.Consumer;
 
 public class PackageableElement
 {
     public static final String DEFAULT_PATH_SEPARATOR = "::";
 
-    public static final Function<CoreInstance, String> GET_USER_PATH = new Function<CoreInstance, String>()
+    public static final Function<CoreInstance, String> GET_USER_PATH = PackageableElement::getUserPathForPackageableElement;
+
+    @Deprecated
+    public static final Function<CoreInstance, String> GET_NAME_VALUE_WITH_USER_PATH = instance ->
     {
-        @Override
-        public String valueOf(CoreInstance packageableElement)
+        StringBuilder buffer = new StringBuilder();
+        CoreInstance pkg = instance.getValueForMetaPropertyToOne(M3Properties._package);
+        if (pkg != null)
         {
-            return getUserPathForPackageableElement(packageableElement);
+            PackageableElement.writeUserPathForPackageableElement(buffer, pkg).append(PackageableElement.DEFAULT_PATH_SEPARATOR);
         }
+        buffer.append(instance.getValueForMetaPropertyToOne(M3Properties.name).getName());
+        return buffer.toString();
     };
 
-    public static final Function<CoreInstance, String> GET_NAME_VALUE_WITH_USER_PATH = new Function<CoreInstance, String>()
-    {
-        @Override
-        public String valueOf(CoreInstance instance)
-        {
-            StringBuffer buffer = new StringBuffer();
-            CoreInstance pkg = instance.getValueForMetaPropertyToOne(M3Properties._package);
-            if (pkg != null)
-            {
-                PackageableElement.writeUserPathForPackageableElement(buffer, pkg);
-                buffer.append(PackageableElement.DEFAULT_PATH_SEPARATOR);
-            }
-            buffer.append(instance.getValueForMetaPropertyToOne(M3Properties.name).getName());
-            return buffer.toString();
-        }
-    };
-
-    public static MutableList<CoreInstance> getUserObjectPathForPackageableElement(CoreInstance packageableElement)
-    {
-        return getUserObjectPathForPackageableElement_Recursive(packageableElement, 1);
-    }
-
-    private static final Function<CoreInstance, CoreInstance> DEFAULT_GET_PACKAGE_ACCESSOR = new Function<CoreInstance, CoreInstance>()
-    {
-        @Override
-        public CoreInstance valueOf(CoreInstance packageableElement)
-        {
-            return packageableElement.getValueForMetaPropertyToOne(M3Properties._package);
-        }
-    };
-
-    private static MutableList<CoreInstance> getUserObjectPathForPackageableElement_Recursive(CoreInstance packageableElement, int depth)
+    public static void forEachPackagePathElement(CoreInstance packageableElement, Consumer<? super CoreInstance> firstConsumer, Consumer<? super CoreInstance> restConsumer)
     {
         CoreInstance pkg = packageableElement.getValueForMetaPropertyToOne(M3Properties._package);
         if (pkg == null)
         {
-            return FastList.<CoreInstance>newList(depth).with(packageableElement);
+            firstConsumer.accept(packageableElement);
         }
-
-        MutableList<CoreInstance> pkgPath = getUserObjectPathForPackageableElement_Recursive(pkg, depth + 1);
-        pkgPath.add(packageableElement);
-        return pkgPath;
-    }
-
-    public static String getM4UserPathForPackageableElement(CoreInstance packageableElement)
-    {
-        StringBuilder builder = new StringBuilder(64);
-        writeM4UserPathForPackageableElement(builder, packageableElement);
-        return builder.toString();
-    }
-
-    public static void writeM4UserPathForPackageableElement(Appendable appendable, CoreInstance packageableElement)
-    {
-        try
+        else
         {
-            CoreInstance pkg = packageableElement.getValueForMetaPropertyToOne(M3Properties._package);
-            if (pkg == null)
-            {
-                appendable.append(M3Paths.Root);
-            }
-            else
-            {
-                writeM4UserPathForPackageableElement(appendable, pkg);
-                appendable.append(".children[");
-                appendable.append(packageableElement.getName());
-                appendable.append(']');
-            }
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
+            forEachPackagePathElement(pkg, firstConsumer, restConsumer);
+            restConsumer.accept(packageableElement);
         }
     }
 
-    public static void collectM4Path(CoreInstance packageableElement, Collection<? super String> target)
+    public static void forEachPackagePathElement(CoreInstance packageableElement, Consumer<? super CoreInstance> consumer)
     {
         CoreInstance pkg = packageableElement.getValueForMetaPropertyToOne(M3Properties._package);
         if (pkg != null)
         {
-            collectM4Path(pkg, target);
-            target.add(M3Properties.children);
+            forEachPackagePathElement(pkg, consumer);
         }
-        target.add(packageableElement.getName());
+        consumer.accept(packageableElement);
+    }
+
+    public static MutableList<CoreInstance> getUserObjectPathForPackageableElement(CoreInstance packageableElement)
+    {
+        MutableList<CoreInstance> path = Lists.mutable.empty();
+        forEachPackagePathElement(packageableElement, path::add);
+        return path;
+    }
+
+    public static String getM4UserPathForPackageableElement(CoreInstance packageableElement)
+    {
+        return writeM4UserPathForPackageableElement(new StringBuilder(64), packageableElement).toString();
+    }
+
+    public static <T extends Appendable> T writeM4UserPathForPackageableElement(T appendable, CoreInstance packageableElement)
+    {
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        forEachPackagePathElement(packageableElement,
+                e -> safeAppendable.append(e.getName()),
+                e -> safeAppendable.append(".children[").append(e.getName()).append(']'));
+        return appendable;
+    }
+
+    public static void collectM4Path(CoreInstance packageableElement, Collection<? super String> target)
+    {
+        forEachPackagePathElement(packageableElement,
+                e -> target.add(e.getName()),
+                e ->
+                {
+                    target.add(M3Properties.children);
+                    target.add(e.getName());
+                });
+    }
+
+    public static void forEachUserPathElement(String userPath, Consumer<? super String> consumer)
+    {
+        forEachUserPathElement(userPath, DEFAULT_PATH_SEPARATOR, consumer);
+    }
+
+    public static void forEachUserPathElement(String userPath, String separator, Consumer<? super String> consumer)
+    {
+        int start = 0;
+        int sepLen = separator.length();
+        int end = userPath.indexOf(separator);
+
+        // If the string is just the separator, nothing to do
+        if ((end == 0) && (sepLen == userPath.length()))
+        {
+            return;
+        }
+
+        while (end != -1)
+        {
+            consumer.accept(userPath.substring(start, end));
+            start = end + sepLen;
+            end = userPath.indexOf(separator, start);
+        }
+        consumer.accept(userPath.substring(start));
     }
 
     public static ListIterable<String> splitUserPath(String userPath)
@@ -133,24 +136,8 @@ public class PackageableElement
 
     public static ListIterable<String> splitUserPath(String userPath, String separator)
     {
-        int start = 0;
-        int sepLen = separator.length();
-        int end = userPath.indexOf(separator);
-
-        // If the string is just the separator, return an empty list
-        if ((end == 0) && (sepLen == userPath.length()))
-        {
-            return Lists.immutable.empty();
-        }
-
-        MutableList<String> result = Lists.mutable.with();
-        while (end != -1)
-        {
-            result.add(userPath.substring(start, end));
-            start = end + sepLen;
-            end = userPath.indexOf(separator, start);
-        }
-        result.add(userPath.substring(start));
+        MutableList<String> result = Lists.mutable.empty();
+        forEachUserPathElement(userPath, separator, result::add);
         return result;
     }
 
@@ -161,44 +148,39 @@ public class PackageableElement
 
     public static String getUserPathForPackageableElement(CoreInstance packageableElement, String sep)
     {
-        StringBuilder builder = new StringBuilder(64);
-        writeUserPathForPackageableElement(builder, packageableElement, sep);
-        return builder.toString();
+        return writeUserPathForPackageableElement(new StringBuilder(64), packageableElement, sep).toString();
     }
 
+    @Deprecated
     public static MutableList<String> getUserObjectPathForPackageableElementAsList(CoreInstance packageableElement, boolean includeRoot)
     {
-        CoreInstance pkg = packageableElement.getValueForMetaPropertyToOne(M3Properties._package);
-        if (pkg == null)
-        {
-            return (includeRoot || !"Root".equals(packageableElement.getName())) ? Lists.mutable.with(packageableElement.getName()) : Lists.mutable.<String>of();
-        }
-        else
-        {
-            MutableList<String> pkgPath = getUserObjectPathForPackageableElementAsList(pkg, includeRoot);
-            pkgPath.add(packageableElement.getName());
-            return pkgPath;
-        }
+        MutableList<String> pkgPath = Lists.mutable.empty();
+        forEachPackagePathElement(packageableElement,
+                includeRoot ?
+                        element -> pkgPath.add(element.getName()) :
+                        element ->
+                        {
+                            if (!M3Paths.Root.equals(element.getName()))
+                            {
+                                pkgPath.add(element.getName());
+                            }
+                        },
+                element -> pkgPath.add(element.getName()));
+        return pkgPath;
     }
 
-    public static void writeUserPathForPackageableElement(Appendable appendable, CoreInstance packageableElement)
+    public static <T extends Appendable> T writeUserPathForPackageableElement(T appendable, CoreInstance packageableElement)
     {
-        writeUserPathForPackageableElement(appendable, packageableElement, null);
+        return writeUserPathForPackageableElement(appendable, packageableElement, null);
     }
 
-    public static void writeUserPathForPackageableElement(Appendable appendable, CoreInstance packageableElement, String sep)
+    public static <T extends Appendable> T writeUserPathForPackageableElement(T appendable, CoreInstance packageableElement, String sep)
     {
-        try
-        {
-            writeUserPathForPackageableElement_Recursive(appendable, packageableElement, (sep == null) ? DEFAULT_PATH_SEPARATOR : sep);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        writeUserPathForPackageableElement_Recursive(SafeAppendable.wrap(appendable), packageableElement, (sep == null) ? DEFAULT_PATH_SEPARATOR : sep);
+        return appendable;
     }
 
-    private static void writeUserPathForPackageableElement_Recursive(Appendable appendable, CoreInstance packageableElement, String sep) throws IOException
+    private static void writeUserPathForPackageableElement_Recursive(SafeAppendable appendable, CoreInstance packageableElement, String sep)
     {
         CoreInstance pkg = packageableElement.getValueForMetaPropertyToOne(M3Properties._package);
         if ((pkg == null) || M3Paths.Root.equals(pkg.getName()))
@@ -208,8 +190,7 @@ public class PackageableElement
         else
         {
             writeUserPathForPackageableElement_Recursive(appendable, pkg, sep);
-            appendable.append(sep);
-            appendable.append(packageableElement.getName());
+            appendable.append(sep).append(packageableElement.getName());
         }
     }
 
@@ -220,36 +201,17 @@ public class PackageableElement
 
     public static String getSystemPathForPackageableElement(CoreInstance packageableElement, String sep)
     {
-        StringBuilder builder = new StringBuilder(64);
-        writeSystemPathForPackageableElement(builder, packageableElement, sep);
-        return builder.toString();
+        return writeSystemPathForPackageableElement(new StringBuilder(64), packageableElement, sep).toString();
     }
 
-    public static void writeSystemPathForPackageableElement(Appendable appendable, CoreInstance packageableElement, String sep)
+    public static <T extends Appendable> T writeSystemPathForPackageableElement(T appendable, CoreInstance packageableElement, String sep)
     {
-        try
-        {
-            writeSystemPathForPackageableElement_Recursive(appendable, packageableElement, (sep == null) ? DEFAULT_PATH_SEPARATOR : sep);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void writeSystemPathForPackageableElement_Recursive(Appendable appendable, CoreInstance packageableElement, String sep) throws IOException
-    {
-        CoreInstance pkg = packageableElement.getValueForMetaPropertyToOne(M3Properties._package);
-        if (pkg == null)
-        {
-            appendable.append(packageableElement.getName());
-        }
-        else
-        {
-            writeSystemPathForPackageableElement_Recursive(appendable, pkg, sep);
-            appendable.append(sep);
-            appendable.append(packageableElement.getName());
-        }
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        String separator = (sep == null) ? DEFAULT_PATH_SEPARATOR : sep;
+        forEachPackagePathElement(packageableElement,
+                e -> safeAppendable.append(e.getName()),
+                e -> safeAppendable.append(separator).append(e.getName()));
+        return appendable;
     }
 
     public static CoreInstance findPackageableElement(String path, ModelRepository repository)
@@ -283,5 +245,4 @@ public class PackageableElement
         }
         return parent;
     }
-
 }

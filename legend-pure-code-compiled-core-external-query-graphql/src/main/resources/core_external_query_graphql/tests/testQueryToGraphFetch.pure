@@ -20,7 +20,7 @@ function <<test.Test>> meta::external::query::graphQL::transformation::queryToPu
   let classes = meta::external::query::graphQL::introspection::model.children->filter(c|$c->instanceOf(Class))->cast(@Class<Any>);
   let res = graphQLExecutableToPure(meta::external::query::graphQL::transformation::queryToPure::tests::buildIntrospectionQuery(), BaseGraphQLType);
   let graphFetch = $res->meta::pure::graphFetch::routing::asString(true);
-  assertEquals( 'meta::external::query::graphQL::introspection::BaseGraphQLType {\n' +
+  assertEquals( '#{meta::external::query::graphQL::introspection::BaseGraphQLType {\n' +
                 '    __schema {\n' +
                 '        queryType {\n' +
                 '            name\n' +
@@ -251,5 +251,5 @@ function <<test.Test>> meta::external::query::graphQL::transformation::queryToPu
                 '            }\n' +
                 '        }\n' +
                 '    }\n' +
-                '}', $graphFetch);
+                '}}#', $graphFetch);
 }

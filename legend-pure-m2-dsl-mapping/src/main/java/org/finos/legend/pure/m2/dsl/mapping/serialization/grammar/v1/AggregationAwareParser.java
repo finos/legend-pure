@@ -14,18 +14,21 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1;
 
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
-import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.walker.AggregateSpecificationValueSpecificationContextUnloaderWalk;
+import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.AggregationAwareLexer;
+import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.antlr.AggregationAwareGraphBuilder;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor.AggregationAwareProcessor;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.unloader.AggregationAwareUnbind;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.validator.AggregationAwareValidator;
-import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.AggregationAwareLexer;
-import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.antlr.AggregationAwareGraphBuilder;
+import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.walker.AggregateSpecificationValueSpecificationContextUnloaderWalk;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
@@ -35,25 +38,22 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalR
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
 import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrDescriptiveErrorListener;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureAntlrErrorStrategy;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.atn.PredictionMode;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import static org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils.isAntlrRecognitionExceptionUsingFastParser;
 
 public class AggregationAwareParser implements Parser
-
 {
     private ParserLibrary parserLibrary;
 
-    public AggregationAwareParser(){}
+    public AggregationAwareParser()
+    {
+    }
 
     public AggregationAwareParser(ParserLibrary parserLibrary)
     {
@@ -96,10 +96,7 @@ public class AggregationAwareParser implements Parser
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseMapping(false, content, id, extendsId, setSourceInfo, root, classPath, classSourceInfo, mappingPath, sourceName, offset, importId, repository, context);
             }
-            else
-            {
-                throw e;
-            }
+            throw e;
         }
     }
 
@@ -112,25 +109,25 @@ public class AggregationAwareParser implements Parser
     @Override
     public RichIterable<MatchRunner> getProcessors()
     {
-        return Lists.immutable.<MatchRunner>with(new AggregationAwareProcessor());
+        return Lists.immutable.with(new AggregationAwareProcessor());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadWalkers()
     {
-        return Lists.immutable.<MatchRunner>with(new AggregateSpecificationValueSpecificationContextUnloaderWalk());
+        return Lists.immutable.with(new AggregateSpecificationValueSpecificationContextUnloaderWalk());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadUnbinders()
     {
-        return Lists.immutable.<MatchRunner>with(new AggregationAwareUnbind());
+        return Lists.immutable.with(new AggregationAwareUnbind());
     }
 
     @Override
     public RichIterable<MatchRunner> getValidators()
     {
-        return Lists.immutable.<MatchRunner>with(new AggregationAwareValidator());
+        return Lists.immutable.with(new AggregationAwareValidator());
     }
 
     @Override
@@ -178,5 +175,4 @@ public class AggregationAwareParser implements Parser
         parser.getInterpreter().setPredictionMode(fastParser ? PredictionMode.SLL : PredictionMode.LL);
         return parser;
     }
-
 }

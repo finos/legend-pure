@@ -28,20 +28,9 @@ import org.finos.legend.pure.m4.exception.PureException;
 
 public class Function
 {
-    public static CoreInstance getFunctionType(CoreInstance function, final Context context, final ProcessorSupport processorSupport)
+    public static CoreInstance getFunctionType(CoreInstance function, Context context, ProcessorSupport processorSupport)
     {
-        if (context == null)
-        {
-            return computeFunctionType(function, processorSupport);
-        }
-        return context.getIfAbsentPutFunctionType(function, new org.eclipse.collections.api.block.function.Function<CoreInstance, CoreInstance>()
-        {
-            @Override
-            public CoreInstance valueOf(CoreInstance func)
-            {
-                return computeFunctionType(func, processorSupport);
-            }
-        });
+        return (context == null) ? computeFunctionType(function, processorSupport) : context.getIfAbsentPutFunctionType(function, func -> computeFunctionType(func, processorSupport));
     }
 
     private static CoreInstance computeFunctionType(CoreInstance function, ProcessorSupport processorSupport)
@@ -71,14 +60,11 @@ public class Function
             {
                 throw new PureCompilationException(function.getSourceInformation(), e);
             }
-            StringBuilder builder = new StringBuilder("Error computing function type for ");
-            PackageableElement.writeUserPathForPackageableElement(builder, function);
-            throw new PureCompilationException(function.getSourceInformation(), builder.toString(), e);
+            throw new PureCompilationException(function.getSourceInformation(), PackageableElement.writeUserPathForPackageableElement(new StringBuilder("Error computing function type for "), function).toString(), e);
         }
         catch (Exception e)
         {
-            StringBuilder builder = new StringBuilder("Error computing function type for ");
-            PackageableElement.writeUserPathForPackageableElement(builder, function);
+            StringBuilder builder = PackageableElement.writeUserPathForPackageableElement(new StringBuilder("Error computing function type for "), function);
             String eMessage = e.getMessage();
             if (eMessage != null)
             {
@@ -101,13 +87,11 @@ public class Function
 
     public static String print(CoreInstance function, ProcessorSupport processorSupport)
     {
-        StringBuilder builder = new StringBuilder(128);
-        print(builder, function, processorSupport);
-        return builder.toString();
+        return print(new StringBuilder(128), function, processorSupport).toString();
     }
 
-    public static void print(Appendable appendable, CoreInstance function, ProcessorSupport processorSupport)
+    public static <T extends Appendable> T print(T appendable, CoreInstance function, ProcessorSupport processorSupport)
     {
-        FunctionDescriptor.writeFunctionDescriptor(appendable, function, processorSupport);
+        return FunctionDescriptor.writeFunctionDescriptor(appendable, function, processorSupport);
     }
 }

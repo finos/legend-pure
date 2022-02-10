@@ -14,22 +14,23 @@
 
 package org.finos.legend.pure.m3.serialization.grammar.top;
 
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m3.serialization.grammar.top.antlr.TopAntlrParser;
 import org.finos.legend.pure.m3.serialization.grammar.top.antlr.TopAntlrParserBaseVisitor;
 import org.finos.legend.pure.m3.serialization.runtime.SourceState;
 import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
-import org.antlr.v4.runtime.tree.TerminalNode;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public class TopGraphBuilder extends TopAntlrParserBaseVisitor<MutableListMultimap<Parser, CoreInstance>>
 {
@@ -68,22 +69,18 @@ public class TopGraphBuilder extends TopAntlrParserBaseVisitor<MutableListMultim
         String parserName = ctx.CODE_BLOCK_START().getText().substring(4);
         if (ctx.CODE() != null)
         {
-            StringBuilder codeBuilder = new StringBuilder();
-            for (TerminalNode tn :ctx.CODE()){
-                codeBuilder.append(tn.getText());
-            }
-            String code = codeBuilder.toString();
+            String code = LazyIterate.collect(ctx.CODE(), TerminalNode::getText).makeString("");
             try
             {
                 Parser parser = this.parserLibrary.getParser(parserName);
-                MutableList<CoreInstance> subResults = FastList.newList();
+                MutableList<CoreInstance> subResults = Lists.mutable.empty();
                 this.count++;
-                parser.parse(code.toString(), this.sourceName, true, ctx.CODE_BLOCK_START().getSymbol().getLine() - 2, this.repository, subResults, this.listener, this.context, this.count, this.oldState);
+                parser.parse(code, this.sourceName, true, ctx.CODE_BLOCK_START().getSymbol().getLine() - 2, this.repository, subResults, this.listener, this.context, this.count, this.oldState);
                 this.newInstancesByParser.putAll(parser, subResults);
             }
             catch (Error e)
             {
-                throw new PureParserException(this.sourceName, ctx.CODE_BLOCK_START().getSymbol().getLine() - 2, 0, e.getMessage(), code.toString());
+                throw new PureParserException(this.sourceName, ctx.CODE_BLOCK_START().getSymbol().getLine() - 2, 0, e.getMessage(), code, e);
             }
             catch (RuntimeException e)
             {
@@ -92,10 +89,9 @@ public class TopGraphBuilder extends TopAntlrParserBaseVisitor<MutableListMultim
                 {
                     throw e;
                 }
-                throw new PureParserException(this.sourceName, ctx.CODE_BLOCK_START().getSymbol().getLine() - 2, 0, e.getMessage(), code.toString(), e);
+                throw new PureParserException(this.sourceName, ctx.CODE_BLOCK_START().getSymbol().getLine() - 2, 0, e.getMessage(), code, e);
             }
         }
         return null;
     }
-
 }

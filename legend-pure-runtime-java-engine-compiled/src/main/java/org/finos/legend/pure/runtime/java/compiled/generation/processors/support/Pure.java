@@ -572,7 +572,7 @@ public class Pure
                     {
                         builder.append("'").append(name).append("'");
                     }
-                    builder.append(" id: '").append(func.getName()).append("' yet (metadata id: ").append(IdBuilder.buildId(func, ((CompiledExecutionSupport) es).getProcessorSupport())).append(")");
+                    builder.append(" id: '").append(func.getName()).append("' yet");
                     throw new PureExecutionException(builder.toString());
                 }
                 return foundFunc.execute(Lists.mutable.with(paramInstances), es);

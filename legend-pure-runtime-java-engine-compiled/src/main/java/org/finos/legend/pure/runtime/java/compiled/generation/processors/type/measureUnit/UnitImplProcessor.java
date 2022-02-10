@@ -15,12 +15,11 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
@@ -50,7 +49,7 @@ public class UnitImplProcessor
             "import org.finos.legend.pure.runtime.java.compiled.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n"+
+            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ReflectiveCoreInstance;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.ValCoreInstance;\n" +
@@ -67,16 +66,6 @@ public class UnitImplProcessor
 
     public static final String CLASS_IMPL_SUFFIX = "_Impl";
 
-    public static final Predicate2<CoreInstance, ProcessorSupport> IS_TO_ONE = new Predicate2<CoreInstance, ProcessorSupport>()
-    {
-        @Override
-        public boolean accept(CoreInstance coreInstance, ProcessorSupport processorSupport)
-        {
-            CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(coreInstance, M3Properties.multiplicity, processorSupport);
-            return Multiplicity.isToOne(multiplicity, false);
-        }
-    };
-
     public static String buildConversionFunction(CoreInstance unit, ProcessorContext processorContext, ProcessorSupport processorSupport)
     {
         CoreInstance func = unit.getValueForMetaPropertyToOne("conversionFunction");
@@ -84,7 +73,7 @@ public class UnitImplProcessor
         return "@Override\n" +
                 "    public org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction<? extends java.lang.Object> _conversionFunction()\n" +
                 "    {\n" +
-                "\treturn this._conversionFunction(this.es);\n" +
+                "        return this._conversionFunction(this.es);\n" +
                 "    }\n" +
 
                 "public org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction<? extends java.lang.Object> _conversionFunction(final ExecutionSupport es)\n" +
@@ -100,14 +89,14 @@ public class UnitImplProcessor
 
     public static String buildMeasure(final CoreInstance unit, ProcessorSupport processorSupport)
     {
-        CoreInstance measure = Instance.getValueForMetaPropertyToOneResolved(unit, "measure", processorSupport);
+        CoreInstance measure = Instance.getValueForMetaPropertyToOneResolved(unit, M3Properties.measure, processorSupport);
         String measureInterfaceName = TypeProcessor.javaInterfaceForType(measure);
         String measureImplName = JavaPackageAndImportBuilder.buildImplClassNameFromType(measure);
-        return   "public " + measureInterfaceName + " _measure()\n" +
+        return "public " + measureInterfaceName + " _measure()\n" +
                 "{\n" +
                 "    if (_measure == null)\n" +
                 "    {\n" +
-                "    _measure =  new org.finos.legend.pure.generated." + measureImplName + "(\"Anonymous_NoCounter\", this.es);\n" +
+                "        _measure = new org.finos.legend.pure.generated." + measureImplName + "(\"Anonymous_NoCounter\", this.es);\n" +
                 "    }\n" +
                 "    return _measure;\n" +
                 "}\n";
@@ -117,7 +106,7 @@ public class UnitImplProcessor
     {
         processorContext.setClassImplSuffix(CLASS_IMPL_SUFFIX);
         CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        CoreInstance measure = Instance.getValueForMetaPropertyToOneResolved(unit, "measure", processorSupport);
+        CoreInstance measure = Instance.getValueForMetaPropertyToOneResolved(unit, M3Properties.measure, processorSupport);
         String rawClassName = JavaPackageAndImportBuilder.buildImplClassNameFromType(unit);
         String className = UnitProcessor.convertToJavaCompatibleClassName(rawClassName);
         String typeParams = UnitProcessor.typeParameters(unit);
@@ -129,10 +118,10 @@ public class UnitImplProcessor
                 M3Paths.ConstraintsGetterOverride.equals(PackageableElement.getUserPathForPackageableElement(unit));
 
         boolean hasFunctions = !_Class.getQualifiedProperties(unit, processorContext.getSupport()).isEmpty()
-                || !_Class.computeConstraintsInHierarchy(unit,processorContext.getSupport()).isEmpty();
+                || !_Class.computeConstraintsInHierarchy(unit, processorContext.getSupport()).isEmpty();
 
-        return StringJavaSource.newStringJavaSource(_package, className, IMPORTS + (hasFunctions? FUNCTION_IMPORTS :"") + imports +
-                "public class " + classNamePlusTypeParams + " extends " + "Root_meta_pure_metamodel_type_Unit_Impl" + " implements " + interfaceNamePlusTypeParams + (isGetterOverride? ", GetterOverrideExecutor" :"") + "\n" +
+        return StringJavaSource.newStringJavaSource(_package, className, IMPORTS + (hasFunctions ? FUNCTION_IMPORTS : "") + imports +
+                "public class " + classNamePlusTypeParams + " extends Root_meta_pure_metamodel_type_Unit_Impl implements " + interfaceNamePlusTypeParams + (isGetterOverride ? ", GetterOverrideExecutor" : "") + "\n" +
                 "{\n" +
                 buildMetaInfo(classGenericType, processorSupport, false, TypeProcessor.javaInterfaceForType(measure)) +
                 buildSimpleConstructor(unit, className, processorSupport, useJavaInheritance) +
@@ -149,8 +138,8 @@ public class UnitImplProcessor
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
         String fullId = PackageableElement.getSystemPathForPackageableElement(_class, "::");
         return "    public static final String tempTypeName = \"" + Instance.getValueForMetaPropertyToOneResolved(_class, "name", processorSupport).getName() + "\";\n" +
-                "    private static final String tempFullTypeId = \"" + fullId + "\";\n"+
-                "    private"+ (lazy ? " volatile" : "") +" CoreInstance classifier;\n" +
+                "    private static final String tempFullTypeId = \"" + fullId + "\";\n" +
+                "    private" + (lazy ? " volatile" : "") + " CoreInstance classifier;\n" +
                 "    private ExecutionSupport es;\n" +
                 "    public static " + measureInterfaceName + " _measure = null;\n";
     }
@@ -170,33 +159,27 @@ public class UnitImplProcessor
 
     private static String buildGetClassifier()
     {
-        return  "    @Override\n" +
+        return "    @Override\n" +
                 "    public CoreInstance getClassifier()\n" +
                 "     {\n" +
-                "        return this.classifier;\n"+
+                "        return this.classifier;\n" +
                 "     }\n";
     }
 
     public static String buildGetValueForMetaPropertyToOne(final CoreInstance classGenericType, final ProcessorSupport processorSupport)
     {
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        RichIterable<CoreInstance> toOneProperties = processorSupport.class_getSimpleProperties(_class).selectWith(IS_TO_ONE, processorSupport);
+        RichIterable<CoreInstance> toOneProperties = processorSupport.class_getSimpleProperties(_class).select(p -> Multiplicity.isToOne(Instance.getValueForMetaPropertyToOneResolved(p, M3Properties.multiplicity, processorSupport), false));
         return "    @Override\n" +
                 "    public CoreInstance getValueForMetaPropertyToOne(String keyName)\n" +
                 "    {\n" +
                 "        switch (keyName)\n" +
                 "        {\n" +
-                toOneProperties.collect(new Function<CoreInstance, String>()
-                {
-                    @Override
-                    public String valueOf(CoreInstance property)
-                    {
-                        return "            case \"" + property.getName() + "\":\n" +
-                                "            {\n" +
-                                "                return ValCoreInstance.toCoreInstance(this._" + Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.name, processorSupport).getName() + "());\n" +
-                                "            }\n";
-                    }
-                }).makeString("") +
+                toOneProperties.collect(property ->
+                "            case \"" + property.getName() + "\":\n" +
+                "            {\n" +
+                "                return ValCoreInstance.toCoreInstance(this._" + PrimitiveUtilities.getStringValue(property.getValueForMetaPropertyToOne(M3Properties.name)) + "());\n" +
+                "            }\n").makeString("") +
 
                 "            case \"conversionFunction\":\n" +
                 "            {\n" +
@@ -219,10 +202,9 @@ public class UnitImplProcessor
 
     public static String buildGetFullSystemPath()
     {
-        return  "    public String getFullSystemPath()\n" +
+        return "    public String getFullSystemPath()\n" +
                 "    {\n" +
                 "         return tempFullTypeId;\n" +
                 "    }\n";
     }
-
 }

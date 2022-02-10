@@ -130,6 +130,11 @@ public class PrimitiveUtilities
         return (instance == null) ? defaultIfNull : getStringValue(instance);
     }
 
+    public static boolean isPrimitiveTypeName(String name)
+    {
+        return PRIMITIVE_TYPE_NAMES.contains(name);
+    }
+
     public static ImmutableSet<String> getPrimitiveTypeNames()
     {
         return PRIMITIVE_TYPE_NAMES;

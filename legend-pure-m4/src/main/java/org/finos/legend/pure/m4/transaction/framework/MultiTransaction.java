@@ -14,44 +14,15 @@
 
 package org.finos.legend.pure.m4.transaction.framework;
 
-import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.block.procedure.Procedure2;
-import org.eclipse.collections.api.collection.MutableCollection;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
-import org.eclipse.collections.impl.list.mutable.FastList;
+
+import java.util.function.Consumer;
 
 public abstract class MultiTransaction extends Transaction
 {
-    private static final Procedure<Transaction> COMMIT = new Procedure<Transaction>()
-    {
-        @Override
-        public void value(Transaction transaction)
-        {
-            transaction.commit();
-        }
-    };
-
-    private static final Procedure<Transaction> ROLLBACK = new Procedure<Transaction>()
-    {
-        @Override
-        public void value(Transaction transaction)
-        {
-            transaction.rollback();
-        }
-    };
-
-    private static final Procedure<ThreadLocalTransactionContext> CLOSE = new Procedure<ThreadLocalTransactionContext>()
-    {
-        @Override
-        public void value(ThreadLocalTransactionContext transaction)
-        {
-            transaction.close();
-        }
-    };
-
     private final ListIterable<Transaction> transactions;
 
     protected MultiTransaction(TransactionManager<?> manager, boolean committable, ListIterable<Transaction> transactions)
@@ -68,30 +39,27 @@ public abstract class MultiTransaction extends Transaction
     @Override
     protected void doCommit()
     {
-        forEachWithExceptionCollection(this.transactions, COMMIT, "committing");
+        forEachWithExceptionCollection(this.transactions, Transaction::commit, "committing");
     }
 
     @Override
     protected void doRollback()
     {
-        forEachWithExceptionCollection(this.transactions, ROLLBACK, "rolling back");
+        forEachWithExceptionCollection(this.transactions, Transaction::rollback, "rolling back");
     }
 
     @Override
     public ThreadLocalTransactionContext openInCurrentThread()
     {
-        MutableList<ThreadLocalTransactionContext> contexts = FastList.newList(this.transactions.size() + 1);
+        MutableList<ThreadLocalTransactionContext> contexts = Lists.mutable.ofInitialCapacity(this.transactions.size() + 1);
         try
         {
             contexts.add(super.openInCurrentThread());
-            for (Transaction transaction : this.transactions)
-            {
-                contexts.add(transaction.openInCurrentThread());
-            }
+            this.transactions.collect(Transaction::openInCurrentThread, contexts);
         }
         catch (Exception e)
         {
-            for (ThreadLocalTransactionContext context : contexts)
+            contexts.forEach(context ->
             {
                 try
                 {
@@ -101,7 +69,7 @@ public abstract class MultiTransaction extends Transaction
                 {
                     // Ignore
                 }
-            }
+            });
             throw e;
         }
         return new ThreadLocalMultiTransactionContext(contexts);
@@ -119,14 +87,24 @@ public abstract class MultiTransaction extends Transaction
         @Override
         protected void doClose()
         {
-            forEachWithExceptionCollection(this.contexts, CLOSE, "closing");
+            forEachWithExceptionCollection(this.contexts, ThreadLocalTransactionContext::close, "closing");
         }
     }
 
-    private static <T> void forEachWithExceptionCollection(ListIterable<T> list, Procedure<? super T> procedure, String descriptionForExceptions)
+    private static <T> void forEachWithExceptionCollection(ListIterable<T> list, Consumer<? super T> action, String descriptionForExceptions)
     {
         MutableList<Exception> exceptions = Lists.mutable.empty();
-        list.forEachWith(new ExceptionCollectionProcedure<>(procedure), exceptions);
+        list.forEach(t ->
+        {
+            try
+            {
+                action.accept(t);
+            }
+            catch (Exception e)
+            {
+                exceptions.add(e);
+            }
+        });
         if (exceptions.notEmpty())
         {
             StringBuilder message = new StringBuilder();
@@ -136,42 +114,26 @@ public abstract class MultiTransaction extends Transaction
             }
             else
             {
-                message.append(exceptions.size());
-                message.append(" exceptions");
+                message.append(exceptions.size()).append(" exceptions");
             }
-            message.append(" occurred while ");
-            message.append(descriptionForExceptions);
-            message.append(':');
-            for (Exception e : exceptions)
+            message.append(" occurred while ").append(descriptionForExceptions).append(':');
+            exceptions.forEach(e -> message.append("\n\t").append(e.getMessage()));
+            Exception mainException = exceptions.get(0);
+            if (exceptions.size() > 1)
             {
-                message.append("\n\t");
-                message.append(e.getMessage());
+                exceptions.subList(1, exceptions.size()).forEach(e ->
+                {
+                    try
+                    {
+                        mainException.addSuppressed(e);
+                    }
+                    catch (Exception ignore)
+                    {
+                        // ignore exceptions while trying to add suppressed exceptions
+                    }
+                });
             }
-
-            throw new RuntimeException(message.toString(), exceptions.get(0));
-        }
-    }
-
-    private static class ExceptionCollectionProcedure<T> implements Procedure2<T, MutableCollection<Exception>>
-    {
-        private final Procedure<T> procedure;
-
-        private ExceptionCollectionProcedure(Procedure<T> procedure)
-        {
-            this.procedure = procedure;
-        }
-
-        @Override
-        public void value(T element, MutableCollection<Exception> exceptions)
-        {
-            try
-            {
-                this.procedure.value(element);
-            }
-            catch (Exception e)
-            {
-                exceptions.add(e);
-            }
+            throw new RuntimeException(message.toString(), mainException);
         }
     }
 }

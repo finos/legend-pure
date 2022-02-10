@@ -14,9 +14,8 @@
 
 package org.finos.legend.pure.m3.compiler.unload.walk;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PropertyOwner;
@@ -25,14 +24,15 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.As
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.AssociationProjection;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjection;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class AbstractPropertyUnloaderWalk implements MatchRunner<AbstractProperty>
+public class AbstractPropertyUnloaderWalk implements MatchRunner<AbstractProperty<?>>
 {
     @Override
     public String getClassName()
@@ -41,9 +41,9 @@ public class AbstractPropertyUnloaderWalk implements MatchRunner<AbstractPropert
     }
 
     @Override
-    public void run(AbstractProperty abstractProperty, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(AbstractProperty<?> abstractProperty, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        WalkerState walkerState = (WalkerState)state;
+        WalkerState walkerState = (WalkerState) state;
         PropertyOwner owner = abstractProperty._owner();
         if (owner != null)
         {
@@ -55,19 +55,19 @@ public class AbstractPropertyUnloaderWalk implements MatchRunner<AbstractPropert
             }
             else if (owner instanceof Class)
             {
-                Class cls = (Class)owner;
-                MutableList<CoreInstance> propertiesProperties = FastList.newList();
-                propertiesProperties.addAllIterable(cls._properties());
-                propertiesProperties.addAllIterable(cls._propertiesFromAssociations());
-                propertiesProperties.addAllIterable(cls._qualifiedProperties());
-                propertiesProperties.addAllIterable(cls._qualifiedPropertiesFromAssociations());
-                propertiesProperties.addAllIterable(cls._originalMilestonedProperties());
-
-                MutableList<CoreInstance> toUnloadProperties = propertiesProperties.partition(new MilestoningFunctions.IsMilestonePropertyPredicate(state.getProcessorSupport())).getSelected();
-                for (CoreInstance property : toUnloadProperties)
+                Class<?> cls = (Class<?>) owner;
+                MutableList<CoreInstance> allProperties = Lists.mutable.<CoreInstance>withAll(cls._properties())
+                        .withAll(cls._propertiesFromAssociations())
+                        .withAll(cls._qualifiedProperties())
+                        .withAll(cls._qualifiedPropertiesFromAssociations())
+                        .withAll(cls._originalMilestonedProperties());
+                allProperties.forEach(property ->
                 {
-                    matcher.fullMatch(property, state);
-                }
+                    if (MilestoningFunctions.isGeneratedMilestoningProperty(property, state.getProcessorSupport()))
+                    {
+                        matcher.fullMatch(property, state);
+                    }
+                });
             }
             else if (owner instanceof AssociationProjection)
             {
@@ -75,17 +75,17 @@ public class AbstractPropertyUnloaderWalk implements MatchRunner<AbstractPropert
             }
             else if (owner instanceof Association)
             {
-                Association association = (Association)owner;
-                MutableList<CoreInstance> propertiesProperties = FastList.newList();
-                propertiesProperties.addAllIterable(association._properties());
-                propertiesProperties.addAllIterable(association._qualifiedProperties());
-                propertiesProperties.addAllIterable(association._originalMilestonedProperties());
-
-                MutableList<CoreInstance> toUnloadProperties = propertiesProperties.partition(new MilestoningFunctions.IsMilestonePropertyPredicate(state.getProcessorSupport())).getSelected();
-                for (CoreInstance property : toUnloadProperties)
+                Association association = (Association) owner;
+                MutableList<CoreInstance> allProperties = Lists.mutable.<CoreInstance>withAll(association._properties())
+                        .withAll(association._qualifiedProperties())
+                        .withAll(association._originalMilestonedProperties());
+                allProperties.forEach(property ->
                 {
-                    matcher.fullMatch(property, state);
-                }
+                    if (MilestoningFunctions.isGeneratedMilestoningProperty(property, state.getProcessorSupport()))
+                    {
+                        matcher.fullMatch(property, state);
+                    }
+                });
             }
         }
     }

@@ -14,89 +14,110 @@
 
 package org.finos.legend.pure.m3.compiler.validation.validator;
 
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.block.factory.Predicates;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningStereotype;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningStereotypeEnum;
-import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class MilestoningClassValidator
 {
-
-    public static void runValidations(Class cls, MutableList<AbstractProperty<?>> properties, ProcessorSupport processorSupport)
+    public static void runValidations(Class<?> cls, Iterable<? extends AbstractProperty<?>> properties, ProcessorSupport processorSupport)
     {
         validateNotMoreThanOneTemporalStereotypeSpecified(cls, processorSupport);
         validatePropertyNamesAgainstReservedTemporalPropertyNames(cls, properties, processorSupport);
     }
 
-    private static void validatePropertyNamesAgainstReservedTemporalPropertyNames(Class cls, MutableList<AbstractProperty<?>> properties, final ProcessorSupport processorSupport)
+    private static void validatePropertyNamesAgainstReservedTemporalPropertyNames(Class<?> cls, Iterable<? extends AbstractProperty<?>> properties, ProcessorSupport processorSupport)
     {
-        ListIterable<String> temporalStereotypeNames = MilestoningFunctions.getAllTemporalStereoTypePropertyNamesFromTopMostNonTopTypeGeneralizations(cls, processorSupport);
-        ListIterable<String> propertyNames = properties.select(Predicates.not(new Predicate<AbstractProperty<?>>()
+        MutableSet<String> reservedNames = MilestoningFunctions.getAllTemporalStereotypePropertyNameSetFromTopMostNonTopTypeGeneralizations(cls, processorSupport);
+        MutableList<String> badPropertyNames = Iterate.collectIf(properties, p -> reservedNames.contains(p._name()) && !MilestoningFunctions.isGeneratedMilestoningDateProperty(p, processorSupport), CoreInstance::getName, Lists.mutable.empty());
+        if (badPropertyNames.notEmpty())
         {
-            @Override
-            public boolean accept(AbstractProperty<?> property)
-            {
-                return MilestoningFunctions.isGeneratedMilestoningDateProperty(property, processorSupport);
-            }
-        })).collect(CoreInstance.GET_NAME);
-        ListIterable<String> disallowedPropertyNames = propertyNames.select(Predicates.in(temporalStereotypeNames));
-        if (disallowedPropertyNames.notEmpty())
-        {
-            throw new PureCompilationException(cls.getSourceInformation(), "Type: " + cls.getName() + " has temporal specification: " + temporalStereotypeNames.makeString("[", ",", "]") + " properties:" + disallowedPropertyNames.makeString("[", ",", "]") + " are reserved and should not be explicit in the Model");
+            StringBuilder builder = PackageableElement.writeUserPathForPackageableElement(new StringBuilder("Type: "), cls);
+            reservedNames.toSortedList().appendString(builder, " has temporal specification: [", ", ", "]");
+            badPropertyNames.sortThis().appendString(builder, " properties: [", ", ", "] are reserved and should not be explicit in the Model");
+            throw new PureCompilationException(cls.getSourceInformation(), builder.toString());
         }
     }
 
-    private static void validateNotMoreThanOneTemporalStereotypeSpecified(Class cls, ProcessorSupport processorSupport)
+    private static void validateNotMoreThanOneTemporalStereotypeSpecified(Class<?> cls, ProcessorSupport processorSupport)
     {
         ListIterable<MilestoningStereotypeEnum> temporalStereotypes = MilestoningFunctions.getTemporalStereoTypesFromTopMostNonTopTypeGeneralizations(cls, processorSupport);
         if (temporalStereotypes.size() > 1)
         {
-            throw new PureCompilationException(cls.getSourceInformation(), "A Type may only have one Temporal Stereotype, '" + cls.getName() + "' has " + temporalStereotypes.collect(MilestoningFunctions.GET_PLATFORM_NAME).toSortedList().makeString("[", ",", "]"));
+            StringBuilder builder = PackageableElement.writeUserPathForPackageableElement(new StringBuilder("A Type may only have one Temporal Stereotype, '"), cls);
+            temporalStereotypes.collect(MilestoningStereotype::getPurePlatformStereotypeName, Lists.mutable.ofInitialCapacity(temporalStereotypes.size()))
+                    .sortThis()
+                    .appendString(builder, "' has [", ", ", "]");
+            throw new PureCompilationException(cls.getSourceInformation(), builder.toString());
         }
     }
 
-
-    static void validateTemporalStereotypesAppliedForAllSubTypesInTemporalHierarchy(Class cls, ProcessorSupport processorSupport)
+    static void validateTemporalStereotypesAppliedForAllSubTypesInTemporalHierarchy(Class<?> cls, ProcessorSupport processorSupport)
     {
         if (!Type.directSubTypeOf(cls, processorSupport.type_TopType(), processorSupport))
         {
             ListIterable<MilestoningStereotypeEnum> topMostTypeMilestoningStereotypes = MilestoningFunctions.getTemporalStereoTypesFromTopMostNonTopTypeGeneralizations(cls, processorSupport);
-            MilestoningStereotype subTypeMilestoningStereotype = MilestoningFunctions.getTemporalStereoTypesExcludingParents(cls, processorSupport).getFirst();
+            MilestoningStereotype subTypeMilestoningStereotype = MilestoningFunctions.getTemporalStereoTypesExcludingParents(cls).getFirst();
             boolean subTypeIsTemporal = subTypeMilestoningStereotype != null;
 
-            if (!topMostTypeMilestoningStereotypes.isEmpty())
+            if (topMostTypeMilestoningStereotypes.notEmpty())
             {
                 MilestoningStereotypeEnum topMostTypeMilestoningStereotype = topMostTypeMilestoningStereotypes.getFirst();
 
                 boolean topMostTypeIsTemporal = topMostTypeMilestoningStereotype != null;
-                MutableSet<CoreInstance> leafUserDefTypes = Type.getTopMostNonTopTypeGeneralizations(cls, processorSupport);
-                String topMostClasses = leafUserDefTypes.collect(CoreInstance.GET_NAME).makeString(",");
-
                 if (topMostTypeIsTemporal && !subTypeIsTemporal)
                 {
-                    throw new PureCompilationException(cls.getSourceInformation(), "Temporal stereotypes must be applied at all levels in a temporal class hierarchy, top most supertype(s): '" + topMostClasses + "' has milestoning stereotype: '" + topMostTypeMilestoningStereotype + "'");
+                    MutableSet<CoreInstance> topNonAnyTypes = Type.getTopMostNonTopTypeGeneralizations(cls, processorSupport);
+                    StringBuilder builder = new StringBuilder("Temporal stereotypes must be applied at all levels in a temporal class hierarchy, top most supertype");
+                    if (topNonAnyTypes.size() != 1)
+                    {
+                        builder.append('s');
+                    }
+                    topNonAnyTypes.collect(PackageableElement::getUserPathForPackageableElement, Lists.mutable.ofInitialCapacity(topNonAnyTypes.size())).sortThis().appendString(builder, " ", ", ", " ");
+                    builder.append((topNonAnyTypes.size() == 1) ? "has" : "have");
+                    builder.append(" milestoning stereotype: '").append(topMostTypeMilestoningStereotype).append("'");
+                    throw new PureCompilationException(cls.getSourceInformation(), builder.toString());
                 }
 
                 if (topMostTypeIsTemporal && subTypeIsTemporal && (topMostTypeMilestoningStereotype != subTypeMilestoningStereotype))
                 {
-                    throw new PureCompilationException(cls.getSourceInformation(), "All temporal stereotypes in a hierarchy must be the same, class: '" + cls.getName() + "' is " + subTypeMilestoningStereotype + ", top most supertype(s): '" + topMostClasses + "' has milestoning stereotype: '" + topMostTypeMilestoningStereotype + "'");
+                    MutableSet<CoreInstance> topNonAnyTypes = Type.getTopMostNonTopTypeGeneralizations(cls, processorSupport);
+                    StringBuilder builder = PackageableElement.writeUserPathForPackageableElement(new StringBuilder("All temporal stereotypes in a hierarchy must be the same, class "), cls);
+                    builder.append(" is ").append(subTypeMilestoningStereotype).append(", top most supertype");
+                    if (topNonAnyTypes.size() != 1)
+                    {
+                        builder.append('s');
+                    }
+                    topNonAnyTypes.collect(PackageableElement::getUserPathForPackageableElement, Lists.mutable.ofInitialCapacity(topNonAnyTypes.size())).sortThis().appendString(builder, " ", ", ", " ");
+                    builder.append((topNonAnyTypes.size() == 1) ? "has" : "have");
+                    builder.append(" milestoning stereotype: '").append(topMostTypeMilestoningStereotype).append("'");
+                    throw new PureCompilationException(cls.getSourceInformation(), builder.toString());
                 }
             }
             else if (subTypeIsTemporal)
             {
-                MutableSet<CoreInstance> leafUserDefTypes = Type.getTopMostNonTopTypeGeneralizations(cls, processorSupport);
-                String topMostClasses = leafUserDefTypes.collect(CoreInstance.GET_NAME).makeString(",");
-                throw new PureCompilationException(cls.getSourceInformation(), "All temporal stereotypes in a hierarchy must be the same, class: '" + cls.getName() + "' is " + subTypeMilestoningStereotype + ", top most supertype(s): '" + topMostClasses + "' is not temporal'");
+                MutableSet<CoreInstance> topNonAnyTypes = Type.getTopMostNonTopTypeGeneralizations(cls, processorSupport);
+                StringBuilder builder = PackageableElement.writeUserPathForPackageableElement(new StringBuilder("All temporal stereotypes in a hierarchy must be the same, class "), cls);
+                builder.append(" is ").append(subTypeMilestoningStereotype).append(", top most supertype");
+                if (topNonAnyTypes.size() != 1)
+                {
+                    builder.append('s');
+                }
+                topNonAnyTypes.collect(PackageableElement::getUserPathForPackageableElement, Lists.mutable.ofInitialCapacity(topNonAnyTypes.size())).sortThis().appendString(builder, " ", ", ", " ");
+                builder.append((topNonAnyTypes.size() == 1) ? "is" : "are").append(" not temporal");
+                throw new PureCompilationException(cls.getSourceInformation(), builder.toString());
             }
         }
     }

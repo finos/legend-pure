@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.compiler;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PropertyOwner;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
@@ -28,13 +28,13 @@ public class AssociationPropertyOwnerStrategy implements PropertyOwnerStrategy
     @Override
     public RichIterable<? extends Property<?, ?>> properties(PropertyOwner propertyOwner)
     {
-        return ((Association)propertyOwner)._properties();
+        return ((Association) propertyOwner)._properties();
     }
 
     @Override
     public RichIterable<? extends QualifiedProperty<?>> qualifiedProperties(PropertyOwner propertyOwner)
     {
-        return ((Association)propertyOwner)._qualifiedProperties();
+        return ((Association) propertyOwner)._qualifiedProperties();
     }
 
     @Override
@@ -46,37 +46,37 @@ public class AssociationPropertyOwnerStrategy implements PropertyOwnerStrategy
     @Override
     public RichIterable<? extends Property<?, ?>> originalMilestonedProperties(PropertyOwner propertyOwner)
     {
-        return ((Association)propertyOwner)._originalMilestonedProperties();
+        return ((Association) propertyOwner)._originalMilestonedProperties();
     }
 
     @Override
     public Association originalMilestonedPropertiesRemove(PropertyOwner propertyOwner)
     {
-        return ((Association)propertyOwner)._originalMilestonedPropertiesRemove();
+        return ((Association) propertyOwner)._originalMilestonedPropertiesRemove();
     }
 
     @Override
     public Association originalMilestonedPropertiesRemove(PropertyOwner propertyOwner, Property<?, ?> property)
     {
-        return ((Association)propertyOwner)._originalMilestonedPropertiesRemove(property);
+        return ((Association) propertyOwner)._originalMilestonedPropertiesRemove(property);
     }
 
     @Override
     public Association propertiesRemove(PropertyOwner propertyOwner)
     {
-        return ((Association)propertyOwner)._propertiesRemove();
+        return ((Association) propertyOwner)._propertiesRemove();
     }
 
     @Override
-    public Association propertiesRemove(PropertyOwner propertyOwner, Property property)
+    public Association propertiesRemove(PropertyOwner propertyOwner, Property<?, ?> property)
     {
-        return ((Association)propertyOwner)._propertiesRemove(property);
+        return ((Association) propertyOwner)._propertiesRemove(property);
     }
 
     @Override
     public Association qualifiedPropertiesRemove(PropertyOwner propertyOwner)
     {
-        return ((Association)propertyOwner)._qualifiedPropertiesRemove();
+        return ((Association) propertyOwner)._qualifiedPropertiesRemove();
     }
 
     @Override
@@ -88,25 +88,25 @@ public class AssociationPropertyOwnerStrategy implements PropertyOwnerStrategy
     @Override
     public Association qualifiedPropertiesFromAssociationsRemove(PropertyOwner propertyOwner)
     {
-        throw  new UnsupportedOperationException("Association does not support qualifiedPropertiesFromAssociations remove.");
+        throw new UnsupportedOperationException("Association does not support qualifiedPropertiesFromAssociations remove.");
     }
 
     @Override
     public Association setOriginalMilestonedProperties(PropertyOwner propertyOwner, RichIterable<? extends Property<?, ?>> values)
     {
-        return ((Association)propertyOwner)._originalMilestonedProperties(values);
+        return ((Association) propertyOwner)._originalMilestonedProperties(values);
     }
 
     @Override
     public Association setProperties(PropertyOwner propertyOwner, RichIterable<? extends Property<?, ?>> values)
     {
-        return ((Association)propertyOwner)._properties(values);
+        return ((Association) propertyOwner)._properties(values);
     }
 
     @Override
     public Association setQualifiedProperties(PropertyOwner propertyOwner, RichIterable<? extends QualifiedProperty<?>> values)
     {
-        return ((Association)propertyOwner)._qualifiedProperties(values);
+        return ((Association) propertyOwner)._qualifiedProperties(values);
     }
 
     @Override
@@ -118,6 +118,6 @@ public class AssociationPropertyOwnerStrategy implements PropertyOwnerStrategy
     @Override
     public Association setQualifiedPropertiesFromAssociations(PropertyOwner propertyOwner, RichIterable<? extends QualifiedProperty<?>> values)
     {
-        throw  new UnsupportedOperationException("Association does not support qualifiedPropertiesFromAssociations set.");
+        throw new UnsupportedOperationException("Association does not support qualifiedPropertiesFromAssociations set.");
     }
 }

@@ -17,103 +17,104 @@ package org.finos.legend.pure.m3.tests.validation.milestoning;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
-public class TestMilestoningClassValidator extends AbstractPureTestWithCoreCompiledPlatform {
+public class TestMilestoningClassValidator extends AbstractPureTestWithCoreCompiledPlatform
+{
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("sourceId.pure");
     }
 
-    @Rule
-    public final ExpectedException expectedEx = ExpectedException.none();
-
     @Test
-    public void testMilestoningStereotypeCannotBeAppliedInASubType() throws Exception {
-
-        expectedEx.expect(PureCompilationException.class);
-        expectedEx.expectMessage("Compilation error at (resource:sourceId.pure lines:2c70-4c1), \"All temporal stereotypes in a hierarchy must be the same, class: 'Product' is businesstemporal, top most supertype(s): 'BaseProduct' is not temporal'\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::milestoning::domain::*;" +
-                        "Class meta::test::milestoning::domain::BaseProduct{}\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product extends BaseProduct{\n" +
+    public void testMilestoningStereotypeCannotBeAppliedInASubType()
+    {
+        runtime.createInMemorySource("sourceId.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "Class meta::test::milestoning::domain::BaseProduct\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product extends BaseProduct\n" +
+                        "{\n" +
                         "   id : Integer[1];\n" +
-                        "}");
+                        "}\n");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure lines:5c70-8c1), \"All temporal stereotypes in a hierarchy must be the same, class meta::test::milestoning::domain::Product is businesstemporal, top most supertype meta::test::milestoning::domain::BaseProduct is not temporal\"", e.getMessage());
     }
 
     @Test
-    public void testMilestoningStereotypeCannotBeAppliedInASubTypeWithMultipleParents() throws Exception {
-
-        expectedEx.expect(PureCompilationException.class);
-        expectedEx.expectMessage("Compilation error at (resource:sourceId.pure lines:3c70-5c1), \"All temporal stereotypes in a hierarchy must be the same, class: 'Product' is businesstemporal, top most supertype(s): 'BaseProduct1,BaseProduct2' is not temporal'\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::milestoning::domain::*;" +
-                        "Class meta::test::milestoning::domain::BaseProduct1{}\n" +
-                        "Class meta::test::milestoning::domain::BaseProduct2{}\n" +
-                        "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product extends BaseProduct1, BaseProduct2{\n" +
+    public void testMilestoningStereotypeCannotBeAppliedInASubTypeWithMultipleParents() throws Exception
+    {
+        runtime.createInMemorySource("sourceId.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "Class meta::test::milestoning::domain::BaseProduct1\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Class meta::test::milestoning::domain::BaseProduct2\n" +
+                        "{\n" +
+                        "}\n" +
+                        "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product extends BaseProduct1, BaseProduct2\n" +
+                        "{\n" +
                         "   id : Integer[1];\n" +
-                        "}");
+                        "}\n");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure lines:8c70-11c1), \"All temporal stereotypes in a hierarchy must be the same, class meta::test::milestoning::domain::Product is businesstemporal, top most supertypes meta::test::milestoning::domain::BaseProduct1, meta::test::milestoning::domain::BaseProduct2 are not temporal\"", e.getMessage());
     }
 
     @Test
-    public void testATypeMayOnlyHaveOneTemporalStereotype() throws Exception {
-
-        expectedEx.expect(PureCompilationException.class);
-        expectedEx.expectMessage("Compilation error at (resource:sourceId.pure lines:1c140-3c1), \"A Type may only have one Temporal Stereotype, 'Product' has [businesstemporal,processingtemporal]\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::milestoning::domain::*;" +
-                        "Class <<temporal.businesstemporal,temporal.processingtemporal>> meta::test::milestoning::domain::Product {\n" +
+    public void testATypeMayOnlyHaveOneTemporalStereotype() throws Exception
+    {
+        runtime.createInMemorySource("sourceId.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "Class <<temporal.businesstemporal,temporal.processingtemporal>> meta::test::milestoning::domain::Product\n" +
+                        "{\n" +
                         "   id : Integer[1];\n" +
-                        "}");
+                        "}\n");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure lines:2c98-5c1), \"A Type may only have one Temporal Stereotype, 'meta::test::milestoning::domain::Product' has [businesstemporal, processingtemporal]\"", e.getMessage());
     }
 
     @Test
     public void testNonTemporalTypesCanHaveReservedTemporalProperties()
     {
-        this.runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::milestoning::domain::*;" +
-                        "Class meta::test::milestoning::domain::Product {\n" +
+        runtime.createInMemorySource("sourceId.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "Class meta::test::milestoning::domain::Product\n" +
+                        "{\n" +
                         "   businessDate : Date[1];\n" +
                         "   processingDate : Date[1];\n" +
                         "   milestoning : meta::pure::milestoning::BiTemporalMilestoning[1];\n" +
-                        "}");
+                        "}\n");
 
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testTemporalTypesCanNotHaveReservedTemporalProperties()
     {
-
-        expectedEx.expect(PureCompilationException.class);
-        expectedEx.expectMessage("Compilation error at (resource:sourceId.pure lines:1c106-5c1), \"Type: Product has temporal specification: [processingDate,businessDate,milestoning] properties:[businessDate,processingDate,milestoning] are reserved and should not be explicit in the Model\"");
-
-        this.runtime.createInMemorySource("sourceId.pure",
-                "import meta::test::milestoning::domain::*;" +
-                        "Class <<temporal.bitemporal>> meta::test::milestoning::domain::Product {\n" +
+        runtime.createInMemorySource("sourceId.pure",
+                "import meta::test::milestoning::domain::*;\n" +
+                        "Class <<temporal.bitemporal>> meta::test::milestoning::domain::Product\n" +
+                        "{\n" +
                         "   businessDate : Date[1];\n" +
                         "   processingDate : Date[1];\n" +
                         "   milestoning : meta::pure::milestoning::BiTemporalMilestoning[1];\n" +
-                        "}");
+                        "}\n");
 
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure lines:2c64-7c1), \"Type: meta::test::milestoning::domain::Product has temporal specification: [businessDate, milestoning, processingDate] properties: [businessDate, milestoning, processingDate] are reserved and should not be explicit in the Model\"", e.getMessage());
     }
 }

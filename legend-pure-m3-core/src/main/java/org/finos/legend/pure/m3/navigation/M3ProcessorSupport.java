@@ -15,14 +15,11 @@
 package org.finos.legend.pure.m3.navigation;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function0;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation._class._Class;
 import org.finos.legend.pure.m3.navigation._package._Package;
@@ -30,11 +27,9 @@ import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-
-import static org.finos.legend.pure.m3.navigation._class._Class.SIMPLE_PROPERTIES_PROPERTIES;
 
 public class M3ProcessorSupport implements ProcessorSupport
 {
@@ -97,15 +92,7 @@ public class M3ProcessorSupport implements ProcessorSupport
         {
             return _Package.getByUserPath(path, this);
         }
-        final ProcessorSupport support = this;
-        return this.context.getIfAbsentPutElementByPath(path, new Function0<CoreInstance>()
-        {
-            @Override
-            public CoreInstance value()
-            {
-                return _Package.getByUserPath(path, support);
-            }
-        });
+        return this.context.getIfAbsentPutElementByPath(path, () -> _Package.getByUserPath(path, this));
 
     }
 
@@ -178,15 +165,7 @@ public class M3ProcessorSupport implements ProcessorSupport
     @Override
     public MapIterable<String, CoreInstance> class_getSimplePropertiesByName(CoreInstance classifier)
     {
-        final ProcessorSupport processorSupport = this;
-        return this.context.getIfAbsentPutPropertiesByName(classifier, new org.eclipse.collections.api.block.function.Function<CoreInstance, ImmutableMap<String, CoreInstance>>()
-        {
-            @Override
-            public ImmutableMap<String, CoreInstance> valueOf(CoreInstance cls)
-            {
-                return _Class.computePropertiesByName(cls, SIMPLE_PROPERTIES_PROPERTIES, processorSupport).toImmutable();
-            }
-        });
+        return this.context.getIfAbsentPutPropertiesByName(classifier, cls -> _Class.computePropertiesByName(cls, _Class.SIMPLE_PROPERTIES_PROPERTIES, this).toImmutable());
     }
 
     @Override
@@ -204,16 +183,8 @@ public class M3ProcessorSupport implements ProcessorSupport
     @Override
     public ListIterable<String> property_getPath(CoreInstance property)
     {
-        final ProcessorSupport processorSupport = this;
         // Example: [Root, children, core, children, Any, properties, classifierGenericType]
-        return this.context.getIfAbsentPutPropertyPath(property, new org.eclipse.collections.api.block.function.Function<CoreInstance, ImmutableList<String>>()
-        {
-            @Override
-            public ImmutableList<String> valueOf(CoreInstance prop)
-            {
-                return Property.calculatePropertyPath(prop, processorSupport).toImmutable();
-            }
-        });
+        return this.context.getIfAbsentPutPropertyPath(property, prop -> Property.calculatePropertyPath(prop, this).toImmutable());
     }
 
     @Override
@@ -228,39 +199,18 @@ public class M3ProcessorSupport implements ProcessorSupport
         return (type == possibleSuperType) ||
                 (type == type_BottomType()) ||
                 (possibleSuperType == type_TopType()) ||
-                this.context.getIfAbsentPutTypeGeneralizationSet(type, new org.eclipse.collections.api.block.function.Function<CoreInstance, ImmutableSet<CoreInstance>>()
-                {
-                    @Override
-                    public ImmutableSet<CoreInstance> valueOf(CoreInstance t)
-                    {
-                        return Sets.immutable.withAll(Type.getGeneralizationResolutionOrder(t, M3ProcessorSupport.this));
-                    }
-                }).contains(possibleSuperType);
+                this.context.getIfAbsentPutTypeGeneralizationSet(type, t -> Sets.immutable.withAll(Type.getGeneralizationResolutionOrder(t, this))).contains(possibleSuperType);
     }
 
     @Override
     public CoreInstance type_BottomType()
     {
-        return this.context.getIfAbsentPutNil(new Function0<CoreInstance>()
-        {
-            @Override
-            public CoreInstance value()
-            {
-                return _Package.getByUserPath(M3Paths.Nil, M3ProcessorSupport.this);
-            }
-        });
+        return this.context.getIfAbsentPutNil(() -> _Package.getByUserPath(M3Paths.Nil, this));
     }
 
     @Override
     public CoreInstance type_TopType()
     {
-        return this.context.getIfAbsentPutAny(new Function0<CoreInstance>()
-        {
-            @Override
-            public CoreInstance value()
-            {
-                return _Package.getByUserPath(M3Paths.Any, M3ProcessorSupport.this);
-            }
-        });
+        return this.context.getIfAbsentPutAny(() -> _Package.getByUserPath(M3Paths.Any, this));
     }
 }

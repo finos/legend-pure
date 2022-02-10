@@ -165,9 +165,7 @@ public class AccessLevelValidator implements MatchRunner
             CoreInstance returnRawType = ImportStub.withImportStubByPass(returnType._rawTypeCoreInstance(), processorSupport);
             if ((returnRawType == null) || !(returnRawType instanceof PrimitiveType))
             {
-                StringBuilder message = new StringBuilder("Functions with access level ");
-                message.append(accessLevel.getName());
-                message.append(" may only have primitive types as return types; found ");
+                StringBuilder message = new StringBuilder("Functions with access level ").append(accessLevel.getName()).append(" may only have primitive types as return types; found ");
                 org.finos.legend.pure.m3.navigation.generictype.GenericType.print(message, returnType, processorSupport);
                 throw new PureCompilationException(instance.getSourceInformation(), message.toString());
             }
@@ -178,15 +176,11 @@ public class AccessLevelValidator implements MatchRunner
             if (functionsWithSameName.size() > 1)
             {
                 StringBuilder message = new StringBuilder("Externalizable function name conflict - multiple functions with the name '");
-                message.append(functionName);
-                message.append("':");
-                for (CoreInstance func : functionsWithSameName.toSortedListBy(CoreInstance.GET_SOURCE_INFO))
+                message.append(functionName).append("':");
+                for (CoreInstance func : functionsWithSameName.toSortedListBy(CoreInstance::getSourceInformation))
                 {
-                    message.append("\n\t");
-                    FunctionDescriptor.writeFunctionDescriptor(message, func, processorSupport);
-                    message.append(" (");
-                    func.getSourceInformation().writeMessage(message);
-                    message.append(')');
+                    FunctionDescriptor.writeFunctionDescriptor(message.append("\n\t"), func, processorSupport);
+                    func.getSourceInformation().appendMessage(message.append(" (")).append(')');
                 }
                 throw new PureCompilationException(instance.getSourceInformation(), message.toString());
             }

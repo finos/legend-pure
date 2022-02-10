@@ -14,50 +14,53 @@
 
 package org.finos.legend.pure.m3.navigation.functionexpression;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 class Support
 {
-    static Pair<ImmutableMap<String, CoreInstance>,ImmutableMap<String, CoreInstance>> inferTypeAndMultiplicityParameterUsingFunctionExpression(CoreInstance functionType, CoreInstance functionExpression, ProcessorSupport processorSupport)
+    static Pair<ImmutableMap<String, CoreInstance>, ImmutableMap<String, CoreInstance>> inferTypeAndMultiplicityParameterUsingFunctionExpression(CoreInstance functionType, CoreInstance functionExpression, ProcessorSupport processorSupport)
     {
-        MutableMap<String, CoreInstance> inferredTypeParams = UnifiedMap.newMap();
-        MutableMap<String, CoreInstance> inferredMultiplicityParams = UnifiedMap.newMap();
-
         ListIterable<? extends CoreInstance> parameters = Instance.getValueForMetaPropertyToManyResolved(functionType, M3Properties.parameters, processorSupport);
+        ListIterable<? extends CoreInstance> parameterValues = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorSupport);
         int size = parameters.size();
-        if (size > 0)
+        if (size != parameterValues.size())
         {
-            ListIterable<? extends CoreInstance> parameterValues = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorSupport);
-            if (size != parameterValues.size())
-            {
-                throw new RuntimeException("Mismatch between the number of parameters (" + size + ") and the number of values (" + parameterValues.size() + ")");
-            }
-            for (int i = 0; i < size; i++)
-            {
-                CoreInstance parameter = parameters.get(i);
-                CoreInstance parameterValue = parameterValues.get(i);
-                CoreInstance parameterGenericType = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.genericType, processorSupport);
-                CoreInstance parameterMultiplicity = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, processorSupport);
-                CoreInstance parameterValueGenericType = Instance.instanceOf(parameterValue, M3Paths.ValueSpecification, processorSupport) ? Instance.getValueForMetaPropertyToOneResolved(parameterValue, M3Properties.genericType, processorSupport) : Instance.extractGenericTypeFromInstance(parameterValue, processorSupport);
-                CoreInstance parameterValueMultiplicity = Instance.getValueForMetaPropertyToOneResolved(parameterValue, M3Properties.multiplicity, processorSupport);
-                processOneLevelGenericType(parameterGenericType, parameterMultiplicity, parameterValueGenericType, parameterValueMultiplicity, inferredTypeParams, inferredMultiplicityParams, processorSupport);
-            }
+            throw new RuntimeException("Mismatch between the number of parameters (" + size + ") and the number of values (" + parameterValues.size() + ")");
+        }
+
+        if (size == 0)
+        {
+            return Tuples.pair(Maps.immutable.empty(), Maps.immutable.empty());
+        }
+
+        MutableMap<String, CoreInstance> inferredTypeParams = Maps.mutable.empty();
+        MutableMap<String, CoreInstance> inferredMultiplicityParams = Maps.mutable.empty();
+        for (int i = 0; i < size; i++)
+        {
+            CoreInstance parameter = parameters.get(i);
+            CoreInstance parameterValue = parameterValues.get(i);
+            CoreInstance parameterGenericType = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.genericType, processorSupport);
+            CoreInstance parameterMultiplicity = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, processorSupport);
+            CoreInstance parameterValueGenericType = Instance.instanceOf(parameterValue, M3Paths.ValueSpecification, processorSupport) ? Instance.getValueForMetaPropertyToOneResolved(parameterValue, M3Properties.genericType, processorSupport) : Instance.extractGenericTypeFromInstance(parameterValue, processorSupport);
+            CoreInstance parameterValueMultiplicity = Instance.getValueForMetaPropertyToOneResolved(parameterValue, M3Properties.multiplicity, processorSupport);
+            processOneLevelGenericType(parameterGenericType, parameterMultiplicity, parameterValueGenericType, parameterValueMultiplicity, inferredTypeParams, inferredMultiplicityParams, processorSupport);
         }
         return Tuples.pair(inferredTypeParams.toImmutable(), inferredMultiplicityParams.toImmutable());
     }
@@ -82,21 +85,21 @@ class Support
             }
         }
 
-        if (!GenericType.isGenericTypeConcrete(parameterGenericType, processorSupport))
+        if (!GenericType.isGenericTypeConcrete(parameterGenericType))
         {
-            String typeParameter = GenericType.getTypeParameterName(parameterGenericType, processorSupport);
+            String typeParameter = GenericType.getTypeParameterName(parameterGenericType);
             CoreInstance currentGenericType = inferredTypeParams.get(typeParameter);
             if (currentGenericType == null)
             {
                 inferredTypeParams.put(typeParameter, parameterValueGenericType);
             }
-            else if (!GenericType.isGenericTypeConcrete(currentGenericType, processorSupport) && GenericType.isGenericTypeConcrete(parameterValueGenericType, processorSupport))
+            else if (!GenericType.isGenericTypeConcrete(currentGenericType) && GenericType.isGenericTypeConcrete(parameterValueGenericType))
             {
                 inferredTypeParams.put(typeParameter, parameterValueGenericType);
             }
             else if (!GenericType.genericTypesEqual(currentGenericType, parameterValueGenericType, processorSupport))
             {
-                inferredTypeParams.put(typeParameter, GenericType.findBestCommonGenericType(FastList.newListWith(currentGenericType, parameterValueGenericType), true, false, processorSupport));
+                inferredTypeParams.put(typeParameter, GenericType.findBestCommonGenericType(Lists.immutable.with(currentGenericType, parameterValueGenericType), true, false, processorSupport));
             }
         }
         else if (FunctionType.isFunctionType(parameterGenericType, processorSupport))
@@ -120,7 +123,7 @@ class Support
                 {
                     CoreInstance typeArgument = typeArguments.get(i);
                     CoreInstance typeParameter = typeParameters.get(i);
-                    String typeParameterNameInSource = Instance.getValueForMetaPropertyToOneResolved(typeParameter, M3Properties.name, processorSupport).getName();
+                    String typeParameterNameInSource = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(typeParameter, M3Properties.name, processorSupport));
                     processOneLevelGenericType(typeArgument, parameterMultiplicity, homogenizedTypeArgs.getArgumentByParameterName(typeParameterNameInSource), parameterValueMultiplicity, inferredTypeParams, inferredMultiplicityParams, processorSupport);
                 }
             }
@@ -130,7 +133,7 @@ class Support
     private static void inferTypeParameterUsingResolvedFunctionType(CoreInstance functionType, CoreInstance resolvedFunctionType, MutableMap<String, CoreInstance> inferredTypeParams, MutableMap<String, CoreInstance> inferredMultiplicityParams, ProcessorSupport processorSupport)
     {
         // TODO consider doing something when resolvedFunctionType is not concrete
-        if (GenericType.isGenericTypeConcrete(resolvedFunctionType, processorSupport))
+        if (GenericType.isGenericTypeConcrete(resolvedFunctionType))
         {
             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.rawType, processorSupport);
             CoreInstance resolvedRawType = Instance.getValueForMetaPropertyToOneResolved(resolvedFunctionType, M3Properties.rawType, processorSupport);
@@ -158,11 +161,11 @@ class Support
                 }
             }
             processOneLevelGenericType(Instance.getValueForMetaPropertyToOneResolved(rawType, M3Properties.returnType, processorSupport),
-                                       Instance.getValueForMetaPropertyToOneResolved(rawType, M3Properties.returnMultiplicity, processorSupport),
-                                       Instance.getValueForMetaPropertyToOneResolved(resolvedRawType, M3Properties.returnType, processorSupport),
-                                       Instance.getValueForMetaPropertyToOneResolved(resolvedRawType, M3Properties.returnMultiplicity, processorSupport),
-                                       inferredTypeParams,
-                                       inferredMultiplicityParams,
+                    Instance.getValueForMetaPropertyToOneResolved(rawType, M3Properties.returnMultiplicity, processorSupport),
+                    Instance.getValueForMetaPropertyToOneResolved(resolvedRawType, M3Properties.returnType, processorSupport),
+                    Instance.getValueForMetaPropertyToOneResolved(resolvedRawType, M3Properties.returnMultiplicity, processorSupport),
+                    inferredTypeParams,
+                    inferredMultiplicityParams,
                     processorSupport);
         }
     }

@@ -14,36 +14,37 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification;
 
-import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.block.factory.Functions;
 import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.compiler.postprocessing.GenericTypeTraceability;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.compiler.postprocessing.inference.TypeInference;
 import org.finos.legend.pure.m3.compiler.postprocessing.inference.TypeInferenceContext;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
-import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.measure.Measure;
-import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
-import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RootRouteNode;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValueSpecificationContext;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.generictype.GenericType;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.measure.Measure;
+import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
+import org.finos.legend.pure.m3.navigation.type.Type;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class InstanceValueProcessor extends Processor<InstanceValue>
 {
@@ -57,12 +58,11 @@ public class InstanceValueProcessor extends Processor<InstanceValue>
     public void process(InstanceValue instance, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
         TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
-        RichIterable<? extends CoreInstance> values = ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>)instance._valuesCoreInstance(), processorSupport);
-        int size = values.size();
-        int i = 0;
-        for (CoreInstance child : values)
+        ListIterable<? extends CoreInstance> values = ImportStub.withImportStubByPasses(ListHelper.wrapListIterable(instance._valuesCoreInstance()), processorSupport);
+        boolean isCollection = values.size() > 1;
+        values.forEachWithIndex((child, i) ->
         {
-            if (size > 1)
+            if (isCollection)
             {
                 typeInferenceContext.addStateForCollectionElement();
             }
@@ -71,25 +71,24 @@ public class InstanceValueProcessor extends Processor<InstanceValue>
                 InstanceValueSpecificationContext usageContext = (InstanceValueSpecificationContext) processorSupport.newAnonymousCoreInstance(null, M3Paths.InstanceValueSpecificationContext);
                 usageContext._offset(i);
                 usageContext._instanceValue(instance);
-                ((ValueSpecification)child)._usageContext(usageContext);
+                ((ValueSpecification) child)._usageContext(usageContext);
             }
             else if (child instanceof RootRouteNode)
             {
-                ((RootRouteNode)child)._owner(instance);
+                ((RootRouteNode) child)._owner(instance);
             }
 
             if (child instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub)
             {
-                ImportStub.processImportStub((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub)child, repository, processorSupport);
+                ImportStub.processImportStub((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub) child, repository, processorSupport);
             }
             // TODO Is this check necessary? The post-processor keeps track of what has been processed.
             else if (!(child instanceof Class))
             {
                 PostProcessor.processElement(matcher, child, state, processorSupport);
             }
-            i++;
-        }
-        if (size > 1)
+        });
+        if (isCollection)
         {
             TypeInference.potentiallyUpdateParentTypeParamForInstanceValueWithManyElements(instance, typeInferenceContext, state, processorSupport);
         }
@@ -99,23 +98,21 @@ public class InstanceValueProcessor extends Processor<InstanceValue>
     @Override
     public void populateReferenceUsages(InstanceValue instance, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        RichIterable<? extends CoreInstance> values = ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>)instance._valuesCoreInstance(), processorSupport);
+        ListIterable<? extends CoreInstance> values = ImportStub.withImportStubByPasses(ListHelper.wrapListIterable(instance._valuesCoreInstance()), processorSupport);
         if (values.isEmpty() || Measure.isUnitInstance(instance, processorSupport))
         {
             GenericTypeTraceability.addTraceForEmptyInstanceValueGenericType(instance, repository, processorSupport);
         }
         else
         {
-            int i = 0;
-            for (CoreInstance value : values)
+            values.forEachWithIndex((value, i) ->
             {
                 //TODO use java instanceof operator once we sort out issue PURE-3418 with Path object being SimpleCoreInstance
                 if (Instance.instanceOf(value, M3Paths.PackageableElement, processorSupport))
                 {
                     addReferenceUsage(instance, value, M3Properties.values, i, repository, processorSupport);
                 }
-                i++;
-            }
+            });
         }
     }
 
@@ -208,18 +205,11 @@ public class InstanceValueProcessor extends Processor<InstanceValue>
     {
         if (instanceValue.getValueForMetaPropertyToOne(M3Properties.genericType) == null)
         {
-            MutableList<CoreInstance> genericTypeSet = FastList.newList(values.size());
-
-            for (CoreInstance instance : values)
+            MutableList<CoreInstance> genericTypeSet = values.collect(instance ->
             {
-                // We check for ValueSpecification because we may have a collection(*) of ValueSpecification (InstanceValue, etc...)
                 CoreInstance genericType = getGenericType(instance, isExecutable, processorSupport);
-                if (!GenericType.isGenericTypeConcrete(genericType, processorSupport))
-                {
-                    genericType = Type.wrapGenericType(processorSupport.type_TopType(), processorSupport);
-                }
-                genericTypeSet.add(genericType);
-            }
+                return GenericType.isGenericTypeConcrete(genericType) ? genericType : Type.wrapGenericType(processorSupport.type_TopType(), processorSupport);
+            }, Lists.mutable.ofInitialCapacity(values.size()));
 
             CoreInstance commonGenericType = GenericType.findBestCommonCovariantNonFunctionTypeGenericType(genericTypeSet, knownMostGeneralGenericTypeBound, instanceValue.getSourceInformation(), processorSupport);
             Instance.setValueForProperty(instanceValue, M3Properties.genericType, commonGenericType, processorSupport);
@@ -230,5 +220,4 @@ public class InstanceValueProcessor extends Processor<InstanceValue>
             Instance.addValueToProperty(instanceValue, M3Properties.multiplicity, Multiplicity.newMultiplicity(size, processorSupport), processorSupport);
         }
     }
-
 }

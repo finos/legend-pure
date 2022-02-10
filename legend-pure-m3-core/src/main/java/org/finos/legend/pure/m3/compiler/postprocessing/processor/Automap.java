@@ -17,41 +17,42 @@ package org.finos.legend.pure.m3.compiler.postprocessing.processor;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-public class Automap {
-
+public class Automap
+{
     public static final String AUTOMAP_LAMBDA_VARIABLE_NAME = "v_automap";
 
-    public static CoreInstance getAutoMapExpressionSequence(CoreInstance functionExpression){
-        CoreInstance autoMapExpressionSequence = null;
-        CoreInstance funcName = functionExpression.getValueForMetaPropertyToOne(M3Properties.functionName);
-        if (funcName != null && "map".equals(funcName.getName())) {
+    public static CoreInstance getAutoMapExpressionSequence(CoreInstance functionExpression)
+    {
+        if ("map".equals(PrimitiveUtilities.getStringValue(functionExpression.getValueForMetaPropertyToOne(M3Properties.functionName), null)))
+        {
             ListIterable<? extends CoreInstance> paramVals = functionExpression.getValueForMetaPropertyToMany(M3Properties.parametersValues);
-            if (!Iterate.isEmpty(paramVals) && paramVals.size() == 2) {
+            if ((paramVals != null) && (paramVals.size() == 2))
+            {
                 CoreInstance mapParam2 = paramVals.get(1);
-
                 ListIterable<? extends CoreInstance> values = mapParam2.getValueForMetaPropertyToMany(M3Properties.values);
-
-                if (!Iterate.isEmpty(values)) {
+                if (Iterate.notEmpty(values))
+                {
                     CoreInstance possibleLambda = values.get(0);
                     ListIterable<? extends CoreInstance> expressionSeq = possibleLambda.getValueForMetaPropertyToMany(M3Properties.expressionSequence);
-
-                    if (!Iterate.isEmpty(expressionSeq)) {
-                        CoreInstance possiblePropertySfe = expressionSeq.getFirst();
-
+                    if (Iterate.notEmpty(expressionSeq))
+                    {
+                        CoreInstance possiblePropertySfe = expressionSeq.get(0);
                         ListIterable<? extends CoreInstance> possiblePropertySfeParams = possiblePropertySfe.getValueForMetaPropertyToMany(M3Properties.parametersValues);
-                        if (!Iterate.isEmpty(possiblePropertySfeParams)) {
-                            CoreInstance possibleLambdaVarName = possiblePropertySfeParams.getFirst().getValueForMetaPropertyToOne(M3Properties.name);
-                            if (!(possibleLambdaVarName == null) && AUTOMAP_LAMBDA_VARIABLE_NAME.equals(possibleLambdaVarName.getName())) {
+                        if (Iterate.notEmpty(possiblePropertySfeParams))
+                        {
+                            CoreInstance possibleLambdaVarName = possiblePropertySfeParams.get(0).getValueForMetaPropertyToOne(M3Properties.name);
+                            if (AUTOMAP_LAMBDA_VARIABLE_NAME.equals(PrimitiveUtilities.getStringValue(possibleLambdaVarName, null)))
+                            {
                                 return possiblePropertySfe;
                             }
-
                         }
                     }
                 }
             }
         }
-        return autoMapExpressionSequence;
+        return null;
     }
 }

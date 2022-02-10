@@ -14,43 +14,14 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 
 public class GeneratedMilestonedProperties
 {
-    static final Function<GeneratedMilestonedProperties, ListIterable<AbstractProperty<?>>> GET_QUALIFIEDPROPERTIES = new Function<GeneratedMilestonedProperties, ListIterable<AbstractProperty<?>>>()
-    {
-        @Override
-        public ListIterable<AbstractProperty<?>> valueOf(GeneratedMilestonedProperties generatedMilestonedProperties)
-        {
-            return generatedMilestonedProperties.getQualifiedProperties();
-        }
-    };
-
-    static final Function<GeneratedMilestonedProperties, AbstractProperty<?>> GET_EDGEPOINTPROPERTY = new Function<GeneratedMilestonedProperties, AbstractProperty<?>>()
-    {
-        @Override
-        public AbstractProperty<?> valueOf(GeneratedMilestonedProperties generatedMilestonedProperties)
-        {
-            return generatedMilestonedProperties.getEdgePointProperty();
-        }
-    };
-
-    static final Function<GeneratedMilestonedProperties, Property<?, ?>> GET_SOURCEMILESTONEDPROPERTY = new Function<GeneratedMilestonedProperties, Property<?, ?>>()
-    {
-        @Override
-        public Property<?, ?> valueOf(GeneratedMilestonedProperties generatedMilestonedProperties)
-        {
-            return generatedMilestonedProperties.getSourceMilestonedProperty();
-        }
-    };
-
     private final Property<?, ?> sourceMilestonedProperty;
     private final MutableList<AbstractProperty<?>> qualifiedProperties = Lists.mutable.empty();
     private AbstractProperty<?> edgePointProperty;
@@ -60,19 +31,7 @@ public class GeneratedMilestonedProperties
         this.sourceMilestonedProperty = sourceMilestonedProperty;
     }
 
-    /*public CoreInstance getQualifiedPropertyWithArg(ProcessorSupport processorSupport)
-    {
-        for (CoreInstance qualifiedProperty : this.qualifiedProperties)
-        {
-            if (MilestoningFunctions.isGeneratedQualifiedProperty(qualifiedProperty, true, res[processorSupport))
-            {
-                return qualifiedProperty;
-            }
-        }
-        return null;
-    }*/
-
-    void addQualifiedProperties(Iterable<AbstractProperty<?>> qualifiedProperties)
+    void addQualifiedProperties(Iterable<? extends AbstractProperty<?>> qualifiedProperties)
     {
         this.qualifiedProperties.addAllIterable(qualifiedProperties);
     }
@@ -104,7 +63,7 @@ public class GeneratedMilestonedProperties
 
     public ListIterable<AbstractProperty<?>> getAllGeneratedProperties()
     {
-        MutableList<AbstractProperty<?>> allGeneratedProperties = FastList.newList(this.qualifiedProperties.size() + 1);
+        MutableList<AbstractProperty<?>> allGeneratedProperties = Lists.mutable.ofInitialCapacity(this.qualifiedProperties.size() + 1);
         if (this.edgePointProperty != null)
         {
             allGeneratedProperties.add(this.edgePointProperty);
