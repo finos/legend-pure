@@ -424,7 +424,12 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForPrope
    let inlinedGraphTree          = $inlinedPropertyTree->propertyTreeToGraphFetchTree($owner);
    let inlinedPropertyGraphTrees = $inlinedGraphTree.subTrees->cast(@PropertyGraphFetchTree);
 
-   let withSubTypes        = $inlinedPropertyGraphTrees->concatenate($inlinedPropertyGraphTrees->map(pgft | $setClasses->map(sc | if($sc->getAllTypeGeneralisationsExcluded()->contains($pgft.property.genericType.rawType->toOne()), | ^$pgft(subType=$sc->cast(@Class<Any>)), | []))));
+   let withSubTypes        = $inlinedPropertyGraphTrees->concatenate($inlinedPropertyGraphTrees->map(pgft | let appendAtPath = $propertyPaths.current->filter(path| $path.values->size() > 1);
+                                                                                                            if($appendAtPath->isEmpty(),
+                                                                                                               | $setClasses->map(sc | if($sc->getAllTypeGeneralisationsExcluded()->contains($pgft.property.genericType.rawType->toOne()), | ^$pgft(subType=$sc->cast(@Class<Any>)), | [])),
+                                                                                                               | $pgft->getSubTreeNodesAtPath(list($appendAtPath.values->tail()), $setClasses->cast(@Class<Any>), $extensions)
+                                                                                                            );
+                                                                                                     ));
 
    let srcNodeProperties   = $withSubTypes->filter(p | $owner->getAllTypeGeneralisations()->contains($p.property->meta::pure::functions::meta::ownerClass()));
    let withFoundProperties = $srcNode->addSubTrees($srcNodeProperties);
@@ -448,6 +453,20 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForPrope
    if($isPropertyTemporalMilestoned,
       | ^$withQPsRecorded(subTrees=$withQPsRecorded.subTrees->map(st| $st->switchToMilestoneProperties($tgtPgft.parameters->evaluateAndDeactivate()))),
       | $withQPsRecorded
+   );
+}
+
+function <<access.private>> meta::pure::graphFetch::getSubTreeNodesAtPath(srcNode:PropertyGraphFetchTree[1], path:List<PropertyPathNode>[1], setClasses: Class<Any>[*], extensions:meta::pure::router::extension::RouterExtension[*]): PropertyGraphFetchTree[*]
+{
+   let head = $path.values->at(0);
+   let tail = $path.values->tail();
+
+   let requiredSubTree = $srcNode.subTrees->cast(@PropertyGraphFetchTree)->filter(st|$st.property == $head.property);
+   if($tail->isEmpty(),
+      | let updatedSubTrees = $requiredSubTree->map(rst | $setClasses->map(sc | if($sc->getAllTypeGeneralisationsExcluded()->contains($rst.property.genericType.rawType->toOne()), | ^$rst(subType=$sc->cast(@Class<Any>)), | [])));
+        $updatedSubTrees->map(ust | ^$srcNode(subTrees=$srcNode.subTrees->cast(@PropertyGraphFetchTree)->map(st|if($st.property == $head.property, |$ust, |$st))));,
+      | let updatedSubTrees = $requiredSubTree->map(rst | $rst->getSubTreeNodesAtPath(list($tail), $setClasses, $extensions));
+        $updatedSubTrees->map(ust | ^$srcNode(subTrees=$srcNode.subTrees->cast(@PropertyGraphFetchTree)->map(st|if($st.property == $head.property, |$ust, |$st))));
    );
 }
 
