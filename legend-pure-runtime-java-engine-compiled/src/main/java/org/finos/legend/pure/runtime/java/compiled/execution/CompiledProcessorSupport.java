@@ -24,6 +24,7 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.SetIterable;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.BaseCoreInstance;
+import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionAccessor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enumeration;
@@ -34,13 +35,12 @@ import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
-import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.function.Function;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
@@ -81,7 +81,7 @@ public class CompiledProcessorSupport implements ProcessorSupport
     {
         if (object instanceof ReflectiveCoreInstance)
         {
-            if (ModelRepository.PRIMITIVE_TYPE_NAMES.contains(typeName))
+            if (PrimitiveUtilities.isPrimitiveTypeName(typeName))
             {
                 return false;
             }
@@ -241,12 +241,10 @@ public class CompiledProcessorSupport implements ProcessorSupport
     @Override
     public CoreInstance newGenericType(SourceInformation sourceInformation, CoreInstance source, boolean inferred)
     {
+        String className = inferred ? FullJavaPaths.InferredGenericType_Impl : FullJavaPaths.GenericType_Impl;
         try
         {
-            return (CoreInstance) this.globalClassLoader.loadClass(
-                            inferred ? FullJavaPaths.InferredGenericType_Impl :
-                                    FullJavaPaths.GenericType_Impl)
-                    .getConstructor(String.class).newInstance("id");
+            return (CoreInstance) this.globalClassLoader.loadClass(className).getConstructor(String.class).newInstance("id");
         }
         catch (ReflectiveOperationException e)
         {
@@ -255,70 +253,108 @@ public class CompiledProcessorSupport implements ProcessorSupport
     }
 
     @Override
-    public CoreInstance package_getByUserPath(final String path)
+    public CoreInstance package_getByUserPath(String path)
     {
-        CoreInstance element = null;
-        try
-        {
-            if (ModelRepository.PRIMITIVE_TYPE_NAMES.contains(path) || M3Paths.Number.equals(path))
-            {
-                element = this.metadataAccessor.getPrimitiveType(path);
-            }
-            else
-            {
-                String fullSystemPath = M3Paths.Package.equals(path) ? path : "Root::" + path;
-                element = this.metadataAccessor.getClass(fullSystemPath);
-            }
-
-            //todo check for other enumerations and other packageable elements
-        }
-        catch (Throwable t)
-        {
-            //todo - change metadata to not throw
-            //Ignore
-        }
-
-        if (element == null)
-        {
-            //todo - should we cache this in compiled ?
-            element = _Package.getByUserPath(path, this);
-        }
-
-        return element;
-    }
-
-    @Override
-    public CoreInstance repository_getTopLevel(String root)
-    {
-        if (M3Paths.Root.equals(root))
+        // Check top level elements
+        if (M3Paths.Root.equals(path) || "::".equals(path))
         {
             return this.metadataAccessor.getPackage(M3Paths.Root);
         }
-        if (M3Paths.Package.equals(root))
+        if (M3Paths.Package.equals(path))
         {
             return this.metadataAccessor.getClass(M3Paths.Package);
         }
-        if (ModelRepository.PRIMITIVE_TYPE_NAMES.contains(root) || M3Paths.Number.equals(root))
+        if (PrimitiveUtilities.isPrimitiveTypeName(path))
         {
-            return this.metadataAccessor.getPrimitiveType(root);
+            return this.metadataAccessor.getPrimitiveType(path);
         }
-        throw new RuntimeException("Could not find top level element: " + root);
+
+        int lastColon = path.lastIndexOf(':');
+        if (lastColon == -1)
+        {
+            // An element in Root - probably a package
+            try
+            {
+                CoreInstance element = this.metadataAccessor.getPackage(M3Paths.Root + "::" + path);
+                if (element != null)
+                {
+                    return element;
+                }
+            }
+            catch (Exception ignore)
+            {
+                // Perhaps it's not a package? Fall back to general method
+            }
+
+            // Get the Root package, then search its children
+            Package pkg = this.metadataAccessor.getPackage(M3Paths.Root);
+            return pkg._children().detect(c -> path.equals(c.getName()));
+        }
+
+        // Perhaps the element is a class?
+        try
+        {
+            CoreInstance element = this.metadataAccessor.getClass(M3Paths.Root + "::" + path);
+            if (element != null)
+            {
+                return element;
+            }
+        }
+        catch (Exception ignore)
+        {
+            // Perhaps it's not a class? Fall back to general method
+        }
+
+        // Get the element's package, then search in the package
+        Package pkg;
+        try
+        {
+            pkg = this.metadataAccessor.getPackage(M3Paths.Root + "::" + path.substring(0, lastColon - 1));
+        }
+        catch (Exception ignore)
+        {
+            pkg = null;
+        }
+        if (pkg == null)
+        {
+            // Package doesn't exist, so the element
+            return null;
+        }
+
+        // Search the children of the package
+        String name = path.substring(lastColon + 1);
+        return pkg._children().detect(c -> name.equals(c.getName()));
+    }
+
+    @Override
+    public CoreInstance repository_getTopLevel(String name)
+    {
+        if (M3Paths.Root.equals(name))
+        {
+            return this.metadataAccessor.getPackage(M3Paths.Root);
+        }
+        if (M3Paths.Package.equals(name))
+        {
+            return this.metadataAccessor.getClass(M3Paths.Package);
+        }
+        if (PrimitiveUtilities.isPrimitiveTypeName(name))
+        {
+            return this.metadataAccessor.getPrimitiveType(name);
+        }
+        throw new RuntimeException("Could not find top level element: " + name);
     }
 
     @Override
     public CoreInstance newEphemeralAnonymousCoreInstance(String type)
     {
+        if (PrimitiveUtilities.isPrimitiveTypeName(type))
+        {
+            return new ValCoreInstance(null, type);
+        }
         try
         {
-            if (ModelRepository.PRIMITIVE_TYPE_NAMES.contains(type))
-            {
-                return new ValCoreInstance(null, type);
-            }
-            else
-            {
-                String className = JavaPackageAndImportBuilder.buildPackageFromUserPath(type) + "." + "Root_" + type.replace("::", "_") + "_Impl";
-                return (CoreInstance) this.globalClassLoader.loadClass(className).getConstructor(String.class).newInstance("NO_ID");
-            }
+            String className = JavaPackageAndImportBuilder.buildPackageFromUserPath(type) + "." + "Root_" + type.replace("::", "_") + "_Impl";
+            return (CoreInstance) this.globalClassLoader.loadClass(className).getConstructor(String.class).newInstance("NO_ID");
         }
         catch (ReflectiveOperationException e)
         {
@@ -329,12 +365,12 @@ public class CompiledProcessorSupport implements ProcessorSupport
     @Override
     public CoreInstance newCoreInstance(String name, String typeName, SourceInformation sourceInformation)
     {
+        if (PrimitiveUtilities.isPrimitiveTypeName(typeName))
+        {
+            return new ValCoreInstance(name, typeName);
+        }
         try
         {
-            if (ModelRepository.PRIMITIVE_TYPE_NAMES.contains(typeName))
-            {
-                return new ValCoreInstance(name, typeName);
-            }
             //When invoked from newCoreInstance(name, classifier, sourceInformation, repository), typeName already begins with Root
             String className = (typeName.startsWith("Root") ? JavaPackageAndImportBuilder.buildPackageFromSystemPath(typeName) + "." + typeName + "_Impl" :
                     JavaPackageAndImportBuilder.buildPackageFromUserPath(typeName) + "." + "Root_" + typeName.replace("::", "_") + "_Impl");
@@ -350,12 +386,6 @@ public class CompiledProcessorSupport implements ProcessorSupport
     public CoreInstance newCoreInstance(String name, CoreInstance classifier, SourceInformation sourceInformation)
     {
         return newCoreInstance(name, fullName(classifier), sourceInformation);
-    }
-
-
-    private CoreInstance getPrimitiveType(String type)
-    {
-        return this.metadataAccessor.getPrimitiveType(type);
     }
 
     @Override

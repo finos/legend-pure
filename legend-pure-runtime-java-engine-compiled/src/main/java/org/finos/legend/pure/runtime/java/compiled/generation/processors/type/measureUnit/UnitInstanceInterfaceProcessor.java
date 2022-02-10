@@ -14,10 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.type.measureUnit;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -40,13 +38,13 @@ public class UnitInstanceInterfaceProcessor
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;\n" +
             "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n";
 
-    public static StringJavaSource buildInterface(final String _package, final String imports, final CoreInstance classGenericType, final ProcessorContext processorContext, final ProcessorSupport processorSupport, final boolean useJavaInheritance)
+    public static StringJavaSource buildInterface(String _package, String imports, CoreInstance classGenericType, ProcessorContext processorContext, ProcessorSupport processorSupport, boolean useJavaInheritance)
     {
-        final CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        final String interfaceName = UnitProcessor.convertToJavaCompatibleClassName(TypeProcessor.javaInterfaceForType(unit)) + "_Instance";
-        final String typeParams = UnitProcessor.typeParameters(unit);
+        CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
+        String interfaceName = UnitProcessor.convertToJavaCompatibleClassName(TypeProcessor.javaInterfaceForType(unit)) + "_Instance";
+        String typeParams = UnitProcessor.typeParameters(unit);
         String typeParamsString = typeParams.isEmpty() ? "" : "<" + typeParams + ">";
-        final String interfaceNamePlusTypeParams = interfaceName + typeParamsString;
+        String interfaceNamePlusTypeParams = interfaceName + typeParamsString;
 
         boolean isGetterOverride = M3Paths.GetterOverride.equals(PackageableElement.getUserPathForPackageableElement(unit));
 
@@ -70,26 +68,16 @@ public class UnitInstanceInterfaceProcessor
                 ("    " +  UnitProcessor.convertToJavaCompatibleClassName(TypeProcessor.javaInterfaceForType(unit)) + " _unit();\n") +
 
                 "}");
-
     }
 
-    static ListIterable<String> getAllGeneralizations(final ProcessorContext processorContext, ProcessorSupport processorSupport, CoreInstance _class, String suffix)
+    static ListIterable<String> getAllGeneralizations(ProcessorContext processorContext, ProcessorSupport processorSupport, CoreInstance _class, String suffix)
     {
-        MutableList<String> allGeneralizations = FastList.newList();
-        for (CoreInstance oneGeneralization : Instance.getValueForMetaPropertyToManyResolved(_class, M3Properties.generalizations, processorContext.getSupport()))
+        return Instance.getValueForMetaPropertyToManyResolved(_class, M3Properties.generalizations, processorContext.getSupport()).collect(oneGeneralization ->
         {
             CoreInstance generalGenericType = Instance.getValueForMetaPropertyToOneResolved(oneGeneralization, M3Properties.general, processorSupport);
-            String typeArgs = generalGenericType.getValueForMetaPropertyToMany(M3Properties.typeArguments).collect(new Function<CoreInstance, String>()
-            {
-                @Override
-                public String valueOf(CoreInstance coreInstance)
-                {
-                    return TypeProcessor.typeToJavaObjectSingle(coreInstance, true, processorContext.getSupport());
-                }
-            }).makeString(",");
-            allGeneralizations.add(typeName(processorSupport, suffix, generalGenericType, typeArgs));
-        }
-        return allGeneralizations;
+            String typeArgs = generalGenericType.getValueForMetaPropertyToMany(M3Properties.typeArguments).collect(i -> TypeProcessor.typeToJavaObjectSingle(i, true, processorContext.getSupport())).makeString(",");
+            return typeName(processorSupport, suffix, generalGenericType, typeArgs);
+        }, Lists.mutable.empty());
     }
 
     private static String typeName(ProcessorSupport processorSupport, String suffix, CoreInstance generalGenericType, String typeArgs)

@@ -20,7 +20,6 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 class MilestoningPropertyCodeBlockMetaData
 {
-
     final String propertyName;
     final String edgepointPropertyName;
     final String rangePropertyName;
@@ -28,47 +27,55 @@ class MilestoningPropertyCodeBlockMetaData
     final Object multiplicityFunctionCall;
     final SourceInformation propertySourceInformation;
     final SourceInformation propertyGenericTypeSourceInformation;
-    final CoreInstance property;
+    final AbstractProperty<?> property;
     final String returnType;
     final String possiblyOverridenMultiplicity;
 
-    MilestoningPropertyCodeBlockMetaData(CoreInstance property, String returnType, String multiplicity)
+    MilestoningPropertyCodeBlockMetaData(AbstractProperty<?> property, String returnType, String multiplicity)
     {
         this.property = property;
         this.propertyName = property.getName();
-        this.edgepointPropertyName = MilestoningFunctions.getEdgePointPropertyName(propertyName);
+        this.edgepointPropertyName = MilestoningFunctions.getEdgePointPropertyName(this.propertyName);
         this.rangePropertyName = MilestoningFunctions.getRangePropertyName(this.propertyName);
         this.varName = MilestoningFunctions.MILESTONE_LAMBDA_VARIABLE_NAME;
         this.multiplicityFunctionCall = getMultiplicityFunctionCall(multiplicity);
         this.possiblyOverridenMultiplicity = possiblyApplyDefaultReturnMultiplicity(multiplicity);
         this.propertySourceInformation = property.getSourceInformation();
-        this.propertyGenericTypeSourceInformation = property instanceof AbstractProperty ? ((AbstractProperty)property)._genericType().getSourceInformation() : null;
+        this.propertyGenericTypeSourceInformation = property._genericType().getSourceInformation();
         this.returnType = returnType;
     }
 
-    String possiblyApplyDefaultReturnMultiplicity(String multiplicity)
+    MilestoningPropertyCodeBlockMetaData(CoreInstance property, String returnType, String multiplicity)
     {
-        String appliedMultiplicityFunc = getMultiplicityFunctionCall(multiplicity);
-        return appliedMultiplicityFunc.equals("") ? "*" : multiplicity;
+        this((AbstractProperty<?>) property, returnType, multiplicity);
     }
 
-    String getMultiplicityFunctionCall(String multiplicity)
+    private String possiblyApplyDefaultReturnMultiplicity(String multiplicity)
     {
-        String optionalFirstElementCall;
+        String appliedMultiplicityFunc = getMultiplicityFunctionCall(multiplicity);
+        return appliedMultiplicityFunc.isEmpty() ? "*" : multiplicity;
+    }
+
+    private String getMultiplicityFunctionCall(String multiplicity)
+    {
         switch (multiplicity)
         {
             case "1":
-                optionalFirstElementCall = "->toOne()";
-                break;
+            {
+                return "->toOne()";
+            }
             case "0..1":
-                optionalFirstElementCall = "->first()";
-                break;
+            {
+                return "->first()";
+            }
             case "1..*":
-                optionalFirstElementCall = "->toOneMany()";
-                break;
+            {
+                return "->toOneMany()";
+            }
             default:
-                optionalFirstElementCall = "";
+            {
+                return "";
+            }
         }
-        return optionalFirstElementCall;
     }
 }

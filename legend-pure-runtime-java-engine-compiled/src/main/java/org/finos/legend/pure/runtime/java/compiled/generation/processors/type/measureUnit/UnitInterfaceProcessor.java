@@ -29,24 +29,24 @@ public class UnitInterfaceProcessor
     private static final String IMPORTS = "import org.eclipse.collections.api.RichIterable;\n" +
             "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.*;\n" +
-            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n"+
-            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n"+
+            "import org.finos.legend.pure.runtime.java.compiled.execution.*;\n" +
+            "import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.*;\n" +
             "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.defended.*;" +
             "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n";
 
-    public static StringJavaSource buildInterface(final String _package, final String imports, final CoreInstance classGenericType, final ProcessorContext processorContext, final ProcessorSupport processorSupport, final boolean useJavaInheritance)
+    public static StringJavaSource buildInterface(String _package, String imports, CoreInstance classGenericType, ProcessorContext processorContext, ProcessorSupport processorSupport, boolean useJavaInheritance)
     {
-        final CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
-        final String interfaceName = UnitProcessor.convertToJavaCompatibleClassName(TypeProcessor.javaInterfaceForType(unit));
-        final String typeParams = UnitProcessor.typeParameters(unit);
+        CoreInstance unit = Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport);
+        String interfaceName = UnitProcessor.convertToJavaCompatibleClassName(TypeProcessor.javaInterfaceForType(unit));
+        String typeParams = UnitProcessor.typeParameters(unit);
         String typeParamsString = typeParams.isEmpty() ? "" : "<" + typeParams + ">";
-        final String interfaceNamePlusTypeParams = interfaceName + typeParamsString;
+        String interfaceNamePlusTypeParams = interfaceName + typeParamsString;
 
         boolean isGetterOverride = M3Paths.GetterOverride.equals(PackageableElement.getUserPathForPackageableElement(unit));
 
-        CoreInstance measure = Instance.getValueForMetaPropertyToOneResolved(unit, "measure", processorSupport);
+        CoreInstance measure = Instance.getValueForMetaPropertyToOneResolved(unit, M3Properties.measure, processorSupport);
 
         return StringJavaSource.newStringJavaSource(_package, interfaceName, IMPORTS + imports + "public interface " + interfaceNamePlusTypeParams + " extends CoreInstance" + ", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit" + "\n{\n" +
                 (isGetterOverride ? "    " + interfaceNamePlusTypeParams + "  __getterOverrideToOneExec(PureFunction2Wrapper f2);\n" +
@@ -57,6 +57,5 @@ public class UnitInterfaceProcessor
                 TypeProcessor.javaInterfaceForType(measure) + " _measure();\n" +
 
                 "}");
-
     }
 }

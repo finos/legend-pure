@@ -15,12 +15,9 @@
 package org.finos.legend.pure.m3.compiler.postprocessing.processor;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.compiler.postprocessing.inference.TypeInference;
@@ -29,17 +26,18 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Lambda
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
-import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
-public class LambdaFunctionProcessor implements MatchRunner<LambdaFunction>
+import java.util.function.Consumer;
+
+public class LambdaFunctionProcessor extends Processor<LambdaFunction<?>>
 {
     @Override
     public String getClassName()
@@ -48,98 +46,83 @@ public class LambdaFunctionProcessor implements MatchRunner<LambdaFunction>
     }
 
     @Override
-    public void run(LambdaFunction lambda, MatcherState state, Matcher matcher, ModelRepository repository, Context context) throws PureCompilationException
+    public void process(LambdaFunction<?> lambda, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
         process(lambda, state, matcher, repository);
     }
 
-    public static void process(LambdaFunction lambda, MatcherState state, Matcher matcher, ModelRepository repository) throws PureCompilationException
+    @Override
+    public void populateReferenceUsages(LambdaFunction<?> instance, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        if (TypeInference.canProcessLambda(lambda, (ProcessorState)state, state.getProcessorSupport()))
+    }
+
+    public static void process(LambdaFunction<?> lambda, ProcessorState state, Matcher matcher, ModelRepository repository)
+    {
+        process(lambda, state);
+    }
+
+    public static void process(LambdaFunction<?> lambda, ProcessorState state)
+    {
+        if (TypeInference.canProcessLambda(lambda, state, state.getProcessorSupport()))
         {
-            MutableSet<String> vars = Sets.mutable.empty();
-            MutableSet<String> params = Sets.mutable.empty();
-            processValueSpecification(lambda, params, vars, state.getProcessorSupport(), repository);
+            processLambda(lambda, state.getProcessorSupport());
         }
     }
 
-    private static void processValueSpecification(CoreInstance valueSpecification, MutableSet<String> params, MutableSet<String> vars, ProcessorSupport processorSupport, ModelRepository modelRepository)
+    private static RichIterable<? extends String> processLambda(LambdaFunction<?> lambda, ProcessorSupport processorSupport)
+    {
+        RichIterable<? extends String> currentOpenVars = lambda._openVariables();
+        if (currentOpenVars.isEmpty())
+        {
+            // Variables from the Lambda definition
+            FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(lambda);
+            MutableSet<String> declaredVars = functionType._parameters().collect(VariableExpression::_name, Sets.mutable.empty());
+
+            // Variables used in the Lambda
+            MutableSet<String> otherVars = Sets.mutable.empty();
+            lambda._expressionSequence().forEach(expression -> processValue(expression, declaredVars::add, otherVars::add, processorSupport));
+
+            // Compute open variables
+            otherVars.removeAll(declaredVars);
+            if (otherVars.notEmpty())
+            {
+                // Add to Lambda (sort these so that they are deterministically ordered which is easier for graph validation tests)
+                MutableList<String> openVars = otherVars.toSortedList();
+                lambda._openVariables(openVars);
+                return openVars;
+            }
+        }
+        return currentOpenVars;
+    }
+
+    private static void processValue(CoreInstance valueSpecification, Consumer<String> declaredVarConsumer, Consumer<String> otherVarConsumer, ProcessorSupport processorSupport)
     {
         if (valueSpecification instanceof FunctionExpression)
         {
-            if (((FunctionExpression)valueSpecification)._functionName() != null && "letFunction".equals(((FunctionExpression)valueSpecification)._functionName()))
+            FunctionExpression functionExpression = (FunctionExpression) valueSpecification;
+            if ("letFunction".equals(functionExpression._functionName()))
             {
-                params.add(((InstanceValue)((FunctionExpression)valueSpecification)._parametersValues().toList().get(0))._valuesCoreInstance().toList().get(0).getName());
+                InstanceValue firstParamValue = (InstanceValue) ListHelper.wrapListIterable(functionExpression._parametersValues()).get(0);
+                String letVarName = PrimitiveUtilities.getStringValue(ListHelper.wrapListIterable(firstParamValue._valuesCoreInstance()).get(0));
+                declaredVarConsumer.accept(letVarName);
             }
-            for (ValueSpecification param : ((FunctionExpression)valueSpecification)._parametersValues())
-            {
-                processValueSpecification(param, params, vars, processorSupport, modelRepository);
-            }
+            functionExpression._parametersValues().forEach(p -> processValue(p, declaredVarConsumer, otherVarConsumer, processorSupport));
         }
         else if (valueSpecification instanceof InstanceValue)
         {
-            for (CoreInstance val : ((InstanceValue)valueSpecification)._valuesCoreInstance())
-            {
-                processValueSpecification(val, params, vars, processorSupport, modelRepository);
-            }
+            ((InstanceValue) valueSpecification)._valuesCoreInstance().forEach(v -> processValue(v, declaredVarConsumer, otherVarConsumer, processorSupport));
         }
         else if (valueSpecification instanceof KeyExpression)
         {
-            processValueSpecification(((KeyExpression)valueSpecification)._expression(), params, vars, processorSupport, modelRepository);
+            processValue(((KeyExpression) valueSpecification)._expression(), declaredVarConsumer, otherVarConsumer, processorSupport);
         }
         else if (valueSpecification instanceof LambdaFunction)
         {
-            vars.addAllIterable(processLambda((LambdaFunction<CoreInstance>) valueSpecification, processorSupport, modelRepository));
+            processLambda((LambdaFunction<?>) valueSpecification, processorSupport).forEach(otherVarConsumer);
         }
         else if (valueSpecification instanceof VariableExpression)
         {
-            vars.add(((VariableExpression)valueSpecification)._name());
-        }
-    }
-
-    private static RichIterable<String> processLambda(LambdaFunction<CoreInstance> lambda, ProcessorSupport processorSupport, ModelRepository repository)
-    {
-        if (lambda._openVariables().isEmpty())
-        {
-            MutableSet<String> vars = Sets.mutable.empty();
-
-            // Variables from the Lambda definition
-            FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(lambda);
-            RichIterable<? extends VariableExpression> parameters = functionType._parameters();
-            MutableSet<String> paramNames = UnifiedSet.newSet(parameters.size());
-            for (VariableExpression parameter : parameters)
-            {
-                paramNames.add(parameter._name());
-            }
-
-            // Variables used in the Lambda
-            for (ValueSpecification expression : lambda._expressionSequence())
-            {
-                processValueSpecification(expression, paramNames, vars, processorSupport, repository);
-            }
-
-            // Intersection
-            MutableList<String> openVars = FastList.newList(vars.size());
-            for (String var : vars)
-            {
-                if (!paramNames.contains(var))
-                {
-                    openVars.add(var);
-                }
-            }
-
-            // Add to Lambda
-            if (openVars.notEmpty())
-            {
-                //sort these so that they are deterministically ordered which is easier for graph validation tests
-                lambda._openVariables(openVars.sortThis());
-            }
-
-            return openVars;
-        }
-        else
-        {
-            return (RichIterable<String>)lambda._openVariables();
+            otherVarConsumer.accept(((VariableExpression) valueSpecification)._name());
         }
     }
 }

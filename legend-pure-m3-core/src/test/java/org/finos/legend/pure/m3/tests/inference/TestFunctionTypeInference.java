@@ -29,7 +29,8 @@ import org.junit.*;
 public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
 
         //set observer
@@ -37,13 +38,16 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("inferenceTest.pure");
 
         try
         {
             runtime.compile();
-        } catch (PureCompilationException e) {
+        }
+        catch (PureCompilationException e)
+        {
             setUp();
         }
     }
@@ -61,13 +65,13 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                                 "function f<T>(s:T[*]):MyClass<T>[1]{^MyClass<T>(value='ok')}\n" +
                                 "function test():Any[*]{f(['a','b']).value+'ee';}\n");
 
-        this.runtime.delete("inferenceTest.pure");
+        runtime.delete("inferenceTest.pure");
 
         compileTestSource("inferenceTest.pure", "Class MyClass<Z>{value:Z[1];}\n" +
                                 "function f<T>(s:T[*]):MyClass<T>[1]{^MyClass<T>(value='ok')}\n" +
                                 "function test():Any[*]{f([1,2]).value+3;}\n");
 
-        this.runtime.delete("inferenceTest.pure");
+        runtime.delete("inferenceTest.pure");
 
         try
         {
@@ -96,7 +100,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                                 "function pl(a:String[1], b:String[1]):String[1]{$a+$b}\n" +
                                 "function test():Any[*]{f('a')->pl('ok')}\n");
 
-        this.runtime.delete("inferenceTest.pure");
+        runtime.delete("inferenceTest.pure");
 
         try
         {
@@ -117,7 +121,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void inferMultipleParametersInLambda()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "" +
+        runtime.createInMemorySource("inferenceTest.pure", "" +
                 "Profile decision\n" +
                 "{\n" +
                 "   tags: [name, id, domainType, dataType, include];\n" +
@@ -126,26 +130,26 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                 "function <<access.private>> datamarts::dtm::domain::bdm::sapiens::impl::getTagValue(p:ElementWithTaggedValues[1], tagName:String[1]):String[1] {\n" +
                 "   $p->value4Tag($tagName, decision)->fold({t, str:String[1]|$t.value}, '');  \n" +
                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
 
     @Test
     public void inferVariableTypeOfFunctionUsedAsParameter()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "function f<T>(s:Function<{->T[1]}>[1]):T[1]{$s->eval();}\n" +
+        runtime.createInMemorySource("inferenceTest.pure", "function f<T>(s:Function<{->T[1]}>[1]):T[1]{$s->eval();}\n" +
                                 "function test():Any[*]{f(|1)+1}\n");
-        this.runtime.compile();
-        this.runtime.delete("inferenceTest.pure");
-        this.runtime.createInMemorySource("inferenceTest.pure", "function f<T>(s:Function<{->T[1]}>[1]):T[1]{$s->eval();}\n" +
+        runtime.compile();
+        runtime.delete("inferenceTest.pure");
+        runtime.createInMemorySource("inferenceTest.pure", "function f<T>(s:Function<{->T[1]}>[1]):T[1]{$s->eval();}\n" +
                                 "function test():Any[*]{f(|'1')+'1'}\n");
-        this.runtime.compile();
-        this.runtime.delete("inferenceTest.pure");
+        runtime.compile();
+        runtime.delete("inferenceTest.pure");
         try
         {
-            this.runtime.createInMemorySource("inferenceTest.pure", "function f<T>(s:Function<{->T[1]}>[1]):T[1]{$s->eval();}\n" +
+            runtime.createInMemorySource("inferenceTest.pure", "function f<T>(s:Function<{->T[1]}>[1]):T[1]{$s->eval();}\n" +
                                     "function test():Any[*]{f(|'1')+1}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -164,27 +168,27 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void inferLambdaTypeParameterUsingMultiPass()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "Class MyClass<Z>{}\n" +
+        runtime.createInMemorySource("inferenceTest.pure", "Class MyClass<Z>{}\n" +
                                 "function g<K>(f:Function<{K[1]->Boolean[1]}>[1]):MyClass<K>[1]{^MyClass<K>()}\n" +
                                 "function f<T>(s:T[*], a:MyClass<T>[1]):String[1]{'a'}\n" +
                                 "function test():Any[*]{f(['a','b'], g(t|$t->startsWith('ee')))}\n");
-        this.runtime.compile();
-        this.runtime.delete("inferenceTest.pure");
+        runtime.compile();
+        runtime.delete("inferenceTest.pure");
 
-        this.runtime.createInMemorySource("inferenceTest.pure", "Class MyClass<Z>{}\n" +
+        runtime.createInMemorySource("inferenceTest.pure", "Class MyClass<Z>{}\n" +
                                 "function g<K>(f:Function<{K[1]->Boolean[1]}>[1]):MyClass<K>[1]{^MyClass<K>()}\n" +
                                 "function f<T>(s:T[*], a:MyClass<T>[1]):String[1]{'a'}\n" +
                                 "function test():Any[*]{f([1,2], g(t|let e = $t+3; $e == 2;))}\n");
-        this.runtime.compile();
-        this.runtime.delete("inferenceTest.pure");
+        runtime.compile();
+        runtime.delete("inferenceTest.pure");
 
         try
         {
-            this.runtime.createInMemorySource("inferenceTest.pure", "Class MyClass<Z>{}\n" +
+            runtime.createInMemorySource("inferenceTest.pure", "Class MyClass<Z>{}\n" +
                                     "function g<K>(f:Function<{K[1]->Boolean[1]}>[1]):MyClass<K>[1]{^MyClass<K>()}\n" +
                                     "function f<T>(s:T[*], a:MyClass<T>[1]):String[1]{'a'}\n" +
                                     "function test():Any[*]{f(['a','b'], g(t|let e = $t+3; $e == 2;))}\n");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -201,9 +205,9 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void ensureNoCrashWhenAnyIsUsedForAFunctionType() throws Exception
+    public void ensureNoCrashWhenAnyIsUsedForAFunctionType()
     {
-        compileTestSource("inferenceTest.pure","function f<T>(a:T[*]):T[*]\n" +
+        compileTestSource("inferenceTest.pure", "function f<T>(a:T[*]):T[*]\n" +
                           "{\n" +
                           "     $a;\n" +
                           "}\n" +
@@ -219,9 +223,9 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     }
 
     @Test
-    public void ensureInferenceIsResilientEnoughToHaveFunctionsProcessedDuringFunctionExpressionProcessing() throws Exception
+    public void ensureInferenceIsResilientEnoughToHaveFunctionsProcessedDuringFunctionExpressionProcessing()
     {
-        compileTestSource("inferenceTest.pure","Class TabularDataSet{}\n" +
+        compileTestSource("inferenceTest.pure", "Class TabularDataSet{}\n" +
                           "function project<T>(set:T[*], paths:meta::pure::metamodel::path::Path<T,Any|*>[*]):TabularDataSet[1]{^TabularDataSet()}\n" +
                           "Class QueryFunctionPair extends Pair<meta::pure::metamodel::function::Function<Any>, meta::pure::metamodel::function::Function<{->String[1]}>>{}\n" +
                           "function f<T>(a:T[*]):T[*]\n" +
@@ -242,7 +246,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void inferTheTypeOfParametersOfACollectionOfLambdas() throws Exception
     {
-        this.runtime.loadAndCompile();
+        runtime.loadAndCompile();
 
         compileTestSource("inferenceTest.pure", "Class Person{age:Integer[1];}\n" +
                                 "function tt<T>(a:T[*],e:Function<{T[1]->Integer[1]}>[*]):Any[*]\n" +
@@ -253,7 +257,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                                 "{\n" +
                                 "   let f = tt([1,2,3],[f|$f+2, f|$f+4]);\n" +
                                 "}\n");
-        this.runtime.delete("inferenceTest.pure");
+        runtime.delete("inferenceTest.pure");
 
         try
         {
@@ -284,7 +288,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void ensureProperFailureWhenTheLambdaWithACollectionHaveDifferentParametersCount() throws Exception
     {
-        this.runtime.loadAndCompile();
+        runtime.loadAndCompile();
 
         try
         {
@@ -308,7 +312,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testFunctionTypeForListOfAbstractProperties()
     {
-        compileTestSource("inferenceTest.pure","function test::propByName(name:String[1]):AbstractProperty<Any>[0..1]\n" +
+        compileTestSource("inferenceTest.pure", "function test::propByName(name:String[1]):AbstractProperty<Any>[0..1]\n" +
                 "{\n" +
                 "  []\n" +
                 "}\n" +
@@ -318,17 +322,17 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                 "  [test::propByName('name1')->toOne(),\n" +
                 "   test::propByName('name2')->toOne()]\n" +
                 "}");
-        CoreInstance testFn = this.runtime.getFunction("test::testFn():Any[*]");
+        CoreInstance testFn = runtime.getFunction("test::testFn():Any[*]");
         Assert.assertNotNull(testFn);
         CoreInstance firstExpression = testFn.getValueForMetaPropertyToOne(M3Properties.expressionSequence);
         CoreInstance genericType = firstExpression.getValueForMetaPropertyToOne(M3Properties.genericType);
-        Assert.assertEquals("meta::pure::metamodel::function::property::AbstractProperty<meta::pure::metamodel::type::Any>", GenericType.print(genericType, true, this.processorSupport));
+        Assert.assertEquals("meta::pure::metamodel::function::property::AbstractProperty<meta::pure::metamodel::type::Any>", GenericType.print(genericType, true, processorSupport));
     }
 
     @Test
     public void inferTheTypeOfParametersOfACollectionOfLambdasAndFunctions()
     {
-        this.runtime.loadAndCompile();
+        runtime.loadAndCompile();
 
         compileTestSource("inferenceTest.pure", "function tt<T>(a:T[*],e:Function<{T[1]->String[1]}>[*]):Any[*]\n" +
                                 "{\n" +
@@ -343,7 +347,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                                 "   let f = tt([1,2,3],[z|let k = $z+2; $k->toString();, a_Integer_1__String_1_]);\n" +
                                 "}\n");
 
-        this.runtime.delete("inferenceTest.pure");
+        runtime.delete("inferenceTest.pure");
 
         try
         {
@@ -414,17 +418,17 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                 "Class CA<V>\n" +
                 "{\n" +
                 "}";
-        this.runtime.createInMemorySource("typeInference.pure", source);
-        this.runtime.compile();
+        runtime.createInMemorySource("typeInference.pure", source);
+        runtime.compile();
     }
 
     @Test
-    public void testIfType() throws Exception
+    public void testIfType()
     {
         try
         {
-            this.runtime.createInMemorySource("inferenceTest.pure", "function test():Any[*]{let r = if(true,|'a',|1)->toOne();$r+2;}");
-            this.runtime.compile();
+            runtime.createInMemorySource("inferenceTest.pure", "function test():Any[*]{let r = if(true,|'a',|1)->toOne();$r+2;}");
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -445,9 +449,9 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     {
         try
         {
-            this.runtime.createInMemorySource("inferenceTest.pure", "function a(a:Integer[1],b:Integer[1]):Integer[1]{$a+$b;}\n" +
+            runtime.createInMemorySource("inferenceTest.pure", "function a(a:Integer[1],b:Integer[1]):Integer[1]{$a+$b;}\n" +
                                     "function test():Any[*]{let r = if(true,|[1,2],|1);a($r,2);}");
-            this.runtime.compile();
+            runtime.compile();
             Assert.fail();
         }
         catch (Exception e)
@@ -460,9 +464,9 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
 }
 
     @Test
-    public void inferTypeParameterUpAndDownWithNestedFunctionArrayDiffAgg() throws Exception
+    public void inferTypeParameterUpAndDownWithNestedFunctionArrayDiffAgg()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "" +
+        runtime.createInMemorySource("inferenceTest.pure", "" +
                 "Class meta::pure::functions::collection::AggregateValue<A,B,C>\n" +
                 "{\n" +
                 "   mapFn : FunctionDefinition<{A[1]->B[1]}>[1];\n" +
@@ -498,24 +502,24 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                 "                  ],\n" +
                 "            ['region', 'total', 'count']);\n" +
                 "}");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void infersToOneEvaluation()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "" +
+        runtime.createInMemorySource("inferenceTest.pure", "" +
                 "function test():Integer[1]\n" +
                 "{\n" +
                 "   toOne_T_MANY__T_1_->eval([1]);\n" +
                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void infersEvalFromFunctionReference()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "" +
+        runtime.createInMemorySource("inferenceTest.pure", "" +
                 "Class Simple\n" +
                 "{\n" +
                 "}\n" +
@@ -524,13 +528,13 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                 "{\n" +
                 "   getAll_Class_1__T_MANY_->eval(Simple);\n" +
                 "}");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void infersEvalFromFunctionAsParameter()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "" +
+        runtime.createInMemorySource("inferenceTest.pure", "" +
                 "Class Simple\n" +
                 "{\n" +
                 "}\n" +
@@ -539,13 +543,13 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                 "{\n" +
                 "   getAll_Class_1__T_MANY_->eval(Simple);\n" +
                 "}");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testProperties()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "Class A{p(s:String[1]){$s}:String[1];}\n" +
+        runtime.createInMemorySource("inferenceTest.pure", "Class A{p(s:String[1]){$s}:String[1];}\n" +
                                 "native function meta::pure::functions::meta::functionType(f:Function<Any>[1]):FunctionType[1];\n" +
                                 "native function meta::pure::functions::collection::sortBy<T,U|m>(col:T[m], key:Function<{T[1]->U[1]}>[0..1]):T[m];\n" +
                                 "function filterToSimpleFunctionProperties(qualifiedProperties : QualifiedProperty<Any>[*]) : QualifiedProperty<Any>[*]\n" +
@@ -559,39 +563,39 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                                 "                                             ->sortBy(p|$p.name->toOne());\n" +
                                 "                                   $prop->map(p|$p.name);\n" +
                                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testTypePropagation()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "function f(a:Pair<String, String>[*]):String[*]{$a->filter(p|$p.first == 'name').second}");
-        this.runtime.compile();
+        runtime.createInMemorySource("inferenceTest.pure", "function f(a:Pair<String, String>[*]):String[*]{$a->filter(p|$p.first == 'name').second}");
+        runtime.compile();
     }
 
     @Test
     public void testMulPropagation()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "Class Address{name:String[1];}\n" +
+        runtime.createInMemorySource("inferenceTest.pure", "Class Address{name:String[1];}\n" +
                                 "function a():Boolean[1]\n" +
                                 "{\n" +
                                 "   let address = ^Address(name='Hoboken, NJ');\n" +
                                 "   assert('Hoboken, NJ' == {a | $a.name}->eval($address), |'');\n" +
                                 "}");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void testLambdaType()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "Class Person{lastName:String[1];}\n" +
+        runtime.createInMemorySource("inferenceTest.pure", "Class Person{lastName:String[1];}\n" +
                                 "function a():Boolean[1]\n" +
                                 "{\n" +
                                 "   let name = 'ee';\n" +
                                 "   let lambda = {|Person.all()->filter(p|$p.lastName == $name)};\n" +
                                 "   assert('name' == $lambda.openVariables, |'');\n" +
                                 "}");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
@@ -618,16 +622,16 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                 "   );   \n" +
                 "}\n");
         runtime.compile();
-        CoreInstance ci = this.runtime.getCoreInstance("funcT_T_MANY__Function_1__Pair_1_");
-        CoreInstance expressionSeq = Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.expressionSequence, this.processorSupport);
-        CoreInstance expSeqGT = Instance.getValueForMetaPropertyToOneResolved(expressionSeq, M3Properties.genericType,  this.processorSupport);
-        CoreInstance pairRT = Instance.getValueForMetaPropertyToOneResolved(expSeqGT, M3Properties.rawType, this.processorSupport);
+        CoreInstance ci = runtime.getCoreInstance("funcT_T_MANY__Function_1__Pair_1_");
+        CoreInstance expressionSeq = Instance.getValueForMetaPropertyToOneResolved(ci, M3Properties.expressionSequence, processorSupport);
+        CoreInstance expSeqGT = Instance.getValueForMetaPropertyToOneResolved(expressionSeq, M3Properties.genericType, processorSupport);
+        CoreInstance pairRT = Instance.getValueForMetaPropertyToOneResolved(expSeqGT, M3Properties.rawType, processorSupport);
         Assert.assertEquals(M3Paths.Pair, PackageableElement.getUserPathForPackageableElement(pairRT));
-        RichIterable<? extends CoreInstance> pairTAs = Instance.getValueForMetaPropertyToManyResolved(expSeqGT, M3Properties.typeArguments, this.processorSupport);
-        CoreInstance listRT = Instance.getValueForMetaPropertyToOneResolved(pairTAs.getFirst(), M3Properties.rawType, this.processorSupport);
+        RichIterable<? extends CoreInstance> pairTAs = Instance.getValueForMetaPropertyToManyResolved(expSeqGT, M3Properties.typeArguments, processorSupport);
+        CoreInstance listRT = Instance.getValueForMetaPropertyToOneResolved(pairTAs.getFirst(), M3Properties.rawType, processorSupport);
         Assert.assertNotNull(listRT);
-        CoreInstance listTA = Instance.getValueForMetaPropertyToOneResolved(pairTAs.getFirst(), M3Properties.typeArguments, this.processorSupport);
-        CoreInstance listTypeParameter = Instance.getValueForMetaPropertyToOneResolved(listTA, M3Properties.typeParameter, this.processorSupport);
+        CoreInstance listTA = Instance.getValueForMetaPropertyToOneResolved(pairTAs.getFirst(), M3Properties.typeArguments, processorSupport);
+        CoreInstance listTypeParameter = Instance.getValueForMetaPropertyToOneResolved(listTA, M3Properties.typeParameter, processorSupport);
         Assert.assertNotNull(listTypeParameter);
         Assert.assertEquals("T", listTypeParameter.getValueForMetaPropertyToOne(M3Properties.name).getName());
     }
@@ -635,7 +639,7 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testLambdasInferForDecide()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "" +
+        runtime.createInMemorySource("inferenceTest.pure", "" +
                 "Class DecisionRule<T,U|m,n>\n" +
                 "{\n" +
                 "   condition: Function<{T[m]->Boolean[1]}>[1];\n" +
@@ -661,38 +665,38 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                 "      rule(x|$x == 'Mark', x| 2)\n" +
                 "   ]);\n" +
                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
     public void ensureReturnTypeIsCorrectlyInferredForComplexNew()
     {
-        this.runtime.createInMemorySource("inferenceTest.pure", "" +
+        runtime.createInMemorySource("inferenceTest.pure", "" +
                 "Class Container { values : Any[*]; }\n" +
                 "\n" +
                 "function test<T>(value:T[1], func:Function<{T[1]->Any[*]}>[1]):List<Container>[*]\n" +
                 "{\n" +
                 "   ^List<Container>(values = $func->eval($value)->map(v|^Container(values=$v)));\n" +
                 "}\n");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
-    public void ensureNoCrashWhenSameMultiplicityTemplateNameAsParent() throws Exception
+    public void ensureNoCrashWhenSameMultiplicityTemplateNameAsParent()
     {
         // Stop recurrence of bug where type inference using the same multiplicity letter (n is multiplicity for
         // test3 and eval) causes resolution to the wrong type.
-            this.runtime.createInMemorySource("wewwe.pure", "function test3<T,U|m,n>(a:T[m], f:Function<{T[m]->U[n]}>[1]):U[n]\n" +
+        runtime.createInMemorySource("wewwe.pure", "function test3<T,U|m,n>(a:T[m], f:Function<{T[m]->U[n]}>[1]):U[n]\n" +
                     "{\n" +
                     "   $f->eval($a);" +
                     "}");
-        this.runtime.compile();
+        runtime.compile();
     }
 
     @Test
-    public void testMap() throws Exception
+    public void testMap()
     {
-        compileTestSource("inferenceTest.pure","Class Person" +
+        compileTestSource("inferenceTest.pure", "Class Person" +
                           "{" +
                           " age:Integer[1];" +
                           "}" +

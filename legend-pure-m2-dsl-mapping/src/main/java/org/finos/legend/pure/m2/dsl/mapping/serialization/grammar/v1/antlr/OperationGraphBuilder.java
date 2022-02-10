@@ -14,14 +14,16 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.antlr;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.list.mutable.ListAdapter;
+import org.eclipse.collections.impl.utility.LazyIterate;
+import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.OperationParser;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.OperationParserBaseVisitor;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
-import org.antlr.v4.runtime.Token;
 
 public class OperationGraphBuilder extends OperationParserBaseVisitor<String>
 {
@@ -51,44 +53,25 @@ public class OperationGraphBuilder extends OperationParserBaseVisitor<String>
     {
         visitChildren(ctx);
         Token startToken = ctx.functionPath().qualifiedName().packagePath() == null ? ctx.functionPath().qualifiedName().identifier().getStart() : ctx.functionPath().qualifiedName().packagePath().getStart();
-        String idOrPath = ctx.functionPath().qualifiedName().packagePath() == null ? ctx.functionPath().qualifiedName().identifier().getText() : ListAdapter.adapt(ctx.functionPath().qualifiedName().packagePath().identifier()).collect(IDENTIFIER_CONTEXT_STRING_FUNCTION).makeString("::") + "::" + ctx.functionPath().qualifiedName().identifier().getText();
-        MutableList<String> parameters = FastList.newList();
+        String idOrPath = ctx.functionPath().qualifiedName().packagePath() == null ? ctx.functionPath().qualifiedName().identifier().getText() : LazyIterate.collect(ctx.functionPath().qualifiedName().packagePath().identifier(), RuleContext::getText).makeString("::") + "::" + ctx.functionPath().qualifiedName().identifier().getText();
+        MutableList<String> parameters = Lists.mutable.empty();
         if (ctx.parameters() != null && ctx.parameters().VALID_STRING() != null)
         {
-            for (int i = 0; i < ctx.parameters().VALID_STRING().size(); i++)
-            {
-                parameters.add(ctx.parameters().VALID_STRING().get(i).getText());
-            }
+            ListIterate.collect(ctx.parameters().VALID_STRING(), TerminalNode::getText, parameters);
         }
         return "^meta::pure::mapping::OperationSetImplementation" + setSourceInfo +
                 "(" +
-                ((id == null) ? "" : ("    id = '" + id + "',")) +
-                "    root = " + root + "," +
-                "    operation = ^meta::pure::metamodel::import::ImportStub " + sourceInformation.getPureSourceInformation(startToken, startToken, ctx.functionPath().qualifiedName().identifier().getStop()).toM4String() + " (importGroup=system::imports::" + importId + ", idOrPath='" + idOrPath + "')," +
+                ((this.id == null) ? "" : ("    id = '" + this.id + "',")) +
+                "    root = " + this.root + "," +
+                "    operation = ^meta::pure::metamodel::import::ImportStub " + this.sourceInformation.getPureSourceInformation(startToken, startToken, ctx.functionPath().qualifiedName().identifier().getStop()).toM4String() + " (importGroup=system::imports::" + this.importId + ", idOrPath='" + idOrPath + "')," +
                 "    parameters = [" + toSetImplementationContainers(parameters) + "]," +
-                "    class = ^meta::pure::metamodel::import::ImportStub" + classSourceInfo + " (importGroup=system::imports::" + importId + ", idOrPath='" + classPath + "')," +
-                "    parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + importId + ", idOrPath='" + mappingPath + "')" +
+                "    class = ^meta::pure::metamodel::import::ImportStub" + this.classSourceInfo + " (importGroup=system::imports::" + this.importId + ", idOrPath='" + this.classPath + "')," +
+                "    parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + this.importId + ", idOrPath='" + this.mappingPath + "')" +
                 ")";
     }
 
-    private static final Function<OperationParser.IdentifierContext, String> IDENTIFIER_CONTEXT_STRING_FUNCTION = new Function<OperationParser.IdentifierContext, String>()
-    {
-        @Override
-        public String valueOf(OperationParser.IdentifierContext identifierContext)
-        {
-            return identifierContext.getText();
-        }
-    };
-
     private String toSetImplementationContainers(MutableList<String> parameters)
     {
-        return parameters.collect(new Function<String, String>()
-        {
-            @Override
-            public String valueOf(String parameter)
-            {
-                return "^meta::pure::mapping::SetImplementationContainer(id='" + parameter + "')";
-            }
-        }).makeString(",");
+        return parameters.isEmpty() ? "" : parameters.makeString("^meta::pure::mapping::SetImplementationContainer(id='", "'),^meta::pure::mapping::SetImplementationContainer(id='", "')");
     }
 }

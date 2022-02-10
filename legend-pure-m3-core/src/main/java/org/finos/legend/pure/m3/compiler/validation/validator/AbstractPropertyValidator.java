@@ -26,7 +26,7 @@ import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class AbstractPropertyValidator implements MatchRunner<AbstractProperty>
+public class AbstractPropertyValidator implements MatchRunner<AbstractProperty<?>>
 {
     @Override
     public String getClassName()
@@ -35,7 +35,7 @@ public class AbstractPropertyValidator implements MatchRunner<AbstractProperty>
     }
 
     @Override
-    public void run(AbstractProperty abstractProperty, MatcherState state, Matcher matcher, ModelRepository modelRepository, final Context context) throws PureCompilationException
+    public void run(AbstractProperty<?> abstractProperty, MatcherState state, Matcher matcher, ModelRepository modelRepository, final Context context) throws PureCompilationException
     {
         PropertyOwner owner = abstractProperty._owner();
         if (owner == null)
@@ -43,8 +43,8 @@ public class AbstractPropertyValidator implements MatchRunner<AbstractProperty>
             throw new PureCompilationException(abstractProperty.getSourceInformation(), "Property '" + abstractProperty._name() + "' has no owner");
         }
 
-        if (!(PropertyOwnerStrategy.PROPERTY_OWNER_STRATEGY_FUNCTION.valueOf(owner).properties(owner).contains(abstractProperty) ||
-              PropertyOwnerStrategy.PROPERTY_OWNER_STRATEGY_FUNCTION.valueOf(owner).qualifiedProperties(owner).contains(abstractProperty)))
+        PropertyOwnerStrategy propertyOwnerStrategy = PropertyOwnerStrategy.getPropertyOwnerStrategy(owner);
+        if (!(propertyOwnerStrategy.properties(owner).contains(abstractProperty) || propertyOwnerStrategy.qualifiedProperties(owner).contains(abstractProperty)))
         {
             throw new PureCompilationException(abstractProperty.getSourceInformation(), "Property '" + abstractProperty._name() + "' not present as a property or qualified property of its owner " + PackageableElement.getUserPathForPackageableElement(owner, "::"));
         }

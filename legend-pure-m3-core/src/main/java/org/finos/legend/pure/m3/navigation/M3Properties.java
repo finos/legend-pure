@@ -38,6 +38,7 @@ public class M3Properties
     public static final String constraints = "constraints";
     public static final String constraintsManager = "constraintsManager";
     public static final String contravariant = "contravariant";
+    public static final String conversionFunction = "conversionFunction";
     public static final String defaultValue = "defaultValue";
     public static final String diagram = "diagram";
     public static final String elementOverride = "elementOverride";
@@ -79,6 +80,7 @@ public class M3Properties
     public static final String line = "line";
     public static final String lowerBound = "lowerBound";
     public static final String mapping = "mapping";
+    public static final String measure = "measure";
     public static final String messageFunction = "messageFunction";
     public static final String modelElements = "modelElements";
     public static final String multiplicity = "multiplicity";

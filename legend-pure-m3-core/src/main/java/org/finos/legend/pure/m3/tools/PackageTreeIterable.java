@@ -28,6 +28,8 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Consumer;
 
 public class PackageTreeIterable extends AbstractLazyIterable<Package>
@@ -45,6 +47,12 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
     public Iterator<Package> iterator()
     {
         return new PackageTreeIterator(this.startingPackages, this.depthFirst);
+    }
+
+    @Override
+    public Spliterator<Package> spliterator()
+    {
+        return Spliterators.spliteratorUnknownSize(iterator(), Spliterator.DISTINCT | Spliterator.NONNULL);
     }
 
     @Override

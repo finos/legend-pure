@@ -102,8 +102,7 @@ public class Obj
         this.properties.appendString(builder, ", properties=[", ", ", "]");
         if (this.sourceInformation != null)
         {
-            builder.append(", sourceInformation=");
-            this.sourceInformation.writeMessage(builder);
+            this.sourceInformation.appendMessage(builder.append(", sourceInformation="));
         }
         builder.append('}');
         return builder.toString();

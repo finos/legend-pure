@@ -15,10 +15,9 @@
 package org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.function.Function2;
-import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.block.procedure.Procedure2;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -26,15 +25,8 @@ import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m2.relational.M2RelationalPaths;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.Pair;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.TreeNode;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
@@ -52,39 +44,19 @@ import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.join.Join
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.join.JoinTreeNode;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.View;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
-
-import static org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.GET_NAME_VALUE_WITH_USER_PATH;
 
 public class ViewProcessing extends RelationalMappingSpecificationProcessing
 {
-    private static final Function<TreeNode, Iterable<Join>> TREE_NODE_TO_JOIN_FUNCTION = new Function<TreeNode, Iterable<Join>>()
-    {
-        @Override
-        public ListIterable<Join> valueOf(TreeNode coreInstance)
-        {
-            return getAllJoins((JoinTreeNode)coreInstance);
-        }
-    };
-
-    private static final Procedure2<Column, MapIterable<String, DataType>> SET_COLUMN_TYPE_PROCEDURE = new Procedure2<Column, MapIterable<String, DataType>>()
-    {
-        @Override
-        public void value(Column column, MapIterable<String, DataType> dataTypes)
-        {
-            String columnName = column._name();
-            DataType colMappingType = dataTypes.get(columnName);
-            if (colMappingType != null)
-            {
-                column._type(colMappingType);
-            }
-        }
-    };
-
     static void processViewsInSchema(Database db, Schema schema, Matcher matcher, ProcessorState processorState, ModelRepository repository, ProcessorSupport processorSupport)
     {
         SetIterable<Database> dbsInHierarchy = org.finos.legend.pure.m2.relational.Database.getAllIncludedDBs(db, processorSupport);
@@ -110,14 +82,14 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
         DatabaseProcessor.processColumnsForTableOrView(view);
 
         RichIterable<? extends ColumnMapping> columnMappings = view._columnMappings();
-        MutableMap<String, DataType> colMappingTypeByName = UnifiedMap.newMap(columnMappings.size());
-        MutableSet<RelationalOperationElement> columnMappingRootTables = UnifiedSet.newSet();
+        MutableMap<String, DataType> colMappingTypeByName = Maps.mutable.ofInitialCapacity(columnMappings.size());
+        MutableSet<RelationalOperationElement> columnMappingRootTables = Sets.mutable.empty();
 
         for (ColumnMapping columnMapping : columnMappings)
         {
             RelationalOperationElement columnMappingRelationalElement = columnMapping._relationalOperationElement();
             String columnMappingColumnName = columnMapping._columnName();
-            RelationalOperationElementProcessor.processColumnExpr(columnMappingRelationalElement, view, null, Sets.mutable.<TableAlias>empty(), matcher, processorState, repository, processorSupport);
+            RelationalOperationElementProcessor.processColumnExpr(columnMappingRelationalElement, view, null, Sets.mutable.empty(), matcher, processorState, repository, processorSupport);
 
             RelationalOperationElement columnMappingRootTable = findMainTable(dbsInHierarchy, view, processorSupport, columnMappingRelationalElement);
             if (columnMappingRootTable != null)
@@ -132,26 +104,22 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
         processDynaFunctionAliases(view, mainTable, processorSupport);
         processFilterMapping(view, null, mainTable, matcher, processorState, repository, processorSupport);
         processGroupByMapping(view, matcher, processorState, repository, mainTable, processorSupport);
-        processPrimaryKeys(view, colMappingTypeByName, repository, processorSupport);
-        setViewColumnsType(view, colMappingTypeByName, processorSupport);
+        processPrimaryKeys(view, colMappingTypeByName);
+        setViewColumnsType(view, colMappingTypeByName);
         setViewMainTableAlias(view, mainTable, processorSupport);
     }
 
-    private static void processDynaFunctionAliases(View view, final RelationalOperationElement mainTable, final ProcessorSupport processorSupport)
+    private static void processDynaFunctionAliases(View view, RelationalOperationElement mainTable, ProcessorSupport processorSupport)
     {
         RichIterable<? extends ColumnMapping> columnMappings = view._columnMappings();
-        columnMappings.forEach(new Procedure<ColumnMapping>()
+        columnMappings.forEach(coreInstance ->
         {
-            @Override
-            public void value(ColumnMapping coreInstance)
+            RelationalOperationElement roe = coreInstance._relationalOperationElement();
+            MutableList<JoinTreeNode> joinTreeNodes = Lists.mutable.empty();
+            RelationalOperationElementProcessor.collectJoinTreeNodes(joinTreeNodes, roe);
+            for (JoinTreeNode joinTreeNode : joinTreeNodes)
             {
-                RelationalOperationElement roe = coreInstance._relationalOperationElement();
-                MutableList<JoinTreeNode> joinTreeNodes = Lists.mutable.empty();
-                RelationalOperationElementProcessor.collectJoinTreeNodes(joinTreeNodes, roe);
-                for (JoinTreeNode joinTreeNode : joinTreeNodes)
-                {
-                    RelationalOperationElementProcessor.processAliasForJoinTreeNode(joinTreeNode, mainTable, processorSupport);
-                }
+                RelationalOperationElementProcessor.processAliasForJoinTreeNode(joinTreeNode, mainTable, processorSupport);
             }
         });
     }
@@ -159,12 +127,12 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
     private static void processGroupByMapping(View view, Matcher matcher, ProcessorState processorState, ModelRepository repository, CoreInstance mainTable, ProcessorSupport processorSupport)
     {
         MutableSet<TableAlias> groupByTableAliases = processGroupByMapping(view, null, processorState, matcher, repository, processorSupport).getTwo();
-        SetIterable<RelationalOperationElement> groupByTables = groupByTableAliases.collect(RelationalInstanceSetImplementationProcessor.TABLE_ALIAS_TO_RELATIONAL_OPERATION_ELEMENT_FN).toSet();
+        SetIterable<RelationalOperationElement> groupByTables = groupByTableAliases.collect(RelationalInstanceSetImplementationProcessor.TABLE_ALIAS_TO_RELATIONAL_OPERATION_ELEMENT_FN, Sets.mutable.empty());
         for (RelationalOperationElement groupByTable : groupByTables)
         {
             if (groupByTable != mainTable)
             {
-                throw new PureCompilationException(view.getSourceInformation(), "View: " + GET_NAME_VALUE_WITH_USER_PATH.valueOf(view) + " has a groupBy which refers to table: '" + GET_NAME_VALUE_WITH_USER_PATH.valueOf(groupByTable) + "' which is not the mainTable: '" + GET_NAME_VALUE_WITH_USER_PATH.valueOf(mainTable) + "'");
+                throw new PureCompilationException(view.getSourceInformation(), "View: " + getNameValueWithUserPath(view) + " has a groupBy which refers to table: '" + getNameValueWithUserPath(groupByTable) + "' which is not the mainTable: '" + getNameValueWithUserPath(mainTable) + "'");
             }
         }
     }
@@ -194,12 +162,12 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
     {
         if (mainTables.isEmpty())
         {
-            throw new PureCompilationException(view.getSourceInformation(), "Unable to determine mainTable for View: " + GET_NAME_VALUE_WITH_USER_PATH.valueOf(view));
+            throw new PureCompilationException(view.getSourceInformation(), "Unable to determine mainTable for View: " + getNameValueWithUserPath(view));
         }
         if (mainTables.size() > 1)
         {
-            MutableList<String> tableNames = mainTables.collect(GET_NAME_VALUE_WITH_USER_PATH, FastList.<String>newList(mainTables.size())).sortThis();
-            throw new PureCompilationException(view.getSourceInformation(), "View: " + GET_NAME_VALUE_WITH_USER_PATH.valueOf(view) + " contains multiple main tables: " + tableNames.makeString("[", ",", "]") + " there should be only one root Table for Views");
+            MutableList<String> tableNames = mainTables.collect(ViewProcessing::getNameValueWithUserPath, Lists.mutable.ofInitialCapacity(mainTables.size())).sortThis();
+            throw new PureCompilationException(view.getSourceInformation(), "View: " + getNameValueWithUserPath(view) + " contains multiple main tables: " + tableNames.makeString("[", ",", "]") + " there should be only one root Table for Views");
         }
         return mainTables.toList().getFirst();
     }
@@ -215,24 +183,24 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
             {
                 database = ((Table)table)._schema() == null ? null : (Database)ImportStub.withImportStubByPass(((Table)table)._schema()._databaseCoreInstance(), processorSupport);
             }
-            else if(table instanceof View)
+            else if (table instanceof View)
             {
                 database = ((View)table)._schema() == null ? null : (Database)ImportStub.withImportStubByPass(((View)table)._schema()._databaseCoreInstance(), processorSupport);
             }
             if (!dbsInHierarchy.contains(database))
             {
-                throw new PureCompilationException(view.getSourceInformation(), "All tables referenced in View: " + GET_NAME_VALUE_WITH_USER_PATH.valueOf(view) + " should come from the View's owning or included DB: '" + GET_NAME_VALUE_WITH_USER_PATH.valueOf(viewDB) + "', table: '" + GET_NAME_VALUE_WITH_USER_PATH.valueOf(table) + "' does not");
+                throw new PureCompilationException(view.getSourceInformation(), "All tables referenced in View: " + getNameValueWithUserPath(view) + " should come from the View's owning or included DB: '" + getNameValueWithUserPath(viewDB) + "', table: '" + getNameValueWithUserPath(table) + "' does not");
             }
         }
     }
 
-    private static void processPrimaryKeys(View view, MapIterable<String, DataType> colMappingTypeByName, ModelRepository repository, ProcessorSupport processorSupport)
+    private static void processPrimaryKeys(View view, MapIterable<String, DataType> colMappingTypeByName)
     {
         RichIterable<? extends Column> primaryKeyCols = view._primaryKey();
         view._userDefinedPrimaryKey(primaryKeyCols.notEmpty());
         if (primaryKeyCols.notEmpty())
         {
-            setColumnTypes(primaryKeyCols, colMappingTypeByName, processorSupport);
+            setColumnTypes(primaryKeyCols, colMappingTypeByName);
             for (Column col : primaryKeyCols)
             {
                 col._owner(view);
@@ -253,15 +221,23 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
         populateGroupByMappingReferenceUsages(view, repository, processorSupport);
     }
 
-    private static void setViewColumnsType(View view, MapIterable<String, DataType> colMappingTypeByName, ProcessorSupport processorSupport)
+    private static void setViewColumnsType(View view, MapIterable<String, DataType> colMappingTypeByName)
     {
         RichIterable<? extends Column> viewColumns = (RichIterable<? extends Column>)view._columns();
-        setColumnTypes(viewColumns, colMappingTypeByName, processorSupport);
+        setColumnTypes(viewColumns, colMappingTypeByName);
     }
 
-    private static void setColumnTypes(RichIterable<? extends Column> sourceColumns, final MapIterable<String, DataType> colMappingTypeByName, final ProcessorSupport processorSupport)
+    private static void setColumnTypes(RichIterable<? extends Column> sourceColumns, MapIterable<String, DataType> colMappingTypeByName)
     {
-        sourceColumns.forEachWith(SET_COLUMN_TYPE_PROCEDURE, colMappingTypeByName);
+        sourceColumns.forEach(column ->
+        {
+            String columnName = column._name();
+            DataType colMappingType = colMappingTypeByName.get(columnName);
+            if (colMappingType != null)
+            {
+                column._type(colMappingType);
+            }
+        });
     }
 
     private static DataType getColumnType(RelationalOperationElement relationalOperationElement, ProcessorSupport processorSupport, ModelRepository repository)
@@ -284,7 +260,7 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
 
     private static ImmutableList<RelationalOperationElement> findAllTablesRootFirst(RelationalOperationElement relationalOperationElement)
     {
-        MutableList<RelationalOperationElement> allTables = FastList.newList();
+        MutableList<RelationalOperationElement> allTables = Lists.mutable.empty();
         if (relationalOperationElement instanceof TableAliasColumn)
         {
             allTables.add(((TableAliasColumn)relationalOperationElement)._alias() == null ? null : ((TableAliasColumn)relationalOperationElement)._alias()._relationalElement());
@@ -299,14 +275,7 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
         else if (relationalOperationElement instanceof DynaFunction)
         {
             RichIterable<? extends RelationalOperationElement> params = ((DynaFunction)relationalOperationElement)._parameters();
-            MutableList<RelationalOperationElement> tablesForParams = params.flatCollect(new Function<RelationalOperationElement, ImmutableList<RelationalOperationElement>>()
-            {
-                @Override
-                public ImmutableList<RelationalOperationElement> valueOf(RelationalOperationElement coreInstance)
-                {
-                    return findAllTablesRootFirst(coreInstance);
-                }
-            }, Lists.mutable.<RelationalOperationElement>empty());
+            MutableList<RelationalOperationElement> tablesForParams = params.flatCollect(ViewProcessing::findAllTablesRootFirst, Lists.mutable.empty());
             if (tablesForParams.size() == 1)
             {
                 //can't determine root from dyna function whose params refer to >1 table
@@ -320,19 +289,15 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
     {
         ListIterable<Join> joins = getAllJoins(joinTreeNode);
         ListIterable<Join> joinsReversed = joins.toReversed();
-        MutableList<RelationalOperationElement> allTables = FastList.newListWith(targetTable);
+        MutableList<RelationalOperationElement> allTables = Lists.mutable.with(targetTable);
         for (Join join : joinsReversed)
         {
-            ListIterable<? extends Pair> aliases = join._aliases().toList();
-            ListIterable<RelationalOperationElement> others = aliases.collectWith(new Function2<Pair, RelationalOperationElement, RelationalOperationElement>()
+            ListIterable<? extends Pair<? extends TableAlias, ? extends TableAlias>> aliases = join._aliases().toList();
+            ListIterable<RelationalOperationElement> others = aliases.collectWith((aliasPair, target) ->
             {
-                @Override
-                public RelationalOperationElement value(Pair aliasPair, RelationalOperationElement target)
-                {
-                    RelationalOperationElement first = aliasPair._first() == null ? null : ((TableAlias)aliasPair._first())._relationalElement();
-                    RelationalOperationElement second = aliasPair._second() == null ? null : ((TableAlias)aliasPair._second())._relationalElement();
-                    return (target != first) ? first : second;
-                }
+                RelationalOperationElement first = aliasPair._first() == null ? null : aliasPair._first()._relationalElement();
+                RelationalOperationElement second = aliasPair._second() == null ? null : aliasPair._second()._relationalElement();
+                return (target != first) ? first : second;
             }, targetTable);
             targetTable = others.getFirst();
             allTables.add(targetTable);
@@ -344,7 +309,24 @@ public class ViewProcessing extends RelationalMappingSpecificationProcessing
     {
         Join join = joinTreeNode._join();
         RichIterable<? extends TreeNode> children = joinTreeNode._childrenData();
-        RichIterable<Join> childrenJoins = children.flatCollect(TREE_NODE_TO_JOIN_FUNCTION);
-        return FastList.<Join>newList(childrenJoins.size() + 1).with(join).withAll(childrenJoins);
+        RichIterable<Join> childrenJoins = children.flatCollect(child -> getAllJoins((JoinTreeNode)child));
+        return Lists.mutable.<Join>ofInitialCapacity(childrenJoins.size() + 1).with(join).withAll(childrenJoins);
+    }
+
+    private static String getNameValueWithUserPath(CoreInstance instance)
+    {
+        if (instance == null)
+        {
+            return null;
+        }
+
+        StringBuilder buffer = new StringBuilder();
+        CoreInstance pkg = instance.getValueForMetaPropertyToOne(M3Properties._package);
+        if (pkg != null)
+        {
+            PackageableElement.writeUserPathForPackageableElement(buffer, pkg).append(PackageableElement.DEFAULT_PATH_SEPARATOR);
+        }
+        buffer.append(PrimitiveUtilities.getStringValue(instance.getValueForMetaPropertyToOne(M3Properties.name)));
+        return buffer.toString();
     }
 }

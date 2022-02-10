@@ -14,16 +14,17 @@
 
 package org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr;
 
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.AnnotatedElementProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.AssociationProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.ClassProcessor;
@@ -41,7 +42,6 @@ import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecifica
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.InstanceValueProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.KeyExpressionProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.valuespecification.VariableExpressionProcessor;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.compiler.unload.unbind.AbstractPropertyUnbind;
 import org.finos.legend.pure.m3.compiler.unload.unbind.AnyUnbind;
 import org.finos.legend.pure.m3.compiler.unload.unbind.AssociationUnbind;
@@ -107,7 +107,10 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportG
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
@@ -129,23 +132,18 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.reference.TagRefere
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
 import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrDescriptiveErrorListener;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureAntlrErrorStrategy;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.atn.PredictionMode;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 public class M3AntlrParser implements Parser
 {
 
     private int offsetLine;
-    private InlineDSLLibrary inlineDSLLibrary;
+    private final InlineDSLLibrary inlineDSLLibrary;
     private final boolean useImportStubsInInstanceParser;
 
 
@@ -325,42 +323,35 @@ public class M3AntlrParser implements Parser
     }
 
     @Override
-    public String parseMapping(String content, String id, String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, final String mappingPath, String sourceName, int offset, final String importId, ModelRepository repository, final Context context) throws PureParserException
+    public String parseMapping(String content, String id, String extendsId, String setSourceInfo, boolean root, String classPath, String classSourceInfo, String mappingPath, String sourceName, int offset, String importId, ModelRepository repository, Context context) throws PureParserException
     {
-        final M3ProcessorSupport processorSupport = new M3ProcessorSupport(context, repository);
+        M3ProcessorSupport processorSupport = new M3ProcessorSupport(context, repository);
         String mappingName = mappingPath.replace("::","_");
         String classMappingName = classPath.replace("::","_");
-        final AntlrContextToM3CoreInstance.LambdaContext lambdaContext = new AntlrContextToM3CoreInstance.LambdaContext(mappingName + '_' + classMappingName + (id == null ? "" : '_' + id));
+        AntlrContextToM3CoreInstance.LambdaContext lambdaContext = new AntlrContextToM3CoreInstance.LambdaContext(mappingName + '_' + classMappingName + (id == null ? "" : '_' + id));
         TemporaryPureSetImplementation arg = parseMappingInfo(content, classPath, lambdaContext, sourceName, offset, importId, repository, processorSupport, context);
 
         return "^meta::pure::mapping::modelToModel::PureInstanceSetImplementation"+ setSourceInfo+ "(\n" +
+                        (id == null ? "" : "id = '" + id + "',\n") +
+                        "   root = " + root + ",\n" +
+                        (arg._class==null ? "" : "   srcClass = " + process(arg._class, processorSupport) + ",\n") +
+                        (arg.filter==null ? "" : "   filter = ^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + ' ' + arg.filter.getSourceInformation().toM4String() + " (classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + arg.filter.getSourceInformation().toM4String() + " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + arg.filter.getSourceInformation().toM4String() + " (rawType = ^meta::pure::metamodel::type::FunctionType " + arg.filter.getSourceInformation().toM4String() + " ()))," +
+                                "                                                                          expressionSequence=" + process(arg.filter, processorSupport) + "),") +
+                        "   class = ^meta::pure::metamodel::import::ImportStub " + classSourceInfo + " (idOrPath='" + classPath + "', importGroup=system::imports::" + importId + "),\n" +
+                        "   parent= ^meta::pure::metamodel::import::ImportStub(idOrPath='" + mappingPath + "', importGroup=system::imports::" + importId + "),\n" +
+                        "   propertyMappings=[" + arg.propertyMappings.collect(temporaryPurePropertyMapping ->
+                                "^meta::pure::mapping::modelToModel::PurePropertyMapping " + temporaryPurePropertyMapping.sourceInformation.toM4String() + " (property='" + temporaryPurePropertyMapping.property + "'," +
+                                "        explodeProperty = " + temporaryPurePropertyMapping.explodeProperty + "," +
+                                "        localMappingProperty = " + temporaryPurePropertyMapping.localMappingProperty + "," +
 
-                        (id == null ? "" : "id = '"+id+"',\n")+
-                        "   root = "+root+",\n"+
-                        (arg._class==null?"":"   srcClass = "+process(arg._class, context, processorSupport)+",\n")+
-                        (arg.filter==null?"":"   filter = ^meta::pure::metamodel::function::LambdaFunction "+ lambdaContext.getLambdaFunctionUniqueName() + ' ' +arg.filter.getSourceInformation().toM4String()+" (classifierGenericType=^meta::pure::metamodel::type::generics::GenericType(rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType(rawType = ^meta::pure::metamodel::type::FunctionType()))," +
-                                "                                                                          expressionSequence="+process(arg.filter, context, processorSupport)+"),")+
-                        "   class = ^meta::pure::metamodel::import::ImportStub "+classSourceInfo+" (idOrPath='"+classPath+"', importGroup=system::imports::"+importId+"),\n"+
-                        "   parent= ^meta::pure::metamodel::import::ImportStub(idOrPath='"+mappingPath+"', importGroup=system::imports::"+importId+"),\n" +
-                        "   propertyMappings=["+arg.propertyMappings.collect(new Function<TemporaryPurePropertyMapping, Object>()
-                            {
-                                @Override
-                                public Object valueOf(TemporaryPurePropertyMapping temporaryPurePropertyMapping)
-                                {
-                                    return   "^meta::pure::mapping::modelToModel::PurePropertyMapping "+temporaryPurePropertyMapping.sourceInformation.toM4String()+" (property='"+temporaryPurePropertyMapping.property+"'," +
-                                            "        explodeProperty = "+temporaryPurePropertyMapping.explodeProperty + ","+
-                                            "        localMappingProperty = "+temporaryPurePropertyMapping.localMappingProperty +","+
-
-                                            (temporaryPurePropertyMapping.localMappingPropertyType == null?"":"        localMappingPropertyType = "+process(temporaryPurePropertyMapping.localMappingPropertyType._rawTypeCoreInstance(), context, processorSupport)+",\n")+
-                                            (temporaryPurePropertyMapping.localMappingPropertyMultiplicity == null?"":"        localMappingPropertyMultiplicity = "+ process(temporaryPurePropertyMapping.localMappingPropertyMultiplicity, context, processorSupport) +",")+
-                                            (temporaryPurePropertyMapping.targetMappingId == null?"":"                                         targetSetImplementationId='"+temporaryPurePropertyMapping.targetMappingId+"',")+
-                                            (temporaryPurePropertyMapping.enumerationMappingInformation == null ? "" : "transformer=^meta::pure::tools::GrammarInfoStub" + temporaryPurePropertyMapping.enumerationMappingInformation.getTwo().toM4String() + "(value='" + mappingPath + "," + temporaryPurePropertyMapping.enumerationMappingInformation.getOne() + "'),") +
-                                            "                                         transform=^meta::pure::metamodel::function::LambdaFunction "+ lambdaContext.getLambdaFunctionUniqueName()+' '+temporaryPurePropertyMapping.expression.getSourceInformation().toM4String()+" ("+
-                                            "                                                           classifierGenericType=^meta::pure::metamodel::type::generics::GenericType(rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType(rawType = ^meta::pure::metamodel::type::FunctionType())),"+
-                                            "                                                           expressionSequence="+process(temporaryPurePropertyMapping.expression, context, processorSupport)+")"+
-                                            "                                                      )\n";
-                                }
-                            }).makeString(",")+"]\n"+
+                                (temporaryPurePropertyMapping.localMappingPropertyType == null ? "" : "        localMappingPropertyType = " + process(temporaryPurePropertyMapping.localMappingPropertyType._rawTypeCoreInstance(), processorSupport) + ",\n") +
+                                (temporaryPurePropertyMapping.localMappingPropertyMultiplicity == null ? "" : "        localMappingPropertyMultiplicity = " + process(temporaryPurePropertyMapping.localMappingPropertyMultiplicity, processorSupport) + ",") +
+                                (temporaryPurePropertyMapping.targetMappingId == null ? "" : "                                         targetSetImplementationId='" + temporaryPurePropertyMapping.targetMappingId + "',") +
+                                (temporaryPurePropertyMapping.enumerationMappingInformation == null ? "" : "transformer=^meta::pure::tools::GrammarInfoStub" + temporaryPurePropertyMapping.enumerationMappingInformation.getTwo().toM4String() + "(value='" + mappingPath + "," + temporaryPurePropertyMapping.enumerationMappingInformation.getOne() + "'),") +
+                                "                                         transform=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + ' ' + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " (" +
+                                "                                                           classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " (rawType = ^meta::pure::metamodel::type::FunctionType " + temporaryPurePropertyMapping.expression.getSourceInformation().toM4String() + " ()))," +
+                                "                                                           expressionSequence=" + process(temporaryPurePropertyMapping.expression, processorSupport) + ")" +
+                                "                                                      )\n").makeString(",")+"]\n"+
                         ")";
     }
 
@@ -373,60 +364,48 @@ public class M3AntlrParser implements Parser
         return visitor.walkAggregateSpecification(parser.aggregateSpecification(), lambdaContext, index);
     }
 
-    public static String process(final CoreInstance ci, final Context context, final ProcessorSupport processorSupport)
+    @Deprecated
+    public static String process(CoreInstance ci, Context context, ProcessorSupport processorSupport)
     {
-        if (Instance.instanceOf(ci, "meta::pure::metamodel::multiplicity::PackageableMultiplicity", processorSupport) || Instance.instanceOf(ci, "meta::pure::metamodel::type::PrimitiveType", processorSupport))
+        return process(ci, processorSupport);
+    }
+
+    public static String process(CoreInstance ci, ProcessorSupport processorSupport)
+    {
+        if (Instance.instanceOf(ci, M3Paths.PackageableMultiplicity, processorSupport) || Instance.instanceOf(ci, M3Paths.PrimitiveType, processorSupport))
         {
-            return PackageableElement.getUserPathForPackageableElement(ci, "::");
+            return PackageableElement.getUserPathForPackageableElement(ci);
         }
-        else
+        return "^" + PackageableElement.getUserPathForPackageableElement(ci.getClassifier()) + (ci.getSourceInformation() == null ? "" : " " + ci.getSourceInformation().toM4String() + " ") + "(" + ci.getKeys().collect(s -> s + "=" + ci.getValueForMetaPropertyToMany(s).collect(coreInstance ->
         {
-            return "^" + PackageableElement.getUserPathForPackageableElement(ci.getClassifier(), "::") + (ci.getSourceInformation() == null ? "" : " " + ci.getSourceInformation().toM4String() + " ") + "(" + ci.getKeys().collect(new Function<String, String>()
+            if (Instance.instanceOf(coreInstance, M3Paths.PackageableElement, processorSupport) &&
+                    !Instance.instanceOf(coreInstance, M3Paths.FunctionType, processorSupport) &&
+                    !Instance.instanceOf(coreInstance, M3Paths.Function, processorSupport))
             {
-                @Override
-                public String valueOf(String s)
+                return PackageableElement.getUserPathForPackageableElement(coreInstance);
+            }
+            if (Instance.instanceOf(coreInstance.getClassifier(), M3Paths.PrimitiveType, processorSupport))
+            {
+                if (Instance.instanceOf(coreInstance, M3Paths.String, processorSupport))
                 {
-                    return s + "=" + ci.getValueForMetaPropertyToMany(s).collect(new Function<CoreInstance, String>()
-                    {
-                        @Override
-                        public String valueOf(CoreInstance coreInstance)
-                        {
-                            if (Instance.instanceOf(coreInstance, M3Paths.PackageableElement, processorSupport) &&
-                                    !Instance.instanceOf(coreInstance, M3Paths.FunctionType, processorSupport) &&
-                                    !Instance.instanceOf(coreInstance, M3Paths.Function, processorSupport)
-                                    )
-                            {
-                                return PackageableElement.getUserPathForPackageableElement(coreInstance, "::");
-                            }
-                            else if (Instance.instanceOf(coreInstance.getClassifier(), M3Paths.PrimitiveType, processorSupport))
-                            {
-                                if (Instance.instanceOf(coreInstance, M3Paths.String, processorSupport))
-                                {
-                                    return "'" + coreInstance.getName() + "'";
-                                }
-                                if (Instance.instanceOf(coreInstance, M3Paths.LatestDate, processorSupport))
-                                {
-                                    return "%latest";
-                                }
-                                if (Instance.instanceOf(coreInstance, M3Paths.Date, processorSupport))
-                                {
-                                    return "%" + coreInstance.getName();
-                                }
-                                if (Instance.instanceOf(coreInstance, M3Paths.StrictTime, processorSupport))
-                                {
-                                    return "%" + coreInstance.getName();
-                                }
-                                return coreInstance.getName();
-                            }
-                            else
-                            {
-                                return process(coreInstance, context, processorSupport);
-                            }
-                        }
-                    });
+                    return "'" + coreInstance.getName() + "'";
                 }
-            }).makeString(",") + ")";
-        }
+                if (Instance.instanceOf(coreInstance, M3Paths.LatestDate, processorSupport))
+                {
+                    return "%latest";
+                }
+                if (Instance.instanceOf(coreInstance, M3Paths.Date, processorSupport))
+                {
+                    return "%" + coreInstance.getName();
+                }
+                if (Instance.instanceOf(coreInstance, M3Paths.StrictTime, processorSupport))
+                {
+                    return "%" + coreInstance.getName();
+                }
+                return coreInstance.getName();
+            }
+            return process(coreInstance, processorSupport);
+        })).makeString(",") + ")";
     }
 
     @Override

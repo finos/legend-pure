@@ -14,31 +14,27 @@
 
 package org.finos.legend.pure.m3.navigation.importstub;
 
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.exception.PureUnresolvedIdentifierException;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
 import org.finos.legend.pure.m3.navigation.profile.Profile;
-import org.finos.legend.pure.m3.compiler.visibility.Visibility;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m3.tools.SearchTools;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class ImportStub
 {
@@ -130,7 +126,7 @@ public class ImportStub
 
     }
 
-    private static CoreInstance resolvePackageableElement(String idOrPath, final org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub importStubNode, ModelRepository repository, final ProcessorSupport processorSupport)
+    private static CoreInstance resolvePackageableElement(String idOrPath, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub importStubNode, ModelRepository repository, ProcessorSupport processorSupport)
     {
         // Try the Special Types (not user-defined top level types!!!)
         if (_Package.SPECIAL_TYPES.contains(idOrPath))
@@ -154,15 +150,14 @@ public class ImportStub
 
         // Look in the imported packages
         MutableSet<CoreInstance> results = Sets.mutable.with();
-        SetIterable<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement> importPackages = Imports.getImportGroupPackages(importGroup, processorSupport);
-        for (CoreInstance pkg : importPackages)
+        Imports.getImportGroupPackages(importGroup, processorSupport).forEach(pkg ->
         {
             CoreInstance found = _Package.findInPackage(pkg, idOrPath);
             if (found != null)
             {
                 results.add(found);
             }
-        }
+        });
 
         switch (results.size())
         {
@@ -178,18 +173,11 @@ public class ImportStub
             }
             case 1:
             {
-                return results.getFirst();
+                return results.getAny();
             }
             default:
             {
-                throw new PureCompilationException(importStubNode.getSourceInformation(), results.collect(new Function<CoreInstance, String>()
-                {
-                    @Override
-                    public String valueOf(CoreInstance instance)
-                    {
-                        return PackageableElement.getUserPathForPackageableElement(instance);
-                    }
-                }).makeString(idOrPath + " has been found more than one time in the imports: [", ", ", "]"));
+                throw new PureCompilationException(importStubNode.getSourceInformation(), results.collect(PackageableElement::getUserPathForPackageableElement, Lists.mutable.ofInitialCapacity(results.size())).sortThis().makeString(idOrPath + " has been found more than one time in the imports: [", ", ", "]"));
             }
         }
     }
@@ -335,49 +323,44 @@ public class ImportStub
 
     public static String printImportStub(CoreInstance importStub)
     {
-        StringBuilder builder = new StringBuilder(64);
-        writeImportStubInfo(builder, importStub);
-        return builder.toString();
+        return writeImportStubInfo(new StringBuilder(64), importStub).toString();
     }
 
-    public static void writeImportStubInfo(StringBuilder builder, CoreInstance importStub)
+    public static <T extends Appendable> T writeImportStubInfo(T appendable, CoreInstance importStub)
     {
-        writeImportStubInfo(builder, importStub, false);
+        return writeImportStubInfo(appendable, importStub, false);
     }
 
-    public static void writeImportStubInfo(StringBuilder builder, CoreInstance importStub, boolean includeImportGroupSourceInfo)
+    public static <T extends Appendable> T writeImportStubInfo(T appendable, CoreInstance importStub, boolean includeImportGroupSourceInfo)
     {
-        builder.append("<ImportStub idOrPath=");
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        safeAppendable.append("<ImportStub idOrPath=");
 
         String idOrPath = PrimitiveUtilities.getStringValue(importStub.getValueForMetaPropertyToOne(M3Properties.idOrPath), null);
         if (idOrPath == null)
         {
-            builder.append(idOrPath);
+            safeAppendable.append(idOrPath);
         }
         else
         {
-            builder.append('\'');
-            builder.append(idOrPath);
-            builder.append('\'');
+            safeAppendable.append('\'').append(idOrPath).append('\'');
         }
 
         CoreInstance importGroup = importStub.getValueForMetaPropertyToOne(M3Properties.importGroup);
-        builder.append(" importGroup=");
+        safeAppendable.append(" importGroup=");
         if (importGroup == null)
         {
-            builder.append("null");
+            safeAppendable.append("null");
         }
         else
         {
-            PackageableElement.writeUserPathForPackageableElement(builder, importGroup);
+            PackageableElement.writeUserPathForPackageableElement(safeAppendable, importGroup);
             if (includeImportGroupSourceInfo)
             {
                 SourceInformation importGroupSourceInfo = importGroup.getSourceInformation();
                 if (importGroupSourceInfo != null)
                 {
-                    builder.append('[');
-                    importGroupSourceInfo.writeMessage(builder);
-                    builder.append(']');
+                    importGroupSourceInfo.appendMessage(safeAppendable.append('[')).append(']');
                 }
             }
         }
@@ -385,9 +368,10 @@ public class ImportStub
         SourceInformation sourceInfo = importStub.getSourceInformation();
         if (sourceInfo != null)
         {
-            builder.append(" sourceInfo=");
-            sourceInfo.writeMessage(builder);
+            sourceInfo.appendMessage(safeAppendable.append(" sourceInfo="));
         }
-        builder.append('>');
+        safeAppendable.append('>');
+
+        return appendable;
     }
 }

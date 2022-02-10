@@ -16,6 +16,7 @@ package org.finos.legend.pure.m3.navigation.typeparameter;
 
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
@@ -23,8 +24,7 @@ public class TypeParameter
 {
     public static boolean isCovariant(CoreInstance typeParameter)
     {
-        CoreInstance contravariant = typeParameter.getValueForMetaPropertyToOne("contravariant");
-        return contravariant == null || !Boolean.valueOf(contravariant.getName());
+        return !PrimitiveUtilities.getBooleanValue(typeParameter.getValueForMetaPropertyToOne(M3Properties.contravariant), false);
     }
 
     public static CoreInstance wrapGenericType(CoreInstance typeParameter, ProcessorSupport processorSupport)
@@ -33,5 +33,4 @@ public class TypeParameter
         Instance.addValueToProperty(genericType, M3Properties.typeParameter, typeParameter, processorSupport);
         return genericType;
     }
-
 }

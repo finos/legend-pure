@@ -878,8 +878,7 @@ public class BinaryModelSourceDeserializer
             message.append(this.classifierPath);
             if (this.sourceInfo != null)
             {
-                message.append(", source info=");
-                this.sourceInfo.writeMessage(message);
+                this.sourceInfo.appendMessage(message.append(", source info="));
             }
             message.append(")");
         }

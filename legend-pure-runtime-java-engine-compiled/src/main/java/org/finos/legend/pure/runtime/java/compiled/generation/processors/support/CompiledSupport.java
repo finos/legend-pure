@@ -2366,12 +2366,9 @@ public class CompiledSupport
             SourceInformation valueSpecSourceInfo = valueSpecification.getSourceInformation();
             if (valueSpecSourceInfo != null)
             {
-                message.append(" (from ");
-                valueSpecSourceInfo.writeMessage(message);
-                message.append(')');
+                valueSpecSourceInfo.appendMessage(message.append(" (from ")).append(')');
             }
-            message.append("; error compiling generated Java code:\n");
-            message.append(_class);
+            message.append("; error compiling generated Java code:\n").append(_class);
             throw new RuntimeException(message.toString(), e);
         }
 
@@ -2387,15 +2384,12 @@ public class CompiledSupport
             SourceInformation valueSpecSourceInfo = valueSpecification.getSourceInformation();
             if (valueSpecSourceInfo != null)
             {
-                message.append(" (from ");
-                valueSpecSourceInfo.writeMessage(message);
-                message.append(')');
+                valueSpecSourceInfo.appendMessage(message.append(" (from ")).append(')');
             }
             String errorMessage = e.getMessage();
             if (errorMessage != null)
             {
-                message.append(": ");
-                message.append(errorMessage);
+                message.append(": ").append(errorMessage);
             }
             throw new RuntimeException(message.toString(), e);
         }
