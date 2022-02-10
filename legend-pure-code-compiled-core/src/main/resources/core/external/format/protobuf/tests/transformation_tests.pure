@@ -127,7 +127,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                 '}', $resultForTestPkg.content );                         
 }
 
-function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
+function <<test.Test, test.ToFix>> {serverVersion.start='v1_20_0'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
 {
   let results = meta::external::format::protobuf::generation::transform(^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::trade::Trade'));
   assertSize($results, 2);
@@ -176,7 +176,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::Opti
     + 'option aBool = true;\n', $options->toString());                       
 }
 
-function <<test.Test>> meta::external::format::protobuf::generation::tests::transform_testClassToProtoBufWithOptions():Boolean[1]
+function <<test.Test, test.ToFix>> meta::external::format::protobuf::generation::tests::transform_testClassToProtoBufWithOptions():Boolean[1]
 {
   let config = ^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::Person',
                                options=^Options(javaPackage='com.gs.person'));
