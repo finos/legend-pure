@@ -25,6 +25,8 @@ import meta::pure::router::store::embedded::*;
 
 Class meta::pure::router::printer::Pref
 {
+   format : Boolean[0..1];
+   elementsFullyQualified : Boolean[0..1];
    useClusterIndex : Boolean[1];
    clusterIndex : ClusteredValueSpecification[*];
 }
@@ -78,6 +80,7 @@ function meta::pure::router::printer::asString(f:ValueSpecification[1], pref:Pre
                                                                      b:KeyExpression[1]|'^KeyExpression(key = ' + $b.key->asString($pref) + ', value = '+ $b.expression->asString($pref) + ')',
                                                                      a:BasicColumnSpecification<Any>[1]| '^BasicColumnSpecification<' + $a->genericType().typeArguments.rawType.name->makeString() + '>(name = \'' + $a.name + '\', func = ' + $a.func->asString($pref) + ')';,
                                                                      r:RoutedVariablePlaceHolder[1]|'$'+$r.name,
+                                                                     a:Class<Any>[1]|if (efq($pref),|$a->elementToPath(),|$a->genericType().rawType.name->toOne()+' '+$a->toString()),
                                                                      a:Any[1]|$a->genericType().rawType.name->toOne()+' '+$a->toString();
                                                                    ]))->joinStrings(', ')+if($i.values->size() < 2,|'',|']');,
                    v:VariableExpression[1] | '$'+$v.name,
@@ -111,13 +114,31 @@ function meta::pure::router::printer::asString(f:FunctionExpression[1], pref:Pre
                                     |$res->at(0).second->eval($f->cast(@FunctionExpression)),
                                     |let qpBlock = if($fd->instanceOf(QualifiedProperty) && $fd->cast(@QualifiedProperty<Any>).expressionSequence->size() == 1,|'{ '+$fd->cast(@QualifiedProperty<Any>).expressionSequence->toOne()->asString($pref)+' }',|'');
                                      if($f.parametersValues->size() > 0,
-                                          |let start = $f.parametersValues->at(0)->asString($pref)+' -> '+$f.func.functionName->toOne() +'(';
+                                          |let start = $f.parametersValues->at(0)->asString($pref)+if(f($pref),|'\n   ',|' ')+'-> ' + $f.func->functionName($pref) +'(';
                                            $start+$f.parametersValues->tail()->map(v|$v->asString($pref)->replace('\n','\n'+space($start->length())))->joinStrings(', ')+')'+$qpBlock;,
-                                          |$f.func.functionName->toOne()+'()'+$qpBlock;
+                                          |$f.func->functionName($pref)+'()'+$qpBlock;
                                          );
                                  );
          ]
    );
+}
+
+function meta::pure::router::printer::functionName(f:Function<Any>[1], pref:Pref[1]):String[1]
+{
+  if($pref->efq(),
+    |$f.package->toOne()->elementToPath()+'::'+$f.functionName->toOne(),
+    |$f.functionName->toOne()
+  );
+}
+
+function meta::pure::router::printer::efq(pref:Pref[1]):Boolean[1]
+{
+  !$pref.elementsFullyQualified->isEmpty() && $pref.elementsFullyQualified->toOne()
+}
+
+function meta::pure::router::printer::f(pref:Pref[1]):Boolean[1]
+{
+  !$pref.format->isEmpty() && $pref.format->toOne()
 }
 
 function meta::pure::graphFetch::routing::asString(r: GraphFetchTree[1], multiLine: Boolean[1]):String[1]
@@ -139,8 +160,8 @@ function meta::pure::graphFetch::routing::asString(r: GraphFetchTree[1], spaceSt
          if($rr.subTrees->isEmpty(), | '', | $rr.subTrees->map(x | $x->asString($space + '    ', $multiLine))->joinStrings(' {'+$newLine, ', '+$newLine, $newLine + $space + '}')),
 
       rr: RootGraphFetchTree<Any>[1] |
-         $space + $rr.class->elementToPath() +
-         if($rr.subTrees->isEmpty(), | '', | $rr.subTrees->map(x | $x->asString($space + '    ', $multiLine))->joinStrings(' {'+$newLine, ', '+$newLine, $newLine + $space + '}')),
+         $space + '#{'+$rr.class->elementToPath() +
+         if($rr.subTrees->isEmpty(), | '}#', | $rr.subTrees->map(x | $x->asString($space + '    ', $multiLine))->joinStrings(' {'+$newLine, ', '+$newLine, $newLine + $space + '}}#')),
 
       rp: RoutedPropertyGraphFetchTree[1] |
          $space + if($rp.propertyMapping->isEmpty(), | '', | $rp.propertyMapping->map(p | '(' + $p.sourceSetImplementationId + '->' + $p.targetSetImplementationId + ')')->joinStrings('@', ', ', '@ ')) + $rp.sets.id->joinStrings('[', ', ', ' / ' + $rp.property.name->toOne() + ']') +

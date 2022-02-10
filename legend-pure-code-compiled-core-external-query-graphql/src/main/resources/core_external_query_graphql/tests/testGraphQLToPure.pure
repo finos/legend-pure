@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::query::graphQL::binding::toPure::*;
+import meta::external::query::graphQL::binding::toPure::typeSystem::*;
 
-function <<test.Test>> meta::external::query::graphQL::binding::toPure::tests::testConvertToPure():Boolean[1]
+function <<test.Test>> meta::external::query::graphQL::binding::toPure::typeSystem::tests::testConvertToPure():Boolean[1]
 {
-  let types = graphQLTypeSystemtoPure(meta::external::query::graphQL::binding::toPure::tests::buildIntrospection(), 'meta::external::query::graphQL::introspection::model');
+  let types = graphQLTypeSystemtoPure(meta::external::query::graphQL::binding::toPure::typeSystem::tests::buildIntrospection(), 'meta::external::query::graphQL::introspection::model');
   let pureTypes = $types->sortBy(t|$t->elementToPath())->map(t | $t->meta::pure::metamodel::serialization::grammar::printType())->joinStrings('\n\n');
   assertEquals(   'Class meta::external::query::graphQL::introspection::model::__Directive\n' +
                   '{\n' +

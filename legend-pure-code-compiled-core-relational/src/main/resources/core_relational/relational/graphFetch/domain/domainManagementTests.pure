@@ -1,51 +1,56 @@
-import meta::external::query::graphQL::transformation::queryToPure::tests::*;
-import meta::external::query::graphQL::transformation::queryToPure::*;
-import meta::relational::graphFetch::tests::domain::*;
-
-function <<test.Test>> meta::relational::graphFetch::tests::domain::testGraphQLQuery():Boolean[1]
-{
-  let graphQLQuery = ^meta::external::query::graphQL::metamodel::ExecutableDocument (
-                        definitions = ^meta::external::query::graphQL::metamodel::executable::OperationDefinition (
-                          name = 'MyQuery',
-                          selectionSet = [^meta::external::query::graphQL::metamodel::executable::Field (
-                            arguments = ^meta::external::query::graphQL::metamodel::executable::Argument (
-                              name = 'legalName',
-                              value = ^meta::external::query::graphQL::metamodel::value::StringValue (
-                                value = 'ork'
-                              )
-                            ),
-                            name = 'firmByLegalName',
-                            selectionSet = [^meta::external::query::graphQL::metamodel::executable::Field (
-                              name = 'legalName'
-                            ), ^meta::external::query::graphQL::metamodel::executable::Field (
-                              name = 'employees',
-                              selectionSet = ^meta::external::query::graphQL::metamodel::executable::Field (
-                                name = 'lastName'
-                              )
-                            )]
-                          ), ^meta::external::query::graphQL::metamodel::executable::Field (
-                            arguments = ^meta::external::query::graphQL::metamodel::executable::Argument (
-                              name = 'lastName',
-                              value = ^meta::external::query::graphQL::metamodel::value::StringValue (
-                                value = 'yro'
-                              )
-                            ),
-                            name = 'employeeByLastName',
-                            selectionSet = ^meta::external::query::graphQL::metamodel::executable::Field (
-                              name = 'firstName'
-                            )
-                          )],
-                          type = meta::external::query::graphQL::metamodel::executable::OperationType.query
-                        )
-                      );
-
-  let plans =  meta::external::query::graphQL::transformation::queryToPure::getPlansFromGraphQL(Domain, TestMapping, testRuntime(), $graphQLQuery, meta::pure::router::extension::defaultRelationalExtensions());
-
-  checkPlans($plans.second);
-}
+import meta::pure::graphFetch::domain::*;
+import meta::pure::graphFetch::domain::tests::*;
+import meta::relational::graphFetch::domain::tests::*;
 
 
-function <<test.Test>> meta::relational::graphFetch::tests::domain::testGraphFetch():Boolean[1]
+//---------------------------------------------------------------------------------
+// Would need to add this to a project that depends both on graphQL and Relational
+//---------------------------------------------------------------------------------
+
+// function <<test.Test>> meta::relational::graphFetch::tests::domain::testGraphQLQuery():Boolean[1]
+// {
+//   let graphQLQuery = ^meta::external::query::graphQL::metamodel::ExecutableDocument (
+//                         definitions = ^meta::external::query::graphQL::metamodel::executable::OperationDefinition (
+//                           name = 'MyQuery',
+//                           selectionSet = [^meta::external::query::graphQL::metamodel::executable::Field (
+//                             arguments = ^meta::external::query::graphQL::metamodel::executable::Argument (
+//                               name = 'legalName',
+//                               value = ^meta::external::query::graphQL::metamodel::value::StringValue (
+//                                 value = 'ork'
+//                               )
+//                             ),
+//                             name = 'firmByLegalName',
+//                             selectionSet = [^meta::external::query::graphQL::metamodel::executable::Field (
+//                               name = 'legalName'
+//                             ), ^meta::external::query::graphQL::metamodel::executable::Field (
+//                               name = 'employees',
+//                               selectionSet = ^meta::external::query::graphQL::metamodel::executable::Field (
+//                                 name = 'lastName'
+//                               )
+//                             )]
+//                           ), ^meta::external::query::graphQL::metamodel::executable::Field (
+//                             arguments = ^meta::external::query::graphQL::metamodel::executable::Argument (
+//                               name = 'lastName',
+//                               value = ^meta::external::query::graphQL::metamodel::value::StringValue (
+//                                 value = 'yro'
+//                               )
+//                             ),
+//                             name = 'employeeByLastName',
+//                             selectionSet = ^meta::external::query::graphQL::metamodel::executable::Field (
+//                               name = 'firstName'
+//                             )
+//                           )],
+//                           type = meta::external::query::graphQL::metamodel::executable::OperationType.query
+//                         )
+//                       );
+
+//   let plans =  meta::external::query::graphQL::transformation::queryToPure::getPlansFromGraphQL(Domain, TestMapping, testRuntime(), $graphQLQuery, meta::pure::router::extension::defaultRelationalExtensions());
+
+//   checkPlans($plans.second);
+// }
+
+
+function <<test.Test>> meta::relational::graphFetch::domain::tests::testGraphFetch():Boolean[1]
 {
   let res = extractDomainTypeClassFromFunction(|Domain.all()->meta::pure::graphFetch::execution::graphFetch(
                                                                 #{
@@ -80,23 +85,23 @@ function <<test.Test>> meta::relational::graphFetch::tests::domain::testGraphFet
   checkPlans($plans);
 }
 
-function <<access.private>> meta::relational::graphFetch::tests::domain::checkPlans(plans:meta::pure::executionPlan::ExecutionPlan[*]):Boolean[1]
+function <<access.private>> meta::relational::graphFetch::domain::tests::checkPlans(plans:meta::pure::executionPlan::ExecutionPlan[*]):Boolean[1]
 {
     assertEquals(
       'PureExp\n' +
       '(\n' +
       '  type = String\n' +
-      '  expression = [Node Index:0] -> serialize(meta::external::query::graphQL::transformation::queryToPure::tests::Firm {legalName, employees {lastName}})\n' +
+      '  expression = [Node Index:0] -> serialize(#{meta::pure::graphFetch::domain::tests::Firm {legalName, employees {lastName}}}#)\n' +
       '  (\n' +
       '    GlobalGraphFetch\n' +
       '    (\n' +
-      '      type = PartialClass[impls=[(meta::external::query::graphQL::transformation::queryToPure::tests::Firm | TestMapping.meta_external_query_graphQL_transformation_queryToPure_tests_Firm)], propertiesWithParameters = [legalName, employees]]\n' +
+      '      type = PartialClass[impls=[(meta::pure::graphFetch::domain::tests::Firm | TestMapping.meta_pure_graphFetch_domain_tests_Firm)], propertiesWithParameters = [legalName, employees]]\n' +
       '      resultSizeRange = 0..1\n' +
-      '      store = meta::relational::graphFetch::tests::domain::TestStore\n' +
+      '      store = meta::relational::graphFetch::domain::tests::TestStore\n' +
       '      localGraphFetchExecutionNode = \n' +
       '         RelationalGraphFetch\n' +
       '         (\n' +
-      '           type = PartialClass[impls=[(meta::external::query::graphQL::transformation::queryToPure::tests::Firm | TestMapping.meta_external_query_graphQL_transformation_queryToPure_tests_Firm)], propertiesWithParameters = [legalName, employees]]\n' +
+      '           type = PartialClass[impls=[(meta::pure::graphFetch::domain::tests::Firm | TestMapping.meta_pure_graphFetch_domain_tests_Firm)], propertiesWithParameters = [legalName, employees]]\n' +
       '           nodeIndex = 0\n' +
       '           relationalNode = \n' +
       '              SQL\n' +
@@ -109,7 +114,7 @@ function <<access.private>> meta::relational::graphFetch::tests::domain::checkPl
       '           children = [\n' +
       '              RelationalGraphFetch\n' +
       '              (\n' +
-      '                type = PartialClass[impls=[(meta::external::query::graphQL::transformation::queryToPure::tests::Person | TestMapping.meta_external_query_graphQL_transformation_queryToPure_tests_Person)], propertiesWithParameters = [lastName]]\n' +
+      '                type = PartialClass[impls=[(meta::pure::graphFetch::domain::tests::Person | TestMapping.meta_pure_graphFetch_domain_tests_Person)], propertiesWithParameters = [lastName]]\n' +
       '                nodeIndex = 2\n' +
       '                relationalNode = \n' +
       '                   SQL\n' +
@@ -137,17 +142,17 @@ function <<access.private>> meta::relational::graphFetch::tests::domain::checkPl
       'PureExp\n' +
       '(\n' +
       '  type = String\n' +
-      '  expression = [Node Index:0] -> serialize(meta::external::query::graphQL::transformation::queryToPure::tests::Person {firstName})\n' +
+      '  expression = [Node Index:0] -> serialize(#{meta::pure::graphFetch::domain::tests::Person {firstName}}#)\n' +
       '  (\n' +
       '    GlobalGraphFetch\n' +
       '    (\n' +
-      '      type = PartialClass[impls=[(meta::external::query::graphQL::transformation::queryToPure::tests::Person | TestMapping.meta_external_query_graphQL_transformation_queryToPure_tests_Person)], propertiesWithParameters = [firstName]]\n' +
+      '      type = PartialClass[impls=[(meta::pure::graphFetch::domain::tests::Person | TestMapping.meta_pure_graphFetch_domain_tests_Person)], propertiesWithParameters = [firstName]]\n' +
       '      resultSizeRange = 0..1\n' +
-      '      store = meta::relational::graphFetch::tests::domain::TestStore\n' +
+      '      store = meta::relational::graphFetch::domain::tests::TestStore\n' +
       '      localGraphFetchExecutionNode = \n' +
       '         RelationalGraphFetch\n' +
       '         (\n' +
-      '           type = PartialClass[impls=[(meta::external::query::graphQL::transformation::queryToPure::tests::Person | TestMapping.meta_external_query_graphQL_transformation_queryToPure_tests_Person)], propertiesWithParameters = [firstName]]\n' +
+      '           type = PartialClass[impls=[(meta::pure::graphFetch::domain::tests::Person | TestMapping.meta_pure_graphFetch_domain_tests_Person)], propertiesWithParameters = [firstName]]\n' +
       '           nodeIndex = 0\n' +
       '           relationalNode = \n' +
       '              SQL\n' +
@@ -169,7 +174,7 @@ function <<access.private>> meta::relational::graphFetch::tests::domain::checkPl
       ')\n', $plans->at(1)->meta::pure::executionPlan::toString::planToString(meta::pure::router::extension::defaultRelationalExtensions()));
 }
 
-function meta::relational::graphFetch::tests::domain::testRuntime():meta::pure::runtime::Runtime[1]
+function meta::relational::graphFetch::domain::tests::testRuntime():meta::pure::runtime::Runtime[1]
 {
    ^meta::pure::runtime::Runtime(
      connections = ^meta::relational::runtime::TestDatabaseConnection(
@@ -191,7 +196,7 @@ function meta::relational::graphFetch::tests::domain::testRuntime():meta::pure::
 }
 
 ###Relational
-Database meta::relational::graphFetch::tests::domain::TestStore
+Database meta::relational::graphFetch::domain::tests::TestStore
 (
   Table FirmTable
   (
@@ -214,10 +219,10 @@ Database meta::relational::graphFetch::tests::domain::TestStore
 )
 
 ###Mapping
-import meta::external::query::graphQL::transformation::queryToPure::tests::*;
-import meta::relational::graphFetch::tests::domain::*;
+import meta::pure::graphFetch::domain::tests::*;
+import meta::relational::graphFetch::domain::tests::*;
 
-Mapping meta::relational::graphFetch::tests::domain::TestMapping
+Mapping meta::relational::graphFetch::domain::tests::TestMapping
 (
   Domain : Relational
            {

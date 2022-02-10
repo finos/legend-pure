@@ -478,8 +478,8 @@ Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::CLatest
 
 Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::GraphFetchTree extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RawValue
 {
-    _type   : String[1];
-   subTrees : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::GraphFetchTree[*];
+    _type : String[1];
+    subTrees : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::GraphFetchTree[*];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RootGraphFetchTree extends meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::GraphFetchTree
