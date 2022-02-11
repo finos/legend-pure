@@ -21,7 +21,7 @@ function meta::external::format::protobuf::generation::transform(input:ProtobufC
 {
    meta::legend::test::mayExecuteLegendTest(
        {clientVersion, serverVersion, serializationKind, host, port|
-                   let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::protobuf::alloyGenerateProtobuf_ProtobufConfig_1__String_1__Integer_1__String_1__ProtobufOutput_MANY_';
+                   let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::protobuf::legendGenerateProtobuf_ProtobufConfig_1__String_1__Integer_1__String_1__ProtobufOutput_MANY_';
                    let xf = $fStr->pathToElement()->cast(@Function<{ProtobufConfig[1], String[1], Integer[1], String[1]->GenerationOutput[*]}>);
                    $xf->evaluate([$input, $host, $port, $serverVersion]->map(v|list($v)))->toOneMany()->cast(@ProtobufOutput);},
        |meta::external::format::protobuf::generation::internal_transform($input)
@@ -62,7 +62,6 @@ function meta::external::format::protobuf::generation::protoPackageToFileName(p:
   $p->replace('.', '_') + '.proto'
 }
 
-
 function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[*]
 {
   meta::external::format::protobuf::generation::classToMessage([$class], [])
@@ -70,8 +69,11 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
 
 function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1..*], options:Options[0..1]):ProtoFile[*]
 {
+   println($class.name);
    let allClasses = $class->map(c | $c->scanTypes([]))->removeDuplicates()->remove(Any);
+   println($allClasses.name);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
+   println($typesMap->keys()->map(k|$k->elementToPath()));
    let classesByPackage = $allClasses->groupBy(c | $c->elementToProtoPackage());
    
    $classesByPackage->keyValues()->map(p | 
@@ -147,14 +149,14 @@ function <<access.private>> meta::external::format::protobuf::generation::seedPu
    )
 }
 
+
 function meta::external::format::protobuf::generation::scanTypes(t:Type[1], processed:Type[*]):Type[*]
 {
    if (!$processed->contains($t),
        |$t->concatenate(if($t->instanceOf(Class),
-                         |$t->cast(@Class<Any>).properties.genericType.rawType->concatenate($t->cast(@Class<Any>)->meta::pure::functions::meta::findAllSpecializations())->filter(t|($t->instanceOf(Class) || $t->instanceOf(meta::pure::metamodel::type::Enumeration)) && $t != Any)->map(c|$c->scanTypes($processed->concatenate($t))),
+                         |$t->cast(@Class<Any>)->allProperties().genericType.rawType->distinct()->concatenate($t->cast(@Class<Any>)->meta::pure::functions::meta::findAllSpecializations())->filter(t|($t->instanceOf(Class) || $t->instanceOf(meta::pure::metamodel::type::Enumeration)) && $t != Any)->map(c|$c->meta::external::format::protobuf::generation::scanTypes($processed->concatenate($t)))->distinct(),
                          |[]
                        )),
        |[]
    );
 }
-

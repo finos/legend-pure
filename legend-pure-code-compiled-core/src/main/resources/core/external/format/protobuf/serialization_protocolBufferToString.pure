@@ -22,7 +22,7 @@ function meta::external::format::protobuf::serialization::toString(file:ProtoFil
    + $file.imports->map( i | 'import "' + $i + '";\n')->joinStrings()
    + if( $file.package->isEmpty(), | '', | 'package ' + $packageName + ';\n' )
    + if($file.options->isEmpty(), | '', | $file.options->toOne()->meta::external::format::protobuf::serialization::toString())
-   + $file.topLevelDefs->map(t | $t->meta::external::format::protobuf::serialization::toString($packageName))->joinStrings('\n');
+   + $file.topLevelDefs->sortBy(s|$s->match([m:Message[1]|$m.name,e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e.name]))->map(t | $t->meta::external::format::protobuf::serialization::toString($packageName))->joinStrings('\n');
 }
 
 function meta::external::format::protobuf::serialization::toString(p:ProtoBufType[1],currentPackage:String[1]):String[1]
