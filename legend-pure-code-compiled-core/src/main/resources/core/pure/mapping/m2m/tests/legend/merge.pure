@@ -148,7 +148,7 @@ meta::pure::mapping::modelToModel::test::alloy::merge::testMergeNonRoot():Any[*]
       []
    );
 
-   let json = $result.values->toOne();  $json->println();
+   let json = $result.values->toOne();
    let expected = '{"ceo":{"firstName":"John","lastName":"Smith","address":{"street":"Main st","postCode":"ABCD"}}}';
    assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
 }
