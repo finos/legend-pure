@@ -41,6 +41,20 @@ function meta::protocols::pure::vX_X_X::invocation::generation::protobuf::transf
 {
    ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::ProtobufConfig(
         package = $input.package,
-        class = $input.class
+        class = $input.class,
+        options = ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::Options
+                  (
+                      javaPackage = $input.options.javaPackage,
+                      javaOuterClassname = $input.options.javaOuterClassname,
+                      javaMultipleFiles = $input.options.javaMultipleFiles,
+                      optimizeFor = if ($input.options.optimizeFor->isEmpty(),|[],|extractEnumValue(meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::OptimizeMode, $input.options.optimizeFor->toOne()->id())),
+                      customOptions = $input.options.customOptions->map(c |
+                                          ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::CustomOption
+                                          (
+                                              name = $c.name,
+                                              value = $c.value
+                                          )
+                                       )
+                  )        
    )
 }
