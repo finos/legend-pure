@@ -7,12 +7,12 @@ import meta::alloy::metadataServer::*;
 import meta::json::schema::generation::*;
 import meta::pure::functions::io::http::*;
 
-function  <<access.private>>  meta::protocols::pure::v1_19_0::invocation::generation::json::alloyGenerateJson(input:JSONSchemaConfig[1], host:String[1], port:Integer[1]):JSONSchemaOutput[*]
+function  <<access.private>>  meta::protocols::pure::v1_19_0::invocation::generation::json::legendGenerateJson(input:JSONSchemaConfig[1], host:String[1], port:Integer[1]):JSONSchemaOutput[*]
 {
-   meta::protocols::pure::v1_19_0::invocation::generation::json::alloyGenerateJson($input, $host, $port, 'v1');
+   meta::protocols::pure::v1_19_0::invocation::generation::json::legendGenerateJson($input, $host, $port, 'v1');
 }
 
-function meta::protocols::pure::v1_19_0::invocation::generation::json::alloyGenerateJson(jsonConfig:JSONSchemaConfig[1], host:String[1], port:Integer[1], version:String[1]):JSONSchemaOutput[*]
+function meta::protocols::pure::v1_19_0::invocation::generation::json::legendGenerateJson(jsonConfig:JSONSchemaConfig[1], host:String[1], port:Integer[1], version:String[1]):JSONSchemaOutput[*]
 {
    let resp = executeHTTPRaw(^URL(host = $host , port=$port, path = '/api/pure/'+$version+'/schemaGeneration/jsonSchema'),
                                  HTTPMethod.POST,
@@ -37,12 +37,12 @@ import meta::protocols::pure::v1_19_0::transformation::fromPureGraph::*;
 import meta::alloy::metadataServer::*;
 import meta::pure::functions::io::http::*;
 
-function <<access.private>> meta::protocols::pure::v1_19_0::invocation::generation::avro::alloyGenerateAvro(input:AvroConfig[1], host:String[1], port:Integer[1]):AvroOutput[*]
+function <<access.private>> meta::protocols::pure::v1_19_0::invocation::generation::avro::legendGenerateAvro(input:AvroConfig[1], host:String[1], port:Integer[1]):AvroOutput[*]
 {
-   meta::protocols::pure::v1_19_0::invocation::generation::avro::alloyGenerateAvro($input, $host, $port, 'v1');
+   meta::protocols::pure::v1_19_0::invocation::generation::avro::legendGenerateAvro($input, $host, $port, 'v1');
 }
 
-function meta::protocols::pure::v1_19_0::invocation::generation::avro::alloyGenerateAvro(avroConfig:AvroConfig[1], host:String[1], port:Integer[1], version:String[1]):AvroOutput[*]
+function meta::protocols::pure::v1_19_0::invocation::generation::avro::legendGenerateAvro(avroConfig:AvroConfig[1], host:String[1], port:Integer[1], version:String[1]):AvroOutput[*]
 {
    let resp = executeHTTPRaw(^URL(host = $host , port=$port, path = '/api/pure/'+$version+'/schemaGeneration/avro'),
                                  HTTPMethod.POST,
@@ -69,12 +69,12 @@ import meta::alloy::metadataServer::*;
 import meta::pure::functions::io::http::*;
 
 
-function <<access.private>>  meta::protocols::pure::v1_19_0::invocation::generation::protobuf::alloyGenerateProtobuf(input:ProtobufConfig[1], host:String[1], port:Integer[1]):ProtobufOutput[*]
+function <<access.private>>  meta::protocols::pure::v1_19_0::invocation::generation::protobuf::legendGenerateProtobuf(input:ProtobufConfig[1], host:String[1], port:Integer[1]):ProtobufOutput[*]
 {
-   meta::protocols::pure::v1_19_0::invocation::generation::protobuf::alloyGenerateProtobuf($input, $host, $port, 'v1');
+   meta::protocols::pure::v1_19_0::invocation::generation::protobuf::legendGenerateProtobuf($input, $host, $port, 'v1');
 }
 
-function meta::protocols::pure::v1_19_0::invocation::generation::protobuf::alloyGenerateProtobuf(input:ProtobufConfig[1], host:String[1], port:Integer[1], version:String[1]):ProtobufOutput[*]
+function meta::protocols::pure::v1_19_0::invocation::generation::protobuf::legendGenerateProtobuf(input:ProtobufConfig[1], host:String[1], port:Integer[1], version:String[1]):ProtobufOutput[*]
 {
    let resp = executeHTTPRaw(^URL(host = $host , port=$port, path = '/api/pure/'+$version+'/schemaGeneration/protobuf'),
                                  HTTPMethod.POST,
