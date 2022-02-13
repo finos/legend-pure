@@ -105,10 +105,10 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
       let imports = $packageClasses
         ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>).properties
         ->filter(p | !$p->isPrimitiveValueProperty() && ($p.genericType.rawType.package->toOne()->elementToPath('.') != $thePackage))
-        ->map( p | $p.genericType.rawType->toOne()->elementToProtoPackage()->protoPackageToFileName());
+        ->map( p | ^ProtoImport(name=$p.genericType.rawType->toOne()->elementToProtoPackage()->protoPackageToFileName()));
 
       ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs,
-                 imports=['google/protobuf/timestamp.proto']->concatenate($imports),
+                 imports=[^ProtoImport(name='google/protobuf/timestamp.proto')]->concatenate($imports),
                  options=$options);
    );
 }
