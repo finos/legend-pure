@@ -130,3 +130,39 @@ Class meta::external::format::protobuf::metamodel::Double extends ScalarType
 Class meta::external::format::protobuf::metamodel::Float extends ScalarType
 { 
 }
+
+Class meta::external::format::protobuf::metamodel::UInt32 extends ScalarType
+{
+}
+
+Class meta::external::format::protobuf::metamodel::UInt64 extends ScalarType
+{
+}
+
+Class meta::external::format::protobuf::metamodel::SInt32 extends ScalarType
+{
+}
+
+Class meta::external::format::protobuf::metamodel::SInt64 extends ScalarType
+{
+}
+
+Class meta::external::format::protobuf::metamodel::Fixed32 extends ScalarType
+{
+}
+
+Class meta::external::format::protobuf::metamodel::Fixed64 extends ScalarType
+{
+}
+
+Class meta::external::format::protobuf::metamodel::SFixed32 extends ScalarType
+{
+}
+
+Class meta::external::format::protobuf::metamodel::SFixed64 extends ScalarType
+{
+}
+
+Class meta::external::format::protobuf::metamodel::Bytes extends ScalarType
+{
+}
