@@ -15,6 +15,8 @@
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
 import org.eclipse.collections.api.collection.MutableCollection;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
@@ -22,16 +24,14 @@ import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
-import org.finos.legend.pure.m3.navigation._package._Package;
-import org.finos.legend.pure.m3.coreinstance.factory.CompositeCoreInstanceFactory;
 import org.finos.legend.pure.m3.coreinstance.M3CoreInstanceFactoryRegistry;
+import org.finos.legend.pure.m3.coreinstance.factory.CompositeCoreInstanceFactory;
+import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.AbstractReference;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceDeserializationHelper;
@@ -41,10 +41,10 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.reference.Reference
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ReferenceFactory;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.SimpleReferenceFactory;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.UnresolvableReferenceException;
-import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 
@@ -215,7 +215,7 @@ public class BinaryModelSourceDeserializer
     private void readPropertyRealKeyIndex(Reader reader)
     {
         int count = reader.readInt();
-        MutableList<ListIterable<String>> results = FastList.newList(count);
+        MutableList<ListIterable<String>> results = Lists.mutable.withInitialCapacity(count);
         for (int i = 0; i < count; i++)
         {
             String[] strings = readStringsById(reader);
@@ -230,7 +230,7 @@ public class BinaryModelSourceDeserializer
         int count = reader.readInt();
 
         // Second, read the nodes in an intermediate form
-        MutableList<InternalNode> nodes = FastList.newList(count);
+        MutableList<InternalNode> nodes = Lists.mutable.withInitialCapacity(count);
         this.internalNodes = nodes.asUnmodifiable();
         for (int i = 0; i < count; i++)
         {
@@ -248,6 +248,8 @@ public class BinaryModelSourceDeserializer
         switch (type)
         {
             case BinaryModelSerializationTypes.TOP_LEVEL_INSTANCE:
+            case BinaryModelSerializationTypes.ENUM_INSTANCE:
+            case BinaryModelSerializationTypes.OTHER_INSTANCE:
             {
                 name = readStringById(reader);
                 break;
@@ -256,16 +258,6 @@ public class BinaryModelSourceDeserializer
             {
                 name = readStringById(reader);
                 pkg = readStringById(reader);
-                break;
-            }
-            case BinaryModelSerializationTypes.ENUM_INSTANCE:
-            {
-                name = readStringById(reader);
-                break;
-            }
-            case BinaryModelSerializationTypes.OTHER_INSTANCE:
-            {
-                name = readStringById(reader);
                 break;
             }
             case BinaryModelSerializationTypes.ANONYMOUS_INSTANCE:
@@ -300,7 +292,7 @@ public class BinaryModelSourceDeserializer
             ListIterable<String> realKey = this.propertyRealKeys.get(realKeyId);
 
             int valueCount = reader.readInt();
-            MutableList<Reference> values = FastList.newList(valueCount);
+            MutableList<Reference> values = Lists.mutable.withInitialCapacity(valueCount);
             for (int j = 0; j < valueCount; j++)
             {
                 Reference value = readReference(reader);
@@ -718,9 +710,9 @@ public class BinaryModelSourceDeserializer
                     }
                     else
                     {
-                        MutableList<CoreInstance> allValues = FastList.newList(serializedValues.size() + existingValues.size());
+                        MutableList<CoreInstance> allValues = Lists.mutable.withInitialCapacity(serializedValues.size() + existingValues.size());
                         allValues.addAllIterable(serializedValues);
-                        MutableMap<String, CoreInstance> valuesByName = serializedValues.toMap(CoreInstance.GET_NAME, Functions.<CoreInstance>getPassThru());
+                        MutableMap<String, CoreInstance> valuesByName = serializedValues.toMap(CoreInstance::getName, Functions.getPassThru());
                         for (CoreInstance value : existingValues)
                         {
                             String name = value.getName();

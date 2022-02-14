@@ -17,36 +17,20 @@ package org.finos.legend.pure.m3.serialization.runtime.binary;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.multimap.list.ImmutableListMultimap;
 import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 
 public class SourceDeserializationResult
 {
-    public static final Predicate<SourceDeserializationResult> HAS_NODES = new Predicate<SourceDeserializationResult>()
-    {
-        @Override
-        public boolean accept(SourceDeserializationResult result)
-        {
-            return result.hasDeserializationNodes();
-        }
-    };
-
-    public static final Function<SourceDeserializationResult, ImmutableList<DeserializationNode>> GET_NODES = new Function<SourceDeserializationResult, ImmutableList<DeserializationNode>>()
-    {
-        @Override
-        public ImmutableList<DeserializationNode> valueOf(SourceDeserializationResult result)
-        {
-            return result.getDeserializationNodes();
-        }
-    };
+    public static final Predicate<SourceDeserializationResult> HAS_NODES = SourceDeserializationResult::hasDeserializationNodes;
+    public static final Function<SourceDeserializationResult, ImmutableList<DeserializationNode>> GET_NODES = SourceDeserializationResult::getDeserializationNodes;
 
     private final Source source;
     private final ImmutableListMultimap<String, String> instancesByParser;
@@ -102,7 +86,7 @@ public class SourceDeserializationResult
         {
             return this.instancesByParser.valuesView();
         }
-        return LazyIterate.concatenate(this.instancesByParser.valuesView(), this.otherInstances);
+        return this.instancesByParser.valuesView().asLazy().concatenate(this.otherInstances);
     }
 
     public boolean hasExternalReferences()
