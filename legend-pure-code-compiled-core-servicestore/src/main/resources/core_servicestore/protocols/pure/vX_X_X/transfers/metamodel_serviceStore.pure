@@ -57,6 +57,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::se
       name                = $s.name,
       type                = $type,
       allowReserved       = $s.allowReserved,
+      required            = $s.required,
       location            = $s.location->toString(),
       _enum               = if($s.enum->isEmpty(), | [], | $s.enum->toOne()->elementToPath()),
       serializationFormat = ^meta::protocols::pure::vX_X_X::metamodel::store::service::SerializationFormat(style = $s.serializationFormat.style, explode = $s.serializationFormat.explode)
