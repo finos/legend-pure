@@ -154,6 +154,17 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
       b:meta::pure::alloy::connections::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy(
             _type = 'gcpApplicationDefaultCredentials'
+         ),
+      b:meta::pure::alloy::connections::alloy::authentication::GCPWorkloadIdentityFederationAuthenticationStrategy[1] |
+         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPWorkloadIdentityFederationAuthenticationStrategy(
+            _type = 'gcpWorkloadIdentityFederation',
+            workloadProjectNumber = $b.workloadProjectNumber,
+            serviceAccountEmail = $b.serviceAccountEmail,
+            gcpScope = $b.gcpScope,
+            workloadPoolId = $b.workloadPoolId,
+            workloadProviderId = $b.workloadProviderId,
+            discoveryUrl = $b.discoveryUrl,
+            clientId = $b.clientId
          )
    ])->toOneMany())
 }
