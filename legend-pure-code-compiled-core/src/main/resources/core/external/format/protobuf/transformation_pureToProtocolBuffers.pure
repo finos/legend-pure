@@ -86,7 +86,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
             ^Message
             (
               name = $c.name->toOne(),
-              body = $c.properties->map(p|$p->propertyToField($c.properties->indexOf($p)+1, $typesMap))
+              content = $c.properties->map(p|$p->propertyToField($c.properties->indexOf($p)+1, $typesMap))
             )
         )->concatenate
             (

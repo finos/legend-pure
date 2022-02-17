@@ -169,8 +169,8 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::Opti
                          javaOuterClassname='TestClass', 
                          javaMultipleFiles=true, 
                          optimizeFor=OptimizeMode.SPEED,
-                         customOptions=[^CustomOption(name='aString', value='stuff'),
-                                        ^CustomOption(name='aBool', value=true)]);
+                         customOptions=[^Option(name='aString', value='stuff'),
+                                        ^Option(name='aBool', value=true)]);
   assertEquals('option java_package = "com.gs.mymodel";\n'
     + 'option java_outer_classname = "TestClass";\n'
     + 'option java_multiple_files = true;\n'

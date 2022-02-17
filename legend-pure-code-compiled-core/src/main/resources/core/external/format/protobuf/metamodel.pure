@@ -51,10 +51,10 @@ Class meta::external::format::protobuf::metamodel::Options
   {doc.doc='Affects the C++ and Java code generators (and possibly third-party generators) changing the generated code to optimize for these characteristics.'} 
   optimizeFor:OptimizeMode[0..1];
   {doc.doc='Freeform options that are not part of the specification but can be passed through to other tooling'}
-  customOptions:CustomOption[*];
+  customOptions:Option[*];
 }
 
-Class meta::external::format::protobuf::metamodel::CustomOption
+Class meta::external::format::protobuf::metamodel::Option
 {
   name:String[1];
   value:Any[1];
@@ -73,7 +73,7 @@ Enum meta::external::format::protobuf::metamodel::OptimizeMode
 Class meta::external::format::protobuf::metamodel::Message extends meta::external::format::protobuf::metamodel::MessageBodyItem, meta::external::format::protobuf::metamodel::ProtoBufType
 {
    name:String[1];
-   body:MessageBodyItem[*];
+   content:MessageBodyItem[*];
 }
 
 Class meta::external::format::protobuf::metamodel::MessageBodyItem
@@ -90,6 +90,12 @@ Class meta::external::format::protobuf::metamodel::Field extends meta::external:
 {
    type:ProtoBufType[1];
    repeated:Boolean[1];
+   options:Option[*];
+}
+
+Class meta::external::format::protobuf::metamodel::MessageOption extends meta::external::format::protobuf::metamodel::MessageBodyItem
+{
+  option:Option[*];
 }
 
 Class meta::external::format::protobuf::metamodel::OneOf extends meta::external::format::protobuf::metamodel::MessageBodyItem
@@ -116,14 +122,24 @@ Class meta::external::format::protobuf::metamodel::ReservedFieldRanges extends m
 Class meta::external::format::protobuf::metamodel::Service extends meta::external::format::protobuf::metamodel::MessageBodyItem
 {
   name:String[1];
-  rpc:RemoteProcedureCall[*];
+  content:ServiceBodyItem[*];
 }
 
-Class meta::external::format::protobuf::metamodel::RemoteProcedureCall
+Class meta::external::format::protobuf::metamodel::ServiceBodyItem
+{
+}
+
+Class meta::external::format::protobuf::metamodel::RemoteProcedureCall extends meta::external::format::protobuf::metamodel::ServiceBodyItem
 {
   name:String[1];
   requestType:MessageType[1];
   returnType:MessageType[1];
+  options:Option[*];
+}
+
+Class meta::external::format::protobuf::metamodel::ServiceOption extends meta::external::format::protobuf::metamodel::ServiceBodyItem
+{
+  option:Option[1];
 }
 
 Class meta::external::format::protobuf::metamodel::MessageType
@@ -151,6 +167,7 @@ Class meta::external::format::protobuf::metamodel::EnumPtr extends meta::externa
 Class meta::external::format::protobuf::metamodel::Enumeration extends meta::external::format::protobuf::metamodel::ProtoBufType
 {
    name : String[1];
+   options: Option[*];
    values:meta::external::format::protobuf::metamodel::Enum[*];
 }
 
@@ -158,6 +175,7 @@ Class meta::external::format::protobuf::metamodel::Enum
 {
    constant : String[1];
    constantNumber : Integer[1];
+   options: Option[*];
 }
 
 Class meta::external::format::protobuf::metamodel::ScalarType extends ProtoBufType
