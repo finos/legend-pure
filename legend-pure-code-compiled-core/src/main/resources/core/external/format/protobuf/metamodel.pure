@@ -113,6 +113,25 @@ Class meta::external::format::protobuf::metamodel::ReservedFieldRanges extends m
   numbers:Integer[*];
 }
 
+Class meta::external::format::protobuf::metamodel::Service extends meta::external::format::protobuf::metamodel::MessageBodyItem
+{
+  name:String[1];
+  rpc:RemoteProcedureCall[*];
+}
+
+Class meta::external::format::protobuf::metamodel::RemoteProcedureCall
+{
+  name:String[1];
+  requestType:MessageType[1];
+  returnType:MessageType[1];
+}
+
+Class meta::external::format::protobuf::metamodel::MessageType
+{
+  type:ProtoBufType[1];
+  stream:Boolean[0..1];
+}
+
 Class meta::external::format::protobuf::metamodel::ProtoBufType
 {
 }
