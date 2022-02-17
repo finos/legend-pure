@@ -74,8 +74,6 @@ Class meta::external::format::protobuf::metamodel::Message extends meta::externa
 {
    name:String[1];
    body:MessageBodyItem[*];
-   reservedFieldNames:String[*];
-   reservedFieldNumbers:Integer[*];
 }
 
 Class meta::external::format::protobuf::metamodel::MessageBodyItem
@@ -93,6 +91,16 @@ Class meta::external::format::protobuf::metamodel::Field extends meta::external:
 Class meta::external::format::protobuf::metamodel::OneOf extends meta::external::format::protobuf::metamodel::MessageBodyItem
 {
   field:Field[2..*];
+}
+
+Class meta::external::format::protobuf::metamodel::ReservedFieldNames extends meta::external::format::protobuf::metamodel::MessageBodyItem
+{
+  names:String[*];
+}
+
+Class meta::external::format::protobuf::metamodel::ReservedFieldRanges extends meta::external::format::protobuf::metamodel::MessageBodyItem
+{
+  numbers:Integer[*];
 }
 
 Class meta::external::format::protobuf::metamodel::ProtoBufType
