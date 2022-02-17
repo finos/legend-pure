@@ -80,10 +80,14 @@ Class meta::external::format::protobuf::metamodel::MessageBodyItem
 {
 }
 
-Class meta::external::format::protobuf::metamodel::Field extends meta::external::format::protobuf::metamodel::MessageBodyItem
+Class meta::external::format::protobuf::metamodel::BaseField extends meta::external::format::protobuf::metamodel::MessageBodyItem
 {
-   binaryFieldNumber:Integer[1];
+   number:Integer[1];
    name:String[1];
+}
+
+Class meta::external::format::protobuf::metamodel::Field extends meta::external::format::protobuf::metamodel::BaseField
+{
    type:ProtoBufType[1];
    repeated:Boolean[1];
 }
@@ -91,6 +95,12 @@ Class meta::external::format::protobuf::metamodel::Field extends meta::external:
 Class meta::external::format::protobuf::metamodel::OneOf extends meta::external::format::protobuf::metamodel::MessageBodyItem
 {
   field:Field[2..*];
+}
+
+Class meta::external::format::protobuf::metamodel::MapField extends meta::external::format::protobuf::metamodel::BaseField
+{
+   keyType:ScalarType[1];
+   valueType:ProtoBufType[1];
 }
 
 Class meta::external::format::protobuf::metamodel::ReservedFieldNames extends meta::external::format::protobuf::metamodel::MessageBodyItem

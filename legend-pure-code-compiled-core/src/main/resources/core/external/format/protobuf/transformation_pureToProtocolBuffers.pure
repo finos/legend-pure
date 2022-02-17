@@ -119,7 +119,7 @@ function meta::external::format::protobuf::generation::propertyToField(property:
    (
       name = $property.name->toOne()->toLower(),
       type = $typesMap->get($property.genericType.rawType->toOne())->toOne(),
-      binaryFieldNumber = $index,
+      number = $index,
       repeated = !$property.multiplicity->hasUpperBound() || ($property.multiplicity.upperBound->toOne().value > 1)
    );
 }
