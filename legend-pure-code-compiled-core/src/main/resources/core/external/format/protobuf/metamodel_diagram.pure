@@ -298,19 +298,6 @@ Diagram meta::external::format::protobuf::Protobuf_Diagram(width=0.0, height=0.0
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_1(
-        property=meta::external::format::protobuf::metamodel::Message.fields,
-        source=Message_$_9,
-        target=Field_$_0
-,        points=[(627.84116,302.00000),(373.43333,302.00000)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
 
     PropertyView pview_2(
         property=meta::external::format::protobuf::metamodel::Enumeration.values,

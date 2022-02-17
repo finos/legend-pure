@@ -70,15 +70,19 @@ Enum meta::external::format::protobuf::metamodel::OptimizeMode
   LITE_RUNTIME
 }
 
-Class meta::external::format::protobuf::metamodel::Message extends meta::external::format::protobuf::metamodel::ProtoBufType
+Class meta::external::format::protobuf::metamodel::Message extends meta::external::format::protobuf::metamodel::MessageBodyItem, meta::external::format::protobuf::metamodel::ProtoBufType
 {
    name:String[1];
-   fields:Field[*];
+   body:MessageBodyItem[*];
    reservedFieldNames:String[*];
    reservedFieldNumbers:Integer[*];
 }
 
-Class meta::external::format::protobuf::metamodel::Field
+Class meta::external::format::protobuf::metamodel::MessageBodyItem
+{
+}
+
+Class meta::external::format::protobuf::metamodel::Field extends meta::external::format::protobuf::metamodel::MessageBodyItem
 {
    binaryFieldNumber:Integer[1];
    name:String[1];
@@ -86,6 +90,10 @@ Class meta::external::format::protobuf::metamodel::Field
    repeated:Boolean[1];
 }
 
+Class meta::external::format::protobuf::metamodel::OneOf extends meta::external::format::protobuf::metamodel::MessageBodyItem
+{
+  field:Field[2..*];
+}
 
 Class meta::external::format::protobuf::metamodel::ProtoBufType
 {

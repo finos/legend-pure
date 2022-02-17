@@ -25,11 +25,22 @@ function meta::external::format::protobuf::serialization::toString(file:ProtoFil
    + $file.topLevelDefs->sortBy(s|$s->match([m:Message[1]|$m.name,e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e.name]))->map(t | $t->meta::external::format::protobuf::serialization::toString($packageName))->joinStrings('\n');
 }
 
+function meta::external::format::protobuf::serialization::toString(p:MessageBodyItem[1],currentPackage:String[1]):String[1]
+{
+   $p->match(
+      [
+         message:Message[1]|'message ' + $message.name + ' {\n' + $message.body->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings(';\n') + ';\n}',
+         enum:meta::external::format::protobuf::metamodel::Enumeration[1]| 'enum '+$enum.name+' {\n'+$enum.values->map(v|'   '+$v.constant+' = '+$enum.values->indexOf($v)->toString())->joinStrings(';\n')+';\n}',
+         field:Field[1]|$field->meta::external::format::protobuf::serialization::toString($currentPackage)
+      ]
+   )
+}
+
 function meta::external::format::protobuf::serialization::toString(p:ProtoBufType[1],currentPackage:String[1]):String[1]
 {
    $p->match(
       [
-         message:Message[1]|'message ' + $message.name + ' {\n' + $message.fields->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings(';\n') + ';\n}',
+         message:Message[1]|'message ' + $message.name + ' {\n' + $message.body->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings(';\n') + ';\n}',
          enum:meta::external::format::protobuf::metamodel::Enumeration[1]| 'enum '+$enum.name+' {\n'+$enum.values->map(v|'   '+$v.constant+' = '+$enum.values->indexOf($v)->toString())->joinStrings(';\n')+';\n}'
       ]
    )
