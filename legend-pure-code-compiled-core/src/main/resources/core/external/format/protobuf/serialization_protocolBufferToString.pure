@@ -36,7 +36,7 @@ function meta::external::format::protobuf::serialization::toString(p:MessageBody
    )
 }
 
-function meta::external::format::protobuf::serialization::toString(p:ProtoBufType[1],currentPackage:String[1]):String[1]
+function meta::external::format::protobuf::serialization::toString(p:TopLevelItem[1],currentPackage:String[1]):String[1]
 {
    $p->match(
       [

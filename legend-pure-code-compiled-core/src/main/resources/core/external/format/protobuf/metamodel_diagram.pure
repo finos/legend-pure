@@ -265,23 +265,7 @@ Diagram meta::external::format::protobuf::Protobuf_Diagram(width=0.0, height=0.0
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_9(
-        source=Message_$_9,
-        target=ProtoBufType_$_14,
-        points=[(627.84116,302.00000),(628.15808,94.50000)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
 
-    GeneralizationView gview_10(
-        source=Enumeration_$_11,
-        target=ProtoBufType_$_14,
-        points=[(758.15808,393.50000),(758.15808,101.50000)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
 
 
     PropertyView pview_0(
