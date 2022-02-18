@@ -163,7 +163,7 @@ function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::p
                 '}', $resultForAccount.content );
 }
 
-function <<test.Test>> meta::external::format::protobuf::generation::tests::OptionsToString():Boolean[1]
+function <<test.Test>> meta::external::format::protobuf::generation::tests::testOptionsToString():Boolean[1]
 {
   let options = ^Options(javaPackage='com.gs.mymodel', 
                          javaOuterClassname='TestClass', 

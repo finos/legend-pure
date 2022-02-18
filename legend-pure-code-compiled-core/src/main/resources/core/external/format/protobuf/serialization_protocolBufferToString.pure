@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::external::format::protobuf::metamodel::*;
+import meta::external::format::protobuf::serialization::*;
 
 function meta::external::format::protobuf::serialization::toString(file:ProtoFile[1]):String[1]
 {
@@ -29,9 +30,12 @@ function meta::external::format::protobuf::serialization::toString(p:MessageBody
 {
    $p->match(
       [
-         message:Message[1]|'message ' + $message.name + ' {\n' + $message.content->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings(';\n') + ';\n}',
-         enum:meta::external::format::protobuf::metamodel::Enumeration[1]| 'enum '+$enum.name+' {\n'+$enum.values->map(v|'   '+$v.constant+' = '+$enum.values->indexOf($v)->toString())->joinStrings(';\n')+';\n}',
-         field:Field[1]|$field->meta::external::format::protobuf::serialization::toString($currentPackage)
+         m:Message[1]|$m->toString($currentPackage),
+         e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e->toString($currentPackage),
+         field:Field[1]| $field->toString($currentPackage),
+         m:MapField[1]| 'map<' + $m.keyType->toString($currentPackage) + ',' + $m.valueType->toString($currentPackage) + '> ' + $m->baseFieldToString() + ';\n',
+         o:OneOf[1]| 'oneof ' + $o.name + ' {\n' + $o.field->map(f | $f->toString($currentPackage))->joinStrings(';\n') + ';\n}',
+         mo:MessageOption[1]| $mo.option->meta::external::format::protobuf::serialization::toString()
       ]
    )
 }
@@ -40,26 +44,60 @@ function meta::external::format::protobuf::serialization::toString(p:TopLevelIte
 {
    $p->match(
       [
-         message:Message[1]|'message ' + $message.name + ' {\n' + $message.content->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings(';\n') + ';\n}',
-         enum:meta::external::format::protobuf::metamodel::Enumeration[1]| 'enum '+$enum.name+' {\n'+$enum.values->map(v|'   '+$v.constant+' = '+$enum.values->indexOf($v)->toString())->joinStrings(';\n')+';\n}'
+         m:Message[1]|$m->toString($currentPackage),
+         e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e->toString($currentPackage),
+         service:Service[1]|'service ' + $service.name + ' {\n' + $service.content->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings(';\n') + ';\n}'
       ]
+   )
+}
+
+function meta::external::format::protobuf::serialization::toString(message:Message[1],currentPackage:String[1]):String[1]
+{
+  'message ' + $message.name + ' {\n' + $message.content->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings(';\n') + ';\n}'
+}
+
+function meta::external::format::protobuf::serialization::toString(enum:meta::external::format::protobuf::metamodel::Enumeration[1],currentPackage:String[1]):String[1]
+{
+  'enum '+$enum.name+' {\n'+$enum.values->map(v|'   '+$v.constant+' = '+$enum.values->indexOf($v)->toString())->joinStrings(';\n')+';\n}'
+}
+
+function meta::external::format::protobuf::serialization::toString(s:ServiceBodyItem[1],currentPackage:String[1]):String[1]
+{
+   $s->match(
+     [
+       rpc:RemoteProcedureCall[1]|'  rpc ' + $rpc.name + ' (' + toString($rpc.requestType, $currentPackage) + ') returns (' + toString($rpc.returnType, $currentPackage) + ');\n',
+       o:ServiceOption[1]|'  ' + meta::external::format::protobuf::serialization::toString($o.option)
+     ]
    )
 }
 
 function meta::external::format::protobuf::serialization::toString(field:Field[1],currentPackage:String[1]):String[1]
 {
-   ' ' + if($field.repeated, | 'repeated ', | '') + $field.type->match(
-                                                                  [
-                                                                     t:MessagePtr[1]|if($currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
-                                                                     t:EnumPtr[1]|if($currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
-                                                                     t:ProtoBufType[1]|$t->genericType().rawType.name->toOne()->toLower()
-                                                                  ])+ ' ' + $field.name + ' = ' + $field.number->toString()
+   ' ' + if($field.repeated, | 'repeated ', | '') + meta::external::format::protobuf::serialization::toString($field.type, $currentPackage)+ ' ' + $field->baseFieldToString()
 }
+
+function meta::external::format::protobuf::serialization::baseFieldToString(bf:BaseField[1]):String[1]
+{
+   $bf.name + ' = ' + $bf.number->toString()
+}
+
+function meta::external::format::protobuf::serialization::toString(t:ProtoBufType[1],currentPackage:String[1]):String[1]
+{
+  $t->match([
+                t:MessagePtr[1]|if($currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
+                t:EnumPtr[1]|if($currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
+                t:ScalarType[1]|$t->genericType().rawType.name->toOne()->toLower()
+            ])
+}
+
+function meta::external::format::protobuf::serialization::toString(t:MessageType[1],currentPackage:String[1]):String[1]
+{
+   if($t.stream->isTrue(), |' [ "stream" ] ' ,|'') + $t->toString($currentPackage)
+}  
 
 function meta::external::format::protobuf::serialization::toString(o:Options[1]):String[1]
 {
-   ''
-   + if ($o.javaPackage->isEmpty(), | '', | 'option java_package = "' + $o.javaPackage->toOne() + '";\n')
+   if ($o.javaPackage->isEmpty(), | '', | 'option java_package = "' + $o.javaPackage->toOne() + '";\n')
    + if ($o.javaOuterClassname->isEmpty(), | '', | 'option java_outer_classname = "' + $o.javaOuterClassname->toOne() + '";\n')
    + if ($o.javaMultipleFiles->isEmpty(), | '', | 'option java_multiple_files = ' + $o.javaMultipleFiles->toOne()->toString() + ';\n')
    + if ($o.optimizeFor->isEmpty(), | '', | 'option optimize_for = ' + $o.optimizeFor->toOne().name + ';\n')

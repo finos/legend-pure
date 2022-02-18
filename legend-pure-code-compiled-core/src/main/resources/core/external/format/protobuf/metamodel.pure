@@ -99,11 +99,12 @@ Class meta::external::format::protobuf::metamodel::Field extends meta::external:
 
 Class meta::external::format::protobuf::metamodel::MessageOption extends meta::external::format::protobuf::metamodel::MessageBodyItem
 {
-  option:Option[*];
+  option:Option[1];
 }
 
 Class meta::external::format::protobuf::metamodel::OneOf extends meta::external::format::protobuf::metamodel::MessageBodyItem
 {
+  name:String[1];
   field:Field[2..*];
 }
 
