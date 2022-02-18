@@ -58,7 +58,7 @@ function meta::external::format::protobuf::serialization::toString(message:Messa
 
 function meta::external::format::protobuf::serialization::toString(enum:meta::external::format::protobuf::metamodel::Enumeration[1],currentPackage:String[1]):String[1]
 {
-  'enum '+$enum.name+' {\n'+$enum.values->map(v|'   '+$v.constant+' = '+$enum.values->indexOf($v)->toString())->joinStrings(';\n')+';\n}'
+  'enum '+$enum.name+' {\n'+$enum.values->map(v|'  '+$v.constant+' = '+$enum.values->indexOf($v)->toString())->joinStrings(';\n')+';\n}'
 }
 
 function meta::external::format::protobuf::serialization::toString(s:ServiceBodyItem[1],currentPackage:String[1]):String[1]
@@ -73,7 +73,7 @@ function meta::external::format::protobuf::serialization::toString(s:ServiceBody
 
 function meta::external::format::protobuf::serialization::toString(field:Field[1],currentPackage:String[1]):String[1]
 {
-   ' ' + if($field.repeated, | 'repeated ', | '') + meta::external::format::protobuf::serialization::toString($field.type, $currentPackage)+ ' ' + $field->baseFieldToString()
+   '  ' + if($field.repeated, | 'repeated ', | '') + meta::external::format::protobuf::serialization::toString($field.type, $currentPackage)+ ' ' + $field->baseFieldToString()
 }
 
 function meta::external::format::protobuf::serialization::baseFieldToString(bf:BaseField[1]):String[1]
