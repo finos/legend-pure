@@ -69,11 +69,8 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
 
 function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1..*], options:Options[0..1]):ProtoFile[*]
 {
-   println($class.name);
    let allClasses = $class->map(c | $c->scanTypes([]))->removeDuplicates()->remove(Any);
-   println($allClasses.name);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
-   println($typesMap->keys()->map(k|$k->elementToPath()));
    let classesByPackage = $allClasses->groupBy(c | $c->elementToProtoPackage());
    
    $classesByPackage->keyValues()->map(p | 
@@ -104,7 +101,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
       //If this is a complex type that is not in the current package, we need to import it      
       let imports = $packageClasses
         ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>).properties
-        ->filter(p | !$p->isPrimitiveValueProperty() && ($p.genericType.rawType.package->toOne()->elementToPath('.') != $thePackage))
+        ->filter(p | !$p->isPrimitiveValueProperty() && ($p.genericType.rawType.package->toOne()->elementToPath('.') != $thePackage) && $p.genericType.rawType != Map)
         ->map( p | ^ProtoImport(name=$p.genericType.rawType->toOne()->elementToProtoPackage()->protoPackageToFileName()));
 
       ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs,
@@ -118,7 +115,9 @@ function meta::external::format::protobuf::generation::propertyToField(property:
    ^Field
    (
       name = $property.name->toOne()->toLower(),
-      type = $typesMap->get($property.genericType.rawType->toOne())->toOne(),
+      type = if($property.genericType.rawType == Map,|^MapType(keyType=$typesMap->get($property.genericType.typeArguments->at(0).rawType->toOne())->toOne()->cast(@ScalarType),
+                                                                         valueType=$typesMap->get($property.genericType.typeArguments->at(1).rawType->toOne())->toOne())
+                                                              ,| $typesMap->get($property.genericType.rawType->toOne())->toOne()),
       number = $index,
       repeated = !$property.multiplicity->hasUpperBound() || ($property.multiplicity.upperBound->toOne().value > 1)
    );
@@ -154,7 +153,7 @@ function meta::external::format::protobuf::generation::scanTypes(t:Type[1], proc
 {
    if (!$processed->contains($t),
        |$t->concatenate(if($t->instanceOf(Class),
-                         |$t->cast(@Class<Any>)->allProperties().genericType.rawType->distinct()->concatenate($t->cast(@Class<Any>)->meta::pure::functions::meta::findAllSpecializations())->filter(t|($t->instanceOf(Class) || $t->instanceOf(meta::pure::metamodel::type::Enumeration)) && $t != Any)->map(c|$c->meta::external::format::protobuf::generation::scanTypes($processed->concatenate($t)))->distinct(),
+                         |$t->cast(@Class<Any>)->allProperties().genericType.rawType->distinct()->concatenate($t->cast(@Class<Any>)->meta::pure::functions::meta::findAllSpecializations())->filter(t|($t->instanceOf(Class) || $t->instanceOf(meta::pure::metamodel::type::Enumeration)) && $t != Any && $t != Map)->map(c|$c->meta::external::format::protobuf::generation::scanTypes($processed->concatenate($t)))->distinct(),
                          |[]
                        )),
        |[]

@@ -51,6 +51,11 @@ Class meta::external::format::protobuf::generation::tests::StandaloneThing
    name : String[1];
 }
 
+Class meta::external::format::protobuf::generation::tests::ClassWithMap
+{
+   map : Map<String,Integer>[1];
+}
+
 function <<test.Test>> meta::external::format::protobuf::generation::tests::testClassToProtoBuf():Boolean[1]
 {
   let results = Trade->classToMessage();              
@@ -121,6 +126,9 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
   assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
                 'package meta.external.format.protobuf.generation.tests;\n' + 
+                'message ClassWithMap {\n' +
+                '  map<string,int64> map = 1;\n' +
+                '}\n' +
                 'message Person {\n' +
                 '  string name = 1;\n' +
                 '}\n' + 
@@ -189,6 +197,18 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::tran
       + 'option java_package = "com.gs.person";\n'
       + 'message Person {\n'
       + '  string name = 1;\n'
+      + '}'
+      ,meta::external::format::protobuf::generation::transform($config).content);
+}
+
+function <<test.Test>> meta::external::format::protobuf::generation::tests::transform_testClassWithMapToProtoBuf():Boolean[1]
+{
+  let config = ^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::ClassWithMap');
+   assertEquals('syntax = "proto3";\n'
+      + 'import "google/protobuf/timestamp.proto";\n'
+      + 'package meta.external.format.protobuf.generation.tests;\n'
+      + 'message ClassWithMap {\n'
+      + '  map<string,int64> map = 1;\n'
       + '}'
       ,meta::external::format::protobuf::generation::transform($config).content);
 }

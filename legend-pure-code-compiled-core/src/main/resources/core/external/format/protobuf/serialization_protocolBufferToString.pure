@@ -33,7 +33,6 @@ function meta::external::format::protobuf::serialization::toString(p:MessageBody
          m:Message[1]|$m->toString($currentPackage),
          e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e->toString($currentPackage),
          field:Field[1]| $field->toString($currentPackage),
-         m:MapField[1]| 'map<' + $m.keyType->toString($currentPackage) + ',' + $m.valueType->toString($currentPackage) + '> ' + $m->baseFieldToString() + ';\n',
          o:OneOf[1]| 'oneof ' + $o.name + ' {\n' + $o.field->map(f | $f->toString($currentPackage))->joinStrings(';\n') + ';\n}',
          mo:MessageOption[1]| $mo.option->meta::external::format::protobuf::serialization::toString()
       ]
@@ -86,6 +85,7 @@ function meta::external::format::protobuf::serialization::toString(t:ProtoBufTyp
   $t->match([
                 t:MessagePtr[1]|if($currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
                 t:EnumPtr[1]|if($currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
+                m:MapType[1]|'map<' + $m.keyType->toString($currentPackage) + ',' + $m.valueType->toString($currentPackage) + '>',
                 t:ScalarType[1]|$t->genericType().rawType.name->toOne()->toLower()
             ])
 }

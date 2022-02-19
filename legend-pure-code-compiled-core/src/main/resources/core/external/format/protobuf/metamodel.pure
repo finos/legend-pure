@@ -108,12 +108,6 @@ Class meta::external::format::protobuf::metamodel::OneOf extends meta::external:
   field:Field[2..*];
 }
 
-Class meta::external::format::protobuf::metamodel::MapField extends meta::external::format::protobuf::metamodel::BaseField
-{
-   keyType:ScalarType[1];
-   valueType:ProtoBufType[1];
-}
-
 Class meta::external::format::protobuf::metamodel::ReservedFieldNames extends meta::external::format::protobuf::metamodel::MessageBodyItem
 {
   names:String[*];
@@ -181,6 +175,12 @@ Class meta::external::format::protobuf::metamodel::Enum
    constant : String[1];
    constantNumber : Integer[1];
    options: Option[*];
+}
+
+Class meta::external::format::protobuf::metamodel::MapType extends meta::external::format::protobuf::metamodel::ProtoBufType
+{
+   keyType:ScalarType[1];
+   valueType:ProtoBufType[1];
 }
 
 Class meta::external::format::protobuf::metamodel::ScalarType extends ProtoBufType
