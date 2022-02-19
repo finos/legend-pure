@@ -77,11 +77,11 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
       let thePackage = $p.first;
       let packageClasses = $p.second.values;
 
-      let topLevelDefs = $packageClasses
+      let messages = $packageClasses
         ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>)
         ->map(c|
             //Collect any abstract base classes
-            let oneOfs = $c->filter(c | ($c.properties->isEmpty() || $c->isAbstract()) && $c->allSpecializations()->isNotEmpty())
+            let oneOfs = $c->filter(c | ($c->allProperties()->isEmpty() || $c->isAbstract()) && $c->allSpecializations()->isNotEmpty())
                                       ->removeDuplicates()
                                       ->map(c | let subClasses = $c->allSpecializations()->filter(sc | $sc != $c);
                                                 ^OneOf(
@@ -97,9 +97,9 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
               name = $c.name->toOne(),
               content = $oneOfs->concatenate($c.properties->map(p|$p->propertyToField($c.properties->indexOf($p)+1, $typesMap)))
             );
-        )->concatenate
-            (
-              $packageClasses
+        );
+        
+      let enumerations = $packageClasses
               ->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->cast(@meta::pure::metamodel::type::Enumeration<Any>)
               ->map(e|
                     ^meta::external::format::protobuf::metamodel::Enumeration
@@ -107,17 +107,23 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
                         name = $e->enumName(),
                         values = $e->enumValues()->map(v|^meta::external::format::protobuf::metamodel::Enum(constant=$v->toString(), constantNumber=$e->enumValues()->indexOf($v)))
                     )->cast(@meta::external::format::protobuf::metamodel::TopLevelItem); //TODO - seems like a bug in pure should not be necessary
-                )
-            );
+                );
+
+      let topLevelDefs = $messages->concatenate($enumerations);      
 
       //If this is a complex type that is not in the current package, we need to import it      
-      let imports = $packageClasses
-        ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>).properties
-        ->filter(p | !$p->isPrimitiveValueProperty() && ($p.genericType.rawType.package->toOne()->elementToPath('.') != $thePackage) && $p.genericType.rawType != Map)
-        ->map( p | ^ProtoImport(name=$p.genericType.rawType->toOne()->elementToProtoPackage()->protoPackageToFileName()));
-
+      let imports = $messages.content
+        ->map(m| $m->match([
+          f:Field[1]|$f.type,
+          o:OneOf[1]|$o.field.type]))
+        ->filter(t|$t->instanceOf(MessagePtr))->cast(@MessagePtr)
+        ->filter(m | $m.package != $thePackage)
+        ->map(p| if ( $p.package == 'google.protobuf', | 'google/protobuf/' + $p.name->toLower() + '.proto'
+                                                                    , | $p.package->protoPackageToFileName()))
+        ->removeDuplicates()->sort()->map(s | ^ProtoImport(name=$s));
+        
       ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs,
-                 imports=[^ProtoImport(name='google/protobuf/timestamp.proto')]->concatenate($imports),
+                 imports=$imports,
                  options=$options);
    );
 }
