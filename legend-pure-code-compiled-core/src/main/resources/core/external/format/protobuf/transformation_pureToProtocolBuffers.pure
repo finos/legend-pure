@@ -86,7 +86,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
                                       ->map(c | let subClasses = $c->allSpecializations()->filter(sc | $sc != $c);
                                                 ^OneOf(
                                                   name=$c.name->toOne()->toLower(),
-                                                  field=$subClasses->map(s | ^Field(name=$s.name->toOne()->toLower(), 
+                                                  field=$subClasses->map(s | ^Field(name=$s.name->toOne()->meta::pure::functions::string::splitOnCamelCase()->joinStrings('_')->toLower(), 
                                                                                     type=$typesMap->get($s)->toOne(),
                                                                                     number=$subClasses->indexOf($s)+1,
                                                                                     repeated=false
@@ -126,7 +126,7 @@ function meta::external::format::protobuf::generation::propertyToField(property:
 {
    ^Field
    (
-      name = $property.name->toOne()->toLower(),
+      name = $property.name->toOne()->meta::pure::functions::string::splitOnCamelCase()->joinStrings('_')->toLower(),
       type = if($property.genericType.rawType == Map,|^MapType(keyType=$typesMap->get($property.genericType.typeArguments->at(0).rawType->toOne())->toOne()->cast(@ScalarType),
                                                                          valueType=$typesMap->get($property.genericType.typeArguments->at(1).rawType->toOne())->toOne())
                                                               ,| $typesMap->get($property.genericType.rawType->toOne())->toOne()),
