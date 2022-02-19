@@ -105,7 +105,7 @@ Class meta::external::format::protobuf::metamodel::MessageOption extends meta::e
 Class meta::external::format::protobuf::metamodel::OneOf extends meta::external::format::protobuf::metamodel::MessageBodyItem
 {
   name:String[1];
-  field:Field[2..*];
+  field:Field[*];
 }
 
 Class meta::external::format::protobuf::metamodel::ReservedFieldNames extends meta::external::format::protobuf::metamodel::MessageBodyItem

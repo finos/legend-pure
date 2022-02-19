@@ -56,6 +56,26 @@ Class meta::external::format::protobuf::generation::tests::ClassWithMap
    map : Map<String,Integer>[1];
 }
 
+Class meta::external::format::protobuf::generation::tests::oneof::Shape
+{
+}
+
+Class meta::external::format::protobuf::generation::tests::oneof::Circle extends meta::external::format::protobuf::generation::tests::oneof::Shape
+{
+  radius:Float[1];
+}
+
+Class meta::external::format::protobuf::generation::tests::oneof::Rectangle extends meta::external::format::protobuf::generation::tests::oneof::Shape
+{
+  height:Float[1];
+  width:Float[1];
+}
+
+Class meta::external::format::protobuf::generation::tests::oneof::Drawing
+{
+  shapes:meta::external::format::protobuf::generation::tests::oneof::Shape[*];
+}
+
 function <<test.Test>> meta::external::format::protobuf::generation::tests::testClassToProtoBuf():Boolean[1]
 {
   let results = Trade->classToMessage();              
@@ -93,7 +113,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
 function <<test.Test>> meta::external::format::protobuf::generation::tests::testGenerateProtobufFromPureWithScope():Boolean[1]
 {
   let results = generateProtobufFromPureWithScope(^ProtobufConfig(scopeElements=[meta::external::format::protobuf::generation::tests]));
-  assertSize($results, 3);
+  assertSize($results, 4);
   let resultForTrade = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_trade.proto');
   assertEquals('syntax = "proto3";\n' +
                 'import "google/protobuf/timestamp.proto";\n' +
@@ -134,7 +154,25 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                 '}\n' + 
                 'message StandaloneThing {\n' +
                 '  string name = 1;\n' +
-                '}', $resultForTestPkg.content );                         
+                '}', $resultForTestPkg.content );
+  let resultForInheritence = $results->filter( r | $r.fileName == 'meta_external_format_protobuf_generation_tests_oneof.proto');
+  assertEquals('syntax = "proto3";\n'+
+                'import "google/protobuf/timestamp.proto";\n'+
+                'package meta.external.format.protobuf.generation.tests.oneof;\n'+
+                'message Circle {\n'+
+                '  double radius = 1;\n'+
+                '}\n'+
+                'message Drawing {\n'+
+                '  oneof Shape {\n'+
+                '    Circle circle = 1;\n'+
+                '    Rectangle rectangle = 2;\n'+
+                '  }\n'+
+                '  repeated Shape shapes = 1;\n'+
+                '}\n'+
+                'message Rectangle {\n'+
+                '  double height = 1;\n'+
+                '  double width = 2;\n'+
+                '}', $resultForInheritence.content );                                      
 }
 
 function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::protobuf::generation::tests::transform_testClassToProtoBuf():Boolean[1]
