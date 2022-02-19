@@ -163,15 +163,17 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                 '  double radius = 1;\n'+
                 '}\n'+
                 'message Drawing {\n'+
-                '  oneof Shape {\n'+
-                '    Circle circle = 1;\n'+
-                '    Rectangle rectangle = 2;\n'+
-                '  }\n'+
                 '  repeated Shape shapes = 1;\n'+
                 '}\n'+
                 'message Rectangle {\n'+
                 '  double height = 1;\n'+
                 '  double width = 2;\n'+
+                '}\n'+
+                'message Shape {\n' +
+                '  oneof shape {\n'+
+                '    Circle circle = 1;\n'+
+                '    Rectangle rectangle = 2;\n'+
+                '  }\n'+
                 '}', $resultForInheritence.content );                                      
 }
 

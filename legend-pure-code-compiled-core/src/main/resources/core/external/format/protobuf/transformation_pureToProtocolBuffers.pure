@@ -79,16 +79,13 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
 
       let topLevelDefs = $packageClasses
         ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>)
-        ->filter(c|$c.properties->isNotEmpty() && !$c->isAbstract())
         ->map(c|
             //Collect any abstract base classes
-            let oneOfs = $c.properties->map(p|$p.genericType.rawType)
-                                      ->filter(c|$c->instanceOf(Class) && !$c == Map)->cast(@Class<Any>)
-                                      ->filter(c | ($c.properties->isEmpty() || $c->isAbstract()) && $c->allSpecializations()->isNotEmpty())
+            let oneOfs = $c->filter(c | ($c.properties->isEmpty() || $c->isAbstract()) && $c->allSpecializations()->isNotEmpty())
                                       ->removeDuplicates()
                                       ->map(c | let subClasses = $c->allSpecializations()->filter(sc | $sc != $c);
                                                 ^OneOf(
-                                                  name=$c.name->toOne(),
+                                                  name=$c.name->toOne()->toLower(),
                                                   field=$subClasses->map(s | ^Field(name=$s.name->toOne()->toLower(), 
                                                                                     type=$typesMap->get($s)->toOne(),
                                                                                     number=$subClasses->indexOf($s)+1,
