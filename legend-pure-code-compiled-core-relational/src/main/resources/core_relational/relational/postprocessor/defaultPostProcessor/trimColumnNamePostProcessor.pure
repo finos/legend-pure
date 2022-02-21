@@ -50,7 +50,9 @@ function meta::relational::postProcessor::reAliasColumnName::lengthConfig(runtim
   let type =  $runtime.connections->filter(c|$c->instanceOf(DatabaseConnection))->cast(@DatabaseConnection).type;
   if($type==DatabaseType.DB2,
      |128,
-     |if($type==DatabaseType.SybaseIQ,|255,|fail('Db not configured for column rename');0;)
+     |if($type==DatabaseType.SybaseIQ,|255,|
+       if($type==DatabaseType.Snowflake,|255,|
+         if($type==DatabaseType.H2,|255,|fail('Db not configured for column rename');0;)))
      );
 }
 
