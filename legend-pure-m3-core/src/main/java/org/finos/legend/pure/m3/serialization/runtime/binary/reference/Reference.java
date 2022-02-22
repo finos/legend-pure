@@ -22,23 +22,8 @@ import org.finos.legend.pure.m4.ModelRepository;
 
 public interface Reference
 {
-    Predicate<Reference> IS_RESOLVED = new Predicate<Reference>()
-    {
-        @Override
-        public boolean accept(Reference reference)
-        {
-            return reference.isResolved();
-        }
-    };
-
-    Function<Reference, CoreInstance> GET_RESOLVED_INSTANCE = new Function<Reference, CoreInstance>()
-    {
-        @Override
-        public CoreInstance valueOf(Reference reference)
-        {
-            return reference.getResolvedInstance();
-        }
-    };
+    Predicate<Reference> IS_RESOLVED = Reference::isResolved;
+    Function<Reference, CoreInstance> GET_RESOLVED_INSTANCE = Reference::getResolvedInstance;
 
     /**
      * Attempt to resolve the reference and return whether the attempt

@@ -360,7 +360,7 @@ public class BinaryModelSourceSerializer
         // Serialize properties
         ListIterable<ListIterable<String>> realKeys = instance.getKeys().toSortedList().collect(instance::getRealKeyByName).reject(M3PropertyPaths.BACK_REFERENCE_PROPERTY_PATHS::contains);
         writer.writeInt(realKeys.size());
-        for (ListIterable<String> realKey : realKeys)
+        realKeys.forEach(realKey ->
         {
             try
             {
@@ -370,16 +370,13 @@ public class BinaryModelSourceSerializer
                 ListIterable<? extends CoreInstance> values = getPropertyValueToMany(instance, realKey.getLast());
                 ListIterable<? extends CoreInstance> valuesToSerialize = M3PropertyPaths.children.equals(realKey) ? values.select(this::isFromThisSource) : values;
                 writer.writeInt(valuesToSerialize.size());
-                for (CoreInstance value : valuesToSerialize)
-                {
-                    serializePropertyValue(value, writer);
-                }
+                valuesToSerialize.forEach(value -> serializePropertyValue(value, writer));
             }
             catch (RuntimeException e)
             {
                 throw new RuntimeException("Error serializing values for property " + realKey, e);
             }
-        }
+        });
     }
 
     private void serializeClassifier(CoreInstance instance, Writer writer)
@@ -660,10 +657,7 @@ public class BinaryModelSourceSerializer
             catch (Exception e)
             {
                 // Exception occurred during serialization
-                StringBuilder message = new StringBuilder("Error serializaing ");
-                message.append(referenceInstance);
-                message.append(" with serializer for type ");
-                message.append(serializer.getTypePath());
+                StringBuilder message = new StringBuilder("Error serializing ").append(referenceInstance).append(" with serializer for type ").append(serializer.getTypePath());
                 SourceInformation sourceInfo = referenceInstance.getSourceInformation();
                 if (sourceInfo != null)
                 {
@@ -838,24 +832,8 @@ public class BinaryModelSourceSerializer
     private int[] getStringReferenceIds(ListIterable<String> strings)
     {
         int[] ids = new int[strings.size()];
-        int i = 0;
-        for (String string : strings)
-        {
-            ids[i] = getStringReferenceId(string);
-            i++;
-        }
+        strings.forEachWithIndex((string, i) -> ids[i] = getStringReferenceId(string));
         return ids;
-    }
-
-    private void registerStrings(Iterable<String> strings)
-    {
-        for (String string : strings)
-        {
-            if (!this.stringIds.containsKey(string))
-            {
-                registerString(string);
-            }
-        }
     }
 
     private int getPropertyRealKeyId(ListIterable<String> propertyRealKey)
@@ -870,7 +848,7 @@ public class BinaryModelSourceSerializer
 
     private int registerPropertyRealKey(ListIterable<String> propertyRealKey)
     {
-        registerStrings(propertyRealKey);
+        propertyRealKey.forEach(this::possiblyRegisterString);
         int id = this.propertyRealKeys.size();
         this.propertyRealKeys.add(propertyRealKey);
         this.propertyRealKeyIds.put(propertyRealKey, id);
