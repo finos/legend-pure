@@ -23,15 +23,11 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Annot
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithStereotypes;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Tag;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Generalization;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
@@ -39,7 +35,6 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.G
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -48,13 +43,14 @@ import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class VisibilityValidation
 {
-    public static void validateFunctionDefinition(FunctionDefinition<? extends CoreInstance> function, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
+    public static void validateFunctionDefinition(FunctionDefinition<?> function, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
         Package pkg = function._package();
         if (pkg != null)
@@ -64,7 +60,7 @@ public class VisibilityValidation
         }
     }
 
-    public static void validateClass(Class<? extends CoreInstance> cls, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
+    public static void validateClass(Class<?> cls, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
         Package pkg = cls._package();
         if (pkg != null)
@@ -87,66 +83,60 @@ public class VisibilityValidation
     private static void validateAnnotatedElement(AnnotatedElement element, String sourceId, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
         // Check stereotypes
-        for (CoreInstance stereotype : ImportStub.withImportStubByPasses(element._stereotypesCoreInstance().toList(), processorSupport))
+        ImportStub.withImportStubByPasses(ListHelper.wrapListIterable(element._stereotypesCoreInstance()), processorSupport).forEach(stereotype ->
         {
-            Profile profile = ((Annotation)stereotype)._profile();
+            Profile profile = ((Annotation) stereotype)._profile();
             if (!Visibility.isVisibleInSource(profile, sourceId, validatorState.getCodeStorage().getAllRepositories(), processorSupport))
             {
-                throwRepoVisibilityException(element.getSourceInformation(), profile, sourceId, validatorState, processorSupport);
+                throwRepoVisibilityException(element.getSourceInformation(), profile, sourceId, processorSupport);
             }
-        }
+        });
 
         // Check tagged values
-        for (TaggedValue taggedValue : element._taggedValues())
+        element._taggedValues().forEach(taggedValue ->
         {
-            Tag tag = (Tag)ImportStub.withImportStubByPass(taggedValue._tagCoreInstance(), processorSupport);
-            Profile profile = tag == null ? null : tag._profile();
+            Tag tag = (Tag) ImportStub.withImportStubByPass(taggedValue._tagCoreInstance(), processorSupport);
+            Profile profile = (tag == null) ? null : tag._profile();
             if (!Visibility.isVisibleInSource(profile, sourceId, validatorState.getCodeStorage().getAllRepositories(), processorSupport))
             {
-                throwRepoVisibilityException(element.getSourceInformation(), profile, sourceId, validatorState, processorSupport);
+                throwRepoVisibilityException(element.getSourceInformation(), profile, sourceId, processorSupport);
             }
-        }
+        });
     }
 
-    private static void validateFunctionDefinition(FunctionDefinition<? extends CoreInstance> function, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
+    private static void validateFunctionDefinition(FunctionDefinition<?> function, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        FunctionType functionType = (FunctionType)processorSupport.function_getFunctionType(function);
+        FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(function);
 
         // Check return type
         validateGenericType(functionType._returnType(), pkg, sourceId, context, validatorState, processorSupport, true);
 
         // Check parameter types
-        for (VariableExpression parameter : functionType._parameters())
-        {
-            validateGenericType(parameter._genericType(), pkg, sourceId, context, validatorState, processorSupport, true);
-        }
+        functionType._parameters().forEach(p -> validateGenericType(p._genericType(), pkg, sourceId, context, validatorState, processorSupport, true));
 
         // Check expression sequence
-        for (ValueSpecification expression : function._expressionSequence())
-        {
-            validateValueSpecification(expression, pkg, sourceId, context, validatorState, processorSupport);
-        }
+        function._expressionSequence().forEach(e -> validateValueSpecification(e, pkg, sourceId, context, validatorState, processorSupport));
 
         // Check annotations
         validateAnnotatedElement(function, sourceId, validatorState, processorSupport);
     }
 
-    private static void validateClass(Class<? extends CoreInstance> cls, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
+    private static void validateClass(Class<?> cls, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
         // Check properties
-        for (Property<?, ?> property : cls._properties())
+        cls._properties().forEach(p ->
         {
-            validateGenericType(property._genericType(), pkg, sourceId, context, validatorState, processorSupport, true);
-            validateAnnotatedElement(property, sourceId, validatorState, processorSupport);
-        }
-        for (Property<?, ?> propertyFromAssoc : cls._propertiesFromAssociations())
+            validateGenericType(p._genericType(), pkg, sourceId, context, validatorState, processorSupport, true);
+            validateAnnotatedElement(p, sourceId, validatorState, processorSupport);
+        });
+        cls._propertiesFromAssociations().forEach(p ->
         {
-            validateGenericType(propertyFromAssoc._genericType(), pkg, sourceId, context, validatorState, processorSupport, false);
-            validateAnnotatedElement(propertyFromAssoc, sourceId, validatorState, processorSupport);
+            validateGenericType(p._genericType(), pkg, sourceId, context, validatorState, processorSupport, false);
+            validateAnnotatedElement(p, sourceId, validatorState, processorSupport);
 
-            GenericType genericType = propertyFromAssoc._genericType();
-            Type rawType = (Type)ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
-            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType, processorSupport) && !Visibility.isVisibleInSource(rawType, sourceId, validatorState.getCodeStorage().getAllRepositories(), processorSupport))
+            GenericType genericType = p._genericType();
+            Type rawType = (Type) ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
+            if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType) && !Visibility.isVisibleInSource(rawType, sourceId, validatorState.getCodeStorage().getAllRepositories(), processorSupport))
             {
                 String classRepoName = PureCodeStorage.getSourceRepoName(cls.getSourceInformation().getSourceId());
                 String otherRepoName = PureCodeStorage.getSourceRepoName(rawType.getSourceInformation().getSourceId());
@@ -155,33 +145,29 @@ public class VisibilityValidation
                 boolean otherIsInModelRepo = (otherRepoName != null) && otherRepoName.startsWith("model");
                 if (!(classIsInModelRepo && otherIsInModelRepo))
                 {
-                    throw new PureCompilationException(propertyFromAssoc.getSourceInformation(), "Associations are not permitted between classes in different repositories, " +
-                            getElementNameForExceptionMessage(rawType, validatorState, processorSupport) + " is in the \"" + PureCodeStorage.getSourceRepoName(rawType.getSourceInformation().getSourceId()) + "\" repository and " +
-                            getElementNameForExceptionMessage(cls, validatorState, processorSupport) + " is in the \"" + PureCodeStorage.getSourceRepoName(cls.getSourceInformation().getSourceId()) + "\" repository" +
+                    throw new PureCompilationException(p.getSourceInformation(), "Associations are not permitted between classes in different repositories, " +
+                            getElementNameForExceptionMessage(rawType, processorSupport) + " is in the \"" + PureCodeStorage.getSourceRepoName(rawType.getSourceInformation().getSourceId()) + "\" repository and " +
+                            getElementNameForExceptionMessage(cls, processorSupport) + " is in the \"" + PureCodeStorage.getSourceRepoName(cls.getSourceInformation().getSourceId()) + "\" repository" +
                             ". This can be solved by first creating a subclass located in the same repository and creating an Association to the subclass.");
                 }
             }
-
-        }
+        });
 
         // Check qualified properties
         // TODO validate qualified property definitions
-        for (QualifiedProperty property : cls._qualifiedProperties())
+        cls._qualifiedProperties().forEach(qp ->
         {
-            validateGenericType(property._genericType(), pkg, sourceId, context, validatorState, processorSupport, true);
-            validateAnnotatedElement(property, sourceId, validatorState, processorSupport);
-        }
-        for (QualifiedProperty propertyFromAssoc : cls._qualifiedPropertiesFromAssociations())
+            validateGenericType(qp._genericType(), pkg, sourceId, context, validatorState, processorSupport, true);
+            validateAnnotatedElement(qp, sourceId, validatorState, processorSupport);
+        });
+        cls._qualifiedPropertiesFromAssociations().forEach(qp ->
         {
-            validateGenericType(propertyFromAssoc._genericType(), pkg, sourceId, context, validatorState, processorSupport, false);
-            validateAnnotatedElement(propertyFromAssoc, sourceId, validatorState, processorSupport);
-        }
+            validateGenericType(qp._genericType(), pkg, sourceId, context, validatorState, processorSupport, false);
+            validateAnnotatedElement(qp, sourceId, validatorState, processorSupport);
+        });
 
         // Check generalizations
-        for (Generalization generalization : cls._generalizations())
-        {
-            validateGenericType(generalization._general(), pkg, sourceId, context, validatorState, processorSupport, true);
-        }
+        cls._generalizations().forEach(genl -> validateGenericType(genl._general(), pkg, sourceId, context, validatorState, processorSupport, true));
 
         // Check annotations
         validateAnnotatedElement(cls, sourceId, validatorState, processorSupport);
@@ -190,10 +176,7 @@ public class VisibilityValidation
     private static void validateAssociation(Association association, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
         // Check properties
-        for (Property<?,?> property : association._properties())
-        {
-            validateGenericType(property._genericType(), pkg, sourceId, context, validatorState, processorSupport, true);
-        }
+        association._properties().forEach(p -> validateGenericType(p._genericType(), pkg, sourceId, context, validatorState, processorSupport, true));
 
         // Check annotations
         validateAnnotatedElement(association, sourceId, validatorState, processorSupport);
@@ -201,35 +184,26 @@ public class VisibilityValidation
 
     private static void validateGenericType(GenericType genericType, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport, boolean checkSourceVisibility) throws PureCompilationException
     {
-        if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType, processorSupport))
+        if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(genericType))
         {
-            Type rawType = (Type)ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
+            Type rawType = (Type) ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
             if (rawType instanceof FunctionType)
             {
-                for (VariableExpression parameter : ((FunctionType)rawType)._parameters())
-                {
-                    GenericType parameterType = parameter._genericType();
-                    validateGenericType(parameterType, pkg, sourceId, context, validatorState, processorSupport, checkSourceVisibility);
-                }
-
-                GenericType returnType = ((FunctionType)rawType)._returnType();
-                validateGenericType(returnType, pkg, sourceId, context, validatorState, processorSupport, checkSourceVisibility);
+                ((FunctionType) rawType)._parameters().forEach(p -> validateGenericType(p._genericType(), pkg, sourceId, context, validatorState, processorSupport, checkSourceVisibility));
+                validateGenericType(((FunctionType) rawType)._returnType(), pkg, sourceId, context, validatorState, processorSupport, checkSourceVisibility);
             }
             else
             {
                 if (!Visibility.isVisibleInPackage(rawType, pkg, context, processorSupport))
                 {
-                    throwAccessException(genericType.getSourceInformation(), rawType, pkg, validatorState, processorSupport);
+                    throwAccessException(genericType.getSourceInformation(), rawType, pkg, processorSupport);
                 }
                 if (checkSourceVisibility && !Visibility.isVisibleInSource(rawType, sourceId, validatorState.getCodeStorage().getAllRepositories(), processorSupport))
                 {
-                    throwRepoVisibilityException(genericType.getSourceInformation(), rawType, sourceId, validatorState, processorSupport);
+                    throwRepoVisibilityException(genericType.getSourceInformation(), rawType, sourceId, processorSupport);
                 }
             }
-            for (GenericType typeArgument : genericType._typeArguments())
-            {
-                validateGenericType(typeArgument, pkg, sourceId, context, validatorState, processorSupport, checkSourceVisibility);
-            }
+            genericType._typeArguments().forEach(arg -> validateGenericType(arg, pkg, sourceId, context, validatorState, processorSupport, checkSourceVisibility));
         }
     }
 
@@ -237,15 +211,15 @@ public class VisibilityValidation
     {
         if (valueSpec instanceof FunctionExpression)
         {
-            validateFunctionExpression((FunctionExpression)valueSpec, pkg, sourceId, context, validatorState, processorSupport);
+            validateFunctionExpression((FunctionExpression) valueSpec, pkg, sourceId, context, validatorState, processorSupport);
         }
         else if (valueSpec instanceof InstanceValue)
         {
-            for (CoreInstance value : ImportStub.withImportStubByPasses(((InstanceValue)valueSpec)._valuesCoreInstance().toList(), processorSupport))
+            ImportStub.withImportStubByPasses(ListHelper.wrapListIterable(((InstanceValue) valueSpec)._valuesCoreInstance()), processorSupport).forEach(value ->
             {
                 if (value instanceof LambdaFunction)
                 {
-                    validateFunctionDefinition((LambdaFunction<? extends CoreInstance>)value, pkg, sourceId, context, validatorState, processorSupport);
+                    validateFunctionDefinition((LambdaFunction<?>) value, pkg, sourceId, context, validatorState, processorSupport);
                 }
                 else if (Instance.instanceOf(value, M3Paths.Path, processorSupport))
                 {
@@ -257,29 +231,29 @@ public class VisibilityValidation
                 }
                 else if (value instanceof Function)
                 {
-                    validatePackageAndSourceVisibility(valueSpec, pkg, sourceId, context, validatorState, processorSupport, (Function)value);
+                    validatePackageAndSourceVisibility(valueSpec, pkg, sourceId, context, validatorState, processorSupport, (Function<?>) value);
                 }
                 else if (value instanceof ValueSpecification)
                 {
-                    validateValueSpecification((ValueSpecification)value, pkg, sourceId, context, validatorState, processorSupport);
+                    validateValueSpecification((ValueSpecification) value, pkg, sourceId, context, validatorState, processorSupport);
                 }
                 else if (value instanceof Class)
                 {
-                    validatePackageAndSourceVisibility(valueSpec, pkg, sourceId, context, validatorState, processorSupport, (Class)value);
+                    validatePackageAndSourceVisibility(valueSpec, pkg, sourceId, context, validatorState, processorSupport, (Class<?>) value);
                 }
                 else if (value instanceof KeyExpression)
                 {
-                    validateValueSpecification(((KeyExpression)value)._key(), pkg, sourceId, context, validatorState, processorSupport);
-                    validateValueSpecification(((KeyExpression)value)._expression(), pkg, sourceId, context, validatorState, processorSupport);
+                    validateValueSpecification(((KeyExpression) value)._key(), pkg, sourceId, context, validatorState, processorSupport);
+                    validateValueSpecification(((KeyExpression) value)._expression(), pkg, sourceId, context, validatorState, processorSupport);
                 }
                 else if (Instance.instanceOf(value, M3Paths.PackageableElement, processorSupport))
                 {
                     if (!Visibility.isVisibleInSource(value, sourceId, validatorState.getCodeStorage().getAllRepositories(), processorSupport))
                     {
-                        throwRepoVisibilityException(valueSpec.getSourceInformation(), value, sourceId, validatorState, processorSupport);
+                        throwRepoVisibilityException(valueSpec.getSourceInformation(), value, sourceId, processorSupport);
                     }
                 }
-            }
+            });
         }
     }
 
@@ -287,11 +261,11 @@ public class VisibilityValidation
     {
         if (!Visibility.isVisibleInPackage(value, pkg, context, processorSupport))
         {
-            throwAccessException(valueSpec.getSourceInformation(), value, pkg, validatorState, processorSupport);
+            throwAccessException(valueSpec.getSourceInformation(), value, pkg, processorSupport);
         }
         if (!Visibility.isVisibleInSource(value, sourceId, validatorState.getCodeStorage().getAllRepositories(), processorSupport))
         {
-            throwRepoVisibilityException(valueSpec.getSourceInformation(), value, sourceId, validatorState, processorSupport);
+            throwRepoVisibilityException(valueSpec.getSourceInformation(), value, sourceId, processorSupport);
         }
     }
 
@@ -299,67 +273,57 @@ public class VisibilityValidation
     {
         if (!Visibility.isVisibleInPackage(value, pkg, context, processorSupport))
         {
-            throwAccessException(sourceInformationForError, value, pkg, validatorState, processorSupport);
+            throwAccessException(sourceInformationForError, value, pkg, processorSupport);
         }
         if (!Visibility.isVisibleInSource(value, sourceId, validatorState.getCodeStorage().getAllRepositories(), processorSupport))
         {
-            throwRepoVisibilityException(sourceInformationForError, value, sourceId, validatorState, processorSupport);
+            throwRepoVisibilityException(sourceInformationForError, value, sourceId, processorSupport);
         }
     }
 
     private static void validateFunctionExpression(FunctionExpression expression, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        Function function = (Function)ImportStub.withImportStubByPass(expression._funcCoreInstance(), processorSupport);
+        Function<?> function = (Function<?>) ImportStub.withImportStubByPass(expression._funcCoreInstance(), processorSupport);
         validatePackageAndSourceVisibility(expression, pkg, sourceId, context, validatorState, processorSupport, function);
-
-        for (ValueSpecification parameterValue : expression._parametersValues())
-        {
-            validateValueSpecification(parameterValue, pkg, sourceId, context, validatorState, processorSupport);
-        }
+        expression._parametersValues().forEach(pv -> validateValueSpecification(pv, pkg, sourceId, context, validatorState, processorSupport));
     }
 
     //TODO: move to m2-path
     private static void validatePath(CoreInstance path, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        validateGenericType((GenericType)Instance.getValueForMetaPropertyToOneResolved(path, M3Properties.start, processorSupport), pkg, sourceId, context, validatorState, processorSupport, true);
+        validateGenericType((GenericType) Instance.getValueForMetaPropertyToOneResolved(path, M3Properties.start, processorSupport), pkg, sourceId, context, validatorState, processorSupport, true);
         // TODO consider validating the parameters of the Path
     }
 
     //TODO: move to m2-graph
     private static void validateRootGraphFetchTree(CoreInstance rootTree, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        validatePackageAndSourceVisibility(rootTree.getValueForMetaPropertyToOne("class").getSourceInformation(), pkg, sourceId, context, validatorState, processorSupport, (Class) Instance.getValueForMetaPropertyToOneResolved(rootTree, "class", processorSupport));
-        for (CoreInstance subTree : Instance.getValueForMetaPropertyToManyResolved(rootTree, "subTrees", processorSupport))
-        {
-            validatePropertyGraphFetchTree(subTree, pkg, sourceId, context, validatorState, processorSupport);
-        }
+        validatePackageAndSourceVisibility(rootTree.getValueForMetaPropertyToOne(M3Properties._class).getSourceInformation(), pkg, sourceId, context, validatorState, processorSupport, (Class<?>) Instance.getValueForMetaPropertyToOneResolved(rootTree, M3Properties._class, processorSupport));
+        Instance.getValueForMetaPropertyToManyResolved(rootTree, "subTrees", processorSupport).forEach(subTree -> validatePropertyGraphFetchTree(subTree, pkg, sourceId, context, validatorState, processorSupport));
     }
 
     private static void validatePropertyGraphFetchTree(CoreInstance propertyTree, CoreInstance pkg, String sourceId, Context context, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        validatePackageAndSourceVisibility(propertyTree.getValueForMetaPropertyToOne("property").getSourceInformation(), pkg, sourceId, context, validatorState, processorSupport, (AbstractProperty) Instance.getValueForMetaPropertyToOneResolved(propertyTree, "property", processorSupport));
+        validatePackageAndSourceVisibility(propertyTree.getValueForMetaPropertyToOne(M3Properties.property).getSourceInformation(), pkg, sourceId, context, validatorState, processorSupport, (AbstractProperty<?>) Instance.getValueForMetaPropertyToOneResolved(propertyTree, M3Properties.property, processorSupport));
         CoreInstance subTypeClass = Instance.getValueForMetaPropertyToOneResolved(propertyTree, "subType", processorSupport);
         if (subTypeClass != null)
         {
-            validatePackageAndSourceVisibility(propertyTree.getValueForMetaPropertyToOne("subType").getSourceInformation(), pkg, sourceId, context, validatorState, processorSupport, (Class) subTypeClass);
+            validatePackageAndSourceVisibility(propertyTree.getValueForMetaPropertyToOne("subType").getSourceInformation(), pkg, sourceId, context, validatorState, processorSupport, (Class<?>) subTypeClass);
         }
-        for (CoreInstance subTree : Instance.getValueForMetaPropertyToManyResolved(propertyTree, "subTrees", processorSupport))
-        {
-            validatePropertyGraphFetchTree(subTree, pkg, sourceId, context, validatorState, processorSupport);
-        }
+        Instance.getValueForMetaPropertyToManyResolved(propertyTree, "subTrees", processorSupport).forEach(subTree -> validatePropertyGraphFetchTree(subTree, pkg, sourceId, context, validatorState, processorSupport));
     }
 
-    private static void throwAccessException(SourceInformation sourceInfo, CoreInstance element, CoreInstance pkg, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
+    private static void throwAccessException(SourceInformation sourceInfo, CoreInstance element, CoreInstance pkg, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        throw new PureCompilationException(sourceInfo, getElementNameForExceptionMessage(element, validatorState, processorSupport) + " is not accessible in " + PackageableElement.getUserPathForPackageableElement(pkg, "::"));
+        throw new PureCompilationException(sourceInfo, getElementNameForExceptionMessage(element, processorSupport) + " is not accessible in " + PackageableElement.getUserPathForPackageableElement(pkg, "::"));
     }
 
-    private static void throwRepoVisibilityException(SourceInformation sourceInfo, CoreInstance element, String sourceId, ValidatorState validatorState, ProcessorSupport processorSupport) throws PureCompilationException
+    private static void throwRepoVisibilityException(SourceInformation sourceInfo, CoreInstance element, String sourceId, ProcessorSupport processorSupport) throws PureCompilationException
     {
-        throw new PureCompilationException(sourceInfo, getElementNameForExceptionMessage(element, validatorState, processorSupport) + " is not visible in the file " + sourceId);
+        throw new PureCompilationException(sourceInfo, getElementNameForExceptionMessage(element, processorSupport) + " is not visible in the file " + sourceId);
     }
 
-    private static String getElementNameForExceptionMessage(CoreInstance element, ValidatorState validatorState, ProcessorSupport processorSupport)
+    private static String getElementNameForExceptionMessage(CoreInstance element, ProcessorSupport processorSupport)
     {
         if (Instance.instanceOf(element, M3Paths.Function, processorSupport))
         {
