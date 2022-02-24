@@ -15,6 +15,10 @@ function meta::protocols::pure::vX_X_X::invocation::generation::json::transformJ
 
 ###Pure
 
+// RRTODO: Add vX_X_X transformCpbGenerationConfig here
+
+###Pure
+
 import meta::external::format::avro::generation::*;
 
 function meta::protocols::pure::vX_X_X::invocation::generation::avro::transformAvroGenerationConfig(input:AvroConfig[1]):meta::protocols::pure::vX_X_X::metamodel::invocation::generation::avro::AvroConfig[1]
