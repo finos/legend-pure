@@ -1,0 +1,15 @@
+// TODO: Make this accessible only from meta::external::format::cpb::generation::generateBackend
+
+import meta::pure::persistence::metamodel::*;
+import meta::pure::persistence::metamodel::trigger::*;
+import meta::pure::persistence::metamodel::reader::*;
+
+Class meta::external::format::cpb::metamodel::PersistenceCPB
+{
+   documentation: String[1];
+   owners: String[1..*];
+   trigger: Trigger[1];
+   reader: Reader[1];
+   persister: Persister[1];
+}
+

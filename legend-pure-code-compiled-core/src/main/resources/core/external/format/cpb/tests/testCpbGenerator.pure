@@ -1,0 +1,88 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::external::format::cpb::generation::*;
+import meta::pure::executionPlan::profiles::*;
+import meta::external::format::cpb::generation::tests::*;
+import meta::json::*;
+
+import meta::pure::persistence::metamodel::*;
+import meta::pure::persistence::metamodel::trigger::*;
+import meta::pure::persistence::metamodel::reader::*;
+import meta::legend::service::metamodel::*;
+import meta::pure::persistence::metamodel::batch::*;
+import meta::pure::persistence::metamodel::batch::targetspecification::*;
+import meta::pure::persistence::metamodel::batch::deduplication::*;
+import meta::pure::persistence::metamodel::batch::mode::snapshot::*;
+import meta::pure::persistence::metamodel::batch::audit::*;
+
+Profile meta::external::format::cpb::generation::tests::CpbProperty
+{
+   tags: [
+     p1, p2, p3
+   ];
+}
+
+Class <<access.private>> meta::external::format::cpb::generation::tests::A
+{
+    a: String[1];
+}
+
+function <<access.private>> meta::external::format::cpb::generation::tests::getPersistencePipe(): PersistencePipe[1]
+{
+  let package = meta::pure::functions::meta::pathToPackage('cnas::pipes', true);
+
+  let svcReader = ^ServiceReader(
+      service = ^Service(
+		package = $package,
+        pattern = '/mountains/lhotse',
+        owners = ['ram'],
+        autoActivateUpdates = true,
+        documentation = 'A service',
+        execution = ^PureExecution(func = {|true}),
+        test = ^Test(),
+        tags = []
+      )
+    );
+
+  let pp = ^PersistencePipe(
+    package = $package,
+    documentation = 'This is not a pipe',
+    owners = ['rajamor', 'chheda'],
+    trigger = ^OpaqueTrigger(),
+    reader = $svcReader,
+    persister = ^BatchPersister(
+      targetSpecification = ^FlatTargetSpecification(
+        modelClass = A,
+        targetName = 's3sink',
+        deduplicationStrategy = ^NoDeduplicationStrategy(),
+        batchMilestoningMode = ^NonMilestonedSnapshot(
+          auditing = ^NoAuditing()
+        )
+      )
+    )
+  );
+
+  $pp;
+}
+
+
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::cpb::generation::tests::transform_persistencePipeToBackend(): Boolean[1]
+{
+  let pp = getPersistencePipe();
+  let config = meta::external::format::cpb::generation::defaultConfig();
+  let schema = transform(^$config(scopeElements=[$pp]))->at(0)->at(0).content;
+  assertEquals('{"items":"This is not a pipe","owners":["rajamor","chheda"]}', $schema);
+}
+

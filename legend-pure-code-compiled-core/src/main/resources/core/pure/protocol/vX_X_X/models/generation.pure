@@ -63,6 +63,13 @@ Enum meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf:
 }
 
 ###Pure
+Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::cpb::CpbConfig extends meta::protocols::pure::vX_X_X::metamodel::invocation::generation::GenerationConfiguration
+{
+
+   comment: String[0..1];
+}
+
+###Pure
 Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::avro::AvroConfig extends meta::protocols::pure::vX_X_X::metamodel::invocation::generation::GenerationConfiguration
 {
 

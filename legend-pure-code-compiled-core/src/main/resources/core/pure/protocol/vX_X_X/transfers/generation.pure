@@ -29,6 +29,20 @@ function meta::protocols::pure::vX_X_X::invocation::generation::json::transformJ
 
 ###Pure
 
+import meta::external::format::cpb::generation::*;
+
+function meta::protocols::pure::vX_X_X::invocation::generation::cpb::transformCpbGenerationConfig(input:CpbConfig[1]):meta::protocols::pure::vX_X_X::metamodel::invocation::generation::cpb::CpbConfig[1]
+{
+   ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::cpb::CpbConfig(
+      package = $input.package,
+      class = $input.class,
+      comment=$input.comment
+   )
+}
+
+
+###Pure
+
 import meta::external::format::avro::generation::*;
 
 function meta::protocols::pure::vX_X_X::invocation::generation::avro::transformAvroGenerationConfig(input:AvroConfig[1]):meta::protocols::pure::vX_X_X::metamodel::invocation::generation::avro::AvroConfig[1]
