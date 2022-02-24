@@ -47,13 +47,16 @@ Class meta::pure::alloy::connections::alloy::authentication::TestDatabaseAuthent
 {
 }
 
-Class meta::pure::alloy::connections::alloy::authentication::GCPWorkloadIdentityFederationAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
+Class meta::pure::alloy::connections::alloy::authentication::GCPWorkloadIdentityFederationWithAWSAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
 {
     workloadProjectNumber : String[1];
     serviceAccountEmail : String[1];
-    gcpScope: String[1];
+    additionalGcpScopes: String[*];
     workloadPoolId : String[1];
     workloadProviderId: String[1];
-    discoveryUrl: String[1];
-    clientId: String[1];
+    awsAccountId: String[1];
+    awsRegion: String[1];
+    awsRole: String[1];
+    awsAccessKeyIdVaultReference: String[1];
+    awsSecretAccessKeyVaultReference: String[1];
 }
