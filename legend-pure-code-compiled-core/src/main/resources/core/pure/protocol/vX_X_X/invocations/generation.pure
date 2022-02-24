@@ -30,6 +30,11 @@ function meta::protocols::pure::vX_X_X::invocation::generation::json::legendGene
 
 ###Pure
 
+// RRTODO - add legendGenerateCpb here
+
+
+###Pure
+
 import meta::pure::generation::metamodel::*;
 import meta::external::format::avro::generation::*;
 import meta::json::*;

@@ -49,6 +49,11 @@ Enum meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf:
 }
 
 ###Pure
+
+// RRTODO: Add vX_X_X CpbConfig here
+
+
+###Pure
 Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::avro::AvroConfig extends meta::protocols::pure::vX_X_X::metamodel::invocation::generation::GenerationConfiguration
 {
 

@@ -1,0 +1,44 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::external::format::cpb::generation::*;
+import meta::pure::executionPlan::profiles::*;
+import meta::external::format::cpb::generation::tests::*;
+import meta::json::*;
+
+Profile meta::external::format::cpb::generation::tests::CpbProperty
+{
+   tags: [
+     p1, p2, p3
+   ];
+}
+
+// To be developed - start here next
+
+// Class <<access.private>> meta::external::format::avro::generation::tests::A
+// {
+//    a: String[1];
+// }
+// 
+// function <<test.Test>> meta::external::format::avro::generation::tests::simpleToOneStringProperty(): Boolean[1]
+// {
+//    let schema = classToAvroSchema(A, ^AvroConfig())->meta::external::format::avro::serialization::avroSchemaToJSON()->toCompactJSONString();
+//    assertEquals('{"type":"record","name":"A","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"a","type":"string"}]}', $schema);
+// }
+// 
+// function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_simpleToOneStringProperty(): Boolean[1]
+// {
+//    let schema = transform(^AvroConfig(class=A->elementToPath()))->at(0)->at(0).content;
+//    assertEquals('{"type":"record","name":"A","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"a","type":"string"}]}', $schema);
+// }
