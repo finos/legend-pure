@@ -1,0 +1,78 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::pure::executionPlan::*;
+import meta::pure::router::extension::*;
+import meta::pure::mapping::*;
+import meta::pure::runtime::*;
+import meta::relational::metamodel::relation::*;
+import meta::relational::metamodel::*;
+import meta::relational::runtime::*;
+import meta::relational::functions::sqlQueryToString::*;
+import meta::relational::functions::typeInference::*;
+import meta::relational::mapping::*;
+import meta::relational::dbTestRunner::*;
+
+function meta::relational::dbTestRunner::runDynaFunctionDatabaseTest(dynaFunc:DynaFunction[1], expectedResult : Literal[1..*], testConfig:DbTestConfig[1]): String[0..1]
+{ 
+  let sqlQuery = ^SelectSQLQuery(columns=[$dynaFunc]);
+  let sqlString = sqlQueryToString($sqlQuery, $testConfig.dbType, []);
+
+  let expectedResultTypes = $expectedResult->map(e|$e->inferRelationalType())->toOneMany();
+  let plan = wrapSQLStringInExecutionPlan($sqlString, $expectedResultTypes, $testConfig.dbType);
+
+  if($testConfig.expectedSql->isNotEmpty() && ($testConfig.expectedSql->toOne() != $sqlString),
+  | 'Sql assert failed ,expected sql: '+ $testConfig.expectedSql->toOne()  +', actual sql : ' + $sqlString;,
+  | let res = executePlanInTestDatabase($plan, $testConfig.dbType, defaultRelationalExtensions());
+    if($res->isEmpty(),
+      | [],                                  //legend engine not available 
+      | if (equal($res.values,$expectedResult.value),
+        | [],
+        | let expectedStr = $expectedResult.value->map(v|$v->toString())->makeString('[',', ',']');
+          let resStr = $res.values->map(v|$v->toString())->makeString('[',', ',']');
+          'Result assert failed ,expected Values : '+ $expectedStr  +', actual Values : ' + $resStr;
+        );
+     );
+  );
+}
+
+function meta::relational::dbTestRunner::wrapSQLStringInExecutionPlan(sqlString:String[1], resultTypes:meta::relational::metamodel::datatype::DataType[1..*], dbType:DatabaseType[1]):ExecutionPlan[1]
+{
+  // use dummyDB as dynaFunctions are independent of store
+  let testConnection = ^TestDatabaseConnection(element= ^Database(name='dummyDB'), type=$dbType, timeZone = 'UTC');
+  let testRuntime = ^Runtime(connections=$testConnection);
+  
+  let resultType = ^DataTypeResultType(type= $resultTypes->at(0)->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType());
+
+  let resultColumns = $resultTypes->toIndexed()->map(e| 
+            ^SQLResultColumn(label='result' + $e.first->toString(), dataType=$e.second));
+  
+  let sqlExecutionNode = ^SQLExecutionNode(
+                        sqlQuery=$sqlString ,
+                        connection=$testConnection , 
+                        resultType=$resultType,
+                        resultColumns=$resultColumns);
+
+  ^ExecutionPlan(
+    authDependent=false,
+    runtime=$testRuntime,
+    func={|true},
+    mapping=^Mapping(name='dummyMapping'),
+    rootExecutionNode=^RelationalDataTypeInstantiationExecutionNode(
+          resultType=$resultType,
+          executionNodes=[$sqlExecutionNode]
+        )
+    );
+}
+
