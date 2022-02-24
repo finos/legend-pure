@@ -178,3 +178,13 @@ Class meta::relational::mapping::RelationalActivity extends meta::pure::mapping:
    executionPlanInformation : String[0..1];
    dataSource : meta::relational::runtime::DataSource[0..1];
 }
+
+// Semi Structured
+
+Class meta::relational::mapping::SemiStructuredRelationalPropertyMapping extends RelationalPropertyMapping
+{
+}
+
+Class meta::relational::mapping::SemiStructuredEmbeddedRelationalInstanceSetImplementation extends SemiStructuredRelationalPropertyMapping, EmbeddedRelationalInstanceSetImplementation
+{
+}
