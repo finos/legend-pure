@@ -19,6 +19,17 @@ import meta::pure::persistence::metamodel::*;
 import meta::external::format::cpb::generation::*;
 import meta::external::format::cpb::metamodel::*;
 
+import meta::pure::persistence::metamodel::*;
+import meta::pure::persistence::metamodel::trigger::*;
+import meta::pure::persistence::metamodel::reader::*;
+import meta::legend::service::metamodel::*;
+import meta::pure::persistence::metamodel::batch::*;
+import meta::pure::persistence::metamodel::batch::targetspecification::*;
+import meta::pure::persistence::metamodel::batch::deduplication::*;
+import meta::pure::persistence::metamodel::batch::mode::snapshot::*;
+import meta::pure::persistence::metamodel::batch::audit::*;
+
+
 function  meta::external::format::cpb::generation::transform(input: CpbConfig[1]): CpbOutput[*]
 {
   meta::legend::test::mayExecuteLegendTest(
@@ -32,10 +43,9 @@ function  meta::external::format::cpb::generation::transform(input: CpbConfig[1]
 
 function <<access.private,Generation.Transformation>> meta::external::format::cpb::generation::internal_transform(input: CpbConfig[1]): CpbOutput[*]
 {
-   assertFalse($input.class->isEmpty(),'a persistence pipe must be provided to cpb transform');
-   let possibleElement = forgivingPathToElement($input.class->toOne());
-   assertNotEmpty($possibleElement, | $input.class->toOne() + ' was not found');
-   assertFalse($possibleElement->size()>1, | $input.class->toOne() + ' more than one found ');
+   let possibleElement = $input.allPackageScopeElements()->filter(p|$p->instanceOf(PersistencePipe))->cast(@PersistencePipe);
+   assertNotEmpty($possibleElement, | 'No persistence pipe was found');
+   assertFalse($possibleElement->size()>1, | 'More than one persistence pipe was found');
    $input->meta::external::format::cpb::generation::generateCpbFromPure($possibleElement->toOne()->cast(@PersistencePipe));
 }
 
@@ -47,9 +57,20 @@ function meta::external::format::cpb::generation::generateCpbFromPureWithScope(c
    $scopeElements->map(pp| $config->meta::external::format::cpb::generation::generateCpbFromPure($pp));
 }
 
+function meta::external::format::cpb::generation::generateBackend(pp: PersistencePipe[1]): String[1]
+{
+  let doc = newJSONKeyValue('items', ^JSONString(value=$pp.documentation));
+  let owners = newJSONKeyValue('owners', ^JSONArray(values=$pp.owners->map(t|^JSONString(value=$t))));
+  let o = newJSONObject([$doc, $owners]);
+  $o->toCompactJSONString();
+}
+
+
 function meta::external::format::cpb::generation::generateCpbFromPure(config: CpbConfig[1], pp: PersistencePipe[1]): CpbOutput[*]
 {
-   let content = $pp->toJSON();
-   ^CpbOutput(content=$content,fileName=$pp->elementToPath()->pathToFileName('cpb'), format='json');
+   let content = $pp->generateBackend();
+   let out = ^CpbOutput(content=$content,fileName=$pp->elementToPath()->pathToFileName('cpb'), format='json');
+   println($out);
+   $out;
 }
 
