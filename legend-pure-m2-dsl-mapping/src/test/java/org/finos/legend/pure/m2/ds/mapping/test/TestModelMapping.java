@@ -857,4 +857,209 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
             assertPureException(PureCompilationException.class, "The following required properties for test::TargetClass are not mapped: prop3", "/test/mapping.pure", 5, 5, 5, 5, 5, 15, e);
         }
     }
+
+    @Test
+    public void testMappingWithMerge()
+    {
+    String  source =
+               "Class  example::SourcePersonWithFirstName\n" +
+                "{\n" +
+                "   id:Integer[1];\n" +
+                "   firstName:String[1];\n" +
+                "}\n" +
+                "\n" +
+                "\n" +
+                "Class example::SourcePersonWithLastName\n" +
+                "{\n" +
+                "   id:Integer[1];\n" +
+                "   lastName:String[1];\n" +
+                "}\n" +
+              "Class example::Person\n" +
+                "{\n" +
+                "   firstName:String[1];\n" +
+                "   lastName:String[1];\n" +
+                "}\n" +
+
+                "\n" +
+              "function meta::pure::router::operations::merge(o:meta::pure::mapping::OperationSetImplementation[1]):meta::pure::mapping::SetImplementation[*] {[]}\n" +
+
+                "###Mapping\n" +
+                "Mapping  example::MergeModelMappingSourceWithMatch\n" +
+                "(\n" +
+                "   *example::Person : Operation\n" +
+                "           {\n" +
+          "             meta::pure::router::operations::merge_OperationSetImplementation_1__SetImplementation_MANY_([p1,p2,p3],{p1:example::SourcePersonWithFirstName[1], p2:example::SourcePersonWithLastName[1],p4:example::SourcePersonWithLastName[1] | $p1.id ==  $p2.id })\n" +
+
+                "           }\n" +
+                "\n" +
+                "   example::Person[p1] : Pure\n" +
+                "            {\n" +
+                "               ~src example::SourcePersonWithFirstName\n" +
+                "               firstName : $src.firstName\n" +
+                "            }\n" +
+                "\n" +
+                "   example::Person[p2] : Pure\n" +
+                "            {\n" +
+                "               ~src example::SourcePersonWithLastName\n" +
+                       "        lastName :  $src.lastName\n" +
+                "            }\n" +
+                "   example::Person[p3] : Pure\n" +
+                "            {\n" +
+                "               ~src example::SourcePersonWithLastName\n" +
+                "        lastName :  $src.lastName\n" +
+                "            }\n" +
+
+                "\n" +
+                ")";
+
+
+        this.runtime.createInMemorySource("mapping.pure", source);
+        this.runtime.compile();
+    }
+
+ @Test
+    public void testMappingWithMergeInvalidReturn()
+    {
+    String  source =
+               "Class  example::SourcePersonWithFirstName\n" +
+                "{\n" +
+                "   id:Integer[1];\n" +
+                "   firstName:String[1];\n" +
+                "}\n" +
+                "\n" +
+                "\n" +
+                "Class example::SourcePersonWithLastName\n" +
+                "{\n" +
+                "   id:Integer[1];\n" +
+                "   lastName:String[1];\n" +
+                "}\n" +
+              "Class example::Person\n" +
+                "{\n" +
+                "   firstName:String[1];\n" +
+                "   lastName:String[1];\n" +
+                "}\n" +
+
+                "\n" +
+              "function meta::pure::router::operations::merge(o:meta::pure::mapping::OperationSetImplementation[1]):meta::pure::mapping::SetImplementation[*] {[]}\n" +
+
+                "###Mapping\n" +
+                "Mapping  example::MergeModelMappingSourceWithMatch\n" +
+                "(\n" +
+                "   *example::Person : Operation\n" +
+                "           {\n" +
+          "             meta::pure::router::operations::merge_OperationSetImplementation_1__SetImplementation_MANY_([p1,p2,p3],{p1:example::SourcePersonWithFirstName[1], p2:example::SourcePersonWithLastName[1],p4:example::SourcePersonWithLastName[1] |  'test' })\n" +
+
+                "           }\n" +
+                "\n" +
+                "   example::Person[p1] : Pure\n" +
+                "            {\n" +
+                "               ~src example::SourcePersonWithFirstName\n" +
+                "               firstName : $src.firstName\n" +
+                "            }\n" +
+                "\n" +
+                "   example::Person[p2] : Pure\n" +
+                "            {\n" +
+                "               ~src example::SourcePersonWithLastName\n" +
+                       "        lastName :  $src.lastName\n" +
+                "            }\n" +
+                "   example::Person[p3] : Pure\n" +
+                "            {\n" +
+                "               ~src example::SourcePersonWithLastName\n" +
+                "        lastName :  $src.lastName\n" +
+                "            }\n" +
+
+                "\n" +
+                ")";
+
+
+
+        this.runtime.createInMemorySource("mapping.pure", source);
+
+        try
+        {
+            this.runtime.compile();
+            Assert.fail("Expected compilation exception");
+        }
+        catch (PureCompilationException e)
+        {
+                this.assertPureException(PureCompilationException.class,
+                        "Merge validation function for class: Person does not return Boolean",
+                        "mapping.pure", 23, 5, 23, 14, 26, 12, e);
+
+        }
+    }
+
+     @Test
+    public void testMappingWithMergeInvalidParameter()
+    {
+    String  source =
+               "Class  example::SourcePersonWithFirstName\n" +
+                "{\n" +
+                "   id:Integer[1];\n" +
+                "   firstName:String[1];\n" +
+                "}\n" +
+                "\n" +
+                "\n" +
+                "Class example::SourcePersonWithLastName\n" +
+                "{\n" +
+                "   id:Integer[1];\n" +
+                "   lastName:String[1];\n" +
+                "}\n" +
+              "Class example::Person\n" +
+                "{\n" +
+                "   id:Integer[1];\n" +
+                "   firstName:String[1];\n" +
+                "   lastName:String[1];\n" +
+                "}\n" +
+
+                "\n" +
+              "function meta::pure::router::operations::merge(o:meta::pure::mapping::OperationSetImplementation[1]):meta::pure::mapping::SetImplementation[*] {[]}\n" +
+
+                "###Mapping\n" +
+                "Mapping  example::MergeModelMappingSourceWithMatch\n" +
+                "(\n" +
+                "   *example::Person : Operation\n" +
+                "           {\n" +
+          "             meta::pure::router::operations::merge_OperationSetImplementation_1__SetImplementation_MANY_([p1,p2,p3],{p1:example::Person[1], p2:example::SourcePersonWithLastName[1],p4:example::SourcePersonWithLastName[1] | $p1.id ==  $p2.id })\n" +
+
+                "           }\n" +
+                "\n" +
+                "   example::Person[p1] : Pure\n" +
+                "            {\n" +
+                "               ~src example::SourcePersonWithFirstName\n" +
+                "               firstName : $src.firstName\n" +
+                "            }\n" +
+                "\n" +
+                "   example::Person[p2] : Pure\n" +
+                "            {\n" +
+                "               ~src example::SourcePersonWithLastName\n" +
+                       "        lastName :  $src.lastName\n" +
+                "            }\n" +
+                "   example::Person[p3] : Pure\n" +
+                "            {\n" +
+                "               ~src example::SourcePersonWithLastName\n" +
+                "        lastName :  $src.lastName\n" +
+                "            }\n" +
+
+                "\n" +
+                ")";
+
+
+
+        this.runtime.createInMemorySource("mapping.pure", source);
+
+        try
+        {
+            this.runtime.compile();
+            Assert.fail("Expected compilation exception");
+        }
+        catch (PureCompilationException e)
+        {
+                this.assertPureException(PureCompilationException.class,
+                        "Merge validation function for class: Person has an invalid parameter. All parameters must be a src class of a merged set",
+                        "mapping.pure", 24, 5, 24, 14, 27, 12, e);
+
+        }
+    }
+
 }

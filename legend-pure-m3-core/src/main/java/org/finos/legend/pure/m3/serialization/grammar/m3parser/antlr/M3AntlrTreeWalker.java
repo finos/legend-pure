@@ -119,4 +119,9 @@ public class M3AntlrTreeWalker extends org.finos.legend.pure.m3.serialization.gr
     {
         return this.antlrContextToM3Builder.combinedExpression(ctx, "", FastList.<String>newList(), lambdaContext, "", true, importId, true);
     }
+
+    public TemporaryPureMergeOperationFunctionSpecification walkMergeOperationSpecification(org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser.CombinedExpressionContext ctx, AntlrContextToM3CoreInstance.LambdaContext lambdaContext)
+    {
+        return this.antlrContextToM3Builder.mergeOperationSpecification(ctx,lambdaContext, this.importId);
+    }
 }

@@ -192,15 +192,13 @@ public class M3AntlrParser implements Parser
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
             final M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(sourceInformation, this.inlineDSLLibrary, repository, coreInstancesResult, listener, context, null, count, this.useImportStubsInInstanceParser, addLines, oldState);
             visitor.visit(parser.definition());
-        }
-        catch (Exception e)
+        } catch (Exception e)
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 this.parseDefinition(false, code, sourceName, repository, coreInstancesResult, listener, context, count, addLines, oldState);
-            }
-            else
+            } else
             {
                 throw e;
             }
@@ -220,15 +218,13 @@ public class M3AntlrParser implements Parser
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
             M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(sourceInformation, this.inlineDSLLibrary, repository, null, null, context, importId, 0, null);
             return visitor.visit(parser.type());
-        }
-        catch (Exception e)
+        } catch (Exception e)
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseType(false, code, fileName, offsetLine, offsetColumn, importId, repository, context);
-            }
-            else
+            } else
             {
                 throw e;
             }
@@ -243,15 +239,13 @@ public class M3AntlrParser implements Parser
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
             M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(sourceInformation, this.inlineDSLLibrary, repository, null, null, context, importId, 0, null);
             return visitor.visit(parser.instance());
-        }
-        catch (Exception e)
+        } catch (Exception e)
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseInstance(false, code, fileName, offsetLine, offsetColumn, importId, repository, context);
-            }
-            else
+            } else
             {
                 throw e;
             }
@@ -271,15 +265,13 @@ public class M3AntlrParser implements Parser
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
             M3AntlrPropertiesWalker visitor = new M3AntlrPropertiesWalker(sourceInformation, this.inlineDSLLibrary, repository, context, importId, properties, qualifiedProperties, typeOwner, startingQualifiedPropertyIndex);
             visitor.visit(parser.properties());
-        }
-        catch (Exception e)
+        } catch (Exception e)
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 this.parseProperties(false, code, fileName, properties, qualifiedProperties, typeOwner, importId, addLines, repository, context, startingQualifiedPropertyIndex);
-            }
-            else
+            } else
             {
                 throw e;
             }
@@ -294,15 +286,13 @@ public class M3AntlrParser implements Parser
             org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(useFastParser, code, sourceInformation);
             M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(sourceInformation, this.inlineDSLLibrary, repository, null, null, context, importId, 0, null);
             return visitor.visit(parser.treePath());
-        }
-        catch (Exception e)
+        } catch (Exception e)
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
                 //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseTreePath(false, code, fileName, offsetLine, offsetColumn, importId, repository, context);
-            }
-            else
+            } else
             {
                 throw e;
             }
@@ -318,7 +308,7 @@ public class M3AntlrParser implements Parser
     {
         AntlrSourceInformation sourceInformation = new AntlrSourceInformation(offset, 0, sourceName, true);
         org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(true, content, sourceInformation);
-        ImportGroup grp = (ImportGroup)processorSupport.package_getByUserPath("system::imports::" + importId);
+        ImportGroup grp = (ImportGroup) processorSupport.package_getByUserPath("system::imports::" + importId);
         M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(classPath, sourceInformation, this.inlineDSLLibrary, repository, null, null, context, grp, 0, null);
         return visitor.walkMapping(parser.mapping(), lambdaContext);
     }
@@ -360,11 +350,18 @@ public class M3AntlrParser implements Parser
     {
         AntlrSourceInformation sourceInformation = new AntlrSourceInformation(offset, 0, sourceName, true);
         org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(true, content, sourceInformation);
-        ImportGroup grp = (ImportGroup)processorSupport.package_getByUserPath("system::imports::" + importId);
+        ImportGroup grp = (ImportGroup) processorSupport.package_getByUserPath("system::imports::" + importId);
         M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(null, sourceInformation, this.inlineDSLLibrary, repository, null, null, context, grp, 0, null);
         return visitor.walkAggregateSpecification(parser.aggregateSpecification(), lambdaContext, index);
     }
-
+    public TemporaryPureMergeOperationFunctionSpecification parseMergeSpecification(String content, AntlrContextToM3CoreInstance.LambdaContext lambdaContext, String sourceName, int offset, String importId, ModelRepository repository, ProcessorSupport processorSupport, Context context)
+    {
+        AntlrSourceInformation sourceInformation = new AntlrSourceInformation(offset, 0, sourceName, true);
+        org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3Parser parser = initAntlrParser(true, content, sourceInformation);
+        ImportGroup grp = (ImportGroup) processorSupport.package_getByUserPath("system::imports::" + importId);
+        M3AntlrTreeWalker visitor = new M3AntlrTreeWalker(null, sourceInformation, this.inlineDSLLibrary, repository, null, null, context, grp, 0, null);
+        return visitor.walkMergeOperationSpecification(parser.combinedExpression(), lambdaContext);
+    }
     @Deprecated
     public static String process(CoreInstance ci, Context context, ProcessorSupport processorSupport)
     {
