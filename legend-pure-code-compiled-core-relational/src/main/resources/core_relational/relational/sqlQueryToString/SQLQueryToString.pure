@@ -1541,6 +1541,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='cast(%s as char)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='cast(%s as varchar)')),
+                                                 choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='cast(%s as varchar)')),
