@@ -193,6 +193,18 @@ function meta::relational::postProcessor::transform(r:RelationalOperationElement
 
                       ll:LiteralList[1] | pair($ll, $transformed),
 
+                      s : SemiStructuredPropertyAccess[1] | let transformedOperand = transform($s.operand, $f, $transformed);
+                                                            let transformedProperty = transform($s.property, $f, $transformedOperand.second);
+                                                            if($s.index->isEmpty(),
+                                                               | pair(^$s(operand = $transformedOperand.first, property = $transformedProperty.first), $transformedProperty.second),
+                                                               | let transformedIndex = transform($s.index->toOne(), $f, $transformedProperty.second);
+                                                                 pair(^$s(operand = $transformedOperand.first, property = $transformedProperty.first, index = $transformedIndex.first), $transformedIndex.second);
+                                                            );,
+
+                      s : SemiStructuredArrayElementAccess[1] | let transformedOperand = transform($s.operand, $f, $transformed);
+                                                                let transformedIndex = transform($s.index, $f, $transformedOperand.second);
+                                                                pair(^$s(operand = $transformedOperand.first, index = $transformedIndex.first), $transformedIndex.second);,
+
                       rel:RelationalOperationElement[1] | pair($rel, $transformed)
                     ]);
          pair($toReturn.first, $toReturn.second->put($r, $toReturn.first));
@@ -265,6 +277,9 @@ function meta::relational::postProcessor::transformNonCached(r:RelationalOperati
                            suffix = $j.suffix->map(s|$s->transformNonCached($f))
                         ),
  
+                      s: SemiStructuredPropertyAccess[1] | ^$s(operand = $s.operand->transformNonCached($f), property = $s.property->transformNonCached($f), index = $s.index->map(i | $i->transformNonCached($f))),
+                      s: SemiStructuredArrayElementAccess[1] | ^$s(operand = $s.operand->transformNonCached($f), index = $s.index->transformNonCached($f)),
+                     
                       rel:RelationalOperationElement[1] | $rel
                     ]);
 }
@@ -304,6 +319,8 @@ function meta::relational::postProcessor::fixTables(relationalOperationElement:R
                                              suffix=if($j.suffix->isEmpty(), | [], | $j.suffix->toOne()->fixTables($oldToNewPairs))),
                     l : Literal[1] | $l,
                     ll : LiteralList[1] | $ll,
+                    s: SemiStructuredPropertyAccess[1] | ^$s(operand = $s.operand->fixTables($oldToNewPairs), property = $s.property->fixTables($oldToNewPairs), index = $s.index->map(i | $i->fixTables($oldToNewPairs))),
+                    s: SemiStructuredArrayElementAccess[1] | ^$s(operand = $s.operand->fixTables($oldToNewPairs), index = $s.index->fixTables($oldToNewPairs)),
                     rel: RelationalOperationElement[1] | $rel
                   ]);
 }

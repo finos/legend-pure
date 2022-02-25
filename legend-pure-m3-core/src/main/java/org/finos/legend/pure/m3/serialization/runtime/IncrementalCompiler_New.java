@@ -112,19 +112,20 @@ public class IncrementalCompiler_New extends IncrementalCompiler
         if (sources.isEmpty())
         {
             // We must compile even if the set of sources is empty, as post-processing or validation may be required for nodes from already compiled sources.
-            IncrementalCompilerTransaction repoTransaction = this.isTransactionalByDefault && threadLocalTransaction == null ? this.newTransaction(true) : threadLocalTransaction;
+            boolean shouldCreateNewRepoTransaction = this.isTransactionalByDefault && (threadLocalTransaction == null);
+            IncrementalCompilerTransaction repoTransaction = shouldCreateNewRepoTransaction ? this.newTransaction(true) : threadLocalTransaction;
             MutableSet<CoreInstance> repoTransactionInstances = Sets.mutable.empty();
             try
             {
                 result = this.compileRepoSources(repoTransaction, "Pure", 1, 1, sources, this.toProcess.toImmutable(), this.toUnbind.toImmutable(), Lists.mutable.<SourceState>with(), repoTransactionInstances);
-                if (this.isTransactionalByDefault && threadLocalTransaction == null)
+                if (shouldCreateNewRepoTransaction)
                 {
                     repoTransaction.commit();
                 }
             }
-            catch (RuntimeException e)
+            catch (Exception e)
             {
-                if (this.isTransactionalByDefault && threadLocalTransaction == null)
+                if (shouldCreateNewRepoTransaction)
                 {
                     this.rollBack(repoTransaction, e, repoTransactionInstances);
                 }
@@ -144,33 +145,26 @@ public class IncrementalCompiler_New extends IncrementalCompiler
 
             ListIterable<String> repoCompileOrder = allReposToCompile.toSortedList(new RepositoryComparator(this.codeStorage.getAllRepositories()));
             MutableList<String> newCompileOrder = Lists.mutable.empty();
-            for (String repo : repoCompileOrder)
+            repoCompileOrder.forEach(repo ->
             {
-                if (repo == null)
+                if ((repo != null) && repo.startsWith("model"))
                 {
-                    newCompileOrder.add(null);
+                    if (!newCompileOrder.contains("model-all"))
+                    {
+                        newCompileOrder.add("model-all");
+                    }
                 }
                 else
                 {
-                    if (repo.startsWith("model"))
-                    {
-                        if (!newCompileOrder.contains("model-all"))
-                        {
-                            newCompileOrder.add("model-all");
-                        }
-                    }
-                    else
-                    {
-                        newCompileOrder.add(repo);
-                    }
+                    newCompileOrder.add(repo);
                 }
-            }
+            });
             int repoCount = newCompileOrder.size();
 
-            int repoNum = 1;
-            for (String repo : newCompileOrder)
+            boolean shouldCreateNewRepoTransactions = this.isTransactionalByDefault && (threadLocalTransaction == null);
+            newCompileOrder.forEachWithIndex((repo, i) ->
             {
-                IncrementalCompilerTransaction repoTransaction = this.isTransactionalByDefault && threadLocalTransaction == null ? this.newTransaction(true) : threadLocalTransaction;
+                IncrementalCompilerTransaction repoTransaction = shouldCreateNewRepoTransactions ? this.newTransaction(true) : threadLocalTransaction;
                 RichIterable<? extends Source> repoSources = sourcesByRepoNew.get(repo);
                 RichIterable<CoreInstance> toProcessThisRepo = this.toProcess.selectWith(CORE_INSTANCE_IS_FROM_REPO, repo).toImmutable();
                 RichIterable<CoreInstance> toUnbindThisRepo = this.toUnbind.selectWith(CORE_INSTANCE_IS_FROM_REPO, repo).toImmutable();
@@ -179,15 +173,15 @@ public class IncrementalCompiler_New extends IncrementalCompiler
                 SourceMutation repoResult;
                 try
                 {
-                    repoResult = this.compileRepoSources(repoTransaction, repo, repoNum++, repoCount, repoSources, toProcessThisRepo, toUnbindThisRepo, sourceStatesByRepo.get(repo), repoTransactionInstances);
-                    if (this.isTransactionalByDefault && threadLocalTransaction == null)
+                    repoResult = this.compileRepoSources(repoTransaction, repo, i + 1, repoCount, repoSources, toProcessThisRepo, toUnbindThisRepo, sourceStatesByRepo.get(repo), repoTransactionInstances);
+                    if (shouldCreateNewRepoTransactions)
                     {
                         repoTransaction.commit();
                     }
                 }
-                catch (RuntimeException e)
+                catch (Exception e)
                 {
-                    if (this.isTransactionalByDefault && threadLocalTransaction == null)
+                    if (shouldCreateNewRepoTransactions)
                     {
                         this.rollBack(repoTransaction, e, repoTransactionInstances);
                     }
@@ -200,13 +194,13 @@ public class IncrementalCompiler_New extends IncrementalCompiler
                 }
                 else if ("model-all".equals(repo))
                 {
-                    compiledSourcesByRepo.putAll(repoSources.groupBy((Source source) -> PureCodeStorage.getSourceRepoName(source.getId())));
+                    compiledSourcesByRepo.putAll(repoSources.groupBy(source -> PureCodeStorage.getSourceRepoName(source.getId())));
                 }
                 else
                 {
                     compiledSourcesByRepo.putAll(repo, repoSources);
                 }
-            }
+            });
         }
 
         this.runEventHandlers(compilerEventHandlers, this.processed, compiledSourcesByRepo);

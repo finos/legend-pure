@@ -191,7 +191,7 @@ function meta::pure::router::routing::varToString(a:Any[1]):String[1]
 {
    $a->match(
                 [
-                   s:SimpleFunctionExpression[1]|$s.func.name->toOne()+ if($s.func == meta::pure::functions::lang::subType_Any_m__T_1__T_m_,| $s.parametersValues->at(1)->genericType().rawType->toOne()->cast(@Class<Any>).name->toOne(),| $s.parametersValues->map(p|$p->varToString()))->makeString('(',',',')'),
+                   s:SimpleFunctionExpression[1]|$s.func.name->toOne()+ if($s.func->in([meta::pure::functions::lang::subType_Any_1__T_1__T_$0_1$_, meta::pure::functions::lang::subType_Any_$0_1$__T_1__T_$0_1$_, meta::pure::functions::lang::subType_Any_MANY__T_1__T_MANY_]),| $s.parametersValues->at(1)->genericType().rawType->toOne()->cast(@Class<Any>).name->toOne(),| $s.parametersValues->map(p|$p->varToString()))->makeString('(',',',')'),
                    e:RoutedValueSpecification[1]|$e.value->varToString(),
                    a:meta::pure::functions::collection::AggregateValue<Nil,Nil,Any>[1]|$a.mapFn->varToString()+$a.aggregateFn->varToString(),
                    a:meta::pure::tds::AggregateValue<Any,Any>[1]|$a.name+$a.mapFn->varToString()+$a.aggregateFn->varToString(),
@@ -573,7 +573,9 @@ function meta::pure::router::routing::shouldStop(f:Function<Any>[1], extensions:
       col_Function_1__String_1__BasicColumnSpecification_1_,
       col_Function_1__String_1__String_1__BasicColumnSpecification_1_,
       joinStrings_String_MANY__String_1__String_1_,
-      subType_Any_m__T_1__T_m_,
+      subType_Any_1__T_1__T_$0_1$_,
+      subType_Any_$0_1$__T_1__T_$0_1$_,
+      subType_Any_MANY__T_1__T_MANY_,
       stdDevSample_Number_MANY__Number_1_,
       stdDevPopulation_Number_MANY__Number_1_,
       extend_TabularDataSet_1__BasicColumnSpecification_MANY__TabularDataSet_1_,
@@ -947,7 +949,7 @@ function meta::pure::router::routing::routeFunctionExpressionFunctionDefinition(
 
               let secondPassPre = $secondPassResults->tail()->evaluateAndDeactivate();
 
-              let secondPass = if ($f == meta::pure::functions::lang::subType_Any_m__T_1__T_m_,
+              let secondPass = if ($f->in([meta::pure::functions::lang::subType_Any_1__T_1__T_$0_1$_, meta::pure::functions::lang::subType_Any_$0_1$__T_1__T_$0_1$_, meta::pure::functions::lang::subType_Any_MANY__T_1__T_MANY_]),
                                       | let first = $secondPassPre->at(0);
                                         let second = $secondPassPre->at(1);
                                         let firstValue = $first.value->toOne()->cast(@ExtendedRoutedValueSpecification);

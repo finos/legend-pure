@@ -1615,3 +1615,10 @@ function <<test.Test>> meta::relational::tests::functions::sqlstring::testIsDist
    let memSql = toSQLString($func, simpleRelationalMapping, DatabaseType.MemSQL, meta::pure::router::extension::defaultRelationalExtensions());
    assertSameSQL('select `root`.LEGALNAME as `LegalName`, count(distinct(`personTable_d#4_d_m1`.FIRSTNAME)) = count(`personTable_d#4_d_m1`.FIRSTNAME) as `IsDistinctFirstName` from firmTable as `root` left outer join personTable as `personTable_d#4_d_m1` on (`root`.ID = `personTable_d#4_d_m1`.FIRMID) group by `LegalName`', $memSql);
 }
+
+function <<test.Test>> meta::relational::tests::functions::sqlstring::testToStringOnPostgres():Boolean[1]
+{
+   let func = {|Person.all()->project([col(x | $x.firstName, 'FirstName'), col(x | $x.age->toOne()->toString()->toUpper(), 'AgeString')])};
+   let sql = toSQLString($func, simpleRelationalMapping, DatabaseType.Postgres, meta::pure::router::extension::defaultRelationalExtensions());
+   assertSameSQL('select "root".FIRSTNAME as "FirstName", upper(cast("root".AGE as varchar)) as "AgeString" from personTable as "root"', $sql);
+}

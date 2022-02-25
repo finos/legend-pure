@@ -17,6 +17,7 @@ package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.unloader;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.unload.unbind.Shared;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.MergeOperationSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.OperationSetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementationContainer;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -45,6 +46,11 @@ public class OperationSetImplementationUnbind implements MatchRunner<OperationSe
         {
             param._setImplementationRemove();
         }
+        if (operationSetImplementation instanceof  org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.MergeOperationSetImplementation)
+        {
+          ((MergeOperationSetImplementation) operationSetImplementation)._validationFunctionRemove();
+        }
+
     }
 }
 

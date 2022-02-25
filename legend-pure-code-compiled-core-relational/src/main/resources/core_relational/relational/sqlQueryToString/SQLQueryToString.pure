@@ -193,6 +193,7 @@ function meta::relational::functions::sqlQueryToString::processOperation(relatio
                                           f:FreeMarkerOperationHolder[1]|processFreeMarkerOperationHolder($f, $dbConfig, $format, $generationState, $config),
                                           d:DynaFunction[1]|processDynaFunction($d, $dbConfig, $format, $generationState, $config, $extensions),
                                           c:ColumnName[1]|processIdentifier($c.name->toOne(), $dbConfig),
+                                          s:SemiStructuredObjectNavigation[1]|processSemiStructuredObjectNavigation($s, $dbConfig, $format, $generationState, $config, $extensions),
                                           {f:meta::relational::metamodel::operation::Function[1]| assert(false, 'Don\'t know how to handle %s', $f->type()); 'TO DO'; }
                                        ])->toOneMany()
                                      );
@@ -939,6 +940,35 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    '(' + $processedLeft + ' not in ' + if($processedRight->startsWith('(') && $processedRight->endsWith(')'), | $processedRight, | '(' + $processedRight + ')') + ' OR ' + $processedLeft + ' is null)';
 }
 
+function <<access.private>> meta::relational::functions::sqlQueryToString::processSemiStructuredObjectNavigation(s:SemiStructuredObjectNavigation[1], dbConfig:DbConfig[1], format:Format[1], generationState:GenerationState[1], config:Config[1], extensions:RouterExtension[*]): String[1]
+{
+   let supportedDbTypes = [DatabaseType.Snowflake];
+   assert($dbConfig.dbType->in($supportedDbTypes), | 'Semi structured navigation not supported for database type: ' + $dbConfig.dbType->toString() + '. Supported database types are: ' + $supportedDbTypes->map(d|$d->toString())->joinStrings(', '));
+
+   let processedOperand = $s.operand->processOperation($dbConfig, $format, $generationState, $config, $extensions);
+
+   if ($dbConfig.dbType == DatabaseType.Snowflake,
+       | $s->processSemiStructuredObjectNavigationForSnowflake($processedOperand),
+       | fail('Unsupported database type ' +$dbConfig.dbType->toString()); '';);
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::processSemiStructuredObjectNavigationForSnowflake(s:SemiStructuredObjectNavigation[1], processedOperand:String[1]): String[1]
+{
+   // https://docs.snowflake.com/en/user-guide/querying-semistructured.html
+
+   let elementAccess = $processedOperand + $s->match([
+      p: SemiStructuredPropertyAccess[1]     | '[\'' + $p.property->cast(@Literal).value->cast(@String) + '\']' + if($p.index->isEmpty(),|'',|'['+ $p.index->toOne()->cast(@Literal).value->toString()+']'),
+      a: SemiStructuredArrayElementAccess[1] | '[' + $a.index->cast(@Literal).value->toString() + ']'
+   ]);
+
+   let castSuffix = if($s.returnType == String, | '::varchar', |
+                    if($s.returnType == StrictDate, | '::date', |
+                    if($s.returnType->isNotEmpty() && $s.returnType->toOne()->_subTypeOf(Date), | '::timestamp', |
+                    '')));
+
+   $elementAccess + $castSuffix;
+}
+
 Class <<access.private>> meta::relational::functions::sqlQueryToString::DynaFunctionToSql
 {
    funcName:String[1];
@@ -1365,6 +1395,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='cast(%s as integer)')),
                                                  choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='cast(%s as integer)')),
                                                  choice(DatabaseType.BigQuery ,    $allStates,            ^ToSql(format='cast(%s as int64)'))]),
+      forDynafunction('parseJson',             [ choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='parse_json(%s)'))]),
       forDynafunction('plus',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform=getTransformForAddPlus()))]),
       forDynafunction('position',              [ choice($aSybase,                  $allStates,            ^ToSql(format='charindex(%s, %s)')),
                                                  choice(DatabaseType.Composite,    $allStates,            ^ToSql(format='position(%s, %s)')),
@@ -1510,6 +1541,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='cast(%s as char)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='cast(%s as varchar)')),
+                                                 choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='cast(%s as varchar)')),

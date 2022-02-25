@@ -17,7 +17,6 @@ package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -74,7 +73,7 @@ public class OperationParser implements Parser
 
         try
         {
-            OperationGraphBuilder visitor = new OperationGraphBuilder(id, setSourceInfo, root, classPath, classSourceInfo, mappingPath, importId, sourceInformation);
+            OperationGraphBuilder visitor = new OperationGraphBuilder(id, setSourceInfo, root, classPath, classSourceInfo, mappingPath, importId, sourceInformation, repository, context);
             org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.OperationParser.MappingContext c = parser.mapping();
             return visitor.visitMapping(c);
         }
@@ -101,7 +100,7 @@ public class OperationParser implements Parser
     @Override
     public RichIterable<MatchRunner> getProcessors()
     {
-        return FastList.<MatchRunner>newListWith(new OperationSetImplementationProcessor());
+        return FastList.<MatchRunner>newListWith( new OperationSetImplementationProcessor());
     }
 
     @Override
