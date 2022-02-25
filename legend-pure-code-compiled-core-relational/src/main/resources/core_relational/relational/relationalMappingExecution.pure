@@ -544,7 +544,7 @@ function meta::relational::mapping::processProperty(o:Any[1], property:Property<
        
            let mapping = $keyInformation.static.mapping;
 
-           let state = ^State(inScopeVars = ^Map<String,List<Any>>(), mapping=$mapping, supportedFunctions=getSupportedFunctions(), inProject=false, inFilter=false, filterChainDepth= 0, inProjectFunctions=false, processingProjectionThread = false, shouldIsolate=false);
+           let state = ^State(inScopeVars = ^Map<String,List<Any>>(), mapping=$mapping, supportedFunctions=getSupportedFunctions(), inProject=false, inFilter=false, filterChainDepth= 0, inProjectFunctions=false, processingProjectionThread = false, shouldIsolate=false, contextBasedSupportedFunctions=getContextBasedSupportedFunctions());
 
            let sourceDb = $keyInformation.sourceConnection->cast(@DatabaseConnection).element;
            let db = if ($sourceDb->instanceOf(Database),|$sourceDb,|[])->cast(@Database);
@@ -568,7 +568,7 @@ function meta::relational::mapping::processProperty(o:Any[1], property:Property<
 
 function meta::relational::mapping::generatePropertySql(setImplementation: RelationalInstanceSetImplementation[1], property:Property<Nil,Any|*>[1], joinType:JoinType[1], propertyPkFilterValues: Any[*], mapping:Mapping[1], runtime: Runtime[1], db:Database[0..1], exeCtx:ExecutionContext[1], extensions:RouterExtension[*]):Pair<RelationalInstanceSetImplementation, SQLQuery>[1]
 {
-   let state = ^State(inScopeVars = ^Map<String,List<Any>>(), mapping=$mapping, supportedFunctions=getSupportedFunctions(), inProject=false, inFilter=false, filterChainDepth= 0, inProjectFunctions=false,  processingProjectionThread = false, shouldIsolate=false);
+   let state = ^State(inScopeVars = ^Map<String,List<Any>>(), mapping=$mapping, supportedFunctions=getSupportedFunctions(), inProject=false, inFilter=false, filterChainDepth= 0, inProjectFunctions=false,  processingProjectionThread = false, shouldIsolate=false, contextBasedSupportedFunctions=getContextBasedSupportedFunctions());
 
    let srcSetImplementation = $setImplementation->match([
 								 s:RootRelationalInstanceSetImplementation[1]|$s,
@@ -676,7 +676,8 @@ function meta::relational::mapping::supports(f:FunctionExpression[1]):Boolean[1]
 {
       !meta::relational::functions::pureToSqlQuery::findSupportedFunction(
                         $f,
-                        meta::relational::functions::pureToSqlQuery::getSupportedFunctions()
+                        meta::relational::functions::pureToSqlQuery::getSupportedFunctions(),
+                        meta::relational::functions::pureToSqlQuery::getContextBasedSupportedFunctions()
                     )->isEmpty()
       //These are here because the router does not go deep enough, should remove
       || [
