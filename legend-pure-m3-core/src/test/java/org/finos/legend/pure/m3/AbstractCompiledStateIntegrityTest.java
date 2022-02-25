@@ -72,6 +72,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Collection;
+import java.util.Objects;
 
 public abstract class AbstractCompiledStateIntegrityTest
 {
@@ -858,6 +859,44 @@ public abstract class AbstractCompiledStateIntegrityTest
             StringBuilder message = new StringBuilder(errorCount * 128);
             message.append("There are ").append(errorCount).append(" function type computation errors:\n\t");
             errorMessages.appendString(message, "\n\t");
+            Assert.fail(message.toString());
+        }
+    }
+
+    @Test
+    public void testLambdaFunctionsHaveUniqueNames()
+    {
+        MutableMap<String, MutableList<CoreInstance>> lambdasByName = Maps.mutable.empty();
+        CoreInstance lambdaFunctionClass = runtime.getCoreInstance(M3Paths.LambdaFunction);
+        GraphNodeIterable.fromModelRepository(repository)
+                .select(n -> lambdaFunctionClass == n.getClassifier())
+                .forEach(lambda -> lambdasByName.getIfAbsentPut(lambda.getName(), Lists.mutable::empty).add(lambda));
+
+        lambdasByName.removeIf((name, lambdas) -> lambdas.size() == 1);
+        if (lambdasByName.notEmpty())
+        {
+            StringBuilder message = new StringBuilder(lambdasByName.size() * 128);
+            message.append("There are ").append(lambdasByName.size()).append(" lambda name conflicts:");
+            lambdasByName.forEachKeyValue((name, lambdas) ->
+            {
+                message.append("\n\t").append(name).append(": ").append(lambdas.size()).append(" (");
+                MutableList<SourceInformation> sourceInfo = lambdas.collect(CoreInstance::getSourceInformation);
+                sourceInfo.removeIf(Objects::isNull);
+                if (sourceInfo.isEmpty())
+                {
+                    message.append("none with source info");
+                }
+                else
+                {
+                    sourceInfo.forEachWithIndex((si, i) -> si.appendMessage((i == 0) ? message : message.append(", ")));
+                    int withNoSourceInfo = lambdas.size() - sourceInfo.size();
+                    if (withNoSourceInfo > 0)
+                    {
+                        message.append(" plus ").append(withNoSourceInfo).append(" with no source info");
+                    }
+                }
+                message.append(')');
+            });
             Assert.fail(message.toString());
         }
     }
