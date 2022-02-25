@@ -17,6 +17,16 @@ import meta::pure::executionPlan::profiles::*;
 import meta::external::format::cpb::generation::tests::*;
 import meta::json::*;
 
+import meta::pure::persistence::metamodel::*;
+import meta::pure::persistence::metamodel::trigger::*;
+import meta::pure::persistence::metamodel::reader::*;
+import meta::legend::service::metamodel::*;
+import meta::pure::persistence::metamodel::batch::*;
+import meta::pure::persistence::metamodel::batch::targetspecification::*;
+import meta::pure::persistence::metamodel::batch::deduplication::*;
+import meta::pure::persistence::metamodel::batch::mode::snapshot::*;
+import meta::pure::persistence::metamodel::batch::audit::*;
+
 Profile meta::external::format::cpb::generation::tests::CpbProperty
 {
    tags: [
@@ -24,21 +34,55 @@ Profile meta::external::format::cpb::generation::tests::CpbProperty
    ];
 }
 
-// To be developed - start here next
+Class <<access.private>> meta::external::format::cpb::generation::tests::A
+{
+    a: String[1];
+}
 
-// Class <<access.private>> meta::external::format::avro::generation::tests::A
-// {
-//    a: String[1];
-// }
-// 
-// function <<test.Test>> meta::external::format::avro::generation::tests::simpleToOneStringProperty(): Boolean[1]
-// {
-//    let schema = classToAvroSchema(A, ^AvroConfig())->meta::external::format::avro::serialization::avroSchemaToJSON()->toCompactJSONString();
-//    assertEquals('{"type":"record","name":"A","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"a","type":"string"}]}', $schema);
-// }
-// 
-// function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_simpleToOneStringProperty(): Boolean[1]
-// {
-//    let schema = transform(^AvroConfig(class=A->elementToPath()))->at(0)->at(0).content;
-//    assertEquals('{"type":"record","name":"A","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"a","type":"string"}]}', $schema);
-// }
+function <<access.private>> meta::external::format::cpb::generation::tests::getPersistencePipe(): PersistencePipe[1]
+{
+  let package = meta::pure::functions::meta::pathToPackage('cnas::pipes', true);
+
+  let svcReader = ^ServiceReader(
+      service = ^Service(
+		package = $package,
+        pattern = '/mountains/lhotse',
+        owners = ['ram'],
+        autoActivateUpdates = true,
+        documentation = 'A service',
+        execution = ^PureExecution(func = {|true}),
+        test = ^Test(),
+        tags = []
+      )
+    );
+
+  let pp = ^PersistencePipe(
+    package = $package,
+    documentation = 'This is not a pipe',
+    owners = ['rajamor', 'chheda'],
+    trigger = ^OpaqueTrigger(),
+    reader = $svcReader,
+    persister = ^BatchPersister(
+      targetSpecification = ^FlatTargetSpecification(
+        modelClass = A,
+        targetName = 's3sink',
+        deduplicationStrategy = ^NoDeduplicationStrategy(),
+        batchMilestoningMode = ^NonMilestonedSnapshot(
+          auditing = ^NoAuditing()
+        )
+      )
+    )
+  );
+
+  $pp;
+}
+
+
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::cpb::generation::tests::transform_persistencePipeToBackend(): Boolean[1]
+{
+  let pp = getPersistencePipe();
+  let config = meta::external::format::cpb::generation::defaultConfig();
+  let schema = transform(^$config(scopeElements=[$pp]))->at(0)->at(0).content;
+  assertEquals('{"items":"This is not a pipe","owners":["rajamor","chheda"]}', $schema);
+}
+
