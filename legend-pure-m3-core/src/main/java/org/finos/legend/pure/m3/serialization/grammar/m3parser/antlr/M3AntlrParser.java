@@ -96,6 +96,7 @@ import org.finos.legend.pure.m3.compiler.validation.validator.FunctionExpression
 import org.finos.legend.pure.m3.compiler.validation.validator.GenericTypeValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.InstanceValueValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.PackageValidator;
+import org.finos.legend.pure.m3.compiler.validation.validator.ProfileValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.PropertyValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.RepositoryPackageValidator;
 import org.finos.legend.pure.m3.compiler.validation.validator.TaggedValueValidator;
@@ -518,7 +519,8 @@ public class M3AntlrParser implements Parser
                 new ElementWithTaggedValueValidator(),
                 new AccessLevelValidator(),
                 new RepositoryPackageValidator(),
-                new PackageValidator()
+                new PackageValidator(),
+                new ProfileValidator()
         );
     }
 

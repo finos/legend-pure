@@ -15,18 +15,13 @@
 package org.finos.legend.pure.m3.compiler.validation.validator;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.collection.MutableCollection;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.compiler.validation.VisibilityValidation;
@@ -38,16 +33,20 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProje
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class ClassValidator implements MatchRunner<Class<CoreInstance>>
+public class ClassValidator implements MatchRunner<Class<?>>
 {
     @Override
     public String getClassName()
@@ -56,9 +55,9 @@ public class ClassValidator implements MatchRunner<Class<CoreInstance>>
     }
 
     @Override
-    public void run(Class<CoreInstance> cls, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(Class<?> cls, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        ValidatorState validatorState = (ValidatorState)state;
+        ValidatorState validatorState = (ValidatorState) state;
         ProcessorSupport processorSupport = validatorState.getProcessorSupport();
         for (Generalization generalization : cls._generalizations())
         {
@@ -68,7 +67,7 @@ public class ClassValidator implements MatchRunner<Class<CoreInstance>>
         {
             Validator.validate(property, validatorState, matcher, processorSupport);
         }
-        for (QualifiedProperty property : cls._qualifiedProperties())
+        for (QualifiedProperty<?> property : cls._qualifiedProperties())
         {
             Validator.validate(property, validatorState, matcher, processorSupport);
         }
@@ -78,7 +77,7 @@ public class ClassValidator implements MatchRunner<Class<CoreInstance>>
         MilestoningClassValidator.validateTemporalStereotypesAppliedForAllSubTypesInTemporalHierarchy(cls, processorSupport);
     }
 
-    private static void validateGeneralization(Generalization generalization, Class<CoreInstance> cls, ValidatorState state, Matcher matcher, ProcessorSupport processorSupport)
+    private static void validateGeneralization(Generalization generalization, Class<?> cls, ValidatorState state, Matcher matcher, ProcessorSupport processorSupport)
     {
         GenericType superGenericType = generalization._general();
         // Validate the GenericType itself
@@ -155,7 +154,7 @@ public class ClassValidator implements MatchRunner<Class<CoreInstance>>
      * @param cls Pure class
      * @throws PureCompilationException if there is an invalid property override
      */
-    private void validatePropertyOverrides(Class<CoreInstance> cls, ProcessorSupport processorSupport) throws PureCompilationException
+    private void validatePropertyOverrides(Class<?> cls, ProcessorSupport processorSupport) throws PureCompilationException
     {
         ListIterable<CoreInstance> generalizations = Type.getGeneralizationResolutionOrder(cls, processorSupport);
         int size = generalizations.size();
@@ -163,8 +162,8 @@ public class ClassValidator implements MatchRunner<Class<CoreInstance>>
         {
             for (int i = 0; i < size; i++)
             {
-                Class spec = (Class)generalizations.get(i);
-                MutableList<CoreInstance> specProperties = LazyIterate.concatenate(spec._properties(), spec._propertiesFromAssociations()).toList();
+                Class<?> spec = (Class<?>) generalizations.get(i);
+                MutableList<CoreInstance> specProperties = Lists.mutable.<CoreInstance>withAll(spec._properties()).withAll(spec._propertiesFromAssociations());
                 for (int j = 0, specPropCount = specProperties.size(); j < specPropCount; j++)
                 {
                     CoreInstance specProperty = specProperties.get(j);
@@ -184,9 +183,9 @@ public class ClassValidator implements MatchRunner<Class<CoreInstance>>
                     // Check for other properties with the same name on generalizations
                     for (int k = i + 1; k < size; k++)
                     {
-                        Class genl = (Class) generalizations.get(k);
-                        MutableList<CoreInstance> genlProperties = LazyIterate.concatenate(genl._properties(), genl._propertiesFromAssociations()).toList();
-                        for(CoreInstance genlProperty : genlProperties)
+                        Class<?> genl = (Class<?>) generalizations.get(k);
+                        MutableList<CoreInstance> genlProperties = Lists.mutable.<CoreInstance>withAll(genl._properties()).withAll(genl._propertiesFromAssociations());
+                        for (CoreInstance genlProperty : genlProperties)
                         {
                             if (name.equals(org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(genlProperty)) && !isPropertyOverrideValid(specProperty, genlProperty, processorSupport))
                             {
@@ -196,17 +195,17 @@ public class ClassValidator implements MatchRunner<Class<CoreInstance>>
                     }
                 }
 
-                MutableList<QualifiedProperty> specQualifiedProperties = LazyIterate.concatenate((ListIterable<QualifiedProperty>)spec._qualifiedProperties(), (ListIterable<QualifiedProperty>)spec._qualifiedPropertiesFromAssociations()).toList();
+                MutableList<QualifiedProperty<?>> specQualifiedProperties = Lists.mutable.<QualifiedProperty<?>>withAll(spec._qualifiedProperties()).withAll(spec._qualifiedPropertiesFromAssociations());
                 for (int j = 0, specQualifiedPropCount = specQualifiedProperties.size(); j < specQualifiedPropCount; j++)
                 {
-                    QualifiedProperty specQualifiedProperty = specQualifiedProperties.get(j);
+                    QualifiedProperty<?> specQualifiedProperty = specQualifiedProperties.get(j);
                     String name = org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(specQualifiedProperty);
 
                     // Check for other qualified properties with the same name on the same class
                     String srcSignature = FunctionDescriptor.getFunctionDescriptor(specQualifiedProperty, processorSupport);
                     for (int k = j + 1; k < specQualifiedPropCount; k++)
                     {
-                        QualifiedProperty otherSpecQualifiedProperty = specQualifiedProperties.get(k);
+                        QualifiedProperty<?> otherSpecQualifiedProperty = specQualifiedProperties.get(k);
                         String otherSignature = FunctionDescriptor.getFunctionDescriptor(otherSpecQualifiedProperty, processorSupport);
                         if (srcSignature.equals(otherSignature))
                         {
@@ -217,8 +216,8 @@ public class ClassValidator implements MatchRunner<Class<CoreInstance>>
                     // Check for other qualified properties with the same name on generalizations
                     for (int k = i + 1; k < size; k++)
                     {
-                        Class genl = (Class)generalizations.get(k);
-                        QualifiedProperty genlQualifiedProperty = getSourcePropertyOverrideByNameAndArgCount(specQualifiedProperty, genl, name, processorSupport);
+                        Class<?> genl = (Class<?>) generalizations.get(k);
+                        QualifiedProperty<?> genlQualifiedProperty = getSourcePropertyOverrideByNameAndArgCount(specQualifiedProperty, genl, name, processorSupport);
                         if ((genlQualifiedProperty != null) && !isQualifiedPropertyOverrideValid(specQualifiedProperty, genlQualifiedProperty, processorSupport))
                         {
                             throwPropertyConflictException(name, cls, spec, genl);
@@ -229,36 +228,21 @@ public class ClassValidator implements MatchRunner<Class<CoreInstance>>
         }
     }
 
-    private QualifiedProperty getSourcePropertyOverrideByNameAndArgCount(QualifiedProperty specProperty, Class genClass, final String name, final ProcessorSupport processorSupport)
+    private QualifiedProperty<?> getSourcePropertyOverrideByNameAndArgCount(QualifiedProperty<?> specProperty, Class<?> genClass, String name, ProcessorSupport processorSupport)
     {
-        FunctionType specFunctionType = (FunctionType)processorSupport.function_getFunctionType(specProperty);
-        final RichIterable<? extends VariableExpression> specParameters = specFunctionType._parameters();
-
-        RichIterable<? extends QualifiedProperty> qualifiedProperties = genClass._qualifiedProperties();
-        RichIterable<? extends QualifiedProperty> qualifiedPropertiesFromAssociations = genClass._qualifiedPropertiesFromAssociations();
-        return LazyIterate.concatenate((ListIterable<QualifiedProperty>)qualifiedProperties, (ListIterable<QualifiedProperty>)qualifiedPropertiesFromAssociations).detect(new Predicate<QualifiedProperty>()
-        {
-            @Override
-            public boolean accept(QualifiedProperty qp)
-            {
-                if (qp._name().equals(name))
-                {
-                    FunctionType genlFunctionType = (FunctionType)processorSupport.function_getFunctionType(qp);
-                    RichIterable<? extends VariableExpression> genlParameters = genlFunctionType._parameters();
-                    return genlParameters.size() == specParameters.size();
-                }
-                return false;
-            }
-        });
+        FunctionType specFunctionType = (FunctionType) processorSupport.function_getFunctionType(specProperty);
+        RichIterable<? extends VariableExpression> specParameters = specFunctionType._parameters();
+        return Lists.mutable.<QualifiedProperty<?>>withAll(genClass._qualifiedProperties()).withAll(genClass._qualifiedPropertiesFromAssociations())
+                .detect(qp -> name.equals(qp._name()) && (specParameters.size() == ((FunctionType) processorSupport.function_getFunctionType(qp))._parameters().size()));
     }
 
     private boolean isPropertyOverrideValid(CoreInstance specProperty, CoreInstance genlProperty, ProcessorSupport processorSupport)
     {
-        FunctionType specFunctionType = (FunctionType)processorSupport.function_getFunctionType(specProperty);
+        FunctionType specFunctionType = (FunctionType) processorSupport.function_getFunctionType(specProperty);
         GenericType specReturnType = specFunctionType._returnType();
         Multiplicity specReturnMultiplicity = specFunctionType._returnMultiplicity();
 
-        FunctionType genlFunctionType = (FunctionType)processorSupport.function_getFunctionType(genlProperty);
+        FunctionType genlFunctionType = (FunctionType) processorSupport.function_getFunctionType(genlProperty);
         GenericType genlReturnType = genlFunctionType._returnType();
         Multiplicity genlReturnMultiplicity = genlFunctionType._returnMultiplicity();
 
@@ -266,10 +250,10 @@ public class ClassValidator implements MatchRunner<Class<CoreInstance>>
         return org.finos.legend.pure.m3.navigation.generictype.GenericType.genericTypesEqual(specReturnType, genlReturnType, processorSupport) && org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.multiplicitiesEqual(specReturnMultiplicity, genlReturnMultiplicity);
     }
 
-    private boolean isQualifiedPropertyOverrideValid(QualifiedProperty specProperty, QualifiedProperty genlProperty, ProcessorSupport processorSupport)
+    private boolean isQualifiedPropertyOverrideValid(QualifiedProperty<?> specProperty, QualifiedProperty<?> genlProperty, ProcessorSupport processorSupport)
     {
-        FunctionType specFunctionType = (FunctionType)processorSupport.function_getFunctionType(specProperty);
-        FunctionType genlFunctionType = (FunctionType)processorSupport.function_getFunctionType(genlProperty);
+        FunctionType specFunctionType = (FunctionType) processorSupport.function_getFunctionType(specProperty);
+        FunctionType genlFunctionType = (FunctionType) processorSupport.function_getFunctionType(genlProperty);
 
         // Return type of specProperty must be the same as genlProperty or a specialization
         GenericType specReturnType = specFunctionType._returnType();
@@ -321,7 +305,7 @@ public class ClassValidator implements MatchRunner<Class<CoreInstance>>
         return true;
     }
 
-    private void throwPropertyConflictException(String propName, Class cls, Class specCls, Class genlCls) throws PureCompilationException
+    private void throwPropertyConflictException(String propName, Class<?> cls, Class<?> specCls, Class<?> genlCls) throws PureCompilationException
     {
         throw new PureCompilationException(cls.getSourceInformation(), "Property conflict on class " + cls.getName() + ": property '" + propName + "' defined on " + specCls.getName() + " conflicts with property '" + propName + "' defined on " + genlCls.getName());
     }
