@@ -14,22 +14,22 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing;
 
-import org.eclipse.collections.api.collection.MutableCollection;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
-import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.set.mutable.UnmodifiableMutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
-
-import java.io.IOException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class VariableContext
 {
@@ -57,8 +57,15 @@ public class VariableContext
      */
     public CoreInstance getValue(String name)
     {
-        CoreInstance value = getLocalValue(name);
-        return ((value != null) || (this.parent == null)) ? value : this.parent.getValue(name);
+        for (VariableContext context = this; context != null; context = context.parent)
+        {
+            CoreInstance value = context.getLocalValue(name);
+            if (value != null)
+            {
+                return value;
+            }
+        }
+        return null;
     }
 
     /**
@@ -100,6 +107,28 @@ public class VariableContext
         }
     }
 
+    @Deprecated
+    public void buildAndRegister(String name, GenericType genericType, Multiplicity multiplicity, ModelRepository modelRepository, ProcessorSupport processorSupport) throws PureCompilationException
+    {
+        buildAndRegister(name, genericType, multiplicity, processorSupport);
+    }
+
+    public void buildAndRegister(String name, GenericType genericType, Multiplicity multiplicity, ProcessorSupport processorSupport)
+    {
+        VariableExpression variableExpression = (VariableExpression) processorSupport.newEphemeralAnonymousCoreInstance(M3Paths.VariableExpression);
+        variableExpression._name(name);
+        variableExpression._genericType(genericType);
+        variableExpression._multiplicity(multiplicity);
+        try
+        {
+            registerValue(name, variableExpression);
+        }
+        catch (VariableContext.VariableNameConflictException e)
+        {
+            throw new PureCompilationException(null, e.getMessage(), e);
+        }
+    }
+
     /**
      * Get the parent context, if present.  Returns null
      * if there is no parent context.
@@ -138,20 +167,14 @@ public class VariableContext
         }
 
         MutableSet<String> names = Sets.mutable.empty();
-        collectVariableNames(names);
+        for (VariableContext context = this; context != null; context = context.parent)
+        {
+            if (context.mapping != null)
+            {
+                names.addAll(context.mapping.keySet());
+            }
+        }
         return names;
-    }
-
-    private void collectVariableNames(MutableCollection<String> variableNames)
-    {
-        if (this.mapping != null)
-        {
-            variableNames.addAllIterable(this.mapping.keysView());
-        }
-        if (this.parent != null)
-        {
-            this.parent.collectVariableNames(variableNames);
-        }
     }
 
     /**
@@ -163,7 +186,7 @@ public class VariableContext
      */
     public SetIterable<String> getLocalVariableNames()
     {
-        return (this.mapping == null) ? Sets.immutable.<String>with() : this.mapping.keysView().toSet();
+        return (this.mapping == null) ? Sets.immutable.empty() : UnmodifiableMutableSet.of(this.mapping.keySet());
     }
 
     /**
@@ -185,14 +208,7 @@ public class VariableContext
      */
     public void printVariables(String indent)
     {
-        try
-        {
-            writeVariables(System.out, indent);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        writeVariables(System.out, indent);
     }
 
     /**
@@ -217,16 +233,7 @@ public class VariableContext
      */
     public String writeVariablesToString(String indent)
     {
-        StringBuilder builder = new StringBuilder();
-        try
-        {
-            writeVariables(builder, indent);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-        return builder.toString();
+        return writeVariables(new StringBuilder(), indent).toString();
     }
 
     /**
@@ -235,11 +242,10 @@ public class VariableContext
      * which are overridden by child contexts are not printed.
      *
      * @param appendable appendable to write to
-     * @throws IOException
      */
-    public void writeVariables(Appendable appendable) throws IOException
+    public <T extends Appendable> T writeVariables(T appendable)
     {
-        writeVariables(appendable, null);
+        return writeVariables(appendable, null);
     }
 
     /**
@@ -249,32 +255,22 @@ public class VariableContext
      *
      * @param appendable appendable to write to
      * @param indent     indentation string used at the start of each line
-     * @throws IOException
      */
-    public void writeVariables(Appendable appendable, String indent) throws IOException
+    public <T extends Appendable> T writeVariables(T appendable, String indent)
     {
-        if (indent == null)
-        {
-            indent = "";
-        }
+        String resolvedIndent = (indent == null) ? "" : indent;
 
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
         SetIterable<String> variables = getVariableNames();
         if (variables.isEmpty())
         {
-            appendable.append(indent);
-            appendable.append("Empty variable context\n");
+            safeAppendable.append(resolvedIndent).append("Empty variable context\n");
         }
         else
         {
-            for (String variable : variables.toSortedList())
-            {
-                appendable.append(indent);
-                appendable.append(variable);
-                appendable.append(": ");
-                appendable.append(getValue(variable).toString());
-                appendable.append('\n');
-            }
+            variables.toSortedList().forEach(v -> safeAppendable.append(resolvedIndent).append(v).append(": ").append(getValue(v)).append('\n'));
         }
+        return appendable;
     }
 
     /**
@@ -299,14 +295,7 @@ public class VariableContext
      */
     public void printVariablesByContext(String initialIndent, String additionalIndent)
     {
-        try
-        {
-            writeVariablesByContext(System.out, initialIndent, additionalIndent);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        writeVariablesByContext(System.out, initialIndent, additionalIndent);
     }
 
     /**
@@ -334,16 +323,7 @@ public class VariableContext
      */
     public String writeVariablesByContextToString(String initialIndent, String additionalIndent)
     {
-        StringBuilder builder = new StringBuilder();
-        try
-        {
-            writeVariablesByContext(builder, initialIndent, additionalIndent);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-        return builder.toString();
+        return writeVariablesByContext(new StringBuilder(), initialIndent, additionalIndent).toString();
     }
 
     /**
@@ -355,43 +335,29 @@ public class VariableContext
      * @param appendable       appendable to write to
      * @param initialIndent    initial indentation string used at the start of each line
      * @param additionalIndent indentation string used (on top of initialIndent) on lines that require further indentation
-     * @throws IOException
      */
-    public void writeVariablesByContext(Appendable appendable, String initialIndent, String additionalIndent) throws IOException
+    public <T extends Appendable> T writeVariablesByContext(T appendable, String initialIndent, String additionalIndent)
     {
-        if (additionalIndent == null)
-        {
-            additionalIndent = ((initialIndent != null) && !initialIndent.isEmpty()) ? initialIndent : "\t";
-        }
-        if (initialIndent == null)
-        {
-            initialIndent = "";
-        }
+        String resolvedInitialIndent = (initialIndent == null) ? "" : initialIndent;
+        String resolvedAdditionalIndent = (additionalIndent == null) ? (resolvedInitialIndent.isEmpty() ? "\t" : resolvedInitialIndent) : additionalIndent;
 
-        VariableContext current = this;
-        for (int level = 0; current != null; current = current.parent, level++)
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        int level = 0;
+        for (VariableContext context = this; context != null; context = context.parent)
         {
-            appendable.append(initialIndent);
-            appendable.append("Variable Context Level ");
-            appendable.append(String.valueOf(level));
-            appendable.append('\n');
-            if (current.mapping != null)
+            safeAppendable.append(resolvedInitialIndent).append("Variable Context Level ").append(level++).append('\n');
+            if (context.mapping == null)
             {
-                for (String variable : current.mapping.keysView().toSortedList())
-                {
-                    appendable.append(initialIndent);
-                    appendable.append(additionalIndent);
-                    appendable.append(variable);
-                    appendable.append(": ");
-                    appendable.append(String.valueOf(current.mapping.get(variable)));
-                    appendable.append('\n');
-                }
+                safeAppendable.append(resolvedInitialIndent).append(resolvedAdditionalIndent).append("None\n");
             }
             else
             {
-                appendable.append("\tNone\n");
+                context.mapping.keyValuesView()
+                        .toSortedListBy(Pair::getOne)
+                        .forEach(p -> safeAppendable.append(resolvedInitialIndent).append(resolvedAdditionalIndent).append(p.getOne()).append(": ").append(p.getTwo()).append('\n'));
             }
         }
+        return appendable;
     }
 
     /**
@@ -440,24 +406,4 @@ public class VariableContext
             super("'" + name + "' has already been defined!");
         }
     }
-
-    public void buildAndRegister(String name, GenericType genericType, Multiplicity multiplicity, ModelRepository modelRepository, ProcessorSupport processorSupport) throws PureCompilationException
-    {
-        try
-        {
-            if (modelRepository != null)
-            {
-                VariableExpression variableExpression = (VariableExpression)modelRepository.newEphemeralAnonymousCoreInstance(null, processorSupport.package_getByUserPath(M3Paths.VariableExpression));
-                variableExpression._name(name);
-                variableExpression._genericType((GenericType)genericType);
-                variableExpression._multiplicity((Multiplicity)multiplicity);
-                this.registerValue(name, variableExpression);
-            }
-        }
-        catch (VariableContext.VariableNameConflictException e)
-        {
-            throw new PureCompilationException(null, e.getMessage());
-        }
-    }
-
 }

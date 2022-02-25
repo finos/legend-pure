@@ -26,10 +26,12 @@
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>1.48.1-SNAPSHOT</version>
+    <version>1.50.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
+        <module>legend-pure-test-reports</module>
+
         <module>legend-pure-m4</module>
 
         <module>legend-pure-m3-bootstrap-generator</module>
@@ -66,6 +68,7 @@
         <module>legend-pure-code-compiled-core-external-format-flatdata</module>
         <module>legend-pure-code-compiled-core-external-format-json</module>
         <module>legend-pure-code-compiled-core-external-format-xml</module>
+        <module>legend-pure-code-compiled-core-external-query-graphql</module>
 
         <module>legend-pure-code-java-compiled-core</module>
 
@@ -73,8 +76,6 @@
         <module>legend-pure-maven-java-compiled</module>
 
         <module>legend-pure-ide-light</module>
-
-        <module>legend-pure-test-reports</module>
     </modules>
 
     <properties>
@@ -111,7 +112,7 @@
         <apache-httpcomponents.version>4.5.13</apache-httpcomponents.version>
         <junit.version>4.13.1</junit.version>
         <jacoco.maven.plugin.version>0.8.5</jacoco.maven.plugin.version>
-        <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.3.1</maven.javadoc.plugin.version>
         <dropwizard.version>1.3.29</dropwizard.version>
         <dropwizard-swagger.version>1.3.17-1</dropwizard-swagger.version>
         <joda.time.version>2.10.6</joda.time.version>
@@ -173,9 +174,9 @@
                     <version>2.3</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <version>2.7</version>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>1.6.8</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -274,6 +275,16 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <executions>
@@ -282,7 +293,7 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[11.0.10,12)</version>
+                                    <version>[11.0.13,12)</version>
                                 </requireJavaVersion>
                                 <dependencyConvergence />
                                 <bannedDependencies>
@@ -456,6 +467,11 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-code-compiled-core-external-format-json</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-code-compiled-core-external-query-graphql</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

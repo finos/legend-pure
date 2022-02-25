@@ -27,96 +27,102 @@ public class ClassPropertyOwnerStrategy implements PropertyOwnerStrategy
     @Override
     public RichIterable<? extends Property<?, ?>> properties(PropertyOwner propertyOwner)
     {
-        return ((Class)propertyOwner)._properties();
+        return ((Class<?>) propertyOwner)._properties();
     }
 
     @Override
     public RichIterable<? extends QualifiedProperty<?>> qualifiedProperties(PropertyOwner propertyOwner)
     {
-        return ((Class)propertyOwner)._qualifiedProperties();
+        return ((Class<?>) propertyOwner)._qualifiedProperties();
     }
 
     @Override
     public RichIterable<? extends QualifiedProperty<?>> qualifiedPropertiesFromAssociations(PropertyOwner propertyOwner)
     {
-        return ((Class)propertyOwner)._qualifiedPropertiesFromAssociations();
+        return ((Class<?>) propertyOwner)._qualifiedPropertiesFromAssociations();
     }
 
     @Override
     public RichIterable<? extends Property<?, ?>> originalMilestonedProperties(PropertyOwner propertyOwner)
     {
-        return ((Class)propertyOwner)._originalMilestonedProperties();
+        return ((Class<?>) propertyOwner)._originalMilestonedProperties();
     }
 
     @Override
-    public Class originalMilestonedPropertiesRemove(PropertyOwner propertyOwner)
+    public Class<?> originalMilestonedPropertiesRemove(PropertyOwner propertyOwner)
     {
-        return ((Class)propertyOwner)._originalMilestonedPropertiesRemove();
+        return ((Class<?>) propertyOwner)._originalMilestonedPropertiesRemove();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Override
+    public Class<?> originalMilestonedPropertiesRemove(PropertyOwner propertyOwner, Property<?, ?> property)
+    {
+        return ((Class<?>) propertyOwner)._originalMilestonedPropertiesRemove((Property) property);
     }
 
     @Override
-    public Class originalMilestonedPropertiesRemove(PropertyOwner propertyOwner, Property property)
+    public Class<?> propertiesRemove(PropertyOwner propertyOwner)
     {
-        return ((Class)propertyOwner)._originalMilestonedPropertiesRemove(property);
+        return ((Class<?>) propertyOwner)._propertiesRemove();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Override
+    public Class<?> propertiesRemove(PropertyOwner propertyOwner, Property<?, ?> property)
+    {
+        return ((Class<?>) propertyOwner)._propertiesRemove((Property) property);
     }
 
     @Override
-    public Class propertiesRemove(PropertyOwner propertyOwner)
+    public Class<?> qualifiedPropertiesRemove(PropertyOwner propertyOwner)
     {
-        return ((Class)propertyOwner)._propertiesRemove();
+        return ((Class<?>) propertyOwner)._qualifiedPropertiesRemove();
     }
 
     @Override
-    public Class propertiesRemove(PropertyOwner propertyOwner, Property property)
+    public Class<?> propertiesFromAssociationsRemove(PropertyOwner propertyOwner)
     {
-        return ((Class)propertyOwner)._propertiesRemove(property);
+        return ((Class<?>) propertyOwner)._propertiesFromAssociationsRemove();
     }
 
     @Override
-    public Class qualifiedPropertiesRemove(PropertyOwner propertyOwner)
+    public Class<?> qualifiedPropertiesFromAssociationsRemove(PropertyOwner propertyOwner)
     {
-        return ((Class)propertyOwner)._qualifiedPropertiesRemove();
+        return ((Class<?>) propertyOwner)._qualifiedPropertiesFromAssociationsRemove();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Override
+    public Class<?> setOriginalMilestonedProperties(PropertyOwner propertyOwner, RichIterable<? extends Property<?, ?>> values)
+    {
+        return ((Class) propertyOwner)._originalMilestonedProperties(values);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Override
+    public Class<?> setProperties(PropertyOwner propertyOwner, RichIterable<? extends Property<?, ?>> values)
+    {
+        return ((Class) propertyOwner)._properties(values);
     }
 
     @Override
-    public Class propertiesFromAssociationsRemove(PropertyOwner propertyOwner)
+    public Class<?> setQualifiedProperties(PropertyOwner propertyOwner, RichIterable<? extends QualifiedProperty<?>> values)
     {
-        return ((Class)propertyOwner)._propertiesFromAssociationsRemove();
+        return ((Class<?>) propertyOwner)._qualifiedProperties(values);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
-    public Class qualifiedPropertiesFromAssociationsRemove(PropertyOwner propertyOwner)
+    public Class<?> setPropertiesFromAssociations(PropertyOwner propertyOwner, RichIterable<? extends Property<?, ?>> values)
     {
-        return ((Class)propertyOwner)._qualifiedPropertiesFromAssociationsRemove();
+        return ((Class) propertyOwner)._propertiesFromAssociations(values);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
-    public Class setOriginalMilestonedProperties(PropertyOwner propertyOwner, RichIterable<? extends Property<?, ?>> values)
+    public Class<?> setQualifiedPropertiesFromAssociations(PropertyOwner propertyOwner, RichIterable<? extends QualifiedProperty<?>> values)
     {
-        return ((Class)propertyOwner)._originalMilestonedProperties(values);
-    }
-
-    @Override
-    public Class setProperties(PropertyOwner propertyOwner, RichIterable<? extends Property<?, ?>> values)
-    {
-        return ((Class)propertyOwner)._properties(values);
-    }
-
-    @Override
-    public Class setQualifiedProperties(PropertyOwner propertyOwner, RichIterable<? extends QualifiedProperty<?>> values)
-    {
-        return ((Class)propertyOwner)._qualifiedProperties(values);
-    }
-
-    @Override
-    public Class setPropertiesFromAssociations(PropertyOwner propertyOwner, RichIterable<? extends Property<?, ?>> values)
-    {
-        return ((Class)propertyOwner)._propertiesFromAssociations(values);
-    }
-
-    @Override
-    public Class setQualifiedPropertiesFromAssociations(PropertyOwner propertyOwner, RichIterable<? extends QualifiedProperty<?>> values)
-    {
-        return ((Class)propertyOwner)._qualifiedPropertiesFromAssociations(values);
+        return ((Class) propertyOwner)._qualifiedPropertiesFromAssociations(values);
     }
 }

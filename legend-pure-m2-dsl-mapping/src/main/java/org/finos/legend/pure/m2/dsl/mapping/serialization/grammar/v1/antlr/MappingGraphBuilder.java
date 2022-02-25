@@ -14,17 +14,17 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.antlr;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.antlr.v4.runtime.RuleContext;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.multimap.MutableMultimap;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.list.mutable.ListAdapter;
-import org.eclipse.collections.impl.multimap.list.FastListMultimap;
+import org.eclipse.collections.impl.factory.Multimaps;
+import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.MappingParser;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.MappingParserBaseVisitor;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.coreinstance.PackageInstance;
+import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.Import;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroupInstance;
@@ -33,12 +33,12 @@ import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 import java.util.Iterator;
 import java.util.List;
@@ -54,8 +54,8 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
     private final ParserLibrary parserLibrary;
     private final StringBuilder sb = new StringBuilder();
 
-    private MutableMultimap<String, String> results = new FastListMultimap();
-    private MutableList<String> includes = FastList.newList();
+    private final MutableMultimap<String, String> results = Multimaps.mutable.list.empty();
+    private final MutableList<String> includes = Lists.mutable.empty();
 
     private String importId;
 
@@ -72,7 +72,7 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
     @Override
     public String visitDefinition(MappingParser.DefinitionContext ctx)
     {
-        final ImportGroup importGroup = imports(sourceInformation.getSourceName(), sourceInformation.getOffsetLine(), ctx.imports());
+        final ImportGroup importGroup = imports(this.sourceInformation.getSourceName(), this.sourceInformation.getOffsetLine(), ctx.imports());
         this.importId = importGroup.getName();
         visitChildren(ctx);
         return sb.toString();
@@ -82,27 +82,23 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
     public String visitMapping(MappingParser.MappingContext ctx)
     {
         visitChildren(ctx);
-        String packageName = "";
         String mappingName = ctx.qualifiedName().identifier().getText();
         boolean hasPackage = ctx.qualifiedName().packagePath() != null;
-        if (hasPackage)
-        {
-            packageName = ListAdapter.adapt(ctx.qualifiedName().packagePath().identifier()).collect(IDENTIFIER_CONTEXT_STRING_FUNCTION).makeString("::");
-        }
-        if(ctx.tests() != null)
+        String packageName = hasPackage ? LazyIterate.collect(ctx.qualifiedName().packagePath().identifier(), RuleContext::getText).makeString("::") : "";
+        if (ctx.tests() != null)
         {
             throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.tests().getStart()),
                     "Grammar Tests in Mapping currently not supported in Pure");
         }
-        sb.append("^meta::pure::mapping::Mapping "
-                + mappingName + sourceInformation.getPureSourceInformation(ctx.MAPPING().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.GROUP_CLOSE().getSymbol()).toM4String() + (hasPackage ? "@" + packageName : packageName)
-                + "(name='" + mappingName + "', package=" + (hasPackage ? packageName : "::")
-                + ", includes = [" + includes.makeString(",") + "]"
-                + ", enumerationMappings = [" + results.get("enumerationMappings").makeString(",") + "]"
-                + ", classMappings = [" + results.get("classMappings").makeString(",") + "]"
-                + ", associationMappings = [" + results.get("associationMappings").makeString(",") + "])");
-        results.clear();
-        includes.clear();
+        this.sb.append("^meta::pure::mapping::Mapping ")
+                .append(mappingName).append(this.sourceInformation.getPureSourceInformation(ctx.MAPPING().getSymbol(), ctx.qualifiedName().identifier().getStart(), ctx.GROUP_CLOSE().getSymbol()).toM4String()).append(hasPackage ? "@" : "").append(packageName)
+                .append("(name='").append(mappingName).append("', package=").append(hasPackage ? packageName : "::")
+                .append(", includes = [").append(this.includes.makeString(",")).append("]")
+                .append(", enumerationMappings = [").append(this.results.get("enumerationMappings").makeString(",")).append("]")
+                .append(", classMappings = [").append(this.results.get("classMappings").makeString(",")).append("]")
+                .append(", associationMappings = [").append(this.results.get("associationMappings").makeString(",")).append("])");
+        this.results.clear();
+        this.includes.clear();
         return null;
     }
 
@@ -110,20 +106,20 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
     public String visitIncludeMapping(MappingParser.IncludeMappingContext ctx)
     {
         StringBuilder builder = new StringBuilder();
-        String sourceInfo = sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String();
+        String sourceInfo = this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String();
         builder.append("^meta::pure::mapping::MappingInclude");
         builder.append(sourceInfo);
         builder.append("(");
 
         // owner mapping (we include a direct reference rather than an import stub since the Mapping owns the MappingInclude)
-        builder.append("owner=" + ((MappingParser.MappingContext)ctx.getParent()).qualifiedName().getText());
+        builder.append("owner=").append(((MappingParser.MappingContext) ctx.getParent()).qualifiedName().getText());
 
         // included mapping
         builder.append(", included=^meta::pure::metamodel::import::ImportStub");
         builder.append(sourceInfo);
         builder.append("(importGroup=system::imports::");
         builder.append(this.importId);
-        builder.append(", idOrPath='" + ctx.qualifiedName().getText() + "')");
+        builder.append(", idOrPath='").append(ctx.qualifiedName().getText()).append("')");
 
         // source substitutions
         if (ctx.storeSubPath() != null)
@@ -134,15 +130,11 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
             {
                 MappingParser.StoreSubPathContext storeSubPathContext = iterator.next();
                 builder.append("^meta::pure::mapping::SubstituteStore(original=^meta::pure::metamodel::import::ImportStub");
-                builder.append(sourceInformation.getPureSourceInformation(storeSubPathContext.sourceStore().qualifiedName().identifier().getStart()).toM4String());
-                builder.append("(importGroup=system::imports::");
-                builder.append(this.importId);
-                builder.append(", idOrPath='" + storeSubPathContext.sourceStore().qualifiedName().getText() + "')");
+                builder.append(this.sourceInformation.getPureSourceInformation(storeSubPathContext.sourceStore().qualifiedName().identifier().getStart()).toM4String());
+                builder.append("(importGroup=system::imports::").append(this.importId).append(", idOrPath='").append(storeSubPathContext.sourceStore().qualifiedName().getText()).append("')");
                 builder.append(", substitute=^meta::pure::metamodel::import::ImportStub");
-                builder.append(sourceInformation.getPureSourceInformation(storeSubPathContext.targetStore().qualifiedName().identifier().getStart()).toM4String());
-                builder.append("(importGroup=system::imports::");
-                builder.append(this.importId);
-                builder.append(", idOrPath='" + storeSubPathContext.targetStore().qualifiedName().getText() + "'))");
+                builder.append(this.sourceInformation.getPureSourceInformation(storeSubPathContext.targetStore().qualifiedName().identifier().getStart()).toM4String());
+                builder.append("(importGroup=system::imports::").append(this.importId).append(", idOrPath='").append(storeSubPathContext.targetStore().qualifiedName().getText()).append("'))");
                 if (iterator.hasNext())
                 {
                     builder.append(", ");
@@ -152,7 +144,7 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
         }
 
         builder.append(')');
-        includes.add(builder.toString());
+        this.includes.add(builder.toString());
 
         return null;
     }
@@ -193,27 +185,27 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
         if (parserName.equals("EnumerationMapping"))
         {
             String linesResult = parser.parseMapping(parseContent, ctx.classMappingId() == null ? null : ctx.classMappingId().getText(), null, setSourceInfo,
-                    ctx.STAR() != null, ctx.qualifiedName().getText(), sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String(), ((MappingParser.MappingContext)ctx.getParent()).qualifiedName().getText(), sourceInformation.getSourceName(),
-                    sourceInformation.getOffsetLine() + ctx.mappingInstance().CURLY_BRACKET_OPEN().getSymbol().getLine() - 1, this.importId, repository, context);
+                    ctx.STAR() != null, ctx.qualifiedName().getText(), this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String(), ((MappingParser.MappingContext) ctx.getParent()).qualifiedName().getText(), this.sourceInformation.getSourceName(),
+                    this.sourceInformation.getOffsetLine() + ctx.mappingInstance().CURLY_BRACKET_OPEN().getSymbol().getLine() - 1, this.importId, this.repository, this.context);
 
             builder.append("^meta::pure::mapping::EnumerationMapping<Any>").append(classSourceInfo)
                     .append("(")
                     .append("name = '").append(classMappingName).append("',")
-                    .append("parent = ").append(((MappingParser.MappingContext)ctx.getParent()).qualifiedName().getText()).append(",")
+                    .append("parent = ").append(((MappingParser.MappingContext) ctx.getParent()).qualifiedName().getText()).append(",")
                     .append("enumeration = ").append("^meta::pure::metamodel::import::ImportStub ")
-                    .append(sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String())
+                    .append(this.sourceInformation.getPureSourceInformation(ctx.qualifiedName().identifier().getStart()).toM4String())
                     .append(" (importGroup=system::imports::").append(this.importId).append(", idOrPath='").append(ctx.qualifiedName().getText()).append("')").append(",")
                     .append("enumValueMappings = [").append(linesResult).append("]")
                     .append(")");
 
-            results.put("enumerationMappings", builder.toString());
+            this.results.put("enumerationMappings", builder.toString());
         }
         else
         {
             try
             {
                 builder.append(parser.parseMapping(parseContent, ctx.classMappingId() == null ? null : ctx.classMappingId().getText(), ctx.superClassMappingId() == null ? null : ctx.superClassMappingId().getText(), setSourceInfo, ctx.STAR() != null, ctx.qualifiedName().getText(), classSourceInfo,
-                        ((MappingParser.MappingContext)ctx.getParent()).qualifiedName().getText(), sourceInformation.getSourceName(), sourceInformation.getOffsetLine() + ctx.mappingInstance().CURLY_BRACKET_OPEN().getSymbol().getLine() - 1, this.importId, repository, context));
+                        ((MappingParser.MappingContext) ctx.getParent()).qualifiedName().getText(), this.sourceInformation.getSourceName(), this.sourceInformation.getOffsetLine() + ctx.mappingInstance().CURLY_BRACKET_OPEN().getSymbol().getLine() - 1, this.importId, this.repository, this.context));
             }
             catch (PureException e)
             {
@@ -221,7 +213,7 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
                 {
                     throw e;
                 }
-                throw new PureParserException(sourceInformation.getPureSourceInformation(ctx.mappingInstance().CURLY_BRACKET_OPEN().getSymbol()), e.getInfo(), e);
+                throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.mappingInstance().CURLY_BRACKET_OPEN().getSymbol()), e.getInfo(), e);
             }
             catch (RuntimeException e)
             {
@@ -230,41 +222,32 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
                 {
                     throw e;
                 }
-                throw new PureParserException(sourceInformation.getPureSourceInformation(ctx.mappingInstance().CURLY_BRACKET_OPEN().getSymbol()), e.getMessage(), e);
+                throw new PureParserException(this.sourceInformation.getPureSourceInformation(ctx.mappingInstance().CURLY_BRACKET_OPEN().getSymbol()), e.getMessage(), e);
             }
 
             String mapping = builder.toString();
             if (mapping.contains("AssociationImplementation"))
             {
-                results.put("associationMappings", mapping);
+                this.results.put("associationMappings", mapping);
             }
             else
             {
-                results.put("classMappings", mapping);
+                this.results.put("classMappings", mapping);
             }
         }
         return null;
     }
 
-    private static final Function<MappingParser.IdentifierContext, String> IDENTIFIER_CONTEXT_STRING_FUNCTION = new Function<MappingParser.IdentifierContext, String>()
-    {
-        @Override
-        public String valueOf(MappingParser.IdentifierContext identifierContext)
-        {
-            return identifierContext.getText();
-        }
-    };
-
     public ImportGroup imports(String src, int offset, MappingParser.ImportsContext ctx)
     {
-        MutableList<Import> imports = FastList.newList();
+        MutableList<Import> imports = Lists.mutable.empty();
         int importGroupStartLine = -1;
         int importGroupStartColumn = -1;
         int importGroupEndLine = -1;
         int importGroupEndColumn = -1;
         for (MappingParser.Import_statementContext isCtx : ctx.import_statement())
         {
-            Import _import = ImportInstance.createPersistent(this.repository, sourceInformation.getPureSourceInformation(isCtx.getStart(), isCtx.packagePath().getStart(), isCtx.STAR().getSymbol()), this.packageToString(isCtx.packagePath().identifier()));
+            Import _import = ImportInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(isCtx.getStart(), isCtx.packagePath().getStart(), isCtx.STAR().getSymbol()), this.packageToString(isCtx.packagePath().identifier()));
 
             imports.add(_import);
             SourceInformation sourceInfo = _import.getSourceInformation();
@@ -293,8 +276,7 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
             importGroupEndLine = 1 + offset;
             importGroupEndColumn = 0;
         }
-        ImportGroup importId = buildImportGroupFromImport(src, this.count, imports, new SourceInformation(src, importGroupStartLine, importGroupStartColumn, importGroupEndLine, importGroupEndColumn));
-        return importId;
+        return buildImportGroupFromImport(src, this.count, imports, new SourceInformation(src, importGroupStartLine, importGroupStartColumn, importGroupEndLine, importGroupEndColumn));
     }
 
     public ImportGroupInstance buildImportGroupFromImport(String fileName, int count, ListIterable<Import> imports, SourceInformation sourceInfo)
@@ -303,7 +285,7 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
         ImportGroupInstance ig = ImportGroupInstance.createPersistent(this.repository, id, sourceInfo);
         ig._imports(imports);
 
-        PackageInstance parent = (PackageInstance)processorSupport.package_getByUserPath("system::imports");
+        Package parent = (Package) this.processorSupport.package_getByUserPath("system::imports");
         parent._childrenAdd(ig);
         ig._package(parent);
         ig._name(id);
@@ -312,21 +294,11 @@ public class MappingGraphBuilder extends MappingParserBaseVisitor<String>
 
     public String packageToString(List<MappingParser.IdentifierContext> identifier)
     {
-        ListIterable<MappingParser.IdentifierContext> path = ListAdapter.adapt(identifier);
-        return path.collect(new Function<MappingParser.IdentifierContext, String>()
-        {
-            @Override
-            public String valueOf(MappingParser.IdentifierContext identifierContext)
-            {
-                return identifierContext.getText();
-
-            }
-        }).makeString("::");
+        return LazyIterate.collect(identifier, RuleContext::getText).makeString("::");
     }
 
     public static String createImportGroupId(String fileName, int count)
     {
         return Source.importForSourceName(fileName) + "_" + count;
     }
-
 }

@@ -17,11 +17,11 @@ package org.finos.legend.pure.m3.compiler.validation.functionExpression;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningStereotypeEnum;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
@@ -35,7 +35,7 @@ public class GetAllVersionsInRangeValidator
     {
         if (canDetermineGenericType(instance, processorSupport))
         {
-            Type sourceRawType = (Type)ImportStub.withImportStubByPass(instance._genericType()._rawTypeCoreInstance(), processorSupport);
+            Type sourceRawType = (Type) ImportStub.withImportStubByPass(instance._genericType()._rawTypeCoreInstance(), processorSupport);
             ListIterable<MilestoningStereotypeEnum> temporalStereotypes = MilestoningFunctions.getTemporalStereoTypesFromTopMostNonTopTypeGeneralizations(sourceRawType, processorSupport);
             ListIterable<? extends ValueSpecification> params = instance._parametersValues().toList().drop(1);
             validateAllVersionsInRangeUsage(instance, temporalStereotypes);
@@ -58,10 +58,9 @@ public class GetAllVersionsInRangeValidator
 
     private static void validateLatestDateUsage(FunctionExpression instance, ListIterable<? extends ValueSpecification> params, ProcessorSupport processorSupport)
     {
-        if (params.flatCollect(MilestoningFunctions.toInstanceValues(processorSupport)).anySatisfy(MilestoningFunctions.isLatestDate(processorSupport)))
+        if (params.anySatisfy(p -> MilestoningFunctions.toInstanceValues(p).anySatisfy(v -> MilestoningFunctions.isLatestDate(v, processorSupport))))
         {
             throw new PureCompilationException(instance.getSourceInformation(), "%latest not a valid parameter for .allVersionsInRange()");
         }
     }
-
 }

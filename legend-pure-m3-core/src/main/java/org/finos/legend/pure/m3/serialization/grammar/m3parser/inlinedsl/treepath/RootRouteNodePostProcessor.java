@@ -16,7 +16,9 @@ package org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.treepa
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.predicate.Predicate;
-import org.eclipse.collections.api.block.procedure.Procedure;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
@@ -25,21 +27,13 @@ import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.stack.MutableStack;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.factory.Stacks;
 import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.GenericTypeTraceability;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
-import org.finos.legend.pure.m3.navigation._class._Class;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
@@ -58,11 +52,16 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.G
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ExpressionSequenceValueSpecificationContext;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._class._Class;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
@@ -77,7 +76,7 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
     public void process(RootRouteNode treePathRoot, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
         GenericType type = treePathRoot._type();
-        Type _class = type == null ? null : (Type)ImportStub.withImportStubByPass(type._rawTypeCoreInstance(), processorSupport);
+        Type _class = type == null ? null : (Type) ImportStub.withImportStubByPass(type._rawTypeCoreInstance(), processorSupport);
         MutableListMultimap<String, RouteNode> resolvedTreeNodes = Multimaps.mutable.list.empty();
         resolveTreeNode(treePathRoot, treePathRoot, _class, matcher, state, repository, context, resolvedTreeNodes);
         secondPass(treePathRoot, resolvedTreeNodes, matcher, state, processorSupport);
@@ -87,7 +86,7 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
     public void populateReferenceUsages(RootRouteNode treePathRoot, ModelRepository repository, ProcessorSupport processorSupport)
     {
         MutableSet<RouteNode> visited = Sets.mutable.empty();
-        MutableStack<RouteNode> stack = Stacks.mutable.<RouteNode>with(treePathRoot);
+        MutableStack<RouteNode> stack = Stacks.mutable.with(treePathRoot);
         while (stack.notEmpty())
         {
             RouteNode node = stack.pop();
@@ -98,15 +97,15 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
                 if (node instanceof ExistingPropertyRouteNode)
                 {
                     GenericTypeTraceability.addTraceForTreePath(node, repository, processorSupport);
-                    RouteNodePropertyStub propertyStub = ((ExistingPropertyRouteNode)node)._property();
+                    RouteNodePropertyStub propertyStub = ((ExistingPropertyRouteNode) node)._property();
                     // TODO Fix this: the reference usage should be to the RouteNodePropertyStub, not to the ExistingPropertyRouteNode
 //                addReferenceUsageForToOneProperty(propertyStub, M3Properties.property, repository, context, processorSupport);
-                    AbstractProperty property = (AbstractProperty)ImportStub.withImportStubByPass(propertyStub._propertyCoreInstance().getFirst(), processorSupport);
+                    AbstractProperty<?> property = (AbstractProperty<?>) ImportStub.withImportStubByPass(propertyStub._propertyCoreInstance().getFirst(), processorSupport);
                     addReferenceUsage(node, property, M3Properties.property, 0, repository, processorSupport);
                 }
                 else if (node instanceof NewPropertyRouteNode)
                 {
-                    NewPropertyRouteNodeFunctionDefinition functionDefinition = ((NewPropertyRouteNode)node)._functionDefinition();
+                    NewPropertyRouteNodeFunctionDefinition<?, ?> functionDefinition = ((NewPropertyRouteNode) node)._functionDefinition();
                     GenericTypeTraceability.addTraceForNewPropertyRouteNodeFunctionDefinition(functionDefinition, repository, processorSupport);
                 }
                 for (PropertyRouteNode child : node._children())
@@ -122,22 +121,18 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
 
     private void secondPass(final RootRouteNode root, final ListMultimap<String, RouteNode> resolvedTreeNodes, final Matcher matcher, final ProcessorState state, final ProcessorSupport processorSupport) throws PureCompilationException
     {
-        resolvedTreeNodes.forEachKey(new Procedure<String>()
+        resolvedTreeNodes.forEachKey(s ->
         {
-            @Override
-            public void value(String s)
+            ListIterable<RouteNode> nodes = resolvedTreeNodes.get(s);
+            RouteNode firstNode = nodes.get(0);
+            PostProcessor.processElement(matcher, firstNode, state, processorSupport);
+            if (nodes.size() > 1)
             {
-                ListIterable<RouteNode> nodes = resolvedTreeNodes.get(s);
-                RouteNode firstNode = nodes.get(0);
-                PostProcessor.processElement(matcher, firstNode, state, processorSupport);
-                if (nodes.size() > 1)
+                for (int i = 1; i < nodes.size(); i++)
                 {
-                    for (int i = 1; i < nodes.size(); i++)
-                    {
-                        RouteNode currentNode = nodes.get(i);
-                        copyNode(root, firstNode, currentNode);
-                        PostProcessor.processElement(matcher, currentNode, state, processorSupport);
-                    }
+                    RouteNode currentNode = nodes.get(i);
+                    copyNode(root, firstNode, currentNode);
+                    PostProcessor.processElement(matcher, currentNode, state, processorSupport);
                 }
             }
         });
@@ -151,9 +146,9 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
         {
             ((NewPropertyRouteNode)to)._specifications(FastList.<ValueSpecification>newList(((NewPropertyRouteNode)to)._specifications().size() + ((NewPropertyRouteNode)from)._specifications().size()).withAll(((NewPropertyRouteNode)to)._specifications()).withAll(((NewPropertyRouteNode)from)._specifications()));
         }
-        if (to instanceof PropertyRouteNode && ((PropertyRouteNode)to)._root() == null)
+        if (to instanceof PropertyRouteNode && ((PropertyRouteNode) to)._root() == null)
         {
-            ((PropertyRouteNode)to)._root(root);
+            ((PropertyRouteNode) to)._root(root);
         }
     }
 
@@ -166,7 +161,7 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
         {
             //node has already been resolved
             //throw exception if types don't match
-            Type alreadyProcessedNodeType = (Type)ImportStub.withImportStubByPass(resolvedTreeNodes.get(nodeName).getFirst()._type()._rawTypeCoreInstance(), processorSupport);
+            Type alreadyProcessedNodeType = (Type) ImportStub.withImportStubByPass(resolvedTreeNodes.get(nodeName).getFirst()._type()._rawTypeCoreInstance(), processorSupport);
             if (alreadyProcessedNodeType != type)
             {
                 throw new PureCompilationException(treePathNode.getSourceInformation(), String.format("Invalid Treepath! 2 nodes with same name %s but with different types %s %s", nodeName, type.getName(), alreadyProcessedNodeType.getName()));
@@ -186,12 +181,12 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
             }
             if (childNode instanceof ExistingPropertyRouteNode)
             {
-                resolveExistingPropertyNode(root, type, matcher, state, repository, context, resolvedTreeNodes, processorSupport, (ExistingPropertyRouteNode)childNode);
+                resolveExistingPropertyNode(root, type, matcher, state, repository, context, resolvedTreeNodes, processorSupport, (ExistingPropertyRouteNode) childNode);
             }
             else
             {
                 //NewProperty, not part of the original model
-                resolveNewPropertyNode(root, type, matcher, state, repository, context, resolvedTreeNodes, processorSupport, (NewPropertyRouteNode)childNode);
+                resolveNewPropertyNode(root, type, matcher, state, repository, context, resolvedTreeNodes, processorSupport, (NewPropertyRouteNode) childNode);
             }
         }
     }
@@ -199,13 +194,13 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
     private void resolveExistingPropertyNode(RootRouteNode root, Type type, Matcher matcher, ProcessorState state, ModelRepository repository, Context context, MutableMultimap<String, RouteNode> resolvedTreeNodes, ProcessorSupport processorSupport, ExistingPropertyRouteNode childNode)
     {
         RouteNodePropertyStub existingPropertyRoutNodeStub = childNode._property();
-        AbstractProperty property = this.resolvePropertyStub(type, existingPropertyRoutNodeStub, matcher, state, processorSupport);
+        AbstractProperty<?> property = this.resolvePropertyStub(type, existingPropertyRoutNodeStub, matcher, state, processorSupport);
         GenericType propertyGenericType = property._genericType();
-        Type propertyType = (Type)ImportStub.withImportStubByPass(propertyGenericType._rawTypeCoreInstance(), processorSupport);
+        Type propertyType = (Type) ImportStub.withImportStubByPass(propertyGenericType._rawTypeCoreInstance(), processorSupport);
 
         if (childNode._type() == null)
         {
-            GenericType genericTypeCopy = (GenericType)org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(propertyGenericType, childNode.getSourceInformation(), processorSupport);
+            GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(propertyGenericType, childNode.getSourceInformation(), processorSupport);
             childNode._type(genericTypeCopy);
         }
 
@@ -226,26 +221,26 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
             functionDefinition._owner(childNode);
         }
         // TODO process the full function definition instead of just the expressionSequence
-        processDerivedPropertyExpressions(childNode, type, functionDefinition._expressionSequence(), matcher, state, repository, processorSupport);
+        processDerivedPropertyExpressions(childNode, type, functionDefinition._expressionSequence(), matcher, state, processorSupport);
 //        PostProcessor.processElement(matcher, functionDefinition, state, context, processorSupport);
 
         // Set classifierGenericType for functionDefinition
-        GenericType sourceType = (GenericType)org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(type, functionDefinition.getSourceInformation(), processorSupport);
+        GenericType sourceType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(type, functionDefinition.getSourceInformation(), processorSupport);
         ValueSpecification lastExpression = functionDefinition._expressionSequence().getLast();
-        GenericType returnType = (GenericType)org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(lastExpression._genericType(), functionDefinition.getSourceInformation(), processorSupport);
-        Multiplicity returnMultiplicity = (Multiplicity)org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(lastExpression._multiplicity(), functionDefinition.getSourceInformation(), processorSupport);
-        GenericType classifierGenericType = (GenericType)org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(functionDefinition.getClassifier(), functionDefinition.getSourceInformation(), processorSupport);
+        GenericType returnType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(lastExpression._genericType(), functionDefinition.getSourceInformation(), processorSupport);
+        Multiplicity returnMultiplicity = (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(lastExpression._multiplicity(), functionDefinition.getSourceInformation(), processorSupport);
+        GenericType classifierGenericType = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(functionDefinition.getClassifier(), functionDefinition.getSourceInformation(), processorSupport);
         classifierGenericType._typeArguments(Lists.immutable.with(sourceType, returnType));
         classifierGenericType._multiplicityArguments(Lists.immutable.with(returnMultiplicity));
         functionDefinition._classifierGenericType(classifierGenericType);
 
-        processDerivedPropertyExpressions(childNode, type, valueSpecifications, matcher, state, repository, processorSupport);
+        processDerivedPropertyExpressions(childNode, type, valueSpecifications, matcher, state, processorSupport);
         GenericType propertyGenericType = valueSpecifications.getLast()._genericType();
 
-        Type _class = (Type)ImportStub.withImportStubByPass(propertyGenericType._rawTypeCoreInstance(), processorSupport);
+        Type _class = (Type) ImportStub.withImportStubByPass(propertyGenericType._rawTypeCoreInstance(), processorSupport);
         if (childNode._type() == null)
         {
-            GenericType genericTypeCopy = (GenericType)org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(propertyGenericType, childNode.getSourceInformation(), processorSupport);
+            GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(propertyGenericType, childNode.getSourceInformation(), processorSupport);
             childNode._type(genericTypeCopy);
         }
         this.resolveTreeNode(root, childNode, _class, matcher, state, repository, context, resolvedTreeNodes);
@@ -278,7 +273,7 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
             resolvedProperties.addAllIterable(getPrimitiveOrOfGivenTypeQualifiedProperties(_class, processorSupport));
             for (RouteNodePropertyStub excludedPropertyStub : excludedProperties)
             {
-                AbstractProperty property = this.resolvePropertyStub(_class, excludedPropertyStub, matcher, state, processorSupport);
+                AbstractProperty<?> property = this.resolvePropertyStub(_class, excludedPropertyStub, matcher, state, processorSupport);
                 String name = Property.getPropertyId(property, processorSupport);
                 if (simplePropertiesByName.containsKey(name))
                 {
@@ -293,12 +288,12 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
         treePathNode._resolvedPropertiesCoreInstance(FastList.<CoreInstance>newList(treePathNode._resolvedPropertiesCoreInstance().size() + resolvedProperties.size()).withAll(treePathNode._resolvedPropertiesCoreInstance()).withAll(resolvedProperties));
     }
 
-    private AbstractProperty resolvePropertyStub(Type _class, RouteNodePropertyStub routeNodePropertyStub, Matcher matcher, ProcessorState state, ProcessorSupport processorSupport)
+    private AbstractProperty<?> resolvePropertyStub(Type _class, RouteNodePropertyStub routeNodePropertyStub, Matcher matcher, ProcessorState state, ProcessorSupport processorSupport)
     {
-        PropertyStub propertyStubNonResolved = (PropertyStub)routeNodePropertyStub._propertyCoreInstance().getFirst();
+        PropertyStub propertyStubNonResolved = (PropertyStub) routeNodePropertyStub._propertyCoreInstance().getFirst();
         propertyStubNonResolved._ownerCoreInstance(_class);
-        AbstractProperty property = (AbstractProperty)ImportStub.withImportStubByPass(routeNodePropertyStub._propertyCoreInstance().getFirst(), processorSupport);
-        ListIterable<? extends VariableExpression> parameters = ((FunctionType)processorSupport.function_getFunctionType(property))._parameters().toList();
+        AbstractProperty<?> property = (AbstractProperty<?>) ImportStub.withImportStubByPass(routeNodePropertyStub._propertyCoreInstance().getFirst(), processorSupport);
+        ListIterable<? extends VariableExpression> parameters = ((FunctionType) processorSupport.function_getFunctionType(property))._parameters().toList();
         for (VariableExpression parameter : ListHelper.tail(parameters))
         {
             //TODO match the parameters
@@ -318,30 +313,26 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
         return processorSupport.class_getSimpleProperties(_class).select(primitiveOrOfGivenTypePropertyPredicate(_class, processorSupport));
     }
 
-    private Predicate<CoreInstance> primitiveOrOfGivenTypePropertyPredicate(final Type _class, final ProcessorSupport processorSupport)
+    private Predicate<CoreInstance> primitiveOrOfGivenTypePropertyPredicate(Type _class, ProcessorSupport processorSupport)
     {
-        return new Predicate<CoreInstance>()
+        return property ->
         {
-            @Override
-            public boolean accept(CoreInstance property)
-            {
-                GenericType genericType = ((AbstractProperty)property)._genericType();
-                Type propertyType = genericType == null ? null : (Type)ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
-                return propertyType == _class || propertyType instanceof DataType;
-            }
+            GenericType genericType = ((AbstractProperty<?>) property)._genericType();
+            Type propertyType = genericType == null ? null : (Type) ImportStub.withImportStubByPass(genericType._rawTypeCoreInstance(), processorSupport);
+            return propertyType == _class || propertyType instanceof DataType;
         };
     }
 
-    private static void processDerivedPropertyExpressions(NewPropertyRouteNodeAccessor treePathNode, Type type, RichIterable<? extends ValueSpecification> expressions, Matcher matcher, ProcessorState processorState, ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
+    private static void processDerivedPropertyExpressions(NewPropertyRouteNodeAccessor treePathNode, Type type, RichIterable<? extends ValueSpecification> expressions, Matcher matcher, ProcessorState processorState, ProcessorSupport processorSupport)
     {
         processorState.pushVariableContext();
-        processorState.getVariableContext().buildAndRegister("this", (GenericType)org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(type, processorSupport), (Multiplicity)processorSupport.package_getByUserPath(M3Paths.PureOne), repository, processorSupport);
+        processorState.getVariableContext().buildAndRegister("this", (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(type, processorSupport), (Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne), processorSupport);
         int i = 0;
         for (ValueSpecification expression : expressions)
         {
             if (expression._usageContext() == null)
             {
-                ExpressionSequenceValueSpecificationContext usageContext = (ExpressionSequenceValueSpecificationContext)processorSupport.newAnonymousCoreInstance(null, M3Paths.ExpressionSequenceValueSpecificationContext);
+                ExpressionSequenceValueSpecificationContext usageContext = (ExpressionSequenceValueSpecificationContext) processorSupport.newAnonymousCoreInstance(null, M3Paths.ExpressionSequenceValueSpecificationContext);
 
                 usageContext._offset(i);
                 usageContext._functionDefinition(treePathNode._functionDefinition());

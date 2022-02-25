@@ -15,11 +15,9 @@
 package org.finos.legend.pure.m3.compiler.postprocessing.processor;
 
 import org.eclipse.collections.api.RichIterable;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
-import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.constraint.Constraint;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithConstraints;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
@@ -27,10 +25,11 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Mu
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ClassConstraintValueSpecificationContext;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 
 public class ElementWithConstraintsProcessor extends Processor<ElementWithConstraints>
@@ -44,16 +43,16 @@ public class ElementWithConstraintsProcessor extends Processor<ElementWithConstr
     @Override
     public void process(ElementWithConstraints instance, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
-        this.processConstraints(instance, state, matcher, repository, processorSupport);
+        this.processConstraints(instance, state, matcher, processorSupport);
     }
 
-    private void processConstraints(ElementWithConstraints cls, ProcessorState state, Matcher matcher, ModelRepository modelRepository, ProcessorSupport processorSupport) throws PureCompilationException
+    private void processConstraints(ElementWithConstraints cls, ProcessorState state, Matcher matcher, ProcessorSupport processorSupport)
     {
 
         RichIterable<? extends Constraint> constraints = cls._constraints();
         if (constraints.notEmpty())
         {
-            state.getVariableContext().buildAndRegister("this", (GenericType)Type.wrapGenericType(cls, processorSupport), (Multiplicity)processorSupport.package_getByUserPath(M3Paths.PureOne), modelRepository, processorSupport);
+            state.getVariableContext().buildAndRegister("this", (GenericType) Type.wrapGenericType(cls, processorSupport), (Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne), processorSupport);
             int i = 0;
             for (Constraint constraint : constraints)
             {
@@ -63,7 +62,7 @@ public class ElementWithConstraintsProcessor extends Processor<ElementWithConstr
                 this.addConstraintUsageContext(constraintFnExpressionSequence, cls, i, processorSupport);
                 i++;
 
-                if(constraint._messageFunction() != null)
+                if (constraint._messageFunction() != null)
                 {
                     FunctionDefinition<?> constraintMessage = constraint._messageFunction();
                     ValueSpecification constraintMessageExpressionSequence = constraintMessage._expressionSequence().toList().getFirst();
@@ -71,7 +70,6 @@ public class ElementWithConstraintsProcessor extends Processor<ElementWithConstr
                     this.addConstraintUsageContext(constraintMessageExpressionSequence, cls, i, processorSupport);
                     i++;
                 }
-
             }
         }
     }
@@ -80,7 +78,7 @@ public class ElementWithConstraintsProcessor extends Processor<ElementWithConstr
     {
         if (expressionSequence != null)
         {
-            ClassConstraintValueSpecificationContext usageContext = (ClassConstraintValueSpecificationContext)processorSupport.newAnonymousCoreInstance(null, M3Paths.ClassConstraintValueSpecificationContext);
+            ClassConstraintValueSpecificationContext usageContext = (ClassConstraintValueSpecificationContext) processorSupport.newAnonymousCoreInstance(null, M3Paths.ClassConstraintValueSpecificationContext);
             usageContext._offset(offset);
             usageContext._classCoreInstance(cls);
             expressionSequence._usageContext(usageContext);
@@ -90,8 +88,5 @@ public class ElementWithConstraintsProcessor extends Processor<ElementWithConstr
     @Override
     public void populateReferenceUsages(ElementWithConstraints instance, ModelRepository repository, ProcessorSupport processorSupport)
     {
-
     }
-
-
 }

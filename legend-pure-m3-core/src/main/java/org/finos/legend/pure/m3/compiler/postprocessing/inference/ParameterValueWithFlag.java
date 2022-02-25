@@ -15,12 +15,11 @@
 package org.finos.legend.pure.m3.compiler.postprocessing.inference;
 
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 class ParameterValueWithFlag
 {
-    private CoreInstance parameterValue;
+    private final CoreInstance parameterValue;
     private final TypeInferenceContext targetGenericsContext;
     private final boolean isFinal;
 
@@ -31,23 +30,18 @@ class ParameterValueWithFlag
         this.isFinal = isFinal;
     }
 
-    public CoreInstance getParameterValue()
+    CoreInstance getParameterValue()
     {
         return this.parameterValue;
     }
 
-    public TypeInferenceContext getTargetGenericsContext()
+    TypeInferenceContext getTargetGenericsContext()
     {
         return targetGenericsContext;
     }
 
-    public void setParameterValue(CoreInstance parameterValue)
+    boolean isTerminal()
     {
-        this.parameterValue = parameterValue;
-    }
-
-    public boolean isTerminal(ProcessorSupport processorSupport)
-    {
-        return this.isFinal || GenericType.isGenericTypeConcrete(this.parameterValue, processorSupport);
+        return this.isFinal || GenericType.isGenericTypeConcrete(this.parameterValue);
     }
 }

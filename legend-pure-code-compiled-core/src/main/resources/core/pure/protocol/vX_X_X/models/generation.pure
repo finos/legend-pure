@@ -1,0 +1,62 @@
+###Pure
+import meta::protocols::pure::vX_X_X::metamodel::invocation::generation::*;
+Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::GenerationConfiguration
+{
+   class:String[0..1];
+   package: String[0..1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::GenerationOutput
+{
+   content:String[1];
+   fileName:String[1];
+}
+
+
+###Pure
+Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::json::JSONSchemaConfig extends meta::protocols::pure::vX_X_X::metamodel::invocation::generation::GenerationConfiguration
+{
+    includeAllRelatedTypes:Boolean[0..1];
+    useConstraints:Boolean[0..1];
+}
+
+###Pure
+Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::ProtobufConfig extends meta::protocols::pure::vX_X_X::metamodel::invocation::generation::GenerationConfiguration
+{
+   options : meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::Options[0..1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::Options
+{
+  javaPackage:String[0..1];
+  javaOuterClassname:String[0..1];
+  javaMultipleFiles:Boolean[0..1];
+  optimizeFor:meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::OptimizeMode[0..1];
+  customOptions:meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::CustomOption[*];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::CustomOption
+{
+  name:String[1];
+  value:Any[1];
+}
+
+Enum meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::OptimizeMode
+{
+  SPEED,
+  CODE_SIZE,
+  LITE_RUNTIME
+}
+
+###Pure
+Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::avro::AvroConfig extends meta::protocols::pure::vX_X_X::metamodel::invocation::generation::GenerationConfiguration
+{
+
+   includeNamespace: Boolean[0..1];
+   includeSuperTypes: Boolean[0..1];
+   includeAssociations: Boolean[0..1];
+   includeGeneratedMilestoning: Boolean[0..1];
+   timestampLogicalType: String[0..1];
+   propertyProfile: Profile[*];
+   namespaceOverride: Map<String, String>[0..1];
+}

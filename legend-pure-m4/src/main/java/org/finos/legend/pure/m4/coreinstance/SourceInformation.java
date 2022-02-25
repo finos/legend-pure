@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.m4.coreinstance;
 
+import org.finos.legend.pure.m4.tools.SafeAppendable;
+
 import java.io.IOException;
 
 public class SourceInformation implements Comparable<SourceInformation>
@@ -79,73 +81,43 @@ public class SourceInformation implements Comparable<SourceInformation>
 
     public String getMessage()
     {
-        StringBuilder builder = new StringBuilder(this.sourceId.length() + 16);
-        writeMessage(builder);
-        return builder.toString();
+        return appendMessage(new StringBuilder(this.sourceId.length() + 16)).toString();
     }
 
+    @Deprecated
     public void writeMessage(StringBuilder builder)
     {
-        builder.append(this.sourceId);
-        builder.append(':');
-        if (this.startLine == this.endLine)
-        {
-            builder.append(this.startLine);
-            builder.append('c');
-            if (this.startColumn == this.endColumn)
-            {
-                builder.append(this.startColumn);
-            }
-            else
-            {
-                builder.append('c');
-                builder.append(this.startColumn);
-                builder.append('-');
-                builder.append(this.endColumn);
-            }
-        }
-        else
-        {
-            builder.append(this.startLine);
-            builder.append('c');
-            builder.append(this.startColumn);
-            builder.append('-');
-            builder.append(this.endLine);
-            builder.append('c');
-            builder.append(this.endColumn);
-        }
+        appendMessage(builder);
     }
 
+    @Deprecated
     public void writeMessage(Appendable appendable) throws IOException
     {
-        appendable.append(this.sourceId);
-        appendable.append(':');
+        appendMessage(appendable);
+    }
+
+    public <T extends Appendable> T appendMessage(T appendable)
+    {
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        safeAppendable.append(this.sourceId).append(':');
         if (this.startLine == this.endLine)
         {
-            appendable.append(Integer.toString(this.startLine));
-            appendable.append('c');
+            safeAppendable.append(this.startLine).append('c');
             if (this.startColumn == this.endColumn)
             {
-                appendable.append(Integer.toString(this.startColumn));
+                safeAppendable.append(this.startColumn);
             }
             else
             {
-                appendable.append('c');
-                appendable.append(Integer.toString(this.startColumn));
-                appendable.append('-');
-                appendable.append(Integer.toString(this.endColumn));
+                safeAppendable.append('c').append(this.startColumn).append('-').append(this.endColumn);
             }
         }
         else
         {
-            appendable.append(Integer.toString(this.startLine));
-            appendable.append('c');
-            appendable.append(Integer.toString(this.startColumn));
-            appendable.append('-');
-            appendable.append(Integer.toString(this.endLine));
-            appendable.append('c');
-            appendable.append(Integer.toString(this.endColumn));
+            safeAppendable.append(this.startLine).append('c').append(this.startColumn).append('-')
+                    .append(this.endLine).append('c').append(this.endColumn);
         }
+        return appendable;
     }
 
     public String toM4String()
@@ -153,9 +125,15 @@ public class SourceInformation implements Comparable<SourceInformation>
         return getM4SourceString(this.sourceId, this.startLine, this.startColumn, this.line, this.column, this.endLine, this.endColumn);
     }
 
+    @Deprecated
     public void writeM4String(Appendable appendable)
     {
-        writeM4SourceInformation(appendable, this.sourceId, this.startLine, this.startColumn, this.line, this.column, this.endLine, this.endColumn);
+        appendM4String(appendable);
+    }
+
+    public <T extends Appendable> T appendM4String(T appendable)
+    {
+        return appendM4SourceInformation(appendable, this.sourceId, this.startLine, this.startColumn, this.line, this.column, this.endLine, this.endColumn);
     }
 
     @Override
@@ -183,7 +161,7 @@ public class SourceInformation implements Comparable<SourceInformation>
             return false;
         }
 
-        SourceInformation sourceInfo = (SourceInformation)other;
+        SourceInformation sourceInfo = (SourceInformation) other;
         return this.sourceId.equals(sourceInfo.sourceId) &&
                 (this.line == sourceInfo.line) &&
                 (this.column == sourceInfo.column) &&
@@ -236,9 +214,9 @@ public class SourceInformation implements Comparable<SourceInformation>
         return Integer.compare(this.endColumn, other.endColumn);
     }
 
-    public boolean contains(SourceInformation contained){
-
-        return (contained.getStartLine() > this.getStartLine() && contained.getEndLine() < this.getEndLine() ) ||
+    public boolean contains(SourceInformation contained)
+    {
+        return (contained.getStartLine() > this.getStartLine() && contained.getEndLine() < this.getEndLine()) ||
                 (contained.getStartLine() == this.getStartLine() && contained.getEndLine() < this.getEndLine() && contained.getStartColumn() >= this.getStartColumn()) ||
                 (contained.getStartLine() > this.getStartLine() && contained.getEndLine() == this.getEndLine() && this.getEndColumn() >= contained.getEndColumn()) ||
                 (contained.getStartLine() == this.getStartLine() && contained.getEndLine() == this.getEndLine() && contained.getStartColumn() >= this.getStartColumn() && this.getEndColumn() >= contained.getEndColumn());
@@ -247,61 +225,36 @@ public class SourceInformation implements Comparable<SourceInformation>
     @Override
     public String toString()
     {
-        StringBuilder builder = new StringBuilder("<SourceInformation ");
-        writeMessage(builder);
-        builder.append('>');
-        return builder.toString();
+        return appendMessage(new StringBuilder("<SourceInformation ")).append('>').toString();
     }
 
     public static String getM4SourceString(String sourceId, int startLine, int startColumn, int line, int column, int endLine, int endColumn)
     {
-        StringBuilder builder = new StringBuilder(sourceId.length() + 32);
-        writeM4SourceInformation(builder, sourceId, startLine, startColumn, line, column, endLine, endColumn);
-        return builder.toString();
+        return appendM4SourceInformation(new StringBuilder(sourceId.length() + 32), sourceId, startLine, startColumn, line, column, endLine, endColumn).toString();
     }
 
+    @Deprecated
     public static void writeM4SourceInformation(StringBuilder builder, String sourceId, int startLine, int startColumn, int line, int column, int endLine, int endColumn)
     {
-        builder.append("?[");
-        builder.append(sourceId);
-        builder.append(':');
-        builder.append(startLine);
-        builder.append(',');
-        builder.append(startColumn);
-        builder.append(',');
-        builder.append(line);
-        builder.append(',');
-        builder.append(column);
-        builder.append(',');
-        builder.append(endLine);
-        builder.append(',');
-        builder.append(endColumn);
-        builder.append("]?");
+        appendM4SourceInformation(builder, sourceId, startLine, startColumn, line, column, endLine, endColumn);
     }
 
+    @Deprecated
     public static void writeM4SourceInformation(Appendable appendable, String sourceId, int startLine, int startColumn, int line, int column, int endLine, int endColumn)
     {
-        try
-        {
-            appendable.append("?[");
-            appendable.append(sourceId);
-            appendable.append(':');
-            appendable.append(Integer.toString(startLine));
-            appendable.append(',');
-            appendable.append(Integer.toString(startColumn));
-            appendable.append(',');
-            appendable.append(Integer.toString(line));
-            appendable.append(',');
-            appendable.append(Integer.toString(column));
-            appendable.append(',');
-            appendable.append(Integer.toString(endLine));
-            appendable.append(',');
-            appendable.append(Integer.toString(endColumn));
-            appendable.append("]?");
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        appendM4SourceInformation(appendable, sourceId, startLine, startColumn, line, column, endLine, endColumn);
+    }
+
+    public static <T extends Appendable> T appendM4SourceInformation(T appendable, String sourceId, int startLine, int startColumn, int line, int column, int endLine, int endColumn)
+    {
+        SafeAppendable.wrap(appendable)
+                .append("?[").append(sourceId).append(':')
+                .append(startLine).append(',')
+                .append(startColumn).append(',')
+                .append(line).append(',')
+                .append(column).append(',')
+                .append(endLine).append(',')
+                .append(endColumn).append("]?");
+        return appendable;
     }
 }

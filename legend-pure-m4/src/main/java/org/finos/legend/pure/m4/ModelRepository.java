@@ -14,28 +14,19 @@
 
 package org.finos.legend.pure.m4;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
+import org.eclipse.collections.api.set.ImmutableSet;
+import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;
 import org.finos.legend.pure.m4.coreinstance.factory.MultipassCoreInstanceFactory;
-import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
-import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunctions;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
-import org.finos.legend.pure.m4.transaction.TransactionObserver;
-import org.finos.legend.pure.m4.transaction.VoidTransactionObserver;
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.function.Function0;
-import org.eclipse.collections.api.map.ConcurrentMutableMap;
-import org.eclipse.collections.api.set.ImmutableSet;
-import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
-import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m4.coreinstance.primitive.BinaryCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.BooleanCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.DateCoreInstance;
@@ -43,18 +34,23 @@ import org.finos.legend.pure.m4.coreinstance.primitive.DecimalCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.FloatCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.IntegerCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.PrimitiveCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.StrictTimeCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstance;
-import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstanceFactory;
+import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.PureStrictTime;
+import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunctions;
+import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstance;
+import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstanceFactory;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.binary.BinaryRepositorySerializer;
 import org.finos.legend.pure.m4.serialization.grammar.NameSpace;
 import org.finos.legend.pure.m4.statelistener.M4StateListener;
+import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
+import org.finos.legend.pure.m4.transaction.TransactionObserver;
+import org.finos.legend.pure.m4.transaction.VoidTransactionObserver;
 import org.finos.legend.pure.m4.transaction.framework.TransactionManager;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
@@ -69,6 +65,7 @@ public class ModelRepository
 {
     public static final String BOOLEAN_TYPE_NAME = "Boolean";
     public static final String BINARY_TYPE_NAME = "Binary";
+    public static final String BYTE_STREAM_TYPE_NAME = "ByteStream";
     public static final String DATE_TYPE_NAME = "Date";
     public static final String STRICT_DATE_TYPE_NAME = "StrictDate";
     public static final String DATETIME_TYPE_NAME = "DateTime";
@@ -78,7 +75,7 @@ public class ModelRepository
     public static final String DECIMAL_TYPE_NAME = "Decimal";
     public static final String INTEGER_TYPE_NAME = "Integer";
     public static final String STRING_TYPE_NAME = "String";
-    public static final ImmutableSet<String> PRIMITIVE_TYPE_NAMES = Sets.immutable.with(BOOLEAN_TYPE_NAME, DATE_TYPE_NAME, STRICT_DATE_TYPE_NAME, DATETIME_TYPE_NAME, LATEST_DATE_TYPE_NAME, STRICT_TIME_TYPE_NAME, FLOAT_TYPE_NAME, DECIMAL_TYPE_NAME, INTEGER_TYPE_NAME, STRING_TYPE_NAME, BINARY_TYPE_NAME);
+    public static final ImmutableSet<String> PRIMITIVE_TYPE_NAMES = Sets.immutable.with(BOOLEAN_TYPE_NAME, BYTE_STREAM_TYPE_NAME, DATE_TYPE_NAME, STRICT_DATE_TYPE_NAME, DATETIME_TYPE_NAME, LATEST_DATE_TYPE_NAME, STRICT_TIME_TYPE_NAME, FLOAT_TYPE_NAME, DECIMAL_TYPE_NAME, INTEGER_TYPE_NAME, STRING_TYPE_NAME, BINARY_TYPE_NAME);
 
 
     public static final String BOOLEAN_TRUE = "true";
@@ -101,14 +98,6 @@ public class ModelRepository
     private final int integerCacheMax = 1000;
     private final AtomicReferenceArray<IntegerCoreInstance> integerCache = new AtomicReferenceArray<>((this.integerCacheMax - this.integerCacheMin) + 1);
     private final ConcurrentMutableMap<String, StringCoreInstance> stringCache = ConcurrentHashMap.newMap();
-    private final Function<String, StringCoreInstance> newString = new Function<String, StringCoreInstance>()
-    {
-        @Override
-        public StringCoreInstance valueOf(String value)
-        {
-            return newStringInstance(value);
-        }
-    };
 
     private final MultipassCoreInstanceFactory coreInstanceFactory;
 
@@ -194,7 +183,7 @@ public class ModelRepository
         CoreInstance classifierType = getTopLevel(classifierName);
         if (classifierType == null)
         {
-            CoreInstance newClassifierType = this.coreInstanceFactory.createCoreInstance(classifierName, nextId(), sourceInformation, (CoreInstance)null, this, true);
+            CoreInstance newClassifierType = this.coreInstanceFactory.createCoreInstance(classifierName, nextId(), sourceInformation, null, this, true);
             classifierType = getOrAddTopLevel(newClassifierType);
             if (newClassifierType == classifierType)
             {
@@ -374,7 +363,7 @@ public class ModelRepository
         {
             name = nextAnonymousInstanceName();
         }
-        CoreInstance instance = this.coreInstanceFactory.createCoreInstance(name, nextId(), sourceInformation, (CoreInstance)null, this, persistent);
+        CoreInstance instance = this.coreInstanceFactory.createCoreInstance(name, nextId(), sourceInformation, null, this, persistent);
         registerNewInstanceInTransaction(instance);
         return instance;
     }
@@ -477,6 +466,8 @@ public class ModelRepository
     {
         return newDateCoreInstance(getPureDate(name), getOrCreateTopLevel(DATETIME_TYPE_NAME, null), internalSyntheticId);
     }
+
+    // TODO [ByteStream] factory for core instance
 
     public DateCoreInstance newDateCoreInstance(PureDate value)
     {
@@ -611,7 +602,7 @@ public class ModelRepository
     {
         try
         {
-            Integer intValue = Integer.valueOf(name);
+            int intValue = Integer.parseInt(name);
             return newIntegerCoreInstance(intValue, classifier, internalSyntheticId);
         }
         catch (NumberFormatException e)
@@ -647,8 +638,11 @@ public class ModelRepository
             IntegerCoreInstance instance = this.integerCache.get(index);
             if (instance == null)
             {
-                this.integerCache.compareAndSet(index, null, PrimitiveCoreInstance.newIntegerCoreInstance(value, classifier, internalSyntheticId));
-                instance = this.integerCache.get(index);
+                instance = PrimitiveCoreInstance.newIntegerCoreInstance(value, classifier, internalSyntheticId);
+                if (!this.integerCache.compareAndSet(index, null, instance))
+                {
+                    instance = this.integerCache.get(index);
+                }
             }
             return instance;
         }
@@ -695,25 +689,18 @@ public class ModelRepository
     public StringCoreInstance newStringCoreInstance(String value)
     {
         StringCoreInstance instance = this.stringCache.get(value);
-        return (instance == null) ? this.newString.valueOf(value) : instance;
+        return (instance == null) ? newStringInstance(value) : instance;
     }
 
     public StringCoreInstance newStringCoreInstance_cached(String value)
     {
-        return this.stringCache.getIfAbsentPutWithKey(value, this.newString);
+        return this.stringCache.getIfAbsentPutWithKey(value, this::newStringInstance);
     }
 
     // Should be used only by BinaryRepositorySerializer
-    public StringCoreInstance newStringCoreInstance_cached(final String value, final int internalSyntheticId)
+    public StringCoreInstance newStringCoreInstance_cached(String value, int internalSyntheticId)
     {
-        return this.stringCache.getIfAbsentPut(value, new Function0<StringCoreInstance>()
-        {
-            @Override
-            public StringCoreInstance value()
-            {
-                return newStringInstance(value, internalSyntheticId);
-            }
-        });
+        return this.stringCache.getIfAbsentPut(value, () -> newStringInstance(value, internalSyntheticId));
     }
 
     private StringCoreInstance newStringInstance(String value)
@@ -767,7 +754,7 @@ public class ModelRepository
 
     public void validate(M4StateListener listener) throws PureCompilationException
     {
-        MutableSet<CoreInstance> doneList = UnifiedSet.newSet();
+        MutableSet<CoreInstance> doneList = Sets.mutable.empty();
         listener.startRepositorySimpleValidation();
         for (CoreInstance instance : getTopLevels())
         {
@@ -793,8 +780,7 @@ public class ModelRepository
             if (deep)
             {
                 // Primitives
-                CoreInstance instance = this.newCoreInstance(instanceName, classifierType, sourceInformation);
-                return instance;
+                return this.newCoreInstance(instanceName, classifierType, sourceInformation);
             }
             else
             {
@@ -901,7 +887,17 @@ public class ModelRepository
     private String nextAnonymousInstanceName()
     {
         String id = Integer.toString(nextAnonymousId(), 32);
-        return ANONYMOUS_NAME_PREFIX + StringUtils.leftPad(id, ANONYMOUS_PADDING_LENGTH, '0');
+        if (id.length() >= ANONYMOUS_PADDING_LENGTH)
+        {
+            return ANONYMOUS_NAME_PREFIX.concat(id);
+        }
+
+        StringBuilder builder = new StringBuilder(ANONYMOUS_PADDING_TOTAL_LENGTH).append(ANONYMOUS_NAME_PREFIX);
+        for (int i = id.length(); i < ANONYMOUS_PADDING_LENGTH; i++)
+        {
+            builder.append('0');
+        }
+        return builder.append(id).toString();
     }
 
     public void setTransactionObserver(TransactionObserver transactionObserver)
@@ -911,32 +907,14 @@ public class ModelRepository
 
     public static boolean isAnonymousInstanceName(String name)
     {
-        if (name == null)
-        {
-            return false;
-        }
-
-        int length = name.length();
-        if (length < ANONYMOUS_PADDING_TOTAL_LENGTH)
-        {
-            return false;
-        }
-
-        int index = 0;
-        for (; index < ANONYMOUS_NAME_PREFIX.length(); index++)
-        {
-            if (name.charAt(index) != ANONYMOUS_NAME_PREFIX.charAt(index))
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return (name != null) &&
+                (name.length() >= ANONYMOUS_PADDING_TOTAL_LENGTH) &&
+                name.startsWith(ANONYMOUS_NAME_PREFIX);
     }
 
     /**
-     * Useful for printing and testing, so that the ID numbers don't change in the print's
-     * @param id
+     * Useful for printing and testing, so that the ID numbers don't change in the prints
+     * @param id instance id
      * @return the original ID or "Anonymous_StripedId"
      */
     public static String possiblyReplaceAnonymousId(String id)

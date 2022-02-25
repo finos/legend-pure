@@ -29,6 +29,8 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -52,6 +54,12 @@ public class GraphNodeIterable extends AbstractLazyIterable<CoreInstance>
     public Iterator<CoreInstance> iterator()
     {
         return new GraphNodeIterator(this.startingNodes, this.filter);
+    }
+
+    @Override
+    public Spliterator<CoreInstance> spliterator()
+    {
+        return Spliterators.spliteratorUnknownSize(iterator(), Spliterator.DISTINCT | Spliterator.NONNULL);
     }
 
     @Override
@@ -167,17 +175,14 @@ public class GraphNodeIterable extends AbstractLazyIterable<CoreInstance>
                 CoreInstance node = this.deque.pollFirst();
                 if (this.visited.add(node))
                 {
-                    switch (filter(node))
+                    NodeFilterResult filterResult = filter(node);
+                    if (filterResult.cont)
                     {
-                        case ACCEPT_AND_CONTINUE:
-                        {
-                            node.getKeys().forEach(key -> Iterate.addAllIterable(node.getValueForMetaPropertyToMany(key), this.deque));
-                            return node;
-                        }
-                        case ACCEPT_AND_STOP:
-                        {
-                            return node;
-                        }
+                        node.getKeys().forEach(key -> Iterate.addAllIterable(node.getValueForMetaPropertyToMany(key), this.deque));
+                    }
+                    if (filterResult.accept)
+                    {
+                        return node;
                     }
                 }
             }
@@ -207,19 +212,36 @@ public class GraphNodeIterable extends AbstractLazyIterable<CoreInstance>
         /**
          * Accept the node for iteration, and continue on to connected nodes.
          */
-        ACCEPT_AND_CONTINUE,
+        ACCEPT_AND_CONTINUE(true, true),
 
         /**
          * Accept the node for iteration, but do not continue on to connected nodes. Note that connected nodes may still
          * be reached by other paths.
          */
-        ACCEPT_AND_STOP,
+        ACCEPT_AND_STOP(true, false),
 
         /**
-         * Reject the node for iteration. This means both that the node will not be returned as part of iteration and
-         * that graph traversal will not continue on to connected nodes (though they may still be reached by other
-         * paths). Note that the rejection is persistent, even if the node is reached by other paths.
+         * Reject the node for iteration, but continue on to connected nodes. This means that the node will not be
+         * returned as part of iteration. Note that the rejection is persistent, even if the node is reached by other
+         * paths.
          */
-        REJECT
+        REJECT_AND_CONTINUE(false, true),
+
+        /**
+         * Reject the node for iteration, and do not continue on to connected nodes. This means both that the node will
+         * not be returned as part of iteration and that graph traversal will not continue on to connected nodes (though
+         * they may still be reached by other paths). Note that the rejection is persistent, even if the node is reached
+         * by other paths.
+         */
+        REJECT_AND_STOP(false, false);
+
+        private final boolean accept;
+        private final boolean cont;
+
+        NodeFilterResult(boolean accept, boolean cont)
+        {
+            this.accept = accept;
+            this.cont = cont;
+        }
     }
 }

@@ -356,6 +356,24 @@ Class meta::relational::metamodel::operation::VariableArithmeticOperation extend
 {
 }
 
+Class meta::relational::metamodel::operation::SemiStructuredObjectNavigation extends Operation
+{
+   operand     : RelationalOperationElement[1];
+   contentType : String[0..1];
+   returnType  : Type[0..1];
+}
+
+Class meta::relational::metamodel::operation::SemiStructuredPropertyAccess extends SemiStructuredObjectNavigation
+{
+   property : RelationalOperationElement[1];
+   index    : RelationalOperationElement[0..1];
+}
+
+Class meta::relational::metamodel::operation::SemiStructuredArrayElementAccess extends SemiStructuredObjectNavigation
+{
+   index : RelationalOperationElement[1];
+}
+
 Class meta::relational::metamodel::ColumnName extends meta::relational::metamodel::RelationalOperationElement
 {
     <<equality.Key>> name : String[1];
@@ -474,6 +492,9 @@ Class meta::relational::metamodel::datatype::Array extends meta::relational::met
 {
 }
 
+Class meta::relational::metamodel::datatype::SemiStructured extends meta::relational::metamodel::datatype::DataType
+{
+}
 
 function meta::relational::metamodel::datatype::dataTypeToSqlText(type: meta::relational::metamodel::datatype::DataType[1]):String[1]
 {
@@ -496,7 +517,8 @@ function meta::relational::metamodel::datatype::dataTypeToSqlText(type: meta::re
         b : meta::relational::metamodel::datatype::Binary[1] | format('BINARY(%d)', $b.size),
         r : meta::relational::metamodel::datatype::Real[1] | 'REAL',
         a : meta::relational::metamodel::datatype::Array[1] | 'ARRAY',
-        v : meta::relational::metamodel::datatype::Varbinary[1] | format('VARBINARY(%d)', $v.size)
+        v : meta::relational::metamodel::datatype::Varbinary[1] | format('VARBINARY(%d)', $v.size),
+        s : meta::relational::metamodel::datatype::SemiStructured[1] | 'SEMISTRUCTURED'
     ]);
 }
 
@@ -518,7 +540,8 @@ function meta::relational::metamodel::datatype::dataTypeToCompatiblePureType(typ
         d : meta::relational::metamodel::datatype::Distinct[1] | String,
         o : meta::relational::metamodel::datatype::Other[1] | String,
         b : meta::relational::metamodel::datatype::Bit[1] | Boolean,
-        r : meta::relational::metamodel::datatype::Real[1] | Float
+        r : meta::relational::metamodel::datatype::Real[1] | Float,
+        s : meta::relational::metamodel::datatype::SemiStructured[1] | String
     ]);
 }
 

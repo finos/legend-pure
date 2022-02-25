@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.48.1-SNAPSHOT</version>
+        <version>1.50.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -54,6 +54,7 @@
                                 <repository>core_external_format_xml</repository>
                                 <repository>core_external_format_flatdata</repository>
                                 <repository>core_external_format_json</repository>
+                                <repository>core_external_query_graphql</repository>
                             </repositories>
                         </configuration>
                     </execution>
@@ -97,6 +98,11 @@
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-core-external-format-json</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-code-compiled-core-external-query-graphql</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>
@@ -238,6 +244,11 @@
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-code-compiled-core-external-format-json</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-code-compiled-core-external-query-graphql</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

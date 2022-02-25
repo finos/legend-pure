@@ -14,30 +14,27 @@
 
 package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.antlr;
 
-import org.eclipse.collections.api.block.procedure.Procedure;
+import org.antlr.v4.runtime.Token;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.tuple.primitive.BooleanObjectPair;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.eclipse.collections.impl.tuple.primitive.PrimitiveTuples;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.AggregationAwareParser;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.AggregationAwareParserBaseVisitor;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.AntlrContextToM3CoreInstance;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.TemporaryPureAggregateSpecification;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.TemporaryPureAggregationFunctionSpecification;
-import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.TemporaryPureGroupByFunctionSpecification;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.antlr.v4.runtime.Token;
-
-import static org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils.removeLastCommaCharacterIfPresent;
+import org.finos.legend.pure.m4.exception.PureException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisitor<String>
 {
@@ -76,22 +73,23 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
     public String visitMapping(AggregationAwareParser.MappingContext ctx)
     {
         visitChildren(ctx);
-        return "^meta::pure::mapping::aggregationAware::AggregationAwareSetImplementation" + setSourceInfo + "(" +
-                ((id == null) ? "" : ("id = '" + id + "',")) +
-                "root = " + root + "," +
-                "class = ^meta::pure::metamodel::import::ImportStub " + classSourceInfo + " (importGroup=system::imports::" + importId + ", idOrPath='" + classPath + "')," +
-                "parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + importId + ", idOrPath='" + mappingPath + "')," +
-                "aggregateSetImplementations=[" + aggregateSetImplementations.toString() + "]," +
-                "mainSetImplementation=" + mainSetImplementation +
+        return "^meta::pure::mapping::aggregationAware::AggregationAwareSetImplementation" + this.setSourceInfo + "(" +
+                ((this.id == null) ? "" : ("id = '" + this.id + "',")) +
+                "root = " + this.root + "," +
+                "class = ^meta::pure::metamodel::import::ImportStub " + this.classSourceInfo + " (importGroup=system::imports::" + this.importId + ", idOrPath='" + this.classPath + "')," +
+                "parent = ^meta::pure::metamodel::import::ImportStub (importGroup=system::imports::" + this.importId + ", idOrPath='" + this.mappingPath + "')," +
+                "aggregateSetImplementations=[" + this.aggregateSetImplementations + "]," +
+                "mainSetImplementation=" + this.mainSetImplementation +
                 ")";
     }
 
     @Override
     public String visitAggregationSpecification(AggregationAwareParser.AggregationSpecificationContext ctx)
     {
-        String aggSpecSourceInfo = " " + sourceInformation.getPureSourceInformation(ctx.GROUP_OPEN().getSymbol(), ctx.GROUP_OPEN().getSymbol(), ctx.GROUP_CLOSE().getSymbol()).toM4String();
-        aggregateSetImplementations.append("^meta::pure::mapping::aggregationAware::AggregateSetImplementationContainer " + aggSpecSourceInfo + " (" + "index=" + index + "," + "aggregateSpecification=^meta::pure::mapping::aggregationAware::AggregateSpecification " + aggSpecSourceInfo + " (");
-
+        String aggSpecSourceInfo = " " + this.sourceInformation.getPureSourceInformation(ctx.GROUP_OPEN().getSymbol(), ctx.GROUP_OPEN().getSymbol(), ctx.GROUP_CLOSE().getSymbol()).toM4String();
+        this.aggregateSetImplementations.append("^meta::pure::mapping::aggregationAware::AggregateSetImplementationContainer ").append(aggSpecSourceInfo).append(" (")
+                .append("index=").append(this.index).append(",")
+                .append("aggregateSpecification=^meta::pure::mapping::aggregationAware::AggregateSpecification ").append(aggSpecSourceInfo).append(" (");
         visitChildren(ctx);
         return null;
     }
@@ -99,7 +97,7 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
     @Override
     public String visitMainMapping(AggregationAwareParser.MainMappingContext ctx)
     {
-        removeLastCommaCharacterIfPresent(aggregateSetImplementations);
+        ParsingUtils.removeLastCommaCharacterIfPresent(aggregateSetImplementations);
         mainSetImplementation = parseSingleMapping(ctx.parserName().VALID_STRING().getSymbol(), ctx.CONTENT().getSymbol(), ctx.CURLY_BRACKET_CLOSE().getSymbol());
         return null;
     }
@@ -107,14 +105,12 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
     @Override
     public String visitModelOperation(AggregationAwareParser.ModelOperationContext ctx)
     {
-        Pair<Boolean, Pair<String, String>> aggregateSpecificationParseResult = parseAggregateSpecification(ctx.CONTENT().getText(), ctx.CONTENT().getSymbol().getLine(), index);
+        BooleanObjectPair<Pair<String, String>> aggregateSpecificationParseResult = parseAggregateSpecification(ctx.CONTENT().getText(), ctx.CONTENT().getSymbol().getLine(), this.index);
 
-        aggregateSetImplementations.append(
-
-                "canAggregate=" + (aggregateSpecificationParseResult.getOne() ? "true" : "false") + "," +
-                        "groupByFunctions=[" + aggregateSpecificationParseResult.getTwo().getOne() + "]," +
-                        "aggregateValues=[" + aggregateSpecificationParseResult.getTwo().getTwo() + "]),");
-        index++;
+        this.aggregateSetImplementations.append("canAggregate=").append(aggregateSpecificationParseResult.getOne()).append(",")
+                .append("groupByFunctions=[").append(aggregateSpecificationParseResult.getTwo().getOne()).append("],")
+                .append("aggregateValues=[").append(aggregateSpecificationParseResult.getTwo().getTwo()).append("]),");
+        this.index++;
         return null;
     }
 
@@ -122,64 +118,41 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
     public String visitAggregateMapping(AggregationAwareParser.AggregateMappingContext ctx)
     {
         String subSetImplementation = parseSingleMapping(ctx.parserName().VALID_STRING().getSymbol(), ctx.CONTENT().getSymbol(), ctx.CURLY_BRACKET_CLOSE().getSymbol());
-        aggregateSetImplementations.append("setImplementation=" + subSetImplementation + ")");
-        aggregateSetImplementations.append(",");
+        this.aggregateSetImplementations.append("setImplementation=").append(subSetImplementation).append("),");
         return null;
     }
 
-    final public Pair<Boolean, Pair<String, String>> parseAggregateSpecification(String content, int beginLine, int index)
+    final public BooleanObjectPair<Pair<String, String>> parseAggregateSpecification(String content, int beginLine, int index)
     {
-        final M3AntlrParser parser = new M3AntlrParser();
-        final M3ProcessorSupport processorSupport = new M3ProcessorSupport(context, repository);
-        String mappingName = mappingPath.replace("::", "_");
-        String classMappingName = classPath.replace("::", "_");
-        final AntlrContextToM3CoreInstance.LambdaContext lambdaContext = new AntlrContextToM3CoreInstance.LambdaContext(mappingName + '_' + classMappingName + (id == null ? "" : '_' + id) + "_AggregationAware_" + index);
-        TemporaryPureAggregateSpecification temporarySpecification = parser.parseAggregateSpecification(content, lambdaContext, sourceInformation.getSourceName(), sourceInformation.getOffsetLine() + beginLine - 1, importId, index, repository, processorSupport, context);
+        M3AntlrParser parser = new M3AntlrParser();
+        M3ProcessorSupport processorSupport = new M3ProcessorSupport(this.context, this.repository);
+        String mappingName = this.mappingPath.replace("::", "_");
+        String classMappingName = this.classPath.replace("::", "_");
+        AntlrContextToM3CoreInstance.LambdaContext lambdaContext = new AntlrContextToM3CoreInstance.LambdaContext(mappingName + '_' + classMappingName + (id == null ? "" : '_' + id) + "_AggregationAware_" + index);
+        TemporaryPureAggregateSpecification temporarySpecification = parser.parseAggregateSpecification(content, lambdaContext, this.sourceInformation.getSourceName(), this.sourceInformation.getOffsetLine() + beginLine - 1, this.importId, index, this.repository, processorSupport, this.context);
 
-        final MutableList<String> groupByFunctionSpecifications = Lists.mutable.with();
-        temporarySpecification.groupByFunctionSpecifications.forEach(new Procedure<TemporaryPureGroupByFunctionSpecification>()
-        {
-            @Override
-            public void value(TemporaryPureGroupByFunctionSpecification groupByFunctionSpecification)
-            {
-                groupByFunctionSpecifications.add(
-                        "^meta::pure::mapping::aggregationAware::GroupByFunctionSpecification " + groupByFunctionSpecification.sourceInformation.toM4String() + " (" +
-                                "groupByFn=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + " " + groupByFunctionSpecification.groupByExpression.getSourceInformation().toM4String() + " (" +
-                                "classifierGenericType=^meta::pure::metamodel::type::generics::GenericType(rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType(rawType = ^meta::pure::metamodel::type::FunctionType()))," +
-                                "expressionSequence=" + parser.process(groupByFunctionSpecification.groupByExpression, context, processorSupport) +
-                                ")" +
-                                ")"
-                );
-            }
-        });
+        MutableList<String> groupByFunctionSpecifications = temporarySpecification.groupByFunctionSpecifications.collect(groupByFunctionSpecification ->
+                "^meta::pure::mapping::aggregationAware::GroupByFunctionSpecification " + groupByFunctionSpecification.sourceInformation.toM4String() + " (" +
+                        "groupByFn=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + " " + groupByFunctionSpecification.groupByExpression.getSourceInformation().toM4String() + " (" +
+                        "classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + groupByFunctionSpecification.groupByExpression.getSourceInformation().toM4String() + " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + groupByFunctionSpecification.groupByExpression.getSourceInformation().toM4String() + " (rawType = ^meta::pure::metamodel::type::FunctionType " + groupByFunctionSpecification.groupByExpression.getSourceInformation().toM4String() + " ()))," +
+                        "expressionSequence=" + M3AntlrParser.process(groupByFunctionSpecification.groupByExpression, processorSupport) + "))");
 
-        final MutableList<String> aggregationFunctionSpecifications = Lists.mutable.with();
-        temporarySpecification.aggregationFunctionSpecifications.forEach(new Procedure<TemporaryPureAggregationFunctionSpecification>()
-        {
-            @Override
-            public void value(TemporaryPureAggregationFunctionSpecification aggregationFunctionSpecification)
-            {
-                aggregationFunctionSpecifications.add(
-                        "^meta::pure::mapping::aggregationAware::AggregationFunctionSpecification " + aggregationFunctionSpecification.sourceInformation.toM4String() + " (" +
-                                "mapFn=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + " " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String() + " (" +
-                                "classifierGenericType=^meta::pure::metamodel::type::generics::GenericType(rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType(rawType = ^meta::pure::metamodel::type::FunctionType()))," +
-                                "expressionSequence=" + parser.process(aggregationFunctionSpecification.mapExpression, context, processorSupport) +
-                                ")," +
-                                "aggregateFn=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + " " + aggregationFunctionSpecification.aggregateExpression.getSourceInformation().toM4String() + " (" +
-                                "classifierGenericType=^meta::pure::metamodel::type::generics::GenericType(rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType(rawType = ^meta::pure::metamodel::type::FunctionType()))," +
-                                "expressionSequence=" + parser.process(aggregationFunctionSpecification.aggregateExpression, context, processorSupport) +
-                                ")" +
-                                ")"
-                );
-            }
-        });
+        MutableList<String> aggregationFunctionSpecifications = temporarySpecification.aggregationFunctionSpecifications.collect(aggregationFunctionSpecification ->
+                "^meta::pure::mapping::aggregationAware::AggregationFunctionSpecification " + aggregationFunctionSpecification.sourceInformation.toM4String() + " (" +
+                        "mapFn=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + " " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String() + " (" +
+                        "classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String()+ " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String()+ " (rawType = ^meta::pure::metamodel::type::FunctionType " + aggregationFunctionSpecification.mapExpression.getSourceInformation().toM4String() + " ()))," +
+                        "expressionSequence=" + M3AntlrParser.process(aggregationFunctionSpecification.mapExpression, processorSupport) +
+                        ")," +
+                        "aggregateFn=^meta::pure::metamodel::function::LambdaFunction " + lambdaContext.getLambdaFunctionUniqueName() + " " + aggregationFunctionSpecification.aggregateExpression.getSourceInformation().toM4String() + " (" +
+                        "classifierGenericType=^meta::pure::metamodel::type::generics::GenericType " + aggregationFunctionSpecification.aggregateExpression.getSourceInformation().toM4String() + " (rawType=meta::pure::metamodel::function::LambdaFunction, typeArguments=^meta::pure::metamodel::type::generics::GenericType " + aggregationFunctionSpecification.aggregateExpression.getSourceInformation().toM4String() + " (rawType = ^meta::pure::metamodel::type::FunctionType " + aggregationFunctionSpecification.aggregateExpression.getSourceInformation().toM4String() + " ()))," +
+                        "expressionSequence=" + M3AntlrParser.process(aggregationFunctionSpecification.aggregateExpression, processorSupport) + "))");
 
-        return Tuples.pair(temporarySpecification.canAggregate, Tuples.pair(groupByFunctionSpecifications.makeString(","), aggregationFunctionSpecifications.makeString(",")));
+        return PrimitiveTuples.pair(temporarySpecification.canAggregate, Tuples.pair(groupByFunctionSpecifications.makeString(","), aggregationFunctionSpecifications.makeString(",")));
     }
 
     String parseSingleMapping(Token parserNameTok, Token content, Token end)
     {
-        SourceInformation sourceInfo = sourceInformation.getPureSourceInformation(parserNameTok, parserNameTok, end);
+        SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(parserNameTok, parserNameTok, end);
         String newSetSourceInfo = " " + sourceInfo.toM4String();
         String parserName = parserNameTok.getText();
         Parser parser;
@@ -193,7 +166,7 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
         }
         try
         {
-            return parser.parseMapping(content.getText(), id == null ? null : id.toString() + "_Main", null, newSetSourceInfo, true, classPath, classSourceInfo, mappingPath, sourceInformation.getSourceName(), sourceInformation.getOffsetLine() + content.getLine() - 1, importId, repository, context);
+            return parser.parseMapping(content.getText(), this.id == null ? null : this.id + "_Main", null, newSetSourceInfo, true, this.classPath, this.classSourceInfo, this.mappingPath, this.sourceInformation.getSourceName(), this.sourceInformation.getOffsetLine() + content.getLine() - 1, this.importId, this.repository, this.context);
         }
         catch (PureException e)
         {
@@ -212,7 +185,5 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
             }
             throw new PureParserException(sourceInfo, e.getMessage(), e);
         }
-
     }
-
 }

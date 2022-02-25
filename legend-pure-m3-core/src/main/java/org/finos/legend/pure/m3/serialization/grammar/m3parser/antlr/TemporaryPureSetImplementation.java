@@ -14,24 +14,24 @@
 
 package org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr;
 
-import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class TemporaryPureSetImplementation
 {
-    public ImportStub _class;
-    public CoreInstance filter;
-    public MutableList<TemporaryPurePropertyMapping> propertyMappings;
+    public final ImportStub _class;
+    public final CoreInstance filter;
+    public final ListIterable<TemporaryPurePropertyMapping> propertyMappings;
 
-    TemporaryPureSetImplementation(ImportStub _class, CoreInstance filter, MutableList<TemporaryPurePropertyMapping> propertyMappings)
+    private TemporaryPureSetImplementation(ImportStub _class, CoreInstance filter, ListIterable<TemporaryPurePropertyMapping> propertyMappings)
     {
         this._class = _class;
         this.filter = filter;
         this.propertyMappings = propertyMappings;
     }
 
-    public static TemporaryPureSetImplementation build(ImportStub _class, CoreInstance filter, MutableList<TemporaryPurePropertyMapping> propertyMappings)
+    public static TemporaryPureSetImplementation build(ImportStub _class, CoreInstance filter, ListIterable<TemporaryPurePropertyMapping> propertyMappings)
     {
         return new TemporaryPureSetImplementation(_class, filter, propertyMappings);
     }

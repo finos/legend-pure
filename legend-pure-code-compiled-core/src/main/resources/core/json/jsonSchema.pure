@@ -102,7 +102,7 @@ function meta::json::schema::generation::toJSONSchema( input:JSONSchemaConfig[1]
 {
     meta::legend::test::mayExecuteLegendTest(
        {clientVersion, serverVersion, serializationKind, host, port|
-                   let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::json::alloyGenerateJson_JSONSchemaConfig_1__String_1__Integer_1__String_1__JSONSchemaOutput_MANY_';
+                   let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::json::legendGenerateJson_JSONSchemaConfig_1__String_1__Integer_1__String_1__JSONSchemaOutput_MANY_';
                    let xf = $fStr->pathToElement()->cast(@Function<{JSONSchemaConfig[1], String[1], Integer[1], String[1]->GenerationOutput[*]}>);
                    $xf->evaluate([$input, $host, $port, $serverVersion]->map(v|list($v)))->toOneMany()->cast(@JSONSchemaOutput);},
        |meta::json::schema::generation::internal_toJSONSchema($input)
@@ -152,7 +152,7 @@ $types;
 function <<access.protected>> meta::json::schema::schemaCollectionOutput(elements:PackageableElement[*],config:JSONSchemaConfigInternal[1]) : JSONSchemaOutput[*]
 {
    let schemaResult =  $elements->meta::json::schema::schemaCollection($config);
-   let types = ^JSONSchemaOutput(content= $schemaResult.schema->jsonSchemaString($config),fileName='model', format=$config.fileType,message=$schemaResult.message);
+   let types = ^JSONSchemaOutput(content= $schemaResult.schema->jsonSchemaString($config),fileName='model.'+$config.fileType, format=$config.fileType,message=$schemaResult.message);
 
 }
 
@@ -205,7 +205,7 @@ function <<access.private>> meta::json::schema::generation::defaultConfig():JSON
 
 function <<Generation.Configuration>> meta::json::schema::generation::describeConfiguration():GenerationParameter[*]
 {
-   meta::pure::generation::describeConfiguration(JSONSchemaConfig,meta::json::schema::generation::defaultConfig__JSONSchemaConfig_1_,[])->filter(p|!$p.name->in(['generateAnyOfSubType','createSchemaCollection','generateMilestoneProperties']));
+   meta::pure::generation::describeConfiguration(JSONSchemaConfig,meta::json::schema::generation::defaultConfig__JSONSchemaConfig_1_,[])->filter(p|!$p.name->in(['generateAnyOfSubType','generateMilestoneProperties']));
 
 
 

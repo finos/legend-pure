@@ -27,7 +27,6 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
-import org.eclipse.collections.impl.set.mutable.SetAdapter;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.helper.AnyStubHelper;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;

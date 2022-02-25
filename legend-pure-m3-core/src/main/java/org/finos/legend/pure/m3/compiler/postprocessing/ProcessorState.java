@@ -14,16 +14,13 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing;
 
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
-import org.eclipse.collections.impl.stack.mutable.ArrayStack;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.SourceMutation;
 import org.finos.legend.pure.m3.compiler.postprocessing.inference.PrintTypeInferenceObserver;
@@ -45,17 +42,17 @@ public class ProcessorState extends MatcherState
 {
     private VariableContext variableContext;
     private final MutableSet<String> variables = Sets.mutable.empty();
-    private MutableStack<TypeInferenceContext> typeInferenceContext = ArrayStack.newStack();
-    private MutableStack<Pair<ListIterable<String>,MilestoningDates>> milestoningDates = ArrayStack.newStack();
-    private final MutableSet<CoreInstance> functionDefinitions = UnifiedSet.newSet();
+    private final MutableStack<TypeInferenceContext> typeInferenceContext = Stacks.mutable.empty();
+    private final MutableStack<Pair<ListIterable<String>, MilestoningDates>> milestoningDates = Stacks.mutable.empty();
+    private final MutableSet<CoreInstance> functionDefinitions = Sets.mutable.empty();
     private final Message message;
     private int count;
-    private ParserLibrary parserLibrary;
-    private InlineDSLLibrary inlineDSLLibrary;
-    private TypeInferenceObserver observer;
-    private URLPatternLibrary URLPatternLibrary;
-    private SourceMutation sourceMutation = new SourceMutation();
-    private CodeStorage codeStorage;
+    private final ParserLibrary parserLibrary;
+    private final InlineDSLLibrary inlineDSLLibrary;
+    private final TypeInferenceObserver observer;
+    private final URLPatternLibrary URLPatternLibrary;
+    private final SourceMutation sourceMutation = new SourceMutation();
+    private final CodeStorage codeStorage;
 
     public ProcessorState(VariableContext variableContext, ParserLibrary parserLibrary, InlineDSLLibrary inlineDSLLibrary, ProcessorSupport processorSupport, URLPatternLibrary URLPatternLibrary, CodeStorage codeStorage, Message message)
     {
@@ -66,7 +63,7 @@ public class ProcessorState extends MatcherState
         this.inlineDSLLibrary = inlineDSLLibrary;
         if (Boolean.getBoolean("pure.typeinference.print"))
         {
-            this.observer =  new PrintTypeInferenceObserver(processorSupport, this);
+            this.observer = new PrintTypeInferenceObserver(processorSupport, this);
         }
         else if (Boolean.getBoolean("pure.typeinference.test"))
         {
@@ -243,23 +240,19 @@ public class ProcessorState extends MatcherState
         this.functionDefinitions.remove(instance);
     }
 
-
-    public MilestoningDates getMilestoningDates(String varName) {
-        MilestoningDates result = null;
-        Pair<ListIterable<String>, MilestoningDates> inputVarDates = this.milestoningDates.detect(Predicates.attributeAnySatisfy(Functions.<ListIterable<String>>firstOfPair(), Predicates.equal(varName)));
-        if(inputVarDates != null){
-            result = inputVarDates.getTwo();
-        }
-        return result;
+    public MilestoningDates getMilestoningDates(String varName)
+    {
+        Pair<ListIterable<String>, MilestoningDates> inputVarDates = this.milestoningDates.detect(p -> p.getOne().contains(varName));
+        return (inputVarDates == null) ? null : inputVarDates.getTwo();
     }
 
-    public void pushMilestoneDateContext(MilestoningDates milestonedDates, ListIterable<String> varNames){
+    public void pushMilestoneDateContext(MilestoningDates milestonedDates, ListIterable<String> varNames)
+    {
         this.milestoningDates.push(Tuples.pair(varNames, milestonedDates));
     }
 
-    public void popMilestoneDateContext(){
+    public void popMilestoneDateContext()
+    {
         this.milestoningDates.pop();
     }
-
-
 }

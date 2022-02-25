@@ -1371,3 +1371,86 @@ Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withFilters::SourceToTarg
   }
 )
 
+###Pure
+import meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::*;
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::Source_A
+{
+  propA : String[1];
+  propB : Source_B[0..1];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::Source_B
+{
+  propC : Source_C[0..1];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::Source_C
+{
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::Source_C_1 extends Source_C
+{
+  propD : String[0..1];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::Target_A
+{
+  propA : String[1];
+  propB : Target_B[0..1];
+}
+
+Class meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::Target_B
+{
+  propC : String[0..1];
+}
+
+function <<test.Test>> meta::pure::graphFetch::tests::sourceTreeCalc::testFlatteningInTransform():Boolean[1]
+{
+  let tree = #{
+      Target_A {
+         propA,
+         propB {
+            propC
+         }
+      }
+   }#;
+
+  let expectedString =  'Source_A\n' + 
+                        '(\n' +
+                        '  propA\n' +
+                        '  propB\n' +
+                        '  (\n' +
+                        '    propC\n' +
+                        '    propC->subType(Source_C_1)\n' +   
+                        '    (\n' +
+                        '      propD\n' +
+                        '    )\n' +
+                        '  )\n' +
+                        ')';
+
+   let sourceTree = meta::pure::graphFetch::calculateSourceTree($tree, 
+                                                                meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::SourceToTargetMappingWithFlatteningInTransform,
+                                                                meta::pure::router::extension::defaultExtensions());
+   assertEquals($expectedString, $sourceTree->meta::pure::graphFetch::sortTree()->meta::pure::graphFetch::treeToString());
+}
+
+###Mapping
+Mapping meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::SourceToTargetMappingWithFlatteningInTransform
+(
+  meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::Target_A : Pure
+  {
+    ~src meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::Source_A
+     
+    propA : $src.propA,
+    propB : $src.propB.propC->cast(@meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::Source_C_1)
+  }
+
+  meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::Target_B : Pure
+  {
+    ~src meta::pure::graphFetch::tests::sourceTreeCalc::withFlatteningInTransform::Source_C_1
+     
+    propC : $src.propD
+  }
+)
+

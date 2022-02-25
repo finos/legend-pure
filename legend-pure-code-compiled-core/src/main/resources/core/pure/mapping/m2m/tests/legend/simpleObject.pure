@@ -115,7 +115,7 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObje
 
    let result = execute(
       |Firm.all()->graphFetchChecked($tree)->serialize($tree),
-      simpleModelMappingWithSubTypeWithNestedAssosiation,
+      simpleModelMappingWithSubTypeWithNestedAssociation,
       ^Runtime(connections = ^JsonModelConnection(
                                 element=^ModelStore(), 
                                 class=_S_Firm, 
@@ -620,6 +620,32 @@ meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObje
 }
 
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
+{  serverVersion.start='v1_20_0',
+   doc.doc='Given: a single JSON object that matches a source definition, and an M2M mapping',
+   doc.doc='Given: a class with subtypes with same name, different package',
+   doc.doc='When:  the mapping is executed using graphFetchChecked with Subtype fully qualified and serialize.',
+   doc.doc='Then:  the Subtype is discover, the mapping is applied and the result of the mapping is serialized.'
+}
+meta::pure::mapping::modelToModel::test::alloy::simple::simpleSerializeOfOneObjectWithMultiLevelInheritance() : Boolean[1]
+{
+   let tree = #{Friendship {friendA {firstName}, friendB {firstName}, friendC {firstName} }}#;
+
+   let result = execute(
+      |meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::Friendship.all()->graphFetch($tree)->serialize($tree),
+      meta::pure::mapping::modelToModel::test::alloy::simpleModelMappingWithMultipleSubType,
+      ^Runtime(connections = ^JsonModelConnection(
+                                element=^ModelStore(),
+                                class=meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_Friendship,
+                                url='data:application/json,[{"friendA" : {"fullName" : "Robert T", "aName" : "A", "@type":"meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA"}, "friendB" : {"fullName" : "John T", "aName" : "A", "@type":"meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_PersonA"}, "friendC" : {"friendC" : {"fullName" : "John T", "aName" : "A", "bName" : "B", "@type":"meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_PersonB"}}}]'
+                             )
+      ),
+      []
+   );
+
+   assert(jsonEquivalent('{"friendA":{"firstName":"RobertA"},"friendC":{"firstName":"JohnB"},"friendB":{"firstName":"JohnA"}}'->parseJSON(), $result.values->toOne()->parseJSON()));
+}
+
+function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly, feature.M2MBasics>>
 {
     serverVersion.start='v1_19_0'
 }
@@ -792,16 +818,29 @@ Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_P
    aName    : String[1];
 }
 
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_PersonB extends meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_PersonA
+{
+   bName    : String[1];
+}
+
+Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::A
+{
+   friendC    : meta::pure::mapping::modelToModel::test::shared::src::_S_Person[0..1];
+}
+
+
 Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_Friendship
 {
    friendA    : meta::pure::mapping::modelToModel::test::shared::src::_S_Person[1];
    friendB    : meta::pure::mapping::modelToModel::test::shared::src::_S_Person[1];
+   friendC    : meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::A[0..1];
 }
 
 Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::dest::Friendship
 {
    friendA    : meta::pure::mapping::modelToModel::test::shared::dest::Person[1];
    friendB    : meta::pure::mapping::modelToModel::test::shared::dest::Person[1];
+   friendC    : meta::pure::mapping::modelToModel::test::shared::dest::Person[0..1];
 }
 
 Class meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::EpochDate
@@ -959,7 +998,8 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::simpleModelMappingWithMu
    {
       ~src meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_Friendship
       friendA[A] : $src.friendA->cast(@meta::pure::mapping::modelToModel::test::shared::src::_S_PersonA),
-      friendB[B] : $src.friendB->cast(@meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_PersonA)
+      friendB[B] : $src.friendB->cast(@meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_PersonA),
+      friendC[C] : if($src.friendC.friendC->isNotEmpty() && $src.friendC.friendC->toOne()->instanceOf(meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_PersonB), |$src.friendC.friendC->cast(@meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_PersonB), |[])
    }
    
    meta::pure::mapping::modelToModel::test::shared::dest::Person[A]  : Pure
@@ -976,10 +1016,17 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::simpleModelMappingWithMu
       lastName : $src.fullName->substring($src.fullName->indexOf(' ') + 1, $src.fullName->length())      
    }
    
-  *meta::pure::mapping::modelToModel::test::shared::dest::Person[union]:Operation
-  {
+   meta::pure::mapping::modelToModel::test::shared::dest::Person[C]  : Pure
+   {
+      ~src meta::pure::mapping::modelToModel::test::alloy::simple::objects::src::_S_PersonB    
+      firstName : $src.fullName->substring(0, $src.fullName->indexOf(' ')) + $src.bName,
+      lastName : $src.fullName->substring($src.fullName->indexOf(' ') + 1, $src.fullName->length())      
+   }
+   
+   *meta::pure::mapping::modelToModel::test::shared::dest::Person[union]:Operation
+   {
       meta::pure::router::operations::union_OperationSetImplementation_1__SetImplementation_MANY_(A, B)
-  }   
+   }   
 )
 
 

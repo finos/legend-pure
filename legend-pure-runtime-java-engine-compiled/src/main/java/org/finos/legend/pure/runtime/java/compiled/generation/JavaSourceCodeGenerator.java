@@ -562,7 +562,7 @@ public final class JavaSourceCodeGenerator
                 {
                     CoreInstance functionType = this.processorSupport.function_getFunctionType(coreInstance);
                     CoreInstance unresolvedReturnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, this.processorSupport);
-                    CoreInstance returnType = GenericType.isGenericTypeConcrete(unresolvedReturnType, this.processorSupport) ? unresolvedReturnType : Type.wrapGenericType(this.processorSupport.package_getByUserPath(M3Paths.Any), this.processorSupport);
+                    CoreInstance returnType = GenericType.isGenericTypeConcrete(unresolvedReturnType) ? unresolvedReturnType : Type.wrapGenericType(this.processorSupport.package_getByUserPath(M3Paths.Any), this.processorSupport);
                     String name = Instance.getValueForMetaPropertyToOneResolved(coreInstance, M3Properties.name, this.processorSupport).getName();
                     CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(coreInstance, M3Properties.multiplicity, this.processorSupport);
                     return buildDelegationReadProperty(coreInstance, "LambdaFunction", "this.lambdaFunction", "", name, returnType, unresolvedReturnType, multiplicity, this.processorSupport, processorContext);
@@ -580,7 +580,7 @@ public final class JavaSourceCodeGenerator
     {
         CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(returnType, M3Properties.rawType, processorSupport);
         boolean isPrimitive = rawType != null && Instance.instanceOf(rawType, M3Paths.PrimitiveType, processorSupport);
-        boolean makePrimitiveIfPossible = GenericType.isGenericTypeConcrete(unresolvedReturnType, processorSupport) && Multiplicity.isToOne(multiplicity, true);
+        boolean makePrimitiveIfPossible = GenericType.isGenericTypeConcrete(unresolvedReturnType) && Multiplicity.isToOne(multiplicity, true);
         String typePrimitive = TypeProcessor.pureTypeToJava(returnType, true, makePrimitiveIfPossible, processorSupport);
         String typeObject = TypeProcessor.pureTypeToJava(returnType, true, false, processorSupport);
 
@@ -686,33 +686,33 @@ public final class JavaSourceCodeGenerator
 
     private static String toFactoryRegistryEntry(CoreInstance _class, ProcessorSupport processorSupport)
     {
-        String systemPath = PackageableElement.getUserObjectPathForPackageableElementAsList(_class, false).makeString("::");
+        String path = PackageableElement.getUserPathForPackageableElement(_class);
         String factory = ClassProcessor.requiresCompilationImpl(processorSupport, _class) ? JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class, ClassImplIncrementalCompilationProcessor.CLASS_IMPL_SUFFIX) :
                 M3ToJavaGenerator.getFullyQualifiedM3ImplForCompiledModel(_class);
         String factoryInterface = M3ToJavaGenerator.getFullyQualifiedM3InterfaceForCompiledModel(_class);
-        return "\t\tinterfaceByPath.put(\"" + systemPath + "\", " + factoryInterface + ".class);\n" +
-                "\t\ttypeFactoriesByPath.put(\"" + systemPath + "\", " + factory + ".FACTORY);\n";
+        return "\t\tinterfaceByPath.put(\"" + path + "\", " + factoryInterface + ".class);\n" +
+                "\t\ttypeFactoriesByPath.put(\"" + path + "\", " + factory + ".FACTORY);\n";
     }
 
     private static String toEnumFactoryRegistryEntry(CoreInstance _enum)
     {
-        String systemPath = PackageableElement.getUserObjectPathForPackageableElementAsList(_enum, false).makeString("::");
-        return "\t\tinterfaceByPath.put(\"" + systemPath + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum.class);\n" +
-                "\t\ttypeFactoriesByPath.put(\"" + systemPath + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.EnumInstance.FACTORY);\n";
+        String path = PackageableElement.getUserPathForPackageableElement(_enum);
+        return "\t\tinterfaceByPath.put(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum.class);\n" +
+                "\t\ttypeFactoriesByPath.put(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.EnumInstance.FACTORY);\n";
     }
 
     private static String toMeasureFactoryRegistryEntry(CoreInstance measure)
     {
-        String systemPath = PackageableElement.getUserObjectPathForPackageableElementAsList(measure, false).makeString("::");
-        return "\t\tinterfaceByPath.put(\"" + systemPath + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure.class);\n" +
-                "\t\ttypeFactoriesByPath.put(\"" + systemPath + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.MeasureInstance.FACTORY);\n";
+        String path = PackageableElement.getUserPathForPackageableElement(measure);
+        return "\t\tinterfaceByPath.put(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Measure.class);\n" +
+                "\t\ttypeFactoriesByPath.put(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.MeasureInstance.FACTORY);\n";
     }
 
     private static String toUnitFactoryRegistryEntry(CoreInstance unit)
     {
-        String systemPath = PackageableElement.getUserObjectPathForPackageableElementAsList(unit, false).makeString("::");
-        return "\t\tinterfaceByPath.put(\"" + systemPath + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit.class);\n" +
-                "\t\ttypeFactoriesByPath.put(\"" + systemPath + "\",org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.UnitInstance.FACTORY);\n"; // TODO: org.finos.legend.pure.generated.Root_meta_pure_metamodel_type_Unit_Impl
+        String path = PackageableElement.getUserPathForPackageableElement(unit);
+        return "\t\tinterfaceByPath.put(\"" + path + "\", org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit.class);\n" +
+                "\t\ttypeFactoriesByPath.put(\"" + path + "\",org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.UnitInstance.FACTORY);\n"; // TODO: org.finos.legend.pure.generated.Root_meta_pure_metamodel_type_Unit_Impl
     }
 
     private String getFactoryRegistryName()

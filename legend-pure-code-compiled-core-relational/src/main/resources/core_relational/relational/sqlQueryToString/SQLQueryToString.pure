@@ -193,6 +193,7 @@ function meta::relational::functions::sqlQueryToString::processOperation(relatio
                                           f:FreeMarkerOperationHolder[1]|processFreeMarkerOperationHolder($f, $dbConfig, $format, $generationState, $config),
                                           d:DynaFunction[1]|processDynaFunction($d, $dbConfig, $format, $generationState, $config, $extensions),
                                           c:ColumnName[1]|processIdentifier($c.name->toOne(), $dbConfig),
+                                          s:SemiStructuredObjectNavigation[1]|processSemiStructuredObjectNavigation($s, $dbConfig, $format, $generationState, $config, $extensions),
                                           {f:meta::relational::metamodel::operation::Function[1]| assert(false, 'Don\'t know how to handle %s', $f->type()); 'TO DO'; }
                                        ])->toOneMany()
                                      );
@@ -689,7 +690,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processGroupByColumns(columns:RelationalOperationElement[*], dbConfig : DbConfig[1], format:Format[1], extensions:RouterExtension[*]):String[*]
 {
-   let supportsAliasInGroupBy = !($dbConfig.dbType->in([DatabaseType.DB2, DatabaseType.Sybase, DatabaseType.Presto]));
+   let supportsAliasInGroupBy = !($dbConfig.dbType->in([DatabaseType.DB2, DatabaseType.Sybase, DatabaseType.Presto, DatabaseType.Snowflake]));
    $columns->map(c | $c->match([
                                 a:Alias[1] | if($supportsAliasInGroupBy == true, | $a->cast(@Alias).name->processIdentifier($dbConfig)
                                                                                , | $a->cast(@Alias).relationalElement->processOperation($dbConfig, $format, $extensions)),
@@ -950,6 +951,35 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    '(' + $processedLeft + ' not in ' + if($processedRight->startsWith('(') && $processedRight->endsWith(')'), | $processedRight, | '(' + $processedRight + ')') + ' OR ' + $processedLeft + ' is null)';
 }
 
+function <<access.private>> meta::relational::functions::sqlQueryToString::processSemiStructuredObjectNavigation(s:SemiStructuredObjectNavigation[1], dbConfig:DbConfig[1], format:Format[1], generationState:GenerationState[1], config:Config[1], extensions:RouterExtension[*]): String[1]
+{
+   let supportedDbTypes = [DatabaseType.Snowflake];
+   assert($dbConfig.dbType->in($supportedDbTypes), | 'Semi structured navigation not supported for database type: ' + $dbConfig.dbType->toString() + '. Supported database types are: ' + $supportedDbTypes->map(d|$d->toString())->joinStrings(', '));
+
+   let processedOperand = $s.operand->processOperation($dbConfig, $format, $generationState, $config, $extensions);
+
+   if ($dbConfig.dbType == DatabaseType.Snowflake,
+       | $s->processSemiStructuredObjectNavigationForSnowflake($processedOperand),
+       | fail('Unsupported database type ' +$dbConfig.dbType->toString()); '';);
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::processSemiStructuredObjectNavigationForSnowflake(s:SemiStructuredObjectNavigation[1], processedOperand:String[1]): String[1]
+{
+   // https://docs.snowflake.com/en/user-guide/querying-semistructured.html
+
+   let elementAccess = $processedOperand + $s->match([
+      p: SemiStructuredPropertyAccess[1]     | '[\'' + $p.property->cast(@Literal).value->cast(@String) + '\']' + if($p.index->isEmpty(),|'',|'['+ $p.index->toOne()->cast(@Literal).value->toString()+']'),
+      a: SemiStructuredArrayElementAccess[1] | '[' + $a.index->cast(@Literal).value->toString() + ']'
+   ]);
+
+   let castSuffix = if($s.returnType == String, | '::varchar', |
+                    if($s.returnType == StrictDate, | '::date', |
+                    if($s.returnType->isNotEmpty() && $s.returnType->toOne()->_subTypeOf(Date), | '::timestamp', |
+                    '')));
+
+   $elementAccess + $castSuffix;
+}
+
 Class <<access.private>> meta::relational::functions::sqlQueryToString::DynaFunctionToSql
 {
    funcName:String[1];
@@ -1071,7 +1101,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::forma
 function <<access.private>> meta::relational::functions::sqlQueryToString::isBooleanOperation(relationalElement:RelationalOperationElement[1], extensions:RouterExtension[*]):Boolean[1]
 {
    $relationalElement->match($extensions.moduleExtension('relational')->cast(@RelationalExtension).sqlQueryToString_isBooleanOperation->concatenate([
-      d:DynaFunction[1] | $d.name->in(['or', 'and', 'lessThan', 'lessThanEqual', 'greaterThan', 'greaterThanEqual', 'equal', 'notEqual', 'notEqualAnsi', 'startsWith', 'endsWith', 'contains', 'isEmpty', 'isNotEmpty', 'isNull', 'isNotNull','isAlphaNumeric', 'exists', 'not', 'in', 'isNumeric', 'matches'])
+      d:DynaFunction[1] | $d.name->in(['or', 'and', 'lessThan', 'lessThanEqual', 'greaterThan', 'greaterThanEqual', 'equal', 'notEqual', 'notEqualAnsi', 'startsWith', 'endsWith', 'contains', 'isEmpty', 'isNotEmpty', 'isNull', 'isNotNull','isAlphaNumeric', 'exists', 'not', 'in', 'isNumeric', 'matches', 'isDistinct'])
                                        || ($d.name == 'group' && $d.parameters->toOne()->isBooleanOperation($extensions));,
       a:Any[1] | false
    ])->toOneMany()
@@ -1436,6 +1466,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='cast(%s as integer)')),
                                                  choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='cast(%s as integer)')),
                                                  choice(DatabaseType.BigQuery ,    $allStates,            ^ToSql(format='cast(%s as int64)'))]),
+      forDynafunction('parseJson',             [ choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='parse_json(%s)'))]),
       forDynafunction('plus',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform=getTransformForAddPlus()))]),
       forDynafunction('position',              [ choice($aSybase,                  $allStates,            ^ToSql(format='charindex(%s, %s)')),
                                                  choice(DatabaseType.Composite,    $allStates,            ^ToSql(format='position(%s, %s)')),
@@ -1595,6 +1626,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='cast(%s as char)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='cast(%s as string)')),
+                                                 choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='cast(%s as varchar)')),
                                                  choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='cast(%s as varchar)')),
@@ -1615,7 +1647,6 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='year(%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='year(%s)')),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='year(%s)')),
-                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='year(%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='year(%s)')),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='year(%s)')),
                                                  choice(DatabaseType.Redshift,    $allStates,             ^ToSql(format='extract(year from %s)')),
@@ -1762,9 +1793,9 @@ function  <<access.private>> meta::relational::functions::sqlQueryToString::gene
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::transformRound(p:String[*]):String[*]
 {
-   if ($p->size() == 2, 
-       | [$p->at(0), $p->at(1)], 
-       | [$p->at(0), '0']); 
+   if ($p->size() == 2,
+       | [$p->at(0), $p->at(1)],
+       | [$p->at(0), '0']);
 }
 
 
@@ -1869,9 +1900,9 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::memSQ
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::sybaseReservedWords():String[*]
 {
-   //Based on 
+   //Based on
    // http://infocenter.sybase.com/help/index.jsp?topic=/com.sybase.infocenter.dc38151.1510/html/iqrefbb/Alhakeywords.htm
-   // and 
+   // and
    // http://infocenter.sybase.com/help/index.jsp?topic=/com.sybase.infocenter.dc38151.1601/doc/html/san1278452828146.html
 
    [
@@ -2232,7 +2263,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processIdentifier(originalIdentifier:String[1], dbConfig : DbConfig[1]):String[1]
-{   
+{
   let processedIdentifier = $originalIdentifier->map(identifier|
                                  if($dbConfig.quoteIdentifiers || $identifier->startsWith('"'),
                                     | '"%s"'->format($identifier->replace('"', '')),
@@ -2246,7 +2277,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
                               );
 
   if(($dbConfig.dbType == DatabaseType.MemSQL || $dbConfig.dbType == DatabaseType.BigQuery || $dbConfig.dbType == DatabaseType.Databricks) && $processedIdentifier->startsWith('"') && $processedIdentifier->endsWith('"'),
-       | '`' + $processedIdentifier->substring(1, $processedIdentifier->length() - 1) + '`', 
+       | '`' + $processedIdentifier->substring(1, $processedIdentifier->length() - 1) + '`',
        | $processedIdentifier);
 }
 
@@ -2327,7 +2358,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::conve
    assert( 2 - $params->size()  >= 0,'Incorrect number of parameters for convertDate: convertDate(column,[dateformat])');
    assert($params->size()==1 || dateFormatsMemSQL()->contains($params->at(1)->replace('\'', '')) , | $params->at(1) +' not supported ');
    let dateFormat = if( $params->size() == 1,|'\'%Y-%m-%d\'' ,| $params->at(1););
-   'date( to_date('+$params->at(0)+','+$dateFormat +') )';
+   'date( date_parse('+$params->at(0)+','+$dateFormat +') )';
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::convertToDateDatabricks(params:String[*]):String[1]

@@ -15,58 +15,54 @@
 package org.finos.legend.pure.m3.compiler.unload.unbind;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.block.procedure.Procedure2;
 import org.eclipse.collections.api.partition.PartitionIterable;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.PropertyOwnerStrategy;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions.IsMilestonePropertyPredicate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PropertyOwner;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
+import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class MilestoningUnbind
 {
     static void undoMoveProcessedOriginalMilestonedProperties(PropertyOwner propertyOwner, Context context)
     {
-        PropertyOwnerStrategy propertyOwnerStrategy = PropertyOwnerStrategy.PROPERTY_OWNER_STRATEGY_FUNCTION.valueOf(propertyOwner);
+        PropertyOwnerStrategy propertyOwnerStrategy = PropertyOwnerStrategy.getPropertyOwnerStrategy(propertyOwner);
         RichIterable<? extends Property<?, ?>> nonMilestonedProperties = propertyOwnerStrategy.originalMilestonedProperties(propertyOwner);
         if (nonMilestonedProperties.notEmpty())
         {
-            for (Property<?, ?> propertyToMove : nonMilestonedProperties.toList())
+            nonMilestonedProperties.forEach(propertyToMove ->
             {
                 propertyOwnerStrategy.originalMilestonedPropertiesRemove(propertyOwner, propertyToMove);
                 propertyOwner.addKeyValue(M3PropertyPaths.properties, propertyToMove);
-            }
+            });
             MilestoningFunctions.updateAndInvalidate(propertyOwner, context);
             propertyOwnerStrategy.originalMilestonedPropertiesRemove(propertyOwner);
         }
     }
 
-    static <T extends AbstractProperty<?>> RichIterable<? extends T> removeGeneratedMilestoningProperties(PropertyOwner owner, ProcessorSupport processorSupport, RichIterable<? extends T> properties, Procedure<PropertyOwner> removeProperty, Procedure2<PropertyOwner, RichIterable<? extends T>> setPropertyValue)
+    static <O extends PropertyOwner, T extends AbstractProperty<?>> void removeGeneratedMilestoningProperties(O owner, ProcessorSupport processorSupport, RichIterable<? extends T> properties, Consumer<? super O> removeProperty, BiConsumer<? super O, RichIterable<? extends T>> setPropertyValue)
     {
-       RichIterable<? extends T> generatedMilestoningProperties = FastList.newList();
-        if (!properties.isEmpty())
+        if (properties.notEmpty())
         {
-            PartitionIterable<? extends T> partition = properties.partition(new IsMilestonePropertyPredicate(processorSupport));
-            generatedMilestoningProperties = partition.getSelected();
-            if (generatedMilestoningProperties.notEmpty())
+            PartitionIterable<? extends T> partition = properties.partition(p -> MilestoningFunctions.isGeneratedMilestoningProperty(p, processorSupport));
+            if (partition.getSelected().notEmpty())
             {
                 RichIterable<? extends T> nonGeneratedMilestoningProperties = partition.getRejected();
                 if (nonGeneratedMilestoningProperties.isEmpty())
                 {
-                    removeProperty.value(owner);
+                    removeProperty.accept(owner);
                 }
                 else
                 {
-                    setPropertyValue.value(owner, nonGeneratedMilestoningProperties);
+                    setPropertyValue.accept(owner, nonGeneratedMilestoningProperties);
                 }
             }
         }
-        return generatedMilestoningProperties;
     }
 }

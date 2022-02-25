@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.validation.validator.MilestoningClassValidator;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
@@ -29,27 +29,30 @@ public class MilestoningClassProcessor
     {
     }
 
-    public static void process(Class cls, Context context, ProcessorSupport processorSupport, ModelRepository modelRepository)
+    @Deprecated
+    public static void process(Class<?> cls, Context context, ProcessorSupport processorSupport, ModelRepository modelRepository)
     {
-        MutableList<AbstractProperty<?>> properties = cls._properties().toList();
-        ListIterable<MilestoningStereotypeEnum> temporalStereotypes = MilestoningFunctions.getTemporalStereoTypesExcludingParents(cls, processorSupport);
+        process(cls, processorSupport);
+    }
+
+    public static void process(Class<?> cls, ProcessorSupport processorSupport)
+    {
+        ListIterable<MilestoningStereotypeEnum> temporalStereotypes = MilestoningFunctions.getTemporalStereoTypesExcludingParents(cls);
         if (temporalStereotypes.notEmpty())
         {
-            MilestoningClassValidator.runValidations(cls, properties, processorSupport);
+            MilestoningClassValidator.runValidations(cls, cls._properties(), processorSupport);
         }
     }
 
-    public static void addMilestoningProperty(Class cls, Context context, ProcessorSupport processorSupport, ModelRepository modelRepository)
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void addMilestoningProperty(Class<?> cls, Context context, ProcessorSupport processorSupport, ModelRepository modelRepository)
     {
-        MutableList<AbstractProperty<?>> properties = cls._properties().toList();
-        ListIterable<MilestoningStereotypeEnum> temporalStereotypes = MilestoningFunctions.getTemporalStereoTypesExcludingParents(cls, processorSupport);
-
+        ListIterable<MilestoningStereotypeEnum> temporalStereotypes = MilestoningFunctions.getTemporalStereoTypesExcludingParents(cls);
         if (temporalStereotypes.notEmpty())
         {
             MilestoningStereotype stereotype = temporalStereotypes.getFirst();
             ListIterable<AbstractProperty<?>> synthesizedMilestonedProperties = PropertyInstanceBuilder.createMilestonedProperties(cls, stereotype.getDatePropertyCodeBlocks(cls.getSourceInformation()), context, processorSupport, modelRepository);
-            properties.addAllIterable(synthesizedMilestonedProperties);
-            cls._properties(properties);
+            ((Class) cls)._properties(Lists.mutable.<AbstractProperty<?>>withAll(cls._properties()).withAll(synthesizedMilestonedProperties));
             context.update(cls);
         }
     }

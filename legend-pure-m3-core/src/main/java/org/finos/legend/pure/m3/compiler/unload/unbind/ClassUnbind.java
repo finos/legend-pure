@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m3.compiler.unload.unbind;
 
 import org.eclipse.collections.api.RichIterable;
+import org.finos.legend.pure.m3.compiler.ClassPropertyOwnerStrategy;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.PropertyOwnerStrategy;
@@ -26,7 +27,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class ClassUnbind implements MatchRunner<Class>
+public class ClassUnbind implements MatchRunner<Class<?>>
 {
     @Override
     public String getClassName()
@@ -35,29 +36,25 @@ public class ClassUnbind implements MatchRunner<Class>
     }
 
     @Override
-    public void run(Class _class, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(Class<?> _class, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
         this.unbindClassProperties(_class, state, matcher);
-        MilestoningUnbind.removeGeneratedMilestoningProperties(_class, state.getProcessorSupport(), _class._properties(), PropertyOwnerStrategy.PROPERTIES_REMOVE, PropertyOwnerStrategy.PROPERTIES_SET);
-        MilestoningUnbind.removeGeneratedMilestoningProperties(_class, state.getProcessorSupport(), _class._qualifiedProperties(), PropertyOwnerStrategy.QUALIFIED_PROPERTIES_REMOVE, PropertyOwnerStrategy.QUALIFIED_PROPERTIES_SET);
-        MilestoningUnbind.removeGeneratedMilestoningProperties(_class, state.getProcessorSupport(), _class._originalMilestonedProperties(), PropertyOwnerStrategy.ORIGINAL_MILESTONED_PROPERTIES_REMOVE, PropertyOwnerStrategy.ORIGINAL_MILESTONED_PROPERTIES_SET);
+        PropertyOwnerStrategy strategy = ClassPropertyOwnerStrategy.CLASS_PROPERTY_OWNER_STRATEGY;
+        MilestoningUnbind.removeGeneratedMilestoningProperties(_class, state.getProcessorSupport(), _class._properties(), strategy::propertiesRemove, (c, p) -> strategy.setProperties(c, p));
+        MilestoningUnbind.removeGeneratedMilestoningProperties(_class, state.getProcessorSupport(), _class._qualifiedProperties(), strategy::qualifiedPropertiesRemove, (c, p) -> strategy.setQualifiedProperties(c, p));
+        MilestoningUnbind.removeGeneratedMilestoningProperties(_class, state.getProcessorSupport(), _class._originalMilestonedProperties(), strategy::originalMilestonedPropertiesRemove, (c, p) -> strategy.setOriginalMilestonedProperties(c, p));
         MilestoningUnbind.undoMoveProcessedOriginalMilestonedProperties(_class, context);
     }
 
-    private void unbindClassProperties(Class _class, MatcherState state, Matcher matcher)
+    private void unbindClassProperties(Class<?> _class, MatcherState state, Matcher matcher)
     {
-        RichIterable<CoreInstance> propertiesValues = _class._properties();
-        this.unbindValues(matcher, state, propertiesValues);
-        RichIterable<? extends CoreInstance> qualifiedPropertiesValues = _class._qualifiedProperties();
-        this.unbindValues(matcher, state, qualifiedPropertiesValues);
-        RichIterable<CoreInstance> originalMilestonedPropertiesValues = _class._originalMilestonedProperties();
-        this.unbindValues(matcher, state, originalMilestonedPropertiesValues);
+        this.unbindValues(matcher, state, _class._properties());
+        this.unbindValues(matcher, state, _class._qualifiedProperties());
+        this.unbindValues(matcher, state, _class._originalMilestonedProperties());
     }
 
-    private void unbindValues(Matcher matcher, MatcherState state, RichIterable<? extends CoreInstance> values){
-        for (CoreInstance value : values)
-        {
-            matcher.fullMatch(value, state);
-        }
+    private void unbindValues(Matcher matcher, MatcherState state, RichIterable<? extends CoreInstance> values)
+    {
+        values.forEach(v -> matcher.fullMatch(v, state));
     }
 }

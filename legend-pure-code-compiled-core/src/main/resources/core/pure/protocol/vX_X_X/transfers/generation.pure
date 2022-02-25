@@ -1,0 +1,60 @@
+###Pure
+
+import meta::json::schema::generation::*;
+
+function meta::protocols::pure::vX_X_X::invocation::generation::json::transformJSONSchemaConfig(input:JSONSchemaConfig[1]):meta::protocols::pure::vX_X_X::metamodel::invocation::generation::json::JSONSchemaConfig[1]
+{
+   ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::json::JSONSchemaConfig(
+        package = $input.package,
+        class = $input.class,
+        includeAllRelatedTypes = $input.includeAllRelatedTypes,
+        useConstraints = $input.useConstraints
+   )
+}
+
+
+###Pure
+
+import meta::external::format::avro::generation::*;
+
+function meta::protocols::pure::vX_X_X::invocation::generation::avro::transformAvroGenerationConfig(input:AvroConfig[1]):meta::protocols::pure::vX_X_X::metamodel::invocation::generation::avro::AvroConfig[1]
+{
+   ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::avro::AvroConfig(
+      package = $input.package,
+      class = $input.class,
+      includeNamespace=$input.includeNamespace ,
+      includeSuperTypes=$input.includeSuperTypes,
+      includeAssociations=$input.includeAssociations,
+      includeGeneratedMilestoning=$input.includeGeneratedMilestoning,
+      timestampLogicalType=$input.timestampLogicalType,
+      propertyProfile=$input.propertyProfile,
+      namespaceOverride=$input.namespaceOverride
+   )
+}
+
+###Pure
+
+import meta::external::format::protobuf::generation::*;
+
+function meta::protocols::pure::vX_X_X::invocation::generation::protobuf::transformProtobufConfig(input:ProtobufConfig[1])
+   :meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::ProtobufConfig[1]
+{
+   ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::ProtobufConfig(
+        package = $input.package,
+        class = $input.class,
+        options = ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::Options
+                  (
+                      javaPackage = $input.options.javaPackage,
+                      javaOuterClassname = $input.options.javaOuterClassname,
+                      javaMultipleFiles = $input.options.javaMultipleFiles,
+                      optimizeFor = if ($input.options.optimizeFor->isEmpty(),|[],|extractEnumValue(meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::OptimizeMode, $input.options.optimizeFor->toOne()->id())),
+                      customOptions = $input.options.customOptions->map(c |
+                                          ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::CustomOption
+                                          (
+                                              name = $c.name,
+                                              value = $c.value
+                                          )
+                                       )
+                  )        
+   )
+}

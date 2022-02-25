@@ -27,7 +27,6 @@ import org.eclipse.collections.api.tuple.primitive.ObjectBooleanPair;
 import org.eclipse.collections.impl.lazy.AbstractLazyIterable;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.tuple.primitive.PrimitiveTuples;
-import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
@@ -37,8 +36,12 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
@@ -85,7 +88,19 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
             {
                 return iterator.next().getGraphPath();
             }
+
+            @Override
+            public void remove()
+            {
+                iterator.remove();
+            }
         };
+    }
+
+    @Override
+    public Spliterator<GraphPath> spliterator()
+    {
+        return Spliterators.spliteratorUnknownSize(iterator(), Spliterator.DISTINCT | Spliterator.NONNULL);
     }
 
     public LazyIterable<ResolvedGraphPath> asResolvedGraphPathIterable()
@@ -113,7 +128,7 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
         {
             for (ResolvedGraphPath resolvedGraphPath : this)
             {
-                procedure.accept(resolvedGraphPath);
+                procedure.value(resolvedGraphPath);
             }
         }
 
@@ -130,6 +145,12 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
         public Iterator<ResolvedGraphPath> iterator()
         {
             return new ResolvedGraphPathIterator();
+        }
+
+        @Override
+        public Spliterator<ResolvedGraphPath> spliterator()
+        {
+            return Spliterators.spliteratorUnknownSize(iterator(), Spliterator.DISTINCT | Spliterator.NONNULL);
         }
 
         private boolean isStartPath(GraphPath path)
@@ -214,15 +235,13 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
                             }
                             else if (values.notEmpty())
                             {
-                                int i = 0;
-                                for (CoreInstance value : values)
+                                values.forEachWithIndex((value, i) ->
                                 {
                                     if (!pathNodeSet.contains(value))
                                     {
                                         enqueue(path.withToManyPropertyValueAtIndex(key, i), pathNodeList.newWith(value));
                                     }
-                                    i++;
-                                }
+                                });
                             }
                         });
                     }
@@ -269,6 +288,8 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
         }
     }
 
+    // Factory methods
+
     public static GraphPathIterable newGraphPathIterable(Iterable<String> startNodePaths, SearchFilter searchFilter, ProcessorSupport processorSupport)
     {
         return new GraphPathIterable(startNodePaths, searchFilter, processorSupport);
@@ -304,46 +325,16 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
         return newGraphPathIterable(startNodePaths, getMaxPathLengthFilter(maxPathLength), processorSupport);
     }
 
-    public static SearchFilter getStopAtNodeFilter(Predicate<? super CoreInstance> shouldStopAtNode)
+    // General filters
+
+    public static SearchFilter getPredicateFilter(BiPredicate<? super ResolvedGraphPath, ? super ProcessorSupport> predicate, FilterResult ifResult, FilterResult elseResult)
     {
-        return (resolvedGraphPath, processorSupport) -> shouldStopAtNode.test(resolvedGraphPath.getLastResolvedNode()) ? FilterResult.ACCEPT_AND_STOP : FilterResult.ACCEPT_AND_CONTINUE;
+        return (resolvedGraphPath, processorSupport) -> predicate.test(resolvedGraphPath, processorSupport) ? ifResult : elseResult;
     }
 
-    public static SearchFilter getMaxPathLengthFilter(int maxPathLength)
+    public static SearchFilter getPredicateFilter(Predicate<? super ResolvedGraphPath> predicate, FilterResult ifResult, FilterResult elseResult)
     {
-        return (resolvedGraphPath, processorSupport) ->
-        {
-            int pathLength = resolvedGraphPath.getGraphPath().getEdgeCount();
-            return (pathLength > maxPathLength) ? FilterResult.REJECT : ((pathLength == maxPathLength) ? FilterResult.ACCEPT_AND_STOP : FilterResult.ACCEPT_AND_CONTINUE);
-        };
-    }
-
-    public static SearchFilter getIncludePropertiesFilter(Iterable<String> includedProperties)
-    {
-        Set<String> includedPropertiesSet = (includedProperties instanceof Set) ? (Set<String>) includedProperties : Sets.mutable.withAll(includedProperties);
-        return getPropertiesFilter(includedPropertiesSet::contains);
-    }
-
-    public static SearchFilter getExcludePropertiesFilter(Iterable<String> excludedProperties)
-    {
-        Set<String> excludedPropertiesSet = (excludedProperties instanceof Set) ? (Set<String>) excludedProperties : Sets.mutable.withAll(excludedProperties);
-        return getPropertiesFilter(p -> !excludedPropertiesSet.contains(p));
-    }
-
-    public static SearchFilter getPropertiesFilter(Predicate<? super String> propertyPredicate)
-    {
-        return (resolvedGraphPath, processorSupport) -> resolvedGraphPath.getGraphPath().getEdges().allSatisfy(e -> propertyPredicate.test(e.getProperty())) ? FilterResult.ACCEPT_AND_CONTINUE : FilterResult.REJECT;
-    }
-
-    public static SearchFilter joinFilters(SearchFilter... filters)
-    {
-        return joinFilters(ArrayAdapter.adapt(filters));
-    }
-
-    public static SearchFilter joinFilters(Iterable<? extends SearchFilter> filters)
-    {
-        MutableList<SearchFilter> flattenedFilters = flattenFilters(filters);
-        return (flattenedFilters.size() == 1) ? flattenedFilters.get(0) : new JoinSearchFilter(flattenedFilters.toImmutable());
+        return (resolvedGraphPath, processorSupport) -> predicate.test(resolvedGraphPath) ? ifResult : elseResult;
     }
 
     public static SearchFilter getDefaultSearchFilter()
@@ -361,13 +352,110 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
 
         // Stop at packaged or top level nodes
         CoreInstance lastNode = resolvedGraphPath.getLastResolvedNode();
-        if ((lastNode.getValueForMetaPropertyToOne(M3Properties._package) instanceof Package) || (lastNode == processorSupport.repository_getTopLevel(lastNode.getName())))
+        if (GraphPath.isPackagedOrTopLevel(lastNode, processorSupport))
         {
             return FilterResult.ACCEPT_AND_STOP;
         }
 
         // Otherwise continue
         return FilterResult.ACCEPT_AND_CONTINUE;
+    }
+
+    // Node filters
+
+    public static SearchFilter getNodePredicateFilter(BiPredicate<? super CoreInstance, ? super ProcessorSupport> predicate, FilterResult ifResult, FilterResult elseResult)
+    {
+        return (resolvedGraphPath, processorSupport) -> predicate.test(resolvedGraphPath.getLastResolvedNode(), processorSupport) ? ifResult : elseResult;
+    }
+
+    public static SearchFilter getNodePredicateFilter(Predicate<? super CoreInstance> predicate, FilterResult ifResult, FilterResult elseResult)
+    {
+        return (resolvedGraphPath, processorSupport) -> predicate.test(resolvedGraphPath.getLastResolvedNode()) ? ifResult : elseResult;
+    }
+
+    public static SearchFilter getStopAtNodeFilter(BiPredicate<? super CoreInstance, ? super ProcessorSupport> shouldStopAtNode)
+    {
+        return getNodePredicateFilter(shouldStopAtNode, FilterResult.ACCEPT_AND_STOP, FilterResult.ACCEPT_AND_CONTINUE);
+    }
+
+    public static SearchFilter getStopAtNodeFilter(Predicate<? super CoreInstance> shouldStopAtNode)
+    {
+        return getNodePredicateFilter(shouldStopAtNode, FilterResult.ACCEPT_AND_STOP, FilterResult.ACCEPT_AND_CONTINUE);
+    }
+
+    public static SearchFilter getStopAtPackagedOrTopLevelNodeFilter()
+    {
+        return getStopAtNodeFilter(GraphPath::isPackagedOrTopLevel);
+    }
+
+    public static SearchFilter getPackagedOrTopLevelNodeFilter(FilterResult ifResult, FilterResult elseResult)
+    {
+        return getNodePredicateFilter(GraphPath::isPackagedOrTopLevel, ifResult, elseResult);
+    }
+
+    // Property filters
+
+    public static SearchFilter getAnyPropertiesFilter(Predicate<? super String> propertyPredicate, FilterResult ifResult, FilterResult elseResult)
+    {
+        return (resolvedGraphPath, processorSupport) -> resolvedGraphPath.getGraphPath().getEdges().anySatisfy(e -> propertyPredicate.test(e.getProperty())) ? ifResult : elseResult;
+    }
+
+    public static SearchFilter getAllPropertiesFilter(Predicate<? super String> propertyPredicate, FilterResult ifResult, FilterResult elseResult)
+    {
+        return (resolvedGraphPath, processorSupport) -> resolvedGraphPath.getGraphPath().getEdges().allSatisfy(e -> propertyPredicate.test(e.getProperty())) ? ifResult : elseResult;
+    }
+
+    public static SearchFilter getIncludePropertiesFilter(String... includedProperties)
+    {
+        return getIncludePropertiesFilter(Sets.immutable.with(includedProperties));
+    }
+
+    public static SearchFilter getIncludePropertiesFilter(Iterable<String> includedProperties)
+    {
+        Set<String> includedPropertiesSet = (includedProperties instanceof Set) ? (Set<String>) includedProperties : Sets.mutable.withAll(includedProperties);
+        return getAllPropertiesFilter(includedPropertiesSet::contains, FilterResult.ACCEPT_AND_CONTINUE, FilterResult.REJECT);
+    }
+
+    public static SearchFilter getExcludePropertiesFilter(String... excludedProperties)
+    {
+        return getExcludePropertiesFilter(Sets.immutable.with(excludedProperties));
+    }
+
+    public static SearchFilter getExcludePropertiesFilter(Iterable<String> excludedProperties)
+    {
+        Set<String> excludedPropertiesSet = (excludedProperties instanceof Set) ? (Set<String>) excludedProperties : Sets.mutable.withAll(excludedProperties);
+        return getAnyPropertiesFilter(excludedPropertiesSet::contains, FilterResult.REJECT, FilterResult.ACCEPT_AND_CONTINUE);
+    }
+
+    @Deprecated
+    public static SearchFilter getPropertiesFilter(Predicate<? super String> propertyPredicate)
+    {
+        return getAllPropertiesFilter(propertyPredicate, FilterResult.ACCEPT_AND_CONTINUE, FilterResult.REJECT);
+    }
+
+    // Path length filters
+
+    public static SearchFilter getPathLengthFilter(IntFunction<FilterResult> lengthFunction)
+    {
+        return (resolvedGraphPath, processorSupport) -> lengthFunction.apply(resolvedGraphPath.getGraphPath().getEdgeCount());
+    }
+
+    public static SearchFilter getMaxPathLengthFilter(int maxPathLength)
+    {
+        return getPathLengthFilter(l -> (l > maxPathLength) ? FilterResult.REJECT : ((l == maxPathLength) ? FilterResult.ACCEPT_AND_STOP : FilterResult.ACCEPT_AND_CONTINUE));
+    }
+
+    // Join filters
+
+    public static SearchFilter joinFilters(SearchFilter... filters)
+    {
+        return joinFilters(ArrayAdapter.adapt(filters));
+    }
+
+    public static SearchFilter joinFilters(Iterable<? extends SearchFilter> filters)
+    {
+        MutableList<SearchFilter> flattenedFilters = flattenFilters(filters);
+        return (flattenedFilters.size() == 1) ? flattenedFilters.get(0) : new JoinSearchFilter(flattenedFilters.toImmutable());
     }
 
     public static final class ResolvedGraphPath
@@ -426,6 +514,20 @@ public class GraphPathIterable extends AbstractLazyIterable<GraphPath>
 
     public interface SearchFilter extends BiFunction<ResolvedGraphPath, ProcessorSupport, FilterResult>
     {
+        default SearchFilter join(SearchFilter filter)
+        {
+            return joinFilters(this, filter);
+        }
+
+        default SearchFilter join(SearchFilter... filters)
+        {
+            return join(ArrayAdapter.adapt(filters));
+        }
+
+        default SearchFilter join(Iterable<? extends SearchFilter> filters)
+        {
+            return joinFilters(Lists.mutable.with(this).withAll(filters));
+        }
     }
 
     public enum FilterResult

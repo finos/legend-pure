@@ -16,16 +16,15 @@ package org.finos.legend.pure.m3.navigation.multiplicity;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.impl.block.factory.Comparators;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Objects;
 
@@ -142,9 +141,7 @@ public class Multiplicity
      */
     public static String print(CoreInstance multiplicity, boolean printBrackets)
     {
-        StringBuilder builder = new StringBuilder(8);
-        print(builder, multiplicity, printBrackets);
-        return builder.toString();
+        return print(new StringBuilder(8), multiplicity, printBrackets).toString();
     }
 
     /**
@@ -155,58 +152,52 @@ public class Multiplicity
      * @param appendable    appendable to print to
      * @param multiplicity  multiplicity
      * @param printBrackets whether to print square brackets around the multiplicity
+     * @return the appendable
      */
-    public static void print(Appendable appendable, CoreInstance multiplicity, boolean printBrackets)
+    public static <T extends Appendable> T print(T appendable, CoreInstance multiplicity, boolean printBrackets)
     {
-        try
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        if (printBrackets)
         {
-            if (printBrackets)
+            safeAppendable.append('[');
+        }
+        if (multiplicity == null)
+        {
+            safeAppendable.append("NULL");
+        }
+        else if (isMultiplicityConcrete(multiplicity))
+        {
+            int lower = concreteMultiplicityLowerBoundToInt(multiplicity);
+            int upper = concreteMultiplicityUpperBoundToInt(multiplicity);
+            if (upper < 0)
             {
-                appendable.append('[');
-            }
-            if (multiplicity == null)
-            {
-                appendable.append("NULL");
-            }
-            else if (isMultiplicityConcrete(multiplicity))
-            {
-                int lower = concreteMultiplicityLowerBoundToInt(multiplicity);
-                int upper = concreteMultiplicityUpperBoundToInt(multiplicity);
-                if (upper < 0)
+                if (lower == 0)
                 {
-                    if (lower == 0)
-                    {
-                        appendable.append('*');
-                    }
-                    else
-                    {
-                        appendable.append(Integer.toString(lower));
-                        appendable.append("..*");
-                    }
+                    safeAppendable.append('*');
                 }
                 else
                 {
-                    appendable.append(Integer.toString(lower));
-                    if (upper != lower)
-                    {
-                        appendable.append("..");
-                        appendable.append(Integer.toString(upper));
-                    }
+                    safeAppendable.append(lower).append("..*");
                 }
             }
             else
             {
-                appendable.append(getMultiplicityParameter(multiplicity));
-            }
-            if (printBrackets)
-            {
-                appendable.append(']');
+                safeAppendable.append(lower);
+                if (upper != lower)
+                {
+                    safeAppendable.append("..").append(upper);
+                }
             }
         }
-        catch (IOException e)
+        else
         {
-            throw new RuntimeException(e);
+            safeAppendable.append(getMultiplicityParameter(multiplicity));
         }
+        if (printBrackets)
+        {
+            safeAppendable.append(']');
+        }
+        return appendable;
     }
 
     /**
@@ -336,10 +327,10 @@ public class Multiplicity
         CoreInstance newMultiplicity = processorSupport.newAnonymousCoreInstance(null, M3Paths.Multiplicity);
         CoreInstance newLowerBound = processorSupport.newAnonymousCoreInstance(null, M3Paths.MultiplicityValue);
         CoreInstance newUpperBound = processorSupport.newAnonymousCoreInstance(null, M3Paths.MultiplicityValue);
-        Instance.addValueToProperty(newLowerBound, M3Properties.value, processorSupport.newCoreInstance(String.valueOf(lowerBound), M3Paths.Integer, null), processorSupport);
+        Instance.addValueToProperty(newLowerBound, M3Properties.value, processorSupport.newCoreInstance(Integer.toString(lowerBound), M3Paths.Integer, null), processorSupport);
         if (upperBound >= 0)
         {
-            Instance.addValueToProperty(newUpperBound, M3Properties.value, processorSupport.newCoreInstance(String.valueOf(upperBound), M3Paths.Integer, null), processorSupport);
+            Instance.addValueToProperty(newUpperBound, M3Properties.value, processorSupport.newCoreInstance(Integer.toString(upperBound), M3Paths.Integer, null), processorSupport);
         }
         Instance.addValueToProperty(newMultiplicity, M3Properties.lowerBound, newLowerBound, processorSupport);
         Instance.addValueToProperty(newMultiplicity, M3Properties.upperBound, newUpperBound, processorSupport);
@@ -408,16 +399,14 @@ public class Multiplicity
         // Copy non-packageable multiplicies
         CoreInstance copy = processorSupport.newAnonymousCoreInstance(replaceSourceInfo ? newSourceInfo : multiplicity.getSourceInformation(), M3Paths.Multiplicity);
 
-        CoreInstance parameter = Instance.getValueForMetaPropertyToOneResolved(multiplicity, M3Properties.multiplicityParameter, processorSupport);
+        CoreInstance parameter = multiplicity.getValueForMetaPropertyToOne(M3Properties.multiplicityParameter);
         if (parameter == null)
         {
             // Concrete multiplicity
-            CoreInstance lowerBound = Instance.getValueForMetaPropertyToOneResolved(multiplicity, M3Properties.lowerBound, processorSupport);
-            CoreInstance lowerBoundCopy = copyMultiplicityValue(lowerBound, replaceSourceInfo, newSourceInfo, processorSupport);
-            CoreInstance upperBound = Instance.getValueForMetaPropertyToOneResolved(multiplicity, M3Properties.upperBound, processorSupport);
-            CoreInstance upperBoundCopy = copyMultiplicityValue(upperBound, replaceSourceInfo, newSourceInfo, processorSupport);
-
+            CoreInstance lowerBoundCopy = copyMultiplicityValue(multiplicity.getValueForMetaPropertyToOne(M3Properties.lowerBound), replaceSourceInfo, newSourceInfo, processorSupport);
             Instance.addValueToProperty(copy, M3Properties.lowerBound, lowerBoundCopy, processorSupport);
+
+            CoreInstance upperBoundCopy = copyMultiplicityValue(multiplicity.getValueForMetaPropertyToOne(M3Properties.upperBound), replaceSourceInfo, newSourceInfo, processorSupport);
             Instance.addValueToProperty(copy, M3Properties.upperBound, upperBoundCopy, processorSupport);
         }
         else
@@ -432,7 +421,7 @@ public class Multiplicity
     private static CoreInstance copyMultiplicityValue(CoreInstance multiplicityValue, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport)
     {
         CoreInstance copy = processorSupport.newAnonymousCoreInstance(replaceSourceInfo ? newSourceInfo : multiplicityValue.getSourceInformation(), M3Paths.MultiplicityValue);
-        CoreInstance value = Instance.getValueForMetaPropertyToOneResolved(multiplicityValue, M3Properties.value, processorSupport);
+        CoreInstance value = multiplicityValue.getValueForMetaPropertyToOne(M3Properties.value);
         if (value != null)
         {
             Instance.addValueToProperty(copy, M3Properties.value, value, processorSupport);
@@ -507,7 +496,7 @@ public class Multiplicity
         }
         return !isMultiplicityConcrete(multiplicity2) &&
                 nonConcreteEqualityByName &&
-                Comparators.nullSafeEquals(getMultiplicityParameter(multiplicity1), getMultiplicityParameter(multiplicity2));
+                Objects.equals(getMultiplicityParameter(multiplicity1), getMultiplicityParameter(multiplicity2));
     }
 
     /**
@@ -542,16 +531,18 @@ public class Multiplicity
 
         if (upper1 < 0)
         {
+            // multiplicity1 is unbounded above
             return (upper2 < 0) || (upper2 >= lower1);
         }
-        else if (upper2 < 0)
+
+        if (upper2 < 0)
         {
-            return (upper1 < 0) || (upper1 >= lower2);
+            // multiplicity2 is unbounded above (but multiplicity1 is not)
+            return upper1 >= lower2;
         }
-        else
-        {
-            return (lower1 <= upper2) && (lower2 <= upper1);
-        }
+
+        // both are bounded
+        return (lower1 <= upper2) && (lower2 <= upper1);
     }
 
     /**
