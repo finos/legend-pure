@@ -235,7 +235,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::tran
       ,meta::external::format::protobuf::generation::transform($config).content);
 }
 
-function <<test.Test>> meta::external::format::protobuf::generation::tests::transform_testClassWithMapToProtoBuf():Boolean[1]
+function <<test.Test, test.ExcludeAlloy>> meta::external::format::protobuf::generation::tests::transform_testClassWithMapToProtoBuf():Boolean[1]
 {
   let config = ^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::ClassWithMap');
    assertEquals('syntax = "proto3";\n'
