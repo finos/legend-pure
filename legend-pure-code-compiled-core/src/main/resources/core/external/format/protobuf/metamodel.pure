@@ -28,7 +28,7 @@ Class meta::external::format::protobuf::metamodel::ProtoFile
    options:Options[0..1];
 }
 
-Class meta::external::format::protobuf::metamodel::TopLevelItem
+Class <<typemodifiers.abstract>> meta::external::format::protobuf::metamodel::TopLevelItem
 {
 }
 
@@ -80,18 +80,14 @@ Class meta::external::format::protobuf::metamodel::Message extends meta::externa
    content:MessageBodyItem[*];
 }
 
-Class meta::external::format::protobuf::metamodel::MessageBodyItem
+Class <<typemodifiers.abstract>> meta::external::format::protobuf::metamodel::MessageBodyItem
 {
 }
 
-Class meta::external::format::protobuf::metamodel::BaseField extends meta::external::format::protobuf::metamodel::MessageBodyItem
+Class meta::external::format::protobuf::metamodel::Field extends meta::external::format::protobuf::metamodel::MessageBodyItem
 {
    number:Integer[1];
    name:String[1];
-}
-
-Class meta::external::format::protobuf::metamodel::Field extends meta::external::format::protobuf::metamodel::BaseField
-{
    type:ProtoBufType[1];
    repeated:Boolean[1];
    options:Option[*];
@@ -124,7 +120,7 @@ Class meta::external::format::protobuf::metamodel::Service extends meta::externa
   content:ServiceBodyItem[*];
 }
 
-Class meta::external::format::protobuf::metamodel::ServiceBodyItem
+Class <<typemodifiers.abstract>> meta::external::format::protobuf::metamodel::ServiceBodyItem
 {
 }
 
@@ -147,7 +143,7 @@ Class meta::external::format::protobuf::metamodel::MessageType
   stream:Boolean[0..1];
 }
 
-Class meta::external::format::protobuf::metamodel::ProtoBufType
+Class <<typemodifiers.abstract>> meta::external::format::protobuf::metamodel::ProtoBufType
 {
 }
 
