@@ -106,7 +106,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
                     (
                         name = $e->enumName(),
                         values = $e->enumValues()->map(v|^meta::external::format::protobuf::metamodel::Enum(constant=$v->toString(), constantNumber=$e->enumValues()->indexOf($v)))
-                    )->cast(@meta::external::format::protobuf::metamodel::TopLevelItem); //TODO - seems like a bug in pure should not be necessary
+                    )
                 );
 
       let topLevelDefs = $messages->concatenate($enumerations);      

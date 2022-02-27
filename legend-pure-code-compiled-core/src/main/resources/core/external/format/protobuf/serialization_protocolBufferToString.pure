@@ -23,10 +23,10 @@ function meta::external::format::protobuf::serialization::toString(file:ProtoFil
    + $file.imports->map( i | 'import "' + if( $i.importType->isEmpty(), | '', | $i.importType->toOne().name + ' ' ) + $i.name + '";\n')->joinStrings()
    + if( $file.package->isEmpty(), | '', | 'package ' + $packageName + ';\n' )
    + if($file.options->isEmpty(), | '', | $file.options->toOne()->meta::external::format::protobuf::serialization::toString())
-   + $file.topLevelDefs->sortBy(s|$s->match([m:Message[1]|$m.name,e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e.name]))->map(t | $t->meta::external::format::protobuf::serialization::toString($packageName))->joinStrings('\n');
+   + $file.topLevelDefs->sortBy(s|$s->match([m:Message[1]|$m.name,e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e.name]))->map(t | $t->meta::external::format::protobuf::serialization::topLevelItemToString($packageName))->joinStrings('\n');
 }
 
-function meta::external::format::protobuf::serialization::toString(p:MessageBodyItem[1],currentPackage:String[1]):String[1]
+function meta::external::format::protobuf::serialization::toString(p:ProtoItemDefinition[1],currentPackage:String[1]):String[1]
 {
    $p->match(
       [
@@ -39,7 +39,7 @@ function meta::external::format::protobuf::serialization::toString(p:MessageBody
    )
 }
 
-function meta::external::format::protobuf::serialization::toString(p:TopLevelItem[1],currentPackage:String[1]):String[1]
+function meta::external::format::protobuf::serialization::topLevelItemToString(p:ProtoItemDefinition[1],currentPackage:String[1]):String[1]
 {
    $p->match(
       [

@@ -20,15 +20,19 @@ Enum meta::external::format::protobuf::metamodel::Syntax
 }
 
 Class meta::external::format::protobuf::metamodel::ProtoFile
+[
+  //Initially implemented this with multiple inheritence but more than one super type is not currently supported in several flows
+  $this.topLevelDefs->map( t | $t->class()->in([Message,Service,meta::external::format::protobuf::metamodel::Enumeration]))->and()
+]
 {
    syntax:Syntax[1];
    package:String[0..1];
    imports:ProtoImport[*];
-   topLevelDefs:TopLevelItem[*];
+   topLevelDefs:ProtoItemDefinition[*];
    options:Options[0..1];
 }
 
-Class <<typemodifiers.abstract>> meta::external::format::protobuf::metamodel::TopLevelItem
+Class <<typemodifiers.abstract>> meta::external::format::protobuf::metamodel::ProtoItemDefinition
 {
 }
 
@@ -74,17 +78,17 @@ Enum meta::external::format::protobuf::metamodel::OptimizeMode
   LITE_RUNTIME
 }
 
-Class meta::external::format::protobuf::metamodel::Message extends meta::external::format::protobuf::metamodel::MessageBodyItem, meta::external::format::protobuf::metamodel::TopLevelItem
+Class meta::external::format::protobuf::metamodel::Message extends meta::external::format::protobuf::metamodel::ProtoItemDefinition
+[
+  //Initially implemented this with multiple inheritence but more than one super type is not currently supported in several flows
+  $this.content->map( t | $t->class()->in([Message,Field,MessageOption,OneOf,ReservedFieldNames,ReservedFieldRanges, meta::external::format::protobuf::metamodel::Enumeration]))->and()
+]
 {
    name:String[1];
-   content:MessageBodyItem[*];
+   content:ProtoItemDefinition[*];
 }
 
-Class <<typemodifiers.abstract>> meta::external::format::protobuf::metamodel::MessageBodyItem
-{
-}
-
-Class meta::external::format::protobuf::metamodel::Field extends meta::external::format::protobuf::metamodel::MessageBodyItem
+Class meta::external::format::protobuf::metamodel::Field extends meta::external::format::protobuf::metamodel::ProtoItemDefinition
 {
    number:Integer[1];
    name:String[1];
@@ -93,28 +97,28 @@ Class meta::external::format::protobuf::metamodel::Field extends meta::external:
    options:Option[*];
 }
 
-Class meta::external::format::protobuf::metamodel::MessageOption extends meta::external::format::protobuf::metamodel::MessageBodyItem
+Class meta::external::format::protobuf::metamodel::MessageOption extends meta::external::format::protobuf::metamodel::ProtoItemDefinition
 {
   option:Option[1];
 }
 
-Class meta::external::format::protobuf::metamodel::OneOf extends meta::external::format::protobuf::metamodel::MessageBodyItem
+Class meta::external::format::protobuf::metamodel::OneOf extends meta::external::format::protobuf::metamodel::ProtoItemDefinition
 {
   name:String[1];
   field:Field[*];
 }
 
-Class meta::external::format::protobuf::metamodel::ReservedFieldNames extends meta::external::format::protobuf::metamodel::MessageBodyItem
+Class meta::external::format::protobuf::metamodel::ReservedFieldNames extends meta::external::format::protobuf::metamodel::ProtoItemDefinition
 {
   names:String[*];
 }
 
-Class meta::external::format::protobuf::metamodel::ReservedFieldRanges extends meta::external::format::protobuf::metamodel::MessageBodyItem
+Class meta::external::format::protobuf::metamodel::ReservedFieldRanges extends meta::external::format::protobuf::metamodel::ProtoItemDefinition
 {
   numbers:Integer[*];
 }
 
-Class meta::external::format::protobuf::metamodel::Service extends meta::external::format::protobuf::metamodel::TopLevelItem
+Class meta::external::format::protobuf::metamodel::Service extends meta::external::format::protobuf::metamodel::ProtoItemDefinition
 {
   name:String[1];
   content:ServiceBodyItem[*];
@@ -159,7 +163,7 @@ Class meta::external::format::protobuf::metamodel::EnumPtr extends meta::externa
    name : String[1];
 }
 
-Class meta::external::format::protobuf::metamodel::Enumeration extends meta::external::format::protobuf::metamodel::MessageBodyItem, meta::external::format::protobuf::metamodel::TopLevelItem 
+Class meta::external::format::protobuf::metamodel::Enumeration extends meta::external::format::protobuf::metamodel::ProtoItemDefinition 
 {
    name : String[1];
    options: Option[*];

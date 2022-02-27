@@ -159,17 +159,6 @@ Diagram meta::external::format::protobuf::Protobuf_Diagram(width=0.0, height=0.0
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_3(
-        type=meta::external::format::protobuf::metamodel::TopLevelItem,
-        position=(416.37286, 208.23323),
-        width=96.45898,
-        height=30.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
 
     TypeView Enumeration_$_11(
         type=meta::external::format::protobuf::metamodel::Enumeration,
@@ -207,17 +196,6 @@ Diagram meta::external::format::protobuf::Protobuf_Diagram(width=0.0, height=0.0
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_1(
-        type=meta::external::format::protobuf::metamodel::MessageBodyItem,
-        position=(416.37286, 272.65429),
-        width=125.36914,
-        height=30.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
 
     TypeView cview_4(
         type=meta::external::format::protobuf::metamodel::Field,
@@ -312,41 +290,9 @@ Diagram meta::external::format::protobuf::Protobuf_Diagram(width=0.0, height=0.0
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_9(
-        source=Message_$_9,
-        target=cview_1,
-        points=[(300.68327,348.73684),(479.05743,287.65429)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
 
-    GeneralizationView gview_10(
-        source=Enumeration_$_11,
-        target=cview_1,
-        points=[(630.49054,324.05263),(479.05743,287.65429)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
 
-    GeneralizationView gview_11(
-        source=Enumeration_$_11,
-        target=cview_3,
-        points=[(630.49054,324.05263),(464.60235,223.23323)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
 
-    GeneralizationView gview_12(
-        source=Message_$_9,
-        target=cview_3,
-        points=[(300.68327,348.73684),(464.60235,223.23323)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
 
     PropertyView pview_0(
         property=meta::external::format::protobuf::metamodel::Field.type,
@@ -376,33 +322,7 @@ Diagram meta::external::format::protobuf::Protobuf_Diagram(width=0.0, height=0.0
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_2(
-        property=meta::external::format::protobuf::metamodel::Message.content,
-        source=Message_$_9,
-        target=cview_1
-,        points=[(300.68327,348.73684),(479.05743,287.65429)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
 
-    PropertyView pview_3(
-        property=meta::external::format::protobuf::metamodel::ProtoFile.topLevelDefs,
-        source=cview_2,
-        target=cview_3
-,        points=[(282.45797,224.12797),(464.60235,223.23323)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
 
     PropertyView pview_4(
         property=meta::external::format::protobuf::metamodel::Field.type,
