@@ -14,6 +14,7 @@
 
 import meta::relational::runtime::*;
 import meta::relational::dbTestRunner::*;
+import meta::pure::alloy::connections::*;
 
 Profile meta::relational::dbTestRunner::dbTest
 {
@@ -23,6 +24,7 @@ Profile meta::relational::dbTestRunner::dbTest
 Class meta::relational::dbTestRunner::DbTestConfig
 {
    dbType: DatabaseType[1];
+   connection: DatabaseConnection[0..1];
    expectedSql: String[0..1];
 }
 
@@ -37,13 +39,35 @@ function meta::relational::dbTestRunner::collectTests(pack: Package[1]): Functio
 
 function meta::relational::dbTestRunner::runTestsWith(dbTestFns: Function<{DbTestConfig[1] -> String[0..1]}>[*],
                                                dbType: DatabaseType[1],
+                                               connection: DatabaseConnection[0..1],
                                                expectedSqls: Map<Function<{DbTestConfig[1] -> String[0..1]}>, String>[0..1]
                                                ): Boolean[1]
 {
   let failures = $dbTestFns->map(f|
       println('running test : '+ $f->elementToPath());
-      let result = $f->eval(^DbTestConfig(dbType=$dbType, expectedSql=if($expectedSqls->isEmpty(), |[], |$expectedSqls->toOne()->get($f))));
+      let result = $f->eval(^DbTestConfig(dbType=$dbType, connection=$connection, expectedSql=if($expectedSqls->isEmpty(), |[], |$expectedSqls->toOne()->get($f))));
       if($result->isEmpty(), |[], |'\n'+ $f->elementToPath() + ': ' + $result->toOne());
   );
   assertEmpty($failures);
+}
+
+function meta::relational::dbTestRunner::getTestConnection(dbType:DatabaseType[1], extensions:meta::pure::router::extension::RouterExtension[*]):RelationalDatabaseConnection[0..1]
+{
+  meta::legend::test::mayExecuteLegendTest
+     (
+       {clientVersion, serverVersion, serializationKind, host, port |
+         let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::execution::testConnection::getTestConnection_DatabaseType_1__String_1__Integer_1__RouterExtension_MANY__RelationalDatabaseConnection_$0_1$_';
+         let xf = $fStr->pathToElement()->cast(@Function<{DatabaseType[1], String[1], Integer[1], meta::pure::router::extension::RouterExtension[*]->RelationalDatabaseConnection[0..1]}>);
+         let res= $xf->evaluate([$dbType, $host, $port]->map(v|list($v))->concatenate(list($extensions)));
+         if($res->isNotEmpty(), 
+           |$res->toOne()->cast(@RelationalDatabaseConnection),
+           | println('**** Warning **** : Test Connection for dbType: '+ $dbType->toString() + ' not available on Legend Engine Server, tests will only generate execution plans without asserting actual data');
+             []->cast(@RelationalDatabaseConnection);
+           );
+         },
+       { |
+         println('**** Warning **** : Legend Engine Server not available');
+         []->cast(@RelationalDatabaseConnection);
+       }
+     );
 }

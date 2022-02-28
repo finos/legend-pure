@@ -23,6 +23,9 @@ import meta::pure::mapping::*;
 import meta::alloy::metadataServer::*;
 import meta::json::*;
 import meta::protocols::pure::vX_X_X::invocation::execution::testDataGeneration::*;
+import meta::pure::alloy::connections::*;
+import meta::relational::runtime::*;
+import meta::protocols::pure::vX_X_X::invocation::execution::testConnection::*;
 
 Class meta::protocols::pure::vX_X_X::invocation::execution::testDataGeneration::SeedDataGenerationInput
 {
@@ -297,3 +300,19 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::testDataG
 }
 
 
+
+function meta::protocols::pure::vX_X_X::invocation::execution::testConnection::getTestConnection(dbType:DatabaseType[1], host:String[1], port:Integer[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::pure::alloy::connections::RelationalDatabaseConnection[0..1]
+{
+   let resp= executeHTTPRaw(^URL(host=$host, port=$port , path='/api/pure/v1/utilities/testConnection/getTestConnection/'+ $dbType->toString()),
+                             HTTPMethod.GET ,
+                             'application/json',
+                             []
+                            );
+
+   if($resp.statusCode != 200,
+       | println($resp.statusCode->toString()+' \''+$resp.entity->replace('\\n', '\n')->replace('\\t', '')+'\''),
+       |   
+          let res = $resp.entity->toOne()->toString();
+          $res -> meta::protocols::pure::vX_X_X::transformation::toPureGraph::connection::buildRelationalDatabaseConnection($extensions);
+      );
+}

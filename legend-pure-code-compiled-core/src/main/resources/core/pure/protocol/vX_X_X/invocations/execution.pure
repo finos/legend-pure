@@ -87,6 +87,15 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::getPlanR
    );
 }
 
+function meta::protocols::pure::vX_X_X::invocation::execution::execute::executePlan(plan:meta::pure::executionPlan::ExecutionPlan[1], context: ExecutionContext[0..1], host: String[1], port: Integer[1], extensions:meta::pure::router::extension::RouterExtension[*]) : meta::pure::mapping::Result<Any|*>[1]
+{
+   let planJSON = $plan->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformPlan($extensions)
+                       ->meta::json::toJSON(1000, meta::json::config(false, false, true, true));
+   let resultType = $planJSON->meta::protocols::pure::vX_X_X::invocation::execution::execute::getPlanReturnType();
+   let resultJSON = executePlan($plan, $host, $port, $extensions);
+   $resultJSON->legendBuildResultFromJSON($resultType, $plan.mapping, $plan.runtime, $context, $extensions);
+}
+
 function meta::protocols::pure::vX_X_X::invocation::execution::execute::executePlan(plan:meta::pure::executionPlan::ExecutionPlan[1], host: String[1], port: Integer[1], extensions:meta::pure::router::extension::RouterExtension[*]) : String[1]
 {
    let alloyPlan = $plan->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformPlan($extensions);
@@ -251,19 +260,4 @@ function meta::protocols::pure::vX_X_X::invocation::execution::execute::alloyExe
 
    assertEq(200, $resp.statusCode, | $resp.statusCode->toString()+' \''+$resp.entity+'\'');
    $resp.entity;
-}
-
-function meta::protocols::pure::vX_X_X::invocation::execution::execute::legendExecutePlanInTestDatabase(plan:meta::pure::executionPlan::ExecutionPlan[1],dbType:meta::relational::runtime::DatabaseType[1], context:ExecutionContext[0..1], host:String[1], port:Integer[1], version:String[1], serializationKind:String[1], executionMode:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::pure::mapping::Result<Any|*>[1]
-{
-   let planJSON= $plan->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformPlan($extensions)->meta::json::toJSON(1000, meta::json::config(false, false, true, true));
-   let resultType = $planJSON->meta::protocols::pure::vX_X_X::invocation::execution::execute::getPlanReturnType();
-
-   let resp= executeHTTPRaw(^URL(host=$host, port=$port , path='/api/pure/v1/execution/executePlanInTestDatabase/'+ $dbType->toString()),
-                             HTTPMethod.POST ,
-                             'application/json',
-                             $planJSON
-                            );
-   assertEq(200, $resp.statusCode, | $resp.statusCode->toString()+' \''+$resp.entity->replace('\\n', '\n')->replace('\\t', '')+'\'');
-   let resultJSON= $resp.entity->toOne();
-  $resultJSON->legendBuildResultFromJSON($resultType, $plan.mapping, $plan.runtime, $context, $extensions);
 }

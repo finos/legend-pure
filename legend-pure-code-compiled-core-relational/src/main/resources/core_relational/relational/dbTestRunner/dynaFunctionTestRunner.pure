@@ -29,29 +29,34 @@ function meta::relational::dbTestRunner::runDynaFunctionDatabaseTest(dynaFunc:Dy
   let sqlQuery = ^SelectSQLQuery(columns=[$dynaFunc]);
   let sqlString = sqlQueryToString($sqlQuery, $testConfig.dbType, []);
 
-  let expectedResultTypes = $expectedResult->map(e|$e->inferRelationalType())->toOneMany();
-  let plan = wrapSQLStringInExecutionPlan($sqlString, $expectedResultTypes, $testConfig.dbType);
-
   if($testConfig.expectedSql->isNotEmpty() && ($testConfig.expectedSql->toOne() != $sqlString),
-  | 'Sql assert failed ,expected sql: '+ $testConfig.expectedSql->toOne()  +', actual sql : ' + $sqlString;,
-  | let res = executePlanInTestDatabase($plan, $testConfig.dbType, defaultRelationalExtensions());
-    if($res->isEmpty(),
-      | [],                                  //legend engine not available 
-      | if (equal($res.values,$expectedResult.value),
-        | [],
-        | let expectedStr = $expectedResult.value->map(v|$v->toString())->makeString('[',', ',']');
-          let resStr = $res.values->map(v|$v->toString())->makeString('[',', ',']');
-          'Result assert failed ,expected Values : '+ $expectedStr  +', actual Values : ' + $resStr;
-        );
-     );
-  );
+    | 'Sql assert failed ,expected sql: '+ $testConfig.expectedSql->toOne()  +', actual sql : ' + $sqlString;,
+    | if($testConfig.connection->isEmpty(),
+      |   [] ,                                                     // test Connection not available ,do nothing further,
+      |  
+          let conn1= $testConfig.connection->toOne();
+          let conn = ^$conn1(element= ^Database(name='dummyDB'));                      // overwite given connection db 
+          
+          let expectedResultTypes = $expectedResult->map(e|$e->inferRelationalType())->toOneMany();
+          let plan = wrapSQLStringInExecutionPlan($sqlString, $expectedResultTypes, $testConfig.dbType,$conn) ;
+          
+          let res = executePlan($plan,defaultRelationalExtensions());
+          if($res->isEmpty(),
+              | [],                                  //legend engine not available 
+              | if (equal($res.values,$expectedResult.value),
+                | [],
+                | let expectedStr = $expectedResult.value->map(v|$v->toString())->makeString('[',', ',']');
+                  let resStr = $res.values->map(v|$v->toString())->makeString('[',', ',']');
+                  'Result assert failed ,expected Values : '+ $expectedStr  +', actual Values : ' + $resStr;
+                );
+              );
+       );
+    );
 }
 
-function meta::relational::dbTestRunner::wrapSQLStringInExecutionPlan(sqlString:String[1], resultTypes:meta::relational::metamodel::datatype::DataType[1..*], dbType:DatabaseType[1]):ExecutionPlan[1]
+function meta::relational::dbTestRunner::wrapSQLStringInExecutionPlan(sqlString:String[1], resultTypes:meta::relational::metamodel::datatype::DataType[1..*], dbType:DatabaseType[1], connection:DatabaseConnection[1]):ExecutionPlan[1]
 {
-  // use dummyDB as dynaFunctions are independent of store
-  let testConnection = ^TestDatabaseConnection(element= ^Database(name='dummyDB'), type=$dbType, timeZone = 'UTC');
-  let testRuntime = ^Runtime(connections=$testConnection);
+  let runtime = ^Runtime(connections=$connection);
   
   let resultType = ^DataTypeResultType(type= $resultTypes->at(0)->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType());
 
@@ -60,13 +65,13 @@ function meta::relational::dbTestRunner::wrapSQLStringInExecutionPlan(sqlString:
   
   let sqlExecutionNode = ^SQLExecutionNode(
                         sqlQuery=$sqlString ,
-                        connection=$testConnection , 
+                        connection=$connection , 
                         resultType=$resultType,
                         resultColumns=$resultColumns);
 
   ^ExecutionPlan(
     authDependent=false,
-    runtime=$testRuntime,
+    runtime=$runtime,
     func={|true},
     mapping=^Mapping(name='dummyMapping'),
     rootExecutionNode=^RelationalDataTypeInstantiationExecutionNode(

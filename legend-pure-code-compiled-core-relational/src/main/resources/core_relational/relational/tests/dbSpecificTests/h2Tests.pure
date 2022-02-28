@@ -14,13 +14,20 @@
 
 import meta::relational::runtime::*;
 import meta::relational::dbTestRunner::*;
+import meta::relational::tests::dbSpecificTests::H2::*;
 
 function <<test.Test>> meta::relational::tests::dbSpecificTests::H2::runSQLQueryTests():Boolean[1]
+{
+  let conn= meta::relational::dbTestRunner::getTestConnection(DatabaseType.H2, meta::pure::router::extension::defaultRelationalExtensions());
+  $conn->meta::relational::tests::dbSpecificTests::H2::runSQLQueryTests();
+}
+
+function meta::relational::tests::dbSpecificTests::H2::runSQLQueryTests(connection:DatabaseConnection[0..1]):Boolean[1]
 {
   let expectedSqls = [
     pair(meta::relational::tests::dbSpecificTests::sqlQueryTests::dynaFunctions::numeric::testAbs_DbTestConfig_1__String_$0_1$_, 'select abs(-1)' )
   ]->newMap();
       
   collectTests(meta::relational::tests::dbSpecificTests::sqlQueryTests)
-      ->runTestsWith(DatabaseType.H2, $expectedSqls);
+      ->runTestsWith(DatabaseType.H2, $connection,  $expectedSqls);
 }
