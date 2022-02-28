@@ -199,7 +199,27 @@ function <<access.private>> meta::relational::mapping::getRelationalTypeFromRela
 
 function meta::relational::mapping::relationalPlanSupportFunctions(c:DatabaseConnection[1]):String[*]
 {
-   if($c.timeZone->isNotEmpty() && !meta::pure::functions::date::systemDefaultTimeZones()->contains($c.timeZone->toOne()),|utcToTimeZoneSupportFunction(),|[])->concatenate(collectionRenderFunction())->concatenate(collectionSizeFunction());
+   if($c.timeZone->isNotEmpty() && !meta::pure::functions::date::systemDefaultTimeZones()->contains($c.timeZone->toOne()),|utcToTimeZoneSupportFunction(),|[])->concatenate(collectionRenderFunction())->concatenate(collectionSizeFunction())->concatenate(optionalVarPlaceHolderOperationSelectorFunction())->concatenate(varPlaceHolderToStringFunction());
+}
+
+function meta::relational::mapping::varPlaceHolderToStringFunction():String[*]
+{
+   '<#function varPlaceHolderToString optionalParameter prefix suffix defaultValue>' +
+         '<#if optionalParameter?is_enumerable && !optionalParameter?has_content>'+               
+               '<#return defaultValue>'+                    
+         '<#else>' +
+               '<#return prefix + optionalParameter + suffix></#if>'+
+   '</#function>';
+}
+
+function meta::relational::mapping::optionalVarPlaceHolderOperationSelectorFunction():String[1]
+{
+   '<#function optionalVarPlaceHolderOperationSelector optionalParameter trueClause falseClause>'+
+        '<#if optionalParameter?has_content || optionalParameter?is_string>'+
+            '<#return trueClause>'+
+         '<#else>'+
+            '<#return falseClause></#if>'+
+   '</#function>';   
 }
 
 function meta::relational::mapping::collectionSizeFunction():String[1]
