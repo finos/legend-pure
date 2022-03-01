@@ -36,6 +36,27 @@ import meta::pure::persistence::metamodel::trigger::*;
  **********/
 
 Class
+{doc.doc = 'A persistence specification. This consists of a trigger that initiates persistence, a reader that provides data to persist, and a persister that writes that data to a store.'}
+meta::pure::persistence::metamodel::Persistence extends PackageableElement
+{
+   {doc.doc = 'A functional description of this pipe specification.'}
+   documentation: String[1];
+
+   {doc.doc = 'Owners of this pipe specification.'}
+   owners: String[1..*];
+
+   {doc.doc = 'The trigger that initiates the pipe.'}
+   trigger: Trigger[1];
+
+   {doc.doc = 'The reader that sources input data for the pipe.'}
+   reader: Reader[1];
+
+   {doc.doc = 'The persister that writes data to a datastore.'}
+   persister: Persister[1];
+}
+
+Class
+<<doc.deprecated>>
 {doc.doc = 'A persistence pipe specification. This consists of a trigger that initiates the pipe, a reader that provides data to the pipe, and a persister that writes that data to a datastore.'}
 meta::pure::persistence::metamodel::PersistencePipe extends PackageableElement
 {
@@ -56,21 +77,29 @@ meta::pure::persistence::metamodel::PersistencePipe extends PackageableElement
 }
 
 /**********
- * backend
+ * context
  **********/
 
 Class
 <<typemodifiers.abstract>>
+{doc.doc = 'The execution context for a persistence specification.'}
+meta::pure::persistence::metamodel::PersistenceContext extends PackageableElement
+{
+   persistence: Persistence[1];
+}
+
+Class
+{doc.doc = 'Execution context for AWS-based data movement services.'}
+meta::pure::persistence::metamodel::AwsPersistenceContext extends PersistenceContext
+{
+}
+
+Class
+<<typemodifiers.abstract, doc.deprecated>>
 {doc.doc = 'The mapping of a persistence pipe specification to a backend system for execution.'}
 meta::pure::persistence::metamodel::PersistencePipeBackend extends PackageableElement
 {
    persistencePipe: PersistencePipe[1];
-}
-
-Class
-{doc.doc = 'Backend details for executing on the AWS Glue managed ETL service.'}
-meta::pure::persistence::metamodel::AwsGluePersistencePipeBackend extends PersistencePipeBackend
-{
 }
 
 /**********
