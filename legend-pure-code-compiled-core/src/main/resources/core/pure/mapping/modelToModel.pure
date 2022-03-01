@@ -302,7 +302,7 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planRootG
    let sourceTreeExtended = if($enableConstraints, | $sourceTree->ensureConstraintsRequirements(), | $sourceTree);
 
    let chainConnectionNodeGeneration = {mcc: ModelChainConnection[1] |
-      $fe->planModelChainConnectionGraphFetchExecution($mcc, $sourceTreeExtended, $mapping, $runtime, $exeCtx, $ext, [], $enableConstraints, $checked, $extensions, $debug)
+      $fe->planModelChainConnectionGraphFetchExecution($mcc, $sourceTreeExtended, $mapping, $runtime, $exeCtx, $ext, $sq.inScopeVars, [], $enableConstraints, $checked, $extensions, $debug)
    };
 
    let defaultGenerateExecutionNode = {c:Connection[1]|
@@ -397,7 +397,7 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planCross
                                     ^InstanceValue(values = $updatedRootTree, multiplicity = PureOne, genericType = ^GenericType(rawType = RootGraphFetchTree, typeArguments = [$genericType]))
                                  ]
                               )->evaluateAndDeactivate();
-      $newGraphFetchExpr->planModelChainConnectionGraphFetchExecution($mcc, $sourceTreeExtended, $mapping, $runtime, $exeCtx, [], $populatedXStorePropertiesInScope, $enableConstraints, $checked, $extensions, $debug);
+      $newGraphFetchExpr->planModelChainConnectionGraphFetchExecution($mcc, $sourceTreeExtended, $mapping, $runtime, $exeCtx, [], $inScopeVars, $populatedXStorePropertiesInScope, $enableConstraints, $checked, $extensions, $debug);
    };
 
    let defaultGenerateExecutionNode = {c:Connection[1]|
@@ -435,7 +435,7 @@ function meta::pure::mapping::modelToModel::graphFetch::executionPlan::getPopula
     $pm.crossExpression.expressionSequence->evaluateAndDeactivate()->toOne()->findPropertiesInValueSpecification()->filter(p | $p.owner == $rootClass || $p.owner->cast(@Class<Any>)->meta::pure::functions::meta::_subTypeOf($rootClass));
 }
 
-function <<access.private>> meta::pure::mapping::modelToModel::graphFetch::executionPlan::planModelChainConnectionGraphFetchExecution(fe: FunctionExpression[1], mcc: ModelChainConnection[1], sourceTreeExtended: RootGraphFetchTree<Any>[1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], ext: RoutedValueSpecification[0..1], populatedXStorePropertiesInScope:AbstractProperty<Any>[*], enableConstraints: Boolean[1], checked: Boolean[1], extensions: RouterExtension[*], debug: DebugContext[1]): ExecutionNode[1]
+function <<access.private>> meta::pure::mapping::modelToModel::graphFetch::executionPlan::planModelChainConnectionGraphFetchExecution(fe: FunctionExpression[1], mcc: ModelChainConnection[1], sourceTreeExtended: RootGraphFetchTree<Any>[1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], ext: RoutedValueSpecification[0..1], inScopeVars: Map<String, List<Any>>[1], populatedXStorePropertiesInScope:AbstractProperty<Any>[*], enableConstraints: Boolean[1], checked: Boolean[1], extensions: RouterExtension[*], debug: DebugContext[1]): ExecutionNode[1]
 {
    let functionParams    = $fe.parametersValues->evaluateAndDeactivate();
    let leftExpr          = $functionParams->at(0)->byPassRouterInfo()->cast(@FunctionExpression);
@@ -472,9 +472,9 @@ function <<access.private>> meta::pure::mapping::modelToModel::graphFetch::execu
    let fnParams   = $newFunction->stubFuncParameters();
    let varsFromXStoreProperties = $populatedXStorePropertiesInScope->map(prop | let varName = $prop->propertyToVarName();
                                                                                 pair($varName,  ^List<Any>(values=$prop)););
-   let inScopeVars= $fnParams->map(ep|pair($ep.name, ^List<Any>(values=$ep)))->concatenate($varsFromXStoreProperties)->concatenate($varsFromXStoreProperties)->newMap();
+   let updatedInScopeVars = $inScopeVars->putAll($fnParams->map(ep|pair($ep.name, ^List<Any>(values=$ep)))->concatenate($varsFromXStoreProperties));
 
-   meta::pure::executionPlan::executionPlan($clusters, $routed, $routedFn, $newFunction, $mcc.mappings->at(0), $newRuntime, $exeCtx, $inScopeVars, $extensions, $debug).rootExecutionNode;
+   meta::pure::executionPlan::executionPlan($clusters, $routed, $routedFn, $newFunction, $mcc.mappings->at(0), $newRuntime, $exeCtx, $updatedInScopeVars, $extensions, $debug).rootExecutionNode;
 }
 
 function meta::pure::mapping::modelToModel::graphFetch::executionPlan::updateClusterWithChainProcessingInfo(cluster:ClusteredValueSpecification[1], ext:RoutedValueSpecification[0..1], setsProcessed:SetImplementation[*]): ClusteredValueSpecification[1]
