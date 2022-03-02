@@ -295,6 +295,8 @@ meta::pure::persistence::metamodel::batch::mode::snapshot::BitemporalSnapshot ex
 {
    transactionMilestoning: TransactionMilestoning[1];
    validityMilestoning: ValidityMilestoning[1];
+   <<doc.deprecated>>
+   {doc.doc = 'Deprecated. Specify validity derivation within validity milestone definition instead.'}
    validityDerivation: ValidityDerivation[1];
 }
 
@@ -324,6 +326,8 @@ meta::pure::persistence::metamodel::batch::mode::delta::BitemporalDelta extends 
    mergeStrategy: MergeStrategy[1];
    transactionMilestoning: TransactionMilestoning[1];
    validityMilestoning: ValidityMilestoning[1];
+   <<doc.deprecated>>
+   {doc.doc = 'Deprecated. Specify validity derivation within validity milestone definition instead.'}
    validityDerivation: ValidityDerivation[1];
 }
 
@@ -471,6 +475,9 @@ meta::pure::persistence::metamodel::batch::validitymilestoning::DateTimeValidity
 
    {doc.doc = 'The name of the property representing the "thru" datetime in the underlying system.'}
    dateTimeThruName: String[1];
+
+   {doc.doc = 'The approach to derive validity (business) temporal data from source data.'}
+   derivation: ValidityDerivation[0..1];
 }
 
 Class
