@@ -51,8 +51,8 @@ function meta::protocols::pure::v1_22_0::extension::store::service::getServiceSt
                 ^meta::protocols::pure::v1_22_0::metamodel::executionPlan::store::service::ServiceParametersResolutionExecutionNode(
                    _type             = 'serviceParametersResolution',
                    resultType        = $spr.resultType->meta::protocols::pure::v1_22_0::transformation::fromPureGraph::executionPlan::transformResultType($mapping, $extensions),
-                   propertyInputMap  = $spr.propertyInputMap,
-                   parameterMappings = $spr.parameterMappings->map(p | $p->meta::protocols::pure::v1_22_0::transformation::fromPureGraph::store::service::mapping::transformServiceStoreParameterMapping($extensions))
+                   propertyInputMap  = $spr.requiredVariableSources.name->map(n | pair($n, $n))->newMap(),
+                   parameterMappings = $spr.requestParametersBuildInfo.parameterBuildInfoList->map(param | $param->meta::protocols::pure::v1_22_0::transformation::fromPureGraph::store::service::mapping::transformServiceStoreParameterMapping($extensions))
                 )
           ]},
       transfers_mapping_transformSetImplementation2 = {mapping:Mapping[1], extensions:meta::pure::router::extension::RouterExtension[*] | [

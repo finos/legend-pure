@@ -90,12 +90,16 @@ function meta::external::shared::format::routerExtensions(type:String[1], extern
                                        assert($formatExtension.generatePathReference->isNotEmpty(), | 'Path Offset not supported by : ' + $formatExtension.externalFormat + ' external format');
 
                                        $formatExtension.generatePathReference->toOne()->eval($path);
-                                    }
+                                    },
+            executionPlan_generation_generateSerializeNode = {checked:Boolean[1], binding:Binding[1], children:ExecutionNode[*] |
+                                                                  let formatExtension = $externalFormatExtensions->getExtensionForContentType($binding.contentType);
+                                                                  $formatExtension.generateSerializeNode->eval($checked, $binding, $children);
+                                                             }
          ),
-         ^PlatformStoreExtension(module = 'platform',
-                                 routing_extraIsSerialize = isSerialize_FunctionExpression_1__Boolean_1_,
-                                 executionPlan_generation_nodeForFunctionExpression = executionPlan_generation_nodeForPlatformFunctionExpression($externalFormatExtensions)
-                                )
+       ^PlatformStoreExtension(module = 'platform',
+                               routing_extraIsSerialize = isSerialize_FunctionExpression_1__Boolean_1_,
+                               executionPlan_generation_nodeForFunctionExpression = executionPlan_generation_nodeForPlatformFunctionExpression($externalFormatExtensions)
+                              )
       ]
    );
 

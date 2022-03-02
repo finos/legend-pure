@@ -37,7 +37,7 @@ function meta::external::store::service::tests::store::tradeServiceStoreSchemaBi
       package     = meta::external::store::service::tests::store,
       schemaSet   = [],
       contentType = 'application/json',
-      modelUnit   = newModelUnit()->include(meta::external::store::service::tests::domain::S_Trade)->exclude(meta::external::store::service::tests::domain::S_Trade_S_Product)
+      modelUnit   = newModelUnit()->include([meta::external::store::service::tests::domain::S_Trade, meta::external::store::service::tests::domain::S_RequestBody])->exclude(meta::external::store::service::tests::domain::S_Trade_S_Product)
    );
 }
 
@@ -61,6 +61,7 @@ function meta::external::store::service::tests::store::TradeProductServiceStore(
       path   = '/allTradesService',
       method = HTTPMethod.GET,
       parameters = ^ServiceParameter(name = 'serializationFormat', type = ^StringTypeReference(list = false), location = Location.QUERY),
+      requestBody = ^ComplexTypeReference(binding = tradeServiceStoreSchemaBinding(), list = false, type = S_RequestBody),
       response = ^ComplexTypeReference(binding = tradeServiceStoreSchemaBinding(), list = true, type = S_Trade)
    );
    
