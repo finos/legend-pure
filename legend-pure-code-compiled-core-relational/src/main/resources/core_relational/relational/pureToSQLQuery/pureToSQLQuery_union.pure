@@ -138,16 +138,17 @@ function meta::relational::functions::pureToSqlQuery::union::managePrimaryKeys(a
 
 function <<access.private>> meta::relational::functions::pureToSqlQuery::union::getDefaultLiteralValue(type: meta::relational::metamodel::datatype::DataType[1]): Literal[1]
 {
-  let value = $type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType()->match([
-    i:Integer[1]| 0,
-    f:Float[1]| 0.0,
-    n:Number[1]| 0.0,
-    s:String[1]| '',
-    d:Date[1]| %9999-01-01T00:00:00,
-    d:DateTime[1]| %9999-01-01T00:00:00,
-    s:StrictDate[1]| %9999-01-01,
-    b:Boolean[1]| false
-  ]);
+  let pureTypeToDefaultValueMap = [
+    pair(Integer, 0),
+    pair(Float, 0.0),
+    pair(Number, 0.0),
+    pair(String, ''),
+    pair(Date, %9999-01-01T00:00:00),
+    pair(DateTime, %9999-01-01T00:00:00),
+    pair(StrictDate, %9999-01-01),
+    pair(Boolean, false)
+  ]->newMap();
+  let value = $pureTypeToDefaultValueMap->get($type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType())->toOne();
   ^Literal(value=$value);
 }
 
