@@ -28,22 +28,22 @@ import meta::pure::persistence::metamodel::batch::targetspecification::*;
 import meta::pure::persistence::metamodel::batch::transactionmilestoning::*;
 import meta::pure::persistence::metamodel::batch::validitymilestoning::*;
 import meta::pure::persistence::metamodel::batch::validitymilestoning::derivation::*;
+import meta::pure::persistence::metamodel::notifier::*;
 import meta::pure::persistence::metamodel::reader::*;
 import meta::pure::persistence::metamodel::trigger::*;
+
+import meta::pure::runtime::*;
 
 /**********
  * persistence
  **********/
 
 Class
-{doc.doc = 'A persistence specification. This consists of a trigger that initiates persistence, a reader that provides data to persist, and a persister that writes that data to a store.'}
+{doc.doc = 'A persistence specification. This consists of a trigger that initiates persistence, a reader that provides data to persist, a persister that writes that data to a store, and a notifier that updates on significant events.'}
 meta::pure::persistence::metamodel::Persistence extends PackageableElement
 {
    {doc.doc = 'A functional description of this pipe specification.'}
    documentation: String[1];
-
-   {doc.doc = 'Owners of this pipe specification.'}
-   owners: String[1..*];
 
    {doc.doc = 'The trigger that initiates the pipe.'}
    trigger: Trigger[1];
@@ -53,6 +53,9 @@ meta::pure::persistence::metamodel::Persistence extends PackageableElement
 
    {doc.doc = 'The persister that writes data to a datastore.'}
    persister: Persister[1];
+
+   {doc.doc = 'The notifier that sends updates on significant persistence events.'}
+   notifier: Notifier[1];
 }
 
 Class
@@ -63,6 +66,7 @@ meta::pure::persistence::metamodel::PersistencePipe extends PackageableElement
    {doc.doc = 'A functional description of this pipe specification.'}
    documentation: String[1];
 
+   <<doc.deprecated>>
    {doc.doc = 'Owners of this pipe specification.'}
    owners: String[1..*];
 
@@ -89,8 +93,8 @@ meta::pure::persistence::metamodel::PersistenceContext extends PackageableElemen
 }
 
 Class
-{doc.doc = 'Execution context for AWS-based data movement services.'}
-meta::pure::persistence::metamodel::AwsPersistenceContext extends PersistenceContext
+{doc.doc = 'Details for executing a persistence specification using the AWS Glue ETL service: https://docs.aws.amazon.com/glue/index.html'}
+meta::pure::persistence::metamodel::AwsGluePersistenceContext extends PersistenceContext
 {
 }
 
@@ -114,6 +118,24 @@ meta::pure::persistence::metamodel::trigger::Trigger
 }
 
 Class
+meta::pure::persistence::metamodel::trigger::ManualTrigger
+{
+}
+
+Class
+{doc.doc = 'A trigger that executes an AWS Glue job on a schedule specified as a cron expression: https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html'}
+meta::pure::persistence::metamodel::trigger::AwsGlueScheduledTrigger
+{
+   minutes: String[1];
+   hours: String[1];
+   dayOfMonth: String[1];
+   month: String[1];
+   dayOfWeek: String[1];
+   year: String[1];
+}
+
+Class
+<<doc.deprecated>>
 {doc.doc = 'A trigger defined by the underlying system.'}
 meta::pure::persistence::metamodel::trigger::OpaqueTrigger extends Trigger
 {
@@ -131,11 +153,14 @@ meta::pure::persistence::metamodel::reader::Reader
 }
 
 Class
-{doc.doc = 'A loader that uses a service to provide data.'}
+{doc.doc = 'A reader that uses a service to provide data.'}
 meta::pure::persistence::metamodel::reader::ServiceReader extends Reader
 {
    {doc.doc = 'The underlying service that provides data.'}
    service: Service[1];
+
+   {doc.doc = 'An optional runtime for the service.'}
+   runtime: Runtime[0..1];
 }
 
 /**********
@@ -144,22 +169,51 @@ meta::pure::persistence::metamodel::reader::ServiceReader extends Reader
 
 Class
 <<typemodifiers.abstract>>
-{doc.doc = 'The persistence logic to execute on input data.'}
+{doc.doc = 'The strategy for persisting input data.'}
 meta::pure::persistence::metamodel::Persister
 {
 }
 
 Class
-{doc.doc = 'Persister that writes data in a continuous stream.'}
+{doc.doc = 'A persister that writes data in a continuous stream.'}
 meta::pure::persistence::metamodel::streaming::StreamingPersister extends Persister
 {
 }
 
 Class
-{doc.doc = 'Persister that writes data in batches.'}
+{doc.doc = 'A persister that writes data in batches.'}
 meta::pure::persistence::metamodel::batch::BatchPersister extends Persister
 {
    targetSpecification: TargetSpecification[1];
+}
+
+/**********
+ * notifier
+ **********/
+
+Class
+{doc.doc = 'The strategy for sending updates on significant persistent events.'}
+meta::pure::persistence::metamodel::notifier::Notifier
+{
+   notifyees: Notifyee[1..*];
+}
+
+Class
+<<typemodifiers.abstract>>
+meta::pure::persistence::metamodel::notifier::Notifyee
+{
+}
+ 
+Class
+meta::pure::persistence::metamodel::notifier::EmailNotifyee
+{
+   emailAddress: String[1];
+}
+ 
+Class
+meta::pure::persistence::metamodel::notifier::PagerDutyNotifyee
+{
+   url: String[1];
 }
 
 /**********
@@ -256,7 +310,9 @@ Class meta::pure::persistence::metamodel::batch::deduplication::MaxVersionDedupl
    versionProperty: Property<Nil, Any|1>[1];
 }
 
-Class meta::pure::persistence::metamodel::batch::deduplication::OpaqueDeduplicationStrategy extends DeduplicationStrategy
+Class
+<<doc.deprecated>>
+meta::pure::persistence::metamodel::batch::deduplication::OpaqueDeduplicationStrategy extends DeduplicationStrategy
 {
 }
 
@@ -352,6 +408,7 @@ meta::pure::persistence::metamodel::batch::mode::delta::merge::DeleteIndicatorMe
 }
 
 Class
+<<doc.deprecated>>
 meta::pure::persistence::metamodel::batch::mode::delta::merge::OpaqueMergeStrategy extends MergeStrategy
 {
 }
@@ -394,6 +451,7 @@ meta::pure::persistence::metamodel::batch::audit::BatchDateTimeAuditing extends 
 }
 
 Class
+<<doc.deprecated>>
 {doc.doc = 'Audit information is represented at the discretion of the underlying system.'}
 meta::pure::persistence::metamodel::batch::audit::OpaqueAuditing extends Auditing
 {
@@ -450,6 +508,7 @@ meta::pure::persistence::metamodel::batch::transactionmilestoning::BatchIdAndDat
 }
 
 Class
+<<doc.deprecated>>
 {doc.doc = 'The representation of the transaction (processing) temporal dimension is at the discretion of the implementing system.'}
 meta::pure::persistence::metamodel::batch::transactionmilestoning::OpaqueTransactionMilestoning extends TransactionMilestoning
 {
@@ -481,6 +540,7 @@ meta::pure::persistence::metamodel::batch::validitymilestoning::DateTimeValidity
 }
 
 Class
+<<doc.deprecated>>
 {doc.doc = 'The representation of the validity (business) temporal dimension is at the discretion of the implementing system.'}
 meta::pure::persistence::metamodel::batch::validitymilestoning::OpaqueValidityMilestoning extends ValidityMilestoning
 {
