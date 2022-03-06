@@ -45,11 +45,21 @@ function meta::external::format::protobuf::generation::generateProtobufFromPureW
 
 function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1..*]):ProtobufOutput[*]
 {
-  $class->classToMessage($config.options)->map(s|
+  let options = configToOptions($config);
+  $class->classToMessage($options)->map(s|
       let content = $s->meta::external::format::protobuf::serialization::toString();
       let fileName = if($s.package->isEmpty(), | $class.name->toOne() + '.proto', | $s.package->toOne()->protoPackageToFileName());
       ^ProtobufOutput(content=$content,fileName=$fileName, format = 'proto');
     );
+}
+
+function meta::external::format::protobuf::generation::configToOptions(config:ProtobufConfig[1]):Options[0..1]
+{
+  ^Options(javaPackage=$config.javaPackage,
+           javaOuterClassname=$config.javaOuterClassname,
+           javaMultipleFiles=$config.javaMultipleFiles,
+           optimizeFor=if($config.optimizeFor->isEmpty(),|[],|extractEnumValue(meta::external::format::protobuf::metamodel::OptimizeMode, $config.optimizeFor->toOne())),
+           customOptions=$config.customOptions->map(o | ^meta::external::format::protobuf::metamodel::Option(name=$o.name, value=$o.value)))
 }
 
 function meta::external::format::protobuf::generation::elementToProtoPackage(e:PackageableElement[1]):String[1]

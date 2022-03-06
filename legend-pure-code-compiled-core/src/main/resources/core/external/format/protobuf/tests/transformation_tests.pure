@@ -225,7 +225,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
 function <<test.Test>> meta::external::format::protobuf::generation::tests::transform_testClassToProtoBufWithOptions():Boolean[1]
 {
   let config = ^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::Person',
-                               options=^Options(javaPackage='com.gs.person'));
+                               javaPackage='com.gs.person');
    assertEquals('syntax = "proto3";\n'
       + 'package meta.external.format.protobuf.generation.tests;\n'
       + 'option java_package = "com.gs.person";\n'
