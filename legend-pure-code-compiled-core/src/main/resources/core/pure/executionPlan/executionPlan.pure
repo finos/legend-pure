@@ -79,7 +79,7 @@ Class meta::pure::executionPlan::ExecutionNode
    authDependent    : Boolean[0..1];
    kerberos         : String[0..1];
    supportFunctions : String[*];
-   requiredVariableSources : VariableSource[*];
+   requiredVariableInputs : VariableInput[*];
    
    implementation   : PlatformImplementation[0..1];
 
@@ -89,7 +89,7 @@ Class meta::pure::executionPlan::ExecutionNode
    } : ExecutionNode[*];
 }
 
-Class meta::pure::executionPlan::VariableSource
+Class meta::pure::executionPlan::VariableInput
 {
    name         : String[1];
    type         : Type[1];

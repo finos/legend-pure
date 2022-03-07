@@ -126,10 +126,10 @@ function <<access.private>> meta::pure::executionPlan::engine::java::generateImp
    let newContext      = ^$context(conventions = ^$oldConventions(newFunctionProhibitedList = []));
 
    let nodeContext     = iExecutionNodeContextParam($newContext.conventions);
-   let requiredVariableSources = $p.requiredVariableSources->map(s | j_variable(javaObject(), $s.name)->j_declare($nodeContext->j_invoke('getResult', [j_string($s.name), javaObject()->j_field('class', javaClassType())], javaObject())));
+   let requiredVariableInputs = $p.requiredVariableInputs->map(s | j_variable(javaObject(), $s.name)->j_declare($nodeContext->j_invoke('getResult', [j_string($s.name), javaObject()->j_field('class', javaClassType())], javaObject())));
    let expressionCode  = $p.expression->generateJava($newContext.conventions, $debug)->j_return();
 
-   let body            = $requiredVariableSources->concatenate($expressionCode)->j_block();
+   let body            = $requiredVariableInputs->concatenate($expressionCode)->j_block();
    let execClass       = $body->buildExecuteClass($nodeContext, $path, $newContext.conventions);
    generatedCode(mergeProjects(newProject()->addClass($execClass)->concatenate($body->dependencies()->resolveAndGetProjects())->toOneMany()), $execClass);
 }

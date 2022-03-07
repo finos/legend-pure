@@ -49,7 +49,7 @@ function meta::external::store::service::executionPlan::engine::java::generateIm
    let varCodecs               = $node.requestParametersBuildInfo.parameterBuildInfoList.transform.expressionSequence->evaluateAndDeactivate()
                                                         ->map(fe | $fe->findVariableExpressionsInValueSpecification())
                                                         ->removeDuplicatesBy({var | $var.name})
-                                                        ->map(var | assert($node.requiredVariableSources.name->contains($var.name), | '\'' + $var.name + '\' is needed as source for ServiceParametersResolutionExecutionNode(' + $path + ') but not listed as source for this node.');
+                                                        ->map(var | assert($node.requiredVariableInputs.name->contains($var.name), | '\'' + $var.name + '\' is needed as source for ServiceParametersResolutionExecutionNode(' + $path + ') but not listed as source for this node.');
                                                                     j_variable(javaObject(), $var.name)->j_declare($inputMap->j_invoke('get', [j_string($var.name)], javaObject())););
 
    let propertiesMappingCodecs = $node.requestParametersBuildInfo.parameterBuildInfoList

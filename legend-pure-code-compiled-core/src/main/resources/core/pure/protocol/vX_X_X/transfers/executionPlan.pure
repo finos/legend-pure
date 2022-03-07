@@ -190,7 +190,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::execution
    );
 
    ^$n(
-      requiredVariableSources = $node.requiredVariableSources->map(s | $s->transformSource()),
+      requiredVariableInputs = $node.requiredVariableInputs->map(s | $s->transformSource()),
       executionNodes  = $node.executionNodes->map(s|$s->transformNode($mapping, $extensions)),
       implementation  = $node.implementation->map(impl | $impl->transformPlatformNodeImplementation())
    );
@@ -294,9 +294,9 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::execution
    );
 }
 
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformSource(source:meta::pure::executionPlan::VariableSource[1]):meta::protocols::pure::vX_X_X::metamodel::executionPlan::VariableSource[1]
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformSource(source:meta::pure::executionPlan::VariableInput[1]):meta::protocols::pure::vX_X_X::metamodel::executionPlan::VariableInput[1]
 {
-   ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::VariableSource(
+   ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::VariableInput(
      name = $source.name,
      type = $source.type->elementToPath(),
      multiplicity = $source.multiplicity->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()

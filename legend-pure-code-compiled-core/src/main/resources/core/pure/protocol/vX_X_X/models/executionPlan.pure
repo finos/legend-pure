@@ -31,12 +31,12 @@ Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::ExecutionNode
    _type : String[1];
    resultType : ResultType[1];
    resultSizeRange : meta::protocols::pure::vX_X_X::metamodel::domain::Multiplicity[0..1];
-   requiredVariableSources : meta::protocols::pure::vX_X_X::metamodel::executionPlan::VariableSource[*];
+   requiredVariableInputs : meta::protocols::pure::vX_X_X::metamodel::executionPlan::VariableInput[*];
    executionNodes : ExecutionNode[*];
    implementation : meta::protocols::pure::vX_X_X::metamodel::executionPlan::PlatformImplementation[0..1];
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::VariableSource
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::VariableInput
 {
    name         : String[1];
    type         : String[1];
