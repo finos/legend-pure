@@ -119,13 +119,13 @@ meta::pure::persistence::metamodel::trigger::Trigger
 }
 
 Class
-meta::pure::persistence::metamodel::trigger::ManualTrigger
+meta::pure::persistence::metamodel::trigger::ManualTrigger extends Trigger
 {
 }
 
 Class
 {doc.doc = 'A trigger that executes an AWS Glue job on a schedule specified as a cron expression: https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html'}
-meta::pure::persistence::metamodel::trigger::AwsGlueScheduledTrigger
+meta::pure::persistence::metamodel::trigger::AwsGlueScheduledTrigger extends Trigger
 {
    minutes: String[1];
    hours: String[1];
@@ -211,13 +211,13 @@ meta::pure::persistence::metamodel::notifier::Notifyee
 }
  
 Class
-meta::pure::persistence::metamodel::notifier::EmailNotifyee
+meta::pure::persistence::metamodel::notifier::EmailNotifyee extends Notifyee
 {
    emailAddress: String[1];
 }
  
 Class
-meta::pure::persistence::metamodel::notifier::PagerDutyNotifyee
+meta::pure::persistence::metamodel::notifier::PagerDutyNotifyee extends Notifyee
 {
    url: String[1];
 }
