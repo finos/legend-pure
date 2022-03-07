@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ###Diagram
-Diagram meta::pure::persistence::Persistence_Core_Diagram(width=0.0, height=0.0)
+Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
 {
     TypeView cview_1(
         type=meta::pure::persistence::metamodel::Persistence,
