@@ -19,9 +19,9 @@ function meta::external::format::protobuf::serialization::toString(file:ProtoFil
 {
   let packageName = if( $file.package->isEmpty(), | '', | $file.package->toOne() );
 
-   'syntax = "' + $file.syntax.name + '";\n'   
-   + $file.imports->map( i | 'import "' + if( $i.importType->isEmpty(), | '', | $i.importType->toOne().name + ' ' ) + $i.name + '";\n')->joinStrings()
+   'syntax = "' + $file.syntax.name + '";\n'
    + if( $file.package->isEmpty(), | '', | 'package ' + $packageName + ';\n' )
+   + $file.imports->map( i | 'import "' + if( $i.importType->isEmpty(), | '', | $i.importType->toOne().name + ' ' ) + $i.name + '";\n')->joinStrings()
    + if($file.options->isEmpty(), | '', | $file.options->toOne()->meta::external::format::protobuf::serialization::toString())
    + $file.topLevelDefs->sortBy(s|$s->match([m:Message[1]|$m.name,e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e.name]))->map(t | $t->meta::external::format::protobuf::serialization::topLevelItemToString($packageName))->joinStrings('\n');
 }
