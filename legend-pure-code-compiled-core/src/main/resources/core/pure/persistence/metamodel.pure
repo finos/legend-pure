@@ -69,7 +69,7 @@ meta::pure::persistence::metamodel::PersistencePipe extends PackageableElement
 
    <<doc.deprecated>>
    {doc.doc = 'Owners of this pipe specification.'}
-   owners: String[1..*];
+   owners: String[0..*];
 
    {doc.doc = 'The trigger that initiates the pipe.'}
    trigger: Trigger[1];
