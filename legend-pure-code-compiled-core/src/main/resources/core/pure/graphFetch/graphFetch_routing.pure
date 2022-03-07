@@ -167,7 +167,7 @@ function <<access.private>> meta::pure::graphFetch::routing::createFunctionAppli
       | let subTypeClass = $prop.subType->toOne();
          ^SimpleFunctionExpression
           (
-             func = meta::pure::functions::lang::subType_Any_MANY__T_1__T_MANY_,
+             func = meta::pure::functions::lang::subType_Any_m__T_1__T_m_,
              importGroup = system::imports::coreImport,
              genericType = ^GenericType(rawType = $subTypeClass),
              multiplicity = ZeroMany,

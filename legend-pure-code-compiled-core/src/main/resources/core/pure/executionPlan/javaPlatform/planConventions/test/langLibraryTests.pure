@@ -29,38 +29,6 @@ meta::pure::executionPlan::engine::java::tests::testCast() : Boolean[1]
       ->runTests();
 }
 
-Class meta::pure::executionPlan::engine::java::tests::A 
-{
-   <<equality.Key>> id: Integer[1];
-}
-Class meta::pure::executionPlan::engine::java::tests::B extends A {}
-Class meta::pure::executionPlan::engine::java::tests::C extends A {}
-Class meta::pure::executionPlan::engine::java::tests::D extends A {}
-
-function meta::pure::executionPlan::engine::java::tests::doTestSubType() : Boolean[1]
-{
-  let objects = [ ^A(id=1), ^B(id=2), ^C(id=3) ];
-  assertEquals(2, $objects->subType(@B).id);
-  assertEquals(3, $objects->subType(@C).id);
-  assertEquals([1, 2, 3], $objects->subType(@A).id);
-  assertEquals([], $objects->subType(@D).id);
-}
-
-function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
-{  meta::pure::executionPlan::profiles::serverVersion.start='vX_X_X' }
-meta::pure::executionPlan::engine::java::tests::testSubType() : Boolean[1]
-{
-   javaPureTests(engineConventions([]), [
-      doTestSubType__Boolean_1_
-   ])
-      ->generate(A)
-      ->generate(B)
-      ->generate(C)
-      ->generate(D)
-      ->runTests();
-}
-
-
 function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly>>
 {  meta::pure::executionPlan::profiles::serverVersion.start='v1_11_0' }
 meta::pure::executionPlan::engine::java::tests::testNot() : Boolean[1]

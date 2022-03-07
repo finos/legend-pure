@@ -28,7 +28,7 @@ public enum NativeFunctionIdentifier
     MilestonedAllSingleDate("getAll", Sets.immutable.with("getAll_Class_1__Date_1__T_MANY_"), false),
     MilestonedAllBiTemporal("getAll", Sets.immutable.with("getAll_Class_1__Date_1__Date_1__T_MANY_"), false),
     Exists("exists", Sets.immutable.with("exists_T_MANY__Function_1__Boolean_1_"), true),
-    SubType("subType", Sets.immutable.with("subType_Any_1__T_1__T_$0_1$_", "subType_Any_$0_1$__T_1__T_$0_1$_", "subType_Any_MANY__T_1__T_MANY_"), false),
+    SubType("subType", Sets.immutable.with("subType_Any_m__T_1__T_m_"), false),
     Project("project", Sets.immutable.with(""), true);
 
     private static final Predicate2<NativeFunctionIdentifier, String> HAS_LAMBDA_PARAM_AND_NAME = new Predicate2<NativeFunctionIdentifier, String>()

@@ -42,8 +42,8 @@ public class TestSubType extends AbstractPureTestWithCoreCompiledPlatform
                     "Class A{}\n" +
                     "Class B extends A{}\n" +
                     "Class C{}\n" +
-                    "native function meta::pure::functions::lang::subType<T>(source:Any[*], object:T[1]):T[*];\n" +
-                    "function testFunc():C[*]\n" +
+                    "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
+                    "function testFunc():C[1]\n" +
                     "{\n" +
                     "   let a = ^B()->subType(@C);" +
                     "}");
@@ -66,8 +66,8 @@ public class TestSubType extends AbstractPureTestWithCoreCompiledPlatform
                     "Class A{}\n" +
                     "Class B extends A{}\n" +
                     "Class C{}\n" +
-                    "native function meta::pure::functions::lang::subType<T>(source:Any[0..1], object:T[1]):T[0..1];\n" +
-                    "function testFunc():A[0..1]\n" +
+                    "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
+                    "function testFunc():A[1]\n" +
                     "{\n" +
                     "   let a = ^B()->subType(@A);" +
                     "}");
@@ -88,8 +88,8 @@ public class TestSubType extends AbstractPureTestWithCoreCompiledPlatform
                 "Class A{}\n" +
                 "Class B extends A{}\n" +
                 "Class C{}\n" +
-                "native function meta::pure::functions::lang::subType<T>(source:Any[1], object:T[1]):T[0..1];\n" +
-                "function testFunc():A[0..1]\n" +
+                "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
+                "function testFunc():A[1]\n" +
                 "{\n" +
                 "   let a = ^A()->subType(@B);" +
                 "}");
