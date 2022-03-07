@@ -78,8 +78,8 @@ function meta::external::format::protobuf::serialization::toString(field:Field[1
 function meta::external::format::protobuf::serialization::toString(t:ProtoBufType[1],currentPackage:String[1]):String[1]
 {
   $t->match([
-                t:MessagePtr[1]|if($currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
-                t:EnumPtr[1]|if($currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
+                t:MessagePtr[1]|if(!$t.package->isEmpty() && $currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
+                t:EnumPtr[1]|if(!$t.package->isEmpty() && $currentPackage != $t.package, | $t.package + '.', | '') + $t.name,
                 m:MapType[1]|'map<' + $m.keyType->toString($currentPackage) + ',' + $m.valueType->toString($currentPackage) + '>',
                 t:ScalarType[1]|$t->genericType().rawType.name->toOne()->toLower()
             ])
