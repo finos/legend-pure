@@ -396,7 +396,7 @@ function <<test.Test>> meta::relational::tests::milestoning::contextpropagation:
    assertSameSQL('select "root".name as "productName", "productexchangetable_0".name as "exchangeName" from ProductTable as "root" left outer join ProductClassificationTable as "productclassificationtable_0" on ("root".type = "productclassificationtable_0".type and "productclassificationtable_0".from_z <= \'2016-10-16\' and "productclassificationtable_0".thru_z > \'2016-10-16\') left outer join (select "productexchangetable_1".name as name from ProductExchangeTable as "productexchangetable_1" where "productexchangetable_1".from_z <= \'2016-10-16\' and "productexchangetable_1".thru_z > \'2016-10-16\') as "productexchangetable_0" on ("productclassificationtable_0".exchange = "productexchangetable_0".name) where ("root".name <> \'\' OR "root".name is null) and "root".from_z <= \'2015-10-16\' and "root".thru_z > \'2015-10-16\'', $result);
 }
 
-function <<test.Test, test.ExcludeAlloy>> meta::relational::tests::milestoning::contextpropagation::testMilestoningContextPropagatedUsingVariableInProjectPath():Boolean[1]
+function <<test.Test>> meta::relational::tests::milestoning::contextpropagation::testMilestoningContextPropagatedUsingVariableInProjectPath():Boolean[1]
 {
    let businessDate = %2015-10-16;
                         

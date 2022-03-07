@@ -54,7 +54,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpec
          e:ExtendedRoutedValueSpecification[1]|$e.value->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformValueSpecification($inScope, $open, false, $extensions),
          e:ClusteredValueSpecification[1]|$e.val->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformValueSpecification($inScope, $open, false, $extensions),
          funcExp:FunctionExpression[1]|
-                  let fe = meta::pure::milestoning::reverseMilestoningDatePropapagations($funcExp);
+                  let fe = meta::pure::milestoning::reverseMilestoningTransforms($funcExp);
                   let spec = $fe.func->match(
                                           [
                                              p:Property<Nil,Any|*>[1]|
@@ -95,7 +95,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpec
                                                                                        ->filter(f|$f->instanceOf(InstanceValue))->cast(@InstanceValue).values
                                                                                         ->filter(f|$f->instanceOf(LambdaFunction))->cast(@LambdaFunction<Any>).expressionSequence;
                                                            let newProp = $xs->at(0) ->cast(@SimpleFunctionExpression);
-                                                           let newProperty = meta::pure::milestoning::reverseMilestoningDatePropapagations($newProp);
+                                                           let newProperty = meta::pure::milestoning::reverseMilestoningTransforms($newProp);
                                                            let newParameter =    $fe.parametersValues->at(0);
                                                            let additionalParameters =   $xs->cast(@SimpleFunctionExpression).parametersValues->tail();
                                                            let updatedProperty = ^$newProperty(parametersValues = $newParameter ->concatenate(  $additionalParameters ));

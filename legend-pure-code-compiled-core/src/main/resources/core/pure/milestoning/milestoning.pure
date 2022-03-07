@@ -53,7 +53,7 @@ function meta::pure::milestoning::reverseMilestoningTransforms(p:AbstractPropert
                                                         ,| if($p->meta::pure::milestoning::hasGeneratedMilestoningPropertyStereotype(),|[],|$p));
 }
 
-function meta::pure::milestoning::reverseMilestoningDatePropapagations(f:FunctionExpression[1]): FunctionExpression[1]
+function meta::pure::milestoning::reverseMilestoningTransforms(f:FunctionExpression[1]): FunctionExpression[1]
 {
     if(!$f.originalMilestonedPropertyParametersValues->isEmpty(),| ^$f(parametersValues = $f.originalMilestonedPropertyParametersValues, originalMilestonedPropertyParametersValues = [], originalMilestonedProperty = []);
                                                                  ,| $f);
