@@ -191,7 +191,7 @@ meta::pure::persistence::metamodel::persister::BatchPersister extends meta::pure
 }
 
 /**********
- * persister
+ * persister (deprecated)
  **********/
 
 Class
