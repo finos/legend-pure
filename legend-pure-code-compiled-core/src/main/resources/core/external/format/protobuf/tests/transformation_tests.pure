@@ -257,7 +257,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                                  requestType=^MessageType(type=^MessagePtr(package='test',name='Request')),
                                  returnType=^MessageType(type=^MessagePtr(package='test',name='Response'))
                                  );
-  assertEquals('  rpc hello(Request) returns (Response) {}\n',$rpc->toString('test'));
+  assertEquals('  rpc hello(Request) returns (Response) {}',$rpc->toString('test'));
   let rpcWithOption = ^RemoteProcedureCall(name='hello', 
                                  requestType=^MessageType(type=^MessagePtr(package='test',name='Request')),
                                  returnType=^MessageType(type=^MessagePtr(package='test',name='Response')),
@@ -265,7 +265,7 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
                                  );
   assertEquals('  rpc hello(Request) returns (Response) {\n' +
                'option (a.b) = { get: "a/b" };\n' +
-               '}\n',$rpcWithOption->toString('test'));
+               '}',$rpcWithOption->toString('test'));
 }
 
 function <<test.Test>> meta::external::format::protobuf::generation::tests::transform_testClassToProtoBufWithOptions():Boolean[1]
