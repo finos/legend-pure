@@ -260,7 +260,7 @@ meta::pure::persistence::metamodel::target::TargetShape
 
 Class
 {doc.doc = 'Specification for a single flat dataset.'}
-meta::pure::persistence::metamodel::target::SingleTargetShape extends TargetShape
+meta::pure::persistence::metamodel::target::SingleFlatTarget extends TargetShape
 {
    {doc.doc = 'A class that models the persistence target. The model class must have primitive properties with single multiplicity.'}
    modelClass: Class<Any>[1];
@@ -280,7 +280,7 @@ meta::pure::persistence::metamodel::target::SingleTargetShape extends TargetShap
 
 Class
 {doc.doc = 'Specification for a group of flat datasets in the same datastore.'}
-meta::pure::persistence::metamodel::target::MultiTargetShape extends TargetShape
+meta::pure::persistence::metamodel::target::MultiFlatTarget extends TargetShape
 {
    {doc.doc = 'A class that models the persistence target. The model class must be nested one level deep; each property of the class must point to a flat class with primitive properties that have single multiplicity.'}
    modelClass: Class<Any>[1];
@@ -288,25 +288,25 @@ meta::pure::persistence::metamodel::target::MultiTargetShape extends TargetShape
    {doc.doc = 'The transaction granularity for the target group.'}
    transactionScope: meta::pure::persistence::metamodel::target::TransactionScope[1];
 
-   {doc.doc = 'Components of this multi target shape. Each component maps a property of the model class to a single target shape.'}
-   components: PropertyAndSingleTargetShape[1..*];
+   {doc.doc = 'Parts of this multi target shape. Each component maps a property of the model class to a single target shape.'}
+   parts: PropertyAndSingleFlatTarget[1..*];
 }
 
 Class
 <<doc.deprecated>>
-{doc.doc = 'A property to target shape mapping used to specify a component of a MultiTargetShape.'}
-meta::pure::persistence::metamodel::target::PropertyAndSingleTargetShape
+{doc.doc = 'A property to target shape mapping used to specify one part of a MultiFlatTarget.'}
+meta::pure::persistence::metamodel::target::PropertyAndSingleFlatTarget
 {
-   {doc.doc = 'The property in the parent MultiFlatTargetShape\'s model class that points to the model class for the component SingleFlatTargetShape.'}
+   {doc.doc = 'The property in the parent MultiFlatTarget\'s model class that points to the model class for the SingleFlatTarget.'}
    property: Property<Nil, Any|1>[1];
 
    {doc.doc = 'The shape for the component flat dataset.'}
-   targetShape: SingleTargetShape[1];
+   singleFlatTarget: SingleFlatTarget[1];
 }
 
 Class
-{doc.doc = 'Specification for an opaque target object that may be arbitrarily nested, binary data, or other. No model class is required.'}
-meta::pure::persistence::metamodel::target::OpaqueTargetShape extends TargetShape
+{doc.doc = 'Specification for an opaque target data that may be arbitrarily nested, binary, etc. No model class is required.'}
+meta::pure::persistence::metamodel::target::OpaqueTarget extends TargetShape
 {
    {doc.doc = 'The name of the target.'}
    targetName: String[1];
@@ -338,7 +338,7 @@ meta::pure::persistence::metamodel::batch::targetspecification::TargetSpecificat
 
 Class
 <<doc.deprecated>>
-{doc.doc = 'Deprecated in favor of SingleFlatTargetShape. Specification for a single flat dataset. The model class must have primitive properties with single multiplicity.'}
+{doc.doc = 'Deprecated in favor of SingleFlatTarget. Specification for a single flat dataset. The model class must have primitive properties with single multiplicity.'}
 meta::pure::persistence::metamodel::batch::targetspecification::FlatTargetSpecification extends TargetSpecification
 {
    {doc.doc = 'The name of the target.'}
@@ -356,7 +356,7 @@ meta::pure::persistence::metamodel::batch::targetspecification::FlatTargetSpecif
 
 Class
 <<doc.deprecated>>
-{doc.doc = 'Deprecated in favor of MultiFlatTargetShape. Specification for a group of flat datasets.'}
+{doc.doc = 'Deprecated in favor of MultiFlatTarget. Specification for a group of flat datasets.'}
 meta::pure::persistence::metamodel::batch::targetspecification::GroupedFlatTargetSpecification extends TargetSpecification
 {
    {doc.doc = 'A class that models the persistence target. The model class must be nested one level deep; each property of the class must point to a flat class with primitive properties that have single multiplicity.'}
@@ -371,7 +371,7 @@ meta::pure::persistence::metamodel::batch::targetspecification::GroupedFlatTarge
 
 Class
 <<doc.deprecated>>
-{doc.doc = 'Deprecated in favor of PropertyAndSingleFlatTargetShape. A property to flat target specification mapping used to specify a component of a GroupedFlatTargetSpecification.'}
+{doc.doc = 'Deprecated in favor of PropertyAndSingleFlatTarget. A property to flat target specification mapping used to specify a component of a GroupedFlatTargetSpecification.'}
 meta::pure::persistence::metamodel::batch::targetspecification::PropertyAndFlatTargetSpecification
 {
    {doc.doc = 'The property in the parent GroupedFlatTargetSpecification\'s model class that points to the model class for the component FlatTargetSpecification.'}
