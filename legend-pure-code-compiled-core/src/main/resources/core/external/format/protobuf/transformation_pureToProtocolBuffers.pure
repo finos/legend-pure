@@ -57,8 +57,20 @@ function meta::external::format::protobuf::generation::configToOptions(config:Pr
 {
   let properties = ProtobufConfig.properties->filter( p | $p.name != 'customOptions');
   $properties->map( p | let res = $p->eval($config);
-                        if( !$res->isEmpty() ,| ^Option(name=$p.name->toOne()->splitOnCamelCase()->toLowerFirstCharacter()->joinStrings('_'), value=$res->toOne()), | []);
-                        )->concatenate($config.customOptions->map(o | ^Option(name=$o.name, value=$o.value)));
+                        if( !$res->isEmpty() ,| ^Option(name=$p.name->toOne()->splitOnCamelCase()->toLowerFirstCharacter()->joinStrings('_'), 
+                                                        value=$res->toOne()->toOptionValue()), | []);
+                        )->concatenate($config.customOptions->map(o | ^Option(name=$o.name, value=$o.value->toOptionValue())));
+}
+
+function meta::external::format::protobuf::generation::toOptionValue(any:Any[1]):Literal[1]
+{
+  $any->match([
+                s:String[1] | ^StringLiteral(value=$s),
+                i:Integer[1] | ^IntLiteral(value=$i),
+                f:Float[1] | ^FloatLiteral(value=$f),
+                b:Boolean[1] | ^BoolLiteral(value=$b),
+                e:meta::pure::metamodel::type::Enum[1] | ^IdentifierLiteral(value=$e.name)
+              ])
 }
 
 function meta::external::format::protobuf::generation::elementToProtoPackage(e:PackageableElement[1]):String[1]

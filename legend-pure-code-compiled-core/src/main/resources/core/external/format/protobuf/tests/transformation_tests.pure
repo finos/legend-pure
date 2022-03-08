@@ -245,6 +245,29 @@ function <<test.Test>> meta::external::format::protobuf::generation::tests::test
     + 'option aBool = true;\n', $options->map( o | $o->toString())->joinStrings());                       
 }
 
+function <<test.Test>> meta::external::format::protobuf::generation::tests::testLiteralBlockOptionToString():Boolean[1]
+{
+  let option = ^Option(name='a', value=^BlockLiteral(values=[^BlockValue(name='get', value=^StringLiteral(value='a/b'))]));
+  assertEquals('option a = { get: "a/b" };\n', $option->toString());
+}
+
+function <<test.Test>> meta::external::format::protobuf::generation::tests::testRpcToString():Boolean[1]
+{
+  let rpc = ^RemoteProcedureCall(name='hello', 
+                                 requestType=^MessageType(type=^MessagePtr(package='test',name='Request')),
+                                 returnType=^MessageType(type=^MessagePtr(package='test',name='Response'))
+                                 );
+  assertEquals('  rpc hello(Request) returns (Response) {}\n',$rpc->toString('test'));
+  let rpcWithOption = ^RemoteProcedureCall(name='hello', 
+                                 requestType=^MessageType(type=^MessagePtr(package='test',name='Request')),
+                                 returnType=^MessageType(type=^MessagePtr(package='test',name='Response')),
+                                 options=[^Option(name='a.b', value=^BlockLiteral(values=[^BlockValue(name='get', value=^StringLiteral(value='a/b'))]))]
+                                 );
+  assertEquals('  rpc hello(Request) returns (Response) {\n' +
+               'option (a.b) = { get: "a/b" };\n' +
+               '}\n',$rpcWithOption->toString('test'));
+}
+
 function <<test.Test>> meta::external::format::protobuf::generation::tests::transform_testClassToProtoBufWithOptions():Boolean[1]
 {
   let config = ^ProtobufConfig(class='meta::external::format::protobuf::generation::tests::Person',

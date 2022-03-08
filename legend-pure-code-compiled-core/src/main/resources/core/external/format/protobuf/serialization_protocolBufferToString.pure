@@ -48,7 +48,7 @@ function meta::external::format::protobuf::serialization::topLevelItemToString(p
       [
          m:Message[1]|$m->toString($currentPackage),
          e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e->toString($currentPackage),
-         service:Service[1]|'service ' + $service.name + ' {\n' + $service.content->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings(';\n') + ';\n}'
+         service:Service[1]|'service ' + $service.name + ' {\n' + $service.content->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings('\n') + '}'
       ]
    )
 }
@@ -67,7 +67,7 @@ function meta::external::format::protobuf::serialization::toString(s:ServiceBody
 {
    $s->match(
      [
-       rpc:RemoteProcedureCall[1]|'  rpc ' + $rpc.name + ' (' + toString($rpc.requestType, $currentPackage) + ') returns (' + toString($rpc.returnType, $currentPackage) + ');\n',
+       rpc:RemoteProcedureCall[1]|'  rpc ' + $rpc.name + '(' + toString($rpc.requestType, $currentPackage) + ') returns (' + toString($rpc.returnType, $currentPackage) + ') {' + if($rpc.options->isEmpty(), | '', | $rpc.options->map(o | $o->toString())->joinStrings('\n','\n','')) + '}\n',
        o:ServiceOption[1]|'  ' + meta::external::format::protobuf::serialization::toString($o.option)
      ]
    )
@@ -95,9 +95,17 @@ function meta::external::format::protobuf::serialization::toString(t:MessageType
 
 function meta::external::format::protobuf::serialization::toString(o:Option[1]):String[1]
 {
-  'option ' + $o.name + ' = ' + 
-  $o.value->match([
-    s:String[1] | '"' + $s + '"',
-    p:Any[1] | $p->toString()
-  ]) + ';\n'
-}  
+  'option ' + if( $o.name->contains('.'), | '(' + $o.name + ')', | $o.name ) + ' = ' + $o.value->toString() + ';\n'
+}
+
+function meta::external::format::protobuf::serialization::toString(v:Literal[1]):String[1]
+{
+  $v->match([
+    b:BlockLiteral[1] | '{ ' + $b.values->map( v | $v.name + ': ' + $v.value->toString())->joinStrings(',') + ' }',
+    s:StringLiteral[1] | '"' + $s.value + '"',
+    i:IntLiteral[1] | $i.value->toString(),
+    f:FloatLiteral[1] | $f.value->toString(),
+    b:BoolLiteral[1] | $b.value->toString(),
+    e:IdentifierLiteral[1] | $e.value->toString()
+  ])
+} 

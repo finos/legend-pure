@@ -51,7 +51,47 @@ Enum meta::external::format::protobuf::metamodel::ImportType
 Class meta::external::format::protobuf::metamodel::Option
 {
   name:String[1];
-  value:Any[1];
+  value:Literal[1];
+}
+
+Class meta::external::format::protobuf::metamodel::Literal
+{
+}
+
+Class meta::external::format::protobuf::metamodel::BlockLiteral extends meta::external::format::protobuf::metamodel::Literal
+{
+  values:BlockValue[*];
+}
+
+Class meta::external::format::protobuf::metamodel::StringLiteral extends meta::external::format::protobuf::metamodel::Literal
+{
+  value:String[1];
+}
+
+Class meta::external::format::protobuf::metamodel::IdentifierLiteral extends meta::external::format::protobuf::metamodel::Literal
+{
+  value:String[1];
+}
+
+Class meta::external::format::protobuf::metamodel::IntLiteral extends meta::external::format::protobuf::metamodel::Literal
+{
+  value:Integer[1];
+}
+
+Class meta::external::format::protobuf::metamodel::FloatLiteral extends meta::external::format::protobuf::metamodel::Literal
+{
+  value:Float[1];
+}
+
+Class meta::external::format::protobuf::metamodel::BoolLiteral extends meta::external::format::protobuf::metamodel::Literal
+{
+  value:Boolean[1];
+}
+
+Class meta::external::format::protobuf::metamodel::BlockValue
+{
+  name:String[1];
+  value:Literal[1];
 }
 
 Class meta::external::format::protobuf::metamodel::Message extends meta::external::format::protobuf::metamodel::ProtoItemDefinition
