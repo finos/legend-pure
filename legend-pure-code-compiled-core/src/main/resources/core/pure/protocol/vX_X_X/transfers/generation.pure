@@ -47,7 +47,7 @@ function meta::protocols::pure::vX_X_X::invocation::generation::protobuf::transf
                       javaPackage = $input.javaPackage,
                       javaOuterClassname = $input.javaOuterClassname,
                       javaMultipleFiles = $input.javaMultipleFiles,
-                      optimizeFor = $input.optimizeFor,
+                      optimizeFor = if($input.optimizeFor->isEmpty(),|[],|extractEnumValue(meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::OptimizeMode, $input.optimizeFor->toOne()->id())),
                       customOptions = $input.customOptions->map(c |
                                           ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::ProtobufOption
                                           (

@@ -89,15 +89,6 @@ function meta::external::format::protobuf::serialization::toString(t:ProtoBufTyp
 function meta::external::format::protobuf::serialization::toString(t:MessageType[1],currentPackage:String[1]):String[1]
 {
    if($t.stream->isTrue(), |' [ "stream" ] ' ,|'') + $t->toString($currentPackage)
-}  
-
-function meta::external::format::protobuf::serialization::toString(o:Options[1]):String[1]
-{
-   if ($o.javaPackage->isEmpty(), | '', | 'option java_package = "' + $o.javaPackage->toOne() + '";\n')
-   + if ($o.javaOuterClassname->isEmpty(), | '', | 'option java_outer_classname = "' + $o.javaOuterClassname->toOne() + '";\n')
-   + if ($o.javaMultipleFiles->isEmpty(), | '', | 'option java_multiple_files = ' + $o.javaMultipleFiles->toOne()->toString() + ';\n')
-   + if ($o.optimizeFor->isEmpty(), | '', | 'option optimize_for = ' + $o.optimizeFor->toOne().name + ';\n')
-   + $o.customOptions->map( co | $co->meta::external::format::protobuf::serialization::toString())->joinStrings()
 }
 
 function meta::external::format::protobuf::serialization::toString(o:Option[1]):String[1]

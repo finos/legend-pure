@@ -230,18 +230,19 @@ function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::p
 
 function <<test.Test>> meta::external::format::protobuf::generation::tests::testOptionsToString():Boolean[1]
 {
-  let options = ^Options(javaPackage='com.gs.mymodel', 
+  let config = ^ProtobufConfig(javaPackage='com.gs.mymodel', 
                          javaOuterClassname='TestClass', 
                          javaMultipleFiles=true, 
                          optimizeFor=OptimizeMode.SPEED,
-                         customOptions=[^Option(name='aString', value='stuff'),
-                                        ^Option(name='aBool', value=true)]);
+                         customOptions=[^ProtobufOption(name='aString', value='stuff'),
+                                        ^ProtobufOption(name='aBool', value=true)]);
+  let options = meta::external::format::protobuf::generation::configToOptions($config);
   assertEquals('option java_package = "com.gs.mymodel";\n'
     + 'option java_outer_classname = "TestClass";\n'
     + 'option java_multiple_files = true;\n'
     + 'option optimize_for = SPEED;\n'
     + 'option aString = "stuff";\n'
-    + 'option aBool = true;\n', $options->toString());                       
+    + 'option aBool = true;\n', $options->map( o | $o->toString())->joinStrings());                       
 }
 
 function <<test.Test>> meta::external::format::protobuf::generation::tests::transform_testClassToProtoBufWithOptions():Boolean[1]
