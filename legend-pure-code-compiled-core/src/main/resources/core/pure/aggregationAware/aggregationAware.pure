@@ -231,9 +231,7 @@ function meta::pure::mapping::aggregationAware::getNoOpFunctions():meta::pure::m
       meta::pure::functions::multiplicity::toOneMany_T_MANY__T_$1_MANY$_,
       meta::pure::functions::collection::first_T_MANY__T_$0_1$_,
       meta::pure::functions::lang::cast_Any_m__T_1__T_m_,
-      meta::pure::functions::lang::subType_Any_1__T_1__T_$0_1$_,
-      meta::pure::functions::lang::subType_Any_$0_1$__T_1__T_$0_1$_,
-      meta::pure::functions::lang::subType_Any_MANY__T_1__T_MANY_
+      meta::pure::functions::lang::subType_Any_m__T_1__T_m_
    ]
 }
 
