@@ -33,6 +33,11 @@ Class meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::
 {
 }
 
+Class meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::alloy::authentication::ApiTokenAuthenticationStrategy extends meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
+{
+    apiToken:String[1];
+}
+
 Class meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::alloy::authentication::TestDatabaseAuthenticationStrategy extends meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::alloy::authentication::DefaultH2AuthenticationStrategy
 {
 }
@@ -90,6 +95,14 @@ Class meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::
 {
     projectId:String[1];
     defaultDataset:String[1];
+}
+
+Class meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::alloy::specification::DatabricksDatasourceSpecification extends meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
+{
+    hostname:String[1];
+    port:String[1];
+    protocol:String[1];
+    httpPath:String[1];
 }
 
 Class meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::TestDatabaseConnection extends meta::protocols::pure::v1_21_0::metamodel::store::relational::connection::DatabaseConnection
