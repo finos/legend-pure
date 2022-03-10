@@ -52,6 +52,7 @@ function meta::relational::postProcessor::reAliasColumnName::lengthConfig(runtim
   let config = newMap([
     pair(DatabaseType.DB2, 128),
     pair(DatabaseType.SybaseIQ, 255),
+    pair(DatabaseType.Snowflake, 255),
     pair(DatabaseType.H2, 255)
   ]);
 
