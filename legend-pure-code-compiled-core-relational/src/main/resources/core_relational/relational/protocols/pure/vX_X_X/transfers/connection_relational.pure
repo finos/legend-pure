@@ -222,7 +222,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
                                                                    clusterID = $r.clusterID,
                                                                    port =$r.port,
                                                                    region = $r.region,
-                                                                   database = $r.database,
+                                                                   databaseName = $r.databaseName,
                                                                    endpointURL = $r.endpointURL,
                                                                    host = $r.host 
                              )       

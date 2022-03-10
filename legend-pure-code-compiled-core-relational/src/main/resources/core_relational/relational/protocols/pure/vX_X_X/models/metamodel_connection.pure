@@ -153,10 +153,10 @@ Class <<typemodifiers.abstract>> meta::protocols::pure::vX_X_X::metamodel::store
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::legend::specification::RedshiftDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
 {
    
-   clusterID:String[0..1];
+   clusterID:String[1];
    region:String[1];
    host:String[1];
-   database:String[1];   
+   databaseName:String[1];
    port:Integer[1];
    endpointURL:String[0..1];
 }

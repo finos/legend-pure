@@ -74,14 +74,14 @@ Class meta::pure::alloy::connections::alloy::specification::BigQueryDatasourceSp
     defaultDataset:String[1];
 }
 
-Class meta::pure::legend::connections::legend::specification::RedshiftDatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
+Class {doc.doc ='Specification for the AWS redshift database'} meta::pure::legend::connections::legend::specification::RedshiftDatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
 {   
-   clusterID:String[0..1];
-   region:String[1];
-   host:String[1];
-   database:String[1];   
-   port:Integer[1];
-   endpointURL:String[0..1];
+  {doc.doc ='clusterID'} clusterID:String[1];
+  {doc.doc ='The aws region'} region:String[1];
+  {doc.doc ='the full host url'}  host:String[1];
+  {doc.doc ='database name'} databaseName:String[1];
+  {doc.doc ='port'} port:Integer[1];
+  {doc.doc ='Optional URL used for redshift service execution'}  endpointURL:String[0..1];
 }
 
          
