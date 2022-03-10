@@ -17,16 +17,13 @@ package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.processor;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.*;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.OperationSetImplementation;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementationContainer;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m4.ModelRepository;
@@ -63,6 +60,11 @@ public class OperationSetImplementationProcessor extends Processor<OperationSetI
                 }
                 param._setImplementation(found);
             }
+        }
+
+        if (operationSetImplementation instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.MergeOperationSetImplementation)
+        {
+            matcher.fullMatch(((MergeOperationSetImplementation) operationSetImplementation)._validationFunction(), state);
         }
     }
 

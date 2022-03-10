@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
 
 public class GraphPath
 {
-    private static final Pattern VALID_START_NODE_PATH = Pattern.compile("(::)|((\\w[\\w$]*+::)*+)*+\\w[\\w$~]*+");
+    private static final Pattern VALID_START_NODE_PATH = Pattern.compile("(::)|((\\w[\\w$]*+::)*+\\w[\\w$]*+(~[\\w$]++)?)");
 
     private final String startNodePath;
     private final ImmutableList<Edge> edges;

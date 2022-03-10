@@ -43,6 +43,11 @@ Class meta::pure::alloy::connections::alloy::authentication::DefaultH2Authentica
 {
 }
 
+Class meta::pure::alloy::connections::alloy::authentication::ApiTokenAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
+{
+    apiToken:String[1];
+}
+
 Class meta::pure::alloy::connections::alloy::authentication::TestDatabaseAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy
 {
 }

@@ -266,6 +266,13 @@ Class meta::pure::mapping::OperationSetImplementation extends meta::pure::mappin
     operation : Function<{OperationSetImplementation[1] -> SetImplementation[*]}>[1];
 }
 
+
+Class meta::pure::mapping::MergeOperationSetImplementation extends meta::pure::mapping::OperationSetImplementation
+{
+    validationFunction : LambdaFunction<Any>[1];
+}
+
+
 Class meta::pure::mapping::PropertyMapping
 {
     owner : PropertyMappingsImplementation[0..1];

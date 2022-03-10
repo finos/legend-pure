@@ -58,6 +58,12 @@ function meta::pure::functions::collection::parseObjectReferences(objectReferenc
    false;
 }
 
+function meta::pure::functions::collection::mergeInstance(sets:Any[*]):Any[1]
+{
+   fail('UnSupported Operation: Only Supported via Plans');
+   false;
+}
+
 function meta::pure::functions::collection::in(value:Any[0..1], collection:Any[*]):Boolean[1]
 {
     $value->isNotEmpty() && $collection->exists(x | $value == $x)

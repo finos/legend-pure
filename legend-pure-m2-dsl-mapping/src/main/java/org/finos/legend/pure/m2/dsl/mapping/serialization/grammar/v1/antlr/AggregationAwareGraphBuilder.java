@@ -97,8 +97,8 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
     @Override
     public String visitMainMapping(AggregationAwareParser.MainMappingContext ctx)
     {
-        ParsingUtils.removeLastCommaCharacterIfPresent(aggregateSetImplementations);
-        mainSetImplementation = parseSingleMapping(ctx.parserName().VALID_STRING().getSymbol(), ctx.CONTENT().getSymbol(), ctx.CURLY_BRACKET_CLOSE().getSymbol());
+        ParsingUtils.removeLastCommaCharacterIfPresent(this.aggregateSetImplementations);
+        this.mainSetImplementation = parseSingleMapping("Main", ctx.parserName().VALID_STRING().getSymbol(), ctx.CONTENT().getSymbol(), ctx.CURLY_BRACKET_CLOSE().getSymbol());
         return null;
     }
 
@@ -117,7 +117,7 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
     @Override
     public String visitAggregateMapping(AggregationAwareParser.AggregateMappingContext ctx)
     {
-        String subSetImplementation = parseSingleMapping(ctx.parserName().VALID_STRING().getSymbol(), ctx.CONTENT().getSymbol(), ctx.CURLY_BRACKET_CLOSE().getSymbol());
+        String subSetImplementation = parseSingleMapping("Aggregate", ctx.parserName().VALID_STRING().getSymbol(), ctx.CONTENT().getSymbol(), ctx.CURLY_BRACKET_CLOSE().getSymbol());
         this.aggregateSetImplementations.append("setImplementation=").append(subSetImplementation).append("),");
         return null;
     }
@@ -150,7 +150,7 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
         return PrimitiveTuples.pair(temporarySpecification.canAggregate, Tuples.pair(groupByFunctionSpecifications.makeString(","), aggregationFunctionSpecifications.makeString(",")));
     }
 
-    String parseSingleMapping(Token parserNameTok, Token content, Token end)
+    private String parseSingleMapping(String mappingType, Token parserNameTok, Token content, Token end)
     {
         SourceInformation sourceInfo = this.sourceInformation.getPureSourceInformation(parserNameTok, parserNameTok, end);
         String newSetSourceInfo = " " + sourceInfo.toM4String();
@@ -166,7 +166,7 @@ public class AggregationAwareGraphBuilder extends AggregationAwareParserBaseVisi
         }
         try
         {
-            return parser.parseMapping(content.getText(), this.id == null ? null : this.id + "_Main", null, newSetSourceInfo, true, this.classPath, this.classSourceInfo, this.mappingPath, this.sourceInformation.getSourceName(), this.sourceInformation.getOffsetLine() + content.getLine() - 1, this.importId, this.repository, this.context);
+            return parser.parseMapping(content.getText(), (this.id == null) ? mappingType : (this.id + "_" + mappingType), null, newSetSourceInfo, true, this.classPath, this.classSourceInfo, this.mappingPath, this.sourceInformation.getSourceName(), this.sourceInformation.getOffsetLine() + content.getLine() - 1, this.importId, this.repository, this.context);
         }
         catch (PureException e)
         {
