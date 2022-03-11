@@ -15,16 +15,16 @@
 import meta::legend::service::metamodel::*;
 
 import meta::pure::persistence::metamodel::*;
-import meta::pure::persistence::metamodel::batch::audit::*;
-import meta::pure::persistence::metamodel::batch::transactionmilestoning::*;
-import meta::pure::persistence::metamodel::batch::validitymilestoning::*;
-import meta::pure::persistence::metamodel::batch::validitymilestoning::derivation::*;
 import meta::pure::persistence::metamodel::notifier::*;
 import meta::pure::persistence::metamodel::persister::*;
+import meta::pure::persistence::metamodel::persister::audit::*;
 import meta::pure::persistence::metamodel::persister::deduplication::*;
 import meta::pure::persistence::metamodel::persister::ingestmode::*;
 import meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::*;
 import meta::pure::persistence::metamodel::persister::targetshape::*;
+import meta::pure::persistence::metamodel::persister::transactionmilestoning::*;
+import meta::pure::persistence::metamodel::persister::validitymilestoning::*;
+import meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::*;
 import meta::pure::persistence::metamodel::reader::*;
 import meta::pure::persistence::metamodel::target::*;
 import meta::pure::persistence::metamodel::trigger::*;
@@ -368,7 +368,7 @@ meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::OpaqueM
  **********/
 
 Class
-{doc.doc = 'Values in the incoming batch are appended to the existing dataset. No updates or deletes occur. Duplicates may optionally be filtered out.'}
+{doc.doc = 'Values in the incoming data are appended to the existing dataset. No updates or deletes occur. Duplicates may optionally be filtered out.'}
 meta::pure::persistence::metamodel::persister::ingestmode::appendonly::AppendOnly extends IngestMode
 {
    auditing: Auditing[1];
@@ -382,19 +382,19 @@ meta::pure::persistence::metamodel::persister::ingestmode::appendonly::AppendOnl
 Class
 <<typemodifiers.abstract>>
 {doc.doc = 'Strategy for representing audit information in the underlying system.'}
-meta::pure::persistence::metamodel::batch::audit::Auditing
+meta::pure::persistence::metamodel::persister::audit::Auditing
 {
 }
 
 Class
 {doc.doc = 'Audit information is not captured in the underlying system.'}
-meta::pure::persistence::metamodel::batch::audit::NoAuditing extends Auditing
+meta::pure::persistence::metamodel::persister::audit::NoAuditing extends Auditing
 {
 }
 
 Class
 {doc.doc = 'Audit information is represented via a transaction datetime in the underlying system.'}
-meta::pure::persistence::metamodel::batch::audit::BatchDateTimeAuditing extends Auditing
+meta::pure::persistence::metamodel::persister::audit::DateTimeAuditing extends Auditing
 {
    {doc.doc = 'The name of the property representing the transaction datetime in the underlying system.'}
    dateTimePropertyName: String[1];
@@ -403,7 +403,7 @@ meta::pure::persistence::metamodel::batch::audit::BatchDateTimeAuditing extends 
 Class
 <<doc.deprecated>>
 {doc.doc = 'Audit information is represented at the discretion of the underlying system.'}
-meta::pure::persistence::metamodel::batch::audit::OpaqueAuditing extends Auditing
+meta::pure::persistence::metamodel::persister::audit::OpaqueAuditing extends Auditing
 {
 }
 
@@ -414,13 +414,13 @@ meta::pure::persistence::metamodel::batch::audit::OpaqueAuditing extends Auditin
 Class
 <<typemodifiers.abstract>>
 {doc.doc = 'Strategy for representing the transaction (processing) temporal dimension in the underlying system.'}
-meta::pure::persistence::metamodel::batch::transactionmilestoning::TransactionMilestoning
+meta::pure::persistence::metamodel::persister::transactionmilestoning::TransactionMilestoning
 {
 }
 
 Class
 {doc.doc = 'The representation of the transaction (processing) temporal dimension is via integral "in" and "out" batch ids.'}
-meta::pure::persistence::metamodel::batch::transactionmilestoning::BatchIdTransactionMilestoning extends TransactionMilestoning
+meta::pure::persistence::metamodel::persister::transactionmilestoning::BatchIdTransactionMilestoning extends TransactionMilestoning
 {
    {doc.doc = 'The name of the property representing the "in" batch id in the underlying system.'}
    batchIdInName: String[1];
@@ -431,7 +431,7 @@ meta::pure::persistence::metamodel::batch::transactionmilestoning::BatchIdTransa
 
 Class
 {doc.doc = 'The representation of the transaction (processing) temporal dimension is via "in" and "out" datetimes.'}
-meta::pure::persistence::metamodel::batch::transactionmilestoning::DateTimeTransactionMilestoning extends TransactionMilestoning
+meta::pure::persistence::metamodel::persister::transactionmilestoning::DateTimeTransactionMilestoning extends TransactionMilestoning
 {
    {doc.doc = 'The name of the property representing the "in" datetime in the underlying system.'}
    dateTimeInName: String[1];
@@ -442,7 +442,7 @@ meta::pure::persistence::metamodel::batch::transactionmilestoning::DateTimeTrans
 
 Class
 {doc.doc = 'The representation of the transaction (processing) temporal dimension is via integral "in" and "out" batch ids and "in" and "out" datetimes.'}
-meta::pure::persistence::metamodel::batch::transactionmilestoning::BatchIdAndDateTimeTransactionMilestoning extends TransactionMilestoning
+meta::pure::persistence::metamodel::persister::transactionmilestoning::BatchIdAndDateTimeTransactionMilestoning extends TransactionMilestoning
 {
    {doc.doc = 'The name of the property representing the "in" batch id in the underlying system.'}
    batchIdInName: String[1];
@@ -460,7 +460,7 @@ meta::pure::persistence::metamodel::batch::transactionmilestoning::BatchIdAndDat
 Class
 <<doc.deprecated>>
 {doc.doc = 'The representation of the transaction (processing) temporal dimension is at the discretion of the implementing system.'}
-meta::pure::persistence::metamodel::batch::transactionmilestoning::OpaqueTransactionMilestoning extends TransactionMilestoning
+meta::pure::persistence::metamodel::persister::transactionmilestoning::OpaqueTransactionMilestoning extends TransactionMilestoning
 {
 }
 
@@ -471,13 +471,13 @@ meta::pure::persistence::metamodel::batch::transactionmilestoning::OpaqueTransac
 Class
 <<typemodifiers.abstract>>
 {doc.doc = 'Strategy for representing the validity (business) temporal dimension in the underlying system.'}
-meta::pure::persistence::metamodel::batch::validitymilestoning::ValidityMilestoning
+meta::pure::persistence::metamodel::persister::validitymilestoning::ValidityMilestoning
 {
 }
 
 Class
 {doc.doc = 'The representation of the validity (business) temporal dimension is via "from" and "thru" datetimes.'}
-meta::pure::persistence::metamodel::batch::validitymilestoning::DateTimeValidityMilestoning extends ValidityMilestoning
+meta::pure::persistence::metamodel::persister::validitymilestoning::DateTimeValidityMilestoning extends ValidityMilestoning
 {
    {doc.doc = 'The name of the property representing the "from" datetime in the underlying system.'}
    dateTimeFromName: String[1];
@@ -492,7 +492,7 @@ meta::pure::persistence::metamodel::batch::validitymilestoning::DateTimeValidity
 Class
 <<doc.deprecated>>
 {doc.doc = 'The representation of the validity (business) temporal dimension is at the discretion of the implementing system.'}
-meta::pure::persistence::metamodel::batch::validitymilestoning::OpaqueValidityMilestoning extends ValidityMilestoning
+meta::pure::persistence::metamodel::persister::validitymilestoning::OpaqueValidityMilestoning extends ValidityMilestoning
 {
 }
 
@@ -501,13 +501,13 @@ meta::pure::persistence::metamodel::batch::validitymilestoning::OpaqueValidityMi
 Class
 <<typemodifiers.abstract>>
 {doc.doc = 'Strategy for representing the validity (business) temporal dimension in the underlying system.'}
-meta::pure::persistence::metamodel::batch::validitymilestoning::derivation::ValidityDerivation
+meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::ValidityDerivation
 {
 }
 
 Class
 {doc.doc = 'Source data provide validity from datetime.'}
-meta::pure::persistence::metamodel::batch::validitymilestoning::derivation::SourceSpecifiesValidFromDate extends ValidityDerivation
+meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::SourceSpecifiesValidFromDate extends ValidityDerivation
 {
    {doc.doc = 'The property in the model class that provides the "from" datetime for validity (business) temporal dimension.'}
    sourceDateTimeFromProperty: Property<Nil,  Any|1>[1];
@@ -515,7 +515,7 @@ meta::pure::persistence::metamodel::batch::validitymilestoning::derivation::Sour
 
 Class
 {doc.doc = 'Source data provide validity from and thru datetimes.'}
-meta::pure::persistence::metamodel::batch::validitymilestoning::derivation::SourceSpecifiesValidFromAndThruDate extends ValidityDerivation
+meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::SourceSpecifiesValidFromAndThruDate extends ValidityDerivation
 {
    {doc.doc = 'The property in the model class that provides the "from" datetime for the validity (business) temporal dimension.'}
    sourceDateTimeFromProperty: Property<Nil, Any|1>[1];
