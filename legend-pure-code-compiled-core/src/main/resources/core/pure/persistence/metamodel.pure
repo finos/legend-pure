@@ -16,17 +16,14 @@ import meta::legend::service::metamodel::*;
 
 import meta::pure::persistence::metamodel::*;
 import meta::pure::persistence::metamodel::batch::audit::*;
-import meta::pure::persistence::metamodel::batch::mode::*;
-import meta::pure::persistence::metamodel::batch::mode::appendonly::*;
-import meta::pure::persistence::metamodel::batch::mode::delta::*;
-import meta::pure::persistence::metamodel::batch::mode::delta::merge::*;
-import meta::pure::persistence::metamodel::batch::mode::snapshot::*;
 import meta::pure::persistence::metamodel::batch::transactionmilestoning::*;
 import meta::pure::persistence::metamodel::batch::validitymilestoning::*;
 import meta::pure::persistence::metamodel::batch::validitymilestoning::derivation::*;
 import meta::pure::persistence::metamodel::notifier::*;
 import meta::pure::persistence::metamodel::persister::*;
 import meta::pure::persistence::metamodel::persister::deduplication::*;
+import meta::pure::persistence::metamodel::persister::ingestmode::*;
+import meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::*;
 import meta::pure::persistence::metamodel::persister::targetshape::*;
 import meta::pure::persistence::metamodel::reader::*;
 import meta::pure::persistence::metamodel::target::*;
@@ -197,8 +194,8 @@ meta::pure::persistence::metamodel::persister::targetshape::FlatTarget extends T
    {doc.doc = 'The deduplication strategy to apply to this target dataset when an item appears multiple times in the same batch.'}
    deduplicationStrategy: DeduplicationStrategy[1];
 
-   {doc.doc = 'The milestoning mode to apply to this target dataset.'}
-   milestoningMode: BatchMilestoningMode[0..1];
+   {doc.doc = 'The ingest mode to apply to this target dataset.'}
+   ingestMode: IngestMode[0..1];
 }
 
 Class
@@ -275,64 +272,65 @@ meta::pure::persistence::metamodel::persister::deduplication::OpaqueDeduplicatio
 }
 
 /**********
- * batch mode
+ * ingest mode
  **********/
 
 Class
 <<typemodifiers.abstract>>
-{doc.doc = 'The batch milestoning strategy to apply.'}
-meta::pure::persistence::metamodel::batch::mode::BatchMilestoningMode
+{doc.doc = 'The ingestion strategy to apply.'}
+meta::pure::persistence::metamodel::persister::ingestmode::IngestMode
 {
 }
 
 /**********
- * batch mode - snapshot
+ * ingest mode - snapshot
  **********/
 
 Class
-{doc.doc = 'Values in the incoming batch represent the full dataset and will replace the existing dataset destructively.'}
-meta::pure::persistence::metamodel::batch::mode::snapshot::NonMilestonedSnapshot extends BatchMilestoningMode
+{doc.doc = 'Values in the incoming data represent the full dataset and will replace the existing dataset destructively.'}
+meta::pure::persistence::metamodel::persister::ingestmode::snapshot::NontemporalSnapshot extends IngestMode
 {
    auditing: Auditing[1];
 }
 
 Class
-{doc.doc = 'Values in the incoming batch represent the full dataset and will replace the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a logical delete in the transaction (processing) dimension. The data have only a transaction (processing) dimension and no validity (business) dimension.'}
-meta::pure::persistence::metamodel::batch::mode::snapshot::UnitemporalSnapshot extends BatchMilestoningMode
+{doc.doc = 'Values in the incoming data represent the full dataset and will replace the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a logical delete in the transaction (processing) dimension. The data have only a transaction (processing) dimension and no validity (business) dimension.'}
+meta::pure::persistence::metamodel::persister::ingestmode::snapshot::UnitemporalSnapshot extends IngestMode
 {
    transactionMilestoning: TransactionMilestoning[1];
 }
 
 Class
-{doc.doc = 'Values in the incoming batch represent the full dataset and will replace the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a logical delete in the transaction (processing) dimension. The data have a transaction (processing) dimension and a validity (business) dimension.'}
-meta::pure::persistence::metamodel::batch::mode::snapshot::BitemporalSnapshot extends BatchMilestoningMode
+{doc.doc = 'Values in the incoming data represent the full dataset and will replace the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a logical delete in the transaction (processing) dimension. The data have a transaction (processing) dimension and a validity (business) dimension.'}
+meta::pure::persistence::metamodel::persister::ingestmode::snapshot::BitemporalSnapshot extends IngestMode
 {
    transactionMilestoning: TransactionMilestoning[1];
    validityMilestoning: ValidityMilestoning[1];
 }
 
 /**********
- * batch mode - delta
+ * ingest mode - delta
  **********/
 
 Class
-{doc.doc = 'Values in the incoming batch represent a delta to be applied on top of the existing dataset destructively. New incoming values are appended. Updated incoming values overwrite existing ones. Missing incoming values result in a no-op.'}
-meta::pure::persistence::metamodel::batch::mode::delta::NonMilestonedDelta extends BatchMilestoningMode
+{doc.doc = 'Values in the incoming data represent a delta to be applied on top of the existing dataset destructively. New incoming values are appended. Updated incoming values overwrite existing ones. Missing incoming values result in a no-op.'}
+meta::pure::persistence::metamodel::persister::ingestmode::delta::NontemporalDelta extends IngestMode
 {
+   mergeStrategy: MergeStrategy[1];
    auditing: Auditing[1];
 }
 
 Class
-{doc.doc = 'Values in the incoming batch represent a delta to be applied on top of the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a no-op in the transaction (processing) dimension. Additional merge semantics, including logical deletes, can be supported via a merge scheme. The data have only a transaction (processing) dimension and no validity (business) dimension.' }
-meta::pure::persistence::metamodel::batch::mode::delta::UnitemporalDelta extends BatchMilestoningMode
+{doc.doc = 'Values in the incoming data represent a delta to be applied on top of the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a no-op in the transaction (processing) dimension. Additional merge semantics, including logical deletes, can be supported via a merge scheme. The data have only a transaction (processing) dimension and no validity (business) dimension.' }
+meta::pure::persistence::metamodel::persister::ingestmode::delta::UnitemporalDelta extends IngestMode
 {
    mergeStrategy: MergeStrategy[1];
    transactionMilestoning: TransactionMilestoning[1];
 }
 
 Class
-{doc.doc = 'Values in the incoming batch represent a delta to be applied on top of the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a no-op in the transaction (processing) dimension. Additional merge semantics, including logical deletes, can be supported via a merge scheme. The data have a transaction (processing) dimension and a validity (business) dimension.' }
-meta::pure::persistence::metamodel::batch::mode::delta::BitemporalDelta extends BatchMilestoningMode
+{doc.doc = 'Values in the incoming data represent a delta to be applied on top of the existing dataset non-destructively. New incoming values represent a logical create; updated incoming values represent a logical update; missing incoming values represent a no-op in the transaction (processing) dimension. Additional merge semantics, including logical deletes, can be supported via a merge scheme. The data have a transaction (processing) dimension and a validity (business) dimension.' }
+meta::pure::persistence::metamodel::persister::ingestmode::delta::BitemporalDelta extends IngestMode
 {
    mergeStrategy: MergeStrategy[1];
    transactionMilestoning: TransactionMilestoning[1];
@@ -343,17 +341,17 @@ meta::pure::persistence::metamodel::batch::mode::delta::BitemporalDelta extends 
 
 Class
 <<typemodifiers.abstract>>
-meta::pure::persistence::metamodel::batch::mode::delta::merge::MergeStrategy
+meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::MergeStrategy
 {
 }
 
 Class
-meta::pure::persistence::metamodel::batch::mode::delta::merge::NoDeletesMergeStrategy extends MergeStrategy
+meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::NoDeletesMergeStrategy extends MergeStrategy
 {
 }
 
 Class
-meta::pure::persistence::metamodel::batch::mode::delta::merge::DeleteIndicatorMergeStrategy extends MergeStrategy
+meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::DeleteIndicatorMergeStrategy extends MergeStrategy
 {
    deleteProperty: Property<Nil, Any|1>[1];
    deleteValues: String[1..*];
@@ -361,17 +359,17 @@ meta::pure::persistence::metamodel::batch::mode::delta::merge::DeleteIndicatorMe
 
 Class
 <<doc.deprecated>>
-meta::pure::persistence::metamodel::batch::mode::delta::merge::OpaqueMergeStrategy extends MergeStrategy
+meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::OpaqueMergeStrategy extends MergeStrategy
 {
 }
 
 /**********
- * batch mode - append only
+ * ingest mode - append only
  **********/
 
 Class
 {doc.doc = 'Values in the incoming batch are appended to the existing dataset. No updates or deletes occur. Duplicates may optionally be filtered out.'}
-meta::pure::persistence::metamodel::batch::mode::appendonly::AppendOnly extends BatchMilestoningMode
+meta::pure::persistence::metamodel::persister::ingestmode::appendonly::AppendOnly extends IngestMode
 {
    auditing: Auditing[1];
    filterDuplicates: Boolean[1];
