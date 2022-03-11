@@ -15,20 +15,19 @@
 import meta::legend::service::metamodel::*;
 
 import meta::pure::persistence::metamodel::*;
-import meta::pure::persistence::metamodel::backend::*;
 import meta::pure::persistence::metamodel::batch::audit::*;
-import meta::pure::persistence::metamodel::batch::deduplication::*;
 import meta::pure::persistence::metamodel::batch::mode::*;
 import meta::pure::persistence::metamodel::batch::mode::appendonly::*;
 import meta::pure::persistence::metamodel::batch::mode::delta::*;
 import meta::pure::persistence::metamodel::batch::mode::delta::merge::*;
 import meta::pure::persistence::metamodel::batch::mode::snapshot::*;
-import meta::pure::persistence::metamodel::batch::targetspecification::*;
 import meta::pure::persistence::metamodel::batch::transactionmilestoning::*;
 import meta::pure::persistence::metamodel::batch::validitymilestoning::*;
 import meta::pure::persistence::metamodel::batch::validitymilestoning::derivation::*;
 import meta::pure::persistence::metamodel::notifier::*;
 import meta::pure::persistence::metamodel::persister::*;
+import meta::pure::persistence::metamodel::persister::deduplication::*;
+import meta::pure::persistence::metamodel::persister::targetshape::*;
 import meta::pure::persistence::metamodel::reader::*;
 import meta::pure::persistence::metamodel::target::*;
 import meta::pure::persistence::metamodel::trigger::*;
@@ -178,13 +177,13 @@ meta::pure::persistence::metamodel::notifier::PagerDutyNotifyee extends Notifyee
 Class
 <<typemodifiers.abstract>>
 {doc.doc = 'A target for persistence.'}
-meta::pure::persistence::metamodel::target::TargetShape
+meta::pure::persistence::metamodel::persister::targetshape::TargetShape
 {
 }
 
 Class
 {doc.doc = 'Specification for a single flat dataset.'}
-meta::pure::persistence::metamodel::target::FlatTarget extends TargetShape
+meta::pure::persistence::metamodel::persister::targetshape::FlatTarget extends TargetShape
 {
    {doc.doc = 'A class that models the persistence target. The model class must have primitive properties with single multiplicity.'}
    modelClass: Class<Any>[1];
@@ -204,13 +203,13 @@ meta::pure::persistence::metamodel::target::FlatTarget extends TargetShape
 
 Class
 {doc.doc = 'Specification for a group of flat datasets in the same datastore.'}
-meta::pure::persistence::metamodel::target::MultiFlatTarget extends TargetShape
+meta::pure::persistence::metamodel::persister::targetshape::MultiFlatTarget extends TargetShape
 {
    {doc.doc = 'A class that models the persistence target. The model class must be nested one level deep; each property of the class must point to a flat class with primitive properties that have single multiplicity.'}
    modelClass: Class<Any>[1];
 
    {doc.doc = 'The transaction granularity for the target group.'}
-   transactionScope: meta::pure::persistence::metamodel::target::TransactionScope[1];
+   transactionScope: meta::pure::persistence::metamodel::persister::targetshape::TransactionScope[1];
 
    {doc.doc = 'Parts of this multi target shape. Each component maps a property of the model class to a single target shape.'}
    parts: PropertyAndFlatTarget[1..*];
@@ -218,7 +217,7 @@ meta::pure::persistence::metamodel::target::MultiFlatTarget extends TargetShape
 
 Class
 {doc.doc = 'A property to target shape mapping used to specify one part of a MultiFlatTarget.'}
-meta::pure::persistence::metamodel::target::PropertyAndFlatTarget
+meta::pure::persistence::metamodel::persister::targetshape::PropertyAndFlatTarget
 {
    {doc.doc = 'The property in the parent MultiFlatTarget\'s model class that points to the model class for the FlatTarget.'}
    property: Property<Nil, Any|1>[1];
@@ -229,7 +228,7 @@ meta::pure::persistence::metamodel::target::PropertyAndFlatTarget
 
 Class
 {doc.doc = 'Specification for an opaque target data that may be arbitrarily nested, binary, etc. No model class is required.'}
-meta::pure::persistence::metamodel::target::OpaqueTarget extends TargetShape
+meta::pure::persistence::metamodel::persister::targetshape::OpaqueTarget extends TargetShape
 {
    {doc.doc = 'The name of the target.'}
    targetName: String[1];
@@ -237,7 +236,7 @@ meta::pure::persistence::metamodel::target::OpaqueTarget extends TargetShape
 
 Enum
 {doc.doc = 'The transaction granularity for persistence operations.'}
-meta::pure::persistence::metamodel::target::TransactionScope
+meta::pure::persistence::metamodel::persister::targetshape::TransactionScope
 {
    {doc.doc = 'Each target in the multi-target group executes in its own transaction; each succeeds or fails independently.'}
    SINGLE_TARGET,
@@ -252,26 +251,26 @@ meta::pure::persistence::metamodel::target::TransactionScope
 
 Class
 <<typemodifiers.abstract>>
-meta::pure::persistence::metamodel::batch::deduplication::DeduplicationStrategy
+meta::pure::persistence::metamodel::persister::deduplication::DeduplicationStrategy
 {
 }
 
-Class meta::pure::persistence::metamodel::batch::deduplication::NoDeduplicationStrategy extends DeduplicationStrategy
+Class meta::pure::persistence::metamodel::persister::deduplication::NoDeduplicationStrategy extends DeduplicationStrategy
 {
 }
 
-Class meta::pure::persistence::metamodel::batch::deduplication::AnyVersionDeduplicationStrategy extends DeduplicationStrategy
+Class meta::pure::persistence::metamodel::persister::deduplication::AnyVersionDeduplicationStrategy extends DeduplicationStrategy
 {
 }
 
-Class meta::pure::persistence::metamodel::batch::deduplication::MaxVersionDeduplicationStrategy extends DeduplicationStrategy
+Class meta::pure::persistence::metamodel::persister::deduplication::MaxVersionDeduplicationStrategy extends DeduplicationStrategy
 {
    versionProperty: Property<Nil, Any|1>[1];
 }
 
 Class
 <<doc.deprecated>>
-meta::pure::persistence::metamodel::batch::deduplication::OpaqueDeduplicationStrategy extends DeduplicationStrategy
+meta::pure::persistence::metamodel::persister::deduplication::OpaqueDeduplicationStrategy extends DeduplicationStrategy
 {
 }
 

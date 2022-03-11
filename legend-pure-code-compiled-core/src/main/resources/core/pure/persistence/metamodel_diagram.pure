@@ -16,7 +16,7 @@
 Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
 {
     TypeView cview_14(
-        type=meta::pure::persistence::metamodel::target::TargetShape,
+        type=meta::pure::persistence::metamodel::persister::targetshape::TargetShape,
         position=(1172.85400, 637.50000),
         width=194.43945,
         height=58.00000,
@@ -28,7 +28,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineWidth=1.0)
 
     TypeView cview_16(
-        type=meta::pure::persistence::metamodel::target::MultiFlatTarget,
+        type=meta::pure::persistence::metamodel::persister::targetshape::MultiFlatTarget,
         position=(747.85400, 784.50000),
         width=283.22656,
         height=86.00000,
@@ -136,7 +136,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineWidth=1.0)
 
     TypeView cview_31(
-        type=meta::pure::persistence::metamodel::batch::deduplication::MaxVersionDeduplicationStrategy,
+        type=meta::pure::persistence::metamodel::persister::deduplication::MaxVersionDeduplicationStrategy,
         position=(1949.72314, 955.57286),
         width=214.05078,
         height=44.00000,
@@ -148,7 +148,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineWidth=1.0)
 
     TypeView cview_32(
-        type=meta::pure::persistence::metamodel::batch::deduplication::AnyVersionDeduplicationStrategy,
+        type=meta::pure::persistence::metamodel::persister::deduplication::AnyVersionDeduplicationStrategy,
         position=(2068.72314, 895.57286),
         width=213.37695,
         height=30.00000,
@@ -160,7 +160,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineWidth=1.0)
 
     TypeView cview_30(
-        type=meta::pure::persistence::metamodel::batch::deduplication::NoDeduplicationStrategy,
+        type=meta::pure::persistence::metamodel::persister::deduplication::NoDeduplicationStrategy,
         position=(1879.72314, 895.57286),
         width=163.34961,
         height=30.00000,
@@ -472,7 +472,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineWidth=1.0)
 
     TypeView cview_47(
-        type=meta::pure::persistence::metamodel::target::FlatTarget,
+        type=meta::pure::persistence::metamodel::persister::targetshape::FlatTarget,
         position=(1523.34962, 786.78643),
         width=214.44922,
         height=86.00000,
@@ -483,20 +483,9 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_29(
-        type=meta::pure::persistence::metamodel::batch::deduplication::DeduplicationStrategy,
-        position=(1983.72314, 808.57286),
-        width=147.35352,
-        height=44.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
 
     TypeView cview_48(
-        type=meta::pure::persistence::metamodel::target::PropertyAndFlatTarget,
+        type=meta::pure::persistence::metamodel::persister::targetshape::PropertyAndFlatTarget,
         position=(1155.34962, 792.78643),
         width=229.12695,
         height=72.00000,
@@ -532,7 +521,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineWidth=1.0)
 
     TypeView cview_18(
-        type=meta::pure::persistence::metamodel::target::OpaqueTarget,
+        type=meta::pure::persistence::metamodel::persister::targetshape::OpaqueTarget,
         position=(1516.85400, 699.50000),
         width=226.47852,
         height=58.00000,
@@ -660,32 +649,8 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_13(
-        source=cview_30,
-        target=cview_29,
-        points=[(1961.39795,910.57286),(2057.39990,830.57286)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
 
-    GeneralizationView gview_14(
-        source=cview_31,
-        target=cview_29,
-        points=[(2056.74853,977.57286),(2057.39990,830.57286)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
 
-    GeneralizationView gview_15(
-        source=cview_32,
-        target=cview_29,
-        points=[(2175.41162,910.57286),(2057.39990,830.57286)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
 
     GeneralizationView gview_16(
         source=cview_35,
@@ -870,19 +835,6 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_6(
-        property=meta::pure::persistence::metamodel::persister::Persister.targetShape,
-        source=cview_8,
-        target=cview_14
-,        points=[(1269.97949,365.28643),(1270.07373,666.50000)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
 
     PropertyView pview_7(
         property=meta::pure::persistence::metamodel::batch::mode::snapshot::BitemporalSnapshot.validityMilestoning,
@@ -1038,22 +990,9 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_18(
-        property=meta::pure::persistence::metamodel::target::FlatTarget.deduplicationStrategy,
-        source=cview_47,
-        target=cview_29
-,        points=[(1630.57422,829.78643),(2057.39990,830.57286)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
 
     PropertyView pview_19(
-        property=meta::pure::persistence::metamodel::target::FlatTarget.milestoningMode,
+        property=meta::pure::persistence::metamodel::persister::targetshape::FlatTarget.milestoningMode,
         source=cview_47,
         target=cview_19
 ,        points=[(1630.57422,829.78643),(1633.33203,1027.75000)],
@@ -1067,7 +1006,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineStyle=SIMPLE)
 
     PropertyView pview_20(
-        property=meta::pure::persistence::metamodel::target::MultiFlatTarget.parts,
+        property=meta::pure::persistence::metamodel::persister::targetshape::MultiFlatTarget.parts,
         source=cview_16,
         target=cview_48
 ,        points=[(889.46728,827.50000),(1269.91309,828.78643)],
@@ -1081,7 +1020,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineStyle=SIMPLE)
 
     PropertyView pview_21(
-        property=meta::pure::persistence::metamodel::target::PropertyAndFlatTarget.flatTarget,
+        property=meta::pure::persistence::metamodel::persister::targetshape::PropertyAndFlatTarget.flatTarget,
         source=cview_48,
         target=cview_47
 ,        points=[(1269.91309,828.78643),(1630.57422,829.78643)],
