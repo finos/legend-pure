@@ -135,18 +135,6 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_12(
-        type=meta::pure::runtime::Runtime,
-        position=(-90.52051, 562.00000),
-        width=224.13379,
-        height=58.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
     TypeView cview_3(
         type=meta::pure::persistence::metamodel::trigger::Trigger,
         position=(-59.60352, 267.00000),
@@ -812,20 +800,6 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         source=cview_1,
         target=cview_8
 ,        points=[(662.86157,364.28643),(1269.97949,365.28643)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
-
-    PropertyView pview_4(
-        property=meta::pure::persistence::metamodel::reader::Reader.runtime,
-        source=cview_6,
-        target=cview_12
-,        points=[(321.65918,590.28643),(21.54639,591.00000)],
         label='',
         propertyPosition=(0.0,0.0),
         multiplicityPosition=(0.0,0.0),

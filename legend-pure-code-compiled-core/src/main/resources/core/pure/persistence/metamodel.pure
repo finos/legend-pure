@@ -99,8 +99,6 @@ Class
 {doc.doc = 'The provider of input data to persist.'}
 meta::pure::persistence::metamodel::reader::Reader
 {
-   {doc.doc = 'An optional runtime for the reader.'}
-   runtime: Runtime[0..1];
 }
 
 Class
