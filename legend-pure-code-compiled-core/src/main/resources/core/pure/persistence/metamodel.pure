@@ -146,7 +146,7 @@ Class
 {doc.doc = 'The strategy for sending updates on significant persistent events.'}
 meta::pure::persistence::metamodel::notifier::Notifier
 {
-   notifyees: Notifyee[1..*];
+   notifyees: Notifyee[*];
 }
 
 Class
