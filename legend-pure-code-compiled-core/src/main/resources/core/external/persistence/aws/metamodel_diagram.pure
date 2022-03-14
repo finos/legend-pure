@@ -63,9 +63,45 @@ Diagram meta::external::persistence::aws::Persistence_Diagram(width=0.0, height=
         color=#FFFFCC,
         lineWidth=1.0)
 
+    TypeView cview_1(
+        type=meta::external::persistence::aws::metamodel::AwsGluePersistenceContext,
+        position=(603.06832, 371.67702),
+        width=223.11523,
+        height=44.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_8(
+        type=meta::pure::persistence::metamodel::persister::Persister,
+        position=(1096.97774, 485.57046),
+        width=219.76953,
+        height=86.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_9(
+        type=meta::pure::runtime::Runtime,
+        position=(1095.51078, 650.70702),
+        width=224.13379,
+        height=44.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
     TypeView cview_6(
         type=meta::pure::runtime::Connection,
-        position=(1157.01863, 356.67702),
+        position=(1460.02744, 650.94134),
         width=104.35840,
         height=44.00000,
         stereotypesVisible=true,
@@ -77,21 +113,9 @@ Diagram meta::external::persistence::aws::Persistence_Diagram(width=0.0, height=
 
     TypeView cview_5(
         type=meta::external::persistence::aws::metamodel::connection::AwsS3Connection,
-        position=(1146.97516, 522.27950),
+        position=(1449.82097, 758.58346),
         width=125.12891,
         height=58.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
-    TypeView cview_1(
-        type=meta::external::persistence::aws::metamodel::AwsGluePersistenceContext,
-        position=(603.06832, 371.67702),
-        width=223.11523,
-        height=44.00000,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -120,7 +144,7 @@ Diagram meta::external::persistence::aws::Persistence_Diagram(width=0.0, height=
     GeneralizationView gview_2(
         source=cview_5,
         target=cview_6,
-        points=[(1209.53961,551.27950),(1209.19783,378.67702)],
+        points=[(1512.38542,787.58346),(1512.20664,672.94134)],
         label='',
         color=#000000,
         lineWidth=-1.0,
@@ -145,6 +169,48 @@ Diagram meta::external::persistence::aws::Persistence_Diagram(width=0.0, height=
         source=cview_2,
         target=cview_7
 ,        points=[(854.57350,279.54658),(855.22656,528.00000)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_2(
+        property=meta::pure::persistence::metamodel::Persistence.persister,
+        source=cview_7,
+        target=cview_8
+,        points=[(855.22656,528.00000),(1206.86251,528.57046)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_3(
+        property=meta::pure::persistence::metamodel::persister::Persister.runtime,
+        source=cview_8,
+        target=cview_9
+,        points=[(1206.86251,528.57046),(1207.57767,672.70702)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_4(
+        property=meta::pure::runtime::Runtime.connections,
+        source=cview_9,
+        target=cview_6
+,        points=[(1207.57767,672.70702),(1512.20664,672.94134)],
         label='',
         propertyPosition=(0.0,0.0),
         multiplicityPosition=(0.0,0.0),
