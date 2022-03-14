@@ -1,5 +1,21 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import meta::pure::persistence::metamodel::*;
 import meta::pure::persistence::metamodel::trigger::*;
+
+import meta::pure::runtime::*;
 
 /**********
  * context
@@ -7,7 +23,7 @@ import meta::pure::persistence::metamodel::trigger::*;
 
 Class
 {doc.doc = 'Details for executing a persistence specification using the AWS Glue ETL service: https://docs.aws.amazon.com/glue/index.html'}
-meta::pure::persistence::aws::metamodel::AwsGluePersistenceContext extends PersistenceContext
+meta::external::persistence::aws::metamodel::AwsGluePersistenceContext extends PersistenceContext
 {
 }
 
@@ -17,7 +33,7 @@ meta::pure::persistence::aws::metamodel::AwsGluePersistenceContext extends Persi
 
 Class
 {doc.doc = 'A trigger that executes an AWS Glue job on a schedule specified as a cron expression: https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html'}
-meta::pure::persistence::aws::metamodel::trigger::AwsGlueScheduledTrigger extends Trigger
+meta::external::persistence::aws::metamodel::trigger::AwsGlueScheduledTrigger extends Trigger
 {
    minutes: String[1];
    hours: String[1];
@@ -26,3 +42,13 @@ meta::pure::persistence::aws::metamodel::trigger::AwsGlueScheduledTrigger extend
    dayOfWeek: String[1];
    year: String[1];
 }
+
+/**********
+ * connection
+ **********/
+
+ Class meta::external::persistence::aws::metamodel::connection::AwsS3Connection extends Connection
+ {
+   region: String[1];
+   bucket: String[1];
+ }
