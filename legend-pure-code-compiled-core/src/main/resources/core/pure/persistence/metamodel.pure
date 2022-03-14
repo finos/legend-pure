@@ -166,6 +166,16 @@ meta::pure::persistence::metamodel::notifier::PagerDutyNotifyee extends Notifyee
 }
 
 /**********
+ * runtime
+ **********/
+
+Class
+{doc.doc = 'A lightweight runtime for use by the persister.'}
+meta::pure::persistence::metamodel::runtime::PersistenceRuntime extends Runtime
+{
+}
+
+/**********
  * target shape
  **********/
 
