@@ -397,7 +397,7 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
     {
         runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
-                        "native function meta::pure::functions::lang::subType<T>(source:Any[*], object:T[1]):T[*];\n" +
+                        "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
                         "   myClassification(bd:Date[1]){^Classification(businessDate=$bd)} : Classification[*];\n" +
@@ -424,7 +424,7 @@ public class TestMilestonedPropertyUsageInFunctionExpressions extends AbstractPu
     {
         runtime.createInMemorySource("sourceId.pure",
                 "import meta::test::milestoning::domain::*;\n" +
-                        "native function meta::pure::functions::lang::subType<T>(source:Any[*], object:T[1]):T[*];\n" +
+                        "native function meta::pure::functions::lang::subType<T|m>(source:Any[m], object:T[1]):T[m];\n" +
                         "Class <<temporal.businesstemporal>> meta::test::milestoning::domain::Product{\n" +
                         "   classification : Classification[*];\n" +
                         "   myClassification(bd:Date[1]){^Classification(businessDate=$bd)} : Classification[*];\n" +
