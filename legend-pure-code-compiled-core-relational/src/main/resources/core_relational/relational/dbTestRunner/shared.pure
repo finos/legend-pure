@@ -24,7 +24,7 @@ Profile meta::relational::dbTestRunner::dbTest
 Class meta::relational::dbTestRunner::DbTestConfig
 {
    dbType: DatabaseType[1];
-   connection: DatabaseConnection[0..1];
+   connection: RelationalDatabaseConnection[0..1];
    expectedSql: String[0..1];
 }
 
@@ -39,7 +39,7 @@ function meta::relational::dbTestRunner::collectTests(pack: Package[1]): Functio
 
 function meta::relational::dbTestRunner::runTestsWith(dbTestFns: Function<{DbTestConfig[1] -> String[0..1]}>[*],
                                                dbType: DatabaseType[1],
-                                               connection: DatabaseConnection[0..1],
+                                               connection: RelationalDatabaseConnection[0..1],
                                                expectedSqls: Map<Function<{DbTestConfig[1] -> String[0..1]}>, String>[0..1]
                                                ): Boolean[1]
 {
