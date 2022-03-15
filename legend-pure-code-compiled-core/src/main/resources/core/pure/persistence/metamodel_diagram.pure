@@ -135,18 +135,6 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_4(
-        type=meta::pure::persistence::metamodel::trigger::ManualTrigger,
-        position=(60.09472, 399.00000),
-        width=102.01367,
-        height=30.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
     TypeView cview_8(
         type=meta::pure::persistence::metamodel::persister::Persister,
         position=(1160.09472, 307.00000),
@@ -507,11 +495,11 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_13(
-        type=meta::pure::runtime::Runtime,
-        position=(1586.47949, 337.00000),
-        width=224.13379,
-        height=58.00000,
+    TypeView cview_4(
+        type=meta::pure::persistence::metamodel::trigger::ManualTrigger,
+        position=(2.09472, 413.00000),
+        width=102.01367,
+        height=30.00000,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -520,9 +508,9 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineWidth=1.0)
 
     TypeView cview_71(
-        type=meta::pure::persistence::metamodel::runtime::PersistenceRuntime,
-        position=(1588.51128, 472.44853),
-        width=221.77930,
+        type=meta::pure::runtime::Connection,
+        position=(1594.01128, 343.94853),
+        width=104.35840,
         height=44.00000,
         stereotypesVisible=true,
         attributesVisible=true,
@@ -534,7 +522,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
     GeneralizationView gview_0(
         source=cview_4,
         target=cview_3,
-        points=[(111.10156,414.00000),(51.62597,314.78643)],
+        points=[(53.10156,428.00000),(51.62597,314.78643)],
         label='',
         color=#000000,
         lineWidth=-1.0,
@@ -765,15 +753,6 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
-    GeneralizationView gview_26(
-        source=cview_71,
-        target=cview_13,
-        points=[(1699.40092,494.44853),(1698.54638,366.00000)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
-
     PropertyView pview_0(
         property=meta::pure::persistence::metamodel::PersistenceContext.persistence,
         source=cview_2,
@@ -831,20 +810,6 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineStyle=SIMPLE)
 
     PropertyView pview_4(
-        property=meta::pure::persistence::metamodel::persister::Persister.runtime,
-        source=cview_8,
-        target=cview_13
-,        points=[(1269.97949,365.28643),(1698.54639,366.00000)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
-
-    PropertyView pview_5(
         property=meta::pure::persistence::metamodel::persister::Persister.targetShape,
         source=cview_8,
         target=cview_14
@@ -858,7 +823,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_6(
+    PropertyView pview_5(
         property=meta::pure::persistence::metamodel::Persistence.notifier,
         source=cview_1,
         target=cview_33
@@ -872,7 +837,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_7(
+    PropertyView pview_6(
         property=meta::pure::persistence::metamodel::notifier::Notifier.notifyees,
         source=cview_33,
         target=cview_34
@@ -886,7 +851,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_8(
+    PropertyView pview_7(
         property=meta::pure::persistence::metamodel::persister::targetshape::MultiFlatTarget.parts,
         source=cview_16,
         target=cview_48
@@ -900,7 +865,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_9(
+    PropertyView pview_8(
         property=meta::pure::persistence::metamodel::persister::targetshape::PropertyAndFlatTarget.flatTarget,
         source=cview_48,
         target=cview_47
@@ -914,7 +879,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_10(
+    PropertyView pview_9(
         property=meta::pure::persistence::metamodel::persister::targetshape::FlatTarget.deduplicationStrategy,
         source=cview_47,
         target=cview_49
@@ -928,7 +893,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_11(
+    PropertyView pview_10(
         property=meta::pure::persistence::metamodel::persister::targetshape::FlatTarget.ingestMode,
         source=cview_47,
         target=cview_50
@@ -942,7 +907,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_12(
+    PropertyView pview_11(
         property=meta::pure::persistence::metamodel::persister::ingestmode::delta::NontemporalDelta.mergeStrategy,
         source=cview_54,
         target=cview_58
@@ -956,7 +921,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_13(
+    PropertyView pview_12(
         property=meta::pure::persistence::metamodel::persister::ingestmode::delta::BitemporalDelta.mergeStrategy,
         source=cview_57,
         target=cview_58
@@ -970,7 +935,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_14(
+    PropertyView pview_13(
         property=meta::pure::persistence::metamodel::persister::ingestmode::delta::UnitemporalDelta.mergeStrategy,
         source=cview_55,
         target=cview_58
@@ -984,7 +949,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_15(
+    PropertyView pview_14(
         property=meta::pure::persistence::metamodel::persister::ingestmode::delta::BitemporalDelta.validityMilestoning,
         source=cview_57,
         target=cview_59
@@ -998,7 +963,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_16(
+    PropertyView pview_15(
         property=meta::pure::persistence::metamodel::persister::ingestmode::snapshot::BitemporalSnapshot.validityMilestoning,
         source=cview_53,
         target=cview_59
@@ -1012,7 +977,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_17(
+    PropertyView pview_16(
         property=meta::pure::persistence::metamodel::persister::ingestmode::snapshot::UnitemporalSnapshot.transactionMilestoning,
         source=cview_52,
         target=cview_60
@@ -1026,7 +991,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_18(
+    PropertyView pview_17(
         property=meta::pure::persistence::metamodel::persister::ingestmode::delta::UnitemporalDelta.transactionMilestoning,
         source=cview_55,
         target=cview_60
@@ -1040,7 +1005,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_19(
+    PropertyView pview_18(
         property=meta::pure::persistence::metamodel::persister::ingestmode::delta::BitemporalDelta.transactionMilestoning,
         source=cview_57,
         target=cview_60
@@ -1054,7 +1019,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_20(
+    PropertyView pview_19(
         property=meta::pure::persistence::metamodel::persister::ingestmode::snapshot::BitemporalSnapshot.transactionMilestoning,
         source=cview_53,
         target=cview_60
@@ -1068,11 +1033,25 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_21(
+    PropertyView pview_20(
         property=meta::pure::persistence::metamodel::persister::ingestmode::snapshot::NontemporalSnapshot.auditing,
         source=cview_51,
         target=cview_68
 ,        points=[(1189.59129,1199.78643),(823.28325,1200.94853)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_21(
+        property=meta::pure::persistence::metamodel::persister::Persister.connections,
+        source=cview_8,
+        target=cview_71
+,        points=[(1269.97949,365.28643),(1646.19047,365.94853)],
         label='',
         propertyPosition=(0.0,0.0),
         multiplicityPosition=(0.0,0.0),

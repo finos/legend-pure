@@ -118,8 +118,8 @@ Class
 {doc.doc = 'The strategy for persisting input data.'}
 meta::pure::persistence::metamodel::persister::Persister
 {
-   {doc.doc = 'An optional runtime for the persister.'}
-   runtime: Runtime[0..1];
+   {doc.doc = 'Optional connections for the persister.'}
+   connections: Connection[0..*];
 
    targetShape: TargetShape[1];
 }
@@ -163,16 +163,6 @@ Class
 meta::pure::persistence::metamodel::notifier::PagerDutyNotifyee extends Notifyee
 {
    url: String[1];
-}
-
-/**********
- * runtime
- **********/
-
-Class
-{doc.doc = 'A lightweight runtime for use by the persister.'}
-meta::pure::persistence::metamodel::runtime::PersistenceRuntime extends Runtime
-{
 }
 
 /**********
