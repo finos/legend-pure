@@ -36,17 +36,17 @@ import meta::pure::runtime::*;
  **********/
 
 Class
-{doc.doc = 'A persistence specification. This consists of a trigger that initiates persistence, a reader that provides data to persist, a persister that writes that data to a store, and a notifier that updates on significant events.'}
+{doc.doc = 'A persistence specification. This consists of a trigger that initiates persistence, a service that provides data to persist, a persister that writes that data to a store, and a notifier that updates on significant events.'}
 meta::pure::persistence::metamodel::Persistence extends PackageableElement
 {
-   {doc.doc = 'A functional description of this pipe specification.'}
+   {doc.doc = 'A functional description of this persistence specification.'}
    documentation: String[1];
 
-   {doc.doc = 'The trigger that initiates the pipe.'}
+   {doc.doc = 'The trigger that initiates persistence.'}
    trigger: Trigger[1];
 
-   {doc.doc = 'The reader that sources input data for the pipe.'}
-   reader: Reader[1];
+   {doc.doc = 'The service that sources and optionally transforms data to persist.'}
+   service: Service[1];
 
    {doc.doc = 'The persister that writes data to a datastore.'}
    persister: meta::pure::persistence::metamodel::persister::Persister[1];
@@ -84,29 +84,15 @@ meta::pure::persistence::metamodel::trigger::ManualTrigger extends Trigger
 }
 
 Class
-<<doc.deprecated>>
-{doc.doc = 'A trigger defined by the underlying system.'}
-meta::pure::persistence::metamodel::trigger::OpaqueTrigger extends Trigger
+{doc.doc = 'A trigger that executes on a schedule specified as a cron expression.'}
+meta::pure::persistence::metamodel::trigger::CronBasedTrigger extends Trigger
 {
-}
-
-/**********
- * reader
- **********/
-
-Class
-<<typemodifiers.abstract>>
-{doc.doc = 'The provider of input data to persist.'}
-meta::pure::persistence::metamodel::reader::Reader
-{
-}
-
-Class
-{doc.doc = 'A reader that uses a service to provide data.'}
-meta::pure::persistence::metamodel::reader::ServiceReader extends Reader
-{
-   {doc.doc = 'The underlying service that provides data.'}
-   service: Service[1];
+   minutes: String[1];
+   hours: String[1];
+   dayOfMonth: String[1];
+   month: String[1];
+   dayOfWeek: String[1];
+   year: String[1];
 }
 
 /**********
@@ -120,8 +106,6 @@ meta::pure::persistence::metamodel::persister::Persister
 {
    {doc.doc = 'Optional connections for the persister.'}
    connections: Connection[0..*];
-
-   targetShape: TargetShape[1];
 }
 
 Class
@@ -134,6 +118,7 @@ Class
 {doc.doc = 'A persister that writes data in batches.'}
 meta::pure::persistence::metamodel::persister::BatchPersister extends meta::pure::persistence::metamodel::persister::Persister
 {
+   targetShape: TargetShape[1];
 }
 
 /**********
@@ -263,12 +248,6 @@ Class meta::pure::persistence::metamodel::persister::deduplication::MaxVersionDe
    versionProperty: Property<Nil, Any|1>[1];
 }
 
-Class
-<<doc.deprecated>>
-meta::pure::persistence::metamodel::persister::deduplication::OpaqueDeduplicationStrategy extends DeduplicationStrategy
-{
-}
-
 /**********
  * ingest mode
  **********/
@@ -355,12 +334,6 @@ meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::DeleteI
    deleteValues: String[1..*];
 }
 
-Class
-<<doc.deprecated>>
-meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::OpaqueMergeStrategy extends MergeStrategy
-{
-}
-
 /**********
  * ingest mode - append only
  **********/
@@ -396,13 +369,6 @@ meta::pure::persistence::metamodel::persister::audit::DateTimeAuditing extends A
 {
    {doc.doc = 'The name of the property representing the transaction datetime in the underlying system.'}
    dateTimePropertyName: String[1];
-}
-
-Class
-<<doc.deprecated>>
-{doc.doc = 'Audit information is represented at the discretion of the underlying system.'}
-meta::pure::persistence::metamodel::persister::audit::OpaqueAuditing extends Auditing
-{
 }
 
 /**********
@@ -455,13 +421,6 @@ meta::pure::persistence::metamodel::persister::transactionmilestoning::BatchIdAn
    dateTimeOutName: String[1];
 }
 
-Class
-<<doc.deprecated>>
-{doc.doc = 'The representation of the transaction (processing) temporal dimension is at the discretion of the implementing system.'}
-meta::pure::persistence::metamodel::persister::transactionmilestoning::OpaqueTransactionMilestoning extends TransactionMilestoning
-{
-}
-
 /**********
  * validity milestoning
  **********/
@@ -485,13 +444,6 @@ meta::pure::persistence::metamodel::persister::validitymilestoning::DateTimeVali
 
    {doc.doc = 'The approach to derive validity (business) temporal data from source data.'}
    derivation: ValidityDerivation[0..1];
-}
-
-Class
-<<doc.deprecated>>
-{doc.doc = 'The representation of the validity (business) temporal dimension is at the discretion of the implementing system.'}
-meta::pure::persistence::metamodel::persister::validitymilestoning::OpaqueValidityMilestoning extends ValidityMilestoning
-{
 }
 
 // validity derivation from source data

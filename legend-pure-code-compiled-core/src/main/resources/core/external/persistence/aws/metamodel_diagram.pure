@@ -39,18 +39,6 @@ Diagram meta::external::persistence::aws::Persistence_Diagram(width=0.0, height=
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_3(
-        type=meta::external::persistence::aws::metamodel::trigger::AwsGlueScheduledTrigger,
-        position=(376.37123, 646.49742),
-        width=225.13086,
-        height=128.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
     TypeView cview_2(
         type=meta::pure::persistence::metamodel::PersistenceContext,
         position=(741.67702, 243.54658),
@@ -121,15 +109,6 @@ Diagram meta::external::persistence::aws::Persistence_Diagram(width=0.0, height=
         lineStyle=SIMPLE)
 
     GeneralizationView gview_1(
-        source=cview_3,
-        target=cview_4,
-        points=[(488.93666,710.49742),(488.22949,529.00000)],
-        label='',
-        color=#000000,
-        lineWidth=-1.0,
-        lineStyle=SIMPLE)
-
-    GeneralizationView gview_2(
         source=cview_5,
         target=cview_10,
         points=[(1497.38542,696.58346),(1495.83975,529.56502)],

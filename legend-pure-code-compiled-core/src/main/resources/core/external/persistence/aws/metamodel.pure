@@ -28,22 +28,6 @@ meta::external::persistence::aws::metamodel::AwsGluePersistenceContext extends P
 }
 
 /**********
- * trigger
- **********/
-
-Class
-{doc.doc = 'A trigger that executes an AWS Glue job on a schedule specified as a cron expression: https://docs.aws.amazon.com/glue/latest/dg/monitor-data-warehouse-schedule.html'}
-meta::external::persistence::aws::metamodel::trigger::AwsGlueScheduledTrigger extends Trigger
-{
-   minutes: String[1];
-   hours: String[1];
-   dayOfMonth: String[1];
-   month: String[1];
-   dayOfWeek: String[1];
-   year: String[1];
-}
-
-/**********
  * connection
  **********/
 
