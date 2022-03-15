@@ -363,7 +363,7 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForPrope
    let requiredProperty = if($isPropertyTemporalMilestoned, |$setImplementation.class->propertyByName($tgtPgft.property->edgePointPropertyName()->toOne()), |$tgtPgft.property);
    let propertyMappings = $setImplementation.propertyMappings->filter(pm|$pm.property == $requiredProperty)->cast(@PurePropertyMapping);
    
-   assert($propertyMappings->isNotEmpty() || ($requiredProperty->isNotEmpty() && ($setImplementation->isNoMappingPassThru($requiredProperty->toOne()) || $setImplementation->isNoMappingDefaultToEmpty($requiredProperty->toOne()))),|'No mapping found for property \'' + $tgtPgft.property.name->toOne() + '\'');
+   assert($propertyMappings->isNotEmpty() || ($requiredProperty->isNotEmpty() && ($setImplementation->isNoMappingPassThru($requiredProperty->toOne()) || $setImplementation->isNoMappingDefaultToEmpty($requiredProperty->toOne()) || $setImplementation->isPartOfMerge())),|'No mapping found for property \'' + $tgtPgft.property.name->toOne() + '\'');
 
    let returnType   = $tgtPgft.property->functionReturnType().rawType->toOne();
                   
@@ -407,7 +407,7 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForPrope
                ^Res(current=list($path), result=list($path));
             },
             {| 
-              assert($setImplementation->isNoMappingDefaultToEmpty($requiredProperty->toOne()), |'No mapping found for property \'' + $tgtPgft.property.name->toOne() + '\''); 
+              assert($setImplementation->isNoMappingDefaultToEmpty($requiredProperty->toOne()) || $setImplementation->isPartOfMerge(), |'No mapping found for property \'' + $tgtPgft.property.name->toOne() + '\''); 
               [];
             }
          );

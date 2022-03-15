@@ -81,10 +81,10 @@ function meta::pure::executionPlan::engine::java::graphFetch::inMemory::prepareF
                                                              $context.typeInfos
                                                           );,
 
-      p : InMemoryGraphFetchExecutionNode[1]            |  if($p->nodeIsMerged(),
-                                                                 | let classesUsedInMerge = $p.graphFetchTree.sets->cast(@MergeOperationSetImplementation).parameters.setImplementation->cast(@PureInstanceSetImplementation).srcClass->cast(@meta::pure::metamodel::type::Class<Any>);
-                                                                   $context.typeInfos->addForClassesWithAllProperties($classesUsedInMerge);,
-                                                                 |   $context.typeInfos;
+      p : InMemoryGraphFetchExecutionNode[1]            | if($p->nodeIsMerged(),  
+                                                             |  let classesUsedInMerge = $p.graphFetchTree.sets.parent.classMappings->filter(m|$m->instanceOf(MergeOperationSetImplementation))->cast(@MergeOperationSetImplementation).parameters.setImplementation->cast(@PureInstanceSetImplementation).srcClass->cast(@meta::pure::metamodel::type::Class<Any>);
+                                                                 $context.typeInfos->addForClassesWithAllProperties($classesUsedInMerge);,
+                                                             |   $context.typeInfos;
                                                               );
                                                         
                                                                
@@ -173,7 +173,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
    let resultPath =  $path+'.n1';
    let resultGraphImpl = $initialNode->graphImplClass($resultPath, $context);
    let rootSet = $node.graphFetchTree->cast(@RoutedRootGraphFetchTree<Any>).sets->cast(@OperationSetImplementation)->toOne();
-
+     
 
    let input = j_parameter(javaList(javaObject()), 'input');
 
@@ -485,11 +485,16 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
    let srcClass          = $set->sourceClass($extensions);
    let srcJavaClass      = $conventions->className($srcClass);
    let src               = j_variable($srcJavaClass, 'src');
+   let isMerged = $set->isPartOfMerge();
    let transform = if ($setHasExplosion,
                        | $set->cast(@PureInstanceSetImplementation)->propertyExplosionCodes($primitiveSubTrees, $result, $graphImplClass, $src, $wrapAsGraphInstance, $resolveToList, $conventions, $extensions, $debug),
-                       | let propertyValues = $primitiveSubTrees->map({st |
+                       |  let inScopeSubTrees =   $primitiveSubTrees->filter( t| $set->propertyMappingsByPropertyName($t.property->cast(@Property<Nil,Any|*>).name->toOne())->head() ->isNotEmpty() && $isMerged || !$isMerged ); 
+                       
+                         let propertyValues = $inScopeSubTrees->map({st |
                             let prop = $st.property->cast(@Property<Nil,Any|*>);
-                            $set->generatePropertyMappingTransform($prop, $set->propertyMappingsByPropertyName($prop.name->toOne())->head(), $src, $conventions, $extensions, $debug->indent());
+                            let propertyMapping =  $set->propertyMappingsByPropertyName($prop.name->toOne())->head();
+                            $set->generatePropertyMappingTransform($prop, $propertyMapping, $src, $conventions, $extensions, $debug->indent());
+                      
                          });
                          let milestoneDateGetter   = {strategy: SingleDateTemporalStrategy[1] |
                             let propertyName = temporalStrategyToPropertyName($strategy);
@@ -506,7 +511,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
                                                          | [$milestoneDateGetter->eval(^ProcessingTemporal()), $milestoneDateGetter->eval(^BusinessTemporal())],
                                                          | []
                                                      )));
-                         $result->objectCreationCodes($graphImplClass, $set, $src, $milestoningDateValues->concatenate($primitiveSubTrees.property->cast(@Property<Nil,Any|*>)->zip($propertyValues)), $wrapAsGraphInstance, $conventions);
+                         $result->objectCreationCodes($graphImplClass, $set, $src, $milestoningDateValues->concatenate($inScopeSubTrees.property->cast(@Property<Nil,Any|*>)->zip($propertyValues)), $wrapAsGraphInstance, $conventions);
                    );
    
    [$src->j_declare($input->j_cast($srcJavaClass))]->concatenate($set->applyTypeFilter($src, $transform, $context, $extensions, $debug->indent()))->toOneMany();
@@ -525,11 +530,12 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
 /* Property mapping helpers */
 
 function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::inMemory::generatePropertyMappingTransform(setImpl: InstanceSetImplementation[1], property: Property<Nil,Any|*>[1], propertyMapping: PropertyMapping[0..1], src: Code[1], conventions: Conventions[1], extensions: RouterExtension[*], debug: DebugContext[1]): Code[1]
-{
+{  
    print(if($debug.debug,|$debug.space+'generatePropertyMappingTransform: \''+$property.name->toOne()+'\'\n', |''));
    
    let isNoMappingPassThru       = $propertyMapping->isEmpty() && $property.owner->instanceOf(meta::pure::metamodel::type::Class) && $setImpl->isNoMappingPassThru($property);
    let isNoMappingDefaultToEmpty = $propertyMapping->isEmpty() && $property.owner->instanceOf(meta::pure::metamodel::type::Class) && $setImpl->isNoMappingDefaultToEmpty($property);
+   let isMergedUnMappedProperty =  $propertyMapping->isEmpty() && $setImpl ->isPartOfMerge();
    let propertyJavaType          = $conventions->pureTypeToJavaType($property);
 
    if ($isNoMappingPassThru,
@@ -547,7 +553,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
          ));
       },
       {|
-         if ($isNoMappingDefaultToEmpty,
+         if ($isNoMappingDefaultToEmpty || $isMergedUnMappedProperty,
             {| 
                if (isJavaList($propertyJavaType), 
                    | $propertyJavaType->j_emptyList(), 
