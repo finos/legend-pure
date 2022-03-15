@@ -140,6 +140,11 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::DefaultH2AuthenticationStrategy(
             _type = 'h2Default'
          ),
+      l:meta::pure::alloy::connections::alloy::authentication::ApiTokenAuthenticationStrategy[1] |
+         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::ApiTokenAuthenticationStrategy(
+            _type = 'apiToken',
+            apiToken = $l.apiToken
+         ),
       t:meta::pure::alloy::connections::alloy::authentication::TestDatabaseAuthenticationStrategy[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::TestDatabaseAuthenticationStrategy(
             _type = 'test'
@@ -180,6 +185,14 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
              _type = 'h2Local',
              testDataSetupCsv = $l.testDataSetupCsv,
              testDataSetupSqls = $l.testDataSetupSqls
+         ),
+       d:meta::pure::alloy::connections::alloy::specification::DatabricksDatasourceSpecification[1] |
+          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatabricksDatasourceSpecification(
+              _type = 'databricks',
+              hostname = $d.hostname,
+              port = $d.port,
+              protocol = $d.protocol,
+              httpPath = $d.httpPath
          ),
       s:meta::pure::alloy::connections::alloy::specification::SnowflakeDatasourceSpecification[1] |
         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::SnowflakeDatasourceSpecification(

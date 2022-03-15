@@ -28,6 +28,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
@@ -138,7 +139,11 @@ public class PackageTreeIterable extends AbstractLazyIterable<Package>
         @Override
         public Package next()
         {
-            Package pkg = this.deque.removeFirst();
+            Package pkg = this.deque.pollFirst();
+            if (pkg == null)
+            {
+                throw new NoSuchElementException();
+            }
             pkg._children().forEach(this::possiblyAddChild);
             return pkg;
         }

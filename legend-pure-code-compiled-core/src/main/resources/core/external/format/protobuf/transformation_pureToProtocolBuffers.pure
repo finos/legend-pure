@@ -69,46 +69,61 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
 
 function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1..*], options:Options[0..1]):ProtoFile[*]
 {
-   println($class.name);
    let allClasses = $class->map(c | $c->scanTypes([]))->removeDuplicates()->remove(Any);
-   println($allClasses.name);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
-   println($typesMap->keys()->map(k|$k->elementToPath()));
    let classesByPackage = $allClasses->groupBy(c | $c->elementToProtoPackage());
    
    $classesByPackage->keyValues()->map(p | 
       let thePackage = $p.first;
       let packageClasses = $p.second.values;
 
-      let topLevelDefs = $packageClasses
+      let messages = $packageClasses
         ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>)
         ->map(c|
+            //Collect any abstract base classes
+            let oneOfs = $c->filter(c | ($c->allProperties()->isEmpty() || $c->isAbstract()) && $c->allSpecializations()->isNotEmpty())
+                                      ->removeDuplicates()
+                                      ->map(c | let subClasses = $c->allSpecializations()->filter(sc | $sc != $c);
+                                                ^OneOf(
+                                                  name=$c.name->toOne()->toLower(),
+                                                  field=$subClasses->map(s | ^Field(name=$s.name->toOne()->meta::pure::functions::string::splitOnCamelCase()->joinStrings('_')->toLower(), 
+                                                                                    type=$typesMap->get($s)->toOne(),
+                                                                                    number=$subClasses->indexOf($s)+1,
+                                                                                    repeated=false
+                                                                                    ))
+                                                ););
             ^Message
             (
               name = $c.name->toOne(),
-              fields = $c.properties->map(p|$p->propertyToField($c.properties->indexOf($p)+1, $typesMap))
-            )
-        )->concatenate
-            (
-              $packageClasses
+              content = $oneOfs->concatenate($c.properties->map(p|$p->propertyToField($c.properties->indexOf($p)+1, $typesMap)))
+            );
+        );
+        
+      let enumerations = $packageClasses
               ->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->cast(@meta::pure::metamodel::type::Enumeration<Any>)
               ->map(e|
                     ^meta::external::format::protobuf::metamodel::Enumeration
                     (
                         name = $e->enumName(),
                         values = $e->enumValues()->map(v|^meta::external::format::protobuf::metamodel::Enum(constant=$v->toString(), constantNumber=$e->enumValues()->indexOf($v)))
-                    )
-                )
-            );
+                    )->cast(@meta::external::format::protobuf::metamodel::TopLevelItem); //TODO - seems like a bug in pure should not be necessary
+                );
+
+      let topLevelDefs = $messages->concatenate($enumerations);      
 
       //If this is a complex type that is not in the current package, we need to import it      
-      let imports = $packageClasses
-        ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>).properties
-        ->filter(p | !$p->isPrimitiveValueProperty() && ($p.genericType.rawType.package->toOne()->elementToPath('.') != $thePackage))
-        ->map( p | $p.genericType.rawType->toOne()->elementToProtoPackage()->protoPackageToFileName());
-
+      let imports = $messages.content
+        ->map(m| $m->match([
+          f:Field[1]|$f.type,
+          o:OneOf[1]|$o.field.type]))
+        ->filter(t|$t->instanceOf(MessagePtr))->cast(@MessagePtr)
+        ->filter(m | $m.package != $thePackage)
+        ->map(p| if ( $p.package == 'google.protobuf', | 'google/protobuf/' + $p.name->toLower() + '.proto'
+                                                                    , | $p.package->protoPackageToFileName()))
+        ->removeDuplicates()->sort()->map(s | ^ProtoImport(name=$s));
+        
       ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs,
-                 imports=['google/protobuf/timestamp.proto']->concatenate($imports),
+                 imports=$imports,
                  options=$options);
    );
 }
@@ -117,9 +132,11 @@ function meta::external::format::protobuf::generation::propertyToField(property:
 {
    ^Field
    (
-      name = $property.name->toOne()->toLower(),
-      type = $typesMap->get($property.genericType.rawType->toOne())->toOne(),
-      binaryFieldNumber = $index,
+      name = $property.name->toOne()->meta::pure::functions::string::splitOnCamelCase()->joinStrings('_')->toLower(),
+      type = if($property.genericType.rawType == Map,|^MapType(keyType=$typesMap->get($property.genericType.typeArguments->at(0).rawType->toOne())->toOne()->cast(@ScalarType),
+                                                                         valueType=$typesMap->get($property.genericType.typeArguments->at(1).rawType->toOne())->toOne())
+                                                              ,| $typesMap->get($property.genericType.rawType->toOne())->toOne()),
+      number = $index,
       repeated = !$property.multiplicity->hasUpperBound() || ($property.multiplicity.upperBound->toOne().value > 1)
    );
 }
@@ -154,7 +171,7 @@ function meta::external::format::protobuf::generation::scanTypes(t:Type[1], proc
 {
    if (!$processed->contains($t),
        |$t->concatenate(if($t->instanceOf(Class),
-                         |$t->cast(@Class<Any>)->allProperties().genericType.rawType->distinct()->concatenate($t->cast(@Class<Any>)->meta::pure::functions::meta::findAllSpecializations())->filter(t|($t->instanceOf(Class) || $t->instanceOf(meta::pure::metamodel::type::Enumeration)) && $t != Any)->map(c|$c->meta::external::format::protobuf::generation::scanTypes($processed->concatenate($t)))->distinct(),
+                         |$t->cast(@Class<Any>)->allProperties().genericType.rawType->distinct()->concatenate($t->cast(@Class<Any>)->meta::pure::functions::meta::findAllSpecializations())->filter(t|($t->instanceOf(Class) || $t->instanceOf(meta::pure::metamodel::type::Enumeration)) && $t != Any && $t != Map)->map(c|$c->meta::external::format::protobuf::generation::scanTypes($processed->concatenate($t)))->distinct(),
                          |[]
                        )),
        |[]
