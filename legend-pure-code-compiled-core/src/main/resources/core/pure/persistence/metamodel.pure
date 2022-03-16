@@ -85,7 +85,7 @@ meta::pure::persistence::metamodel::trigger::ManualTrigger extends Trigger
 
 Class
 {doc.doc = 'A trigger that executes on a schedule specified as a cron expression.'}
-meta::pure::persistence::metamodel::trigger::CronBasedTrigger extends Trigger
+meta::pure::persistence::metamodel::trigger::CronTrigger extends Trigger
 {
    minutes: String[1];
    hours: String[1];
