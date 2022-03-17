@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::external::persistence::aws::metamodel::*;
+
 import meta::pure::persistence::metamodel::*;
 import meta::pure::persistence::metamodel::trigger::*;
 
@@ -33,6 +35,21 @@ meta::external::persistence::aws::metamodel::AwsGluePersistenceContext extends P
 
  Class meta::external::persistence::aws::metamodel::connection::AwsS3Connection extends Connection
  {
+   partition: AwsPartition[1];
    region: String[1];
    bucket: String[1];
  }
+
+Enum
+{doc.doc = 'A grouping of regions as defined in AWS: https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket.html'}
+meta::external::persistence::aws::metamodel::AwsPartition
+{
+   {doc.doc = 'Standard regions'}
+   AWS,
+
+   {doc.doc = 'China regions'}
+   AWS_CN,
+
+   {doc.doc = 'AWS GovCloud (US) regions'}
+   AWS_US_GOV
+}

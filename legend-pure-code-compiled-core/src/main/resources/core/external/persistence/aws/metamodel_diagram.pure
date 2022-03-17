@@ -89,9 +89,9 @@ Diagram meta::external::persistence::aws::Persistence_Diagram(width=0.0, height=
 
     TypeView cview_5(
         type=meta::external::persistence::aws::metamodel::connection::AwsS3Connection,
-        position=(1434.82097, 667.58346),
-        width=125.12891,
-        height=58.00000,
+        position=(1418.82097, 652.58346),
+        width=153.03125,
+        height=72.00000,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -111,7 +111,7 @@ Diagram meta::external::persistence::aws::Persistence_Diagram(width=0.0, height=
     GeneralizationView gview_1(
         source=cview_5,
         target=cview_10,
-        points=[(1497.38542,696.58346),(1495.83975,529.56502)],
+        points=[(1495.33659,688.58346),(1495.83975,529.56502)],
         label='',
         color=#000000,
         lineWidth=-1.0,
