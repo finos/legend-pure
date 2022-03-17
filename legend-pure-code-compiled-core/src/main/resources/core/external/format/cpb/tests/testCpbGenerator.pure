@@ -19,13 +19,15 @@ import meta::json::*;
 
 import meta::pure::persistence::metamodel::*;
 import meta::pure::persistence::metamodel::trigger::*;
+import meta::pure::persistence::metamodel::notifier::*;
 import meta::pure::persistence::metamodel::reader::*;
+import meta::pure::persistence::metamodel::persister::*;
+import meta::pure::persistence::metamodel::persister::audit::*;
+import meta::pure::persistence::metamodel::persister::targetshape::*;
+import meta::pure::persistence::metamodel::persister::ingestmode::*;
+import meta::pure::persistence::metamodel::persister::ingestmode::snapshot::*;
+import meta::pure::persistence::metamodel::persister::deduplication::*;
 import meta::legend::service::metamodel::*;
-import meta::pure::persistence::metamodel::batch::*;
-import meta::pure::persistence::metamodel::batch::targetspecification::*;
-import meta::pure::persistence::metamodel::batch::deduplication::*;
-import meta::pure::persistence::metamodel::batch::mode::snapshot::*;
-import meta::pure::persistence::metamodel::batch::audit::*;
 
 Profile meta::external::format::cpb::generation::tests::CpbProperty
 {
@@ -39,50 +41,54 @@ Class <<access.private>> meta::external::format::cpb::generation::tests::A
     a: String[1];
 }
 
-function <<access.private>> meta::external::format::cpb::generation::tests::getPersistencePipe(): PersistencePipe[1]
+function <<access.private>> meta::external::format::cpb::generation::tests::getPersistence(): Persistence[1]
 {
   let package = meta::pure::functions::meta::pathToPackage('cnas::pipes', true);
 
-  let svcReader = ^ServiceReader(
-      service = ^Service(
-		package = $package,
-        pattern = '/mountains/lhotse',
-        owners = ['ram'],
-        autoActivateUpdates = true,
-        documentation = 'A service',
-        execution = ^PureExecution(func = {|true}),
-        test = ^Test(),
-        tags = []
-      )
-    );
+  let notifier = ^Notifier(
+    notifyees = [
+      ^EmailNotifyee(emailAddress = 'basecamp@k2.com'),
+      ^PagerDutyNotifyee(url = 'http://mountains.are.cool')
+	]
+  );
 
-  let pp = ^PersistencePipe(
+  let service = ^Service(
+	package = $package,
+	pattern = '/mountains/lhotse',
+	owners = ['ram'],
+	autoActivateUpdates = true,
+	documentation = 'A service',
+	execution = ^PureExecution(func = {|true}),
+	test = ^Test(),
+	tags = []
+  );
+
+  let p = ^Persistence(
     package = $package,
-    documentation = 'This is not a pipe',
-    owners = ['rajamor', 'chheda'],
-    trigger = ^OpaqueTrigger(),
-    reader = $svcReader,
+    documentation = 'Mountains persist for a long time',
+    trigger = ^ManualTrigger(),
+    service = $service,
     persister = ^BatchPersister(
-      targetSpecification = ^FlatTargetSpecification(
+      targetShape = ^FlatTarget(
         modelClass = A,
         targetName = 's3sink',
         deduplicationStrategy = ^NoDeduplicationStrategy(),
-        batchMilestoningMode = ^NonMilestonedSnapshot(
+		ingestMode = ^NontemporalSnapshot(
           auditing = ^NoAuditing()
         )
       )
-    )
+    ),
+    notifier = $notifier
   );
 
-  $pp;
+  $p;
 }
 
 
-function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::cpb::generation::tests::transform_persistencePipeToBackend(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::cpb::generation::tests::transform_persistenceToBackend(): Boolean[1]
 {
-  let pp = getPersistencePipe();
+  let p = getPersistence();
   let config = meta::external::format::cpb::generation::defaultConfig();
-  let schema = transform(^$config(scopeElements=[$pp]))->at(0)->at(0).content;
-  assertEquals('{"items":"This is not a pipe","owners":["rajamor","chheda"]}', $schema);
+  let schema = transform(^$config(scopeElements=[$p]))->at(0)->at(0).content;
+  assertEquals('{"documentation":"Mountains persist for a long time","notifier":{"notifyees":[{"emailAddress":"basecamp@k2.com"},{"url":"http:\\/\\/mountains.are.cool"}]},"trigger":{},"service":"cnas::pipes","persister":{"targetShape":{"modelClass":{"package":"meta::external::format::cpb::generation::tests","name":"A","sourceInformation":{"source":"\\/core\\/external\\/format\\/cpb\\/tests\\/testCpbGenerator.pure","line":39,"column":74,"startLine":39,"startColumn":1,"endLine":42,"endColumn":1},"typeParameters":[],"generalizations":[{"rawType":"meta::pure::metamodel::type::Any","typeArguments":[]}],"properties":[{"name":"a","aggregation":"None","multiplicity":"1","genericType":{"rawType":"String","typeArguments":[]},"stereotypes":[],"taggedValues":[]}],"qualifiedProperties":[],"stereotypes":[{"profile":"meta::pure::profiles::access","value":"private"}],"taggedValues":[]},"targetName":"s3sink","deduplicationStrategy":{},"ingestMode":{"auditing":{}}}}}', $schema);
 }
-

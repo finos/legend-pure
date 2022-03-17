@@ -21,7 +21,6 @@ import meta::external::format::cpb::metamodel::*;
 
 import meta::pure::persistence::metamodel::*;
 import meta::pure::persistence::metamodel::trigger::*;
-import meta::pure::persistence::metamodel::reader::*;
 import meta::legend::service::metamodel::*;
 import meta::pure::persistence::metamodel::batch::*;
 import meta::pure::persistence::metamodel::batch::targetspecification::*;
@@ -43,32 +42,32 @@ function  meta::external::format::cpb::generation::transform(input: CpbConfig[1]
 
 function <<access.private,Generation.Transformation>> meta::external::format::cpb::generation::internal_transform(input: CpbConfig[1]): CpbOutput[*]
 {
-   let possibleElement = $input.allPackageScopeElements()->filter(p|$p->instanceOf(PersistencePipe))->cast(@PersistencePipe);
-   assertNotEmpty($possibleElement, | 'No persistence pipe was found');
-   assertFalse($possibleElement->size()>1, | 'More than one persistence pipe was found');
-   $input->meta::external::format::cpb::generation::generateCpbFromPure($possibleElement->toOne()->cast(@PersistencePipe));
+   let possibleElement = $input.allPackageScopeElements()->filter(p|$p->instanceOf(Persistence))->cast(@Persistence);
+   assertNotEmpty($possibleElement, | 'No Persistence was found');
+   assertFalse($possibleElement->size()>1, | 'More than one Persistence was found');
+   $input->meta::external::format::cpb::generation::generateCpbFromPure($possibleElement->toOne()->cast(@Persistence));
 }
 
 
 function meta::external::format::cpb::generation::generateCpbFromPureWithScope(config: CpbConfig[1]): CpbOutput[*]
 {
-   let scopeElements = $config.allPackageScopeElements()->filter(p|$p->instanceOf(PersistencePipe))->cast(@PersistencePipe);
-   assertNotEmpty($scopeElements, 'At least one PersistencePipe is needed to transform into cloud-persistent backend form');
-   $scopeElements->map(pp| $config->meta::external::format::cpb::generation::generateCpbFromPure($pp));
+   let scopeElements = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Persistence))->cast(@Persistence);
+   assertNotEmpty($scopeElements, 'At least one Persistence is needed to transform into cloud-persistent backend form');
+   $scopeElements->map(p| $config->meta::external::format::cpb::generation::generateCpbFromPure($p));
 }
 
-function meta::external::format::cpb::generation::generateCpbFromPure(config: CpbConfig[1], pp: PersistencePipe[1]): CpbOutput[*]
+function meta::external::format::cpb::generation::generateCpbFromPure(config: CpbConfig[1], p: Persistence[1]): CpbOutput[*]
 {
-   let content = $pp->generateCpbBackend();
-   let out = ^CpbOutput(content=$content,fileName=$pp->elementToPath()->pathToFileName('cpb'), format='json');
+   let content = $p->generateCpbBackend();
+   let out = ^CpbOutput(content=$content,fileName=$p->elementToPath()->pathToFileName('cpb'), format='json');
    $out;
 }
 
-function meta::external::format::cpb::generation::generateCpbBackend(pp: PersistencePipe[1]): String[1]
+function meta::external::format::cpb::generation::generateCpbBackend(p: Persistence[1]): String[1]
 {
   let jsonConfig = config(false, false, true, true);
-  let fileName = 'persistence/' + $pp->elementToPath()->pathToFileName('json');
-  let content = ^PersistenceCPB(documentation=$pp.documentation, owners=$pp.owners, trigger=$pp.trigger, reader=$pp.reader, persister=$pp.persister);
+  let fileName = 'persistence/' + $p->elementToPath()->pathToFileName('json');
+  let content = ^PersistenceCPB(documentation=$p.documentation, notifier=$p.notifier, trigger=$p.trigger, service=$p.service, persister=$p.persister);
   $content->toJSONElement(meta::external::format::cpb::generation::extraJsonSerializers(), 1000, $jsonConfig)->toCompactJSONString();
 }
 
