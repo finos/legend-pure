@@ -953,14 +953,14 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processSemiStructuredObjectNavigation(s:SemiStructuredObjectNavigation[1], dbConfig:DbConfig[1], format:Format[1], generationState:GenerationState[1], config:Config[1], extensions:RouterExtension[*]): String[1]
 {
-   let supportedDbTypes = [DatabaseType.Snowflake];
+   let supportedDbTypes = [DatabaseType.Snowflake, DatabaseType.H2];
    assert($dbConfig.dbType->in($supportedDbTypes), | 'Semi structured navigation not supported for database type: ' + $dbConfig.dbType->toString() + '. Supported database types are: ' + $supportedDbTypes->map(d|$d->toString())->joinStrings(', '));
 
    let processedOperand = $s.operand->processOperation($dbConfig, $format, $generationState, $config, $extensions);
 
-   if ($dbConfig.dbType == DatabaseType.Snowflake,
-       | $s->processSemiStructuredObjectNavigationForSnowflake($processedOperand),
-       | fail('Unsupported database type ' +$dbConfig.dbType->toString()); '';);
+   if ($dbConfig.dbType == DatabaseType.Snowflake, | $s->processSemiStructuredObjectNavigationForSnowflake($processedOperand), |
+   if ($dbConfig.dbType == DatabaseType.H2, | $s->processSemiStructuredObjectNavigationForH2($processedOperand), |
+   fail('Unsupported database type ' +$dbConfig.dbType->toString()); '';));
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processSemiStructuredObjectNavigationForSnowflake(s:SemiStructuredObjectNavigation[1], processedOperand:String[1]): String[1]
@@ -978,6 +978,32 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
                     '')));
 
    $elementAccess + $castSuffix;
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::processSemiStructuredObjectNavigationForH2(s:SemiStructuredObjectNavigation[1], processedOperand:String[1]): String[1]
+{
+   // Use a user defined function for H2 (testing purpose)
+   
+   let udfName = 'legend_h2_extension_json_navigate';
+
+   let elementAccess = $s->match([
+      p: SemiStructuredPropertyAccess[1] | 
+         let propertyAccess = $udfName + '(' + $processedOperand + ', \'' + $p.property->cast(@Literal).value->cast(@String) + '\', null)';
+         if ($p.index->isNotEmpty(),
+             | $udfName + '(' + $propertyAccess + ', null, ' + $p.index->toOne()->cast(@Literal).value->toString() + ')',
+             | $propertyAccess
+         );,
+
+      a: SemiStructuredArrayElementAccess[1] | $udfName + '(' + $processedOperand + ', null, ' + $a.index->cast(@Literal).value->toString() + ')'
+   ]);
+
+   if ($s.returnType == String, | 'cast(' + $elementAccess + ' as varchar)', |
+   if ($s.returnType == Boolean, | 'cast(' + $elementAccess + ' as boolean)', |
+   if ($s.returnType == Float, | 'cast(' + $elementAccess + ' as float)', |
+   if ($s.returnType == Integer, | 'cast(' + $elementAccess + ' as integer)', |
+   if ($s.returnType == StrictDate, | 'cast(' + $elementAccess + ' as date)', |
+   if ($s.returnType->isNotEmpty() && $s.returnType->toOne()->_subTypeOf(Date), | 'cast(' + $elementAccess + ' as timestamp)', |
+   $elementAccess))))));
 }
 
 Class <<access.private>> meta::relational::functions::sqlQueryToString::DynaFunctionToSql
