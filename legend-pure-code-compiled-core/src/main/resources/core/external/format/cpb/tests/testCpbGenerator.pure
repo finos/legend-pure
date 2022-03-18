@@ -28,11 +28,6 @@ import meta::pure::persistence::metamodel::persister::ingestmode::*;
 import meta::pure::persistence::metamodel::persister::ingestmode::snapshot::*;
 import meta::pure::persistence::metamodel::persister::deduplication::*;
 import meta::legend::service::metamodel::*;
-import meta::pure::persistence::metamodel::batch::*;
-import meta::pure::persistence::metamodel::batch::targetspecification::*;
-import meta::pure::persistence::metamodel::batch::deduplication::*;
-import meta::pure::persistence::metamodel::batch::mode::snapshot::*;
-import meta::pure::persistence::metamodel::batch::audit::*;
 
 Profile meta::external::format::cpb::generation::tests::CpbProperty
 {
@@ -95,6 +90,5 @@ function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::c
   let p = getPersistence();
   let config = meta::external::format::cpb::generation::defaultConfig();
   let schema = transform(^$config(scopeElements=[$p]))->at(0)->at(0).content;
-  assertEquals('{"items":"Mountains persist for a long time","notifiers":["basecamp@k2.com","http://mountains.are.cool"]}', $schema);
+  assertEquals('{"documentation":"Mountains persist for a long time","notifier":{"notifyees":[{"emailAddress":"basecamp@k2.com"},{"url":"http:\\/\\/mountains.are.cool"}]},"trigger":{},"service":"cnas::pipes","persister":{"targetShape":{"modelClass":{"package":"meta::external::format::cpb::generation::tests","name":"A","sourceInformation":{"source":"\\/core\\/external\\/format\\/cpb\\/tests\\/testCpbGenerator.pure","line":39,"column":74,"startLine":39,"startColumn":1,"endLine":42,"endColumn":1},"typeParameters":[],"generalizations":[{"rawType":"meta::pure::metamodel::type::Any","typeArguments":[]}],"properties":[{"name":"a","aggregation":"None","multiplicity":"1","genericType":{"rawType":"String","typeArguments":[]},"stereotypes":[],"taggedValues":[]}],"qualifiedProperties":[],"stereotypes":[{"profile":"meta::pure::profiles::access","value":"private"}],"taggedValues":[]},"targetName":"s3sink","deduplicationStrategy":{},"ingestMode":{"auditing":{}}}}}', $schema);
 }
-
