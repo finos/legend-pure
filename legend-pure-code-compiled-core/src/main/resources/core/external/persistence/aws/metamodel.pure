@@ -24,8 +24,8 @@ import meta::pure::runtime::*;
  **********/
 
 Class
-{doc.doc = 'Details for executing a persistence specification using the AWS Glue ETL service: https://docs.aws.amazon.com/glue/index.html'}
-meta::external::persistence::aws::metamodel::AwsGluePersistenceContext extends PersistenceContext
+{doc.doc = 'Details for executing a persistence specification via an AWS service'}
+meta::external::persistence::aws::metamodel::AwsPersistenceContext extends PersistenceContext
 {
 }
 

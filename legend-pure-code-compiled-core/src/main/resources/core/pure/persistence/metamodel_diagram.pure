@@ -459,18 +459,6 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_71(
-        type=meta::pure::runtime::Connection,
-        position=(1594.01128, 343.94853),
-        width=104.35840,
-        height=44.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
     TypeView cview_72(
         type=meta::legend::service::metamodel::Service,
         position=(225.01128, 582.94853),
@@ -512,6 +500,18 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         position=(29.36040, 407.94853),
         width=223.80078,
         height=128.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_71(
+        type=meta::pure::runtime::Connection,
+        position=(1595.01504, 342.94477),
+        width=104.35840,
+        height=44.00000,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -1023,7 +1023,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         property=meta::pure::persistence::metamodel::persister::Persister.connections,
         source=cview_8,
         target=cview_71
-,        points=[(1269.97949,365.28643),(1646.19047,365.94853)],
+,        points=[(1269.97949,365.28643),(1647.19423,364.94477)],
         label='',
         propertyPosition=(0.0,0.0),
         multiplicityPosition=(0.0,0.0),

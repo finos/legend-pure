@@ -51,18 +51,6 @@ Diagram meta::external::persistence::aws::Persistence_Diagram(width=0.0, height=
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_1(
-        type=meta::external::persistence::aws::metamodel::AwsGluePersistenceContext,
-        position=(603.06832, 371.67702),
-        width=223.11523,
-        height=44.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
     TypeView cview_8(
         type=meta::pure::persistence::metamodel::persister::Persister,
         position=(1096.97774, 485.57046),
@@ -99,19 +87,31 @@ Diagram meta::external::persistence::aws::Persistence_Diagram(width=0.0, height=
         color=#FFFFCC,
         lineWidth=1.0)
 
+    TypeView cview_11(
+        type=meta::external::persistence::aws::metamodel::AwsPersistenceContext,
+        position=(603.42611, 361.56502),
+        width=223.11523,
+        height=44.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
     GeneralizationView gview_0(
-        source=cview_1,
-        target=cview_2,
-        points=[(714.62594,393.67702),(854.57350,279.54658)],
+        source=cview_5,
+        target=cview_10,
+        points=[(1495.33659,688.58346),(1495.83975,529.56502)],
         label='',
         color=#000000,
         lineWidth=-1.0,
         lineStyle=SIMPLE)
 
     GeneralizationView gview_1(
-        source=cview_5,
-        target=cview_10,
-        points=[(1495.33659,688.58346),(1495.83975,529.56502)],
+        source=cview_11,
+        target=cview_2,
+        points=[(714.98373,383.56502),(854.57350,279.54658)],
         label='',
         color=#000000,
         lineWidth=-1.0,
