@@ -21,7 +21,6 @@ import meta::external::format::cpb::metamodel::*;
 
 import meta::pure::persistence::metamodel::*;
 import meta::pure::persistence::metamodel::trigger::*;
-import meta::pure::persistence::metamodel::reader::*;
 import meta::legend::service::metamodel::*;
 import meta::pure::persistence::metamodel::batch::*;
 import meta::pure::persistence::metamodel::batch::targetspecification::*;
