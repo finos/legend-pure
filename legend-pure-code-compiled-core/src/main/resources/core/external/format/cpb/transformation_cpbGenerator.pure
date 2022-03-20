@@ -66,8 +66,7 @@ function meta::external::format::cpb::generation::generateCpbFromPure(config: Cp
 function meta::external::format::cpb::generation::generateCpbBackend(p: Persistence[1]): String[1]
 {
   let jsonConfig = config(false, false, true, true);
-  let fileName = 'persistence/' + $p->elementToPath()->pathToFileName('json');
-  let content = ^PersistenceCPB(documentation=$p.documentation, notifier=$p.notifier, trigger=$p.trigger, service=$p.service, persister=$p.persister);
+  let content = meta::external::format::cpb::serialization::serialize($p);
   $content->toJSONElement(meta::external::format::cpb::generation::extraJsonSerializers(), 1000, $jsonConfig)->toCompactJSONString();
 }
 

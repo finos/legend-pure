@@ -5,6 +5,34 @@ import meta::legend::service::metamodel::*;
 import meta::pure::persistence::metamodel::trigger::*;
 import meta::pure::persistence::metamodel::notifier::*;
 import meta::pure::persistence::metamodel::persister::*;
+import meta::pure::persistence::metamodel::persister::deduplication::*;
+import meta::pure::persistence::metamodel::persister::ingestmode::*;
+import meta::pure::persistence::metamodel::persister::audit::*;
+import meta::pure::persistence::metamodel::persister::transactionmilestoning::*;
+import meta::external::format::cpb::metamodel::*;
+import meta::pure::runtime::*;
+
+Class meta::external::format::cpb::metamodel::AwsPersistenceTargetShapeProperties
+{
+  name: String[1];
+  awstype: Type[1];
+}
+
+Class meta::external::format::cpb::metamodel::AwsPersistenceTargetShape
+{
+  name: String[1];
+  package: Package[1];
+  properties: AwsPersistenceTargetShapeProperties[*];
+}
+
+Class meta::external::format::cpb::metamodel::AwsPersistenceTarget
+{
+  targetName: String[1];
+  connection: Connection[1];
+  // deduplicationStrategy: DeduplicationStrategy[1];
+  ingestMode: IngestMode[0..1];
+  shape: AwsPersistenceTargetShape[1];
+}
 
 Class meta::external::format::cpb::metamodel::PersistenceCPB
 {
@@ -12,5 +40,6 @@ Class meta::external::format::cpb::metamodel::PersistenceCPB
    service: Service[1];
    trigger: Trigger[1];
    notifier: Notifier[1];
-   persister: Persister[1];
+   persister: Persister[0..1];
+   target: AwsPersistenceTarget[1..*];
 }
