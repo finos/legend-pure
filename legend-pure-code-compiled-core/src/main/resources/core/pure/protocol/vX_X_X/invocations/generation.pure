@@ -31,33 +31,33 @@ function meta::protocols::pure::vX_X_X::invocation::generation::json::legendGene
 ###Pure
 
 import meta::pure::generation::metamodel::*;
-import meta::external::format::cpb::generation::*;
+import meta::external::format::awspersistence::generation::*;
 import meta::json::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::*;
 import meta::alloy::metadataServer::*;
 import meta::pure::functions::io::http::*;
 
 function <<access.private>>
-meta::protocols::pure::vX_X_X::invocation::generation::cpb::legendGenerateCpb(input:CpbConfig[1], host:String[1], port:Integer[1]):CpbOutput[*]
+meta::protocols::pure::vX_X_X::invocation::generation::awspersistence::legendGenerateAwsPersistence(input:AwsPersistenceConfig[1], host:String[1], port:Integer[1]):AwsPersistenceOutput[*]
 {
-   meta::protocols::pure::vX_X_X::invocation::generation::cpb::legendGenerateCpb($input, $host, $port, 'v1');
+   meta::protocols::pure::vX_X_X::invocation::generation::awspersistence::legendGenerateAwsPersistence($input, $host, $port, 'v1');
 }
 
 function
-meta::protocols::pure::vX_X_X::invocation::generation::cpb::legendGenerateCpb(cpbConfig:CpbConfig[1], host:String[1], port:Integer[1], version:String[1]):CpbOutput[*]
+meta::protocols::pure::vX_X_X::invocation::generation::awspersistence::legendGenerateAwsPersistence(c:AwsPersistenceConfig[1], host:String[1], port:Integer[1], version:String[1]):AwsPersistenceOutput[*]
 {
-   let resp = executeHTTPRaw(^URL(host = $host , port=$port, path = '/api/pure/'+$version+'/schemaGeneration/cpb'),
+   let resp = executeHTTPRaw(^URL(host = $host , port=$port, path = '/api/pure/'+$version+'/schemaGeneration/awspersistence'),
                                  HTTPMethod.POST,
                                  'application/json',
                                  '{ "clientVersion":"vX_X_X",'+
-                                 ' "config":'+$cpbConfig->meta::protocols::pure::vX_X_X::invocation::generation::cpb::transformCpbGenerationConfig()->alloyToJSON()+','+
-                                 '  "model":'+if ($cpbConfig.package->isEmpty(),
-                                                  |$cpbConfig.class->toOne()->pathToElement()->toOne()->cast(@Type)->buildPureModelFromType(meta::pure::router::extension::defaultExtensions())->alloyToJSON(),
-                                                  |$cpbConfig.package->toOne()->pathToElement()->toOne()->cast(@Package)->buildPureModelFromPackage(meta::pure::router::extension::defaultExtensions())->alloyToJSON())+
+                                 ' "config":'+$c->meta::protocols::pure::vX_X_X::invocation::generation::awspersistence::transformAwsPersistenceGenerationConfig()->alloyToJSON()+','+
+                                 '  "model":'+if ($c.package->isEmpty(),
+                                                  |$c.class->toOne()->pathToElement()->toOne()->cast(@Type)->buildPureModelFromType(meta::pure::router::extension::defaultExtensions())->alloyToJSON(),
+                                                  |$c.package->toOne()->pathToElement()->toOne()->cast(@Package)->buildPureModelFromPackage(meta::pure::router::extension::defaultExtensions())->alloyToJSON())+
                                  '}'
                                 );
    assertEq(200, $resp.statusCode, | $resp.entity);
-   $resp.entity->parseJSON()->fromJSON(CpbOutput, ^ExtendedJSONDeserializationConfig(nullReplacementInArray = ^TDSNull(), typeKeyName='__TYPE', failOnUnknownProperties=true))->cast(@CpbOutput);
+   $resp.entity->parseJSON()->fromJSON(AwsPersistenceOutput, ^ExtendedJSONDeserializationConfig(nullReplacementInArray = ^TDSNull(), typeKeyName='__TYPE', failOnUnknownProperties=true))->cast(@AwsPersistenceOutput);
 }
 
 

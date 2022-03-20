@@ -1,0 +1,44 @@
+// TODO: Make this accessible only from meta::external::format::awspersistence::generation::generateBackend
+
+import meta::pure::persistence::metamodel::*;
+import meta::legend::service::metamodel::*;
+import meta::pure::persistence::metamodel::trigger::*;
+import meta::pure::persistence::metamodel::notifier::*;
+import meta::pure::persistence::metamodel::persister::*;
+import meta::pure::persistence::metamodel::persister::deduplication::*;
+import meta::pure::persistence::metamodel::persister::ingestmode::*;
+import meta::pure::persistence::metamodel::persister::audit::*;
+import meta::pure::persistence::metamodel::persister::transactionmilestoning::*;
+import meta::pure::runtime::*;
+
+Class meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShapeProperties
+{
+  name: String[1];
+  awstype: Type[1];
+}
+
+Class meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShape
+{
+  name: String[1];
+  package: Package[1];
+  properties: meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShapeProperties[*];
+}
+
+Class meta::external::format::awspersistence::metamodel::AwsPersistenceTarget
+{
+  targetName: String[1];
+  connection: Connection[1];
+  // deduplicationStrategy: DeduplicationStrategy[1];
+  ingestMode: IngestMode[0..1];
+  shape: meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShape[1];
+}
+
+Class meta::external::format::awspersistence::metamodel::AwsPersistence
+{
+   documentation: String[1];
+   service: Service[1];
+   trigger: Trigger[1];
+   notifier: Notifier[1];
+   persister: Persister[0..1];
+   target: meta::external::format::awspersistence::metamodel::AwsPersistenceTarget[1..*];
+}

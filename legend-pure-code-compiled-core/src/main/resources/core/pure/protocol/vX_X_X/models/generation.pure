@@ -63,7 +63,7 @@ Enum meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf:
 }
 
 ###Pure
-Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::cpb::CpbConfig extends meta::protocols::pure::vX_X_X::metamodel::invocation::generation::GenerationConfiguration
+Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::awspersistence::AwsPersistenceConfig extends meta::protocols::pure::vX_X_X::metamodel::invocation::generation::GenerationConfiguration
 {
 
    comment: String[0..1];
