@@ -125,10 +125,26 @@ function <<access.private>> meta::relational::functions::toDDL::createTableState
    'Create Table '+if($t.schema.name == 'default',|'',|$t.schema.name+'.')+$t.name+
       + '('
       + $t.columns->cast(@meta::relational::metamodel::Column)
-         ->map(c | $c.name->meta::relational::functions::sqlQueryToString::processColumnName($dbConfig) + ' ' + meta::relational::metamodel::datatype::dataTypeToSqlText($c.type) + if($c.nullable->isEmpty() || $applyConstraints == false, | '', | if($c.nullable == true , | ' NULL', | ' NOT NULL' )))
+         ->map(c | $c.name->meta::relational::functions::sqlQueryToString::processColumnName($dbConfig) + ' ' + meta::relational::functions::toDDL::getColumnTypeSqlText($c.type, $dbConfig.dbType) + if($c.nullable->isEmpty() || $applyConstraints == false, | '', | if($c.nullable == true , | ' NULL', | ' NOT NULL' )))
         ->joinStrings(',')
       + if ($t.primaryKey->isEmpty() || $applyConstraints == false, | '', | ', PRIMARY KEY(' + $t.primaryKey->map(c | $c.name)->joinStrings(',') + ')')
       +');';
+}
+
+function <<access.private>> meta::relational::functions::toDDL::getColumnTypeSqlText(columnType:meta::relational::metamodel::datatype::DataType[1], dbType:DatabaseType[1]):String[1] 
+{
+   $columnType->match([
+      s : meta::relational::metamodel::datatype::SemiStructured[1] | $s->getSemiStructuredColumnTypeSqlText($dbType),
+      a : Any[*] | meta::relational::metamodel::datatype::dataTypeToSqlText($columnType)
+   ])
+}
+
+function <<access.private>> meta::relational::functions::toDDL::getSemiStructuredColumnTypeSqlText(columnType:meta::relational::metamodel::datatype::SemiStructured[1], dbType:DatabaseType[1]):String[1] 
+{
+   if ($dbType == DatabaseType.H2,
+       | 'VARCHAR(4000)',
+       | fail('DDL generation for semi structured type not supported for ' + $dbType->toString()); '';
+   )
 }
 
 function meta::relational::functions::toDDL::buildInsertSQLQueryResultIntoTable(tableName: String[1], s:SelectSQLQuery[1], connection: DatabaseConnection[1], extensions:meta::pure::router::extension::RouterExtension[*], context:DebugContext[1]) : String[1]
