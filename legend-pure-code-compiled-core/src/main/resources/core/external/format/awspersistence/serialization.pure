@@ -23,13 +23,13 @@ import meta::pure::persistence::metamodel::persister::ingestmode::snapshot::*;
 import meta::pure::persistence::metamodel::persister::audit::*;
 import meta::pure::persistence::metamodel::persister::transactionmilestoning::*;
 
-import meta::external::format::cpb::metamodel::*;
+import meta::external::format::awspersistence::metamodel::*;
+import meta::external::format::awspersistence::serialization::*;
 import meta::pure::functions::meta::*;
-import meta::external::format::cpb::serialization::*;
 import meta::pure::runtime::*;
 
 
-function  meta::external::format::cpb::serialization::serialize(p: Persistence[1]): PersistenceCPB[1]
+function  meta::external::format::awspersistence::serialization::serialize(p: Persistence[1]): meta::external::format::awspersistence::metamodel::AwsPersistence[1]
 {
   let notifier = $p.notifier;
   let nonpd = $notifier.notifyees->filter(n|!$n->instanceOf(PagerDutyNotifyee));
@@ -40,7 +40,7 @@ function  meta::external::format::cpb::serialization::serialize(p: Persistence[1
 
   let apt = serializeShape($bp);
 
-  let pp = ^PersistenceCPB(
+  let pp = ^meta::external::format::awspersistence::metamodel::AwsPersistence(
       documentation=$p.documentation,
       notifier=$p.notifier,
       trigger=$p.trigger,
@@ -53,7 +53,7 @@ function  meta::external::format::cpb::serialization::serialize(p: Persistence[1
 }
 
 
-function <<access.private>> meta::external::format::cpb::serialization::serializeShape(bp: BatchPersister[1]): AwsPersistenceTarget[1..*]
+function <<access.private>> meta::external::format::awspersistence::serialization::serializeShape(bp: BatchPersister[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTarget[1..*]
 {
   assert($bp.targetShape->instanceOf(FlatTarget), | 'AwsPersistence can currently only handle flat target shapes');
   let ft = $bp.targetShape->cast(@FlatTarget);
@@ -70,7 +70,7 @@ function <<access.private>> meta::external::format::cpb::serialization::serializ
   $apt->toOneMany();
 }
 
-function <<access.private>> meta::external::format::cpb::serialization::serializeAwsPersistenceTarget(ft: FlatTarget[1], c: Connection[1], modelClass: Class<Any>[1]): AwsPersistenceTarget[1]
+function <<access.private>> meta::external::format::awspersistence::serialization::serializeAwsPersistenceTarget(ft: FlatTarget[1], c: Connection[1], modelClass: Class<Any>[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTarget[1]
 {
   let properties = $modelClass.properties;
   let nonprimitives = $properties->filter(p|! $p.genericType.rawType->toOne()->instanceOf(PrimitiveType));
@@ -79,7 +79,7 @@ function <<access.private>> meta::external::format::cpb::serialization::serializ
   let pts = $properties->map(p|
     assertSize($p.name, 1, 'In FlatTarget <%s>, expected exactly one property name, found %s', [$ft.targetName, $p.name->size()]);
     assertSize($p.genericType.rawType, 1, 'In FlatTarget <%s> for property <%s>, expected exactly one type, found %s', [$ft.targetName, $p.name->toOne(), $p.genericType.rawType->size()]);
-    ^AwsPersistenceTargetShapeProperties(name=$p.name->toOne(), awstype=$p.genericType.rawType->toOne());
+    ^meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShapeProperties(name=$p.name->toOne(), awstype=$p.genericType.rawType->toOne());
   );
   assertSize($modelClass.name, 1, 'Expecting exactly one modelClass name, found %s', [$modelClass.name->size()]);
   assertSize($modelClass.package, 1, 'Expecting exactly one modelClass package, found %s', [$modelClass.package->size()]);
@@ -95,9 +95,9 @@ function <<access.private>> meta::external::format::cpb::serialization::serializ
     a:Any[1]|assert(false, 'AwsPersistence can currently only handle %s milestoning in FlatTarget <%s>', [$canHandle, $ft.targetName])
   ]);
 
-  let shape = ^AwsPersistenceTargetShape(name=$ft.modelClass.name->toOne(), package=$ft.modelClass.package->toOne(), properties=$pts);
+  let shape = ^meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShape(name=$ft.modelClass.name->toOne(), package=$ft.modelClass.package->toOne(), properties=$pts);
 
-  let apt = ^AwsPersistenceTarget(
+  let apt = ^meta::external::format::awspersistence::metamodel::AwsPersistenceTarget(
       targetName=$ft.targetName,
       connection=$c,
       // deduplicationStrategy=$ft.deduplicationStrategy,

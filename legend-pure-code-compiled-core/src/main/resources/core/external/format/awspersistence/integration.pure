@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::format::cpb::generation::*;
+import meta::external::format::awspersistence::generation::*;
 import meta::pure::generation::metamodel::*;
 
-Class meta::external::format::cpb::generation::CpbConfig extends GenerationConfiguration
+Class meta::external::format::awspersistence::generation::AwsPersistenceConfig extends GenerationConfiguration
 {
    {doc.doc = 'A sample checkbox for cloud persistent backends that does nothing.'}
    comment: String[0..1];
@@ -23,16 +23,16 @@ Class meta::external::format::cpb::generation::CpbConfig extends GenerationConfi
 }
 
 
-Class meta::external::format::cpb::generation::CpbOutput extends GenerationOutput
+Class meta::external::format::awspersistence::generation::AwsPersistenceOutput extends GenerationOutput
 {
 }
 
-function  meta::external::format::cpb::generation::defaultConfig():CpbConfig[1]
+function  meta::external::format::awspersistence::generation::defaultConfig():AwsPersistenceConfig[1]
 {
-   ^CpbConfig();
+   ^AwsPersistenceConfig();
 }
 
-function <<access.private, Generation.Configuration>>  meta::external::format::cpb::generation::describeConfiguration():GenerationParameter[*]
+function <<access.private, Generation.Configuration>>  meta::external::format::awspersistence::generation::describeConfiguration():GenerationParameter[*]
 {
-  meta::pure::generation::describeConfiguration(CpbConfig,meta::external::format::cpb::generation::defaultConfig__CpbConfig_1_,[]);
+  meta::pure::generation::describeConfiguration(AwsPersistenceConfig,meta::external::format::awspersistence::generation::defaultConfig__AwsPersistenceConfig_1_,[]);
 }

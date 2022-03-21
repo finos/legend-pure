@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::external::format::cpb::generation::*;
+import meta::external::format::awspersistence::generation::*;
 import meta::pure::executionPlan::profiles::*;
-import meta::external::format::cpb::generation::tests::*;
+import meta::external::format::awspersistence::generation::tests::*;
 import meta::json::*;
 
 import meta::pure::persistence::metamodel::*;
@@ -29,19 +29,19 @@ import meta::pure::persistence::metamodel::persister::ingestmode::snapshot::*;
 import meta::pure::persistence::metamodel::persister::deduplication::*;
 import meta::legend::service::metamodel::*;
 
-Profile meta::external::format::cpb::generation::tests::CpbProperty
+Profile meta::external::format::awspersistence::generation::tests::AwsPersistenceProperty
 {
    tags: [
      p1, p2, p3
    ];
 }
 
-Class <<access.private>> meta::external::format::cpb::generation::tests::A
+Class <<access.private>> meta::external::format::awspersistence::generation::tests::A
 {
     a: String[1];
 }
 
-function <<access.private>> meta::external::format::cpb::generation::tests::getPersistence(): Persistence[1]
+function <<access.private>> meta::external::format::awspersistence::generation::tests::getPersistence(): Persistence[1]
 {
   let package = meta::pure::functions::meta::pathToPackage('cnas::pipes', true);
 
@@ -85,10 +85,10 @@ function <<access.private>> meta::external::format::cpb::generation::tests::getP
 }
 
 
-function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::cpb::generation::tests::transform_persistenceToBackend(): Boolean[1]
+function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::awspersistence::generation::tests::transform_persistenceToBackend(): Boolean[1]
 {
   let p = getPersistence();
-  let config = meta::external::format::cpb::generation::defaultConfig();
+  let config = meta::external::format::awspersistence::generation::defaultConfig();
   let schema = transform(^$config(scopeElements=[$p]))->at(0)->at(0).content;
-  assertEquals('{"documentation":"Mountains persist for a long time","notifier":{"notifyees":[{"emailAddress":"basecamp@k2.com"},{"url":"http:\\/\\/mountains.are.cool"}]},"trigger":{},"service":"cnas::pipes","persister":{"targetShape":{"modelClass":{"package":"meta::external::format::cpb::generation::tests","name":"A","sourceInformation":{"source":"\\/core\\/external\\/format\\/cpb\\/tests\\/testCpbGenerator.pure","line":39,"column":74,"startLine":39,"startColumn":1,"endLine":42,"endColumn":1},"typeParameters":[],"generalizations":[{"rawType":"meta::pure::metamodel::type::Any","typeArguments":[]}],"properties":[{"name":"a","aggregation":"None","multiplicity":"1","genericType":{"rawType":"String","typeArguments":[]},"stereotypes":[],"taggedValues":[]}],"qualifiedProperties":[],"stereotypes":[{"profile":"meta::pure::profiles::access","value":"private"}],"taggedValues":[]},"targetName":"s3sink","deduplicationStrategy":{},"ingestMode":{"auditing":{}}}}}', $schema);
+  assertEquals('{"documentation":"Mountains persist for a long time","notifier":{"notifyees":[{"emailAddress":"basecamp@k2.com"},{"url":"http:\\/\\/mountains.are.cool"}]},"trigger":{},"service":"cnas::pipes","persister":{"targetShape":{"modelClass":{"package":"meta::external::format::awspersistence::generation::tests","name":"A","sourceInformation":{"source":"\\/core\\/external\\/format\\/awspersistence\\/tests\\/testAwsPersistenceGenerator.pure","line":39,"column":74,"startLine":39,"startColumn":1,"endLine":42,"endColumn":1},"typeParameters":[],"generalizations":[{"rawType":"meta::pure::metamodel::type::Any","typeArguments":[]}],"properties":[{"name":"a","aggregation":"None","multiplicity":"1","genericType":{"rawType":"String","typeArguments":[]},"stereotypes":[],"taggedValues":[]}],"qualifiedProperties":[],"stereotypes":[{"profile":"meta::pure::profiles::access","value":"private"}],"taggedValues":[]},"targetName":"s3sink","deduplicationStrategy":{},"ingestMode":{"auditing":{}}}}}', $schema);
 }
