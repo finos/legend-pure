@@ -39,6 +39,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
    let interfaceClass =  $context.conventions->className($initialNode->typeFromStoreLocalNode());
 
    let result            = j_variable($resultGraphImpl, 'result');
+   
    let propertySubtree = $graphFetchTree.subTrees->cast(@RoutedPropertyGraphFetchTree)->filter(st | $st.property->instanceOf(Property) );
    let intialSet =  $childSets->head().id;
    let interfaceGraphParameter = j_parameter($interfaceClass, 'graphObject');
@@ -52,15 +53,9 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
                                     ->js_filter(j_lambda($interfaceGraphParameter, $interfaceGraphParameter->j_instanceof($resultGraphImpl )   ))
                                     ->js_filter(j_lambda($resultGraphParameter, $resultGraphParameter->j_invoke($conventions->getterName('setId$'), [], javaString())->j_eq(j_string($intialSet->toOne()))))
                                     ->js_resolve($resultGraphImpl);
-
-
-
-
-    let initializationCodes = [
-                           $result->j_declare( $inputStream)
-                         ];
-
-
+   let initializationCodes = [
+                             $result->j_declare( $inputStream)
+                             ];
 
    //this gets used if a property accesses the result of a merged class
    let subMergeMethods  =  $propertySubtree->map(st |let prop = $st.property->cast(@Property<Nil,Any|*>);
@@ -98,12 +93,11 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
                                                    let source = $src->j_declare( $input->j_streamOf()
                                                                              ->js_filter(j_lambda($interfaceGraphParameter, $interfaceGraphParameter->j_instanceof($setGraphIMPL )   ))
                                                                              ->js_filter(j_lambda($setGraphParameter, $setGraphParameter->j_invoke($conventions->getterName('setId$'), [], javaString())->j_eq(j_string($set.id->toOne()))))->js_resolve($setGraphIMPL));
-                                                   let propertyValues = $propertySubtree->map({st |let prop = $st.property->cast(@Property<Nil,Any|*>);
-
+                                                   let propertyValues = $propertySubtree->map({st |let prop = $st.property->cast(@Property<Nil,Any|*>); 
                                                                                                     let propertyMapping = $set.propertyMappingsByPropertyName($prop.name->toOne())->head();
                                                                                                     let possibleMergeForSet = $propertyMapping->MergeOperationForProperty();
 
-                                                                                                    if($propertyMapping->isEmpty() && $prop.owner->instanceOf(meta::pure::metamodel::type::Class) && $set->isNoMappingDefaultToEmpty($prop) || $possibleMergeForSet->isNotEmpty(),
+                                                                                                    if($propertyMapping->isEmpty()  || $possibleMergeForSet->isNotEmpty(),
                                                                                                       |[] ,
                                                                                                       |  let initialResult = $result->j_invoke($conventions->setterName($prop),$src->j_invoke($conventions->getterName($prop), [],javaVoid()),javaVoid());
                                                                                                       );
@@ -127,7 +121,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
       
 
       let assert =   j_if(  j_not(  $validationFunction.expressionSequence->toOne()->generateJava($conventions, $debug)),   
-                       javaIllegalStateException()->j_new(j_string('Merge Mapping Validation function for class: '+  $mergeOp.class->elementToPath()  + ' returned false. Please ensure the input data returns true for the validation functiion'))->j_throw());
+                       javaIllegalStateException()->j_new(j_string('Merge Mapping Validation function for class: '+  $mergeOp.class->elementToPath()  + ' returned false. Please ensure the input data returns true for the validation function'))->j_throw());
 
       let validationName =  'validate'+$updatedChildPath->replace('.','_');
       let validationMethod = javaMethod([],javaVoid(), $validationName, $mergeParameters, $assert);
@@ -137,8 +131,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
       let initSrcJavaClass =  className($conventions,$childSets->at(0)->sourceClass($extensions));
 
 
-      let allSrcGetters = $result->j_invoke($conventions->getterName('src$'),[], javaObject())->j_cast($initSrcJavaClass) ->concatenate( $properties.src  )    ;
-
+     let allSrcGetters = $result->j_invoke($conventions->getterName('src$'),[], javaObject())->j_cast($initSrcJavaClass) ->concatenate( $properties.src  )    ;
 
       let orderedGetters = $mergeParameters->map(p| $allSrcGetters->filter(s|$s.type== $p.type)->at(0)->j_cast($p.type));
       let invokeValidation = j_this($rootClass)->j_invoke($validationName,$orderedGetters,javaVoid() );
@@ -146,12 +139,11 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
 
      let returnCodes = $result->j_return();
    
-   let merge =  $initializationCodes->concatenate($properties.combined())->concatenate($subMergeMethods.mergeOperation)->concatenate($invokeValidation)->concatenate($returnCodes)->toOneMany();
-    let mergeMethod = javaMethod([], $resultGraphImpl, 'merge'+$updatedChildPath->replace('.','_'), [$input], $merge);
+    let merge =  $initializationCodes->concatenate($properties.combined())->concatenate($subMergeMethods.mergeOperation)->concatenate($invokeValidation)->concatenate($returnCodes)->toOneMany();
+     let mergeMethod = javaMethod([], $resultGraphImpl, 'merge'+$updatedChildPath->replace('.','_'), [$input], $merge);
      $mergeMethod->concatenate($subMergeMethods.mergeMethod)->concatenate($validationMethod);
 
 }
-
 
 
 

@@ -116,6 +116,12 @@ function meta::pure::mapping::modelToModel::inMemory::isNoMappingDefaultToEmpty(
    !$property.multiplicity->hasLowerBound() && $property.owner->instanceOf(Class);
 }
 
+function meta::pure::mapping::modelToModel::inMemory::isPartOfMerge(setImpl:SetImplementation[1]):Boolean[1]
+{
+     $setImpl.parent.classMappings->filter(m|$m->instanceOf(MergeOperationSetImplementation))->cast(@MergeOperationSetImplementation)->filter(o| $setImpl.id->in($o.parameters.id))->isNotEmpty();
+
+}
+
 function meta::pure::mapping::modelToModel::inMemory::noMappingPassThruSourceProperty(setImpl:SetImplementation[1], property:AbstractProperty<Any>[1]):AbstractProperty<Any>[0..1]
 {
    $setImpl->match([
