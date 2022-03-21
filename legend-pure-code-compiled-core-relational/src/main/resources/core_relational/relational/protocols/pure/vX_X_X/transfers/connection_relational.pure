@@ -229,7 +229,19 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
              _type = 'bigQuery',
              projectId = $b.projectId,
              defaultDataset = $b.defaultDataset
-         )
+         ),
+     r:meta::pure::legend::connections::legend::specification::RedshiftDatasourceSpecification[1] |
+                                                  ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::legend::specification::RedshiftDatasourceSpecification(
+                                                                   _type = 'redshift',
+                                                                   clusterID = $r.clusterID,
+                                                                   port =$r.port,
+                                                                   region = $r.region,
+                                                                   databaseName = $r.databaseName,
+                                                                   endpointURL = $r.endpointURL,
+                                                                   host = $r.host 
+                             )       
+
+         
    ])->toOneMany())
 }
 
