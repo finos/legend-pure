@@ -588,6 +588,17 @@ function <<test.Test>> meta::external::language::java::factory::tests::inferredI
    assertEquals(['java.util.List'], $cls.additionalImports);
 }
 
+function <<test.Test>> meta::external::language::java::factory::tests::inferredImportsOnEnum():Boolean[1]
+{
+   let cls = javaEnum('public', 'org.finos.Things')
+      ->addEntries([
+           javaEnumEntry('Alpha')->annotate(^meta::external::language::java::metamodel::annotations::generated::Generated(value='a', comments='In the beginning'))->javaDoc('The first one')
+        ])
+      ->inferImports();
+   
+   assertEquals(['javax.annotation.Generated'], $cls.additionalImports);
+}
+
 function <<test.Test>> meta::external::language::java::factory::tests::inferredImportsEnum():Boolean[1]
 {
    let cls = javaClass('test.pkg.TestClass')
