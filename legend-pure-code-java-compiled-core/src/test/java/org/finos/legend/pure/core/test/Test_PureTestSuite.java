@@ -20,12 +20,11 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
@@ -71,12 +70,12 @@ public class Test_PureTestSuite extends TestSuite
 
     private static TestSuite buildSuite(TestCollection testCollection, ExecutionSupport executionSupport)
     {
-        MutableList<TestSuite> subSuites = new FastList<>();
+        MutableList<TestSuite> subSuites = Lists.mutable.empty();
         for (TestCollection collection : testCollection.getSubCollections().toSortedList(Comparator.comparing(a -> a.getPackage().getName())))
         {
             subSuites.add(buildSuite(collection, executionSupport));
         }
-        return buildSuite(org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.GET_USER_PATH.valueOf(testCollection.getPackage()),
+        return buildSuite(org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.getUserPathForPackageableElement(testCollection.getPackage()),
                 testCollection.getBeforeFunctions(),
                 testCollection.getAfterFunctions(),
                 testCollection.getPureAndAlloyOnlyFunctions(),

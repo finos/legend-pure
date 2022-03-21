@@ -319,9 +319,7 @@ public class BinaryModelSourceSerializer
                         SourceInformation sourceInformation = instance.getSourceInformation();
                         if (sourceInformation != null)
                         {
-                            message.append(" (source information: ");
-                            sourceInformation.writeMessage(message);
-                            message.append(')');
+                            sourceInformation.appendMessage(message.append(" (source information: ")).append(')');
                         }
                         throw new RuntimeException(message.toString(), e);
                     }
@@ -704,9 +702,7 @@ public class BinaryModelSourceSerializer
                 SourceInformation sourceInfo = referenceInstance.getSourceInformation();
                 if (sourceInfo != null)
                 {
-                    message.append(" (source information: ");
-                    sourceInfo.writeMessage(message);
-                    message.append(')');
+                    sourceInfo.appendMessage(message.append(" (source information: ")).append(')');
                 }
                 throw new RuntimeException(message.toString(), e);
             }
@@ -942,9 +938,7 @@ public class BinaryModelSourceSerializer
         SourceInformation sourceInfo = instance.getSourceInformation();
         if (sourceInfo != null)
         {
-            message.append(" (source information: ");
-            sourceInfo.writeMessage(message);
-            message.append(')');
+            sourceInfo.appendMessage(message.append(" (source information: ")).append(')');
         }
         throw new RuntimeException(message.toString());
     }

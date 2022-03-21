@@ -14,33 +14,33 @@
 
 package org.finos.legend.pure.m3.navigation._package;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.ImmutableSet;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
 
 public class _Package
 {
-    public static final ImmutableSet<String> SPECIAL_TYPES = ModelRepository.PRIMITIVE_TYPE_NAMES.union(Sets.immutable.with(M3Paths.Package, M3Paths.Number));
+    public static final ImmutableSet<String> SPECIAL_TYPES = PrimitiveUtilities.getPrimitiveTypeNames().newWith(M3Paths.Package);
 
-    public static CoreInstance getByUserPath(final String path, final ProcessorSupport processorSupport)
+    public static CoreInstance getByUserPath(String path, ProcessorSupport processorSupport)
     {
         return getByUserPath(PackageableElement.splitUserPath(path), processorSupport);
     }
 
     public static CoreInstance getByUserPath(ListIterable<String> path, ProcessorSupport processorSupport)
     {
-        if ((path.size() == 1) && SPECIAL_TYPES.contains(path.get(0)))
+        if ((path.size() == 1) && isTopLevelName(path.get(0)))
         {
             return processorSupport.repository_getTopLevel(path.get(0));
         }
@@ -63,18 +63,7 @@ public class _Package
 
     public static CoreInstance getByUserPath(String[] path, ProcessorSupport processorSupport)
     {
-        int length = path.length;
-        if ((length == 1) && SPECIAL_TYPES.contains(path[0]))
-        {
-            return processorSupport.repository_getTopLevel(path[0]);
-        }
-
-        CoreInstance element = processorSupport.repository_getTopLevel(M3Paths.Root);
-        for (int i = 0; (element != null) && (i < length); i++)
-        {
-            element = findInPackage(element, path[i]);
-        }
-        return element;
+        return getByUserPath(ArrayAdapter.adapt(path), processorSupport);
     }
 
     public static CoreInstance findInPackage(CoreInstance pkg, String name)
@@ -95,18 +84,14 @@ public class _Package
         int size = m3Path.size();
 
         // Top level elements are handled differently
-        if ((size == 1) && SPECIAL_TYPES.contains(m3Path.get(0)))
+        if ((size == 1) && isTopLevelName(m3Path.get(0)))
         {
             return Lists.mutable.withAll(m3Path);
         }
 
-        MutableList<String> m4Path = FastList.newList((size * 2) + 1);
+        MutableList<String> m4Path = Lists.mutable.ofInitialCapacity((size * 2) + 1);
         m4Path.add(M3Paths.Root);
-        for (String m3Element : m3Path)
-        {
-            m4Path.add(M3Properties.children);
-            m4Path.add(m3Element);
-        }
+        m3Path.forEach(m3Element -> m4Path.with(M3Properties.children).with(m3Element));
         return m4Path;
     }
 
@@ -141,7 +126,7 @@ public class _Package
         CoreInstance packageClass = null;
         for (String name : path)
         {
-            if("".equals(name))
+            if ("".equals(name))
             {
                 throw new RuntimeException("\"\" is an invalid package name.");
             }
@@ -160,7 +145,7 @@ public class _Package
                     }
                     child = repository.newCoreInstance(name, packageClass, null, persistent);
                     child.addKeyValue(M3PropertyPaths._package, parent);
-                    child.setKeyValues(M3PropertyPaths.children, Lists.immutable.<CoreInstance>empty());
+                    child.setKeyValues(M3PropertyPaths.children, Lists.immutable.empty());
                     child.addKeyValue(M3PropertyPaths.name, persistent ? repository.newStringCoreInstance_cached(name) : repository.newStringCoreInstance(name));
                     parent.addKeyValue(M3PropertyPaths.children, child);
                 }
@@ -168,5 +153,10 @@ public class _Package
             }
         }
         return parent;
+    }
+
+    private static boolean isTopLevelName(String name)
+    {
+        return SPECIAL_TYPES.contains(name) || M3Paths.Root.equals(name);
     }
 }

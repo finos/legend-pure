@@ -14,88 +14,77 @@
 
 package org.finos.legend.pure.m3;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.eclipse.collections.api.block.predicate.Predicate;
-import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Collection;
-
 public class TestUnresolvedImportStubs extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
     @Test
     public void testNoUnresolvedImportStubs()
     {
-        final CoreInstance importStubClass = this.runtime.getCoreInstance(M3Paths.ImportStub);
-        final CoreInstance propertyStubClass = this.runtime.getCoreInstance(M3Paths.PropertyStub);
-        final CoreInstance enumStubClass = this.runtime.getCoreInstance(M3Paths.EnumStub);
-        Collection<CoreInstance> unresolvedStubs = Iterate.select(GraphNodeIterable.fromModelRepository(this.repository), new Predicate<CoreInstance>()
+        CoreInstance importStubClass = runtime.getCoreInstance(M3Paths.ImportStub);
+        CoreInstance propertyStubClass = runtime.getCoreInstance(M3Paths.PropertyStub);
+        CoreInstance enumStubClass = runtime.getCoreInstance(M3Paths.EnumStub);
+        MutableList<CoreInstance> unresolvedStubs = GraphNodeIterable.fromModelRepository(repository).select(node ->
         {
-            @Override
-            public boolean accept(CoreInstance node)
+            CoreInstance classifier = node.getClassifier();
+            if (classifier == importStubClass)
             {
-                CoreInstance classifier = node.getClassifier();
-                if (classifier == importStubClass)
-                {
-                    return node.getValueForMetaPropertyToOne(M3Properties.resolvedNode) == null;
-                }
-                if (classifier == propertyStubClass)
-                {
-                    return node.getValueForMetaPropertyToOne(M3Properties.resolvedProperty) == null;
-                }
-                if (classifier == enumStubClass)
-                {
-                    return node.getValueForMetaPropertyToOne(M3Properties.resolvedEnum) == null;
-                }
-                return false;
+                return node.getValueForMetaPropertyToOne(M3Properties.resolvedNode) == null;
             }
-        });
-        if (!unresolvedStubs.isEmpty())
+            if (classifier == propertyStubClass)
+            {
+                return node.getValueForMetaPropertyToOne(M3Properties.resolvedProperty) == null;
+            }
+            if (classifier == enumStubClass)
+            {
+                return node.getValueForMetaPropertyToOne(M3Properties.resolvedEnum) == null;
+            }
+            return false;
+        }, Lists.mutable.empty());
+        if (unresolvedStubs.notEmpty())
         {
             StringBuilder message = new StringBuilder("The following ").append(unresolvedStubs.size()).append(" stubs are unresolved:");
-            for (CoreInstance instance : unresolvedStubs)
+            unresolvedStubs.forEach(instance ->
             {
                 CoreInstance classifier = instance.getClassifier();
                 message.append("\n\t");
                 if (classifier == importStubClass)
                 {
-                    message.append("ImportStub: importGroup=");
-                    PackageableElement.writeUserPathForPackageableElement(message, instance.getValueForMetaPropertyToOne(M3Properties.importGroup));
-                    message.append(", idOrPath=");
-                    message.append(instance.getValueForMetaPropertyToOne(M3Properties.idOrPath).getName());
+                    PackageableElement.writeUserPathForPackageableElement(message.append("ImportStub: importGroup="), instance.getValueForMetaPropertyToOne(M3Properties.importGroup));
+                    message.append(", idOrPath=").append(instance.getValueForMetaPropertyToOne(M3Properties.idOrPath).getName());
                 }
                 else if (classifier == propertyStubClass)
                 {
-                    message.append("PropertyStub: owner=");
-                    message.append(instance.getValueForMetaPropertyToOne(M3Properties.owner).getValueForMetaPropertyToOne(M3Properties.idOrPath).getName());
-                    message.append(", propertyName=");
-                    message.append(instance.getValueForMetaPropertyToOne(M3Properties.propertyName).getName());
+                    message.append("PropertyStub: owner=").append(instance.getValueForMetaPropertyToOne(M3Properties.owner).getValueForMetaPropertyToOne(M3Properties.idOrPath).getName());
+                    message.append(", propertyName=").append(instance.getValueForMetaPropertyToOne(M3Properties.propertyName).getName());
                 }
                 else
                 {
-                    message.append("EnumStub: enumeration=");
-                    message.append(instance.getValueForMetaPropertyToOne(M3Properties.enumeration).getValueForMetaPropertyToOne(M3Properties.idOrPath).getName());
-                    message.append(", enumName=");
-                    message.append(instance.getValueForMetaPropertyToOne(M3Properties.enumName).getName());
+                    message.append("EnumStub: enumeration=").append(instance.getValueForMetaPropertyToOne(M3Properties.enumeration).getValueForMetaPropertyToOne(M3Properties.idOrPath).getName());
+                    message.append(", enumName=").append(instance.getValueForMetaPropertyToOne(M3Properties.enumName).getName());
                 }
                 SourceInformation sourceInfo = instance.getSourceInformation();
                 if (sourceInfo != null)
                 {
-                    sourceInfo.writeMessage(message);
+                    sourceInfo.appendMessage(message);
                 }
-            }
+            });
             Assert.fail(message.toString());
         }
     }

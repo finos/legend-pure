@@ -18,48 +18,61 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class MilestoningDates {
-
-    private CoreInstance businessDate;
-    private CoreInstance processingDate;
+public class MilestoningDates
+{
+    private final CoreInstance businessDate;
+    private final CoreInstance processingDate;
 
     public MilestoningDates(MilestoningStereotype stereotype, ListIterable<? extends CoreInstance> temporalParameterValues)
     {
         if (stereotype == MilestoningStereotypeEnum.businesstemporal)
         {
             this.businessDate = temporalParameterValues.get(0);
+            this.processingDate = null;
         }
         else if (stereotype == MilestoningStereotypeEnum.processingtemporal)
         {
+            this.businessDate = null;
             this.processingDate = temporalParameterValues.get(0);
         }
         else if (stereotype == MilestoningStereotypeEnum.bitemporal)
         {
-            this.processingDate = temporalParameterValues.get(0);
             this.businessDate = temporalParameterValues.get(1);
+            this.processingDate = temporalParameterValues.get(0);
+        }
+        else
+        {
+            this.businessDate = null;
+            this.processingDate = null;
         }
     }
 
-    public MilestoningDates(CoreInstance businessDate, CoreInstance processingDate) {
-       this.businessDate = businessDate;
+    public MilestoningDates(CoreInstance businessDate, CoreInstance processingDate)
+    {
+        this.businessDate = businessDate;
         this.processingDate = processingDate;
     }
 
-    public CoreInstance getBusinessDate() {
+    public CoreInstance getBusinessDate()
+    {
         return this.businessDate;
     }
 
-    public CoreInstance getMilestoningDate(MilestoningStereotype milestoningDateType) {
-        if(milestoningDateType == MilestoningStereotypeEnum.businesstemporal){
-            return this.businessDate;
-        }else if(milestoningDateType == MilestoningStereotypeEnum.processingtemporal){
-            return this.processingDate;
-        }else{
-            throw new PureCompilationException("Unexpected milestoning type encountered during propagation:"+milestoningDateType);
-        }
+    public CoreInstance getProcessingDate()
+    {
+        return this.processingDate;
     }
 
-    public CoreInstance getProcessingDate() {
-        return this.processingDate;
+    public CoreInstance getMilestoningDate(MilestoningStereotype milestoningDateType)
+    {
+        if (milestoningDateType == MilestoningStereotypeEnum.businesstemporal)
+        {
+            return this.businessDate;
+        }
+        if (milestoningDateType == MilestoningStereotypeEnum.processingtemporal)
+        {
+            return this.processingDate;
+        }
+        throw new PureCompilationException("Unexpected milestoning type encountered during propagation: " + milestoningDateType);
     }
 }

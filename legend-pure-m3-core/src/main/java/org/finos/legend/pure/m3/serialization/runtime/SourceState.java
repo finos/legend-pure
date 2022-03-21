@@ -14,43 +14,25 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate2;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
-import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.factory.Comparators;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
-import java.util.Comparator;
+import java.util.Objects;
 
 public class SourceState
 {
-    public static final Function<SourceState, ImmutableSet<CoreInstance>> SOURCE_STATE_INSTANCES = new Function<SourceState, ImmutableSet<CoreInstance>>()
-    {
-        @Override
-        public ImmutableSet<CoreInstance> valueOf(SourceState sourceState)
-        {
-            return sourceState.getInstances();
-        }
-    };
-
-    public static final Predicate2<SourceState, Source> IS_SOURCE_STATE_FOR_SOURCE = new Predicate2<SourceState, Source>(){
-
-        @Override
-        public boolean accept(SourceState sourceState, Source source)
-        {
-            return sourceState.getSource().equals(source);
-        }
-    };
+    public static final Function<SourceState, ImmutableSet<CoreInstance>> SOURCE_STATE_INSTANCES = SourceState::getInstances;
+    public static final Predicate2<SourceState, Source> IS_SOURCE_STATE_FOR_SOURCE = (sourceState, source) -> sourceState.getSource().equals(source);
 
     private final Source source;
     private final String content;
@@ -66,54 +48,11 @@ public class SourceState
         this.content = content;
         this.instances = instances.toImmutable();
         this.importGroups = importGroups.toImmutable();
+        this.packages = instances.collectIf(i -> i instanceof PackageableElement, i -> ((PackageableElement) i)._package()).toImmutable();
 
-        MutableSet<Package> collection = Sets.mutable.with();
-        for(CoreInstance instance : instances)
-        {
-            if(instance instanceof PackageableElement)
-            {
-                collection.add(((PackageableElement)instance)._package());
-            }
-        }
-        this.packages = collection.toImmutable();
-
-        MutableMap<CoreInstance, String> contentResultMap = UnifiedMap.newMapWith(this.instances.collect(new Function<CoreInstance, Pair<CoreInstance, String>>()
-        {
-            @Override
-            public Pair<CoreInstance, String> valueOf(CoreInstance instance)
-            {
-                Pair<CoreInstance, String> instanceContent;
-                try
-                {
-                    instanceContent = Tuples.pair(instance, SourceState.this.getInstanceContent(instance));
-                }
-                catch (Exception e)
-                {
-                    instanceContent = Tuples.pair(instance, "");
-                }
-                return instanceContent;
-            }
-        }));
-        this.instanceContentMap = contentResultMap.toImmutable();
-
-        MutableMap<CoreInstance, String> importGroupResultMap = UnifiedMap.newMapWith(this.instances.collect(new Function<CoreInstance, Pair<CoreInstance, String>>()
-        {
-            @Override
-            public Pair<CoreInstance, String> valueOf(CoreInstance instance)
-            {
-                Pair<CoreInstance, String> instanceImportGroup;
-                try
-                {
-                    instanceImportGroup = Tuples.pair(instance, SourceState.this.getInstanceImportId(instance));
-                }
-                catch (Exception e)
-                {
-                    instanceImportGroup = Tuples.pair(instance, "");
-                }
-                return instanceImportGroup;
-            }
-        }));
-        this.instanceImportGroupMap = importGroupResultMap.toImmutable();
+        String[] contentLines = content.split("\\R");
+        this.instanceContentMap = this.instances.toMap(i -> i, i -> getInstanceContent(i, contentLines)).toImmutable();
+        this.instanceImportGroupMap = this.instances.toMap(i -> i, i -> getInstanceImportId(i, this.importGroups)).toImmutable();
     }
 
     public Source getSource()
@@ -141,60 +80,6 @@ public class SourceState
         return this.importGroups;
     }
 
-    private String getInstanceContent(CoreInstance instance)
-    {
-        SourceInformation sourceInformation = instance.getSourceInformation();
-
-        String [] splitContent = this.content.split("\\r?\\n");
-        StringBuilder contentStringBuilder = new StringBuilder();
-
-        if (sourceInformation.getStartLine() == sourceInformation.getEndLine())
-        {
-            contentStringBuilder.append(splitContent[sourceInformation.getStartLine()-1].substring(Math.max(0, sourceInformation.getStartColumn()-1), Math.min(sourceInformation.getEndColumn(), splitContent[sourceInformation.getStartLine()-1].length())));
-            contentStringBuilder.append(System.lineSeparator());
-        }
-        else
-        {
-            for (int line = sourceInformation.getStartLine() - 1; line < sourceInformation.getEndLine(); line++)
-            {
-                if (line == sourceInformation.getStartLine() - 1)
-                {
-                    contentStringBuilder.append(splitContent[line].substring(Math.max(0, sourceInformation.getStartColumn()-1)));
-                }
-                else if (line == sourceInformation.getEndLine() - 1)
-                {
-                    contentStringBuilder.append(splitContent[line].substring(0, Math.min(sourceInformation.getEndColumn(), splitContent[line].length())));
-                }
-                else
-                {
-                    contentStringBuilder.append(splitContent[line]);
-                }
-                contentStringBuilder.append(System.lineSeparator());
-            }
-        }
-        return contentStringBuilder.toString();
-    }
-
-    private String getInstanceImportId(CoreInstance instance)
-    {
-        String importId = null;
-        for (PackageableElement importGroup : this.importGroups.toSortedList(new Comparator<PackageableElement>()
-        {
-            @Override
-            public int compare(PackageableElement o1, PackageableElement o2)
-            {
-                return o1.getSourceInformation().getEndLine() - o2.getSourceInformation().getEndLine();
-            }
-        }))
-        {
-            if (importGroup.getSourceInformation().getEndLine() <= instance.getSourceInformation().getStartLine())
-            {
-                importId = importGroup._name();
-            }
-        }
-        return importId;
-    }
-
     public String instanceContentInSource(CoreInstance instance)
     {
         return this.instanceContentMap.get(instance);
@@ -207,34 +92,82 @@ public class SourceState
 
     public boolean instanceContentInSourceEqualsNewContent(CoreInstance instance, String newContent)
     {
-        return !"".equals(this.instanceContentMap.get(instance)) && this.instanceContentMap.get(instance).equals(newContent);
+        String cachedContent = this.instanceContentMap.get(instance);
+        return (cachedContent != null) && !cachedContent.isEmpty() && cachedContent.equals(newContent);
     }
 
     public boolean instanceImportGroupInSourceEqualsNewImportGroup(CoreInstance instance, String newImportGroup)
     {
-        return !"".equals(this.instanceImportGroupMap.get(instance)) && this.instanceImportGroupMap.get(instance).equals(newImportGroup);
+        String cachedImportGroup = this.instanceImportGroupMap.get(instance);
+        return (cachedImportGroup != null) && !cachedImportGroup.isEmpty() && cachedImportGroup.equals(newImportGroup);
     }
 
     @Override
     public boolean equals(Object o)
     {
-        if (this == o)
-        {
-            return true;
-        }
-        if (!(o instanceof SourceState))
-        {
-            return false;
-        }
-
-        SourceState that = (SourceState) o;
-
-        return Comparators.nullSafeEquals(this.source, that.getSource());
+        return (this == o) || ((o instanceof SourceState) && Objects.equals(this.source, ((SourceState) o).source));
     }
 
     @Override
     public int hashCode()
     {
-        return this.source == null ? 0 : this.source.hashCode();
+        return Objects.hashCode(this.source);
+    }
+
+    private static String getInstanceContent(CoreInstance instance, String[] contentLines)
+    {
+        try
+        {
+            StringBuilder builder = new StringBuilder();
+
+            SourceInformation sourceInformation = instance.getSourceInformation();
+            if (sourceInformation.getStartLine() == sourceInformation.getEndLine())
+            {
+                String line = contentLines[sourceInformation.getStartLine() - 1];
+                builder.append(line, Math.max(0, sourceInformation.getStartColumn() - 1), Math.min(sourceInformation.getEndColumn(), line.length())).append(System.lineSeparator());
+            }
+            else
+            {
+                // first line
+                String startLine = contentLines[sourceInformation.getStartLine() - 1];
+                builder.append(startLine, Math.max(0, sourceInformation.getStartColumn() - 1), startLine.length()).append(System.lineSeparator());
+
+                // in between lines
+                for (int line = sourceInformation.getStartLine(), end = sourceInformation.getEndLine() - 1; line < end; line++)
+                {
+                    builder.append(contentLines[line]).append(System.lineSeparator());
+                }
+
+                // last line
+                String lastLine = contentLines[sourceInformation.getEndLine() - 1];
+                builder.append(lastLine, 0, Math.min(sourceInformation.getEndColumn(), lastLine.length())).append(System.lineSeparator());
+            }
+            return builder.toString();
+        }
+        catch (Exception ignore)
+        {
+            return "";
+        }
+    }
+
+    private static String getInstanceImportId(CoreInstance instance, RichIterable<? extends PackageableElement> importGroups)
+    {
+        if (instance.getSourceInformation() != null)
+        {
+            try
+            {
+                int instanceStartLine = instance.getSourceInformation().getStartLine();
+                MutableList<? extends PackageableElement> possibleImportGroups = importGroups.select(ig -> ig.getSourceInformation().getEndLine() <= instanceStartLine, Lists.mutable.empty());
+                if (possibleImportGroups.notEmpty())
+                {
+                    return possibleImportGroups.maxBy(ig -> ig.getSourceInformation().getEndLine())._name();
+                }
+            }
+            catch (Exception ignore)
+            {
+                return "";
+            }
+        }
+        return null;
     }
 }

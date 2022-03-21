@@ -182,7 +182,7 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
 
 function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::findValidPaths(p:PackageableElement[*], extensions:meta::pure::router::extension::RouterExtension[*]):String[*]
 {
-   let validForTests = ['meta::java::generation::tests', 'meta::pure::tests', 'apps::pure', 'apps::global']->concatenate($extensions.validTestPackages);
+   let validForTests = ['meta::java::generation::tests', 'meta::external', 'meta::pure::tests', 'apps::pure', 'apps::global']->concatenate($extensions.validTestPackages);
    $validForTests->concatenate($p->map(op|$op->findValidPathsFromPackage()))->removeDuplicates();
 }
 
@@ -371,4 +371,24 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBase
 {
    let gm = $packageStr->pathToElement()->cast(@Store);
    buildBasePureModelFromStore($gm, '-1', $extensions)->toJsonBeta(^JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=true));
+}
+
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildPureModelFromType(type:Type[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::PureModelContextData[1]
+{
+   let found = $type->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::findAllTypes($type->findValidPaths($extensions));
+   let associations = $found.classes->findAllAssociations();
+
+   let protocol = ^Protocol(name='pure', version='vX_X_X');
+   ^meta::protocols::pure::vX_X_X::metamodel::PureModelContextData
+   (
+      _type = 'data',
+      serializer = $protocol,
+      origin = buildPureModelContextPointer(^meta::protocols::pure::vX_X_X::metamodel::PackageableElementPointer(type=meta::protocols::pure::vX_X_X::metamodel::PackageableElementType.CLASS, path=$type->elementToPath()), '-1', $protocol),
+      elements = buildDomain($found, $associations, $extensions)
+   );
+}
+
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildPureModelFromPackage(ps:Package[*], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::PureModelContextData[1]
+{
+   meta::protocols::pure::vX_X_X::transformation::fromPureGraph::buildBasePureModelFromPackage($ps, '-1', $extensions);
 }

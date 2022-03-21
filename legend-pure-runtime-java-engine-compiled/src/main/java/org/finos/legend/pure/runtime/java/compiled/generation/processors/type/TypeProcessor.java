@@ -14,16 +14,15 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.type;
 
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.bootstrap.generator.M3ToJavaGenerator;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Unit;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.navigation.measure.Measure;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
@@ -41,7 +40,7 @@ public class TypeProcessor
         }
         else
         {
-            return "RichIterable<? extends "+ typeToJavaObjectSingle(genericType, typeParameter, processorContext.getSupport())+">";
+            return "RichIterable<? extends " + typeToJavaObjectSingle(genericType, typeParameter, processorContext.getSupport()) + ">";
         }
     }
 
@@ -58,7 +57,7 @@ public class TypeProcessor
         }
         else
         {
-            return "RichIterable<? extends "+ typeToJavaObjectSingle(genericType, typeParam, processorSupport)+">";
+            return "RichIterable<? extends " + typeToJavaObjectSingle(genericType, typeParam, processorSupport) + ">";
         }
     }
 
@@ -92,7 +91,7 @@ public class TypeProcessor
         CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
         if (rawType == null)
         {
-            return typeParam ? GenericType.getTypeParameterName(genericType, processorSupport) : "java.lang.Object";
+            return typeParam ? GenericType.getTypeParameterName(genericType) : "java.lang.Object";
         }
         if ("FunctionType".equals(processorSupport.getClassifier(rawType).getName()))
         {
@@ -108,7 +107,7 @@ public class TypeProcessor
             return FullJavaPaths.Enum;
         }
         String finalRawTypeSystemPath = fullyQualify || "Package".equals(rawType.getName()) ? fullyQualifiedJavaInterfaceNameForType(rawType) : javaInterfaceForType(rawType);
-        if (Measure.isUnitGenericType(genericType, processorSupport))
+        if (rawType instanceof Unit)
         {
             return UnitProcessor.convertToJavaCompatibleClassName(finalRawTypeSystemPath) + "_Instance";
         }
@@ -211,6 +210,10 @@ public class TypeProcessor
             {
                 return "byte[]";
             }
+            case M3Paths.ByteStream:
+            {
+                return "org.finos.legend.pure.m4.coreinstance.primitive.byteStream.PureByteStream";
+            }
             default:
             {
                 return null;
@@ -221,14 +224,7 @@ public class TypeProcessor
     public static String buildTypeArgumentsString(CoreInstance genericType, boolean addExtends, final ProcessorSupport processorSupport)
     {
         ListIterable<? extends CoreInstance> typeArgs = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport);
-        return typeArgs.isEmpty()?"":"<"+(addExtends?"? extends ":"")+ typeArgs.collect(new Function<CoreInstance, String>()
-        {
-            @Override
-            public String valueOf(CoreInstance coreInstance)
-            {
-                return typeToJavaObjectSingle(coreInstance, true, processorSupport);
-            }
-        }).makeString(","+(addExtends?"? extends ":""))+">";
+        return typeArgs.isEmpty() ? "" : "<" + (addExtends ? "? extends " : "") + typeArgs.collect(arg -> typeToJavaObjectSingle(arg, true, processorSupport)).makeString("," + (addExtends ? "? extends " : "")) + ">";
     }
 
     public static boolean isJavaPrimitivePossible(CoreInstance genericType, ProcessorSupport processorSupport)

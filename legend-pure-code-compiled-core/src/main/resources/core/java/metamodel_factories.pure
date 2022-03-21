@@ -1026,22 +1026,36 @@ function meta::external::language::java::factory::inferImports(class:meta::exter
    let canInfer  = $class.additionalImports->isEmpty() && !$allCodes->containsSimpleCode();
    if($canInfer,
       {| 
+          let annotationsTypes = $class.annotations
+                                  ->concatenate($class.fields.annotations)
+                                  ->concatenate($class.methods.annotations)
+                                  ->concatenate($class.methods.parameters.annotations)
+                                  ->concatenate($class.constructors.annotations)
+                                  ->concatenate($class.constructors.parameters.annotations)
+                                  ->map(x|
+                                          let javaClass = $x->genericType().rawType->toOne()->meta::pure::functions::meta::value4Tag('javaClass', meta::external::language::java::metamodel::annotations::AnnotationJavaInfo);
+                                          assert(!$javaClass->isEmpty(), 'Error: Please provide the Java class that supports the annotation "'+$x->genericType().rawType->toOne()->elementToPath()+'"" using the profile "meta::external::language::java::metamodel::annotations::AnnotationJavaInfo"');
+                                          $javaClass.value;
+                                        )
+                                  ->removeDuplicates()
+                                  ->map(x|javaClass($x));
          let classesUsed = $allCodes->classesUsed()
                                     ->concatenate($class.interfaces)
                                     ->concatenate($class.superType)
                                     ->concatenate($class.fields.type)
                                     ->concatenate($class.methods.returnType)
                                     ->concatenate($class.methods.parameters.type)
+                                    ->concatenate($class.constructors.parameters.type)
                                     ->typesToClasses()
+                                    ->concatenate($annotationsTypes)
                                     ->filter(c| $c.package != anonymousPackage())
                                     ->removeDuplicates();
-
          let inSamePackage = $classesUsed->filter(c| $c.package == $class.package);
          let toImport      = $classesUsed->filter(c| !$c.simpleName->in($inSamePackage.simpleName));
          let withImports   = $toImport->fold({i, c| $c->imports($i)}, $class);
          ^$withImports(additionalImports=$withImports.additionalImports->sort());
       },
-      | ^$class(additionalImports=$class.additionalImports->map(c| javaClass($c))->filter(c| $c.package != $class.package)->map(c| $c->typeToString()));
+      |^$class(additionalImports=$class.additionalImports->map(c| javaClass($c))->filter(c| $c.package != $class.package)->map(c| $c->typeToString()));
    );   
 }
 

@@ -23,6 +23,7 @@ import org.finos.legend.pure.m3.compiler.ReferenceUsage;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
@@ -72,38 +73,34 @@ public abstract class Processor<T extends CoreInstance> implements MatchRunner<T
 
     protected void addReferenceUsagesForToManyProperty(CoreInstance instance, RichIterable<? extends CoreInstance> values, String property, ModelRepository repository, ProcessorSupport processorSupport)
     {
-        ListIterable<? extends CoreInstance> valuesResolved = ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>)values, processorSupport);
+        ListIterable<? extends CoreInstance> valuesResolved = ImportStub.withImportStubByPasses(ListHelper.wrapListIterable(values), processorSupport);
         if (valuesResolved.notEmpty())
         {
             CoreInstance packageableElementClass = processorSupport.package_getByUserPath(M3Paths.PackageableElement);
-            int i = 0;
-            for (CoreInstance value : valuesResolved)
+            valuesResolved.forEachWithIndex((value, i) ->
             {
                 if (Instance.instanceOf(value, packageableElementClass, processorSupport))
                 {
                     this.addReferenceUsage(instance, value, property, i, repository, processorSupport);
                 }
-                i++;
-            }
+            });
         }
     }
 
     protected void addReferenceUsagesForToManyProperty(CoreInstance instance, RichIterable<? extends CoreInstance> values, String property, ModelRepository repository, ProcessorSupport processorSupport, RichIterable<? extends SourceInformation> sourceInformations)
     {
-        ListIterable<? extends CoreInstance> valuesResolved = ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>)values, processorSupport);
-        ListIterable<? extends SourceInformation> sourceInformationList = (ListIterable<? extends SourceInformation>)sourceInformations;
+        ListIterable<? extends CoreInstance> valuesResolved = ImportStub.withImportStubByPasses(ListHelper.wrapListIterable(values), processorSupport);
+        ListIterable<? extends SourceInformation> sourceInformationList = ListHelper.wrapListIterable(sourceInformations);
         if (valuesResolved.notEmpty())
         {
             CoreInstance packageableElementClass = processorSupport.package_getByUserPath(M3Paths.PackageableElement);
-            int i = 0;
-            for (CoreInstance value : valuesResolved)
+            valuesResolved.forEachWithIndex((value, i) ->
             {
                 if (Instance.instanceOf(value, packageableElementClass, processorSupport))
                 {
                     this.addReferenceUsage(instance, value, property, i, repository, processorSupport, sourceInformationList.get(i));
                 }
-                i++;
-            }
+            });
         }
     }
 

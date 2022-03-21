@@ -37,7 +37,6 @@ import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestonedPropertyMetaData;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningDatesPropagationFunctions;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
-import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions.IsMilestonePropertyPredicate;
 import org.finos.legend.pure.m3.compiler.unload.Unbinder;
 import org.finos.legend.pure.m3.compiler.unload.unbind.UnbindState;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
@@ -96,7 +95,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         TypeInferenceObserver observer = state.getObserver();
         state.pushTypeInferenceContext();
 
-        ListIterable<? extends ValueSpecification> parametersValues = functionExpression._parametersValues().toList();
+        ListIterable<? extends ValueSpecification> parametersValues = ListHelper.wrapListIterable(functionExpression._parametersValues());
 
         // Process the function's parameters (FIRST PASS)
         boolean inferenceSuccess = firstPassTypeInference(functionExpression, parametersValues, state, matcher, repository, context, processorSupport);
@@ -346,13 +345,12 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                 observer.parameterInferenceSucceeded();
                 observer.shiftTab();
                 observer.shiftTab();
-                for (int z = 0; z < parametersValues.size(); z++)
+                parametersValues.forEachWithIndex((instance, z) ->
                 {
-                    ValueSpecification instance = parametersValues.get(z);
                     TypeInferenceContext typeInferenceContext = state.getTypeInferenceContext();
                     typeInferenceContext.register(paramsType.get(z)._genericType(), instance._genericType(), typeInferenceContext.getTopContext(), observer);
                     typeInferenceContext.registerMul(paramsType.get(z)._multiplicity(), instance._multiplicity(), typeInferenceContext.getTopContext(), observer);
-                }
+                });
 
                 // WARNING / returnType may need reverse matching to be found
                 GenericType returnGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
@@ -363,9 +361,8 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     observer.returnTypeNotConcrete();
 
                     // reverse matching
-                    for (int z = 0; z < parametersValues.size(); z++)
+                    parametersValues.forEachWithIndex((instance, z) ->
                     {
-                        ValueSpecification instance = parametersValues.get(z);
                         GenericType templateGenType = paramsType.get(z)._genericType();
                         Multiplicity templateMultiplicity = paramsType.get(z)._multiplicity();
                         GenericType resolvedGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(templateGenType, state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
@@ -390,7 +387,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                         observer.unShiftTab();
 
                         state.popTypeInferenceContextAhead();
-                    }
+                    });
                     observer.unShiftTab();
 
                     returnGenericType = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(foundFunctionType._returnType(), state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
@@ -517,7 +514,7 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         }
     }
 
-    private boolean firstPassTypeInference(FunctionExpression functionExpression, ListIterable<? extends ValueSpecification> parametersValues, final ProcessorState processorState, final Matcher matcher, ModelRepository repository, final Context context, final ProcessorSupport processorSupport) throws PureCompilationException
+    private boolean firstPassTypeInference(FunctionExpression functionExpression, ListIterable<? extends ValueSpecification> parametersValues, ProcessorState processorState, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport) throws PureCompilationException
     {
         TypeInferenceObserver observer = processorState.getObserver();
         int i = 0;
@@ -715,18 +712,13 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                     {
                         case 0:
                         {
-                            message.append("Can't find the property '");
-                            message.append(propertyName);
-                            message.append("' in the class ");
-                            PackageableElement.writeUserPathForPackageableElement(message, sourceType);
+                            PackageableElement.writeUserPathForPackageableElement(message.append("Can't find the property '").append(propertyName).append("' in the class "), sourceType);
                             break;
                         }
                         case 1:
                         {
                             property = qualifiedProperties.get(0);
-                            message.append("The property '");
-                            message.append(propertyName);
-                            message.append("' ");
+                            message.append("The property '").append(propertyName).append("' ");
                             if (MilestoningFunctions.isGeneratedMilestoningProperty(property, processorSupport))
                             {
                                 if (MilestoningFunctions.isAllVersionsInRangeProperty(property, processorSupport))
@@ -746,20 +738,14 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
                         }
                         default:
                         {
-                            if (qualifiedProperties.allSatisfy(new IsMilestonePropertyPredicate(processorSupport))) //bitemporal
+                            if (qualifiedProperties.allSatisfy(qp -> MilestoningFunctions.isGeneratedMilestoningProperty(qp, processorSupport))) //bitemporal
                             {
-                                message.append("The property '");
-                                message.append(propertyName);
-                                message.append("' ");
+                                message.append("The property '").append(propertyName).append("' ");
                                 milestoningMissingDateParamErrorMsg(processorSupport, qualifiedProperties.getFirst(), message);
                             }
                             else
                             {
-                                message.append("There are ");
-                                message.append(qualifiedProperties.size());
-                                message.append(" properties named '");
-                                message.append(propertyName);
-                                message.append("' and all require additional parameters.");
+                                message.append("There are ").append(qualifiedProperties.size()).append(" properties named '").append(propertyName).append("' and all require additional parameters.");
                             }
                         }
                     }
@@ -864,11 +850,11 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         // Make the function a map
         functionExpression._functionName("map");
 
-        if (propertyOrQualifiedPropertyNameProperty.equals(M3Properties.qualifiedPropertyName))
+        if (M3Properties.qualifiedPropertyName.equals(propertyOrQualifiedPropertyNameProperty))
         {
             functionExpression._qualifiedPropertyNameRemove();
         }
-        else if (propertyOrQualifiedPropertyNameProperty.equals(M3Properties.propertyName))
+        else if (M3Properties.propertyName.equals(propertyOrQualifiedPropertyNameProperty))
         {
             functionExpression._propertyNameRemove();
         }
@@ -878,7 +864,6 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
 
     private static LambdaFunction<?> buildLambdaForMapWithProperty(FunctionExpression functionExpression, ListIterable<? extends ValueSpecification> qualifierParams, String propertyOrQualifiedPropertyNameProperty, GenericType sourceGenericType, ModelRepository repository, ProcessorSupport processorSupport)
     {
-
         VariableExpression lambdaVarExpr = buildLambdaVariableExpression(functionExpression, repository, processorSupport);
         GenericType varExpGenT = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericTypeAsInferredGenericType(sourceGenericType, functionExpression.getSourceInformation(), processorSupport);
 
@@ -900,12 +885,12 @@ public class FunctionExpressionProcessor extends Processor<FunctionExpression>
         SimpleFunctionExpression propertySfe = (SimpleFunctionExpression) repository.newAnonymousCoreInstance(functionExpression.getSourceInformation(), processorSupport.package_getByUserPath(M3Paths.SimpleFunctionExpression), true);
 
         String lambdaContextName;
-        if (propertyOrQualifiedPropertyNameProperty.equals(M3Properties.qualifiedPropertyName))
+        if (M3Properties.qualifiedPropertyName.equals(propertyOrQualifiedPropertyNameProperty))
         {
             lambdaContextName = functionExpression._qualifiedPropertyName().getName();
             propertySfe._qualifiedPropertyName(functionExpression._qualifiedPropertyName());
         }
-        else if (propertyOrQualifiedPropertyNameProperty.equals(M3Properties.propertyName))
+        else if (M3Properties.propertyName.equals(propertyOrQualifiedPropertyNameProperty))
         {
             lambdaContextName = functionExpression._propertyName().getName();
             propertySfe._propertyName(functionExpression._propertyName());

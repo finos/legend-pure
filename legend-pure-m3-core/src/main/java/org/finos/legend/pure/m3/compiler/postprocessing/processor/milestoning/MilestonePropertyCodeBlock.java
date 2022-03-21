@@ -14,15 +14,13 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning;
 
-import org.eclipse.collections.api.block.predicate.Predicate;
-import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 public class MilestonePropertyCodeBlock
@@ -31,14 +29,14 @@ public class MilestonePropertyCodeBlock
     private final String codeBlock;
     private final SourceInformation propertyGenericTypeSourceInformation;
     private final SourceInformation propertySourceInformation;
-    private final CoreInstance sourceProperty;
+    private final AbstractProperty<?> sourceProperty;
 
     enum MilestonePropertyHolderType
     {
         REGULAR, QUALIFIED
     }
 
-    MilestonePropertyCodeBlock(MilestonePropertyHolderType milestonePropertyHolderType, String codeBlock, CoreInstance sourceProperty, SourceInformation propertySourceInformation, SourceInformation propertyGenericTypeSourceInformation)
+    MilestonePropertyCodeBlock(MilestonePropertyHolderType milestonePropertyHolderType, String codeBlock, AbstractProperty<?> sourceProperty, SourceInformation propertySourceInformation, SourceInformation propertyGenericTypeSourceInformation)
     {
         this.milestonePropertyHolderType = milestonePropertyHolderType;
         this.codeBlock = codeBlock;
@@ -72,39 +70,29 @@ public class MilestonePropertyCodeBlock
         return this.codeBlock;
     }
 
-    ListIterable<CoreInstance> getNonMilestonedStereotypes(ProcessorSupport processorSupport){
-        MutableList<CoreInstance> stereotypes = FastList.newList();
-        if(this.sourceProperty != null)
+    RichIterable<? extends Stereotype> getNonMilestonedStereotypes(ProcessorSupport processorSupport)
+    {
+        if (this.sourceProperty == null)
         {
-            ListIterable<? extends CoreInstance> sourceStereotypes = ImportStub.withImportStubByPasses(((AbstractProperty)sourceProperty)._stereotypesCoreInstance().toList(),  processorSupport);
-            if(sourceStereotypes != null && !sourceStereotypes.isEmpty()){
-                stereotypes.addAll(sourceStereotypes.select(Predicates.not(new Predicate<CoreInstance>()
-                {
-                    @Override
-                    public boolean accept(CoreInstance stereotype)
-                    {
-                        return CoreInstance.GET_NAME.valueOf(stereotype).equals(MilestoningFunctions.GENERATED_MILESTONING_STEREOTYPE_VALUE) || CoreInstance.GET_NAME.valueOf(stereotype).equals(MilestoningFunctions.GENERATED_MILESTONING_DATE_STEREOTYPE_VALUE);
-                    }
-                })).toList());
-            }
+            return Lists.immutable.empty();
         }
-        return stereotypes;
+        return this.sourceProperty._stereotypesCoreInstance().asLazy()
+                .collect(st -> (Stereotype) ImportStub.withImportStubByPass(st, processorSupport))
+                .reject(this::isMilestoningStereotype, Lists.mutable.empty());
     }
 
-    ListIterable<CoreInstance> getTaggedValues(ProcessorSupport processorSupport){
-        MutableList<CoreInstance> taggedValues = FastList.newList();
-        if(sourceProperty != null)
-        {
-            ListIterable<? extends CoreInstance> sourceTaggedValues = ImportStub.withImportStubByPasses(((AbstractProperty)sourceProperty)._taggedValues().toList(), processorSupport);
-            if (sourceTaggedValues != null)
-            {
-                taggedValues.addAll(sourceTaggedValues.toList());
-            }
-        }
-        return taggedValues;
+    private boolean isMilestoningStereotype(Stereotype stereotype)
+    {
+        return MilestoningFunctions.GENERATED_MILESTONING_DATE_STEREOTYPE.equals(stereotype._value()) || MilestoningFunctions.GENERATED_MILESTONING_DATE_STEREOTYPE_VALUE.equals(stereotype._value());
     }
 
-    CoreInstance getSourceProperty(){
-        return sourceProperty;
+    RichIterable<? extends TaggedValue> getTaggedValues()
+    {
+        return (this.sourceProperty == null) ? Lists.immutable.empty() : this.sourceProperty._taggedValues();
+    }
+
+    AbstractProperty<?> getSourceProperty()
+    {
+        return this.sourceProperty;
     }
 }

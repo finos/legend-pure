@@ -15,20 +15,24 @@
 package org.finos.legend.pure.m3.navigation.generictype;
 
 import org.eclipse.collections.api.block.HashingStrategy;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.set.strategy.mutable.UnifiedSetWithHashingStrategy;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.navigation.typeparameter.TypeParameter;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+
+import java.util.Objects;
 
 class Support
 {
@@ -41,12 +45,13 @@ class Support
             results.add(current);
         }
 
-        for (CoreInstance generalization : Instance.getValueForMetaPropertyToManyResolved(currentRawType, M3Properties.generalizations, processorSupport))
+        currentRawType.getValueForMetaPropertyToMany(M3Properties.generalizations).forEach(generalization ->
         {
-            GenericTypeWithXArguments generalMulti = new GenericTypeWithXArguments(Instance.getValueForMetaPropertyToOneResolved(generalization, M3Properties.general, processorSupport), GenericType.bindMultiplicityParametersToMultiplicityArguments(Instance.getValueForMetaPropertyToOneResolved(generalization, M3Properties.general, processorSupport), multis.getArgumentsByParameterName(), processorSupport));
-            GenericTypeWithXArguments general = new GenericTypeWithXArguments(Instance.getValueForMetaPropertyToOneResolved(generalization, M3Properties.general, processorSupport), GenericType.bindTypeParametersToTypeArguments(Instance.getValueForMetaPropertyToOneResolved(generalization, M3Properties.general, processorSupport), current.getArgumentsByParameterName(), multis.getArgumentsByParameterName(), processorSupport));
+            CoreInstance superType = Instance.getValueForMetaPropertyToOneResolved(generalization, M3Properties.general, processorSupport);
+            GenericTypeWithXArguments generalMulti = new GenericTypeWithXArguments(superType, GenericType.bindMultiplicityParametersToMultiplicityArguments(superType, multis.getArgumentsByParameterName(), processorSupport));
+            GenericTypeWithXArguments general = new GenericTypeWithXArguments(superType, GenericType.bindTypeParametersToTypeArguments(superType, current.getArgumentsByParameterName(), multis.getArgumentsByParameterName(), processorSupport));
             resolveTypeArgumentsForGenericTypeToFindUsingInheritanceTree(general, generalMulti, genericTypeToFind, results, processorSupport);
-        }
+        });
     }
 
     static void resolveMultiplicityArgumentsForGenericTypeToFindUsingInheritanceTree(GenericTypeWithXArguments current, CoreInstance rawTypeToFind, MutableList<GenericTypeWithXArguments> results, ProcessorSupport processorSupport)
@@ -57,11 +62,12 @@ class Support
             results.add(current);
         }
 
-        for (CoreInstance generalization : Instance.getValueForMetaPropertyToManyResolved(currentRawType, M3Properties.generalizations, processorSupport))
+        currentRawType.getValueForMetaPropertyToMany(M3Properties.generalizations).forEach(generalization ->
         {
-            GenericTypeWithXArguments general = new GenericTypeWithXArguments(Instance.getValueForMetaPropertyToOneResolved(generalization, M3Properties.general, processorSupport), GenericType.bindMultiplicityParametersToMultiplicityArguments(Instance.getValueForMetaPropertyToOneResolved(generalization, M3Properties.general, processorSupport), current.getArgumentsByParameterName(), processorSupport));
+            CoreInstance superType = Instance.getValueForMetaPropertyToOneResolved(generalization, M3Properties.general, processorSupport);
+            GenericTypeWithXArguments general = new GenericTypeWithXArguments(superType, GenericType.bindMultiplicityParametersToMultiplicityArguments(superType, current.getArgumentsByParameterName(), processorSupport));
             resolveMultiplicityArgumentsForGenericTypeToFindUsingInheritanceTree(general, rawTypeToFind, results, processorSupport);
-        }
+        });
     }
 
     static CoreInstance reprocessGenericTypeHavingNonConcreteTypeArguments(CoreInstance source, MapIterable<String, CoreInstance> genericTypeByTypeParameterNames, MapIterable<String, CoreInstance> sourceMulBinding, ProcessorSupport processorSupport)
@@ -69,14 +75,8 @@ class Support
         CoreInstance result = processorSupport.newGenericType(source.getSourceInformation(), source, false);
         CoreInstance sourceRawType = source.getValueForMetaPropertyToOne(M3Properties.rawType);
         Instance.addValueToProperty(result, M3Properties.rawType, sourceRawType, processorSupport);
-        for (CoreInstance typeArgument : Instance.getValueForMetaPropertyToManyResolved(source, M3Properties.typeArguments, processorSupport))
-        {
-            Instance.addValueToProperty(result, M3Properties.typeArguments, GenericType.makeTypeArgumentAsConcreteAsPossible(typeArgument, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport), processorSupport);
-        }
-        for (CoreInstance multiplicityArgument : Instance.getValueForMetaPropertyToManyResolved(source, M3Properties.multiplicityArguments, processorSupport))
-        {
-            Instance.addValueToProperty(result, M3Properties.multiplicityArguments, Multiplicity.makeMultiplicityAsConcreteAsPossible(multiplicityArgument, sourceMulBinding), processorSupport);
-        }
+        Instance.getValueForMetaPropertyToManyResolved(source, M3Properties.typeArguments, processorSupport).forEach(typeArgument -> Instance.addValueToProperty(result, M3Properties.typeArguments, GenericType.makeTypeArgumentAsConcreteAsPossible(typeArgument, genericTypeByTypeParameterNames, sourceMulBinding, processorSupport), processorSupport));
+        Instance.getValueForMetaPropertyToManyResolved(source, M3Properties.multiplicityArguments, processorSupport).forEach(multiplicityArgument -> Instance.addValueToProperty(result, M3Properties.multiplicityArguments, Multiplicity.makeMultiplicityAsConcreteAsPossible(multiplicityArgument, sourceMulBinding), processorSupport));
         return result;
     }
 
@@ -85,28 +85,30 @@ class Support
         CoreInstance functionType = Instance.getValueForMetaPropertyToOneResolved(genericFunctionType, M3Properties.rawType, processorSupport);
         CoreInstance newFunctionType = processorSupport.newCoreInstance(functionType.getName(), processorSupport.getClassifier(functionType), functionType.getSourceInformation());
 
-        for (CoreInstance instance : Instance.getValueForMetaPropertyToManyResolved(functionType, M3Properties.parameters, processorSupport))
+        functionType.getValueForMetaPropertyToMany(M3Properties.parameters).forEach(parameter ->
         {
-            if (Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, processorSupport) == null)
+            CoreInstance genericType = parameter.getValueForMetaPropertyToOne(M3Properties.genericType);
+            CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.multiplicity, processorSupport);
+            if (genericType == null)
             {
-                CoreInstance inst = processorSupport.newCoreInstance(instance.getName(), M3Paths.VariableExpression, null);
-                Instance.addValueToProperty(inst, M3Properties.name, Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.name, processorSupport), processorSupport);
-                Instance.addValueToProperty(newFunctionType, M3Properties.parameters, inst, processorSupport);
+                CoreInstance newParameter = processorSupport.newCoreInstance(parameter.getName(), M3Paths.VariableExpression, null);
+                Instance.addValueToProperty(newParameter, M3Properties.name, parameter.getValueForMetaPropertyToOne(M3Properties.name), processorSupport);
+                Instance.addValueToProperty(newFunctionType, M3Properties.parameters, newParameter, processorSupport);
             }
-            else if (GenericType.isGenericTypeConcrete(Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, processorSupport), processorSupport) && Multiplicity.isMultiplicityConcrete(Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.multiplicity, processorSupport)))
+            else if (GenericType.isGenericTypeConcrete(genericType) && Multiplicity.isMultiplicityConcrete(multiplicity))
             {
-                Instance.addValueToProperty(newFunctionType, M3Properties.parameters, instance, processorSupport);
+                Instance.addValueToProperty(newFunctionType, M3Properties.parameters, parameter, processorSupport);
             }
             else
             {
-                CoreInstance inst = processorSupport.newCoreInstance(instance.getName(), M3Paths.VariableExpression, null);
-                Instance.addValueToProperty(inst, M3Properties.name, Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.name, processorSupport), processorSupport);
-                Instance.addValueToProperty(inst, M3Properties.multiplicity, Multiplicity.makeMultiplicityAsConcreteAsPossible(Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.multiplicity, processorSupport), sourceMulBinding), processorSupport);
-                Instance.addValueToProperty(inst, M3Properties.genericType, GenericType.makeTypeArgumentAsConcreteAsPossible(Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.genericType, processorSupport), resolved, sourceMulBinding, processorSupport), processorSupport);
-                Instance.addValueToProperty(newFunctionType, M3Properties.parameters, inst, processorSupport);
+                CoreInstance newParameter = processorSupport.newCoreInstance(parameter.getName(), M3Paths.VariableExpression, null);
+                Instance.addValueToProperty(newParameter, M3Properties.name, Instance.getValueForMetaPropertyToOneResolved(parameter, M3Properties.name, processorSupport), processorSupport);
+                Instance.addValueToProperty(newParameter, M3Properties.multiplicity, Multiplicity.makeMultiplicityAsConcreteAsPossible(multiplicity, sourceMulBinding), processorSupport);
+                Instance.addValueToProperty(newParameter, M3Properties.genericType, GenericType.makeTypeArgumentAsConcreteAsPossible(genericType, resolved, sourceMulBinding, processorSupport), processorSupport);
+                Instance.addValueToProperty(newFunctionType, M3Properties.parameters, newParameter, processorSupport);
             }
-        }
-        Instance.addValueToProperty(newFunctionType, M3Properties.returnType, GenericType.makeTypeArgumentAsConcreteAsPossible(Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport), resolved, sourceMulBinding, processorSupport), processorSupport);
+        });
+        Instance.addValueToProperty(newFunctionType, M3Properties.returnType, GenericType.makeTypeArgumentAsConcreteAsPossible(functionType.getValueForMetaPropertyToOne(M3Properties.returnType), resolved, sourceMulBinding, processorSupport), processorSupport);
         Instance.addValueToProperty(newFunctionType, M3Properties.returnMultiplicity, Multiplicity.makeMultiplicityAsConcreteAsPossible(Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport), sourceMulBinding), processorSupport);
 
         return Type.wrapGenericType(newFunctionType, processorSupport);
@@ -130,81 +132,94 @@ class Support
             return true;
         }
 
-        if (!GenericType.isGenericTypeConcrete(genericType, processorSupport) || !GenericType.isGenericTypeConcrete(otherGenericType, processorSupport))
+        boolean genericTypeIsConcrete = GenericType.isGenericTypeConcrete(genericType);
+        boolean otherIsConcrete = GenericType.isGenericTypeConcrete(otherGenericType);
+        if (!genericTypeIsConcrete || !otherIsConcrete)
         {
-            boolean a = !GenericType.isGenericTypeConcrete(genericType, processorSupport) && !GenericType.isGenericTypeConcrete(otherGenericType, processorSupport) && GenericType.getTypeParameterName(genericType, processorSupport).equals(GenericType.getTypeParameterName(otherGenericType, processorSupport));
-            boolean b = GenericType.isGenericTypeConcrete(genericType, processorSupport) && (covariant?"Any":"Nil").equals(Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport).getName()) ||
-                        GenericType.isGenericTypeConcrete(otherGenericType, processorSupport) && (covariant?"Any":"Nil").equals(Instance.getValueForMetaPropertyToOneResolved(otherGenericType, M3Properties.rawType, processorSupport).getName());
+
+            boolean a = !genericTypeIsConcrete && !otherIsConcrete && Objects.equals(GenericType.getTypeParameterName(genericType), GenericType.getTypeParameterName(otherGenericType));
+            boolean b = genericTypeIsConcrete && (covariant ? "Any" : "Nil").equals(Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport).getName()) ||
+                    otherIsConcrete && (covariant ? "Any" : "Nil").equals(Instance.getValueForMetaPropertyToOneResolved(otherGenericType, M3Properties.rawType, processorSupport).getName());
             // Use case b manages Comparison between Property<Employee, Any> (coming from the properties class def) and Property<Employee, T>  (coming fom a specific property added having T as a return type)
             // In this context we don't even know T .. we just want to add the property to the class (not even instantiated)
             // We check Any only but we should check the range of T at one point (T extends Vehicle for example ...)
-            return a || b || !GenericType.isGenericTypeConcrete(otherGenericType, processorSupport);
+            return a || b || !GenericType.isGenericTypeConcrete(otherGenericType);
         }
 
-        if (!covariant && Type.isBottomType(Instance.getValueForMetaPropertyToOneResolved(otherGenericType, M3Properties.rawType, processorSupport), processorSupport))
+        CoreInstance genericTypeRawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
+        CoreInstance otherGenericTypeRawType = Instance.getValueForMetaPropertyToOneResolved(otherGenericType, M3Properties.rawType, processorSupport);
+
+        if (!covariant && Type.isBottomType(otherGenericTypeRawType, processorSupport))
         {
             return true;
         }
 
-        boolean basicTypeTest = covariant?
-                processorSupport.type_subTypeOf(Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(otherGenericType, M3Properties.rawType, processorSupport)):
-                processorSupport.type_subTypeOf(Instance.getValueForMetaPropertyToOneResolved(otherGenericType,M3Properties.rawType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport));
-
-        if (basicTypeTest)
+        boolean basicTypeTest = covariant ?
+                processorSupport.type_subTypeOf(genericTypeRawType, otherGenericTypeRawType) :
+                processorSupport.type_subTypeOf(otherGenericTypeRawType, genericTypeRawType);
+        if (!basicTypeTest)
         {
-            ListIterable<? extends CoreInstance> typeArguments = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport);
+            return false;
+        }
+
+        if (covariant)
+        {
             ListIterable<? extends CoreInstance> otherTypeArguments = Instance.getValueForMetaPropertyToManyResolved(otherGenericType, M3Properties.typeArguments, processorSupport);
-            boolean genericCompatibility = true;
-            if (covariant)
+            if (otherTypeArguments.notEmpty())
             {
-                if (otherTypeArguments.isEmpty())
-                {
-                    return genericCompatibility;
-                }
                 GenericTypeWithXArguments homogenizedTypeArgs = GenericType.resolveClassTypeParameterUsingInheritance(genericType, otherGenericType, processorSupport);
-                ListIterable<? extends CoreInstance> otherTypeParameters = Instance.getValueForMetaPropertyToManyResolved(Instance.getValueForMetaPropertyToOneResolved(otherGenericType, M3Properties.rawType, processorSupport), M3Properties.typeParameters, processorSupport);
+                ListIterable<? extends CoreInstance> otherTypeParameters = otherGenericTypeRawType.getValueForMetaPropertyToMany(M3Properties.typeParameters);
                 for (int i = 0; i < otherTypeArguments.size(); i++)
                 {
-                    boolean isCovariant = TypeParameter.isCovariant(otherTypeParameters.get(i));
-                    genericCompatibility &= GenericType.isGenericCompatibleWith(homogenizedTypeArgs.getArgumentsByParameterName().get(Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(Instance.getValueForMetaPropertyToOneResolved(otherGenericType, M3Properties.rawType, processorSupport), M3Properties.typeParameters, processorSupport).get(i), M3Properties.name, processorSupport).getName()), otherTypeArguments.get(i), isCovariant, processorSupport);
+                    CoreInstance otherTypeParameter = otherTypeParameters.get(i);
+                    boolean isCovariant = TypeParameter.isCovariant(otherTypeParameter);
+                    String otherTypeParameterName = PrimitiveUtilities.getStringValue(otherTypeParameter.getValueForMetaPropertyToOne(M3Properties.name));
+                    if (!GenericType.isGenericCompatibleWith(homogenizedTypeArgs.getArgumentByParameterName(otherTypeParameterName), otherTypeArguments.get(i), isCovariant, processorSupport))
+                    {
+                        return false;
+                    }
                 }
             }
-            else
+        }
+        else
+        {
+            ListIterable<? extends CoreInstance> typeArguments = Instance.getValueForMetaPropertyToManyResolved(genericType, M3Properties.typeArguments, processorSupport);
+            if (typeArguments.notEmpty())
             {
-                if (typeArguments.isEmpty())
-                {
-                    return genericCompatibility;
-                }
                 GenericTypeWithXArguments homogenizedTypeArgs = GenericType.resolveClassTypeParameterUsingInheritance(otherGenericType, genericType, processorSupport);
-                ListIterable<? extends CoreInstance> typeParameters = Instance.getValueForMetaPropertyToManyResolved(Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), M3Properties.typeParameters, processorSupport);
+                ListIterable<? extends CoreInstance> typeParameters = genericTypeRawType.getValueForMetaPropertyToMany(M3Properties.typeParameters);
                 for (int i = 0; i < typeArguments.size(); i++)
                 {
-                    boolean isCovariant = TypeParameter.isCovariant(typeParameters.get(i));
-                    genericCompatibility &= GenericType.isGenericCompatibleWith(typeArguments.get(i), homogenizedTypeArgs.getArgumentsByParameterName().get(Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), M3Properties.typeParameters, processorSupport).get(i), M3Properties.name, processorSupport).getName()), isCovariant, processorSupport);
+                    CoreInstance typeParameter = typeParameters.get(i);
+                    boolean isCovariant = TypeParameter.isCovariant(typeParameter);
+                    String typeParameterName = PrimitiveUtilities.getStringValue(typeParameter.getValueForMetaPropertyToOne(M3Properties.name));
+                    if (!GenericType.isGenericCompatibleWith(typeArguments.get(i), homogenizedTypeArgs.getArgumentByParameterName(typeParameterName), isCovariant, processorSupport))
+                    {
+                        return false;
+                    }
                 }
             }
-            return genericCompatibility;
         }
-        return false;
+        return true;
     }
 
-    static CoreInstance getBestGenericTypeUsingContravariance(ListIterable<CoreInstance> genericTypeSet, ProcessorSupport processorSupport)
+    static CoreInstance getBestGenericTypeUsingContravariance(ListIterable<CoreInstance> genericTypeSet, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport)
     {
         int genericTypeCount = genericTypeSet.size();
         if (genericTypeCount == 0)
         {
             // Empty set, so we return Any
-            return Type.wrapGenericType(processorSupport.type_TopType(), processorSupport);
+            return Type.wrapGenericType(processorSupport.type_TopType(), replaceSourceInfo ? newSourceInfo : null, processorSupport);
         }
-        else if (genericTypeCount == 1)
+        if (genericTypeCount == 1)
         {
             // Only one generic type, so we return a copy of it
-            return GenericType.copyGenericType(genericTypeSet.get(0), processorSupport);
+            return GenericType.copyGenericType(genericTypeSet.get(0), replaceSourceInfo, newSourceInfo, processorSupport);
         }
 
         CoreInstance bottomType = processorSupport.type_BottomType();
 
-        MutableList<CoreInstance> rawTypes = FastList.newList(genericTypeCount);
+        MutableList<CoreInstance> rawTypes = Lists.mutable.ofInitialCapacity(genericTypeCount);
         for (CoreInstance genericType : genericTypeSet)
         {
             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
@@ -216,51 +231,35 @@ class Support
             rawTypes.add(rawType);
         }
 
-        for (int i = 0; i < genericTypeCount; i++)
+        // If one type is a subtype of all types, return that
+        int subTypeOfAllIndex = rawTypes.detectIndex(type -> (type != null) && rawTypes.allSatisfy(other -> (other == null) || (other == type) || processorSupport.type_subTypeOf(type, other)));
+        if (subTypeOfAllIndex != -1)
         {
-            CoreInstance rawType = rawTypes.get(i);
-            if (rawType != null)
-            {
-                boolean subTypeOfAllTypes = true;
-                for (int j = 0; subTypeOfAllTypes && (j < genericTypeCount); j++)
-                {
-                    if (j != i)
-                    {
-                        CoreInstance otherRawType = rawTypes.get(j);
-                        if ((otherRawType != null) && !processorSupport.type_subTypeOf(rawType, otherRawType))
-                        {
-                            subTypeOfAllTypes = false;
-                        }
-                    }
-                }
-                if (subTypeOfAllTypes)
-                {
-                    return GenericType.copyGenericType(genericTypeSet.get(i), processorSupport);
-                }
-            }
+            return GenericType.copyGenericType(genericTypeSet.get(subTypeOfAllIndex), replaceSourceInfo, newSourceInfo, processorSupport);
         }
+
         // Cannot find a common type, so we return Nil
-        return Type.wrapGenericType(bottomType, processorSupport);
+        return Type.wrapGenericType(bottomType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
     }
 
-    static CoreInstance getBestGenericTypeUsingCovariance(ListIterable<CoreInstance> genericTypeSet, CoreInstance knownMostGeneralGenericTypeBound, ProcessorSupport processorSupport)
+    static CoreInstance getBestGenericTypeUsingCovariance(ListIterable<CoreInstance> genericTypeSet, CoreInstance knownMostGeneralGenericTypeBound, boolean replaceSourceInfo, SourceInformation newSourceInfo, ProcessorSupport processorSupport)
     {
         int genericTypeCount = genericTypeSet.size();
         if (genericTypeCount == 0)
         {
             // Empty set, so we return Nil
-            return Type.wrapGenericType(processorSupport.type_BottomType(), processorSupport);
+            return Type.wrapGenericType(processorSupport.type_BottomType(), replaceSourceInfo ? newSourceInfo : null, processorSupport);
         }
         if (genericTypeCount == 1)
         {
             // Only one generic type, so we return a copy of it
-            return GenericType.copyGenericType(genericTypeSet.get(0), processorSupport);
+            return GenericType.copyGenericType(genericTypeSet.get(0), replaceSourceInfo, newSourceInfo, processorSupport);
         }
 
         boolean hasNonBottomGenericType = false;
         CoreInstance topType = processorSupport.type_TopType();
         CoreInstance bottomType = processorSupport.type_BottomType();
-        MutableList<CoreInstance> nonBottomConcreteGenericTypeList = FastList.newList(Math.min(genericTypeCount, 16));
+        MutableList<CoreInstance> nonBottomConcreteGenericTypeList = Lists.mutable.ofInitialCapacity(Math.min(genericTypeCount, 16));
         AlmostGenericTypeMutableSet nonBottomConcreteGenericTypeSet = new AlmostGenericTypeMutableSet(processorSupport, Math.min(genericTypeCount, 16));
         for (CoreInstance genericType : genericTypeSet)
         {
@@ -268,11 +267,11 @@ class Support
             if (rawType == topType)
             {
                 // Any is present, so that's going to be the result
-                return Type.wrapGenericType(rawType, processorSupport);
+                return Type.wrapGenericType(rawType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
             }
             if (knownMostGeneralGenericTypeBound != null && GenericType.genericTypesEqual(genericType, knownMostGeneralGenericTypeBound, processorSupport))
             {
-                return GenericType.copyGenericType(genericType, processorSupport);
+                return GenericType.copyGenericType(genericType, replaceSourceInfo, newSourceInfo, processorSupport);
             }
             if (rawType != bottomType)
             {
@@ -287,7 +286,7 @@ class Support
         if (!hasNonBottomGenericType)
         {
             // All types are Nil, so we return Nil
-            return Type.wrapGenericType(bottomType, processorSupport);
+            return Type.wrapGenericType(bottomType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
         }
         int nonBottomConcreteGenericTypesCount = nonBottomConcreteGenericTypeList.size();
         if (nonBottomConcreteGenericTypesCount == 0)
@@ -297,13 +296,13 @@ class Support
             String current = null;
             for (CoreInstance g : genericTypeSet)
             {
-                String tp = GenericType.getTypeParameterName(g, processorSupport);
+                String tp = GenericType.getTypeParameterName(g);
                 if (tp != null)
                 {
                     if ((current != null) && !tp.equals(current))
                     {
                         // No so we return Any
-                        return Type.wrapGenericType(topType, processorSupport);
+                        return Type.wrapGenericType(topType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
                     }
                     current = tp;
                 }
@@ -313,16 +312,11 @@ class Support
         if (nonBottomConcreteGenericTypesCount == 1)
         {
             // Only one concrete type, so we return a copy of it
-            return GenericType.copyGenericType(nonBottomConcreteGenericTypeList.get(0), processorSupport);
+            return GenericType.copyGenericType(nonBottomConcreteGenericTypeList.get(0), replaceSourceInfo, newSourceInfo, processorSupport);
         }
 
         // General case
-        MutableList<ListIterable<CoreInstance>> generalizations = FastList.newList(nonBottomConcreteGenericTypesCount);
-        for (CoreInstance genericType : nonBottomConcreteGenericTypeList)
-        {
-            ListIterable<CoreInstance> genls = GenericType.getAllSuperTypesIncludingSelf(genericType, processorSupport);
-            generalizations.add(genls);
-        }
+        MutableList<ListIterable<CoreInstance>> generalizations = nonBottomConcreteGenericTypeList.collect(gt -> GenericType.getAllSuperTypesIncludingSelf(gt, processorSupport));
 
         int shortestLength = generalizations.get(0).size();
         int shortestIndex = 0;
@@ -337,22 +331,22 @@ class Support
         }
 
         CoreInstance commonRawType = null;
-        MutableList<CoreInstance> genericTypesAtSameLevel = FastList.newList(nonBottomConcreteGenericTypesCount);
+        MutableList<CoreInstance> genericTypesAtSameLevel = Lists.mutable.ofInitialCapacity(nonBottomConcreteGenericTypesCount);
         ListIterable<CoreInstance> shortestGeneralizations = generalizations.remove(shortestIndex);
         // Special handling for FunctionTypes
         if (FunctionType.isFunctionType(Instance.getValueForMetaPropertyToOneResolved(shortestGeneralizations.get(0), M3Properties.rawType, processorSupport), processorSupport))
         {
-            MutableList<CoreInstance> functionTypes = FastList.newList(nonBottomConcreteGenericTypeList).with(shortestGeneralizations.get(0));
+            MutableList<CoreInstance> functionTypes = Lists.mutable.withAll(nonBottomConcreteGenericTypeList).with(shortestGeneralizations.get(0));
             for (ListIterable<CoreInstance> genls : generalizations)
             {
                 if (!FunctionType.isFunctionType(Instance.getValueForMetaPropertyToOneResolved(genls.get(0), M3Properties.rawType, processorSupport), processorSupport))
                 {
                     // Any is the only thing in common between FunctionTypes and non-FunctionTypes
-                    return Type.wrapGenericType(topType, processorSupport);
+                    return Type.wrapGenericType(topType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
                 }
                 functionTypes.add(genls.get(0));
             }
-            return GenericType.findBestCommonGenericType(functionTypes, true, true, processorSupport);
+            return GenericType.findBestCommonGenericType(functionTypes, true, true, replaceSourceInfo, newSourceInfo, processorSupport);
         }
         for (CoreInstance genericType : shortestGeneralizations)
         {
@@ -385,56 +379,38 @@ class Support
         if (commonRawType == null)
         {
             // If we can't figure out anything better, we return Any
-            return Type.wrapGenericType(topType, processorSupport);
+            return Type.wrapGenericType(topType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
         }
 
         // We now have the generic types at the same raw type level
-        CoreInstance resultGenericType = Type.wrapGenericType(commonRawType, processorSupport);
+        CoreInstance resultGenericType = Type.wrapGenericType(commonRawType, replaceSourceInfo ? newSourceInfo : null, processorSupport);
         ListIterable<? extends CoreInstance> typeParameters = commonRawType.getValueForMetaPropertyToMany(M3Properties.typeParameters);
         if (typeParameters.notEmpty())
         {
-            MutableList<CoreInstance> newTypeArguments = FastList.newList(typeParameters.size());
+            MutableList<CoreInstance> newTypeArguments = Lists.mutable.ofInitialCapacity(typeParameters.size());
 
-            MutableList<ListIterable<? extends CoreInstance>> typeArguments = FastList.newList(nonBottomConcreteGenericTypesCount);
-            for (CoreInstance genericType : genericTypesAtSameLevel)
+            MutableList<ListIterable<? extends CoreInstance>> typeArguments = genericTypesAtSameLevel.collect(gt -> gt.getValueForMetaPropertyToMany(M3Properties.typeArguments));
+            typeParameters.forEachWithIndex((typeParameter, i) ->
             {
-                typeArguments.add(genericType.getValueForMetaPropertyToMany(M3Properties.typeArguments));
-            }
-            for (int i = 0; i < typeParameters.size(); i++)
-            {
-                CoreInstance typeParameter = typeParameters.get(i);
                 boolean covariant = TypeParameter.isCovariant(typeParameter);
-                MutableList<CoreInstance> parameterTypeArguments = FastList.newList(nonBottomConcreteGenericTypesCount);
-                for (ListIterable<? extends CoreInstance> args : typeArguments)
-                {
-                    CoreInstance typeArg = args.get(i);
-                    parameterTypeArguments.add(typeArg);
-                }
-                CoreInstance typeArgument = covariant ? getBestGenericTypeUsingCovariance(parameterTypeArguments, null, processorSupport) : getBestGenericTypeUsingContravariance(parameterTypeArguments, processorSupport);
+                MutableList<CoreInstance> parameterTypeArguments = typeArguments.collect(args -> args.get(i));
+                CoreInstance typeArgument = covariant ? getBestGenericTypeUsingCovariance(parameterTypeArguments, null, replaceSourceInfo, newSourceInfo, processorSupport) : getBestGenericTypeUsingContravariance(parameterTypeArguments, replaceSourceInfo, newSourceInfo, processorSupport);
                 newTypeArguments.add(typeArgument);
-            }
+            });
 
             Instance.setValuesForProperty(resultGenericType, M3Properties.typeArguments, newTypeArguments, processorSupport);
         }
         ListIterable<? extends CoreInstance> multiplicityParameters = commonRawType.getValueForMetaPropertyToMany(M3Properties.multiplicityParameters);
         if (multiplicityParameters.notEmpty())
         {
-            MutableList<CoreInstance> newMultiplicityArguments = FastList.newList(multiplicityParameters.size());
+            MutableList<CoreInstance> newMultiplicityArguments = Lists.mutable.ofInitialCapacity(multiplicityParameters.size());
 
-            MutableList<ListIterable<? extends CoreInstance>> multiplicityArguments = FastList.newList(nonBottomConcreteGenericTypesCount);
-            for (CoreInstance genericType : genericTypesAtSameLevel)
+            MutableList<ListIterable<? extends CoreInstance>> multiplicityArguments = genericTypesAtSameLevel.collect(gt -> gt.getValueForMetaPropertyToMany(M3Properties.multiplicityArguments));
+            multiplicityParameters.forEachWithIndex((multParameter, i) ->
             {
-                multiplicityArguments.add(genericType.getValueForMetaPropertyToMany(M3Properties.multiplicityArguments));
-            }
-            for (int i = 0; i < multiplicityParameters.size(); i++)
-            {
-                MutableList<CoreInstance> multiplicities = FastList.newList(nonBottomConcreteGenericTypesCount);
-                for (ListIterable<? extends CoreInstance> args : multiplicityArguments)
-                {
-                    multiplicities.add(args.get(i));
-                }
+                MutableList<CoreInstance> multiplicities = multiplicityArguments.collect(args -> args.get(i));
                 newMultiplicityArguments.add(multiplicities.contains(null) ? null : Multiplicity.minSubsumingMultiplicity(multiplicities, processorSupport));
-            }
+            });
 
             Instance.setValuesForProperty(resultGenericType, M3Properties.multiplicityArguments, newMultiplicityArguments, processorSupport);
         }
@@ -481,7 +457,7 @@ class Support
      */
     private static class AlmostGenericTypeMutableSet extends UnifiedSetWithHashingStrategy<CoreInstance>
     {
-        private AlmostGenericTypeMutableSet()
+        public AlmostGenericTypeMutableSet()
         {
         }
 
@@ -510,7 +486,7 @@ class Support
         public int computeHashCode(CoreInstance genericType)
         {
             CoreInstance rawType = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, this.processorSupport);
-            return (rawType == null) ? GenericType.getTypeParameterName(genericType, this.processorSupport).hashCode() : rawType.hashCode();
+            return (rawType == null) ? Objects.hashCode(GenericType.getTypeParameterName(genericType)) : rawType.hashCode();
         }
 
         @Override

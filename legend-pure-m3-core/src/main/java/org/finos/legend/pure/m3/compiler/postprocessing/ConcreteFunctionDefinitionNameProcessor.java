@@ -14,29 +14,28 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
 import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 
 public class ConcreteFunctionDefinitionNameProcessor
 {
-    public static void process(Function function, ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
+    public static void process(Function<?> function, ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
     {
         Package parent = function._package();
         if (parent != null)
@@ -51,20 +50,16 @@ public class ConcreteFunctionDefinitionNameProcessor
             {
                 function._name(signature);
             }
-            if (parent._children().count(Predicates.attributeEqual(CoreInstance.GET_NAME, signature)) > 1)
+            if (parent._children().count(c -> signature.equals(c.getName())) > 1)
             {
-                ListIterable<SourceInformation> sourceInfos = parent._children().collectIf(Predicates.attributeEqual(CoreInstance.GET_NAME, signature), CoreInstance.GET_SOURCE_INFO).toSortedList();
+                ListIterable<SourceInformation> sourceInfos = parent._children().collectIf(c -> signature.equals(c.getName()), CoreInstance::getSourceInformation, Lists.mutable.empty()).sortThis();
                 String pkg = PackageableElement.getUserPathForPackageableElement(parent);
                 if (M3Paths.Root.equals(pkg))
                 {
                     pkg = "::";
                 }
 
-                StringBuilder message = new StringBuilder("The function '");
-                message.append(signature);
-                message.append("' is defined more than once in the package '");
-                message.append(pkg);
-                message.append("' at: ");
+                StringBuilder message = new StringBuilder("The function '").append(signature).append("' is defined more than once in the package '").append(pkg).append("' at: ");
                 boolean first = true;
                 for (SourceInformation sourceInfo : sourceInfos)
                 {
@@ -76,19 +71,14 @@ public class ConcreteFunctionDefinitionNameProcessor
                     {
                         message.append(", ");
                     }
-                    message.append(sourceInfo.getSourceId());
-                    message.append(" (line:");
-                    message.append(sourceInfo.getLine());
-                    message.append(" column:");
-                    message.append(sourceInfo.getColumn());
-                    message.append(')');
+                    message.append(sourceInfo.getSourceId()).append(" (line:").append(sourceInfo.getLine()).append(" column:").append(sourceInfo.getColumn()).append(')');
                 }
                 throw new PureCompilationException(function.getSourceInformation(), message.toString());
             }
         }
     }
 
-    private static String getSignatureAndResolveImports(Function function, ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
+    private static String getSignatureAndResolveImports(Function<?> function, ModelRepository repository, ProcessorSupport processorSupport) throws PureCompilationException
     {
         String functionName = function._functionName();
         FunctionType functionType = (FunctionType)processorSupport.function_getFunctionType(function);
@@ -96,11 +86,7 @@ public class ConcreteFunctionDefinitionNameProcessor
         org.finos.legend.pure.m3.navigation.generictype.GenericType.resolveGenericTypeUsingImports(returnTypeGeneric, repository, processorSupport);
         String returnType = ImportStub.withImportStubByPass(returnTypeGeneric._rawTypeCoreInstance(), processorSupport) == null ? org.finos.legend.pure.m3.navigation.generictype.GenericType.getTypeParameterName(returnTypeGeneric, processorSupport) : ImportStub.withImportStubByPass(returnTypeGeneric._rawTypeCoreInstance(), processorSupport).getName();
         String multiplicity = Multiplicity.multiplicityToSignatureString(functionType._returnMultiplicity());
-        MutableList<String> vars = FastList.newList();
-        for (VariableExpression var : functionType._parameters())
-        {
-            vars.add(functionSignatureVariableToString(var, repository, processorSupport));
-        }
+        MutableList<String> vars = functionType._parameters().collect(v -> functionSignatureVariableToString(v, repository, processorSupport), Lists.mutable.empty());
         return functionName + "_" + vars.makeString("_") + "_" + returnType + multiplicity;
     }
 

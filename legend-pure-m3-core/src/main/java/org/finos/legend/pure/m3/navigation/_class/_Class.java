@@ -15,13 +15,13 @@
 package org.finos.legend.pure.m3.navigation._class;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -33,8 +33,7 @@ import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m3.navigation.property.Property;
 import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-
-import java.io.IOException;
+import org.finos.legend.pure.m4.tools.SafeAppendable;
 
 public class _Class
 {
@@ -94,28 +93,12 @@ public class _Class
     {
         CoreInstance profile = processorSupport.package_getByUserPath(M3Paths.equality);
         CoreInstance stereotype = Profile.findStereotype(profile, KEY_STEREOTYPE);
-
-        MutableList<CoreInstance> keys = Lists.mutable.with();
-        for (CoreInstance property : processorSupport.class_getSimpleProperties(classifier))
-        {
-            if (hasStereotype(property, stereotype, processorSupport))
-            {
-                keys.add(property);
-            }
-        }
-        return keys;
+        return processorSupport.class_getSimpleProperties(classifier).select(p -> hasStereotype(p, stereotype, processorSupport), Lists.mutable.empty());
     }
 
     private static boolean hasStereotype(CoreInstance property, CoreInstance stereotype, ProcessorSupport processorSupport)
     {
-        for (CoreInstance st : Instance.getValueForMetaPropertyToManyResolved(property, M3Properties.stereotypes, processorSupport))
-        {
-            if (st == stereotype)
-            {
-                return true;
-            }
-        }
-        return false;
+        return Instance.getValueForMetaPropertyToManyResolved(property, M3Properties.stereotypes, processorSupport).anySatisfy(st -> st == stereotype);
     }
 
     public static String print(CoreInstance cls)
@@ -123,78 +106,71 @@ public class _Class
         return print(cls, false);
     }
 
-    public static void print(Appendable appendable, CoreInstance cls)
+    public static <T extends Appendable> T print(T appendable, CoreInstance cls)
     {
-        print(appendable, cls, false);
+        return print(appendable, cls, false);
     }
 
     public static String print(CoreInstance cls, boolean fullPaths)
     {
-        StringBuilder builder = new StringBuilder();
-        print(builder, cls, fullPaths);
-        return builder.toString();
+        return print(new StringBuilder(), cls, fullPaths).toString();
     }
 
-    public static void print(Appendable appendable, CoreInstance cls, boolean fullPaths)
+    public static <T extends Appendable> T print(T appendable, CoreInstance cls, boolean fullPaths)
     {
         ListIterable<? extends CoreInstance> typeParameters = cls.getValueForMetaPropertyToMany(M3Properties.typeParameters);
         ListIterable<? extends CoreInstance> multiplicityParameters = cls.getValueForMetaPropertyToMany(M3Properties.multiplicityParameters);
         boolean hasTypeParams = typeParameters.notEmpty();
         boolean hasMultParams = multiplicityParameters.notEmpty();
 
-        try
+        SafeAppendable safeAppendable = SafeAppendable.wrap(appendable);
+        if (fullPaths)
         {
-            if (fullPaths)
-            {
-                PackageableElement.writeUserPathForPackageableElement(appendable, cls);
-            }
-            else
-            {
-                appendable.append(cls.getValueForMetaPropertyToOne(M3Properties.name).getName());
-            }
-            if (hasTypeParams || hasMultParams)
-            {
-                appendable.append('<');
-                if (hasTypeParams)
-                {
-                    boolean first = true;
-                    for (CoreInstance parameter : typeParameters)
-                    {
-                        if (first)
-                        {
-                            first = false;
-                        }
-                        else
-                        {
-                            appendable.append(',');
-                        }
-                        appendable.append(parameter.getValueForMetaPropertyToOne(M3Properties.name).getName());
-                    }
-                }
-                if (hasMultParams)
-                {
-                    appendable.append('|');
-                    boolean first = true;
-                    for (CoreInstance parameter : multiplicityParameters)
-                    {
-                        if (first)
-                        {
-                            first = false;
-                        }
-                        else
-                        {
-                            appendable.append(',');
-                        }
-                        appendable.append(parameter.getValueForMetaPropertyToOne(M3Properties.values).getName());
-                    }
-                }
-                appendable.append('>');
-            }
+            PackageableElement.writeUserPathForPackageableElement(safeAppendable, cls);
         }
-        catch (IOException e)
+        else
         {
-            throw new RuntimeException(e);
+            safeAppendable.append(cls.getValueForMetaPropertyToOne(M3Properties.name).getName());
         }
+        if (hasTypeParams || hasMultParams)
+        {
+            safeAppendable.append('<');
+            if (hasTypeParams)
+            {
+                boolean first = true;
+                for (CoreInstance parameter : typeParameters)
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        safeAppendable.append(',');
+                    }
+                    safeAppendable.append(parameter.getValueForMetaPropertyToOne(M3Properties.name).getName());
+                }
+            }
+            if (hasMultParams)
+            {
+                safeAppendable.append('|');
+                boolean first = true;
+                for (CoreInstance parameter : multiplicityParameters)
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        safeAppendable.append(',');
+                    }
+                    safeAppendable.append(parameter.getValueForMetaPropertyToOne(M3Properties.values).getName());
+                }
+            }
+            safeAppendable.append('>');
+        }
+        return appendable;
     }
 
     /**
@@ -210,20 +186,10 @@ public class _Class
     public static MutableMap<String, CoreInstance> computePropertiesByName(CoreInstance classifier, Iterable<String> propertyProperties, ProcessorSupport processorSupport)
     {
         MutableMap<String, CoreInstance> properties = Maps.mutable.with();
-        for (CoreInstance type : Type.getGeneralizationResolutionOrder(classifier, processorSupport))
-        {
-            for (String propertyProperty : propertyProperties)
-            {
-                for (CoreInstance property : Instance.getValueForMetaPropertyToManyResolved(type, propertyProperty, processorSupport))
-                {
-                    String name = Property.getPropertyId(property, processorSupport);
-                    if (!properties.containsKey(name))
-                    {
-                        properties.put(name, property);
-                    }
-                }
-            }
-        }
+        Type.getGeneralizationResolutionOrder(classifier, processorSupport).forEach(type ->
+                propertyProperties.forEach(propertyProperty ->
+                        Instance.getValueForMetaPropertyToManyResolved(type, propertyProperty, processorSupport).forEach(property ->
+                                properties.getIfAbsentPut(Property.getPropertyId(property, processorSupport), property))));
         return properties;
     }
 
@@ -238,10 +204,7 @@ public class _Class
     public static ListIterable<CoreInstance> computeConstraintsInHierarchy(CoreInstance _class, ProcessorSupport processorSupport)
     {
         MutableList<CoreInstance> allConstraints = Lists.mutable.empty();
-        for (CoreInstance genl : Type.getGeneralizationResolutionOrder(_class, processorSupport).asReversed())
-        {
-            allConstraints.addAllIterable(genl.getValueForMetaPropertyToMany(M3Properties.constraints));
-        }
+        Type.getGeneralizationResolutionOrder(_class, processorSupport).asReversed().forEach(genl -> allConstraints.addAllIterable(genl.getValueForMetaPropertyToMany(M3Properties.constraints)));
         return allConstraints;
     }
 }

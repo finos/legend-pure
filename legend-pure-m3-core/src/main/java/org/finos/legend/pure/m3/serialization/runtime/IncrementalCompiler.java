@@ -16,17 +16,15 @@ package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.multimap.Multimap;
 import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.map.sorted.mutable.TreeSortedMap;
@@ -60,7 +58,6 @@ import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.finos.legend.pure.m4.coreinstance.factory.CoreInstanceFactory;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.tools.ConcurrentHashSet;
@@ -68,6 +65,7 @@ import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 import org.finos.legend.pure.m4.transaction.framework.MultiTransaction;
 import org.finos.legend.pure.m4.transaction.framework.MultiTransactionManager;
 
+import java.util.SortedMap;
 import java.util.concurrent.ForkJoinPool;
 
 public abstract class IncrementalCompiler implements SourceEventHandler
@@ -75,27 +73,14 @@ public abstract class IncrementalCompiler implements SourceEventHandler
     static final int PARSE_SOURCES_THRESHOLD = 100;
     static final int CONTEXT_REGISTRATION_THRESHOLD = 100;
 
-    static final Function<CoreInstance, String> GET_COREINSTANCE_REPO_NAME = new Function<CoreInstance, String>()
+    static final Function<CoreInstance, String> GET_COREINSTANCE_REPO_NAME = object ->
     {
-        @Override
-        public String valueOf(CoreInstance object)
+        SourceInformation sourceInformation = object.getSourceInformation();
+        if (sourceInformation == null)
         {
-            SourceInformation sourceInformation = object.getSourceInformation();
-            if (sourceInformation == null)
-            {
-                throw new RuntimeException("Instance " + object.getName() + " of type " + object.getClassifier().getName() + " has no source information. This needs to be fixed");
-            }
-            return PureCodeStorage.getSourceRepoName(sourceInformation.getSourceId());
+            throw new RuntimeException("Instance " + object.getName() + " of type " + object.getClassifier().getName() + " has no source information. This needs to be fixed");
         }
-    };
-
-    private static final Predicate<CompilerEventHandler> COMPILER_EVENT_HANDLER_INITIALIZED = new Predicate<CompilerEventHandler>()
-    {
-        @Override
-        public boolean accept(CompilerEventHandler each)
-        {
-            return each.isInitialized();
-        }
+        return PureCodeStorage.getSourceRepoName(sourceInformation.getSourceId());
     };
 
     final InlineDSLLibrary dslLibrary;
@@ -131,11 +116,11 @@ public abstract class IncrementalCompiler implements SourceEventHandler
         RichIterable<CoreInstanceFactoryRegistry> registries =
                 factoryRegistryOverride != null ?
                         Lists.fixedSize.of(factoryRegistryOverride) :
-                        Lists.mutable.withAll(allParsers.flatCollect(CoreInstanceFactoriesRegistry.CORE_INSTANCE_FACTORY_GETTOR)).withAll(inlineDSLs.flatCollect(CoreInstanceFactoriesRegistry.CORE_INSTANCE_FACTORY_GETTOR));
+                        allParsers.asLazy().flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry).concatenate(inlineDSLs.flatCollect(CoreInstanceFactoriesRegistry::getCoreInstanceFactoriesRegistry));
 
         CoreInstanceFactoryRegistry registry = registries.injectInto(
-                new CoreInstanceFactoryRegistry(IntObjectMaps.immutable.<CoreInstanceFactory>empty(), Maps.immutable.<String, CoreInstanceFactory>empty(), Maps.immutable.<String, Class>empty()),
-                (argument1, argument2) -> argument1.combine(argument2)
+                new CoreInstanceFactoryRegistry(IntObjectMaps.immutable.empty(), Maps.immutable.empty(), Maps.immutable.empty()),
+                CoreInstanceFactoryRegistry::combine
         );
 
         this.modelRepository = new ModelRepository(new CompositeCoreInstanceFactory(registry));
@@ -186,10 +171,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
 
     void finishedCompilingCore(RichIterable<? extends Source> compiledSources)
     {
-        for (CompilerEventHandler compilerEventHandler : this.compilerEventHandlers)
-        {
-            compilerEventHandler.finishedCompilingCore(compiledSources);
-        }
+        this.compilerEventHandlers.forEach(eh -> eh.finishedCompilingCore(compiledSources));
     }
 
     public SourceMutation compileInCurrentTransaction(Source... sources)
@@ -205,7 +187,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
             throw new IllegalStateException("No current transaction");
         }
         // TODO should we use this.compilerEventHandlers?
-        return this.compile(sources, Lists.immutable.<CompilerEventHandler>empty());
+        return this.compile(sources, Lists.immutable.empty());
     }
 
     SourceMutation compile(RichIterable<? extends Source> sources) throws PureCompilationException, PureParserException
@@ -217,54 +199,30 @@ public abstract class IncrementalCompiler implements SourceEventHandler
 
     void runEventHandlers(Iterable<? extends CompilerEventHandler> compilerEventHandlers, SetIterable<CoreInstance> copyToProcess, Multimap<String, ? extends Source> compiledSourcesByRepo)
     {
-        MutableList<CoreInstance> allUpdatedInstances = compiledSourcesByRepo.valuesView().flatCollect(new Function<Source, Iterable<CoreInstance>>()
-        {
-            @Override
-            public Iterable<CoreInstance> valueOf(Source source)
-            {
-                return source.getNewInstances();
-            }
-        }, Lists.mutable.<CoreInstance>empty());
+        MutableList<CoreInstance> allUpdatedInstances = compiledSourcesByRepo.valuesView().flatCollect(Source::getNewInstances, Lists.mutable.empty()).withAll(copyToProcess);
 
-        allUpdatedInstances = allUpdatedInstances.withAll(copyToProcess);
-
-        TreeSortedMap<String, RichIterable<? extends Source>> sortedMap = new TreeSortedMap<String, RichIterable<? extends Source>>(new RepositoryComparator(this.codeStorage.getAllRepositories()), compiledSourcesByRepo.toMap());
-
-        for (CompilerEventHandler compilerEventHandler : compilerEventHandlers)
-        {
-            compilerEventHandler.compiled(sortedMap, allUpdatedInstances);
-        }
+        SortedMap<String, RichIterable<? extends Source>> sortedMap = new TreeSortedMap<>(new RepositoryComparator(this.codeStorage.getAllRepositories()), compiledSourcesByRepo.toMap());
+        compilerEventHandlers.forEach(eh -> eh.compiled(sortedMap, allUpdatedInstances));
     }
 
     MutableSet<CoreInstance> removeNodesFromSourcesInScope(RichIterable<? extends Source> sources, MutableSet<CoreInstance> toProcess)
     {
         final MutableSet<String> excludedSourceIds = Sets.mutable.empty();
-        this.sourcesToBeRemoved.collect(Source.SOURCE_ID, excludedSourceIds);
-        sources.collect(Source.SOURCE_ID, excludedSourceIds);
-        return toProcess.reject(new Predicate<CoreInstance>()
-        {
-            @Override
-            public boolean accept(CoreInstance instance)
-            {
-                return (instance.getSourceInformation() == null) || excludedSourceIds.contains(instance.getSourceInformation().getSourceId());
-            }
-        });
+        this.sourcesToBeRemoved.collect(Source::getId, excludedSourceIds);
+        sources.collect(Source::getId, excludedSourceIds);
+        return toProcess.reject(instance -> (instance.getSourceInformation() == null) || excludedSourceIds.contains(instance.getSourceInformation().getSourceId()));
     }
 
     SourceMutation finishRepoCompilation(String repoName, MutableList<CoreInstance> newInstancesConsolidated, ValidationType validationType) throws PureCompilationException
     {
-        Procedure<CoreInstance> registerInContext = new Procedure<CoreInstance>()
+        Procedure<CoreInstance> registerInContext = instance ->
         {
-            @Override
-            public void value(CoreInstance instance)
+            if (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function)
             {
-                if (instance instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function)
-                {
-                    IncrementalCompiler.this.context.registerFunctionByName(instance);
-                }
-                IncrementalCompiler.this.context.registerInstanceByClassifier(instance);
-                IncrementalCompiler.this.context.update(instance);
+                this.context.registerFunctionByName(instance);
             }
+            this.context.registerInstanceByClassifier(instance);
+            this.context.update(instance);
         };
         if (shouldParallelize(newInstancesConsolidated.size(), CONTEXT_REGISTRATION_THRESHOLD))
         {
@@ -282,7 +240,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
             this.modelRepository.validate(VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER);
         }
 
-        newInstancesConsolidated.removeIf(SourceMutation.IS_MARKED_FOR_DELETION);
+        newInstancesConsolidated.removeIf(SourceMutation::isMarkedForDeletion);
 
         this.message.setMessage("Validating " + repoName + "...");
         Validator.validateM3(newInstancesConsolidated, validationType, this.library, this.dslLibrary, this.additionalValidators.asUnmodifiable(), this.codeStorage, this.modelRepository, this.context, this.processorSupport);
@@ -321,18 +279,14 @@ public abstract class IncrementalCompiler implements SourceEventHandler
         return excludes;
     }
 
-    void rollBack(IncrementalCompilerTransaction transaction, Throwable t, Iterable<? extends Source> sources) throws PureCompilationException
+    void rollBack(IncrementalCompilerTransaction transaction, Throwable t) throws PureCompilationException
     {
         try
         {
             transaction.rollback();
-
-            for (CoreInstance inst : this.toProcess)
-            {
-                this.context.update(inst);
-            }
+            this.toProcess.forEach(this.context::update);
         }
-        catch (Throwable t2)
+        catch (Throwable ignore)
         {
             // TODO Rollback failed, so runtime is corrupt. Should do something to reset the compiled state.
             throw new PureCompilationException("Compilation failed because of the embedded exception, and the attempt to roll back to the previous state also failed. Full recompilation is advisable.", t);
@@ -378,8 +332,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
     void cleanUpImportGroups(String sourceId)
     {
         Package imports = (Package)this.processorSupport.package_getByUserPath("system::imports");
-        ListIterable<? extends PackageableElement> importGroups = imports._children().toList();
-        ListIterable<? extends PackageableElement> newImportGroups = importGroups.rejectWith(Imports.IS_IMPORT_GROUP_FOR_SOURCE, sourceId);
+        MutableList<? extends PackageableElement> newImportGroups = imports._children().reject(ig -> Imports.isImportGroupForSource(ig, sourceId), Lists.mutable.empty());
         imports._children(newImportGroups);
     }
 
@@ -432,7 +385,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
 
     boolean eventHandlersFullyInitialized()
     {
-        return this.compilerEventHandlers.allSatisfy(COMPILER_EVENT_HANDLER_INITIALIZED);
+        return this.compilerEventHandlers.allSatisfy(CompilerEventHandler::isInitialized);
     }
 
     @Override

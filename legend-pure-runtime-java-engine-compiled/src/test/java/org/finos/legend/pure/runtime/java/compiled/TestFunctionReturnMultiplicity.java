@@ -81,7 +81,7 @@ public class TestFunctionReturnMultiplicity extends AbstractPureTestWithCoreComp
         CoreInstance result = this.compileAndExecute("test():Any[*]");
         ListIterable<? extends CoreInstance> values = result.getValueForMetaPropertyToMany("values");
         Assert.assertEquals(7, values.size());
-        Assert.assertEquals("a instanceOf String,1 instanceOf Integer,2.0 instanceOf Float,2015-03-12 instanceOf StrictDate,2015-03-12T23:59:00+0000 instanceOf DateTime,true instanceOf Boolean,Class(1803) instanceOf Class", values.makeString(","));
+        Assert.assertEquals("a instanceOf String,1 instanceOf Integer,2.0 instanceOf Float,2015-03-12 instanceOf StrictDate,2015-03-12T23:59:00+0000 instanceOf DateTime,true instanceOf Boolean,Class(1809) instanceOf Class", values.makeString(","));
     }
 
 
@@ -116,7 +116,7 @@ public class TestFunctionReturnMultiplicity extends AbstractPureTestWithCoreComp
                 "}\n");
         CoreInstance result = this.compileAndExecute("test():Any[*]");
         CoreInstance value = result.getValueForMetaPropertyToOne("values");
-        Assert.assertEquals("Class(1803) instanceOf Class", value.toString());
+        Assert.assertEquals("Class(1809) instanceOf Class", value.toString());
     }
 
     @Test

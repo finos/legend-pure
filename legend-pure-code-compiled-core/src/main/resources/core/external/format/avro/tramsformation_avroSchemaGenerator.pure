@@ -23,7 +23,7 @@ function  meta::external::format::avro::generation::transform(input: AvroConfig[
 {
   meta::legend::test::mayExecuteLegendTest(
        {clientVersion, serverVersion, serializationKind, host, port|
-                   let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::avro::alloyGenerateAvro_AvroConfig_1__String_1__Integer_1__String_1__AvroOutput_MANY_';
+                   let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::avro::legendGenerateAvro_AvroConfig_1__String_1__Integer_1__String_1__AvroOutput_MANY_';
                    let xf = $fStr->pathToElement()->cast(@Function<{AvroConfig[1], String[1], Integer[1], String[1]->AvroOutput[*]}>);
                    $xf->evaluate([$input, $host, $port, $serverVersion]->map(v|list($v)))->toOneMany()->cast(@AvroOutput);},
        | meta::external::format::avro::generation::internal_transform($input)

@@ -21,7 +21,7 @@ function meta::external::format::protobuf::generation::transform(input:ProtobufC
 {
    meta::legend::test::mayExecuteLegendTest(
        {clientVersion, serverVersion, serializationKind, host, port|
-                   let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::protobuf::alloyGenerateProtobuf_ProtobufConfig_1__String_1__Integer_1__String_1__ProtobufOutput_MANY_';
+                   let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::protobuf::legendGenerateProtobuf_ProtobufConfig_1__String_1__Integer_1__String_1__ProtobufOutput_MANY_';
                    let xf = $fStr->pathToElement()->cast(@Function<{ProtobufConfig[1], String[1], Integer[1], String[1]->GenerationOutput[*]}>);
                    $xf->evaluate([$input, $host, $port, $serverVersion]->map(v|list($v)))->toOneMany()->cast(@ProtobufOutput);},
        |meta::external::format::protobuf::generation::internal_transform($input)
@@ -40,49 +40,103 @@ function meta::external::format::protobuf::generation::generateProtobufFromPureW
 {   
    $config.scopeElements->filter(e| !$e->instanceOf(Package))->map(e|assert($e->instanceOf(Class),' Protobuf generation of ' + $e->type().name->toOne()+ ' is not currently supported. Tried to generate Protobuf for '+ $e->elementToPath()) ;);
    let classElements = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Class))->cast(@Class<Any>);
-   $classElements->map(c| $config->meta::external::format::protobuf::generation::generateProtobufFromPure($c));
+   $config->meta::external::format::protobuf::generation::generateProtobufFromPure($classElements->toOneMany());
 }
 
-function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1]):ProtobufOutput[*]
+function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1..*]):ProtobufOutput[*]
 {
-   let content =$class->map(c|$c->classToMessage())->map(s|$s->meta::external::format::protobuf::serialization::toString())->removeDuplicates()->joinStrings('\n');
-   ^ProtobufOutput(content=$content,fileName=$class->elementToPath()->pathToFileName('proto'), format = 'proto');
+  $class->classToMessage($config.options)->map(s|
+      let content = $s->meta::external::format::protobuf::serialization::toString();
+      let fileName = if($s.package->isEmpty(), | $class.name->toOne() + '.proto', | $s.package->toOne()->protoPackageToFileName());
+      ^ProtobufOutput(content=$content,fileName=$fileName, format = 'proto');
+    );
 }
 
-function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[1]
+function meta::external::format::protobuf::generation::elementToProtoPackage(e:PackageableElement[1]):String[1]
 {
-   let allClasses = $class->scanTypes([])->removeDuplicates()->remove(Any);
+  $e.package->toOne()->elementToPath('.')
+}
+
+function meta::external::format::protobuf::generation::protoPackageToFileName(p:String[1]):String[1]
+{
+  $p->replace('.', '_') + '.proto'
+}
+
+function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1]):ProtoFile[*]
+{
+  meta::external::format::protobuf::generation::classToMessage([$class], [])
+}
+
+function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1..*], options:Options[0..1]):ProtoFile[*]
+{
+   let allClasses = $class->map(c | $c->scanTypes([]))->removeDuplicates()->remove(Any);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
-   let topLevelDefs = $allClasses
-      ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>)
-      ->map(c|
-         ^Message
-         (
-            name = $c.name->toOne(),
-            fields = $c.properties->map(p|$p->propertyToField($c.properties->indexOf($p)+1, $typesMap))
-         )
-      )->concatenate
-         (
-            $allClasses
-            ->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->cast(@meta::pure::metamodel::type::Enumeration<Any>)
-            ->map(e|
-                  ^meta::external::format::protobuf::metamodel::Enumeration
-                  (
-                     name = $e->enumName(),
-                     values = $e->enumValues()->map(v|^meta::external::format::protobuf::metamodel::Enum(constant=$v->toString(), constantNumber=$e->enumValues()->indexOf($v)))
-                  )
-             )
-         );
-    ^ProtoFile(syntax=Syntax.proto3, topLevelDefs=$topLevelDefs, imports=['google/protobuf/timestamp.proto']);     
+   let classesByPackage = $allClasses->groupBy(c | $c->elementToProtoPackage());
+   
+   $classesByPackage->keyValues()->map(p | 
+      let thePackage = $p.first;
+      let packageClasses = $p.second.values;
+
+      let messages = $packageClasses
+        ->filter(c|$c->instanceOf(Class))->cast(@Class<Any>)
+        ->map(c|
+            //Collect any abstract base classes
+            let oneOfs = $c->filter(c | ($c->allProperties()->isEmpty() || $c->isAbstract()) && $c->allSpecializations()->isNotEmpty())
+                                      ->removeDuplicates()
+                                      ->map(c | let subClasses = $c->allSpecializations()->filter(sc | $sc != $c);
+                                                ^OneOf(
+                                                  name=$c.name->toOne()->toLower(),
+                                                  field=$subClasses->map(s | ^Field(name=$s.name->toOne()->meta::pure::functions::string::splitOnCamelCase()->joinStrings('_')->toLower(), 
+                                                                                    type=$typesMap->get($s)->toOne(),
+                                                                                    number=$subClasses->indexOf($s)+1,
+                                                                                    repeated=false
+                                                                                    ))
+                                                ););
+            ^Message
+            (
+              name = $c.name->toOne(),
+              content = $oneOfs->concatenate($c.properties->map(p|$p->propertyToField($c.properties->indexOf($p)+1, $typesMap)))
+            );
+        );
+        
+      let enumerations = $packageClasses
+              ->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->cast(@meta::pure::metamodel::type::Enumeration<Any>)
+              ->map(e|
+                    ^meta::external::format::protobuf::metamodel::Enumeration
+                    (
+                        name = $e->enumName(),
+                        values = $e->enumValues()->map(v|^meta::external::format::protobuf::metamodel::Enum(constant=$v->toString(), constantNumber=$e->enumValues()->indexOf($v)))
+                    )->cast(@meta::external::format::protobuf::metamodel::TopLevelItem); //TODO - seems like a bug in pure should not be necessary
+                );
+
+      let topLevelDefs = $messages->concatenate($enumerations);      
+
+      //If this is a complex type that is not in the current package, we need to import it      
+      let imports = $messages.content
+        ->map(m| $m->match([
+          f:Field[1]|$f.type,
+          o:OneOf[1]|$o.field.type]))
+        ->filter(t|$t->instanceOf(MessagePtr))->cast(@MessagePtr)
+        ->filter(m | $m.package != $thePackage)
+        ->map(p| if ( $p.package == 'google.protobuf', | 'google/protobuf/' + $p.name->toLower() + '.proto'
+                                                                    , | $p.package->protoPackageToFileName()))
+        ->removeDuplicates()->sort()->map(s | ^ProtoImport(name=$s));
+        
+      ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs,
+                 imports=$imports,
+                 options=$options);
+   );
 }
 
 function meta::external::format::protobuf::generation::propertyToField(property:Property<Nil,Any|*>[1], index:Integer[1], typesMap:Map<Type, ProtoBufType>[1]):Field[1]
 {
    ^Field
    (
-      name = $property.name->toOne()->toLower(),
-      type = $typesMap->get($property.genericType.rawType->toOne())->toOne(),
-      binaryFieldNumber = $index,
+      name = $property.name->toOne()->meta::pure::functions::string::splitOnCamelCase()->joinStrings('_')->toLower(),
+      type = if($property.genericType.rawType == Map,|^MapType(keyType=$typesMap->get($property.genericType.typeArguments->at(0).rawType->toOne())->toOne()->cast(@ScalarType),
+                                                                         valueType=$typesMap->get($property.genericType.typeArguments->at(1).rawType->toOne())->toOne())
+                                                              ,| $typesMap->get($property.genericType.rawType->toOne())->toOne()),
+      number = $index,
       repeated = !$property.multiplicity->hasUpperBound() || ($property.multiplicity.upperBound->toOne().value > 1)
    );
 }
@@ -95,31 +149,31 @@ function <<access.private>> meta::external::format::protobuf::generation::seedPu
          pair(Float, ^meta::external::format::protobuf::metamodel::Double()),
          pair(String, ^meta::external::format::protobuf::metamodel::String()),
          pair(Boolean, ^meta::external::format::protobuf::metamodel::Bool()),
-         pair(DateTime , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
-         pair(Date , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
-         pair(StrictDate , ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Timestamp')),
+         pair(DateTime , ^meta::external::format::protobuf::metamodel::MessagePtr(package='google.protobuf', name='Timestamp')),
+         pair(Date , ^meta::external::format::protobuf::metamodel::MessagePtr(package='google.protobuf', name='Timestamp')),
+         pair(StrictDate , ^meta::external::format::protobuf::metamodel::MessagePtr(package='google.protobuf', name='Timestamp')),
          pair(Number , ^meta::external::format::protobuf::metamodel::Double()),
-         pair(Any, ^meta::external::format::protobuf::metamodel::MessagePtr(name='google.protobuf.Any'))
+         pair(Any, ^meta::external::format::protobuf::metamodel::MessagePtr(package='google.protobuf', name='Any'))
       ]
       ->concatenate
       (
-         $types->filter(c|$c->instanceOf(Class))->map(c|pair($c, ^meta::external::format::protobuf::metamodel::MessagePtr(name=$c.name->toOne())))
+         $types->filter(c|$c->instanceOf(Class))->map(c|pair($c, ^meta::external::format::protobuf::metamodel::MessagePtr(package=$c->elementToProtoPackage(), name=$c.name->toOne())))
       )
       ->concatenate
       (
-         $types->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->map(c|pair($c, ^meta::external::format::protobuf::metamodel::EnumPtr(name=$c.name->toOne())))
+         $types->filter(c|$c->instanceOf(meta::pure::metamodel::type::Enumeration))->map(c|pair($c, ^meta::external::format::protobuf::metamodel::EnumPtr(package=$c->elementToProtoPackage(), name=$c.name->toOne())))
       )
    )
 }
+
 
 function meta::external::format::protobuf::generation::scanTypes(t:Type[1], processed:Type[*]):Type[*]
 {
    if (!$processed->contains($t),
        |$t->concatenate(if($t->instanceOf(Class),
-                         |$t->cast(@Class<Any>).properties.genericType.rawType->concatenate($t->cast(@Class<Any>)->meta::pure::functions::meta::findAllSpecializations())->filter(t|($t->instanceOf(Class) || $t->instanceOf(meta::pure::metamodel::type::Enumeration)) && $t != Any)->map(c|$c->scanTypes($processed->concatenate($t))),
+                         |$t->cast(@Class<Any>)->allProperties().genericType.rawType->distinct()->concatenate($t->cast(@Class<Any>)->meta::pure::functions::meta::findAllSpecializations())->filter(t|($t->instanceOf(Class) || $t->instanceOf(meta::pure::metamodel::type::Enumeration)) && $t != Any && $t != Map)->map(c|$c->meta::external::format::protobuf::generation::scanTypes($processed->concatenate($t)))->distinct(),
                          |[]
                        )),
        |[]
    );
 }
-

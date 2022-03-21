@@ -14,17 +14,17 @@
 
 package org.finos.legend.pure.m4.coreinstance;
 
-import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
-import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
-import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.procedure.Procedure2;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
+import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.compileState.CompileState;
+import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecification;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
 
 /**
  * Core Pure instance
@@ -34,56 +34,21 @@ public interface CoreInstance
     /**
      * Function to get the name of a core instance.
      */
-    Function<CoreInstance, String> GET_NAME = new Function<CoreInstance, String>()
-    {
-        @Override
-        public String valueOf(CoreInstance instance)
-        {
-            return instance.getName();
-        }
-    };
+    Function<CoreInstance, String> GET_NAME = CoreInstance::getName;
 
     /**
      * Function to get the classifier of a core instance.
      */
-    Function<CoreInstance, CoreInstance> GET_CLASSIFIER = new Function<CoreInstance, CoreInstance>()
-    {
-        @Override
-        public CoreInstance valueOf(CoreInstance instance)
-        {
-            return instance.getClassifier();
-        }
-    };
+    Function<CoreInstance, CoreInstance> GET_CLASSIFIER = CoreInstance::getClassifier;
 
     /**
      * Function to get the source information of a core instance.
      */
-    Function<CoreInstance, SourceInformation> GET_SOURCE_INFO = new Function<CoreInstance, SourceInformation>()
-    {
-        @Override
-        public SourceInformation valueOf(CoreInstance instance)
-        {
-            return instance.getSourceInformation();
-        }
-    };
+    Function<CoreInstance, SourceInformation> GET_SOURCE_INFO = CoreInstance::getSourceInformation;
 
-    Procedure2<CoreInstance, ModelRepositoryTransaction> COMMIT = new Procedure2<CoreInstance, ModelRepositoryTransaction>()
-    {
-        @Override
-        public void value(CoreInstance instance, ModelRepositoryTransaction transaction)
-        {
-            instance.commit(transaction);
-        }
-    };
+    Procedure2<CoreInstance, ModelRepositoryTransaction> COMMIT = CoreInstance::commit;
 
-    Procedure2<CoreInstance, ModelRepositoryTransaction> ROLL_BACK = new Procedure2<CoreInstance, ModelRepositoryTransaction>()
-    {
-        @Override
-        public void value(CoreInstance instance, ModelRepositoryTransaction transaction)
-        {
-            instance.rollback(transaction);
-        }
-    };
+    Procedure2<CoreInstance, ModelRepositoryTransaction> ROLL_BACK = CoreInstance::rollback;
 
     /**
      * Get the model repository in which this instance is defined.

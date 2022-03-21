@@ -59,12 +59,12 @@ public class ReferenceUsage
     /**
      * Add a ReferenceUsage to the used instance.
      *
-     * @param used             instance being used (which will get the ReferenceUsage)
-     * @param user             instance that uses the referenced instance
-     * @param propertyName     name of the property for the reference
-     * @param offset           offset of the reference in the list of property values
-     * @param repository       model repository
-     * @param processorSupport processor support
+     * @param used                      instance being used (which will get the ReferenceUsage)
+     * @param user                      instance that uses the referenced instance
+     * @param propertyName              name of the property for the reference
+     * @param offset                    offset of the reference in the list of property values
+     * @param repository                model repository
+     * @param processorSupport          processor support
      * @param sourceInformationForUsage optional additional source information, useful if the owner is not the place the reference in code occurs
      */
     public static void addReferenceUsage(CoreInstance used, CoreInstance user, String propertyName, int offset, ModelRepository repository, ProcessorSupport processorSupport, SourceInformation sourceInformationForUsage)
@@ -347,20 +347,14 @@ public class ReferenceUsage
             SourceInformation sourceInfo = owner.getSourceInformation();
             if (sourceInfo != null)
             {
-                builder.append(" (");
-                sourceInfo.writeMessage(builder);
-                builder.append(')');
+                sourceInfo.appendMessage(builder.append(" (")).append(')');
             }
         }
-        builder.append(", propertyName='");
-        builder.append(PrimitiveUtilities.getStringValue(referenceUsage.getValueForMetaPropertyToOne(M3Properties.propertyName), null));
-        builder.append("', offset=");
-        builder.append(PrimitiveUtilities.getIntegerValue(referenceUsage.getValueForMetaPropertyToOne(M3Properties.offset), (Integer)null));
+        builder.append(", propertyName='").append(PrimitiveUtilities.getStringValue(referenceUsage.getValueForMetaPropertyToOne(M3Properties.propertyName), null));
+        builder.append("', offset=").append(PrimitiveUtilities.getIntegerValue(referenceUsage.getValueForMetaPropertyToOne(M3Properties.offset), (Integer) null));
         if (includeName)
         {
-            builder.append(", name='");
-            builder.append(referenceUsage.getName());
-            builder.append('\'');
+            builder.append(", name='").append(referenceUsage.getName()).append('\'');
         }
         builder.append('>');
     }
@@ -396,7 +390,7 @@ public class ReferenceUsage
                 return false;
             }
 
-            ReferenceUsageIndexKey that = (ReferenceUsageIndexKey)other;
+            ReferenceUsageIndexKey that = (ReferenceUsageIndexKey) other;
             return (this.owner == that.owner) && (this.offset == that.offset) && this.propertyName.equals(that.propertyName);
         }
 
@@ -413,21 +407,14 @@ public class ReferenceUsage
         public String toString()
         {
             StringBuilder builder = new StringBuilder(64);
-            builder.append("<ReferenceUsageIndexKey owner='");
-            builder.append(this.owner);
-            builder.append("' ");
+            builder.append("<ReferenceUsageIndexKey owner='").append(this.owner).append("' ");
             SourceInformation ownerSourceInfo = this.owner.getSourceInformation();
             if (ownerSourceInfo != null)
             {
-                builder.append('(');
-                ownerSourceInfo.writeMessage(builder);
-                builder.append(") ");
+                ownerSourceInfo.appendMessage(builder.append('(')).append(") ");
             }
-            builder.append("propertyName='");
-            builder.append(this.propertyName);
-            builder.append("' offset=");
-            builder.append(this.offset);
-            builder.append(">");
+            builder.append("propertyName='").append(this.propertyName);
+            builder.append("' offset=").append(this.offset).append('>');
             return builder.toString();
         }
     }

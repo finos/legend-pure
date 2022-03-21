@@ -588,6 +588,32 @@ function <<test.Test>> meta::external::language::java::factory::tests::inferredI
    assertEquals(['java.util.List'], $cls.additionalImports);
 }
 
+function <<test.Test>> meta::external::language::java::factory::tests::inferredImportsEnum():Boolean[1]
+{
+   let cls = javaClass('test.pkg.TestClass')
+                ->addField(javaField('private', javaString(), 'aString'))
+                ->addField(javaField('private', javaList(javaString()), 'aList'))
+                ->addField(javaField('private', javaClass('test.pkg.TestOther'), 'samePackage'))
+                ->addField(javaField('private', javaClass('test.pkg..other.TestOther'), 'sameNameAsClassInPackage'))
+                ->meta::external::language::java::factory::annotate(^meta::external::language::java::metamodel::annotations::json::JsonTypeInfo(
+                      use = ^meta::external::language::java::metamodel::annotations::json::EnumValue(value='JsonTypeInfo.Id.NAME'),
+                      property = '_type'
+                    )
+                )
+                ->meta::external::language::java::factory::annotate(^meta::external::language::java::metamodel::annotations::json::JsonSubTypes(
+                          subTypes=[
+                                  ^meta::external::language::java::metamodel::annotations::json::JsonSubType(
+                                      value='test.pkg.TestClassOther',
+                                      name='test'
+                                  )
+                              ]
+                           )
+                     )
+                ->inferImports();
+   
+   assertEquals(['com.fasterxml.jackson.annotation.JsonSubTypes', 'com.fasterxml.jackson.annotation.JsonTypeInfo', 'java.util.List'], $cls.additionalImports);
+}
+
 function meta::external::language::java::factory::tests::assertCode(expectedCode:String[1], expectedType:meta::external::language::java::metamodel::Type[1], code:Code[1]):Boolean[1]
 {
    assertEquals($expectedCode, $code->codeToString());

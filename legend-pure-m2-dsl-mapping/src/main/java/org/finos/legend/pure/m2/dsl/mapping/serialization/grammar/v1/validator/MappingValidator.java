@@ -34,22 +34,16 @@ import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.*;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.modelToModel.PureInstanceSetImplementation;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.compiler.validation.VisibilityValidation;
 import org.finos.legend.pure.m3.coreinstance.Package;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.AssociationImplementation;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EmbeddedSetImplementation;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EnumValueMapping;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.EnumerationMapping;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.InstanceSetImplementation;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.Mapping;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.MappingInclude;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SubstituteStore;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
@@ -86,7 +80,7 @@ public class MappingValidator implements MatchRunner<Mapping>
     @Override
     public void run(Mapping mapping, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        ValidatorState validatorState = (ValidatorState)state;
+        ValidatorState validatorState = (ValidatorState) state;
         ProcessorSupport processorSupport = validatorState.getProcessorSupport();
 
         validateIncludes(mapping, matcher, validatorState, processorSupport);
@@ -103,6 +97,7 @@ public class MappingValidator implements MatchRunner<Mapping>
         validateEnumerationMappings(mapping, processorSupport);
         validateSuperSetImplementationId(mapping, processorSupport);
         validateVisibility(mapping, context, validatorState, processorSupport);
+        validateOperationMappings(mapping, setImplementationsByClass, processorSupport);
         StoreSubstitutionValidator.validateStoreSubstitutions(mapping);
     }
 
@@ -117,18 +112,18 @@ public class MappingValidator implements MatchRunner<Mapping>
             {
                 if (superSetId.equals(classMapping._id()))
                 {
-                    throw new PureCompilationException(classMapping.getSourceInformation(), "Extend mapping id cannot reference self \'" + classMapping._id()+"\'");
+                    throw new PureCompilationException(classMapping.getSourceInformation(), "Extend mapping id cannot reference self \'" + classMapping._id() + "\'");
                 }
                 MapIterable<String, ? extends SetImplementation> classMappingIndex = org.finos.legend.pure.m2.dsl.mapping.Mapping.getClassMappingsByIdIncludeEmbedded(mapping, processorSupport);
                 SetImplementation superSetInstanceMapping = classMappingIndex.get(superSetId);
                 if (superSetInstanceMapping == null)
                 {
-                    throw new PureCompilationException(classMapping.getSourceInformation(), "Extend mapping id not found \'" + superSetId+"\'");
+                    throw new PureCompilationException(classMapping.getSourceInformation(), "Extend mapping id not found \'" + superSetId + "\'");
                 }
-                Class targetClass = (Class)ImportStub.withImportStubByPass(classMapping._classCoreInstance(), processorSupport);
-                Class extendsTargetClass = (Class)ImportStub.withImportStubByPass(superSetInstanceMapping._classCoreInstance(), processorSupport);
+                Class targetClass = (Class) ImportStub.withImportStubByPass(classMapping._classCoreInstance(), processorSupport);
+                Class extendsTargetClass = (Class) ImportStub.withImportStubByPass(superSetInstanceMapping._classCoreInstance(), processorSupport);
 
-                if(!targetClass.equals(extendsTargetClass))
+                if (!targetClass.equals(extendsTargetClass))
                 {
                     //We allow extends mappings for subtypes that only have associations and no simple properties of their own
                     ListIterable<CoreInstance> generalizations = org.finos.legend.pure.m3.navigation.type.Type.getDirectGeneralizations(targetClass, processorSupport);
@@ -138,15 +133,14 @@ public class MappingValidator implements MatchRunner<Mapping>
                         {
                             throw new PureCompilationException(classMapping.getSourceInformation(), "Invalid extends mapping. Class [" + targetClass._name() + "] extends more than one class. Extends mappings are only currently only allowed with single inheritance relationships");
                         }
-                    }
-                    else
+                    } else
                     {
-                        throw new PureCompilationException(classMapping.getSourceInformation(), "Class [" + targetClass._name() + "] != ["+ extendsTargetClass._name() + "], when ["+ classMapping._id()+"] extends [ \'" + superSetId+"\'] they must map the same class");
+                        throw new PureCompilationException(classMapping.getSourceInformation(), "Class [" + targetClass._name() + "] != [" + extendsTargetClass._name() + "], when [" + classMapping._id() + "] extends [ \'" + superSetId + "\'] they must map the same class");
                     }
                 }
-                if(! classMapping.getClassifier().equals(superSetInstanceMapping.getClassifier()))
+                if (!classMapping.getClassifier().equals(superSetInstanceMapping.getClassifier()))
                 {
-                    throw new PureCompilationException(classMapping.getSourceInformation(), "When extending mappings must be of same type [" + classMapping.getClassifier().getName() + "]!= [" + superSetInstanceMapping.getClassifier().getName()+"]");
+                    throw new PureCompilationException(classMapping.getSourceInformation(), "When extending mappings must be of same type [" + classMapping.getClassifier().getName() + "]!= [" + superSetInstanceMapping.getClassifier().getName() + "]");
                 }
             }
         }
@@ -165,7 +159,7 @@ public class MappingValidator implements MatchRunner<Mapping>
             {
                 for (PropertyMapping propertyMapping : associationMapping._propertyMappings())
                 {
-                    Property property = (Property)ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
+                    Property property = (Property) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
                     final String propertyName = property.getName();
 
                     SetImplementation sourceClassMapping = validateId(associationMapping, propertyMapping, classMappingIndex, propertyMapping._sourceSetImplementationId(), "source", processorSupport);
@@ -180,7 +174,7 @@ public class MappingValidator implements MatchRunner<Mapping>
                                 + "\'. Target \'" + targetId + "\' is an embedded class mapping, embedded mappings are only allowed to be the source in an Association Mapping.");
                     }
 
-                    ListIterable<? extends PropertyMapping> sourcePropertyMappings = ((InstanceSetImplementation)sourceClassMapping)._propertyMappings().toList();
+                    ListIterable<? extends PropertyMapping> sourcePropertyMappings = ((InstanceSetImplementation) sourceClassMapping)._propertyMappings().toList();
                     PropertyMapping alreadyMapped = sourcePropertyMappings.detect(new Predicate<PropertyMapping>()
                     {
                         @Override
@@ -192,7 +186,7 @@ public class MappingValidator implements MatchRunner<Mapping>
                     if (alreadyMapped != null)
                     {
                         throw new PureCompilationException(propertyMapping.getSourceInformation(), "Property \'" + propertyName + "\' is mapped twice, once in Association mapping \'" + ImportStub.withImportStubByPass(associationMapping._associationCoreInstance(), processorSupport).getName() +
-                                "\' and once in Class mapping \'" + ((Class)ImportStub.withImportStubByPass(targetClassMapping._classCoreInstance(), processorSupport))._name() + "\'. Only one mapping is allowed.");
+                                "\' and once in Class mapping \'" + ((Class) ImportStub.withImportStubByPass(targetClassMapping._classCoreInstance(), processorSupport))._name() + "\'. Only one mapping is allowed.");
                     }
                 }
             }
@@ -225,6 +219,35 @@ public class MappingValidator implements MatchRunner<Mapping>
         }
     }
 
+    private static void validateOperationMappings(Mapping mapping, MutableListMultimap<Type, CoreInstance> setImplementationsByClass, final ProcessorSupport processorSupport)
+    {
+        RichIterable<? extends MergeOperationSetImplementation> mergeOperations = mapping._classMappings().select(s -> s instanceof MergeOperationSetImplementation).collect(s -> (MergeOperationSetImplementation) s);
+        if (!mergeOperations.isEmpty())
+        {
+            mergeOperations.forEach(m -> {
+
+                        FunctionType ft = (FunctionType) processorSupport.function_getFunctionType ( m._validationFunction()._expressionSequence().getFirst());
+                        if (!ft._returnType()._rawType()._name().equals("Boolean"))
+                        {
+                            throw new PureCompilationException(m.getSourceInformation(), "Merge validation function for class: "+ ImportStub.withImportStubByPass(m._classCoreInstance(), processorSupport).getName() +  " does not return Boolean");
+                        }
+
+                        MutableList<PureInstanceSetImplementation> mergesrc = setImplementationsByClass.get(m._class()).select(s -> s instanceof PureInstanceSetImplementation).collect(s -> (PureInstanceSetImplementation) s);
+                        MutableList<Type> mergeSrcClasses = mergesrc.collect(r -> r._srcClass());
+
+                        RichIterable<Type> validationParams = ft._parameters().collect(p -> p._genericType()._rawType());
+                        if (!validationParams.allSatisfy(p -> mergeSrcClasses.contains(p)))
+                        {
+                            throw new PureCompilationException(m.getSourceInformation(), "Merge validation function for class: " + ImportStub.withImportStubByPass(m._classCoreInstance(), processorSupport).getName() + " has an invalid parameter. All parameters must be a src class of a merged set");
+                        }
+                    }
+
+            );
+
+        }
+
+    }
+
     private static final Function<EnumValueMapping, RichIterable<? extends CoreInstance>> GET_SOURCE_TYPES = new Function<EnumValueMapping, RichIterable<? extends CoreInstance>>()
     {
         @Override
@@ -235,7 +258,7 @@ public class MappingValidator implements MatchRunner<Mapping>
                 @Override
                 public CoreInstance valueOf(CoreInstance sourceValue)
                 {
-                    return sourceValue instanceof EnumStub ? ((EnumStub)sourceValue)._enumeration() : sourceValue.getClassifier();
+                    return sourceValue instanceof EnumStub ? ((EnumStub) sourceValue)._enumeration() : sourceValue.getClassifier();
                 }
             });
         }
@@ -244,11 +267,11 @@ public class MappingValidator implements MatchRunner<Mapping>
     public static SetImplementation validateId(AssociationImplementation associationMapping, PropertyMapping propertyMapping, MapIterable<String, ? extends SetImplementation> classMappingIndex, String setImplementationId, String sourceOrTarget, ProcessorSupport processorSupport)
     {
         SetImplementation setImplementation = classMappingIndex.get(setImplementationId);
-        Property property = (Property)ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
+        Property property = (Property) ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
         if ("target".equals(sourceOrTarget))
         {
             //Target, so need to find the property on the other end
-            Association association = (Association)ImportStub.withImportStubByPass(associationMapping._associationCoreInstance(), processorSupport);
+            Association association = (Association) ImportStub.withImportStubByPass(associationMapping._associationCoreInstance(), processorSupport);
             property = association._properties().select(Predicates.notEqual(property)).getFirst();
         }
 
@@ -259,7 +282,7 @@ public class MappingValidator implements MatchRunner<Mapping>
                     + "\'. Make sure that you have specified a valid Class mapping id as the source id and target id, using the syntax \'property[sourceId, targetId]: ...\'.");
         }
 
-        Class _class = (Class)ImportStub.withImportStubByPass(setImplementation._classCoreInstance(), processorSupport);
+        Class _class = (Class) ImportStub.withImportStubByPass(setImplementation._classCoreInstance(), processorSupport);
         String propertyName = property.getName();
 
         if (processorSupport.class_findPropertyUsingGeneralization(_class, propertyName) == null)
@@ -280,7 +303,7 @@ public class MappingValidator implements MatchRunner<Mapping>
             MutableList<MapIterable<Store, Store>> storeSubstitutionMaps = FastList.newList(includeCount);
             for (MappingInclude include : includes)
             {
-                Mapping owner = (Mapping)ImportStub.withImportStubByPass(include._ownerCoreInstance(), processorSupport);
+                Mapping owner = (Mapping) ImportStub.withImportStubByPass(include._ownerCoreInstance(), processorSupport);
                 if (owner != mapping)
                 {
                     StringBuilder message = new StringBuilder("Corrupt mapping include: owner should be ");
@@ -290,7 +313,7 @@ public class MappingValidator implements MatchRunner<Mapping>
                     throw new PureCompilationException(include.getSourceInformation(), message.toString());
                 }
 
-                Mapping includedMapping = (Mapping)ImportStub.withImportStubByPass(include._includedCoreInstance(),processorSupport);
+                Mapping includedMapping = (Mapping) ImportStub.withImportStubByPass(include._includedCoreInstance(), processorSupport);
                 Validator.validate(includedMapping, state, matcher, processorSupport);
 
                 MapIterable<Store, Store> includeStoreSubstitutions = validateIncludeStoreSubstitutions(include, processorSupport);
@@ -344,13 +367,13 @@ public class MappingValidator implements MatchRunner<Mapping>
                 throwStoreSubstitutionError(include, substitute);
             }
 
-            if (substitutionMap.put((Store)original, (Store)substitute) != null)
+            if (substitutionMap.put((Store) original, (Store) substitute) != null)
             {
                 StringBuilder message = new StringBuilder("Store substitution error: multiple substitutions for ");
                 PackageableElement.writeUserPathForPackageableElement(message, original);
                 throw new PureCompilationException(include.getSourceInformation(), message.toString());
             }
-            if (!storeIncludes((Store) substitute, (Store)original, processorSupport))
+            if (!storeIncludes((Store) substitute, (Store) original, processorSupport))
             {
                 StringBuilder message = new StringBuilder("Store substitution error: ");
                 PackageableElement.writeUserPathForPackageableElement(message, substitute);
@@ -389,7 +412,7 @@ public class MappingValidator implements MatchRunner<Mapping>
             visited.add(mapping);
             for (MappingInclude include : includes)
             {
-                Mapping includedMapping = (Mapping)ImportStub.withImportStubByPass(include._includedCoreInstance(), processorSupport);
+                Mapping includedMapping = (Mapping) ImportStub.withImportStubByPass(include._includedCoreInstance(), processorSupport);
                 // Validate that a single mapping is not directly included more than once
                 if (!includesSet.add(includedMapping))
                 {
@@ -426,7 +449,7 @@ public class MappingValidator implements MatchRunner<Mapping>
         MutableListMultimap<Class, SetImplementation> directMappings = Multimaps.mutable.list.empty();
         for (SetImplementation classMapping : mapping._classMappings())
         {
-            Class src = (Class)ImportStub.withImportStubByPass(classMapping._classCoreInstance(), processorSupport);
+            Class src = (Class) ImportStub.withImportStubByPass(classMapping._classCoreInstance(), processorSupport);
             if (src == null)
             {
                 throw new PureCompilationException(classMapping.getSourceInformation(), "Class mapping is missing class");
@@ -443,8 +466,7 @@ public class MappingValidator implements MatchRunner<Mapping>
             if (classMappings.size() == 1)
             {
                 classMappings.toList().get(0)._root(true);
-            }
-            else
+            } else
             {
                 int rootCount = classMappings.count(IS_ROOT);
                 if (rootCount != 1)
@@ -459,7 +481,7 @@ public class MappingValidator implements MatchRunner<Mapping>
     {
         for (MappingInclude include : mapping._includes())
         {
-            Mapping includedMapping = (Mapping)ImportStub.withImportStubByPass(include._includedCoreInstance(), processorSupport);
+            Mapping includedMapping = (Mapping) ImportStub.withImportStubByPass(include._includedCoreInstance(), processorSupport);
             validateMappedEntitiesInIncludes(rootMapping, includedMapping, processorSupport, setImplementationsByClass, state, matcher);
             validateMappedEntities(rootMapping, includedMapping._classMappings(), true, setImplementationsByClass, processorSupport, state, matcher);
             validateMappedEntities(rootMapping, includedMapping._enumerationMappings(), false, setImplementationsByClass, processorSupport, state, matcher);
@@ -477,11 +499,10 @@ public class MappingValidator implements MatchRunner<Mapping>
             Type src = null;
             if (mappedInstance instanceof SetImplementation)
             {
-                src = (Class)ImportStub.withImportStubByPass(((SetImplementation)mappedInstance)._classCoreInstance(), processorSupport);
-            }
-            else if (mappedInstance instanceof EnumerationMapping)
+                src = (Class) ImportStub.withImportStubByPass(((SetImplementation) mappedInstance)._classCoreInstance(), processorSupport);
+            } else if (mappedInstance instanceof EnumerationMapping)
             {
-                src = (Enumeration)ImportStub.withImportStubByPass(((EnumerationMapping)mappedInstance)._enumerationCoreInstance(), processorSupport);
+                src = (Enumeration) ImportStub.withImportStubByPass(((EnumerationMapping) mappedInstance)._enumerationCoreInstance(), processorSupport);
             }
             setImplementationsByClass.put(src, mappedInstance);
         }
@@ -496,7 +517,7 @@ public class MappingValidator implements MatchRunner<Mapping>
     {
         if (visited.add(store))
         {
-            ListIterable<? extends Store> includes = (ListIterable<? extends Store>)ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>)store._includesCoreInstance(), processorSupport);
+            ListIterable<? extends Store> includes = (ListIterable<? extends Store>) ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>) store._includesCoreInstance(), processorSupport);
             if (includes.contains(includedStore))
             {
                 return true;
@@ -521,19 +542,19 @@ public class MappingValidator implements MatchRunner<Mapping>
 
             for (SetImplementation classMapping : mapping._classMappings())
             {
-                Class _class = (Class)ImportStub.withImportStubByPass(classMapping._classCoreInstance(), processorSupport);
+                Class _class = (Class) ImportStub.withImportStubByPass(classMapping._classCoreInstance(), processorSupport);
                 VisibilityValidation.validatePackageAndSourceVisibility(classMapping, pkg, sourceId, context, validatorState, processorSupport, _class);
             }
 
             for (EnumerationMapping enumerationMapping : mapping._enumerationMappings())
             {
-                Enumeration enumeration = (Enumeration)ImportStub.withImportStubByPass(enumerationMapping._enumerationCoreInstance(), processorSupport);
+                Enumeration enumeration = (Enumeration) ImportStub.withImportStubByPass(enumerationMapping._enumerationCoreInstance(), processorSupport);
                 VisibilityValidation.validatePackageAndSourceVisibility(enumerationMapping, pkg, sourceId, context, validatorState, processorSupport, enumeration);
             }
 
             for (MappingInclude include : mapping._includes())
             {
-                Mapping included = (Mapping)ImportStub.withImportStubByPass(include._includedCoreInstance(), processorSupport);
+                Mapping included = (Mapping) ImportStub.withImportStubByPass(include._includedCoreInstance(), processorSupport);
                 VisibilityValidation.validatePackageAndSourceVisibility(mapping, pkg, sourceId, context, validatorState, processorSupport, included);
             }
         }

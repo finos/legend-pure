@@ -17,6 +17,9 @@ package org.finos.legend.pure.m3.serialization.runtime;
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -26,15 +29,8 @@ import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.stack.MutableStack;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.factory.Stacks;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.eclipse.collections.impl.utility.StringIterate;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.coreinstance.Package;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
@@ -42,129 +38,25 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecificat
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.tools.GrammarInfoStub;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
-import java.util.Comparator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Source
 {
-    public static final Function<Source, String> SOURCE_ID = new Function<Source, String>()
-    {
-        @Override
-        public String valueOf(Source source)
-        {
-            return source.getId();
-        }
-    };
-
-    public static final Function<Source, ListIterable<CoreInstance>> SOURCE_NEW_INSTANCES = new Function<Source, ListIterable<CoreInstance>>()
-    {
-        @Override
-        public ListIterable<CoreInstance> valueOf(Source source)
-        {
-            return source.getNewInstances();
-        }
-    };
-
-    public static final Predicate<Source> IS_COMPILED = new Predicate<Source>()
-    {
-        @Override
-        public boolean accept(Source source)
-        {
-            return source.isCompiled();
-        }
-    };
-
-    private static final Comparator<SourceInformation> SOURCE_INFO_COMPARATOR = new Comparator<SourceInformation>()
-    {
-        @Override
-        public int compare(SourceInformation s1, SourceInformation s2)
-        {
-            if (s1 == s2)
-            {
-                return 0;
-            }
-
-            int startLine1 = s1.getStartLine();
-            int startLine2 = s2.getStartLine();
-            if (startLine1 != startLine2)
-            {
-                return startLine2 - startLine1;
-            }
-
-            int startColumn1 = s1.getStartColumn();
-            int startColumn2 = s2.getStartColumn();
-            if (startColumn1 != startColumn2)
-            {
-                return startColumn2 - startColumn1;
-            }
-
-            int endLine1 = s1.getEndLine();
-            int endLine2 = s2.getEndLine();
-            if (endLine1 != endLine2)
-            {
-                return endLine1 - endLine2;
-            }
-
-            int endColumn1 = s1.getEndColumn();
-            int endColumn2 = s2.getEndColumn();
-            if (endColumn1 != endColumn2)
-            {
-                return endColumn1 - endColumn2;
-            }
-
-            int line1 = s1.getLine();
-            int line2 = s2.getLine();
-            if (line1 != line2)
-            {
-                return line1 - line2;
-            }
-
-            int column1 = s1.getColumn();
-            int column2 = s2.getColumn();
-            return column1 - column2;
-        }
-    };
-
-    // TODO find a better way to do this
-    private static final Comparator<CoreInstance> FOUND_ELEMENT_COMPARATOR = new Comparator<CoreInstance>()
-    {
-        @Override
-        public int compare(CoreInstance element1, CoreInstance element2)
-        {
-            if (element1 == element2)
-            {
-                return 0;
-            }
-
-            if (element1 instanceof ValueSpecification)
-            {
-                return (element2 instanceof ValueSpecification) ? 0 : -1;
-            }
-            if (element2 instanceof ValueSpecification)
-            {
-                return 1;
-            }
-
-            if (element1 instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub)
-            {
-                return (element2 instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub)? 0 : -1;
-            }
-            if (element2 instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub)
-            {
-                return 1;
-            }
-
-            return 0;
-        }
-    };
+    public static final Function<Source, String> SOURCE_ID = Source::getId;
+    public static final Function<Source, ListIterable<CoreInstance>> SOURCE_NEW_INSTANCES = Source::getNewInstances;
+    public static final Predicate<Source> IS_COMPILED = Source::isCompiled;
 
     private static final Pattern LINE_PATTERN = Pattern.compile("^.*$", Pattern.MULTILINE);
 
@@ -173,7 +65,7 @@ public class Source
     private SourceRegistry sourceRegistry;
 
     private final String id;
-    private String content = "";
+    private String content;
 
     private final boolean immutable;
     private final boolean inMemory;
@@ -218,22 +110,15 @@ public class Source
 
                 String oldContent = this.content;
                 this.content = (contentFromStorage == null) ? "" : contentFromStorage;
-                for (SourceEventHandler eventHandler : this.sourceRegistry.getSourceEventHandlers())
-                {
-                    eventHandler.updateSource(this, oldContent);
-                }
+                this.sourceRegistry.getSourceEventHandlers().forEach(eh -> eh.updateSource(this, oldContent));
                 unCompile();
-                return true;
             }
             else
             {
                 this.sourceRegistry.unregisterSource(this.id);
-                for (SourceEventHandler eventHandler : this.sourceRegistry.getSourceEventHandlers())
-                {
-                    eventHandler.deleteSource(this);
-                }
-                return true;
+                this.sourceRegistry.getSourceEventHandlers().forEach(eh -> eh.deleteSource(this));
             }
+            return true;
         }
     }
 
@@ -251,10 +136,7 @@ public class Source
                     }
                     String oldContent = this.content;
                     this.content = content;
-                    for (SourceEventHandler eventHandler : this.sourceRegistry.getSourceEventHandlers())
-                    {
-                        eventHandler.updateSource(this, oldContent);
-                    }
+                    this.sourceRegistry.getSourceEventHandlers().forEach(eh -> eh.updateSource(this, oldContent));
                     unCompile();
                 }
             }
@@ -273,11 +155,7 @@ public class Source
                 }
 
                 this.sourceRegistry.unregisterSource(this.id);
-
-                for (SourceEventHandler eventHandler : this.sourceRegistry.getSourceEventHandlers())
-                {
-                    eventHandler.deleteSource(this);
-                }
+                this.sourceRegistry.getSourceEventHandlers().forEach(eh -> eh.deleteSource(this));
             }
         }
     }
@@ -289,10 +167,7 @@ public class Source
             synchronized (this.lock)
             {
                 this.sourceRegistry.registerSource(new Source(destinationId, this.isImmutable(), this.isInMemory(), this.getContent()));
-                for (SourceEventHandler eventHandler : this.sourceRegistry.getSourceEventHandlers())
-                {
-                    eventHandler.moveSource(this, this.sourceRegistry.getSource(destinationId));
-                }
+                this.sourceRegistry.getSourceEventHandlers().forEach(eh -> eh.moveSource(this, this.sourceRegistry.getSource(destinationId)));
                 this.sourceRegistry.unregisterSource(this.id);
             }
         }
@@ -309,18 +184,15 @@ public class Source
         }
     }
 
-    private NavigationHandler getNavigationHandler(CoreInstance found, ProcessorSupport processorSupport)
+    private NavigationHandler<?> getNavigationHandler(CoreInstance found, ProcessorSupport processorSupport)
     {
         for (CoreInstance type : Type.getGeneralizationResolutionOrder(found.getClassifier(), processorSupport))
         {
             String path = PackageableElement.getUserPathForPackageableElement(type);
-            if (path != null)
+            NavigationHandler<?> handler = this.sourceRegistry.getNavigationHandler(path);
+            if (handler != null)
             {
-                NavigationHandler handler = this.sourceRegistry.getNavigationHandler(path);
-                if (handler != null)
-                {
-                    return handler;
-                }
+                return handler;
             }
         }
         return null;
@@ -369,7 +241,7 @@ public class Source
     @Override
     public boolean equals(Object o)
     {
-        return (this == o) || ((o instanceof Source) && this.id.equals(((Source)o).id));
+        return (this == o) || ((o instanceof Source) && this.id.equals(((Source) o).id));
     }
 
     @Override
@@ -406,8 +278,7 @@ public class Source
 
     public CoreInstance navigate(int line, int column, ProcessorSupport processorSupport)
     {
-        CoreInstance found = this.findElementAt(line, column, processorSupport);
-
+        CoreInstance found = findElementAt(line, column);
         if (found != null)
         {
             // TODO remove type specific code - find a better way to do this
@@ -439,7 +310,7 @@ public class Source
 
             else if (found instanceof GrammarInfoStub)
             {
-                found= found.getValueForMetaPropertyToOne(M3Properties.value);
+                found = found.getValueForMetaPropertyToOne(M3Properties.value);
             }
 
             else
@@ -455,9 +326,15 @@ public class Source
         return ImportStub.withImportStubByPass(found, processorSupport);
     }
 
+    @Deprecated
     public CoreInstance findElementAt(int line, int column, ProcessorSupport processorSupport)
     {
-        ListIterable<CoreInstance> elements = this.findRawElementsAt(line, column, processorSupport);
+        return findElementAt(line, column);
+    }
+
+    public CoreInstance findElementAt(int line, int column)
+    {
+        ListIterable<CoreInstance> elements = findRawElementsAt(line, column);
         switch (elements.size())
         {
             case 0:
@@ -470,16 +347,16 @@ public class Source
             }
             default:
             {
-                Multimap<SourceInformation, CoreInstance> elementsBySourceInfo = elements.groupBy(CoreInstance.GET_SOURCE_INFO);
-                SourceInformation minSourceInfo = elementsBySourceInfo.keysView().min(SOURCE_INFO_COMPARATOR);
+                Multimap<SourceInformation, CoreInstance> elementsBySourceInfo = elements.groupBy(CoreInstance::getSourceInformation);
+                SourceInformation minSourceInfo = elementsBySourceInfo.keysView().min(Source::compareSourceInformation);
                 RichIterable<CoreInstance> results = elementsBySourceInfo.get(minSourceInfo);
                 if (results.size() == 1)
                 {
-                    return results.getFirst();
+                    return results.getAny();
                 }
                 else
                 {
-                    return results.min(FOUND_ELEMENT_COMPARATOR);
+                    return results.min(Source::compareFoundElements);
                 }
             }
         }
@@ -538,14 +415,14 @@ public class Source
 
     private RichIterable<SourceCoordinates> findCaseInsensitive(String string)
     {
-        string = string.toLowerCase();
+        String lowerCase = string.toLowerCase();
         MutableList<SourceCoordinates> results = Lists.mutable.with();
         Matcher lines = LINE_PATTERN.matcher(this.content);
-        int length = string.length();
+        int length = lowerCase.length();
         for (int i = 0; lines.find(); i++)
         {
             String line = lines.group().toLowerCase();
-            for (int index = line.indexOf(string); index != -1; index = line.indexOf(string, index + 1))
+            for (int index = line.indexOf(lowerCase); index != -1; index = line.indexOf(lowerCase, index + 1))
             {
                 results.add(new SourceCoordinates(this.id, i + 1, index + 1, i + 1, index + length + 1));
             }
@@ -553,39 +430,27 @@ public class Source
         return results;
     }
 
-    private ListIterable<CoreInstance> findRawElementsAt(int line, int column, ProcessorSupport processorSupport)
+    private ListIterable<CoreInstance> findRawElementsAt(int line, int column)
     {
-        this.registerAllInstances(processorSupport);
-        MutableList<CoreInstance> elements = Lists.mutable.with();
-
+        registerAllInstances();
         synchronized (this.lock)
         {
-            for (CoreInstance element : this.allInstances)
-            {
-                if (this.isElementAtPoint(element, line, column))
-                {
-                    elements.add(element);
-                }
-            }
+            return this.allInstances.select(e -> isElementAtPoint(e, line, column), Lists.mutable.empty());
         }
-        return elements;
     }
 
-    public ConcreteFunctionDefinition findConcreteFunctionDefinitionAt(int line, int column, ProcessorSupport processorSupport)
+    @Deprecated
+    public ConcreteFunctionDefinition<?> findConcreteFunctionDefinitionAt(int line, int column, ProcessorSupport processorSupport)
     {
-        ConcreteFunctionDefinition found = null;
+        return findConcreteFunctionDefinitionAt(line, column);
+    }
+
+    public ConcreteFunctionDefinition<?> findConcreteFunctionDefinitionAt(int line, int column)
+    {
         synchronized (this.lock)
         {
-            for (CoreInstance element : this.newInstances)
-            {
-                if (this.isElementAtPoint(element, line, column) && element instanceof ConcreteFunctionDefinition)
-                {
-                    found = (ConcreteFunctionDefinition)element;
-                    break;
-                }
-            }
+            return (ConcreteFunctionDefinition<?>) this.newInstances.detect(e -> isElementAtPoint(e, line, column) && (e instanceof ConcreteFunctionDefinition));
         }
-        return found;
     }
 
     private boolean isElementAtPoint(CoreInstance element, int line, int column)
@@ -603,22 +468,17 @@ public class Source
         }
 
         int endLine = sourceInfo.getEndLine();
-        if ((endLine < line) || ((endLine == line) && (sourceInfo.getEndColumn() < column)))
-        {
-            return false;
-        }
-
-        return true;
+        return (endLine >= line) && ((endLine != line) || (sourceInfo.getEndColumn() >= column));
     }
 
-    private void registerAllInstances(ProcessorSupport processorSupport)
+    private void registerAllInstances()
     {
         synchronized (this.lock)
         {
             if (this.allInstances == null)
             {
-                MutableSet<CoreInstance> result = UnifiedSet.newSet(this.newInstances.size());
-                MutableSet<CoreInstance> visited = UnifiedSet.newSet(this.newInstances.size());
+                MutableSet<CoreInstance> result = Sets.mutable.ofInitialCapacity(this.newInstances.size());
+                MutableSet<CoreInstance> visited = Sets.mutable.ofInitialCapacity(this.newInstances.size());
                 MutableStack<CoreInstance> searchStack = Stacks.mutable.withAll(this.newInstances);
                 while (!searchStack.isEmpty())
                 {
@@ -638,13 +498,7 @@ public class Source
                         }
                         if (searchPropertyValues)
                         {
-                            for (String key : next.getKeys())
-                            {
-                                for (CoreInstance value : next.getValueForMetaPropertyToMany(key))
-                                {
-                                    searchStack.push(value);
-                                }
-                            }
+                            next.getKeys().forEach(key -> next.getValueForMetaPropertyToMany(key).forEach(searchStack::push));
                         }
                     }
                 }
@@ -675,12 +529,10 @@ public class Source
         {
             builder.append(parserName);
         }
-        builder.append('_');
-        builder.append(formatForImportGroupId(base));
+        builder.append('_').append(formatForImportGroupId(base));
         if (count >= 0)
         {
-            builder.append('_');
-            builder.append(count);
+            builder.append('_').append(count);
         }
         return builder.toString();
     }
@@ -703,5 +555,81 @@ public class Source
     public static Source createMutableInMemorySource(String id, String content)
     {
         return new Source(id, false, true, content);
+    }
+
+    private static int compareSourceInformation(SourceInformation s1, SourceInformation s2)
+    {
+        if (s1 == s2)
+        {
+            return 0;
+        }
+
+        int startLine1 = s1.getStartLine();
+        int startLine2 = s2.getStartLine();
+        if (startLine1 != startLine2)
+        {
+            return startLine2 - startLine1;
+        }
+
+        int startColumn1 = s1.getStartColumn();
+        int startColumn2 = s2.getStartColumn();
+        if (startColumn1 != startColumn2)
+        {
+            return startColumn2 - startColumn1;
+        }
+
+        int endLine1 = s1.getEndLine();
+        int endLine2 = s2.getEndLine();
+        if (endLine1 != endLine2)
+        {
+            return endLine1 - endLine2;
+        }
+
+        int endColumn1 = s1.getEndColumn();
+        int endColumn2 = s2.getEndColumn();
+        if (endColumn1 != endColumn2)
+        {
+            return endColumn1 - endColumn2;
+        }
+
+        int line1 = s1.getLine();
+        int line2 = s2.getLine();
+        if (line1 != line2)
+        {
+            return line1 - line2;
+        }
+
+        int column1 = s1.getColumn();
+        int column2 = s2.getColumn();
+        return column1 - column2;
+    }
+
+    // TODO find a better way to do this
+    private static int compareFoundElements(CoreInstance element1, CoreInstance element2)
+    {
+        if (element1 == element2)
+        {
+            return 0;
+        }
+
+        if (element1 instanceof ValueSpecification)
+        {
+            return (element2 instanceof ValueSpecification) ? 0 : -1;
+        }
+        if (element2 instanceof ValueSpecification)
+        {
+            return 1;
+        }
+
+        if (element1 instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub)
+        {
+            return (element2 instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub) ? 0 : -1;
+        }
+        if (element2 instanceof org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportStub)
+        {
+            return 1;
+        }
+
+        return 0;
     }
 }

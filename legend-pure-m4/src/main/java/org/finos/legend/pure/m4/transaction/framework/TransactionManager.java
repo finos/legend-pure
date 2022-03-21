@@ -14,8 +14,6 @@
 
 package org.finos.legend.pure.m4.transaction.framework;
 
-import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.block.procedure.primitive.LongProcedure;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.api.map.primitive.MutableLongIntMap;
 import org.eclipse.collections.impl.factory.primitive.LongIntMaps;
@@ -25,15 +23,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class TransactionManager<T extends Transaction>
 {
-    private static final Procedure<Transaction> INVALIDATE_IF_OPEN = new Procedure<Transaction>()
-    {
-        @Override
-        public void value(Transaction transaction)
-        {
-            transaction.invalidateIfOpen();
-        }
-    };
-
     private final AtomicReference<T> committableTransaction = new AtomicReference<>();
     private ConcurrentMutableMap<T, MutableLongIntMap> transactions = ConcurrentHashMap.newMap();
     private ConcurrentMutableMap<Long, T> transactionsByThreadId = ConcurrentHashMap.newMap();
@@ -49,7 +38,7 @@ public abstract class TransactionManager<T extends Transaction>
         this.committableTransaction.set(null);
 
         // Invalidate any transactions from previous state
-        previousTransactions.forEachKey(INVALIDATE_IF_OPEN);
+        previousTransactions.forEachKey(Transaction::invalidateIfOpen);
     }
 
     public T getThreadLocalTransaction()
@@ -91,6 +80,7 @@ public abstract class TransactionManager<T extends Transaction>
         // Do nothing by default
     }
 
+    @SuppressWarnings("unchecked")
     ThreadLocalTransactionContext setThreadLocalTransaction(Transaction transaction)
     {
         if (transaction == null)
@@ -101,7 +91,7 @@ public abstract class TransactionManager<T extends Transaction>
         {
             throw new IllegalArgumentException("transaction belongs to a different manager");
         }
-        T t = (T)transaction;
+        T t = (T) transaction;
         MutableLongIntMap threads = this.transactions.get(t);
         if (threads == null)
         {
@@ -169,7 +159,8 @@ public abstract class TransactionManager<T extends Transaction>
         }
     }
 
-    protected boolean deregisterTransaction(final Transaction transaction)
+    @SuppressWarnings("unchecked")
+    protected boolean deregisterTransaction(Transaction transaction)
     {
         MutableLongIntMap threads = this.transactions.remove(transaction);
         if (threads == null)
@@ -179,17 +170,10 @@ public abstract class TransactionManager<T extends Transaction>
         synchronized (threads)
         {
             transaction.invalidateIfOpen();
-            threads.forEachKey(new LongProcedure()
-            {
-                @Override
-                public void value(long threadId)
-                {
-                    TransactionManager.this.transactionsByThreadId.remove(threadId, transaction);
-                }
-            });
+            threads.forEachKey(threadId -> this.transactionsByThreadId.remove(threadId, transaction));
             if (transaction.isCommittable())
             {
-                this.committableTransaction.compareAndSet((T)transaction, null);
+                this.committableTransaction.compareAndSet((T) transaction, null);
             }
             return true;
         }

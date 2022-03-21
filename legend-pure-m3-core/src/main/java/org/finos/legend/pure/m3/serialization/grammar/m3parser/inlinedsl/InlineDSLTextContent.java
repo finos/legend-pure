@@ -16,9 +16,9 @@ package org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl;
 
 public class InlineDSLTextContent
 {
-    private int line;
-    private int column;
-    String text;
+    private final int line;
+    private final int column;
+    private final String text;
 
     public InlineDSLTextContent(String text, int line, int column)
     {
