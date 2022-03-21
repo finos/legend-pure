@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 
@@ -24,6 +24,11 @@ import java.io.InputStream;
 public class EmptyCodeStorage extends AbstractMultipleRepositoryCodeStorage
 {
     public EmptyCodeStorage(Iterable<? extends CodeRepository> repositories)
+    {
+        super(repositories);
+    }
+
+    public EmptyCodeStorage(CodeRepository... repositories)
     {
         super(repositories);
     }

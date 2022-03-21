@@ -76,7 +76,7 @@ public class PureCompiledJarMojo extends AbstractMojo
     private boolean generateMetadata;
 
     @Parameter(defaultValue = "monolithic")
-    private MetadataType metadataType;
+    private GenerationType generationType;
 
     @Parameter(defaultValue = "false")
     private boolean useSingleDir;
@@ -93,6 +93,7 @@ public class PureCompiledJarMojo extends AbstractMojo
             getLog().info("  Requested repositories: " + this.repositories);
             getLog().info("  Excluded repositories: " + this.excludedRepositories);
             getLog().info("  Extra repositories: " + this.extraRepositories);
+            getLog().info("  Generation type: " + this.generationType);
             ListIterable<CodeRepository> resolvedRepositories = resolveRepositories();
             getLog().info(resolvedRepositories.asLazy().collect(CodeRepository::getName).makeString("  Resolved repositories: ", ", ", ""));
 
@@ -107,14 +108,12 @@ public class PureCompiledJarMojo extends AbstractMojo
             {
                 distributedMetadataDirectory = this.classesDirectory.toPath();
                 getLog().info("  All in output directory: " + this.classesDirectory);
-                getLog().info("  Metadata type: " + this.metadataType);
             }
             else
             {
                 distributedMetadataDirectory = this.targetDirectory.toPath().resolve("metadata-distributed");
                 getLog().info("  Classes output directory: " + this.classesDirectory);
                 getLog().info("  Distributed metadata output directory: " + distributedMetadataDirectory);
-                getLog().info("  Metadata type: " + this.metadataType);
             }
 
             Path codegenDirectory;
@@ -184,7 +183,7 @@ public class PureCompiledJarMojo extends AbstractMojo
         // Possibly write distributed metadata
         if (this.generateMetadata)
         {
-            switch (this.metadataType)
+            switch (this.generationType)
             {
                 case monolithic:
                 {
@@ -198,7 +197,7 @@ public class PureCompiledJarMojo extends AbstractMojo
                 }
                 default:
                 {
-                    throw new MojoExecutionException("Unhandled metadata type: " + this.metadataType);
+                    throw new MojoExecutionException("Unhandled generation type: " + this.generationType);
                 }
             }
         }
@@ -210,7 +209,23 @@ public class PureCompiledJarMojo extends AbstractMojo
         try
         {
             JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, JavaPackageAndImportBuilder.externalizablePackage());
-            generate = generator.generateOnly(this.generateSources, codegenDirectory);
+            switch (this.generationType)
+            {
+                case monolithic:
+                {
+                    generate = generator.generateOnly(this.generateSources, codegenDirectory);
+                    break;
+                }
+                case modular:
+                {
+                    generate = generator.generateOnly(repositories, this.generateSources, codegenDirectory);
+                    break;
+                }
+                default:
+                {
+                    throw new MojoExecutionException("Unhandled generation type: " + this.generationType);
+                }
+            }
             completeStep(generateStep, generateStart);
         }
         catch (Exception e)
@@ -326,7 +341,7 @@ public class PureCompiledJarMojo extends AbstractMojo
         long compilationStart = startStep(compilationStep);
         try
         {
-            PureJavaCompiler compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSources(), generate.getExternalizableSources(), false);
+            PureJavaCompiler compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSourcesByGroup(), generate.getExternalizableSources(), false);
             completeStep(compilationStep, compilationStart);
             return compiler;
         }
@@ -369,7 +384,7 @@ public class PureCompiledJarMojo extends AbstractMojo
         return (endNanos - startNanos) / 1_000_000_000.0;
     }
 
-    public enum MetadataType
+    public enum GenerationType
     {
         monolithic, modular
     }
