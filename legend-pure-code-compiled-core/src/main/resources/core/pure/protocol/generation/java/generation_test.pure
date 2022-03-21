@@ -108,12 +108,12 @@ function <<test.Test>> meta::protocols::generation::java::tests::testTranslatorJ
                 '                                      fieldflag.name());\n'+
                 '    }\n'+
                 '\n'+
-                '    public Root_meta_protocols_generation_java_tests_model_Enum translate(Enum enum,\n'+
+                '    public Root_meta_protocols_generation_java_tests_model_Enum translate(Enum _enum,\n'+
                 '                                                                          PureModel pureModel)\n'+
                 '    {\n'+
-                '        return enum == null ? null\n'+
-                '                            : new Root_meta_protocols_generation_java_tests_model_Enum_Impl("")._constant(enum.constant)\n'+
-                '                                                                                               ._constantNumber(enum.constantNumber);\n'+
+                '        return _enum == null ? null\n'+
+                '                             : new Root_meta_protocols_generation_java_tests_model_Enum_Impl("")._constant(_enum.constant)\n'+
+                '                                                                                                ._constantNumber(_enum.constantNumber);\n'+
                 '    }\n'+
                 '\n'+
                 '    public Root_meta_protocols_generation_java_tests_model_EnumPtr translate(EnumPtr enumptr,\n'+
