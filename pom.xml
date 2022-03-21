@@ -62,6 +62,7 @@
 
         <module>legend-pure-code-compiled-platform</module>
         <module>legend-pure-code-compiled-core</module>
+        <module>legend-pure-code-compiled-core-persistence</module>
         <module>legend-pure-code-compiled-core-relational</module>
         <module>legend-pure-code-compiled-core-servicestore</module>
         <module>legend-pure-code-compiled-core-external-shared</module>
@@ -437,6 +438,11 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-code-compiled-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-code-compiled-core-persistence</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

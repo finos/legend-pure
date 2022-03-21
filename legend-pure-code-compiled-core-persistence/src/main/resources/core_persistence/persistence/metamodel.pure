@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::external::shared::format::binding::*;
+
 import meta::legend::service::metamodel::*;
 
 import meta::pure::persistence::metamodel::*;
@@ -26,6 +28,7 @@ import meta::pure::persistence::metamodel::persister::transactionmilestoning::*;
 import meta::pure::persistence::metamodel::persister::validitymilestoning::*;
 import meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::*;
 import meta::pure::persistence::metamodel::reader::*;
+import meta::pure::persistence::metamodel::sink::*;
 import meta::pure::persistence::metamodel::target::*;
 import meta::pure::persistence::metamodel::trigger::*;
 
@@ -104,8 +107,8 @@ Class
 {doc.doc = 'The strategy for persisting input data.'}
 meta::pure::persistence::metamodel::persister::Persister
 {
-   {doc.doc = 'Optional connections for the persister.'}
-   connections: Connection[0..*];
+   connection: Connection[0..1];
+   binding: Binding[1];
 }
 
 Class
@@ -162,17 +165,17 @@ meta::pure::persistence::metamodel::persister::targetshape::TargetShape
 }
 
 Class
-{doc.doc = 'Specification for a single flat dataset.'}
+{doc.doc = 'Specification for a single flat dataset. This requires a model class for graph fetch input services; it does not for TDS services.'}
 meta::pure::persistence::metamodel::persister::targetshape::FlatTarget extends TargetShape
 {
    {doc.doc = 'A class that models the persistence target. The model class must have primitive properties with single multiplicity.'}
-   modelClass: Class<Any>[1];
+   modelClass: Class<Any>[0..1];
 
    {doc.doc = 'The name of the target.'}
    targetName: String[1];
 
-   {doc.doc = 'An optional set of properties in the model class that designate partitioning keys for the dataset.'}
-   partitionProperties: Property<Nil, Any|1>[*];
+   {doc.doc = 'An optional set of properties in the model class (for a graph fetch service) OR columns in the TDS (for a TDS service) that designate partitioning keys for the dataset.'}
+   partitionKeyNames: String[*];
 
    {doc.doc = 'The deduplication strategy to apply to this target dataset when an item appears multiple times in the same batch.'}
    deduplicationStrategy: DeduplicationStrategy[1];
@@ -182,7 +185,7 @@ meta::pure::persistence::metamodel::persister::targetshape::FlatTarget extends T
 }
 
 Class
-{doc.doc = 'Specification for a group of flat datasets in the same datastore.'}
+{doc.doc = 'Specification for multiple flat datasets targeting the same datastore. This is only valid for graph fetch services.'}
 meta::pure::persistence::metamodel::persister::targetshape::MultiFlatTarget extends TargetShape
 {
    {doc.doc = 'A class that models the persistence target. The model class must be nested one level deep; each property of the class must point to a flat class with primitive properties that have single multiplicity.'}
@@ -191,27 +194,28 @@ meta::pure::persistence::metamodel::persister::targetshape::MultiFlatTarget exte
    {doc.doc = 'The transaction granularity for the target group.'}
    transactionScope: meta::pure::persistence::metamodel::persister::targetshape::TransactionScope[1];
 
-   {doc.doc = 'Parts of this multi target shape. Each component maps a property of the model class to a single target shape.'}
-   parts: PropertyAndFlatTarget[1..*];
+   {doc.doc = 'The parts of this multi target shape. Each component maps a property of the model class to a flat target.'}
+   parts: MultiFlatTargetPart[1..*];
 }
 
 Class
-{doc.doc = 'A property to target shape mapping used to specify one part of a MultiFlatTarget.'}
-meta::pure::persistence::metamodel::persister::targetshape::PropertyAndFlatTarget
+{doc.doc = 'Specification for one part (dataset) of a MultiFlatTarget. The model property must refer to a property in the model class that targets a class corresponding to this part.'}
+meta::pure::persistence::metamodel::persister::targetshape::MultiFlatTargetPart
 {
    {doc.doc = 'The property in the parent MultiFlatTarget\'s model class that points to the model class for the FlatTarget.'}
-   property: Property<Nil, Any|1>[1];
+   modelProperty: Property<Nil, Any|1>[1];
 
-   {doc.doc = 'The shape for the component flat dataset.'}
-   flatTarget: FlatTarget[1];
-}
-
-Class
-{doc.doc = 'Specification for an opaque target data that may be arbitrarily nested, binary, etc. No model class is required.'}
-meta::pure::persistence::metamodel::persister::targetshape::OpaqueTarget extends TargetShape
-{
    {doc.doc = 'The name of the target.'}
    targetName: String[1];
+
+   {doc.doc = 'An optional set of properties in the model class that designate partitioning keys for the dataset.'}
+   partitionKeyNames: String[*];
+
+   {doc.doc = 'The deduplication strategy to apply to this target dataset when an item appears multiple times in the same batch.'}
+   deduplicationStrategy: DeduplicationStrategy[1];
+
+   {doc.doc = 'The ingest mode to apply to this target dataset.'}
+   ingestMode: IngestMode[0..1];
 }
 
 Enum
