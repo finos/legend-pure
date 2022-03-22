@@ -909,7 +909,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         property=meta::pure::persistence::metamodel::persister::ingestmode::snapshot::BitemporalSnapshot.validityMilestoning,
         source=cview_53,
         target=cview_59
-,        points=[(1812.37819,928.47710),(1812.08087,1050.04954),(1850.57813,1050.04954)],
+,        points=[(1811.42156,938.82554),(1812.08087,1050.04954),(1850.57813,1050.04954)],
         label='',
         propertyPosition=(0.0,0.0),
         multiplicityPosition=(0.0,0.0),
@@ -951,7 +951,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         property=meta::pure::persistence::metamodel::persister::ingestmode::delta::BitemporalDelta.transactionMilestoning,
         source=cview_57,
         target=cview_60
-,        points=[(2144.37045,931.25242),(2145.38607,1328.64810),(2067.37847,1329.66119)],
+,        points=[(2153.42156,936.82554),(2152.42156,1329.82554),(2067.37847,1329.66119)],
         label='',
         propertyPosition=(0.0,0.0),
         multiplicityPosition=(0.0,0.0),
@@ -965,7 +965,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         property=meta::pure::persistence::metamodel::persister::ingestmode::snapshot::BitemporalSnapshot.transactionMilestoning,
         source=cview_53,
         target=cview_60
-,        points=[(1765.65792,931.52407),(1767.50510,1326.62193),(1850.57813,1327.63502)],
+,        points=[(1763.42156,934.82554),(1762.42156,1327.82554),(1850.57813,1327.63502)],
         label='',
         propertyPosition=(0.0,0.0),
         multiplicityPosition=(0.0,0.0),
