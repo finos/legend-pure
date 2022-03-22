@@ -46,10 +46,10 @@ Class meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobu
   javaOuterClassname:String[0..1];
   javaMultipleFiles:Boolean[0..1];
   optimizeFor:meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::OptimizeMode[0..1];
-  customOptions:meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::CustomOption[*];
+  customOptions:meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::ProtobufOption[*];
 }
 
-Class meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::CustomOption
+Class meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::ProtobufOption
 {
   name:String[1];
   value:Any[1];

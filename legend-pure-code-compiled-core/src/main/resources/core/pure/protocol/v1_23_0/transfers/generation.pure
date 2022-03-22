@@ -58,12 +58,12 @@ function meta::protocols::pure::v1_23_0::invocation::generation::protobuf::trans
         class = $input.class,
         options = ^meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::Options
                   (
-                      javaPackage = $input.options.javaPackage,
-                      javaOuterClassname = $input.options.javaOuterClassname,
-                      javaMultipleFiles = $input.options.javaMultipleFiles,
-                      optimizeFor = if ($input.options.optimizeFor->isEmpty(),|[],|extractEnumValue(meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::OptimizeMode, $input.options.optimizeFor->toOne()->id())),
-                      customOptions = $input.options.customOptions->map(c |
-                                          ^meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::CustomOption
+                      javaPackage = $input.javaPackage,
+                      javaOuterClassname = $input.javaOuterClassname,
+                      javaMultipleFiles = $input.javaMultipleFiles,
+                      optimizeFor = if($input.optimizeFor->isEmpty(),|[],|extractEnumValue(meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::OptimizeMode, $input.optimizeFor->toOne()->id())),
+                      customOptions = $input.customOptions->map(c |
+                                          ^meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::ProtobufOption
                                           (
                                               name = $c.name,
                                               value = $c.value
