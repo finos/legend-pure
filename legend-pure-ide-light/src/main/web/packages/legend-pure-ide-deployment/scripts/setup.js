@@ -43,7 +43,7 @@ const setup = (outputDir) => {
         appName: 'ide',
         env: 'local',
         pure: {
-          url: 'http://localhost:9010',
+          url: 'http://localhost:7373',
         },
       },
       undefined,

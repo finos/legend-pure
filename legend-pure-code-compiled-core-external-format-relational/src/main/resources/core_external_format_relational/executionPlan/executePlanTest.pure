@@ -1,0 +1,207 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::external::format::relational::executionPlan::test::*;
+import meta::external::format::relational::metamodel::*;
+import meta::external::format::json::metamodel::*;
+import meta::external::shared::format::binding::*;
+import meta::external::shared::format::executionPlan::*;
+import meta::external::shared::format::metamodel::*;
+import meta::external::shared::functions::*;
+import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::toString::*;
+import meta::pure::graphFetch::execution::*;
+import meta::pure::mapping::modelToModel::*;
+import meta::pure::model::unit::*;
+import meta::pure::runtime::*;
+import meta::pure::mapping::*;
+import meta::pure::graphFetch::*;
+
+Class meta::external::format::relational::executionPlan::test::Persons
+{
+   person: meta::external::format::relational::executionPlan::test::Person[*];
+}
+
+Class meta::external::format::relational::executionPlan::test::Person
+{
+   firstName : String[1];
+   lastName  : String[1];
+   AGE  : Integer[1];
+}
+
+function meta::hello::relational():Binding[1]
+{
+   let schemaSet = ^SchemaSet(
+      name    = 'TestSchema',
+      package = meta::external::format::json::executionPlan::test,
+      format  = 'RELATIONAL',
+      schemas = ^Schema(
+         id = 'TabularDataSet',
+         detail  = ^meta::external::format::relational::metamodel::RelationalTdsSchema(
+            table = meta::relational::tests::dbInc.schema('default').table('personTable')->toOne()
+         )
+      )
+   );
+   
+   let binding = ^Binding(
+      name        = 'TestBinding',
+      package     = meta::external::format::json::executionPlan::test,
+      schemaSet   = $schemaSet,
+      contentType = 'application/x.relational',
+      modelUnit   = newModelUnit()->include(meta::pure::tds::TabularDataSet)
+   );
+}
+
+function meta::hello::relationalGraph():Binding[1]
+{
+   let schemaSet = ^SchemaSet(
+      name    = 'TestSchema',
+      package = meta::external::format::json::executionPlan::test,
+      format  = 'RELATIONAL',
+      schemas = ^Schema(
+         id = 'Graph',
+         detail  = ^meta::external::format::relational::metamodel::RelationalGraphSchema(
+           rootClass = Persons,
+           tables = ^RelationalGraphPropertyToTable(
+             property = 'person',
+             table = meta::relational::tests::dbInc.schema('default').table('personTable')->toOne(),
+             propertyToColumn = [
+               pair('firstName', meta::relational::tests::dbInc.schema('default').table('personTable')->toOne().column('FIRSTNAME')->toOne()),
+               pair('lastName', meta::relational::tests::dbInc.schema('default').table('personTable')->toOne().column('LASTNAME')->toOne())
+             ]
+            )
+         )
+      )
+   );
+   
+   let binding = ^Binding(
+      name        = 'TestBinding',
+      package     = meta::external::format::json::executionPlan::test,
+      schemaSet   = $schemaSet,
+      contentType = 'application/x.relational',
+      modelUnit   = newModelUnit()->include([Persons, Person])
+   );
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::format::relational::executionPlan::test::relationalDataNodesChecked(): Boolean[1]
+{
+   let extensions = meta::external::shared::format::routerExtensions(
+     'externalFormat',
+     [
+       meta::external::format::relational::relationalFormatExtension(),       
+       meta::external::format::json::jsonFormatExtension()
+     ])->concatenate(meta::pure::router::extension::defaultRelationalExtensions());
+
+  // let binding = meta::hello::json();
+  let binding = meta::hello::relational();
+  
+  // let plan = executionPlan(
+  //    |Person.all()->graphFetchChecked($tree)->externalize($binding),
+  //     SelfMapping,
+  //     ^Runtime(
+  //        connections = ^ExternalFormatConnection(
+  //           element        = $binding,
+  //           externalSource = ^UrlStreamExternalSource(url = 'executor:default')
+  //        )
+  //     ),
+  //     ^ExecutionContext(),
+  //     $extensions,
+  //     noDebug()
+  //  );
+
+   let plan = executionPlan(
+     |Person.all()
+          ->from(meta::pure::executionPlan::tests::relational::alternateSimpleMapping, meta::relational::tests::testRuntime())
+          ->project([x|$x.firstName, x|$x.lastName], ['FIRSTNAME', ['LASTNAME']])
+          ->externalize($binding)
+          ,
+      $extensions
+   );
+   
+   let boundPlan = $plan->generatePlatformCode(^meta::pure::executionPlan::PlatformCodeGenerationConfig(platform=meta::pure::executionPlan::Platform.JAVA), $extensions);
+   //$boundPlan->planToString(true, $extensions)->println();
+   
+   //let planString = $plan->planToString(false, $extensions);
+
+/////////////////////
+
+   let srcBinding = ^Binding(
+      name        = 'TestBinding2',
+      package     = meta::external::format::json::executionPlan::test,
+      contentType = 'application/json',
+      modelUnit   = newModelUnit()->include([Persons, Person])
+   );
+
+   let tree = #{Persons{person{firstName, lastName}}}#;
+    let graphBinding = meta::hello::relationalGraph();
+    $graphBinding->meta::external::format::relational::executionPlan::helperFunction::generateTree(Persons)->printTree();
+   let plan2 = executionPlan(
+     |Persons.all()
+          ->from(meta::external::format::relational::executionPlan::test::SelfMapping, ^Runtime(connections = ^ExternalFormatConnection(element = $srcBinding, externalSource = ^UrlStreamExternalSource(url = 'executor:default'))))
+          ->graphFetchChecked($tree)
+          ->externalize($graphBinding)
+          ,
+      $extensions
+   );
+   
+   let boundPlan2 = $plan2->generatePlatformCode(^meta::pure::executionPlan::PlatformCodeGenerationConfig(platform=meta::pure::executionPlan::Platform.JAVA), $extensions);
+   $boundPlan2->planToString(true, $extensions)->println();
+   
+  //let planString2 = $plan2->planToString(false, $extensions);
+
+   
+   false;
+}
+
+###Mapping
+
+import meta::external::format::relational::executionPlan::test::*;
+
+Mapping meta::external::format::relational::executionPlan::test::SelfMapping
+(
+   Persons: Pure
+   {
+      ~src Persons
+      
+      person   : $src.person
+   }
+
+   Person: Pure
+   {
+      ~src Person
+      
+      firstName   : $src.firstName,
+      lastName    : $src.lastName,
+      AGE         : $src.AGE
+   }
+)
+###Mapping
+import meta::relational::tests::*;
+import meta::relational::tests::model::simple::*;
+Mapping meta::pure::executionPlan::tests::relational::alternateSimpleMapping
+(
+
+    meta::external::format::relational::executionPlan::test::Person : Relational
+            {
+                scope([dbInc])
+                (
+                    firstName : personTable.FIRSTNAME
+                ),
+                scope([dbInc]default.personTable)
+                (
+                    lastName : LASTNAME
+                )
+            }
+
+)

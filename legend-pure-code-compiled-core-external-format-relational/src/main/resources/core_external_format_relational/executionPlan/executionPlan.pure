@@ -1,0 +1,204 @@
+// Copyright 2022 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::external::shared::format::binding::*;
+import meta::pure::metamodel::path::*;
+import meta::external::shared::format::executionPlan::*;
+import meta::external::shared::format::binding::validation::*;
+
+import meta::external::format::relational::executionPlan::*;
+import meta::external::format::relational::executionPlan::helperFunction::*;
+
+import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::executionPlan::toString::*;
+import meta::pure::graphFetch::*;
+import meta::pure::router::extension::*;
+import meta::pure::runtime::*;
+import meta::external::language::java::factory::project::*;
+import meta::external::format::relational::metamodel::*;
+import meta::pure::model::unit::*;
+
+import meta::external::format::json::binding::validation::*;
+import meta::external::format::json::executionPlan::*;
+import meta::external::format::json::executionPlan::engine::java::jsonSerialize::helperFunctions::*;
+
+Class meta::external::format::relational::executionPlan::RelationalTdsSerializeExecutionNode extends ExternalFormatSerializeExecutionNode
+{
+
+}
+
+
+Class meta::external::format::relational::executionPlan::RelationalGraphSerializeExecutionNode extends ExternalFormatSerializeExecutionNode
+{
+
+}
+
+function meta::external::format::relational::executionPlan::generateSerializeNode(checked:Boolean[1], binding:Binding[1], children:ExecutionNode[*]): ExternalFormatSerializeExecutionNode[1]
+{
+   assert($binding.schemaSet->isNotEmpty() && $binding.schemaSet.format == 'RELATIONAL', |'A relational schema set must be provided');
+
+   let schema = if($binding.schemaId->isEmpty(),
+                           |$binding.schemaSet.schemas->at(0),
+                           |$binding.schemaSet.schemas->filter(s | $s.id == $binding.schemaId)->toOne());
+
+
+  $schema.detail->match([
+    tds: RelationalTdsSchema[1] | ^meta::external::format::relational::executionPlan::RelationalTdsSerializeExecutionNode(resultType = ^ResultType(type=String), resultSizeRange = PureOne, checked = $checked, binding = $binding, executionNodes = $children),
+    graph: RelationalGraphSchema[1] | ^meta::external::format::relational::executionPlan::RelationalGraphSerializeExecutionNode(resultType = ^ResultType(type=String), resultSizeRange = PureOne, checked = $checked, binding = $binding, executionNodes = $children)
+  ]);
+}
+
+function meta::external::format::relational::executionPlan::generateDeserializeNode(connection:Connection[1], children:ExecutionNode[1], tree:RootGraphFetchTree<Any>[0..1]): ExecutionNode[1]
+{
+   fail('Relational deserialization not supported');
+   []->cast(@ExecutionNode)->toOne();
+}
+
+function meta::external::format::relational::executionPlan::printPlanNodeToString(space:String[1], extensions:RouterExtension[*]): Function<{Nil[1]->String[1]}>[*]
+{
+   [
+      {node:RelationalTdsSerializeExecutionNode[1] |
+         'Relational_TDS_Serialize\n' + 
+         $space + '(' + header($node, $space, $extensions) + '\n' +
+         $space + '  checked = ' + $node.checked->toString() + '\n' +
+         $space + '  binding = ' + $node.binding->elementToPath() + '\n' +
+         $node->childrenToString($space+'  ', $extensions) + '\n' +
+         $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
+         $space + ')\n'
+      },
+      {node:RelationalGraphSerializeExecutionNode[1] |
+         'Relational_Graph_Serialize\n' + 
+         $space + '(' + header($node, $space, $extensions) + '\n' +
+         $space + '  checked = ' + $node.checked->toString() + '\n' +
+         $space + '  binding = ' + $node.binding->elementToPath() + '\n' +
+         $node->childrenToString($space+'  ', $extensions) + '\n' +
+         $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
+         $space + ')\n'
+      }      
+   ]
+}
+
+function meta::external::format::relational::executionPlan::planJavaPrepare(path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): Function<{Nil[1]->GenerationContext[1]}>[*]
+{
+   [
+      node:RelationalTdsSerializeExecutionNode[1]   | prepareRelationalTdsSchema($node, $path, $context, $extensions, $debug),
+      node:RelationalGraphSerializeExecutionNode[1]   | prepareRelationalGraphSchema($node, $path, $context, $extensions, $debug)
+   ]
+}
+
+function meta::external::format::relational::executionPlan::planJavaGenerate(path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): Function<{Nil[1]->GeneratedCode[1]}>[*]
+{
+   [
+       node:RelationalTdsSerializeExecutionNode[1]   | generateForRelationalTdsSerialize($node, $path, $context, $extensions, $debug),
+       node:RelationalGraphSerializeExecutionNode[1]   | generateForRelationalGraphSerialize($node, $path, $context, $extensions, $debug)
+
+   ]
+}
+
+// ========================================================================================================================================================
+// prepare
+// ========================================================================================================================================================
+
+function meta::external::format::relational::executionPlan::prepareRelationalTdsSchema(node:RelationalTdsSerializeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): GenerationContext[1]
+{
+  print(if($debug.debug,|$debug.space+'('+$path+') prepare RelationalTdsSerializeExecutionNode\n', |''));
+  let binding = $node.binding;
+  let schema = if($binding.schemaId->isEmpty(), |$binding.schemaSet.schemas->at(0), |$binding.schemaSet.schemas->filter(s | $s.id == $binding.schemaId)->toOne()).detail->cast(@RelationalTdsSchema);
+  let outputColumns = $node.executionNodes.resultType->match([
+                    t:TDSResultType[1] | $t.tdsColumns
+                  ]);
+  $outputColumns->map({x|
+    let tCol = $schema.table.column($x.name);
+    assert($tCol->isNotEmpty(), |'Output column: ' + $x.name + ' not found in binding table: ' + $schema.table.name);
+    let tColType = $tCol->toOne().type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType();
+    assert($tColType == $x.type, |'Column ' + $schema.table.name->toOne() + ' type incomatible.  Table expect: ' + $tColType->toString() + ' TDS has: ' + $x.type->makeString());
+  });
+  $context;
+}
+
+function meta::external::format::relational::executionPlan::prepareRelationalGraphSchema(node:RelationalGraphSerializeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): GenerationContext[1]
+{
+  print(if($debug.debug,|$debug.space+'('+$path+') prepare RelationalGraphSerializeExecutionNode\n', |''));
+  let binding = $node.binding;
+  let classIn = $node.executionNodes.resultType->match([
+                         c:ClassResultType[1] | $c.type->cast(@Class<Any>)
+                      ]);
+  let graph = if($binding.schemaId->isEmpty(),
+                          |$binding.schemaSet.schemas->at(0),
+                          |$binding.schemaSet.schemas->filter(s | $s.id == $binding.schemaId)->toOne()).detail->cast(@RelationalGraphSchema);
+
+  let jsonBinding = ^Binding(name = $binding.name->toOne() + '_graphGen', package = $binding.package, contentType = 'application/json', modelUnit = $binding.modelUnit);
+  let bindingDetail = $jsonBinding->bindDetails();
+  assert($bindingDetail->instanceOf(JsonSchemaBindingDetail), | 'Detailed binding failed: ' + $bindingDetail->cast(@FailedBindingDetail).errorMessages->joinStrings('\n'));      
+  $binding->generateTree($classIn)->treeToContext($path, $context);
+}
+
+function meta::external::format::relational::executionPlan::helperFunction::generateTree(binding:Binding[1], classIn:Class<Any>[1]): RootGraphFetchTree<Any>[1] 
+{
+  let graph = if($binding.schemaId->isEmpty(),
+                          |$binding.schemaSet.schemas->at(0),
+                          |$binding.schemaSet.schemas->filter(s | $s.id == $binding.schemaId)->toOne()).detail->cast(@RelationalGraphSchema);
+
+  let jsonBinding = ^Binding(name = $binding.name->toOne() + '_graphGen', package = $binding.package, contentType = 'application/json', modelUnit   = newModelUnit()->include($graph.rootClass)->include($graph.tables->map(x | $graph.rootClass->classPropertyByName($x.property).genericType.rawType->toOne())));
+  let bindingDetail = $jsonBinding->bindDetails();
+  assert($bindingDetail->instanceOf(JsonSchemaBindingDetail), | 'Detailed binding failed: ' + $bindingDetail->cast(@FailedBindingDetail).errorMessages->joinStrings('\n'));
+  generateRootTreeFromBindingDetail($classIn, $bindingDetail->cast(@JsonSchemaBindingDetail))->setSchemaAliasToTree($graph);
+}
+
+function meta::external::format::relational::executionPlan::helperFunction::setSchemaAliasToTree(tree:RootGraphFetchTree<Any>[1], schema:RelationalGraphSchema[1]): RootGraphFetchTree<Any>[1]
+{
+  let subTreesDefined = $tree.subTrees
+          ->filter(x | $x->instanceOf(PropertyGraphFetchTree))->cast(@PropertyGraphFetchTree)
+          ->filter(x | $x.property.name->in($schema.tables.property));
+
+  assert($subTreesDefined->size() == $schema.tables->size(), |'Not all tables defined on schema found on model root class');
+
+  let subTreesWithTableAlias = $subTreesDefined->map({x|
+      let schemaTable = $schema.tables->filter(t | $x.property.name == $t.property)->first();
+      ^$x(
+        alias = $schemaTable.table.name,
+        subTrees = $x.subTrees->cast(@PropertyGraphFetchTree)->map({p|
+          let propertyColumn = $schemaTable.propertyToColumn->filter(pc | $pc.first == $p.property.name)->first();
+          let columnWithAlias = ^$p(alias = if($propertyColumn->isEmpty(), |$p.property.name, |$propertyColumn->toOne().second.name));
+
+          let tCol = $schemaTable.table.column($columnWithAlias.alias->toOne());
+          assert($tCol->isNotEmpty(), |'Output column: ' + $columnWithAlias.alias->toOne() + ' not found in binding table: ' + $schemaTable.table.name->toOne());
+          let tColType = $tCol->toOne().type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType();
+          let pType = $p.property->functionReturnType().rawType->toOne();
+          assert($tColType == $pType, |'Column ' + $columnWithAlias.alias->toOne() + ' (model property: ' + $p.property.name->toOne() + ') type incomatible.  Table expect: ' + $tColType->toString() + ' Model has: ' + $pType->makeString());
+          $columnWithAlias;
+        })
+      );      
+  });
+  ^$tree(subTrees = $subTreesWithTableAlias);
+}
+
+
+// ========================================================================================================================================================
+// generate
+// ========================================================================================================================================================
+
+function meta::external::format::relational::executionPlan::generateForRelationalTdsSerialize(node:RelationalTdsSerializeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): GeneratedCode[1]
+{
+   print(if($debug.debug,|$debug.space+'('+$path+') generate RelationalTdsSerializeExecutionNode\n', |''));  
+   ^meta::pure::executionPlan::engine::java::GeneratedCode();
+}
+
+
+function meta::external::format::relational::executionPlan::generateForRelationalGraphSerialize(node:RelationalGraphSerializeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): GeneratedCode[1]
+{
+   print(if($debug.debug,|$debug.space+'('+$path+') generate RelationalGraphSerializeExecutionNode\n', |''));
+   generateJsonSerializer($path, $context, $debug);
+}

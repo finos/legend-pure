@@ -1,0 +1,5 @@
+{
+  "name" : "core_external_format_relational",
+  "pattern" : "(meta)(::.*)?",
+  "dependencies" : ["platform", "core", "core_relational", "core_external_shared", "core_external_format_json"]
+}

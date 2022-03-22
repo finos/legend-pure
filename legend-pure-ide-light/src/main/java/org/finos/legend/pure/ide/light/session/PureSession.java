@@ -96,12 +96,13 @@ public class PureSession
                     .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
                     .with(this.buildCore(""))
                     .with(this.buildCore("relational"))
-                    .with(this.buildCore("servicestore"))
+//                    .with(this.buildCore("servicestore"))
                     .with(this.buildCore("external-shared"))
                     .with(this.buildCore("external-format-flatdata"))
+                    .with(this.buildCore("external-format-relational"))
                     .with(this.buildCore("external-format-json"))
-                    .with(this.buildCore("external-format-xml"))
-                    .with(this.buildCore("external-query-graphql"))
+//                    .with(this.buildCore("external-format-xml"))
+//                    .with(this.buildCore("external-query-graphql"))
                     .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
 
             this.codeStorage = new PureCodeStorage(Paths.get(rootPath), repos.toArray(new RepositoryCodeStorage[0]));

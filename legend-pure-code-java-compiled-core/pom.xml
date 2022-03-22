@@ -54,6 +54,7 @@
                                 <repository>core_external_format_xml</repository>
                                 <repository>core_external_format_flatdata</repository>
                                 <repository>core_external_format_json</repository>
+                                <repository>core_external_format_relational</repository>
                                 <repository>core_external_query_graphql</repository>
                             </repositories>
                         </configuration>
@@ -98,6 +99,11 @@
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-core-external-format-json</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-code-compiled-core-external-format-relational</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                     <dependency>

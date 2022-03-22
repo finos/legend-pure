@@ -407,7 +407,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::serialize::
 function <<access.private>> meta::pure::executionPlan::engine::java::serialize::contextField(conventions:Conventions[1]): meta::external::language::java::metamodel::Field[1] { javaField('private', $conventions->className(IExecutionNodeContext), 'context'); }
 
 function <<access.private>> meta::pure::executionPlan::engine::java::serialize::subTreeFieldName(tree:PropertyGraphFetchTree[1]): String[1]
-{      
+{
    if($tree.alias->isEmpty(), |$tree.property.name->toOne() + if($tree.property->instanceOf(QualifiedProperty), | $tree.parameters->evaluateAndDeactivate()->map(x | $x->meta::pure::router::printer::asString())->joinStrings('(', ', ', ')'), | ''), |$tree.alias)->toOne();
 }
 

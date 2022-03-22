@@ -114,8 +114,8 @@ function <<meta::pure::profiles::test.Test>> meta::external::format::json::execu
       $extensions,
       noDebug()
    );
-//    let boundPlan = $plan->generatePlatformCode(^meta::pure::executionPlan::PlatformCodeGenerationConfig(platform=meta::pure::executionPlan::Platform.JAVA), $extensions);
-//    $boundPlan->planToString(true, $extensions)->println();
+   let boundPlan = $plan->generatePlatformCode(^meta::pure::executionPlan::PlatformCodeGenerationConfig(platform=meta::pure::executionPlan::Platform.JAVA), $extensions);
+   $boundPlan->planToString(true, $extensions)->println();
    
    let planString = $plan->planToString(false, $extensions);
    
