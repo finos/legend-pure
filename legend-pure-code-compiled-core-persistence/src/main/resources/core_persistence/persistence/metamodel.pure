@@ -124,7 +124,7 @@ meta::pure::persistence::metamodel::persister::BatchPersister extends meta::pure
    targetShape: TargetShape[1];
 
    {doc.doc = 'The ingest mode to apply to this target dataset.'}
-   ingestMode: IngestMode[0..1];
+   ingestMode: IngestMode[1];
 }
 
 /**********
@@ -250,6 +250,12 @@ Class meta::pure::persistence::metamodel::persister::deduplication::MaxVersionDe
    versionField: String[1];
 }
 
+Class meta::pure::persistence::metamodel::persister::deduplication::DuplicateCountDeduplicationStrategy extends DeduplicationStrategy
+{
+   {doc.doc = 'The name of the output field where duplicate counts will be recorded in the underlying system.'}
+   duplicateCountName: String[1];
+}
+
 /**********
  * ingest mode
  **********/
@@ -372,7 +378,7 @@ Class
 {doc.doc = 'Audit information is represented via a transaction datetime in the underlying system.'}
 meta::pure::persistence::metamodel::persister::audit::DateTimeAuditing extends Auditing
 {
-   {doc.doc = 'The name of the field representing the audit datetime in the underlying system.'}
+   {doc.doc = 'The name of the output field representing the audit datetime in the underlying system.'}
    dateTimeName: String[1];
 }
 
@@ -391,10 +397,10 @@ Class
 {doc.doc = 'The representation of the transaction (processing) temporal dimension is via integral "in" and "out" batch ids.'}
 meta::pure::persistence::metamodel::persister::transactionmilestoning::BatchIdTransactionMilestoning extends TransactionMilestoning
 {
-   {doc.doc = 'The name of the field representing the "in" batch id in the underlying system.'}
+   {doc.doc = 'The name of the output field representing the "in" batch id in the underlying system.'}
    batchIdInName: String[1];
 
-   {doc.doc = 'The name of the field representing the "out" batch id in the underlying system.'}
+   {doc.doc = 'The name of the output field representing the "out" batch id in the underlying system.'}
    batchIdOutName: String[1];
 }
 
@@ -402,10 +408,10 @@ Class
 {doc.doc = 'The representation of the transaction (processing) temporal dimension is via "in" and "out" datetimes.'}
 meta::pure::persistence::metamodel::persister::transactionmilestoning::DateTimeTransactionMilestoning extends TransactionMilestoning
 {
-   {doc.doc = 'The name of the field representing the "in" datetime in the underlying system.'}
+   {doc.doc = 'The name of the output field representing the "in" datetime in the underlying system.'}
    dateTimeInName: String[1];
 
-   {doc.doc = 'The name of the field representing the "out" datetime in the underlying system.'}
+   {doc.doc = 'The name of the output field representing the "out" datetime in the underlying system.'}
    dateTimeOutName: String[1];
 }
 
@@ -413,16 +419,16 @@ Class
 {doc.doc = 'The representation of the transaction (processing) temporal dimension is via integral "in" and "out" batch ids and "in" and "out" datetimes.'}
 meta::pure::persistence::metamodel::persister::transactionmilestoning::BatchIdAndDateTimeTransactionMilestoning extends TransactionMilestoning
 {
-   {doc.doc = 'The name of the field representing the "in" batch id in the underlying system.'}
+   {doc.doc = 'The name of the output field representing the "in" batch id in the underlying system.'}
    batchIdInName: String[1];
 
-   {doc.doc = 'The name of the field representing the "out" batch id in the underlying system.'}
+   {doc.doc = 'The name of the output field representing the "out" batch id in the underlying system.'}
    batchIdOutName: String[1];
 
-   {doc.doc = 'The name of the field representing the "in" datetime in the underlying system.'}
+   {doc.doc = 'The name of the output field representing the "in" datetime in the underlying system.'}
    dateTimeInName: String[1];
 
-   {doc.doc = 'The name of the field representing the "out" datetime in the underlying system.'}
+   {doc.doc = 'The name of the output field representing the "out" datetime in the underlying system.'}
    dateTimeOutName: String[1];
 }
 
@@ -441,10 +447,10 @@ Class
 {doc.doc = 'The representation of the validity (business) temporal dimension is via "from" and "thru" datetimes.'}
 meta::pure::persistence::metamodel::persister::validitymilestoning::DateTimeValidityMilestoning extends ValidityMilestoning
 {
-   {doc.doc = 'The name of the field representing the "from" datetime in the underlying system.'}
+   {doc.doc = 'The name of the output field representing the "from" datetime in the underlying system.'}
    dateTimeFromName: String[1];
 
-   {doc.doc = 'The name of the field representing the "thru" datetime in the underlying system.'}
+   {doc.doc = 'The name of the output field representing the "thru" datetime in the underlying system.'}
    dateTimeThruName: String[1];
 
    {doc.doc = 'The approach to derive validity (business) temporal data from source data.'}
