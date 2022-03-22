@@ -72,19 +72,28 @@ Class meta::pure::executionPlan::ExecutionPlan
 
 Class meta::pure::executionPlan::ExecutionNode
 {
-   fromCluster : ClusteredValueSpecification[0..1];
-   resultType : ResultType[1];
-   resultSizeRange : Multiplicity[0..1];
-   executionNodes : ExecutionNode[*];
-   authDependent: Boolean[0..1];
-   kerberos  : String[0..1];
+   fromCluster      : ClusteredValueSpecification[0..1];
+   resultType       : ResultType[1];
+   resultSizeRange  : Multiplicity[0..1];
+   executionNodes   : ExecutionNode[*];
+   authDependent    : Boolean[0..1];
+   kerberos         : String[0..1];
    supportFunctions : String[*];
-   implementation : PlatformImplementation[0..1];
+   requiredVariableInputs : VariableInput[*];
+   
+   implementation   : PlatformImplementation[0..1];
 
    childNodes()
    {
       $this.executionNodes->fold({n,accum| $accum->concatenate($n.childNodes()); },[$this]);
    } : ExecutionNode[*];
+}
+
+Class meta::pure::executionPlan::VariableInput
+{
+   name         : String[1];
+   type         : Type[1];
+   multiplicity : Multiplicity[1];
 }
 
 Class meta::pure::executionPlan::SequenceExecutionNode extends meta::pure::executionPlan::ExecutionNode

@@ -91,8 +91,9 @@ function <<access.private>> meta::pure::executionPlan::toString::extractClusters
 
 function meta::pure::executionPlan::toString::header(e:ExecutionNode[1], space:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
 {
-   '\n'+$space+'  type = '+$e.resultType->typeToString($space, $extensions)+if($e.resultSizeRange->isEmpty(),|'',|'\n'
-       +$space+'  resultSizeRange = '+$e.resultSizeRange->toOne()->meta::pure::metamodel::serialization::grammar::printMultiplicity());
+   '\n'+ $space+'  type = '+$e.resultType->typeToString($space, $extensions)+if($e.resultSizeRange->isEmpty(),|'',|'\n'
+       + $space+'  resultSizeRange = '+$e.resultSizeRange->toOne()->meta::pure::metamodel::serialization::grammar::printMultiplicity())
+       + if($e.requiredVariableInputs->isEmpty(), |'', | '\n' + $space+'  requires = '+$e.requiredVariableInputs->map(source | $source.name + '(' + $source.type->elementToPath() + '[' + $source.multiplicity->meta::pure::metamodel::serialization::grammar::printMultiplicity() +'])')->joinStrings('[',', ',']'));
 }
 
 function meta::pure::executionPlan::toString::childrenToString(e:ExecutionNode[*], space:String[1], extensions:meta::pure::router::extension::RouterExtension[*]):String[1]
