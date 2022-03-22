@@ -28,7 +28,6 @@ import meta::pure::persistence::metamodel::persister::transactionmilestoning::*;
 import meta::pure::persistence::metamodel::persister::validitymilestoning::*;
 import meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::*;
 import meta::pure::persistence::metamodel::reader::*;
-import meta::pure::persistence::metamodel::sink::*;
 import meta::pure::persistence::metamodel::target::*;
 import meta::pure::persistence::metamodel::trigger::*;
 
@@ -121,7 +120,11 @@ Class
 {doc.doc = 'A persister that writes data in batches.'}
 meta::pure::persistence::metamodel::persister::BatchPersister extends meta::pure::persistence::metamodel::persister::Persister
 {
+   {doc.doc = 'The shape of the datasets to be persisted.'}
    targetShape: TargetShape[1];
+
+   {doc.doc = 'The ingest mode to apply to this target dataset.'}
+   ingestMode: IngestMode[0..1];
 }
 
 /**********
@@ -159,7 +162,7 @@ meta::pure::persistence::metamodel::notifier::PagerDutyNotifyee extends Notifyee
 
 Class
 <<typemodifiers.abstract>>
-{doc.doc = 'A target for persistence.'}
+{doc.doc = 'The shape of the datasets to be persisted.'}
 meta::pure::persistence::metamodel::persister::targetshape::TargetShape
 {
 }
@@ -174,14 +177,11 @@ meta::pure::persistence::metamodel::persister::targetshape::FlatTarget extends T
    {doc.doc = 'The name of the target.'}
    targetName: String[1];
 
-   {doc.doc = 'An optional set of properties in the model class (for a graph fetch service) OR columns in the TDS (for a TDS service) that designate partitioning keys for the dataset.'}
-   partitionKeyNames: String[*];
+   {doc.doc = 'An optional set of properties in the model class OR columns in the TDS that designate partitioning keys for the dataset.'}
+   partitionFields: String[*];
 
    {doc.doc = 'The deduplication strategy to apply to this target dataset when an item appears multiple times in the same batch.'}
    deduplicationStrategy: DeduplicationStrategy[1];
-
-   {doc.doc = 'The ingest mode to apply to this target dataset.'}
-   ingestMode: IngestMode[0..1];
 }
 
 Class
@@ -209,13 +209,10 @@ meta::pure::persistence::metamodel::persister::targetshape::MultiFlatTargetPart
    targetName: String[1];
 
    {doc.doc = 'An optional set of properties in the model class that designate partitioning keys for the dataset.'}
-   partitionKeyNames: String[*];
+   partitionFields: String[*];
 
    {doc.doc = 'The deduplication strategy to apply to this target dataset when an item appears multiple times in the same batch.'}
    deduplicationStrategy: DeduplicationStrategy[1];
-
-   {doc.doc = 'The ingest mode to apply to this target dataset.'}
-   ingestMode: IngestMode[0..1];
 }
 
 Enum
@@ -249,7 +246,8 @@ Class meta::pure::persistence::metamodel::persister::deduplication::AnyVersionDe
 
 Class meta::pure::persistence::metamodel::persister::deduplication::MaxVersionDeduplicationStrategy extends DeduplicationStrategy
 {
-   versionProperty: Property<Nil, Any|1>[1];
+   {doc.doc = 'The property in the model class or column in the TDS that indicates the version of the object / row. The object / row with the highest value in a batch will be written to the target datastore.'}
+   versionField: String[1];
 }
 
 /**********
@@ -334,7 +332,10 @@ meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::NoDelet
 Class
 meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::DeleteIndicatorMergeStrategy extends MergeStrategy
 {
-   deleteProperty: Property<Nil, Any|1>[1];
+   {doc.doc = 'The property in the model class or column in the TDS that indicates whether an object or row should be deleted.'}
+   deleteField: String[1];
+
+   {doc.doc = 'The values for the deleteField which signify \'true\'.'}
    deleteValues: String[1..*];
 }
 
@@ -371,8 +372,8 @@ Class
 {doc.doc = 'Audit information is represented via a transaction datetime in the underlying system.'}
 meta::pure::persistence::metamodel::persister::audit::DateTimeAuditing extends Auditing
 {
-   {doc.doc = 'The name of the property representing the transaction datetime in the underlying system.'}
-   dateTimePropertyName: String[1];
+   {doc.doc = 'The name of the field representing the audit datetime in the underlying system.'}
+   dateTimeName: String[1];
 }
 
 /**********
@@ -390,10 +391,10 @@ Class
 {doc.doc = 'The representation of the transaction (processing) temporal dimension is via integral "in" and "out" batch ids.'}
 meta::pure::persistence::metamodel::persister::transactionmilestoning::BatchIdTransactionMilestoning extends TransactionMilestoning
 {
-   {doc.doc = 'The name of the property representing the "in" batch id in the underlying system.'}
+   {doc.doc = 'The name of the field representing the "in" batch id in the underlying system.'}
    batchIdInName: String[1];
 
-   {doc.doc = 'The name of the property representing the "out" batch id in the underlying system.'}
+   {doc.doc = 'The name of the field representing the "out" batch id in the underlying system.'}
    batchIdOutName: String[1];
 }
 
@@ -401,10 +402,10 @@ Class
 {doc.doc = 'The representation of the transaction (processing) temporal dimension is via "in" and "out" datetimes.'}
 meta::pure::persistence::metamodel::persister::transactionmilestoning::DateTimeTransactionMilestoning extends TransactionMilestoning
 {
-   {doc.doc = 'The name of the property representing the "in" datetime in the underlying system.'}
+   {doc.doc = 'The name of the field representing the "in" datetime in the underlying system.'}
    dateTimeInName: String[1];
 
-   {doc.doc = 'The name of the property representing the "out" datetime in the underlying system.'}
+   {doc.doc = 'The name of the field representing the "out" datetime in the underlying system.'}
    dateTimeOutName: String[1];
 }
 
@@ -412,16 +413,16 @@ Class
 {doc.doc = 'The representation of the transaction (processing) temporal dimension is via integral "in" and "out" batch ids and "in" and "out" datetimes.'}
 meta::pure::persistence::metamodel::persister::transactionmilestoning::BatchIdAndDateTimeTransactionMilestoning extends TransactionMilestoning
 {
-   {doc.doc = 'The name of the property representing the "in" batch id in the underlying system.'}
+   {doc.doc = 'The name of the field representing the "in" batch id in the underlying system.'}
    batchIdInName: String[1];
 
-   {doc.doc = 'The name of the property representing the "out" batch id in the underlying system.'}
+   {doc.doc = 'The name of the field representing the "out" batch id in the underlying system.'}
    batchIdOutName: String[1];
 
-   {doc.doc = 'The name of the property representing the "in" datetime in the underlying system.'}
+   {doc.doc = 'The name of the field representing the "in" datetime in the underlying system.'}
    dateTimeInName: String[1];
 
-   {doc.doc = 'The name of the property representing the "out" datetime in the underlying system.'}
+   {doc.doc = 'The name of the field representing the "out" datetime in the underlying system.'}
    dateTimeOutName: String[1];
 }
 
@@ -440,10 +441,10 @@ Class
 {doc.doc = 'The representation of the validity (business) temporal dimension is via "from" and "thru" datetimes.'}
 meta::pure::persistence::metamodel::persister::validitymilestoning::DateTimeValidityMilestoning extends ValidityMilestoning
 {
-   {doc.doc = 'The name of the property representing the "from" datetime in the underlying system.'}
+   {doc.doc = 'The name of the field representing the "from" datetime in the underlying system.'}
    dateTimeFromName: String[1];
 
-   {doc.doc = 'The name of the property representing the "thru" datetime in the underlying system.'}
+   {doc.doc = 'The name of the field representing the "thru" datetime in the underlying system.'}
    dateTimeThruName: String[1];
 
    {doc.doc = 'The approach to derive validity (business) temporal data from source data.'}
@@ -463,17 +464,17 @@ Class
 {doc.doc = 'Source data provide validity from datetime.'}
 meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::SourceSpecifiesValidFromDate extends ValidityDerivation
 {
-   {doc.doc = 'The property in the model class that provides the "from" datetime for validity (business) temporal dimension.'}
-   sourceDateTimeFromProperty: Property<Nil,  Any|1>[1];
+   {doc.doc = 'The property in the model class or column in the TDS that provides the "from" datetime for validity (business) temporal dimension.'}
+   sourceDateTimeFromField: String[1];
 }
 
 Class
 {doc.doc = 'Source data provide validity from and thru datetimes.'}
 meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::SourceSpecifiesValidFromAndThruDate extends ValidityDerivation
 {
-   {doc.doc = 'The property in the model class that provides the "from" datetime for the validity (business) temporal dimension.'}
-   sourceDateTimeFromProperty: Property<Nil, Any|1>[1];
+   {doc.doc = 'The property in the model class or column in the TDS that provides the "from" datetime for the validity (business) temporal dimension.'}
+   sourceDateTimeFromField: String[1];
 
-   {doc.doc = 'The property in the model class that provides the "thru" datetime for the validity (business) temporal dimension.'}
-   sourceDateTimeThruProperty: Property<Nil, Any|1>[1];
+   {doc.doc = 'The property in the model class or column in the TDS that provides the "thru" datetime for the validity (business) temporal dimension.'}
+   sourceDateTimeThruField: String[1];
 }
