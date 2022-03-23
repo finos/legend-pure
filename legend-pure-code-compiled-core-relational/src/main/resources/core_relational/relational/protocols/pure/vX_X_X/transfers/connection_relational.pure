@@ -160,19 +160,11 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy(
             _type = 'gcpApplicationDefaultCredentials'
          ),
-      b:meta::pure::alloy::connections::alloy::authentication::GCPWorkloadIdentityFederationWithAWSAuthenticationStrategy[1] |
-         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPWorkloadIdentityFederationWithAWSAuthenticationStrategy(
-            _type = 'gcpWorkloadIdentityFederationWithAWS',
-            workloadProjectNumber = $b.workloadProjectNumber,
+      b:meta::pure::alloy::connections::alloy::authentication::GCPWorkloadIdentityFederationAuthenticationStrategy[1] |
+         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPWorkloadIdentityFederationAuthenticationStrategy(
+            _type = 'gcpWorkloadIdentityFederation',
             serviceAccountEmail = $b.serviceAccountEmail,
-            additionalGcpScopes = $b.additionalGcpScopes,
-            workloadPoolId = $b.workloadPoolId,
-            workloadProviderId = $b.workloadProviderId,
-            awsAccountId = $b.awsAccountId,
-            awsRegion = $b.awsRegion,
-            awsRole = $b.awsRole,
-            awsAccessKeyIdVaultReference = $b.awsAccessKeyIdVaultReference,
-            awsSecretAccessKeyVaultReference = $b.awsSecretAccessKeyVaultReference
+            additionalGcpScopes = $b.additionalGcpScopes
          )
    ])->toOneMany())
 }
