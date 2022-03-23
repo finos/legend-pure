@@ -263,7 +263,7 @@ function <<access.protected>> meta::json::findClasses(json:JSONObject[1], class:
                            );
    ]);
    
-   let jsonPropertyNames =  if($config.removeType->isNotEmpty() && $config.removeType->toOne()==false  , 
+   let jsonPropertyNames =  if($config.retainTypeField->isNotEmpty() && $config.retainTypeField->toOne()==true  ,
                      | $jsonProperties,
                      | $jsonProperties->filter(kv | !$kv.key.value->equal($config.typeKeyName)))
       ->map(kv | $kv.key->extractSupportedPropertyName());

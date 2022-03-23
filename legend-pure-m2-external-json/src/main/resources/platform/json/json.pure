@@ -81,7 +81,7 @@ Class meta::json::JSONConfig
 
 Class meta::json::JSONDeserializationConfig extends JSONConfig
 {
-    removeType: Boolean[0..1];
+    retainTypeField: Boolean[0..1];
     failOnUnknownProperties : Boolean[1];
     constraintsHandler: ConstraintsOverride[0..1];
 }

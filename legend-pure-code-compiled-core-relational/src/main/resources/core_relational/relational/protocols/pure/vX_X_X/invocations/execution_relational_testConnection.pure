@@ -31,7 +31,7 @@ import meta::protocols::pure::vX_X_X::transformation::toPureGraph::model::*;
 
 function meta::protocols::pure::vX_X_X::invocation::execution::testConnection::getTestConnection(dbType:DatabaseType[1], host:String[1], port:Integer[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::pure::alloy::connections::RelationalDatabaseConnection[0..1]
 {
-   let resp= executeHTTPRaw(^URL(host=$host, port=$port , path='/api/pure/v1/utilities/testConnection/getTestConnection/'+ $dbType->toString()),
+   let resp= executeHTTPRaw(^URL(host=$host, port=$port , path='/api/pure/v1/utilities/tests/connections/'+ $dbType->toString()),
                              HTTPMethod.GET ,
                              'application/json',
                              []
@@ -53,7 +53,7 @@ function meta::protocols::pure::vX_X_X::transformation::toPureGraph::connection:
                  ^JSONDeserializationConfig( 
                                             typeKeyName='_type',
                                             failOnUnknownProperties=false ,
-                                            removeType=false,
+                                            retainTypeField=true,
                                             typeLookup = [
                                                             pair('delegatedKerberos', 'DelegatedKerberosAuthenticationStrategy'),
                                                             pair('userNamePassword', 'UserNamePasswordAuthenticationStrategy'),

@@ -37,18 +37,32 @@ function meta::relational::dbTestRunner::collectTests(pack: Package[1]): Functio
    ]));
 }
 
-function meta::relational::dbTestRunner::runTestsWith(dbTestFns: Function<{DbTestConfig[1] -> String[0..1]}>[*],
+function meta::relational::dbTestRunner::runTestsWith(
+                                               allTests: Function<{DbTestConfig[1] -> String[0..1]}>[*],
+                                               ignoredTests : Function<{DbTestConfig[1] -> String[0..1]}>[*],
                                                dbType: DatabaseType[1],
                                                connection: RelationalDatabaseConnection[0..1],
                                                expectedSqls: Map<Function<{DbTestConfig[1] -> String[0..1]}>, String>[0..1]
                                                ): Boolean[1]
 {
-  let failures = $dbTestFns->map(f|
-      println('running test : '+ $f->elementToPath());
+  println('Running DB Tests for : '+ $dbType->toString());
+
+  //list of failed test ids with corresponding error messages
+  let failedTests = $allTests->filter(t|!$ignoredTests->contains($t))->map(f|
+      println('   running test : '+ $f->elementToPath());
       let result = $f->eval(^DbTestConfig(dbType=$dbType, connection=$connection, expectedSql=if($expectedSqls->isEmpty(), |[], |$expectedSqls->toOne()->get($f))));
-      if($result->isEmpty(), |[], |'\n'+ $f->elementToPath() + ': ' + $result->toOne());
+      if($result->isEmpty(), |[], |$f->elementToPath() + ': ' + $result->toOne());
   );
-  assertEmpty($failures);
+
+  let passed= ($allTests->size() - ($ignoredTests->size() + $failedTests->size()));
+  println('Test Summary : \n' +
+          '    Tests Passed = ' +  $passed->toString()+ '\n' +
+          '    Tests Failed = ' +  $failedTests->size()->toString() + 
+                if($failedTests->isEmpty(), |'\n' , |$failedTests->joinStrings('\n                ','\n                ','\n')) + 
+          '    Tests Ignored = ' + $ignoredTests->size()->toString() + '\n'
+          );
+          
+  $failedTests->isEmpty();
 }
 
 function meta::relational::dbTestRunner::getTestConnection(dbType:DatabaseType[1], extensions:meta::pure::router::extension::RouterExtension[*]):RelationalDatabaseConnection[0..1]

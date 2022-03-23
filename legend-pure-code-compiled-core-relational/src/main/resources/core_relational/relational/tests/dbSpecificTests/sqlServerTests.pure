@@ -16,19 +16,32 @@ import meta::relational::runtime::*;
 import meta::relational::dbTestRunner::*;
 import meta::relational::tests::dbSpecificTests::SqlServer::*;
 import meta::pure::alloy::connections::*;
+import meta::pure::functions::meta::*;
 
 function <<test.Test>> meta::relational::tests::dbSpecificTests::SqlServer::runSQLQueryTests():Boolean[1]
 {
-  let conn= meta::relational::dbTestRunner::getTestConnection(DatabaseType.SqlServer, meta::pure::router::extension::defaultRelationalExtensions());
-  $conn->meta::relational::tests::dbSpecificTests::SqlServer::runSQLQueryTests();
-}
+  let connection= meta::relational::dbTestRunner::getTestConnection(DatabaseType.SqlServer, meta::pure::router::extension::defaultRelationalExtensions());
 
-function meta::relational::tests::dbSpecificTests::SqlServer::runSQLQueryTests(connection:RelationalDatabaseConnection[0..1]):Boolean[1]
-{
-  let expectedSqls = [
-    pair(meta::relational::tests::dbSpecificTests::sqlQueryTests::dynaFunctions::numeric::testAbs_DbTestConfig_1__String_$0_1$_, 'select abs(-1)' )
-  ]->newMap();
-      
-  collectTests(meta::relational::tests::dbSpecificTests::sqlQueryTests)
-      ->runTestsWith(DatabaseType.SqlServer,$connection, $expectedSqls);
+  let allTests = collectTests(meta::relational::tests::dbSpecificTests::sqlQueryTests);
+
+  let unsupportedDynaFunctions = [
+    'indexOf',
+    'adjust',
+    'firstDayOfWeek',
+    'dayOfMonth',
+    'previousDayOfWeek',
+    'mostRecentDayOfWeek',
+    'mod', 'rem', 'log','joinStrings'
+    ];
+
+  let wronglySupportedDynaFunctions =[ 
+      'second', 'minute', 'hour', 'quarter', 'quarterNumber', 'year'
+      //'firstDayOfMonth'
+      ];
+
+  let ignoredTests= $unsupportedDynaFunctions->concatenate($wronglySupportedDynaFunctions)->map(dynaFuncName |
+              let dynaFuncPackageName = 'meta::relational::tests::dbSpecificTests::sqlQueryTests::dynaFunctions::' + $dynaFuncName;
+              $dynaFuncPackageName->pathToElement()->cast(@Package)->collectTests(););
+
+  runTestsWith($allTests, $ignoredTests, DatabaseType.SqlServer, $connection,  []);
 }
