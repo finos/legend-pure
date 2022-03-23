@@ -16,9 +16,9 @@
 
 import meta::json::schema::generation::*;
 
-function meta::protocols::pure::vX_X_X::invocation::generation::json::transformJSONSchemaConfig(input:JSONSchemaConfig[1]):meta::protocols::pure::vX_X_X::metamodel::invocation::generation::json::JSONSchemaConfig[1]
+function meta::protocols::pure::v1_23_0::invocation::generation::json::transformJSONSchemaConfig(input:JSONSchemaConfig[1]):meta::protocols::pure::v1_23_0::metamodel::invocation::generation::json::JSONSchemaConfig[1]
 {
-   ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::json::JSONSchemaConfig(
+   ^meta::protocols::pure::v1_23_0::metamodel::invocation::generation::json::JSONSchemaConfig(
         package = $input.package,
         class = $input.class,
         includeAllRelatedTypes = $input.includeAllRelatedTypes,
@@ -31,9 +31,9 @@ function meta::protocols::pure::vX_X_X::invocation::generation::json::transformJ
 
 import meta::external::format::avro::generation::*;
 
-function meta::protocols::pure::vX_X_X::invocation::generation::avro::transformAvroGenerationConfig(input:AvroConfig[1]):meta::protocols::pure::vX_X_X::metamodel::invocation::generation::avro::AvroConfig[1]
+function meta::protocols::pure::v1_23_0::invocation::generation::avro::transformAvroGenerationConfig(input:AvroConfig[1]):meta::protocols::pure::v1_23_0::metamodel::invocation::generation::avro::AvroConfig[1]
 {
-   ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::avro::AvroConfig(
+   ^meta::protocols::pure::v1_23_0::metamodel::invocation::generation::avro::AvroConfig(
       package = $input.package,
       class = $input.class,
       includeNamespace=$input.includeNamespace ,
@@ -50,20 +50,20 @@ function meta::protocols::pure::vX_X_X::invocation::generation::avro::transformA
 
 import meta::external::format::protobuf::generation::*;
 
-function meta::protocols::pure::vX_X_X::invocation::generation::protobuf::transformProtobufConfig(input:ProtobufConfig[1])
-   :meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::ProtobufConfig[1]
+function meta::protocols::pure::v1_23_0::invocation::generation::protobuf::transformProtobufConfig(input:ProtobufConfig[1])
+   :meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::ProtobufConfig[1]
 {
-   ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::ProtobufConfig(
+   ^meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::ProtobufConfig(
         package = $input.package,
         class = $input.class,
-        options = ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::Options
+        options = ^meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::Options
                   (
                       javaPackage = $input.javaPackage,
                       javaOuterClassname = $input.javaOuterClassname,
                       javaMultipleFiles = $input.javaMultipleFiles,
-                      optimizeFor = if($input.optimizeFor->isEmpty(),|[],|extractEnumValue(meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::OptimizeMode, $input.optimizeFor->toOne()->id())),
+                      optimizeFor = if($input.optimizeFor->isEmpty(),|[],|extractEnumValue(meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::OptimizeMode, $input.optimizeFor->toOne()->id())),
                       customOptions = $input.customOptions->map(c |
-                                          ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::ProtobufOption
+                                          ^meta::protocols::pure::v1_23_0::metamodel::invocation::generation::protobuf::ProtobufOption
                                           (
                                               name = $c.name,
                                               value = $c.value
