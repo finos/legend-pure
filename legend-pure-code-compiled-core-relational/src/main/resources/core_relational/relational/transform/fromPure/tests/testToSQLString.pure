@@ -466,6 +466,15 @@ function <<test.Test>> meta::relational::tests::functions::sqlstring::testToSQLS
    assertEquals('select substr("root".FULLNAME, 0, position(\',\', "root".FULLNAME)-1) as "firstName" from personTable as "root"', $db2sql);
 }
 
+function <<test.Test>> meta::relational::tests::functions::sqlstring::testToSQLStringIndexOfSnowflake():Boolean[1]
+{
+   let sql = toSQLString(
+              |meta::relational::tests::model::simple::Person.all()->project(p|$p.firstName->indexOf('Jo'), 'index'),
+               meta::relational::tests::simpleRelationalMapping, DatabaseType.Snowflake, meta::pure::router::extension::defaultRelationalExtensions());
+
+   assertEquals('select CHARINDEX(\'Jo\', "root".FIRSTNAME) as "index" from personTable as "root"', $sql);
+}
+
 function <<test.Test>> meta::relational::tests::functions::sqlstring::testToSQLStringWithStdDevSample():Boolean[1]
 {
    [DatabaseType.SybaseIQ, DatabaseType.H2, DatabaseType.DB2, DatabaseType.Postgres, DatabaseType.Presto]->map(db|
