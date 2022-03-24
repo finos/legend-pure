@@ -75,6 +75,10 @@ jobs:
       - name: Build + Test
         if: (github.repository != 'finos/legend-pure') || (github.ref != 'refs/heads/master')
         run: mvn -B -e install javadoc:javadoc -DargLine="-Xmx2000m"
+        env:
+          MAVEN_OPTS: -Xmx4000m
       - name: Build + Test + Sonar + Maven Deploy
         if: (github.repository == 'finos/legend-pure') && (github.ref == 'refs/heads/master')
         run: mvn -B -e deploy javadoc:javadoc -Psonar -DargLine="-Xmx2000m"
+        env:
+          MAVEN_OPTS: -Xmx4000m
