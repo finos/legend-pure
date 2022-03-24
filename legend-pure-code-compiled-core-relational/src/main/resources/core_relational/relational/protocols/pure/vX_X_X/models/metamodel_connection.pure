@@ -126,6 +126,8 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
 {
     projectId:String[1];
     defaultDataset:String[1];
+    proxyHost: String[0..1];
+    proxyPort: String[0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::TestDatabaseConnection extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection
