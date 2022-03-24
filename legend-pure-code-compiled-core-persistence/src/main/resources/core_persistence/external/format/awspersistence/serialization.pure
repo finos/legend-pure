@@ -1,0 +1,216 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::legend::service::metamodel::*;
+
+import meta::relational::runtime::*;
+import meta::relational::metamodel::*;
+import meta::relational::metamodel::relation::*;
+import meta::relational::metamodel::datatype::*;
+import meta::pure::alloy::connections::alloy::specification::*;
+
+import meta::pure::persistence::metamodel::*;
+import meta::pure::persistence::metamodel::trigger::*;
+import meta::pure::persistence::metamodel::notifier::*;
+import meta::pure::persistence::metamodel::persister::*;
+import meta::pure::persistence::metamodel::persister::targetshape::*;
+import meta::pure::persistence::metamodel::persister::deduplication::*;
+import meta::pure::persistence::metamodel::persister::ingestmode::*;
+import meta::pure::persistence::metamodel::persister::ingestmode::snapshot::*;
+import meta::pure::persistence::metamodel::persister::audit::*;
+import meta::pure::persistence::metamodel::persister::transactionmilestoning::*;
+
+import meta::external::persistence::aws::metamodel::connection::*;
+
+import meta::external::format::awspersistence::generation::*;
+import meta::external::format::awspersistence::metamodel::*;
+import meta::external::format::awspersistence::serialization::*;
+
+import meta::pure::alloy::connections::*;
+import meta::pure::functions::meta::*;
+import meta::pure::runtime::*;
+import meta::pure::store::*;
+
+
+function  meta::external::format::awspersistence::serialization::serialize(config: AwsPersistenceConfig[1], p: Persistence[1]): meta::external::format::awspersistence::metamodel::AwsPersistence[1]
+{
+  let notifier = $p.notifier;
+  let nonpd = $notifier.notifyees->filter(n|!$n->instanceOf(PagerDutyNotifyee));
+  assertEmpty($nonpd, | 'AwsPersistence can currently only support PagerDuty notifees');
+
+  assert($p.persister->instanceOf(BatchPersister), | 'AwsPersistence can currently only handle batch persistence');
+  let bp = $p.persister->cast(@BatchPersister);
+
+  let apt = $config->serializeShape($bp);
+
+  let pp = ^meta::external::format::awspersistence::metamodel::AwsPersistence(
+      documentation=$p.documentation,
+      notifier=$p.notifier,
+      trigger=$p.trigger,
+      service=$p.service,
+      // persister=$p.persister,
+      target=$apt
+    );
+
+  $pp;
+}
+
+
+function <<access.private>> meta::external::format::awspersistence::serialization::serializeShape(config: AwsPersistenceConfig[1], bp: BatchPersister[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTarget[1..*]
+{
+  assert($bp.targetShape->instanceOf(FlatTarget), | 'AwsPersistence can currently only handle flat target shapes');
+  let ft = $bp.targetShape->cast(@FlatTarget);
+
+  let connection = $bp.connection;
+
+  // FIXME, giving Persister a name will help with debug
+  assertNotEmpty($bp.connection, |'Expecting a Persister connection, found none');
+  let c = $bp.connection->toOne();
+
+  // FIXME: Should these be validated in a common place for all generators?
+  assertNotEmpty($ft.modelClass, |'Expecting a ModelClass in the BatchPersister but found none');
+  assertSize($ft.modelClass, 1, 'Expecting exactly one modelClass, found %s', [$ft.modelClass->size()]);
+  let modelClass = $ft.modelClass->toOne();
+  assert($modelClass.generalizations.general.rawType == Any, | 'AwsPersistence requires the class in targetShape to not be generalized (i.e., not extend another class)');
+  assertSize($modelClass.name, 1, 'Expecting exactly one modelClass name, found %s', [$modelClass.name->size()]);
+  assertSize($modelClass.package, 1, 'Expecting exactly one modelClass package, found %s', [$modelClass.package->size()]);
+
+  let canHandle = 'NontemporalSnapshot, UnitemporalSnapshot';
+  $bp.ingestMode->match([
+    u:UnitemporalSnapshot[1]|assert($u.transactionMilestoning->instanceOf(BatchIdTransactionMilestoning), 'In FlatTarget %s, for UnitemporalSnapshot, only BatchIdTransactionMilestoning is supported', [$ft.targetName]),
+    n:NontemporalSnapshot[1]|assert($n.auditing->instanceOf(NoAuditing), 'In FlatTarget %s, for NontemporalSnapshot, only NoAuditing is supported', [$ft.targetName]),
+    a:Any[*]|assert(false, 'AwsPersistence can currently only handle %s milestoning in FlatTarget <%s>', [$canHandle, $ft.targetName])
+  ]);
+
+  let apt = $config->serializeAwsPersistenceTarget($ft, $c, $bp.ingestMode);
+  $apt->toOneMany();
+}
+
+
+function <<access.private>> meta::external::format::awspersistence::serialization::serializeAwsPersistenceTarget(config: AwsPersistenceConfig[1], ft: FlatTarget[1], c: Connection[1], im: IngestMode[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTarget[1]
+{
+  let modelClass = $ft.modelClass->toOne();
+  let properties = $modelClass.properties;
+  let nonprimitives = $properties->filter(p|! $p.genericType.rawType->toOne()->instanceOf(PrimitiveType));
+  assertEmpty($nonprimitives, 'Found non-primitive types in FlatTarget <%s>, only primitive types can be persisted', [$ft.targetName]);
+
+  let pts = $properties->map(p|
+    assertSize($p.name, 1, 'In FlatTarget <%s>, expected exactly one property name, found %s', [$ft.targetName, $p.name->size()]);
+    assertSize($p.genericType.rawType, 1, 'In FlatTarget <%s> for property <%s>, expected exactly one type, found %s', [$ft.targetName, $p.name->toOne(), $p.genericType.rawType->size()]);
+    ^meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShapeProperties(name=$p.name->toOne(), type=$p.genericType.rawType->toOne());
+  );
+  
+  assert($ft.deduplicationStrategy->instanceOf(NoDeduplicationStrategy), 'AwsPersistence can currently only handle NoDeduplicationStrategy in FlatTarget <%s>', [$ft.targetName]);
+
+  let mcShape = ^meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShape(name=$ft.modelClass.name->toOne(), package=$ft.modelClass.package->toOne(), properties=$pts);
+
+  let r = $config->getRelationalStoreInfo($c, $modelClass);
+
+  let apt = ^meta::external::format::awspersistence::metamodel::AwsPersistenceTarget(
+      targetName=$ft.targetName,
+      connection=$c,
+      targetRelationalType=$r,
+      // deduplicationStrategy=$ft.deduplicationStrategy,
+      ingestMode=$im,
+      modelClass=$mcShape
+    );
+
+  $apt;
+}
+
+
+
+function <<access.private>> meta::external::format::awspersistence::serialization::getRelationalStoreInfo(config: AwsPersistenceConfig[1], c: Connection[1], modelClass: Class<Any>[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTargetRelationaType[*]
+{
+  let table = $c->match([
+    s3:AwsS3Connection[1]| [],
+    rdb:RelationalDatabaseConnection[1]|
+      if ($rdb.type == DatabaseType.Snowflake, 
+        | let x = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Store) && $p->fullPackageName('::')==$rdb.element);
+          assertSize($x, 1, 'Expected exactly one store in Connection, found <%d> (should be precluded by engine pureModel construction)', [$x->size()]);
+          let store = $x->toOne()->cast(@Database);
+          let storeName = $store->fullPackageName('::');
+
+          // The databasename is specified in the SnowflakeDatasourceSpecification. The schema is specified in the Store specification
+          // We will use the convention that the tablename in Snowflake corresponds to the modelclass name in the Persister
+          // We check to make sure exactly one such schema exists
+//          let dbName = $rdb.datasourceSpecification->cast(@SnowflakeDatasourceSpecification).databaseName;
+//          let schemas = $store.schemas->filter(s|$s.name == $dbName);
+//          assertSize($schemas, 1, 'In store <%s>, expected a schema with name <%s> as that is the name provided in the datasourceSpecification, instead found <%s>', [$storeName, $dbName, $store.schemas->fold({item,accum|$accum->concatenate($item.name)}, [])->makeString(',')]);
+
+          let tables = $store.schemas->fold({item, accum|$accum->concatenate($item.tables)} , []);
+          assertNotEmpty($tables, 'In connection which points to store <%s>, expected to see at least one table but found none', [ $storeName ]);
+
+          let t = if ($tables->size() == 1,
+            | $tables->toOne(), // The schema containing this table is the schema we will use
+            | $config->getTableForModelClass($tables, $modelClass, $storeName);
+          );
+          $config->validateRelationalTargetWithModel($t, $modelClass, $storeName);
+          $t;,
+        | assert(false,'AwsPersistence can currently only handle RelationalDB targets of type Snowflake');
+          [];
+      )
+  ]);
+
+  let targetRelType = $table.columns->cast(@Column)->map(c|^meta::external::format::awspersistence::metamodel::AwsPersistenceTargetRelationaType(name=$c.name, sqlType=$c.type->meta::relational::metamodel::datatype::dataTypeToSqlText()));
+  $targetRelType;
+}
+
+function <<access.private>> meta::external::format::awspersistence::serialization::getTableForModelClass(config: AwsPersistenceConfig[1], tables: Table[*], modelClass: Class<Any>[1], storeName: String[1]): Table[1]
+{
+  let mcn = $modelClass.name->toOne();
+  let t = $tables->filter(t|$t.name == $modelClass.name);
+  assertSize($t, 1, 'Of the <%d> total tables provided across all schemas for store <%s>, none match the modelclass name of <%s>', [$tables->size(), $storeName, $mcn]);
+  $t->toOne();
+}
+
+Class <<access.private>> meta::external::format::awspersistence::serialization::NameAndType
+{
+  name: String[1];
+  type: Type[1];
+  sqlType: meta::relational::metamodel::datatype::DataType[0..1];
+}
+
+
+function <<access.private>> meta::external::format::awspersistence::serialization::validateRelationalTargetWithModel(config: AwsPersistenceConfig[1], table: Table[1], modelClass: Class<Any>[1], storeName: String[1]): Any[*]
+{
+  // Better have the same number of elements
+  let mcn = $modelClass.name->toOne();
+  let properties = $modelClass.properties;
+  let columns = $table.columns->cast(@Column);
+  assert($properties->size() == $columns->size(), 'Class <%s> and columns in store <%s> have different numbers of elements, %d and %d respectively', [ $mcn, $storeName, $properties->size(), $columns->size()]);
+
+  // Better have same names, modulo quotes
+  let mn = $properties->map(p|^NameAndType(name=$p.name->toOne(), type=$p.genericType.rawType->toOne()))->sortBy(nt|$nt.name);
+  let cn = $columns->map(c|^NameAndType(name=$c.name, sqlType=$c.type, type=$c.type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType()))->sortBy(nt|$nt.name);
+
+  let both = $mn->zip($cn);
+
+  // Example of fold: let tables = $store.schemas->fold({item, accum|$accum->concatenate($item.tables)} , []);
+
+  let gap = $both->filter(b|
+    let m = $b.first;
+    let c = $b.second;
+    $m.type != $c.type || $m.name->makeString('"', '', '"') != $c.name;
+  )->fold({b,accum|$accum->concatenate(
+      format('    <%s,%s> is incompatible with <%s,%s>', [$b.first.name, $b.first.type, $b.second.name, $b.second.sqlType->toOne()->meta::relational::metamodel::datatype::dataTypeToSqlText()]))},
+      []
+  );
+  
+  assertEmpty($gap, |$gap->makeString(
+    format('When checking model class %s with store definition %s, found:\n', [$mcn, $storeName]),
+    '\n',
+    '\n'
+  ));
+}

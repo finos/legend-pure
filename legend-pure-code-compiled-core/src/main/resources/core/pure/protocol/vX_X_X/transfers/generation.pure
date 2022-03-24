@@ -29,20 +29,6 @@ function meta::protocols::pure::vX_X_X::invocation::generation::json::transformJ
 
 ###Pure
 
-import meta::external::format::awspersistence::generation::*;
-
-function meta::protocols::pure::vX_X_X::invocation::generation::awspersistence::transformAwsPersistenceGenerationConfig(input:AwsPersistenceConfig[1]):meta::protocols::pure::vX_X_X::metamodel::invocation::generation::awspersistence::AwsPersistenceConfig[1]
-{
-   ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::awspersistence::AwsPersistenceConfig(
-      package = $input.package,
-      class = $input.class,
-      comment=$input.comment
-   )
-}
-
-
-###Pure
-
 import meta::external::format::avro::generation::*;
 
 function meta::protocols::pure::vX_X_X::invocation::generation::avro::transformAvroGenerationConfig(input:AvroConfig[1]):meta::protocols::pure::vX_X_X::metamodel::invocation::generation::avro::AvroConfig[1]

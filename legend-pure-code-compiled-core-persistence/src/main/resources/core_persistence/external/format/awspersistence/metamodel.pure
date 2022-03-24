@@ -2,6 +2,7 @@
 
 import meta::pure::persistence::metamodel::*;
 import meta::legend::service::metamodel::*;
+import meta::relational::metamodel::relation::*;
 import meta::pure::persistence::metamodel::trigger::*;
 import meta::pure::persistence::metamodel::notifier::*;
 import meta::pure::persistence::metamodel::persister::*;
@@ -11,10 +12,12 @@ import meta::pure::persistence::metamodel::persister::audit::*;
 import meta::pure::persistence::metamodel::persister::transactionmilestoning::*;
 import meta::pure::runtime::*;
 
+import meta::relational::metamodel::*;
+
 Class meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShapeProperties
 {
   name: String[1];
-  awstype: Type[1];
+  type: Type[1];
 }
 
 Class meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShape
@@ -24,13 +27,21 @@ Class meta::external::format::awspersistence::metamodel::AwsPersistenceTargetSha
   properties: meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShapeProperties[*];
 }
 
+Class meta::external::format::awspersistence::metamodel::AwsPersistenceTargetRelationaType
+{
+  name: String[1];
+  sqlType: String[1];
+}
+
+
 Class meta::external::format::awspersistence::metamodel::AwsPersistenceTarget
 {
   targetName: String[1];
   connection: Connection[1];
+  targetRelationalType: meta::external::format::awspersistence::metamodel::AwsPersistenceTargetRelationaType[*];
   // deduplicationStrategy: DeduplicationStrategy[1];
-  ingestMode: IngestMode[0..1];
-  shape: meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShape[1];
+  ingestMode: meta::pure::persistence::metamodel::persister::ingestmode::IngestMode[1];
+  modelClass: meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShape[1];
 }
 
 Class meta::external::format::awspersistence::metamodel::AwsPersistence

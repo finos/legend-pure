@@ -58,16 +58,21 @@ function meta::external::format::awspersistence::generation::generateAwsPersiste
 
 function meta::external::format::awspersistence::generation::generateAwsPersistenceFromPure(config: AwsPersistenceConfig[1], p: Persistence[1]): AwsPersistenceOutput[*]
 {
-   let content = $p->generateAwsPersistenceBackend();
+   let content = $config->generateAwsPersistenceBackend($p);
    let out = ^AwsPersistenceOutput(content=$content,fileName=$p->elementToPath()->pathToFileName('awspersistence'), format='json');
    $out;
 }
 
-function meta::external::format::awspersistence::generation::generateAwsPersistenceBackend(p: Persistence[1]): String[1]
+function meta::external::format::awspersistence::generation::generateAwsPersistenceBackend(config: AwsPersistenceConfig[1], p: Persistence[1]): String[1]
+{
+  $config->meta::external::format::awspersistence::generation::generateAwsPersistenceBackendRaw($p)->toCompactJSONString();
+}
+
+function meta::external::format::awspersistence::generation::generateAwsPersistenceBackendRaw(config: AwsPersistenceConfig[1], p: Persistence[1]): JSONElement[1]
 {
   let jsonConfig = config(false, false, true, true);
-  let content = meta::external::format::awspersistence::serialization::serialize($p);
-  $content->toJSONElement(meta::external::format::awspersistence::generation::extraJsonSerializers(), 1000, $jsonConfig)->toCompactJSONString();
+  let content = $config->meta::external::format::awspersistence::serialization::serialize($p);
+  $content->toJSONElement(meta::external::format::awspersistence::generation::extraJsonSerializers(), 1000, $jsonConfig);
 }
 
 function meta::external::format::awspersistence::generation::extraJsonSerializers():Function<{Nil[1],JSONState[1] ->JSONElement[1]}>[*]
