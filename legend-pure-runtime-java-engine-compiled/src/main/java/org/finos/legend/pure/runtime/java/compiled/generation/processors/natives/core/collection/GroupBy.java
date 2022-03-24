@@ -103,11 +103,6 @@ public class GroupBy extends AbstractNative implements Native
         return "         new PureFunction2<Object, Object, Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value(vars.get(0), vars.get(1), es);\n" +
-                "            }\n" +
-                "            @Override\n" +
                 "            public Object value(Object p1, final Object p2, final ExecutionSupport es)\n" +
                 "            {\n" +
                 "                final " + FullJavaPaths.Function+ " func = p2 instanceof java.util.List?(" + FullJavaPaths.Function + ")((java.util.List)p2).get(0):(" + FullJavaPaths.Function + ")p2;\n" +

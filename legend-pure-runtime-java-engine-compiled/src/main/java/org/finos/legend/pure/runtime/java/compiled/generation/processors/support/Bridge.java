@@ -24,9 +24,39 @@ import org.finos.legend.pure.m3.execution.ExecutionSupport;
 
 public interface Bridge
 {
-    Function0<List<Object>> listBuilder();
-    Function2<Multiplicity, ExecutionSupport, Boolean> hasToOneUpperBound();
-    Function2<Multiplicity, ExecutionSupport, Boolean> isToOne();
-    Function3<PackageableElement, String, ExecutionSupport, String> elementToPath();
-    Function0<LambdaCompiledExtended> lambdaBuilder();
+    @Deprecated
+    default Function0<List<Object>> listBuilder()
+    {
+        return this::buildList;
+    }
+
+    @Deprecated
+    default Function2<Multiplicity, ExecutionSupport, Boolean> hasToOneUpperBound()
+    {
+        return this::hasToOneUpperBound;
+    }
+
+    @Deprecated
+    default Function2<Multiplicity, ExecutionSupport, Boolean> isToOne()
+    {
+        return this::isToOne;
+    }
+
+    @Deprecated
+    default Function3<PackageableElement, String, ExecutionSupport, String> elementToPath()
+    {
+        return this::elementToPath;
+    }
+
+    @Deprecated
+    default Function0<LambdaCompiledExtended> lambdaBuilder()
+    {
+        return this::buildLambda;
+    }
+
+    <T> List<T> buildList();
+    boolean hasToOneUpperBound(Multiplicity multiplicity, ExecutionSupport executionSupport);
+    boolean isToOne(Multiplicity multiplicity, ExecutionSupport executionSupport);
+    String elementToPath(PackageableElement element, String separator, ExecutionSupport executionSupport);
+    LambdaCompiledExtended buildLambda();
 }

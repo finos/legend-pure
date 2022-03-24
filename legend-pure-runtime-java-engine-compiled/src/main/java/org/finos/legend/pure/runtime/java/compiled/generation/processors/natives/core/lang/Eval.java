@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.lang;
 
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -30,9 +29,9 @@ public class Eval extends AbstractNative
 {
     public Eval()
     {
-        super("eval_Function_1__V_m_","eval_Function_1__T_n__V_m_","eval_Function_1__T_n__U_p__V_m_",
-                "eval_Function_1__T_n__U_p__W_q__V_m_","eval_Function_1__T_n__U_p__W_q__X_r__V_m_",
-                "eval_Function_1__T_n__U_p__W_q__X_r__Y_s__V_m_","eval_Function_1__T_n__U_p__W_q__X_r__Y_s__Z_t__V_m_",
+        super("eval_Function_1__V_m_", "eval_Function_1__T_n__V_m_", "eval_Function_1__T_n__U_p__V_m_",
+                "eval_Function_1__T_n__U_p__W_q__V_m_", "eval_Function_1__T_n__U_p__W_q__X_r__V_m_",
+                "eval_Function_1__T_n__U_p__W_q__X_r__Y_s__V_m_", "eval_Function_1__T_n__U_p__W_q__X_r__Y_s__Z_t__V_m_",
                 "eval_Function_1__S_n__T_o__U_p__W_q__X_r__Y_s__Z_t__V_m_");
     }
 
@@ -43,27 +42,27 @@ public class Eval extends AbstractNative
         String type = TypeProcessor.typeToJavaObjectWithMul(Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.genericType, processorSupport), Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.multiplicity, processorSupport), processorSupport);
         CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.multiplicity, processorSupport);
 
-        String parameters = StringUtils.join(transformedParams, ", ");
+        String parameters = String.join(", ", transformedParams);
         parameters = transformedParams.size() == 1 ? transformedParams.get(0) + ", new Object[]{}" : parameters;
-        parameters = transformedParams.size() == 2 && "null".equals(transformedParams.get(1)) ? transformedParams.get(0) + ",new Object[]{null}" : parameters;
+        parameters = transformedParams.size() == 2 && "null".equals(transformedParams.get(1)) ? transformedParams.get(0) + ", new Object[]{null}" : parameters;
 
         String eval = "CoreGen.evaluate(es, (" + FullJavaPaths.Function + ")" + parameters + ")";
-        return "((" + type + ")(Object)" + (Multiplicity.isToOne(multiplicity, false) ? eval : "CompiledSupport.toPureCollection(" + eval + ")")+")";
+        return "((" + type + ")(Object)" + (Multiplicity.isToOne(multiplicity, false) ? eval : "CompiledSupport.toPureCollection(" + eval + ")") + ")";
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
         return "new SharedPureFunction<Object>()\n" +
                 "{\n" +
                 "        @Override\n" +
-                "        public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
+                "        public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "        {\n" +
                 "           org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function func = (org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function) vars.get(0);\n" +
                 "           Object[] params = vars.size() == 1 ? new Object[]{} : vars.drop(1).toArray();\n" +
-                "           Object value = CoreGen.evaluate(es, func, params);" +
-                "           return value instanceof Iterable ? CompiledSupport.toPureCollection(value) : value;" +
+                "           Object value = CoreGen.evaluate(es, func, params);\n" +
+                "           return value instanceof Iterable ? CompiledSupport.toPureCollection(value) : value;\n" +
                 "        }\n" +
                 "}";
     }
-
 }

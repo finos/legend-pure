@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.collection;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -32,14 +32,16 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuesp
 
 public class Fold extends AbstractNativeFunctionGeneric
 {
-    public Fold() {
+    public Fold()
+    {
         super(getMethod(CompiledSupport.class, "fold"), "fold_T_MANY__Function_1__V_m__V_m_");
     }
 
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        if (!transformedParams.isEmpty()) {
+        if (!transformedParams.isEmpty())
+        {
             throw new IllegalArgumentException("transformed parameters must be empty");
         }
 
@@ -73,18 +75,14 @@ public class Fold extends AbstractNativeFunctionGeneric
     @Override
     public ListIterable<String> transformParameterValues(ListIterable<? extends CoreInstance> parametersValues, CoreInstance topLevelElement, ProcessorSupport processorSupport, ProcessorContext processorContext)
     {
-        return Lists.mutable.empty();
+        return Lists.immutable.empty();
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
         return "new PureFunction3<RichIterable, " + FullJavaPaths.Function + ", Object, Object>()\n" +
                 "        {\n" +
-                "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value((RichIterable) vars.get(0), (" + FullJavaPaths.Function + ") vars.get(1), vars.get(2), es);\n" +
-                "            }\n" +
                 "            @Override\n" +
                 "            public Object value(RichIterable value, final " + FullJavaPaths.Function + " func, Object accumulator, final ExecutionSupport es)\n" +
                 "            {\n" +

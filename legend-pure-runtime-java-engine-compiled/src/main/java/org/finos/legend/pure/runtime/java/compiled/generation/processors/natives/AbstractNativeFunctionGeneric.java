@@ -15,10 +15,11 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives;
 
 import org.apache.commons.lang3.ClassUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -29,40 +30,42 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.NativeF
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.List;
 
 public abstract class AbstractNativeFunctionGeneric extends AbstractNative
 {
     private final boolean hasSrcInformation;
     private final boolean hasExecutionSupport;
     private final boolean castReturnValue;
-    private final Object methodName;
-    private final Object[] parameterTypes;
+    private final String methodName;
+    private final ImmutableList<Object> parameterTypes;
 
-    protected AbstractNativeFunctionGeneric(String methodName, Class<?>[] parameterTypes, String... signatures) {
+    protected AbstractNativeFunctionGeneric(String methodName, Class<?>[] parameterTypes, String... signatures)
+    {
         this(methodName, parameterTypes, false, false, false, signatures);
     }
 
-    protected AbstractNativeFunctionGeneric(String methodName, Class<?>[] parameterTypes, boolean hasSrcInformation, boolean hasExecutionSupport, boolean castReturnValue,  String... signatures)
+    protected AbstractNativeFunctionGeneric(String methodName, Class<?>[] parameterTypes, boolean hasSrcInformation, boolean hasExecutionSupport, boolean castReturnValue, String... signatures)
     {
         this(methodName, (Object[]) parameterTypes, hasSrcInformation, hasExecutionSupport, castReturnValue, signatures);
     }
 
-    protected AbstractNativeFunctionGeneric(String methodName, Object[] parameterTypes, String... signatures) {
+    protected AbstractNativeFunctionGeneric(String methodName, Object[] parameterTypes, String... signatures)
+    {
         this(methodName, parameterTypes, false, false, false, signatures);
     }
 
-    protected AbstractNativeFunctionGeneric(String methodName, Object[] parameterTypes, boolean hasSrcInformation, boolean hasExecutionSupport, boolean castReturnValue,  String... signatures) {
+    protected AbstractNativeFunctionGeneric(String methodName, Object[] parameterTypes, boolean hasSrcInformation, boolean hasExecutionSupport, boolean castReturnValue, String... signatures)
+    {
         super(signatures);
         this.methodName = methodName;
-        this.parameterTypes = parameterTypes;
+        this.parameterTypes = Lists.immutable.with(parameterTypes);
         this.hasSrcInformation = hasSrcInformation;
         this.hasExecutionSupport = hasExecutionSupport;
         this.castReturnValue = castReturnValue;
     }
 
-    protected AbstractNativeFunctionGeneric(Method method, String... signatures) {
+    protected AbstractNativeFunctionGeneric(Method method, String... signatures)
+    {
         this(method, false, false, false, signatures);
     }
 
@@ -75,24 +78,29 @@ public abstract class AbstractNativeFunctionGeneric extends AbstractNative
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
         SourceInformation sourceInformation = functionExpression.getSourceInformation();
-        String cast = "";
-
-        if (this.castReturnValue) {
+        String cast;
+        if (this.castReturnValue)
+        {
             ProcessorSupport processorSupport = processorContext.getSupport();
             CoreInstance nativeFunction = Instance.getValueForMetaPropertyToOneResolved(functionExpression, M3Properties.func, processorSupport);
             CoreInstance functionType = processorSupport.function_getFunctionType(nativeFunction);
             String returnType = TypeProcessor.typeToJavaPrimitiveSingle(Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport), processorSupport);
 
-            cast =  "(" + returnType + ")";
+            cast = "(" + returnType + ")";
+        }
+        else
+        {
+            cast = "";
         }
 
         String sourceInformationStr = this.hasSrcInformation ? buildSourceInformationParameterValues(sourceInformation, transformedParams.size()) : "";
         String es = this.hasExecutionSupport ? buildEs(transformedParams.size()) : "";
 
-        return cast + this.methodName + "(" + StringUtils.join(transformedParams, ", ") + sourceInformationStr + es + ")";
+        return cast + this.methodName + "(" + transformedParams.makeString(", ") + sourceInformationStr + es + ")";
     }
 
-    public String buildEs(int noParams) {
+    public String buildEs(int noParams)
+    {
         return noParams > 0 || this.hasSrcInformation ? ", es" : "es";
     }
 
@@ -110,92 +118,100 @@ public abstract class AbstractNativeFunctionGeneric extends AbstractNative
     @Override
     public String buildBody()
     {
-        List<Object> parameterTypes = Arrays.asList(this.parameterTypes);
-        if (this.hasSrcInformation) {
-            parameterTypes = parameterTypes.subList(0, parameterTypes.size() - 1);
+        int paramCount = this.parameterTypes.size();
+        if (this.hasSrcInformation)
+        {
+            paramCount -= 1;
+        }
+        if (this.hasExecutionSupport)
+        {
+            paramCount -= 1;
         }
 
-        if (this.hasExecutionSupport) {
-            parameterTypes = parameterTypes.subList(0, parameterTypes.size() - 1);
+        MutableList<String> parameterAccessStrings = Lists.mutable.ofInitialCapacity(this.parameterTypes.size());
+        if (paramCount > 0)
+        {
+            this.parameterTypes.forEachWithIndex(0, paramCount - 1, (type, index) ->
+            {
+                String typeName = getClassName(type);
+                String parameterType = type instanceof Class && ((Class<?>) type).isArray() ? "ListIterable<" + typeName + ">" : typeName;
+                parameterAccessStrings.add("(" + parameterType + ")vars.get(" + index + ")");
+            });
         }
 
-        List<String> parameterAccessString = FastList.newList(parameterTypes.size());
-
-        int index = 0;
-        for (Object type : parameterTypes) {
-            String typeName = getClassName(type);
-            String parameterType = type instanceof Class && ((Class)type).isArray() ? "ListIterable<" + typeName + ">" : typeName;
-
-            parameterAccessString.add("(" + parameterType + ")vars.get(" + index + ")");
-            index++;
+        if (this.hasSrcInformation)
+        {
+            parameterAccessStrings.add(buildSourceInformationParameterValues(null, 0));
         }
 
-        if (this.hasSrcInformation) {
-            parameterAccessString.add(buildSourceInformationParameterValues(null, 0));
-        }
-
-        if (this.hasExecutionSupport) {
-            parameterAccessString.add("es");
+        if (this.hasExecutionSupport)
+        {
+            parameterAccessStrings.add("es");
         }
 
         return "new SharedPureFunction<Object>()\n" +
                 "{\n" +
                 "   @Override\n" +
-                "   public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
+                "   public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "   {\n" +
-                "       return " + this.methodName + "(" + StringUtils.join(parameterAccessString, ", ") +  ");" +
+                "       return " + this.methodName + "(" + parameterAccessStrings.makeString(", ") + ");\n" +
                 "   }\n" +
                 "\n}";
     }
 
 
-    public static Method getMethod(Class clazz, String method, Class<?> ...parameterTypes) {
-        try {
+    public static Method getMethod(Class<?> clazz, String method, Class<?>... parameterTypes)
+    {
+        try
+        {
             return clazz.getMethod(method, parameterTypes);
-        } catch (NoSuchMethodException e) {
+        }
+        catch (NoSuchMethodException e)
+        {
             throw new RuntimeException(e);
         }
     }
 
-    public static Method getMethod(Class clazz, final String methodName) {
+    public static Method getMethod(Class<?> clazz, String methodName)
+    {
         Method[] methods = clazz.getMethods();
-        FastList<Method> candidates = FastList.newListWith(methods).select(new Predicate<Method>()
-        {
-            @Override
-            public boolean accept(Method method)
-            {
-                return method.getName().equals(methodName);
-            }
-        });
+        MutableList<Method> candidates = ArrayIterate.select(methods, m -> methodName.equals(m.getName()));
 
-        if (candidates.size() > 1) {
+        if (candidates.size() > 1)
+        {
             throw new IllegalArgumentException("multiple functions found for  " + clazz.getSimpleName() + "." + methodName);
         }
 
-        if (candidates.isEmpty()) {
+        if (candidates.isEmpty())
+        {
             throw new IllegalArgumentException("cannot find function for " + clazz.getSimpleName() + "." + methodName);
         }
 
         return candidates.get(0);
     }
 
-    private Class<?> box(Class<?> clazz) {
+    private Class<?> box(Class<?> clazz)
+    {
         return ClassUtils.primitiveToWrapper(clazz);
     }
 
-    private String getClassName(Object obj) {
-        if (obj instanceof Class) {
-            return getClassName((Class) obj);
+    private String getClassName(Object obj)
+    {
+        if (obj instanceof Class)
+        {
+            return getClassName((Class<?>) obj);
         }
 
-        if (obj instanceof String) {
+        if (obj instanceof String)
+        {
             return (String) obj;
         }
 
         throw new IllegalArgumentException("type must be a Class or String");
     }
 
-    private String getClassName(Class<?> clazz) {
+    private String getClassName(Class<?> clazz)
+    {
         Class<?> boxedType = box(clazz);
         String name = boxedType.getCanonicalName();
         return name.startsWith("java.lang.") ? boxedType.getSimpleName() : name;

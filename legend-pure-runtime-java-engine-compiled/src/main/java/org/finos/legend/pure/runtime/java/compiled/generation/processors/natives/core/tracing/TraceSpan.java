@@ -56,7 +56,7 @@ public class TraceSpan extends AbstractNative
         return "new SharedPureFunction<Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
+                "            public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "            {\n" +
                 "               Object value = CoreGen.traceSpan(es, ("  +  FullJavaPaths.Function +  ") vars.get(0), \n" +
                 "                               CompiledSupport.pureToString(vars.get(1), es), \n" +

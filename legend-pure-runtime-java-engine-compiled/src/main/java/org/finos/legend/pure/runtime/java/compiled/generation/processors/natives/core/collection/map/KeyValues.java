@@ -38,13 +38,8 @@ public class KeyValues extends AbstractNative
     @Override
     public String buildBody() {
 
-        return "new DefendedPureFunction1<PureMap, Object>()\n" +
+        return "new PureFunction1<PureMap, Object>()\n" +
                 "        {\n" +
-                "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value((PureMap) vars.get(0), es);\n" +
-                "            }\n" +
                 "            @Override\n" +
                 "            public Object value(PureMap map, ExecutionSupport es)\n" +
                 "            {\n" +

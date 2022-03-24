@@ -21,7 +21,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 
 public class GenericType extends AbstractNative
 {
-    public GenericType() {
+    public GenericType()
+    {
         super("genericType_Any_MANY__GenericType_1_");
     }
 
@@ -34,15 +35,10 @@ public class GenericType extends AbstractNative
     @Override
     public String buildBody()
     {
-        return "new DefendedPureFunction1<Object, Object>()\n" +
+        return "new PureFunction1<Object, Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value(vars.get(0), es);\n" +
-                "            }\n" +
-                "            @Override\n" +
-                "            public Object value(Object o, final ExecutionSupport es)\n" +
+                "            public Object value(Object o, ExecutionSupport es)\n" +
                 "            {\n" +
                 "               return CoreGen.safeGetGenericType(o, ((CompiledExecutionSupport)es).getMetadataAccessor(), ((CompiledExecutionSupport)es).getProcessorSupport());" +
                 "            }\n" +

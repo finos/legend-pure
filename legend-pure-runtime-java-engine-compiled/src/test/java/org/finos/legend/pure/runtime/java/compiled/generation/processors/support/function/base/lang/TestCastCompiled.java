@@ -14,31 +14,22 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.base.lang;
 
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestCast;
-import org.finos.legend.pure.m3.tools.ThrowableTools;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+
+import javax.lang.model.SourceVersion;
 
 public class TestCastCompiled extends AbstractTestCast
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
-    }
-    @After
-    public void cleanRuntime() {
-        runtime.delete("fromString.pure");
-        runtime.delete("/org/finos/legend/pure/m3/cast/cast.pure");
-        try{
-            runtime.compile();
-        } catch (PureCompilationException e) {
-            setUp();
-        }
     }
 
     protected static FunctionExecution getFunctionExecution()
@@ -47,74 +38,113 @@ public class TestCastCompiled extends AbstractTestCast
     }
 
     @Override
-    public void checkInvalidCastWithTypeParametersErrorMessage(Exception e)
+    protected void checkInvalidCastWithTypeParametersTopLevelException(PureExecutionException e)
     {
-        Assert.assertEquals("Error executing test():Any[*]. Unexpected error executing function", e.getMessage());
-        Throwable cause = ThrowableTools.findRootThrowable(e);
-        Assert.assertNotSame(e, cause);
-        String java7runtime = JavaPackageAndImportBuilder.rootPackage() + ".Root_X_Impl cannot be cast to " + JavaPackageAndImportBuilder.rootPackage() + ".Root_Y";
-        String java11runtime = "class " + JavaPackageAndImportBuilder.rootPackage() + ".Root_X_Impl cannot be cast to class " + JavaPackageAndImportBuilder.rootPackage() + ".Root_Y";
-        Assert.assertTrue(java7runtime.equals(cause.getMessage()) || cause.getMessage().startsWith(java11runtime));
+        assertPureException(PureExecutionException.class, "Unexpected error executing function", "fromString.pure", 1, 1, 1, 10, 4, 1, e);
     }
 
     @Override
-    public void testPrimitiveConcreteOneErrorMessage(Exception e)
+    protected void checkInvalidCastWithTypeParametersRootException(PureExecutionException e)
     {
-        this.checkInvalidTypeCastErrorMessage(e, "Cast exception: Integer cannot be cast to String", 31, 10);
+        Exception root = findRootException(e);
+        Assert.assertTrue(root instanceof ClassCastException);
+        String message = root.getMessage();
+        if (SourceVersion.latest().compareTo(SourceVersion.RELEASE_8) > 0)
+        {
+            String expectedStart = "class " + JavaPackageAndImportBuilder.rootPackage() + ".Root_X_Impl cannot be cast to class " + JavaPackageAndImportBuilder.rootPackage() + ".Root_Y";
+            if (!message.startsWith(expectedStart))
+            {
+                Assert.assertEquals("should start with expected", expectedStart, message);
+            }
+        }
+        else
+        {
+            String expectedMessage = JavaPackageAndImportBuilder.rootPackage() + ".Root_X_Impl incompatible with " + JavaPackageAndImportBuilder.rootPackage() + ".Root_Y";
+            Assert.assertEquals(expectedMessage, message);
+        }
     }
 
     @Override
-    public void testPrimitiveConcreteManyErrorMessage(Exception e)
+    protected void checkPrimitiveConcreteOneTopLevelException(PureExecutionException e)
     {
-        this.checkInvalidTypeCastErrorMessage(e, "Cast exception: String cannot be cast to Number", 36, 13);
+        Assert.assertSame(e, findRootException(e));
     }
 
     @Override
-    public void testNonPrimitiveConcreteOneErrorMessage(Exception e)
+    protected void checkPrimitiveConcreteManyTopLevelException(PureExecutionException e)
     {
-        this.checkInvalidTypeCastErrorMessage(e, "Cast exception: X cannot be cast to Y", 41, 12);
+        Assert.assertSame(e, findRootException(e));
     }
 
     @Override
-    public void testNonPrimitiveConcreteManyErrorMessage(Exception e)
+    protected void checkNonPrimitiveConcreteOneTopLevelException(PureExecutionException e)
     {
-        this.checkInvalidTypeCastErrorMessage(e, "Cast exception: X cannot be cast to Y", 41, 12);
+        Assert.assertSame(e, findRootException(e));
     }
 
     @Override
-    public void testEnumToStringCastErrorMessage(Exception e)
+    protected void checkNonPrimitiveConcreteManyTopLevelException(PureExecutionException e)
     {
-        this.checkInvalidTypeCastErrorMessage(e, "Cast exception: Month cannot be cast to String", 31, 10);
+        Assert.assertSame(e, findRootException(e));
     }
 
     @Override
-    public void testPrimitiveNonConcreteOneErrorMessage(Exception e)
+    protected void checkEnumToStringCastTopLevelException(PureExecutionException e)
     {
-        this.checkInvalidTypeCastErrorMessage(e, "Cast exception: Integer cannot be cast to String", 51, 10);
+        Assert.assertSame(e, findRootException(e));
     }
 
     @Override
-    public void testNonPrimitiveNonConcreteOneErrorMessage(Exception e)
+    protected void checkPrimitiveNonConcreteOneTopLevelException(PureExecutionException e)
     {
-        this.checkInvalidTypeCastErrorMessage(e, "Cast exception: X cannot be cast to Y", 61, 12);
+        Assert.assertSame(e, findRootException(e));
     }
 
     @Override
-    public void testPrimitiveNonConcreteManyErrorMessage(Exception e)
+    protected void checkPrimitiveNonConcreteOneRootException(PureExecutionException e)
     {
-        this.checkInvalidTypeCastErrorMessage(e, "Cast exception: String cannot be cast to Number", 56, 13);
+        checkException(findRootException(e), "Cast exception: Integer cannot be cast to String", "/org/finos/legend/pure/m3/cast/cast.pure", 51, 10);
     }
 
     @Override
-    public void testNonPrimitiveNonConcreteManyErrorMessage(Exception e)
+    protected void checkNonPrimitiveNonConcreteOneTopLevelException(PureExecutionException e)
     {
-        this.checkInvalidTypeCastErrorMessage(e, "Cast exception: X cannot be cast to Y", 61, 12);
+        Assert.assertSame(e, findRootException(e));
     }
 
     @Override
-    public void testStringToEnumCastErrorMessage(Exception e)
+    protected void checkNonPrimitiveNonConcreteOneRootException(PureExecutionException e)
     {
-        this.checkInvalidTypeCastErrorMessage(e, "Cast exception: String cannot be cast to Enum", 3, 17);
+        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/org/finos/legend/pure/m3/cast/cast.pure", 61, 12);
     }
 
+    @Override
+    protected void checkPrimitiveNonConcreteManyTopLevelException(PureExecutionException e)
+    {
+        Assert.assertSame(e, findRootException(e));
+    }
+
+    @Override
+    protected void checkPrimitiveNonConcreteManyRootException(PureExecutionException e)
+    {
+        checkException(findRootException(e), "Cast exception: String cannot be cast to Number", "/org/finos/legend/pure/m3/cast/cast.pure", 56, 13);
+    }
+
+    @Override
+    protected void checkNonPrimitiveNonConcreteManyTopLevelException(PureExecutionException e)
+    {
+        Assert.assertSame(e, findRootException(e));
+    }
+
+    @Override
+    protected void checkNonPrimitiveNonConcreteManyRootException(PureExecutionException e)
+    {
+        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/org/finos/legend/pure/m3/cast/cast.pure", 61, 12);
+    }
+
+    @Override
+    protected void checkStringToEnumCastTopLevelException(PureExecutionException e)
+    {
+        checkException(e, "Cast exception: String cannot be cast to Enum", "fromString.pure", 3, 17);
+    }
 }

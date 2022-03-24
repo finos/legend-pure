@@ -37,15 +37,10 @@ public class ParseJSON extends AbstractNative
     public String buildBody()
     {
         final String jsonElement = JavaPackageAndImportBuilder.buildInterfaceReferenceFromUserPath("meta::json::JSONElement");
-        return "new DefendedPureFunction1<String, " + jsonElement + ">()\n" +
+        return "new PureFunction1<String, " + jsonElement + ">()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public " + jsonElement + " execute(ListIterable vars, ExecutionSupport es)\n" +
-                "            {\n" +
-                "              return value((String)vars.get(0), es);\n" +
-                "            }\n" +
-                "            @Override\n" +
-                "            public " + jsonElement + " value(String url, final ExecutionSupport es)\n" +
+                "            public " + jsonElement + " value(String url, ExecutionSupport es)\n" +
                 "            {\n" +
                 "               return (" + jsonElement + ")new org.finos.legend.pure.runtime.java.extension.external.json.shared.JsonParser(((CompiledExecutionSupport)es).getProcessorSupport()).toPureJson(url);" +
                 "            }\n" +
