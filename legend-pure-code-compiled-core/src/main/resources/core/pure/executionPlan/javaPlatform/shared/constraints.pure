@@ -37,6 +37,11 @@ import meta::pure::milestoning::*;
 
 function meta::pure::executionPlan::engine::java::createConstraintCheckingForClass(jClass: meta::external::language::java::metamodel::Class[1], class:meta::pure::metamodel::type::Class<Any>[1], context:GenerationContext[1], debug:DebugContext[1]) : Project[1]
 {
+   createConstraintCheckingForClass($jClass, $class, $context, true, $debug);
+}
+
+function meta::pure::executionPlan::engine::java::createConstraintCheckingForClass(jClass: meta::external::language::java::metamodel::Class[1], class:meta::pure::metamodel::type::Class<Any>[1], context:GenerationContext[1], constraintsEnabled:Boolean[1], debug:DebugContext[1]) : Project[1]
+{
    print(if($debug.debug,|$debug.space+'createConstraintCheckingForClass: \''+$class.name->toOne()+'\'\n',|''));
 
    let typeInfo       = $context.typeInfos->forClass($class);
@@ -47,59 +52,75 @@ function meta::pure::executionPlan::engine::java::createConstraintCheckingForCla
    let defectList     = javaList($defect);
    let constrained    = $conventions->className(DataQualityConstrainedInterface);
    let allConstraints = $context.typeInfos->forSupertypesOf($class).constraints->concatenate($typeInfo.constraints);
+   let result         = j_variable($defectList, 'result');
+   let ctext          = j_parameter($conventions->className(DataQualityGraphContextClass), 'context');
+   let index          = j_variable(javaInt(), 'index');
+         
 
    let propertyConstraintCalls = $typeInfo.properties
       ->filter(p| $p->functionReturnType().rawType->toOne()->instanceOf(meta::pure::metamodel::type::Class))
       ->map({p|
-         let getterCall       = 'this.'+$conventions->getterName($p)+'()';
-         let constrainedClass = javaParameterizedType($constrained, $conventions->className($p->functionReturnType().rawType->toOne()));
+         let propertyType     = $conventions->pureTypeToJavaType($p);
+         let getterCall       = j_this($jClass)->j_invoke($conventions->getterName($p), [], $propertyType);
+         let constrainedClass = javaParameterizedType($constrained, if($propertyType->isJavaList(), |$propertyType->elementType(), |$propertyType));
 
          let pathNode = if($p.multiplicity->isToOne() || $p.multiplicity->isZeroOne(),
-            | $conventions->codeType($conventions->className(DataQualityBasicRelativePathNodeClass))->codeToString($jClass)+'.newRelativePathNode('+escapedString($p.name->toOne())+')',
-            | $conventions->codeType($conventions->className(DataQualityBasicRelativePathNodeClass))->codeToString($jClass)+'.newRelativePathNode('+escapedString($p.name->toOne())+', index)'
+            | $conventions->className(DataQualityBasicRelativePathNodeClass)->j_invoke('newRelativePathNode', j_string($p.name->toOne())),
+            | $conventions->className(DataQualityBasicRelativePathNodeClass)->j_invoke('newRelativePathNode', [j_string($p.name->toOne()), $index])
          );
-         let processDefects   = '.stream().map(d -> '+$conventions->codeType($conventions->className(DataQualityBasicDefectClass))->codeToString($jClass)+'.prefixPath(d, '+$pathNode+')).collect('+$conventions->codeType(javaClass('java.util.stream.Collectors'))->codeToString($jClass)+'.toList())';
+         let d      = j_parameter($defect, 'd');
+         let prefix = j_lambda($d, $conventions->className(DataQualityBasicDefectClass)->j_invoke('prefixPath', [$d, $pathNode]));
 
          if($p.multiplicity->hasToOneUpperBound(), // Properties with multiplicity [1] might not be set if not accessed in the fetch tree
             {|
-               '    if ('+$getterCall+' != null)\n' +
-               '    {\n' +
-               '        result.addAll((('+$conventions->codeType($constrainedClass)->codeToString($jClass)+') '+$getterCall+').allConstraints(context)'+$processDefects+');\n' +
-               '    }\n'
+               j_if($getterCall->j_ne(j_null()),
+                    $result->j_invoke('addAll', $getterCall->j_cast($constrainedClass)->j_invoke('allConstraints', $ctext, $defectList)->j_streamOf()->js_map($prefix)->js_resolve($defectList))
+               )
             },
             {|
-               '    if ('+$getterCall+' != null)\n' +
-               '    {\n' +
-               '        for (int i =0; i < '+$getterCall+'.size(); i++)\n' +
-               '        {\n' +
-               '            final int index = i;\n' +
-               '            result.addAll((('+$conventions->codeType($constrainedClass)->codeToString($jClass)+') '+$getterCall+'.get(i)).allConstraints(context)'+$processDefects+');\n' +
-               '        }\n' +
-               '    }\n'
+               let i = j_variable(javaInt(), 'i');
+               j_if($getterCall->j_ne(j_null()),
+                    j_for($i->j_declare(j_int(0)), $i->j_lt($getterCall->j_invoke('size', [])), $i->j_inc(),
+                       [
+                          j_declare('final', $index, $i),
+                          $result->j_invoke('addAll', $getterCall->j_invoke('get', $i)->j_cast($constrainedClass)->j_invoke('allConstraints', $ctext, $defectList)->j_streamOf()->js_map($prefix)->js_resolve($defectList))
+                       ]
+                    )
+               );
             }
          );
       });
-
+      
 
    let constrainedClass = $jClass
       ->implements(javaParameterizedType($constrained, $iface))
-      ->addMethod(
+      ->addMethod(cls|
          javaMethod('public', $defectList, 'allConstraints', [],
-            'return allConstraints(new '+$conventions->codeType($conventions->className(DataQualityGraphContextClass))->codeToString($jClass)+'());'
+            j_return(j_this($cls)->j_invoke('allConstraints', j_new($conventions->className(DataQualityGraphContextClass), []), $defectList))
          )
       )
-      ->addMethod(
-         javaMethod('public', $defectList, 'allConstraints', [javaParam($conventions->className(DataQualityGraphContextClass), 'context')],
-            $conventions->codeType($defectList)->codeToString($jClass)+' result = new '+$conventions->codeType(javaClass('java.util.ArrayList'))->codeToString($jClass)+'<>();\n' +
-            'if (!context.visited.contains(this))\n' +
-            '{\n' +
-            '    context.visited.add(this);\n' +
-            $allConstraints->generateConstraintMethodCalls($typeInfo.class, $conventions) +
-            $propertyConstraintCalls->sort()->joinStrings() +
-            '}\n' +
-            'return result;'
-         )
-      )
+      ->addMethod({cls|
+         javaMethod('public', $defectList, 'allConstraints', $ctext,
+            [
+               $result->j_declare(j_new(javaArrayList($defect), [])),
+               j_if(j_not($ctext->j_field('visited', javaList(javaObject()))->j_invoke('contains', j_this($cls))),
+                    $ctext->j_field('visited', javaList(javaObject()))->j_invoke('add', j_this($cls))
+                       ->concatenate(
+                          if($constraintsEnabled,
+                             {|
+                                $allConstraints->toNumbered()
+                                  ->map(nc| j_this($cls)->j_invoke(constraintMethodName($nc.second, $nc.first, $class), [], javaOptional($defect))->j_invoke('ifPresent', $result->j_methodReference('add', javaFunctionType($defect, javaVoid())), javaVoid()))
+                                  ->concatenate($propertyConstraintCalls)
+                             },
+                             | []
+                          )
+                       )
+                       ->toOneMany()
+               ),
+               j_return($result)
+            ]
+         );
+      })
       ->addMethod(
          javaMethod('public', $iface, 'withConstraintsApplied', [],
             $conventions->codeType($defectList)->codeToString($jClass)+' defects = allConstraints();\n' +
@@ -192,39 +213,6 @@ function meta::pure::executionPlan::engine::java::generateToCheckedMethods(class
             )
          )
    );
-}
-
-function meta::pure::executionPlan::engine::java::generateAllConstraintsMethods(typeInfo:ClassTypeInfo[1], superTypeConstraintCheckersFields:meta::external::language::java::metamodel::Field[*], conventions:Conventions[1]):Project[*]
-{
-   let defectList = javaList($conventions->defectClass());
-
-   let javaClass = $conventions->constraintCheckerClassName($typeInfo.class)
-      ->addMethod(cls| 
-         javaMethod('public', $defectList, 'allConstraints', [],
-            'return allConstraints(new '+$conventions->codeType($conventions->className(DataQualityGraphContextClass))->codeToString($cls)+'());'
-         )
-      )
-      ->addMethod(cls| 
-         javaMethod('public', $defectList, 'allConstraints', [javaParam($conventions->className(DataQualityGraphContextClass), 'context')],
-            $conventions->codeType($defectList)->codeToString($cls)+' result = new '+$conventions->codeType(javaClass('java.util.ArrayList'))->codeToString($cls)+'<>();\n' +
-            'if (!context.visited.contains(this))\n' +
-            '{\n' +
-            '    context.visited.add(this);\n' +
-            $superTypeConstraintCheckersFields->map(f | '    result.addAll('+$f.name+'.allConstraints());\n')->joinStrings('') +
-            $typeInfo.constraints->generateConstraintMethodCalls($typeInfo.class, $conventions) +
-            $typeInfo.properties->map(p| $p->generatePropertyConstraintCall($conventions))->joinStrings() +
-            '}\n' +
-            'return result;'
-         )
-      );
-   newProject()->addClass($javaClass);
-}
-
-function <<access.private>> meta::pure::executionPlan::engine::java::generateConstraintMethodCalls(constraints:ConstraintInfo[*], class:meta::pure::metamodel::type::Class<Any>[1], conventions:Conventions[1]): String[1]
-{
-   $constraints->toNumbered()
-      ->map(nc| '    this.'+constraintMethodName($nc.second, $nc.first, $class)+'().ifPresent(result::add);')
-      ->joinStrings('\n');
 }
 
 function <<access.private>> meta::pure::executionPlan::engine::java::generatePropertyConstraintCall(property:AbstractProperty<Any>[1], conventions:Conventions[1]): String[1]
