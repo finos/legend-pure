@@ -51,3 +51,17 @@ Class meta::pure::alloy::connections::alloy::authentication::ApiTokenAuthenticat
 Class meta::pure::alloy::connections::alloy::authentication::TestDatabaseAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::DefaultH2AuthenticationStrategy
 {
 }
+
+Class meta::pure::alloy::connections::alloy::authentication::GCPWorkloadIdentityFederationWithAWSAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
+{
+    workloadProjectNumber : String[1];
+    serviceAccountEmail : String[1];
+    additionalGcpScopes: String[*];
+    workloadPoolId : String[1];
+    workloadProviderId: String[1];
+    awsAccountId: String[1];
+    awsRegion: String[1];
+    awsRole: String[1];
+    awsAccessKeyIdVaultReference: String[1];
+    awsSecretAccessKeyVaultReference: String[1];
+}

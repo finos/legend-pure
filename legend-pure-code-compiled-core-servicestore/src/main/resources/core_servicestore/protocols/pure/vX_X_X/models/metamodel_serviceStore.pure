@@ -130,22 +130,29 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::LocalMa
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceMapping
 {
-   service           : ServicePtr[1];
-   parameterMappings : ServiceParameterMapping[*];
+   service          : ServicePtr[1];
+   pathOffset       : Path[0..1];
+   requestBuildInfo : ServiceRequestBuildInfo[0..1];
 }
 
-Class <<typemodifiers.abstract>> meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceParameterMapping
+Class meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestBuildInfo
 {
-    _type           : String[1];
+   requestParametersBuildInfo : ServiceRequestParametersBuildInfo[0..1];
+   requestBodyBuildInfo       : ServiceRequestBodyBuildInfo[0..1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestParametersBuildInfo
+{
+   parameterBuildInfoList : ServiceRequestParameterBuildInfo[*];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestParameterBuildInfo
+{
    serviceParameter : String[1];
-}
-
-Class meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ParameterIndexedParameterMapping extends ServiceParameterMapping
-{
    transform        : Lambda[1];
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::PropertyIndexedParameterMapping extends ServiceParameterMapping
+Class meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestBodyBuildInfo
 {
    transform        : Lambda[1];
 }

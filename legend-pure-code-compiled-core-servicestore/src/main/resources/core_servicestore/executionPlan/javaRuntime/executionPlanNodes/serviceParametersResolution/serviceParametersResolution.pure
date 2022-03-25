@@ -46,12 +46,14 @@ function meta::external::store::service::executionPlan::engine::java::generateIm
    
    let serviceParamValueMap    = j_variable(javaMap(javaString(), javaObject()), 'serviceParamValueMap'); 
    
-   let varCodecs               = $node.parameterMappings.transform.expressionSequence->evaluateAndDeactivate()
+   let varCodecs               = $node.requestParametersBuildInfo.parameterBuildInfoList.transform.expressionSequence->evaluateAndDeactivate()
                                                         ->map(fe | $fe->findVariableExpressionsInValueSpecification())
                                                         ->removeDuplicatesBy({var | $var.name})
-                                                        ->map(var | j_variable(javaObject(), $var.name)->j_declare($inputMap->j_invoke('get', [j_string($node.propertyInputMap->get($var.name)->toOne())], javaObject())));
+                                                        ->map(var | assert($node.requiredVariableInputs.name->contains($var.name), | '\'' + $var.name + '\' is needed as source for ServiceParametersResolutionExecutionNode(' + $path + ') but not listed as source for this node.');
+                                                                    j_variable(javaObject(), $var.name)->j_declare($inputMap->j_invoke('get', [j_string($var.name)], javaObject())););
 
-   let propertiesMappingCodecs = $node.parameterMappings->map(pm | let paramName       = $pm.serviceParameter.name;
+   let propertiesMappingCodecs = $node.requestParametersBuildInfo.parameterBuildInfoList
+                                                        ->map(pm | let paramName       = $pm.serviceParameter.name;
                                                                    let paramTakesList  = $pm.serviceParameter.type.list;
                                                                    let propTransformer = $pm.transform.expressionSequence->evaluateAndDeactivate()->toOne();
                                                               

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::protocols::pure::vX_X_X::metamodel::executionPlan::*;
+import meta::protocols::pure::vX_X_X::metamodel::executionPlan::store::service::*;
 
 import meta::protocols::pure::vX_X_X::metamodel::store::service::*;
 import meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::*;
@@ -23,11 +24,17 @@ Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::store::service::R
    method          : meta::pure::functions::io::http::HTTPMethod[1];
    mimeType        : String[1];
    params          : ServiceParameter[*];
+   requestBodyDescription : RequestBodyDescription[0..1];
    securitySchemes : SecurityScheme[*];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::store::service::RequestBodyDescription
+{
+   mimeType  : String[1];
+   resultKey : String[1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::store::service::ServiceParametersResolutionExecutionNode extends meta::protocols::pure::vX_X_X::metamodel::executionPlan::ExecutionNode
 {
-   propertyInputMap  : Map<String, String>[1];
-   parameterMappings : ServiceParameterMapping[*];
+   requestParametersBuildInfo : ServiceRequestParametersBuildInfo[1];
 }

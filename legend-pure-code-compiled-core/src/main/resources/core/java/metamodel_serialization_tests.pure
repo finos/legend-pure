@@ -28,7 +28,7 @@ function <<test.Test>> meta::external::language::java::serialization::tests::cla
    let expected = 'package org.finos;\n' +
                   '\n' +
                   'import com.fasterxml.jackson.annotation.JsonIgnoreProperties;\n' +
-                  'import com.fasterxml.jackson.annotation.JsonIgnoreProperty;\n' +
+                  'import com.fasterxml.jackson.annotation.JsonProperty;\n' +
                   'import com.fasterxml.jackson.annotation.JsonSubTypes;\n' +
                   'import java.util.HashMap;\n' +
                   'import java.util.List;\n' +

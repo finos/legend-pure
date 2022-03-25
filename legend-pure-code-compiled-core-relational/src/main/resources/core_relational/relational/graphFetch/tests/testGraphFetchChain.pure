@@ -139,6 +139,57 @@ function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::rel
    );
 }
 
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::chain::testRelationalChainExecutionWithFilter(): Boolean[1]
+{
+   let tree = #{
+      Target_Firm {
+         firmName,
+         employeeCount
+      }
+   }#;
+   
+   let query = {|Target_Firm.all()->filter(x | $x.firmName == 'FIRM X')->graphFetch($tree)->serialize($tree)};
+   let mapping = M2M_Mapping;
+   let modelChainConnection = ^meta::pure::mapping::modelToModel::ModelChainConnection(
+      element = ^meta::pure::mapping::modelToModel::ModelStore(),
+      mappings = [meta::relational::tests::simpleRelationalMapping]
+   );
+   let runtime = ^meta::pure::runtime::Runtime(
+      connections = meta::relational::tests::testRuntime().connections->concatenate($modelChainConnection)
+   );
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual('{"firmName":"FIRM X","employeeCount":4}', $result);
+}
+
+function <<test.Test, test.AlloyOnly>> {serverVersion.start='v1_19_0'} meta::relational::graphFetch::tests::chain::testRelationalChainExecutionWithInScopeVariableFilter(): Boolean[1]
+{
+   let tree = #{
+      Target_Firm {
+         firmName,
+         employeeCount
+      }
+   }#;
+   
+   let query = {|
+      let name = 'FIRM X';
+      Target_Firm.all()->filter(x | $x.firmName == $name)->graphFetch($tree)->serialize($tree);
+   };
+   let mapping = M2M_Mapping;
+   let modelChainConnection = ^meta::pure::mapping::modelToModel::ModelChainConnection(
+      element = ^meta::pure::mapping::modelToModel::ModelStore(),
+      mappings = [meta::relational::tests::simpleRelationalMapping]
+   );
+   let runtime = ^meta::pure::runtime::Runtime(
+      connections = meta::relational::tests::testRuntime().connections->concatenate($modelChainConnection)
+   );
+
+   let result = execute($query, $mapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions()).values;
+
+   assertJsonStringsEqual('{"firmName":"FIRM X","employeeCount":4}', $result);
+}
+
 ###Pure
 import meta::relational::graphFetch::tests::chain::*;
 

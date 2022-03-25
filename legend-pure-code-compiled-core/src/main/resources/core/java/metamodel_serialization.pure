@@ -259,7 +259,7 @@ function <<access.private>> meta::external::language::java::serialization::doCon
       ->closeBrace();
 }
 
-function <<access.private>> meta::external::language::java::serialization::doMethod(sfer:Stringifier[1], m:meta::external::language::java::metamodel::Method[1]): Stringifier[1]
+function meta::external::language::java::serialization::doMethod(sfer:Stringifier[1], m:meta::external::language::java::metamodel::Method[1]): Stringifier[1]
 {
    let code = $m.body->map(b| j_code($b->toOne(), javaVoid()))->concatenate($m.bodyCode)->first();
 
@@ -878,7 +878,7 @@ function <<access.private>> meta::external::language::java::serialization::initi
    ^$sfer(stack=$j, wipLine='', pending='', completeLines='');
 }
 
-function <<access.private>> meta::external::language::java::serialization::getResult(sfer:Stringifier[1]): String[1]
+function meta::external::language::java::serialization::getResult(sfer:Stringifier[1]): String[1]
 {
    $sfer->finishLine(true).completeLines;
 }

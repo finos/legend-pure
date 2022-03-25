@@ -232,7 +232,7 @@ Class meta::external::language::java::metamodel::annotations::json::JsonCreator 
 
 Class
 {
-  meta::external::language::java::metamodel::annotations::AnnotationJavaInfo.javaClass = 'com.fasterxml.jackson.annotation.JsonIgnoreProperty'
+  meta::external::language::java::metamodel::annotations::AnnotationJavaInfo.javaClass = 'com.fasterxml.jackson.annotation.JsonProperty'
 }
 meta::external::language::java::metamodel::annotations::json::JsonProperty extends meta::external::language::java::metamodel::Annotation
 {
@@ -300,13 +300,21 @@ Class meta::external::language::java::metamodel::annotations::json::JsonInclude 
 }
 
 
-Class meta::external::language::java::metamodel::annotations::generated::Generated extends meta::external::language::java::metamodel::Annotation
+Class 
+{
+  meta::external::language::java::metamodel::annotations::AnnotationJavaInfo.javaClass = 'javax.annotation.Generated'
+}
+meta::external::language::java::metamodel::annotations::generated::Generated extends meta::external::language::java::metamodel::Annotation
 {
    value : String[1];
    comments: String[0..1];
 }
 
-Class meta::external::language::java::metamodel::annotations::override::Override extends meta::external::language::java::metamodel::Annotation
+Class 
+{
+  meta::external::language::java::metamodel::annotations::AnnotationJavaInfo.javaClass = 'java.lang.Override'
+}
+meta::external::language::java::metamodel::annotations::override::Override extends meta::external::language::java::metamodel::Annotation
 {
 }
 

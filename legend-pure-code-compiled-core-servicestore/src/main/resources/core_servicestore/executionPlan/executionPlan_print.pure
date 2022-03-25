@@ -29,10 +29,11 @@ function meta::external::store::service::executionPlan::toString::serviceStoreEx
 {
    'RestServiceExecutionNode\n'+
    $space+'('+header($s, $space, $extensions)+'\n'+
-   $space+'  url             = '+$s.url +'\n'+
-   $space+'  method          = '+$s.method->toString() +'\n'+
-   $space+'  mimeType        = '+$s.mimeType +'\n'+
-   $space+'  params          = '+$s.params->map(p | $p->serviceParamToString())->joinStrings('[', ', ' ,']') +'\n'+
+   $space+'  url = '+$s.url +'\n'+
+   $space+'  method = '+$s.method->toString() +'\n'+
+   $space+'  mimeType = '+$s.mimeType +'\n'+
+   $space+'  params = '+$s.params->map(p | $p->serviceParamToString())->joinStrings('[', ', ' ,']') +'\n'+
+   if($s.requestBodyDescription->isNotEmpty(), |$space+'  requestBodyDescription = ' + $s.requestBodyDescription->toOne().resultKey + '(' + $s.requestBodyDescription->toOne().mimeType +')\n', |'') +
    $space+'  securitySchemes = '+$s.securitySchemes->map(sec | $sec->securitySchemeToString($extensions))->joinStrings('[', ', ' ,']') +'\n'+
    $s.implementation->printImplementation('implementation', $space+'  ', $extensions) +'\n'+
    $space+')\n'
@@ -42,8 +43,7 @@ function meta::external::store::service::executionPlan::toString::serviceParamet
 {
    'ServiceParametersResolutionExecutionNode\n'+
    $space+'('+header($s, $space, $extensions)+'\n'+
-   $space+'  propertyInputMap = '+$s.propertyInputMap->keyValues()->map(p | $p.first + ' <- ' + $p.second)->joinStrings('[', ', ' ,']') +'\n'+
-   $space+'  serviceParameterMappings = '+$s.parameterMappings->map(pm |$pm->serviceParamMappingToString())->joinStrings('[', ', ' ,']') +'\n'+
+   $space+'  requestParametersBuildInfo = '+$s.requestParametersBuildInfo->serviceRequestParametersBuildInfoToString() +'\n'+
    $s.implementation->printImplementation('implementation', $space+'  ', $extensions) +'\n'+
    $space+')\n'
 }
@@ -64,9 +64,14 @@ function meta::external::store::service::executionPlan::toString::securityScheme
 }
 
 
-function meta::external::store::service::executionPlan::toString::serviceParamMappingToString(s:ServiceParameterMapping[1]):String[1]
+function meta::external::store::service::executionPlan::toString::serviceRequestParametersBuildInfoToString(s:ServiceRequestParametersBuildInfo[1]):String[1]
 {
-   $s.serviceParameter->serviceParamToString() + ' <- ' + $s.transform.expressionSequence->evaluateAndDeactivate()->toOne()->asString()
+   $s.parameterBuildInfoList->map(param | $param->serviceRequestParameterBuildInfoToString())->joinStrings('[', ', ' ,']');
+}
+
+function meta::external::store::service::executionPlan::toString::serviceRequestParameterBuildInfoToString(s:ServiceRequestParameterBuildInfo[1]):String[1]
+{
+   $s.serviceParameter->serviceParamToString() + ' = ' + $s.transform.expressionSequence->evaluateAndDeactivate()->toOne()->asString()
 }
 
 function meta::external::store::service::executionPlan::toString::serviceParamToString(s:ServiceParameter[1]):String[1]

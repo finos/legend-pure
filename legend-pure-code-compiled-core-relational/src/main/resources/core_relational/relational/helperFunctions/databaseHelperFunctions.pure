@@ -366,6 +366,7 @@ function meta::relational::functions::database::testDataSQLgeneration::convertVa
    // $value == '---null---' needs to be removed when split is fixed
    let stringToken = map(range($types->size()), {x |if($str->at($x) == '' || $str->at($x) == '---null---', |'null', |$types->at($x)->match([
                  s:Varchar[*] | '\'' + $str->at($x)->replace('\'', '\'\'') + '\'',
+                 s:SemiStructured[*] | '\'' + $str->at($x)->replace('\'', '\'\'') + '\'',
                  s:meta::relational::metamodel::datatype::Char[*] | '\'' + $str->at($x)->replace('\'', '\'\'') + '\'',
                  d:meta::relational::metamodel::datatype::Date[*] |  '\'' + $str->at($x) + '\'',
                  t:meta::relational::metamodel::datatype::Timestamp[*] |  '\'' + if($str->at($x)->length() > 10, |$str->at($x), |$str->at($x)) + '\'',

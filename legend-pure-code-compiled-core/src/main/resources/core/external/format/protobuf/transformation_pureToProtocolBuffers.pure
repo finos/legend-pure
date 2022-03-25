@@ -45,11 +45,32 @@ function meta::external::format::protobuf::generation::generateProtobufFromPureW
 
 function meta::external::format::protobuf::generation::generateProtobufFromPure(config:ProtobufConfig[1], class: Class<Any>[1..*]):ProtobufOutput[*]
 {
-  $class->classToMessage($config.options)->map(s|
+  let options = configToOptions($config);
+  $class->classToMessage($options)->map(s|
       let content = $s->meta::external::format::protobuf::serialization::toString();
       let fileName = if($s.package->isEmpty(), | $class.name->toOne() + '.proto', | $s.package->toOne()->protoPackageToFileName());
       ^ProtobufOutput(content=$content,fileName=$fileName, format = 'proto');
     );
+}
+
+function meta::external::format::protobuf::generation::configToOptions(config:ProtobufConfig[1]):Option[*]
+{
+  let properties = ProtobufConfig.properties->filter( p | $p.name != 'customOptions');
+  $properties->map( p | let res = $p->eval($config);
+                        if( !$res->isEmpty() ,| ^Option(name=$p.name->toOne()->splitOnCamelCase()->toLowerFirstCharacter()->joinStrings('_'), 
+                                                        value=$res->toOne()->toOptionValue()), | []);
+                        )->concatenate($config.customOptions->map(o | ^Option(name=$o.name, value=$o.value->toOptionValue())));
+}
+
+function meta::external::format::protobuf::generation::toOptionValue(any:Any[1]):Literal[1]
+{
+  $any->match([
+                s:String[1] | ^StringLiteral(value=$s),
+                i:Integer[1] | ^IntLiteral(value=$i),
+                f:Float[1] | ^FloatLiteral(value=$f),
+                b:Boolean[1] | ^BoolLiteral(value=$b),
+                e:meta::pure::metamodel::type::Enum[1] | ^IdentifierLiteral(value=$e.name)
+              ])
 }
 
 function meta::external::format::protobuf::generation::elementToProtoPackage(e:PackageableElement[1]):String[1]
@@ -67,7 +88,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
   meta::external::format::protobuf::generation::classToMessage([$class], [])
 }
 
-function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1..*], options:Options[0..1]):ProtoFile[*]
+function meta::external::format::protobuf::generation::classToMessage(class:Class<Any>[1..*], options:Option[*]):ProtoFile[*]
 {
    let allClasses = $class->map(c | $c->scanTypes([]))->removeDuplicates()->remove(Any);
    let typesMap = seedPureTypeToProtoBufTypeMapping($allClasses);
@@ -106,7 +127,7 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
                     (
                         name = $e->enumName(),
                         values = $e->enumValues()->map(v|^meta::external::format::protobuf::metamodel::Enum(constant=$v->toString(), constantNumber=$e->enumValues()->indexOf($v)))
-                    )->cast(@meta::external::format::protobuf::metamodel::TopLevelItem); //TODO - seems like a bug in pure should not be necessary
+                    )
                 );
 
       let topLevelDefs = $messages->concatenate($enumerations);      
@@ -122,7 +143,10 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
                                                                     , | $p.package->protoPackageToFileName()))
         ->removeDuplicates()->sort()->map(s | ^ProtoImport(name=$s));
         
-      ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs,
+      ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, 
+                 topLevelDefs=$topLevelDefs->sortBy(s|$s->match([m:Message[1]|$m.name,
+                                                                 e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e.name,
+                                                                 s:Service[1]|$s.name])),
                  imports=$imports,
                  options=$options);
    );
