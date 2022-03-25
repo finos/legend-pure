@@ -67,6 +67,7 @@
         <module>legend-pure-code-compiled-core-external-shared</module>
         <module>legend-pure-code-compiled-core-external-format-flatdata</module>
         <module>legend-pure-code-compiled-core-external-format-json</module>
+        <module>legend-pure-code-compiled-core-external-format-protobuf</module>
         <module>legend-pure-code-compiled-core-external-format-xml</module>
         <module>legend-pure-code-compiled-core-external-query-graphql</module>
 
