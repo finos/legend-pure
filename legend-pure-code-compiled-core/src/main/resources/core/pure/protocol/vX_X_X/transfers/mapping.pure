@@ -132,7 +132,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::
                (
                   id = $r.id,
                   class = $r.class->elementToPath(),
-                  _type = 'operation',
+                  _type = 'mergeOperation',
                   root = $r.root,
                   parameters = $r.parameters.id,
                   operation = $operation,

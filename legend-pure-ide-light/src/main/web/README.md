@@ -1,6 +1,6 @@
 # Pure IDE
 
-This is the code for the web application of the Pure IDE (Light) we bapplication. Notice that if you just need to boot the IDE, you can do so by doing a `mvn install` on the root project and start the Pure IDE with `Dropwizard`. Hence, starting the IDE here is mainly for development purpose.
+This is the code for the web application of the Pure IDE (Light) web application. Notice that if you just need to boot the IDE, you can do so by doing a `mvn install` on the root project and start the Pure IDE with `Dropwizard`. Hence, starting the IDE here is mainly for development purpose.
 
 ## Getting started
 

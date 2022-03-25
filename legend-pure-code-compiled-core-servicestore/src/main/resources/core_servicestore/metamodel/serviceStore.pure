@@ -87,7 +87,8 @@ Class meta::external::store::service::metamodel::ServiceParameter
 Enum meta::external::store::service::metamodel::Location
 {
    PATH,
-   QUERY
+   QUERY,
+   HEADER
 }
 
 Class <<typemodifiers.abstract>> meta::external::store::service::metamodel::TypeReference

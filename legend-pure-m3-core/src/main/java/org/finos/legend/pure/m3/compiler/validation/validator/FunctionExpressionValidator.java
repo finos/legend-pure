@@ -80,7 +80,7 @@ public class FunctionExpressionValidator implements MatchRunner<FunctionExpressi
         {
             EnumValidator.validateEnum(instance, processorSupport);
         }
-        if ("subType_Any_m__T_1__T_m_".equals(function.getName()))
+        if ("subType_Any_m__T_1__T_m_".equals(function.getName()) || "whenSubType_Any_1__T_1__T_$0_1$_".equals(function.getName()) || "whenSubType_Any_$0_1$__T_1__T_$0_1$_".equals(function.getName()) || "whenSubType_Any_MANY__T_1__T_MANY_".equals(function.getName()))
         {
             SubTypeValidator.validateSubType(instance, processorSupport);
         }

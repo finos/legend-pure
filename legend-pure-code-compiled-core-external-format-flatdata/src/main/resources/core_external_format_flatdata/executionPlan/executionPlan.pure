@@ -993,7 +993,7 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::cre
    let schemaClass = $withPropertyMethods->addAlloyStoreObjectReferenceMethodsForClass($context);
    mergeProjects([
       newProject()->addClass($schemaClass),
-      $schemaClass->createConstraintCheckingForClass($class, $context, $debug)
+      $schemaClass->createConstraintCheckingForClass($class, $context, false, $debug)
    ]);
 }
 

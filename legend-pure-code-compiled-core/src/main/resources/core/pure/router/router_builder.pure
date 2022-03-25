@@ -54,7 +54,7 @@ function meta::pure::router::builder::propagateVoid(v:ValueSpecification[1], ele
 }
 
 function meta::pure::router::builder::build(v:ValueSpecification[1], l:List<PermutationSet>[*], last:SetImplementation[0..1], mapping:Mapping[1], exeCtx: ExecutionContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):ValueSpecification[1]
-{
+{  
     $v->match([
                f:FunctionExpression[1]| if($f->isSerialize($extensions),
                                                  | // Not routing tree part in serialize function call
@@ -137,26 +137,24 @@ function meta::pure::router::builder::build(v:ValueSpecification[1], l:List<Perm
                                                                              let property = $f.func->cast(@Property<Nil,Any|*>);
                                                                              let propertyMappings = $setImplementation->match([
                                                                                                i:InstanceSetImplementation[1]|let pMapping = $i->propertyMappingsByPropertyName($propertyName);
-
-                                                                                                                              if($pMapping->isEmpty() && ($i->isNoMappingPassThru($property) || $i->isNoMappingDefaultToEmpty($property)),
+                                                                                                                              if($pMapping->isEmpty() && ($i->isNoMappingPassThru($property) || $i->isNoMappingDefaultToEmpty($property) || $i->isPartOfMerge()  ),
                                                                                                                                  | [],
-                                                                                                                                 {|
+                                                                                                                                 {|  
                                                                                                                                     assert(!$pMapping->isEmpty(), | 'No property mapping found for: "'+$propertyName+'" in "'+$setImplementation.id+'" in the mapping "'+$setImplementation.parent->elementToPath()+'"');
                                                                                                                                     $pMapping->toOne();
                                                                                                                                  }
                                                                                                                               );,
-                                                                                               o:OperationSetImplementation[1]| $o->resolveOperation($e.mapping)->map(i| let pMapping = $i->match([e:EmbeddedSetImplementation[1]| $e->propertyMappingsByPropertyName($propertyName),
-                                                                                                                                                                                                 a:InstanceSetImplementation[1]| $i.propertyMappingsByPropertyName($propertyName)
-                                                                                                                                                                                                ]);
-
-                                                                                                                                                                      if($pMapping->isEmpty() && ($i->isNoMappingPassThru($property) || $i->isNoMappingDefaultToEmpty($property)),
+                                                                                               o:OperationSetImplementation[1]|  $o->resolveOperation($e.mapping)->map(i|  let pMapping = $i->match([e:EmbeddedSetImplementation[1]| $e->propertyMappingsByPropertyName($propertyName),
+                                                                                                                                                                                                   a:InstanceSetImplementation[1]| $i.propertyMappingsByPropertyName($propertyName)
+                                                                                                                                                                                                ]);  
+                                                                                                                                                                      if($pMapping->isEmpty() && ($i->isNoMappingPassThru($property) || $i->isNoMappingDefaultToEmpty($property) || $o->instanceOf(MergeOperationSetImplementation)),
                                                                                                                                                                         | [],                         
                                                                                                                                                                         {| assert(!$pMapping->isEmpty(), | 'No property mapping found for: ' + $propertyName + ' in mapping ' + $i.class.name->toOne() + '[' + $i.id + ']');
                                                                                                                                                                           $pMapping->toOne();
                                                                                                                                                                         }
                                                                                                                                                                       );
                                                                                                                                          )
-                                                                                                                           ]);
+                                                                                                                           ;]);
 
                                                                              print(if($debug.debug,|$debug.space+'  propertyMappings found "'+$propertyMappings->size()->toString() +'" \n',|''));
 

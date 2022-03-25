@@ -96,7 +96,7 @@ function <<access.private>> meta::protocols::generation::java::translation::gene
   let returnType = javaClass('public', javaPackage('org.finos.legend.pure.generated'), 'Root_'+$c.package->toOne()->elementToPath('_')+'_'+$c.name->toOne());
 
   let parameters = [
-      j_parameter(pureTypeToJavaType($conventions, $c, PureOne), $c.name->toOne()->toLower()),
+      j_parameter(pureTypeToJavaType($conventions, $c, PureOne), $c.name->toOne()->toLower()->sanitizeJavaKeywords()),
       j_parameter(javaClass('public', javaPackage('org.finos.legend.engine.language.pure.compiler.toPureGraph'), 'PureModel'), 'pureModel')
   ];
 
@@ -177,13 +177,16 @@ function <<access.private>> meta::protocols::generation::java::translation::gene
   let returnType = javaClass('public', javaPackage('org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type'), 'Enum');
 
   let parameters = [
-      j_parameter(pureTypeToJavaType($conventions, $e, PureOne), $e->enumName()->toOne()->toLower()),
+      j_parameter(pureTypeToJavaType($conventions, $e, PureOne), $e->enumName()->toOne()->toLower()->sanitizeJavaKeywords()),
       j_parameter(javaClass('public', javaPackage('org.finos.legend.engine.language.pure.compiler.toPureGraph'), 'PureModel'), 'pureModel')
   ];
 
   javaMethod('public', $returnType, 'translate', $parameters,
              j_return(
-                j_invoke($parameters->at(1), 'getEnumValue', [j_string($e->elementToPath()), j_invoke($parameters->at(0), 'name', [], javaString())], $returnType)
+                j_conditional(j_eq($parameters->at(0), j_null()), 
+                              j_null(),
+                              j_invoke($parameters->at(1), 'getEnumValue', [j_string($e->elementToPath()), j_invoke($parameters->at(0), 'name', [], javaString())], $returnType)
+                )
              )
   );
 }

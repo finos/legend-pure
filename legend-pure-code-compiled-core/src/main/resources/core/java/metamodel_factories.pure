@@ -1032,6 +1032,10 @@ function meta::external::language::java::factory::inferImports(class:meta::exter
                                   ->concatenate($class.methods.parameters.annotations)
                                   ->concatenate($class.constructors.annotations)
                                   ->concatenate($class.constructors.parameters.annotations)
+                                  ->concatenate($class->match([
+                                     enm:meta::external::language::java::metamodel::Enumeration[1]| $enm.enumeration.annotations,
+                                     oth:Any[1] | []
+                                   ]))
                                   ->map(x|
                                           let javaClass = $x->genericType().rawType->toOne()->meta::pure::functions::meta::value4Tag('javaClass', meta::external::language::java::metamodel::annotations::AnnotationJavaInfo);
                                           assert(!$javaClass->isEmpty(), 'Error: Please provide the Java class that supports the annotation "'+$x->genericType().rawType->toOne()->elementToPath()+'"" using the profile "meta::external::language::java::metamodel::annotations::AnnotationJavaInfo"');

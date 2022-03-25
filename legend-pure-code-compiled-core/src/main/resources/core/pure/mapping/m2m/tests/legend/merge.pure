@@ -21,8 +21,9 @@ import meta::pure::graphFetch::execution::*;
 Class meta::pure::mapping::modelToModel::test::alloy::merge::SourcePersonWithFirstName
 {
    id:Integer[1];
-   sourceFirstName:String[0..1];
-   sourceAddress: meta::pure::mapping::modelToModel::test::alloy::merge::SourceAddress[0..1];
+   sourceFirstName:String[1];
+   nickName:String[*];
+   sourceAddress: meta::pure::mapping::modelToModel::test::alloy::merge::SourceAddress[1];
 }
 
 Class meta::pure::mapping::modelToModel::test::alloy::merge::SourcePersonWithLastName
@@ -36,7 +37,7 @@ Class meta::pure::mapping::modelToModel::test::alloy::merge::SourcePersonWithLas
 Class meta::pure::mapping::modelToModel::test::alloy::merge::SourcePersonWithAge
 {
    id:Integer[1];
-   sourceAge:Integer[0..1];
+   sourceAge:Integer[1];
 }
 
 
@@ -75,10 +76,11 @@ Class meta::pure::mapping::modelToModel::test::alloy::merge::PersonCombined
 
 Class meta::pure::mapping::modelToModel::test::alloy::merge::Person
 {
-   firstName : String[0..1];
+   firstName : String[1];
    lastName : String[0..1];
-   age:Integer[0..1]; //un-mapped property
+   age:Integer[1]; 
    address:meta::pure::mapping::modelToModel::test::alloy::merge::Address[0..1]; 
+   nickName:String[*];
 }
 
 
@@ -94,7 +96,7 @@ meta::pure::mapping::modelToModel::test::alloy::merge::testSimplemerge():Any[*]
                connections =[ ^JsonModelConnection(
                   element=^ModelStore(),
                   class = meta::pure::mapping::modelToModel::test::alloy::merge::SourcePersonWithFirstName,
-                  url = 'data:application/json,{"id":1,"sourceFirstName":"John","sourceAddress":{"sourceStreet":"Main st"}}'
+                  url = 'data:application/json,{"id":1,"sourceFirstName":"John","nickName":["Jo","Johnny"],"sourceAddress":{"id":1, "sourceStreet":"Main st"}}'
                                  ),
                         ^JsonModelConnection(
                      element=^ModelStore(),
@@ -110,10 +112,9 @@ meta::pure::mapping::modelToModel::test::alloy::merge::testSimplemerge():Any[*]
    ]
                ),
       
-      []
-   );
+      []);
 
-   let json = $result.values->toOne(); 
+   let json = $result.values->toOne();
    let expected = '{"firstName":"John","lastName":"Smith","address":{"street":"Main st"},"age":10}';
    assert(jsonEquivalent($expected->parseJSON(), $json->parseJSON()));
 }
@@ -206,7 +207,8 @@ Mapping meta::pure::mapping::modelToModel::test::alloy::merge::SimpleMergeModelM
             {
                ~src 	meta::pure::mapping::modelToModel::test::alloy::merge::SourcePersonWithFirstName
                firstName : $src.sourceFirstName,
-               address : $src.sourceAddress
+               address : $src.sourceAddress,
+               nickName: $src.nickName
            }
 
    meta::pure::mapping::modelToModel::test::alloy::merge::Person[p2] : Pure

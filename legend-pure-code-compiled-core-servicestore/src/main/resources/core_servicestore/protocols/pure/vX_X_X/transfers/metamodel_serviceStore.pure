@@ -114,8 +114,9 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::se
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceMapping(sm:ServiceMapping[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceMapping[1]
 {
    ^meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceMapping(
-      service           = $sm.service->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceToServicePtr(),
-      parameterMappings = $sm.parameterMappings->map(paramMapping | $paramMapping->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceStoreParameterMapping($extensions))
+      service          = $sm.service->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceToServicePtr(),
+      pathOffset       = $sm.pathOffset->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformAny([], newMap([])->cast(@Map<String,List<Any>>), $p->functionReturnMultiplicity(), $extensions))->cast(@meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::Path),
+      requestBuildInfo = $sm.requestBuildInfo->map(r | $r->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceRequestBuildInfo($extensions))
    )
 }
 
@@ -137,11 +138,32 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::se
    )
 }
 
-function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceStoreParameterMapping(s:ServiceParameterMapping[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceParameterMapping[1]
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceRequestBuildInfo(s:ServiceRequestBuildInfo[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestBuildInfo[1]
 {
-   ^meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ParameterIndexedParameterMapping(
-      _type            = 'parameter',
+   ^meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestBuildInfo(
+      requestParametersBuildInfo = $s.requestParametersBuildInfo->map(param | $param->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceRequestParametersBuildInfo($extensions)),
+      requestBodyBuildInfo       = $s.requestBodyBuildInfo->map(body | $body->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceRequestBodyBuildInfo($extensions))
+   )
+}
+
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceRequestParametersBuildInfo(s:ServiceRequestParametersBuildInfo[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestParametersBuildInfo[1]
+{
+   ^meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestParametersBuildInfo(
+      parameterBuildInfoList = $s.parameterBuildInfoList->map(param | $param->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceRequestParameterBuildInfo($extensions))
+   )
+}
+
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceRequestParameterBuildInfo(s:ServiceRequestParameterBuildInfo[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestParameterBuildInfo[1]
+{
+   ^meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestParameterBuildInfo(
       serviceParameter = $s.serviceParameter.name,
       transform        = $s.transform->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformLambda($extensions)
+   )
+}
+
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceRequestBodyBuildInfo(s:ServiceRequestBodyBuildInfo[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestBodyBuildInfo[1]
+{
+   ^meta::protocols::pure::vX_X_X::metamodel::store::service::mapping::ServiceRequestBodyBuildInfo(
+      transform = $s.transform->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformLambda($extensions)
    )
 }

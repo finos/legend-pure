@@ -96,6 +96,15 @@ function meta::relational::functions::database::setUpData(t:String[1], mapping:M
    meta::alloy::service::execution::setUpDataSQLs($t, $database);
 }
 
+function meta::relational::functions::database::setUpData(records:List<String>[*], mapping:Mapping[*], runtime:Runtime[1]):String[*]
+{
+   let databases = $mapping->extractDBs($runtime);
+
+   let database = if ($databases->size() == 1, | $databases->at(0), | ^Database(name='Default_CatchAll', includes = $databases));
+
+   meta::alloy::service::execution::setUpDataSQLs($records, $database);
+}
+
 // This function is needed because split does not preserve empty strings
 // We work around by inserting a non-empty value, doing a split, and then removing the non-empty value
 function <<access.private>> meta::alloy::service::execution::splitWithEmptyValue(s:String[1]) : String[*]
@@ -116,7 +125,7 @@ function <<access.private>> meta::alloy::service::execution::replaceWithEmptyVal
    if ($replaced->contains(',,'), | meta::alloy::service::execution::replaceWithEmptyValue($replaced, $delimForEmptyCsvField), | $replaced);
 }
 
-function meta::alloy::service::execution::setUpDataSQLs(data:String[1], db:Database[1]) : String[*]
+function <<access.private>> meta::alloy::service::execution::schemaAndTableSetup(db:Database[1]):String[*]
 {
    let allSchemas = $db->allSchemas();
 
@@ -136,11 +145,24 @@ function meta::alloy::service::execution::setUpDataSQLs(data:String[1], db:Datab
       })
    });
 
+   $schemaSetup->concatenate($tableSetup);
+}
+
+function meta::alloy::service::execution::setUpDataSQLs(data:String[1], db:Database[1]) : String[*]
+{
+   let schemaAndTableSetup = $db->meta::alloy::service::execution::schemaAndTableSetup();
+
    let formattedData = $data->split('\n')
                             ->map(l|list($l->meta::alloy::service::execution::splitWithEmptyValue()))
                             ->concatenate(list(''));
 
-   $schemaSetup->concatenate($tableSetup)->concatenate(loadCsvDataToDbTable($formattedData, $db, t:Table[1]|$t));
+   $schemaAndTableSetup->concatenate(loadCsvDataToDbTable($formattedData, $db, t:Table[1]|$t));
+}
+
+function meta::alloy::service::execution::setUpDataSQLs(records:List<String>[*], db:Database[1]) : String[*]
+{
+   let schemaAndTableSetup = $db->meta::alloy::service::execution::schemaAndTableSetup();
+   $schemaAndTableSetup->concatenate(loadCsvDataToDbTable($records, $db, t:Table[1]|$t));
 }
 
 function {service.contentType='text/csv', service.contentDisposition='attachment;filename=result.csv'} meta::csv::toCSV(t:TabularDataSet[1]):String[1]

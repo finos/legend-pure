@@ -45,14 +45,19 @@ function meta::protocols::pure::vX_X_X::extension::store::service::getServiceSto
                    method           = $ser.method,
                    mimeType         = $ser.mimeType,
                    securitySchemes  = $ser.securitySchemes->map(s | $s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::transformSecurityScheme($extensions)),
+                   requestBodyDescription = if($ser.requestBodyDescription->isEmpty(),
+                                               |[],
+                                               |^meta::protocols::pure::vX_X_X::metamodel::executionPlan::store::service::RequestBodyDescription(
+                                                    mimeType = $ser.requestBodyDescription.mimeType->toOne(),
+                                                    resultKey = $ser.requestBodyDescription.resultKey->toOne()
+                                                 )),
                    params           = $ser.params->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::transformServiceStoreParameter())
                 ),
              spr:meta::external::store::service::executionPlan::nodes::ServiceParametersResolutionExecutionNode[1]|
                 ^meta::protocols::pure::vX_X_X::metamodel::executionPlan::store::service::ServiceParametersResolutionExecutionNode(
-                   _type             = 'serviceParametersResolution',
-                   resultType        = $spr.resultType->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformResultType($mapping, $extensions),
-                   propertyInputMap  = $spr.propertyInputMap,
-                   parameterMappings = $spr.parameterMappings->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceStoreParameterMapping($extensions))
+                   _type                      = 'serviceParametersResolution',
+                   resultType                 = $spr.resultType->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformResultType($mapping, $extensions),
+                   requestParametersBuildInfo = $spr.requestParametersBuildInfo->map(p | $p->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::store::service::mapping::transformServiceRequestParametersBuildInfo($extensions))
                 )
           ]},
       transfers_mapping_transformSetImplementation2 = {mapping:Mapping[1], extensions:meta::pure::router::extension::RouterExtension[*] | [

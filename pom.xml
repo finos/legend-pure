@@ -20,13 +20,13 @@
     <parent>
         <groupId>org.finos</groupId>
         <artifactId>finos</artifactId>
-        <version>2</version>
+        <version>4</version>
     </parent>
 
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>1.51.2-SNAPSHOT</version>
+    <version>1.52.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -280,7 +280,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
@@ -1033,7 +1033,7 @@
         <repository>
             <id>ossrh</id>
             <name>OSSRH Public Group</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
@@ -1041,7 +1041,7 @@
         <repository>
             <id>ossrh-releases</id>
             <name>OSSRH Public Releases Group</name>
-            <url>https://oss.sonatype.org/content/repositories/releases/</url>
+            <url>https://s01.oss.sonatype.org/content/repositories/releases/</url>
         </repository>
     </repositories>
 </project>
