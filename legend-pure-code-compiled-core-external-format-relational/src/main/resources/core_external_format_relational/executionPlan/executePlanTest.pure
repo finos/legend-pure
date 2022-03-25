@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import meta::external::format::relational::*;
 import meta::external::format::relational::executionPlan::test::*;
 import meta::external::format::relational::metamodel::*;
+import meta::external::format::json::*;
 import meta::external::format::json::metamodel::*;
+import meta::external::shared::format::*;
 import meta::external::shared::format::binding::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::metamodel::*;
@@ -28,180 +31,230 @@ import meta::pure::runtime::*;
 import meta::pure::mapping::*;
 import meta::pure::graphFetch::*;
 
+function <<meta::pure::profiles::test.Test>> meta::external::format::relational::executionPlan::test::planGenerationForRelationalTds(): Boolean[1]
+{
+  let extensions = routerExtensions('externalFormat', relationalFormatExtension())
+    ->concatenate(meta::pure::router::extension::defaultRelationalExtensions());
+
+  let schemaSet = ^SchemaSet(
+    name    = 'TestSchema',
+    package = meta::external::format::json::executionPlan::test,
+    format  = 'RELATIONAL',
+    schemas = ^Schema(
+        id = 'TabularDataSet',
+        detail  = ^RelationalTdsSchema(table = meta::relational::tests::dbInc.schema('default').table('personTable')->toOne())
+    )
+  );
+   
+  let binding = ^Binding(
+    name        = 'TestBinding',
+    package     = meta::external::format::json::executionPlan::test,
+    schemaSet   = $schemaSet,
+    contentType = 'application/x.relational',
+    modelUnit   = newModelUnit()->include(meta::pure::tds::TabularDataSet)
+  );
+
+  let plan = executionPlan(
+    |Person.all()          
+        ->project([x|$x.firstName, x|$x.lastName], ['FIRSTNAME', 'LASTNAME'])
+        ->from(meta::pure::executionPlan::tests::relational::RelationalMapping, meta::relational::tests::testRuntime())
+        ->externalize($binding),
+    $extensions
+  );
+  
+  let planString = $plan->planToString(false, $extensions);
+
+  let expected =
+    'Relational_TDS_Serialize\n' +
+    '(\n' +
+    '  type = String\n' +
+    '  resultSizeRange = 1\n' +
+    '  checked = false\n' +
+    '  binding = meta::external::format::json::executionPlan::test::TestBinding\n' +
+    '\n' +
+    '  (\n' +
+    '    Relational\n' +
+    '    (\n' +
+    '      type = TDS[(FIRSTNAME, String, VARCHAR(200), ""), (LASTNAME, String, VARCHAR(200), "")]\n' +
+    '      resultColumns = [("FIRSTNAME", VARCHAR(200)), ("LASTNAME", VARCHAR(200))]\n' +
+    '      sql = select "root".FIRSTNAME as "FIRSTNAME", "root".LASTNAME as "LASTNAME" from personTable as "root"\n' +
+    '      connection = TestDatabaseConnection(type = "H2")\n' +
+    '    )\n' +
+    '  )\n' +
+    ')\n';
+
+   assertEquals($expected, $planString);
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::format::relational::executionPlan::test::planGenerationForRelationalGraph(): Boolean[1]
+{
+  let extensions = routerExtensions('externalFormat', [relationalFormatExtension(), jsonFormatExtension()])
+    ->concatenate(meta::pure::router::extension::defaultRelationalExtensions());
+
+  let srcBinding = ^Binding(
+    name        = 'TestBinding2',
+    package     = meta::external::format::json::executionPlan::test,
+    contentType = 'application/json',
+    modelUnit   = newModelUnit()->include([Persons, Person])
+  );
+
+  let schemaSet = ^SchemaSet(
+    name    = 'TestSchema',
+    package = meta::external::format::json::executionPlan::test,
+    format  = 'RELATIONAL',
+    schemas = ^Schema(
+        id = 'Graph',
+        detail  = ^RelationalGraphSchema(schema = meta::relational::tests::dbInc.schema('default')->toOne())
+    )
+  );
+
+  let targetBinding = ^Binding(
+    name        = 'TestBinding',
+    package     = meta::external::format::json::executionPlan::test,
+    schemaSet   = $schemaSet,
+    contentType = 'application/x.relational',
+    modelUnit   = newModelUnit()->include(Persons)
+  );
+
+  let tree = #{  
+    Persons{
+      'personTable': person{
+        'FIRSTNAME': firstName,
+        'LASTNAME': lastName,
+        AGE
+      }
+    }
+  }#;
+
+  let plan = executionPlan(
+    |Persons.all()          
+        ->graphFetchChecked($tree)
+        ->from(meta::external::format::relational::executionPlan::test::M2MMapping, ^Runtime(connections = ^ExternalFormatConnection(element = $srcBinding, externalSource = ^UrlStreamExternalSource(url = 'executor:default'))))
+        ->externalize($targetBinding),
+    $extensions
+  );
+
+//   let boundPlan = $plan->generatePlatformCode(^meta::pure::executionPlan::PlatformCodeGenerationConfig(platform=meta::pure::executionPlan::Platform.JAVA), $extensions);
+//   $boundPlan->planToString(true, $extensions)->println();
+   
+  let planString = $plan->planToString(false, $extensions);
+
+  let expected =
+      'Relational_Graph_Serialize\n' +
+      '(\n' +
+      '  type = String\n' +
+      '  resultSizeRange = 1\n' +
+      '  checked = true\n' +
+      '  binding = meta::external::format::json::executionPlan::test::TestBinding\n' +
+      '\n' +
+      '  (\n' +
+      '    GlobalGraphFetch\n' +
+      '    (\n' +
+      '      type = PartialClass[impls=[(meta::external::format::relational::executionPlan::test::Persons | M2MMapping.meta_external_format_relational_executionPlan_test_Persons)], propertiesWithParameters = [person]]\n' +
+      '      resultSizeRange = *\n' +
+      '      store = MODEL\n' +
+      '      localGraphFetchExecutionNode = \n' +
+      '         InMemoryRootGraphFetch\n' +
+      '         (\n' +
+      '           type = PartialClass[impls=[(meta::external::format::relational::executionPlan::test::Persons | M2MMapping.meta_external_format_relational_executionPlan_test_Persons)], propertiesWithParameters = [person]]\n' +
+      '           graphFetchTree = [meta_external_format_relational_executionPlan_test_Persons/meta::external::format::relational::executionPlan::test::Persons]{@(meta_external_format_relational_executionPlan_test_Persons->meta_external_format_relational_executionPlan_test_Person)@[meta_external_format_relational_executionPlan_test_Person/person]{@(meta_external_format_relational_executionPlan_test_Person->)@[/firstName],@(meta_external_format_relational_executionPlan_test_Person->)@[/lastName],@(meta_external_format_relational_executionPlan_test_Person->)@[/AGE]}}\n' +
+      '           nodeIndex = 0\n' +
+      '           batchSize = 1\n' +
+      '           checked = true\n' +
+      '           (\n' +
+      '             DataQuality\n' +
+      '             (\n' +
+      '               type = PartialClass[impls=[], propertiesWithParameters = [person]]\n' +
+      '               resultSizeRange = *\n' +
+      '               enableConstraints = true\n' +
+      '               checked = true\n' +
+      '\n' +
+      '               (\n' +
+      '                 JSON_Deserialize\n' +
+      '                 (\n' +
+      '                   type = PartialClass[impls=[], propertiesWithParameters = [person]]\n' +
+      '                   resultSizeRange = *\n' +
+      '                   binding = meta::external::format::json::executionPlan::test::TestBinding2\n' +
+      '\n' +
+      '                   (\n' +
+      '                     UrlStream\n' +
+      '                     (\n' +
+      '                       type = String\n' +
+      '                       url = executor:default\n' +
+      '\n' +
+      '                     )\n' +
+      '                   )\n' +
+      '                 )\n' +
+      '               )\n' +
+      '             )\n' +
+      '           )\n' +
+      '           children = [\n' +
+      '              InMemoryPropertyGraphFetch\n' +
+      '              (\n' +
+      '                type = PartialClass[impls=[(meta::external::format::relational::executionPlan::test::Person | M2MMapping.meta_external_format_relational_executionPlan_test_Person)], propertiesWithParameters = [firstName, lastName, AGE]]\n' +
+      '                graphFetchTree = @(meta_external_format_relational_executionPlan_test_Persons->meta_external_format_relational_executionPlan_test_Person)@[meta_external_format_relational_executionPlan_test_Person/person]{@(meta_external_format_relational_executionPlan_test_Person->)@[/firstName],@(meta_external_format_relational_executionPlan_test_Person->)@[/lastName],@(meta_external_format_relational_executionPlan_test_Person->)@[/AGE]}\n' +
+      '                nodeIndex = 1\n' +
+      '                parentIndex = 0\n' +
+      '                children = [\n' +
+      '                   \n' +
+      '                ]\n' +
+      '              )\n' +
+      '\n' +
+      '           ]\n' +
+      '         )\n' +
+      '      children = [\n' +
+      '         \n' +
+      '      ]\n' +
+      '    )\n' +
+      '  )\n' +
+      ')\n';   
+
+  assertEquals($expected, $planString);
+}
+
 Class meta::external::format::relational::executionPlan::test::Persons
 {
-   person: meta::external::format::relational::executionPlan::test::Person[*];
+  person: meta::external::format::relational::executionPlan::test::Person[*];
 }
 
 Class meta::external::format::relational::executionPlan::test::Person
 {
-   firstName : String[1];
-   lastName  : String[1];
-   AGE  : Integer[1];
+  firstName : String[1];
+  lastName  : String[1];
+  AGE  : Integer[1];
+  // fullName(x: String[1]){ $this.firstName + $x + $this.lastName }:String[1];
 }
 
-function meta::hello::relational():Binding[1]
-{
-   let schemaSet = ^SchemaSet(
-      name    = 'TestSchema',
-      package = meta::external::format::json::executionPlan::test,
-      format  = 'RELATIONAL',
-      schemas = ^Schema(
-         id = 'TabularDataSet',
-         detail  = ^meta::external::format::relational::metamodel::RelationalTdsSchema(
-            table = meta::relational::tests::dbInc.schema('default').table('personTable')->toOne()
-         )
-      )
-   );
-   
-   let binding = ^Binding(
-      name        = 'TestBinding',
-      package     = meta::external::format::json::executionPlan::test,
-      schemaSet   = $schemaSet,
-      contentType = 'application/x.relational',
-      modelUnit   = newModelUnit()->include(meta::pure::tds::TabularDataSet)
-   );
-}
-
-function meta::hello::relationalGraph():Binding[1]
-{
-   let schemaSet = ^SchemaSet(
-      name    = 'TestSchema',
-      package = meta::external::format::json::executionPlan::test,
-      format  = 'RELATIONAL',
-      schemas = ^Schema(
-         id = 'Graph',
-         detail  = ^meta::external::format::relational::metamodel::RelationalGraphSchema(
-           rootClass = Persons,
-           tables = ^RelationalGraphPropertyToTable(
-             property = 'person',
-             table = meta::relational::tests::dbInc.schema('default').table('personTable')->toOne(),
-             propertyToColumn = [
-               pair('firstName', meta::relational::tests::dbInc.schema('default').table('personTable')->toOne().column('FIRSTNAME')->toOne()),
-               pair('lastName', meta::relational::tests::dbInc.schema('default').table('personTable')->toOne().column('LASTNAME')->toOne())
-             ]
-            )
-         )
-      )
-   );
-   
-   let binding = ^Binding(
-      name        = 'TestBinding',
-      package     = meta::external::format::json::executionPlan::test,
-      schemaSet   = $schemaSet,
-      contentType = 'application/x.relational',
-      modelUnit   = newModelUnit()->include([Persons, Person])
-   );
-}
-
-function <<meta::pure::profiles::test.Test>> meta::external::format::relational::executionPlan::test::relationalDataNodesChecked(): Boolean[1]
-{
-   let extensions = meta::external::shared::format::routerExtensions(
-     'externalFormat',
-     [
-       meta::external::format::relational::relationalFormatExtension(),       
-       meta::external::format::json::jsonFormatExtension()
-     ])->concatenate(meta::pure::router::extension::defaultRelationalExtensions());
-
-  // let binding = meta::hello::json();
-  let binding = meta::hello::relational();
-  
-  // let plan = executionPlan(
-  //    |Person.all()->graphFetchChecked($tree)->externalize($binding),
-  //     SelfMapping,
-  //     ^Runtime(
-  //        connections = ^ExternalFormatConnection(
-  //           element        = $binding,
-  //           externalSource = ^UrlStreamExternalSource(url = 'executor:default')
-  //        )
-  //     ),
-  //     ^ExecutionContext(),
-  //     $extensions,
-  //     noDebug()
-  //  );
-
-   let plan = executionPlan(
-     |Person.all()
-          ->from(meta::pure::executionPlan::tests::relational::alternateSimpleMapping, meta::relational::tests::testRuntime())
-          ->project([x|$x.firstName, x|$x.lastName], ['FIRSTNAME', ['LASTNAME']])
-          ->externalize($binding)
-          ,
-      $extensions
-   );
-   
-   let boundPlan = $plan->generatePlatformCode(^meta::pure::executionPlan::PlatformCodeGenerationConfig(platform=meta::pure::executionPlan::Platform.JAVA), $extensions);
-   //$boundPlan->planToString(true, $extensions)->println();
-   
-   //let planString = $plan->planToString(false, $extensions);
-
-/////////////////////
-
-   let srcBinding = ^Binding(
-      name        = 'TestBinding2',
-      package     = meta::external::format::json::executionPlan::test,
-      contentType = 'application/json',
-      modelUnit   = newModelUnit()->include([Persons, Person])
-   );
-
-   let tree = #{Persons{person{firstName, lastName}}}#;
-    let graphBinding = meta::hello::relationalGraph();
-    $graphBinding->meta::external::format::relational::executionPlan::helperFunction::generateTree(Persons)->printTree();
-   let plan2 = executionPlan(
-     |Persons.all()
-          ->from(meta::external::format::relational::executionPlan::test::SelfMapping, ^Runtime(connections = ^ExternalFormatConnection(element = $srcBinding, externalSource = ^UrlStreamExternalSource(url = 'executor:default'))))
-          ->graphFetchChecked($tree)
-          ->externalize($graphBinding)
-          ,
-      $extensions
-   );
-   
-   let boundPlan2 = $plan2->generatePlatformCode(^meta::pure::executionPlan::PlatformCodeGenerationConfig(platform=meta::pure::executionPlan::Platform.JAVA), $extensions);
-   $boundPlan2->planToString(true, $extensions)->println();
-   
-  //let planString2 = $plan2->planToString(false, $extensions);
-
-   
-   false;
-}
-
-###Mapping
-
-import meta::external::format::relational::executionPlan::test::*;
-
-Mapping meta::external::format::relational::executionPlan::test::SelfMapping
-(
-   Persons: Pure
-   {
-      ~src Persons
-      
-      person   : $src.person
-   }
-
-   Person: Pure
-   {
-      ~src Person
-      
-      firstName   : $src.firstName,
-      lastName    : $src.lastName,
-      AGE         : $src.AGE
-   }
-)
 ###Mapping
 import meta::relational::tests::*;
 import meta::relational::tests::model::simple::*;
-Mapping meta::pure::executionPlan::tests::relational::alternateSimpleMapping
+import meta::external::format::relational::executionPlan::test::*;
+
+Mapping meta::external::format::relational::executionPlan::test::M2MMapping
 (
+  Persons: Pure
+  {
+    ~src Persons
+    person   : $src.person
+  }
 
-    meta::external::format::relational::executionPlan::test::Person : Relational
-            {
-                scope([dbInc])
-                (
-                    firstName : personTable.FIRSTNAME
-                ),
-                scope([dbInc]default.personTable)
-                (
-                    lastName : LASTNAME
-                )
-            }
+  meta::external::format::relational::executionPlan::test::Person: Pure
+  {
+    ~src meta::external::format::relational::executionPlan::test::Person
+    firstName   : $src.firstName,
+    lastName    : $src.lastName,
+    AGE         : $src.AGE
+  }
+)
 
+Mapping meta::pure::executionPlan::tests::relational::RelationalMapping
+(
+  meta::external::format::relational::executionPlan::test::Person : Relational
+  {
+    scope([dbInc]default.personTable)
+    (        
+      firstName : FIRSTNAME,
+      lastName : LASTNAME
+    )
+  }
 )

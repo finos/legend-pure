@@ -14,18 +14,10 @@
 
 Class meta::external::format::relational::metamodel::RelationalTdsSchema extends meta::external::shared::format::metamodel::SchemaDetail
 {
-   table: meta::relational::metamodel::relation::Table[1];  
+   table: meta::relational::metamodel::relation::Table[1];
 }
 
 Class meta::external::format::relational::metamodel::RelationalGraphSchema extends meta::external::shared::format::metamodel::SchemaDetail
 {
-   rootClass: Class<Any>[1];
-   tables: meta::external::format::relational::metamodel::RelationalGraphPropertyToTable[1..*];  
-}
-
-Class meta::external::format::relational::metamodel::RelationalGraphPropertyToTable
-{
-   property: String[1];
-   table: meta::relational::metamodel::relation::Table[1];
-   propertyToColumn: Pair<String, meta::relational::metamodel::Column>[*];
+   schema: meta::relational::metamodel::Schema[1];
 }

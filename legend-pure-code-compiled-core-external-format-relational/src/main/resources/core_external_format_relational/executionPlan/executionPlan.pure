@@ -24,6 +24,7 @@ import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::engine::java::*;
 import meta::pure::executionPlan::toString::*;
 import meta::pure::graphFetch::*;
+import meta::pure::graphFetch::executionPlan::*;
 import meta::pure::router::extension::*;
 import meta::pure::runtime::*;
 import meta::external::language::java::factory::project::*;
@@ -54,6 +55,7 @@ function meta::external::format::relational::executionPlan::generateSerializeNod
                            |$binding.schemaSet.schemas->filter(s | $s.id == $binding.schemaId)->toOne());
 
 
+// todo validate children 
   $schema.detail->match([
     tds: RelationalTdsSchema[1] | ^meta::external::format::relational::executionPlan::RelationalTdsSerializeExecutionNode(resultType = ^ResultType(type=String), resultSizeRange = PureOne, checked = $checked, binding = $binding, executionNodes = $children),
     graph: RelationalGraphSchema[1] | ^meta::external::format::relational::executionPlan::RelationalGraphSerializeExecutionNode(resultType = ^ResultType(type=String), resultSizeRange = PureOne, checked = $checked, binding = $binding, executionNodes = $children)
@@ -135,54 +137,36 @@ function meta::external::format::relational::executionPlan::prepareRelationalGra
   let classIn = $node.executionNodes.resultType->match([
                          c:ClassResultType[1] | $c.type->cast(@Class<Any>)
                       ]);
-  let graph = if($binding.schemaId->isEmpty(),
-                          |$binding.schemaSet.schemas->at(0),
-                          |$binding.schemaSet.schemas->filter(s | $s.id == $binding.schemaId)->toOne()).detail->cast(@RelationalGraphSchema);
+  assert($classIn->in($binding.modelUnit->resolve().classes), |'Class ' + $classIn->elementToPath() + ' not found on binding model unit.');
 
-  let jsonBinding = ^Binding(name = $binding.name->toOne() + '_graphGen', package = $binding.package, contentType = 'application/json', modelUnit = $binding.modelUnit);
-  let bindingDetail = $jsonBinding->bindDetails();
-  assert($bindingDetail->instanceOf(JsonSchemaBindingDetail), | 'Detailed binding failed: ' + $bindingDetail->cast(@FailedBindingDetail).errorMessages->joinStrings('\n'));      
-  $binding->generateTree($classIn)->treeToContext($path, $context);
+  let tree = $node.executionNodes->at(0)->cast(@GlobalGraphFetchExecutionNode).localGraphFetchExecutionNode.graphFetchTree->cast(@RootGraphFetchTree<Any>);
+  $tree->validateTree($binding);
+  $tree->treeToContext($path, $context);
 }
 
-function meta::external::format::relational::executionPlan::helperFunction::generateTree(binding:Binding[1], classIn:Class<Any>[1]): RootGraphFetchTree<Any>[1] 
+function meta::external::format::relational::executionPlan::helperFunction::validateTree(tree:RootGraphFetchTree<Any>[1], binding:Binding[1]): Boolean[1]
 {
-  let graph = if($binding.schemaId->isEmpty(),
+  let dbSchema = if($binding.schemaId->isEmpty(),
                           |$binding.schemaSet.schemas->at(0),
-                          |$binding.schemaSet.schemas->filter(s | $s.id == $binding.schemaId)->toOne()).detail->cast(@RelationalGraphSchema);
-
-  let jsonBinding = ^Binding(name = $binding.name->toOne() + '_graphGen', package = $binding.package, contentType = 'application/json', modelUnit   = newModelUnit()->include($graph.rootClass)->include($graph.tables->map(x | $graph.rootClass->classPropertyByName($x.property).genericType.rawType->toOne())));
-  let bindingDetail = $jsonBinding->bindDetails();
-  assert($bindingDetail->instanceOf(JsonSchemaBindingDetail), | 'Detailed binding failed: ' + $bindingDetail->cast(@FailedBindingDetail).errorMessages->joinStrings('\n'));
-  generateRootTreeFromBindingDetail($classIn, $bindingDetail->cast(@JsonSchemaBindingDetail))->setSchemaAliasToTree($graph);
+                          |$binding.schemaSet.schemas->filter(s | $s.id == $binding.schemaId)->toOne()).detail->cast(@RelationalGraphSchema).schema;
+  $tree.subTrees->filter(x | $x->instanceOf(PropertyGraphFetchTree))->cast(@PropertyGraphFetchTree)->forAll(x | $x->validateSubTree($dbSchema));
 }
 
-function meta::external::format::relational::executionPlan::helperFunction::setSchemaAliasToTree(tree:RootGraphFetchTree<Any>[1], schema:RelationalGraphSchema[1]): RootGraphFetchTree<Any>[1]
+function meta::external::format::relational::executionPlan::helperFunction::validateSubTree(tree:PropertyGraphFetchTree[1], dbSchema:meta::relational::metamodel::Schema[1]): Boolean[1]
 {
-  let subTreesDefined = $tree.subTrees
-          ->filter(x | $x->instanceOf(PropertyGraphFetchTree))->cast(@PropertyGraphFetchTree)
-          ->filter(x | $x.property.name->in($schema.tables.property));
+  //use FailedBindingDetail to collect errors
+  let tableName = $tree.alias->isEmpty()->if(|$tree.property.name->toOne(), |$tree.alias->toOne());
+  let dbTable = $dbSchema.table($tableName);
+  assert($dbTable->isNotEmpty(), |'Table: ' + $tableName + '(property: ' + $tree.property.name->toOne() + ') not found on binding schema: ' + $dbSchema.name);
 
-  assert($subTreesDefined->size() == $schema.tables->size(), |'Not all tables defined on schema found on model root class');
-
-  let subTreesWithTableAlias = $subTreesDefined->map({x|
-      let schemaTable = $schema.tables->filter(t | $x.property.name == $t.property)->first();
-      ^$x(
-        alias = $schemaTable.table.name,
-        subTrees = $x.subTrees->cast(@PropertyGraphFetchTree)->map({p|
-          let propertyColumn = $schemaTable.propertyToColumn->filter(pc | $pc.first == $p.property.name)->first();
-          let columnWithAlias = ^$p(alias = if($propertyColumn->isEmpty(), |$p.property.name, |$propertyColumn->toOne().second.name));
-
-          let tCol = $schemaTable.table.column($columnWithAlias.alias->toOne());
-          assert($tCol->isNotEmpty(), |'Output column: ' + $columnWithAlias.alias->toOne() + ' not found in binding table: ' + $schemaTable.table.name->toOne());
-          let tColType = $tCol->toOne().type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType();
-          let pType = $p.property->functionReturnType().rawType->toOne();
-          assert($tColType == $pType, |'Column ' + $columnWithAlias.alias->toOne() + ' (model property: ' + $p.property.name->toOne() + ') type incomatible.  Table expect: ' + $tColType->toString() + ' Model has: ' + $pType->makeString());
-          $columnWithAlias;
-        })
-      );      
+  $tree.subTrees->cast(@PropertyGraphFetchTree)->forAll({cp|
+    let columnName = $cp.alias->isEmpty()->if(|$cp.property.name->toOne(), |$cp.alias->toOne());
+    let tCol = $dbTable.column($columnName);
+    assert($tCol->isNotEmpty(), |'Column: ' + $columnName + '(property: ' + $cp.property.name->toOne() + ') not found in binding table: ' + $tableName);
+    let tColType = $tCol->toOne().type->meta::relational::metamodel::datatype::dataTypeToCompatiblePureType();
+    let pType = $cp.property->functionReturnType().rawType->toOne();
+    assert($tColType == $pType, |'Column: ' + $columnName + '(property: ' + $cp.property.name->toOne() + ') type incomatible.  Table expect: ' + $tColType->toString() + ' Property is: ' + $pType->makeString());
   });
-  ^$tree(subTrees = $subTreesWithTableAlias);
 }
 
 
