@@ -143,7 +143,10 @@ function meta::external::format::protobuf::generation::classToMessage(class:Clas
                                                                     , | $p.package->protoPackageToFileName()))
         ->removeDuplicates()->sort()->map(s | ^ProtoImport(name=$s));
         
-      ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, topLevelDefs=$topLevelDefs,
+      ^ProtoFile(syntax=Syntax.proto3, package=$thePackage, 
+                 topLevelDefs=$topLevelDefs->sortBy(s|$s->match([m:Message[1]|$m.name,
+                                                                 e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e.name,
+                                                                 s:Service[1]|$s.name])),
                  imports=$imports,
                  options=$options);
    );

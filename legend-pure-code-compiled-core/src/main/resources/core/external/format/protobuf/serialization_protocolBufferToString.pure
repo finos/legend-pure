@@ -23,9 +23,7 @@ function meta::external::format::protobuf::serialization::toString(file:ProtoFil
    + if( $file.package->isEmpty(), | '', | 'package ' + $packageName + ';\n\n' )
    + if( $file.imports->isEmpty(), | '', | $file.imports->map( i | 'import "' + if( $i.importType->isEmpty(), | '', | $i.importType->toOne().name + ' ' ) + $i.name + '";\n')->joinStrings('','','\n'))
    + if( $file.options->isEmpty(), | '', | $file.options->map(o | $o->meta::external::format::protobuf::serialization::toString())->joinStrings() + '\n')                                         
-   + if( $file.topLevelDefs->isEmpty(), | '', | $file.topLevelDefs->sortBy(s|$s->match([m:Message[1]|$m.name,
-                                                                                        e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e.name,
-                                                                                        s:Service[1]|$s.name]))->map(t | $t->meta::external::format::protobuf::serialization::topLevelItemToString($packageName))->joinStrings('\n\n'));
+   + if( $file.topLevelDefs->isEmpty(), | '', | $file.topLevelDefs->map(t | $t->meta::external::format::protobuf::serialization::topLevelItemToString($packageName))->joinStrings('\n\n'));
 }
 
 function meta::external::format::protobuf::serialization::toString(p:ProtoItemDefinition[1],currentPackage:String[1]):String[1]
@@ -47,7 +45,7 @@ function meta::external::format::protobuf::serialization::topLevelItemToString(p
       [
          m:Message[1]|$m->toString($currentPackage),
          e:meta::external::format::protobuf::metamodel::Enumeration[1]|$e->toString($currentPackage),
-         service:Service[1]|'service ' + $service.name + ' {\n' + $service.content->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings('\n') + '}'
+         service:Service[1]|'service ' + $service.name + ' {' + $service.content->map(f | $f->meta::external::format::protobuf::serialization::toString($currentPackage))->joinStrings('\n','\n','\n') + '}'
       ]
    )
 }
