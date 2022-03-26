@@ -60,7 +60,8 @@ function meta::relational::dbTestRunner::runDynaFunctionDatabaseTest(dynaFunc:Dy
                                       | false,
                                       | zip(zip($res.values ,$newExpectedResult.value ), $expectedDelta.value )->map(x|
                                              $x->match([
-                                               a:Pair<Pair<Number,Number>,Number>[1] | if( abs($a.first.first - $a.first.second) <= abs($a.second), |true, |false);,
+                                               a:Pair<Pair<Number,Number>,Number>[1] |
+                                                     if( abs($a.first->cast(@Pair<Number,Number>).first - $a.first->cast(@Pair<Number,Number>).second) <= abs($a.second->cast(@Number)), |true, |false);,
                                                b:Any[1] | true;
                                              ]))->and();
                                    );
