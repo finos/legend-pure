@@ -104,8 +104,9 @@ function <<test.Test>> meta::protocols::generation::java::tests::testTranslatorJ
                 '    public org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum translate(FieldFlag fieldflag,\n'+
                 '                                                                                         PureModel pureModel)\n'+
                 '    {\n'+
-                '        return pureModel.getEnumValue("meta::protocols::generation::java::tests::model::FieldFlag",\n'+
-                '                                      fieldflag.name());\n'+
+                '        return fieldflag == null ? null\n' +
+                '                                 : pureModel.getEnumValue("meta::protocols::generation::java::tests::model::FieldFlag",\n'+
+                '                                                          fieldflag.name());\n'+
                 '    }\n'+
                 '\n'+
                 '    public Root_meta_protocols_generation_java_tests_model_Enum translate(Enum _enum,\n'+
