@@ -19,21 +19,11 @@ import org.eclipse.collections.api.set.SetIterable;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
-import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 class UnpackedPureRepositoryJar extends AbstractPureRepositoryJar
 {
-    private static final Filter<Path> META_INF_FILTER = new Filter<Path>()
-    {
-        @Override
-        public boolean accept(Path entry) throws IOException
-        {
-            return !PureRepositoryJarTools.META_INF_DIR_NAME.equalsIgnoreCase(entry.getFileName().toString());
-        }
-    };
-
     private final Path root;
 
     UnpackedPureRepositoryJar(Path root) throws IOException
@@ -58,7 +48,7 @@ class UnpackedPureRepositoryJar extends AbstractPureRepositoryJar
     @Override
     public void readAllFiles(MutableMap<String, byte[]> fileBytes)
     {
-        try (DirectoryStream<Path> rootStream = Files.newDirectoryStream(this.root, META_INF_FILTER))
+        try (DirectoryStream<Path> rootStream = Files.newDirectoryStream(this.root, entry -> !PureRepositoryJarTools.META_INF_DIR_NAME.equalsIgnoreCase(entry.getFileName().toString())))
         {
             readFilesFromDirectoryStream(rootStream, fileBytes);
         }
@@ -104,10 +94,6 @@ class UnpackedPureRepositoryJar extends AbstractPureRepositoryJar
     {
         String virtualPath = this.root.relativize(realPath).toString();
         String separator = realPath.getFileSystem().getSeparator();
-        if (!"/".equals(separator))
-        {
-            virtualPath = virtualPath.replace(separator, "/");
-        }
-        return virtualPath;
+        return "/".equals(separator) ? virtualPath : virtualPath.replace(separator, "/");
     }
 }

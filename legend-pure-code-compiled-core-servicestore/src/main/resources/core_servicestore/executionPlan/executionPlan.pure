@@ -15,21 +15,29 @@
 import meta::pure::executionPlan::*;
 import meta::pure::functions::io::http::*;
 
+import meta::external::store::service::executionPlan::nodes::*;
+
 import meta::external::store::service::metamodel::*;
 import meta::external::store::service::metamodel::mapping::*;
 import meta::external::store::service::metamodel::runtime::*;
 
 Class meta::external::store::service::executionPlan::nodes::RestServiceExecutionNode extends ExecutionNode
 {
-   url             : String[1];
-   method          : HTTPMethod[1];
-   mimeType        : String[1];
-   params          : ServiceParameter[*];
-   securitySchemes : SecurityScheme[*];
+   url                    : String[1];
+   method                 : HTTPMethod[1];
+   mimeType               : String[1];
+   params                 : ServiceParameter[*];
+   requestBodyDescription : RequestBodyDescription[0..1];
+   securitySchemes        : SecurityScheme[*];
+}
+
+Class meta::external::store::service::executionPlan::nodes::RequestBodyDescription
+{
+   mimeType  : String[1];
+   resultKey : String[1];
 }
 
 Class meta::external::store::service::executionPlan::nodes::ServiceParametersResolutionExecutionNode extends ExecutionNode
 {
-   propertyInputMap  : Map<String, String>[1];
-   parameterMappings : ServiceParameterMapping[*];
+   requestParametersBuildInfo : ServiceRequestParametersBuildInfo[1];
 }

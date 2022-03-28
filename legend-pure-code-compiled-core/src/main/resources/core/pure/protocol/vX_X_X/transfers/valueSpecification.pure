@@ -40,11 +40,8 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpec
 
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformValueSpecification(v:ValueSpecification[1], inScope:String[*], open:Map<String,List<Any>>[1],isParameter:Boolean[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::valueSpecification::ValueSpecification[1]
 {
-
-       meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformValueSpecification($v, $inScope, $open,$isParameter,false, $extensions);
-
+   meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformValueSpecification($v, $inScope, $open,$isParameter,false, $extensions);
 }
-
 
 function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformValueSpecification(v:ValueSpecification[1], inScope:String[*], open:Map<String,List<Any>>[1],isParameter:Boolean[1],useAppliedFunction:Boolean[1], extensions:meta::pure::router::extension::RouterExtension[*]):meta::protocols::pure::vX_X_X::metamodel::valueSpecification::ValueSpecification[1]
 {
@@ -76,8 +73,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpec
                                                       agg_FunctionDefinition_1__FunctionDefinition_1__AggregateValue_1_,
                                                       agg_String_1__FunctionDefinition_1__FunctionDefinition_1__AggregateValue_1_,
                                                       func_String_1__FunctionDefinition_1__TdsOlapAggregation_1_,
-                                                      func_FunctionDefinition_1__TdsOlapRank_1_,
-                                                      new_Class_1__String_1__KeyExpression_MANY__T_1_ // This assumes that transformAny will take care of the instantiation correctly (e.g for sort, extend and agg)
+                                                      func_FunctionDefinition_1__TdsOlapRank_1_
                                                    ];
 
                                               let isExtractEnum = $fe->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::hasExtractEnumValue();
@@ -99,7 +95,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpec
                                                            let updatedProperty = ^$newProperty(parametersValues = $newParameter ->concatenate(  $additionalParameters ));
                                                            $updatedProperty->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformValueSpecification($inScope,$open,false,$useAppliedFunction, $extensions);
 
-                                                       ,|   if($passToTransformAny->contains($fe.func),
+                                                       ,|   if($passToTransformAny->contains($fe.func) || (new_Class_1__String_1__KeyExpression_MANY__T_1_ == $fe.func && $fe.parametersValues->at(0).genericType.typeArguments.rawType->cast(@Class<Any>)->at(0)->isWithinPackage(meta::pure)),
                                                                        |$fe->reactivate($fe->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::scan()->map(o|pair($o,^List<Any>()))->newMap())->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformAny($inScope, $open, PureOne, 0, $fe, $extensions);,
                                                                        |let package = $fe.func.package->toOne();
                                                                         if($fe.func->instanceOf(FunctionDefinition) && $useAppliedFunction && (!$package->isWithinPackage(meta) && !$package->meta::alloy::isMetaAlloyTestDependency() || $package->meta::alloy::isMetaAlloyTestDependencyForGeneration() ),

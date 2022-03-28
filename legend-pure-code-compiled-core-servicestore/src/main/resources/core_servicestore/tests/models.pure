@@ -96,6 +96,12 @@ Class meta::external::store::service::tests::domain::S_Trade
   s_tradeDetails: String[1];
 }
 
+Class meta::external::store::service::tests::domain::S_RequestBody
+{
+  propA: String[1];
+  propB: String[1];
+}
+
 Association meta::external::store::service::tests::domain::S_Trade_S_Product
 {
   s_product: meta::external::store::service::tests::domain::S_Product[1];

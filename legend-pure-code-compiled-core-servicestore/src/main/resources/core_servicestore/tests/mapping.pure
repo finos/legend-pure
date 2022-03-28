@@ -159,9 +159,14 @@ function meta::external::store::service::tests::mapping::serviceStoreMapping():M
    
    let tradeService         = $serviceStore.getServiceStoreElementById('TradeServices')->cast(@ServiceGroup).getServiceStoreElementById('AllTradeService')->cast(@Service);
    let transform3           = {| 'CSV'};
-   let parameterMapping     = ^ServiceParameterMapping(serviceParameter = $tradeService.parameters->toOne(),
-                                                       transform        = $transform3);
-   let tradeServicesMapping = ^ServiceMapping(service = $tradeService, owner = $tradeServiceSetImpl, parameterMappings = $parameterMapping);
+   let parameterBuildInfo   = ^ServiceRequestParameterBuildInfo(serviceParameter = $tradeService.parameters->toOne(),
+                                                                transform        = $transform3);
+   
+   let requestBodyBuildInfo = ^ServiceRequestBodyBuildInfo(transform = {s_trade:meta::external::store::service::tests::domain::S_Trade[1]| ^meta::external::store::service::tests::domain::S_RequestBody(propA = $s_trade.s_tradeId, propB = 'propB')});
+   let tradeServicesMapping = ^ServiceMapping(service = $tradeService, 
+                                              owner = $tradeServiceSetImpl, 
+                                              requestBuildInfo = ^ServiceRequestBuildInfo(requestParametersBuildInfo = ^ServiceRequestParametersBuildInfo(parameterBuildInfoList = $parameterBuildInfo),
+                                                                                          requestBodyBuildInfo = $requestBodyBuildInfo));
    $tradeServiceSetImpl->mutateAdd('servicesMapping', $tradeServicesMapping);
    
    let prodServiceSetImpl  = ^RootServiceInstanceSetImplementation(
@@ -184,25 +189,25 @@ function meta::external::store::service::tests::mapping::serviceStoreMapping():M
    
    let productByIdService  = $serviceStore.getServiceStoreElementById('ProductServices')->cast(@ServiceGroup).getServiceStoreElementById('ProductByIdService')->cast(@Service);
    let transform           = {s_prod:meta::external::store::service::tests::domain::S_Product[1] | $s_prod.s_tradeId->split(':')->at(0)};
-   let idParameterMapping  = [^ServiceParameterMapping(serviceParameter = $productByIdService.parameters->at(0),
-                                                       transform        = $transform),
-                              ^ServiceParameterMapping(serviceParameter = $productByIdService.parameters->at(1),
-                                                       transform        = $transform3)];
+   let idParamBuildInfos   = [^ServiceRequestParameterBuildInfo(serviceParameter = $productByIdService.parameters->at(0),
+                                                                transform        = $transform),
+                              ^ServiceRequestParameterBuildInfo(serviceParameter = $productByIdService.parameters->at(1),
+                                                                transform        = $transform3)];
    
    let transform0          = {s_prod:meta::external::store::service::tests::domain::S_Product[1] | $s_prod.s_productId};
-   let idParameterMapping1 = [^ServiceParameterMapping(serviceParameter = $productByIdService.parameters->at(0),
-                                                       transform        = $transform0),
-                              ^ServiceParameterMapping(serviceParameter = $productByIdService.parameters->at(1),
-                                                       transform        = $transform3)];
+   let idParamBuildInfos1  = [^ServiceRequestParameterBuildInfo(serviceParameter = $productByIdService.parameters->at(0),
+                                                                transform        = $transform0),
+                              ^ServiceRequestParameterBuildInfo(serviceParameter = $productByIdService.parameters->at(1),
+                                                                transform        = $transform3)];
    
    let productByNameService= $serviceStore.getServiceStoreElementById('ProductServices')->cast(@ServiceGroup).getServiceStoreElementById('ProductByNameService')->cast(@Service);
    let transform1           = {s_prod:meta::external::store::service::tests::domain::S_Product[1] | 'Product 30'};
-   let nameParameterMapping = ^ServiceParameterMapping(serviceParameter = $productByNameService.parameters->toOne(),
-                                                       transform        = $transform1);
+   let nameParamBuildInfo   = ^ServiceRequestParameterBuildInfo(serviceParameter = $productByNameService.parameters->toOne(),
+                                                                transform        = $transform1);
    
-   let prodServicesMapping = [^ServiceMapping(service = $productByIdService, owner = $prodServiceSetImpl, parameterMappings = $idParameterMapping),
-                              ^ServiceMapping(service = $productByIdService, owner = $prodServiceSetImpl, parameterMappings = $idParameterMapping1),
-                              ^ServiceMapping(service = $productByNameService, owner = $prodServiceSetImpl, parameterMappings = $nameParameterMapping)];
+   let prodServicesMapping = [^ServiceMapping(service = $productByIdService, owner = $prodServiceSetImpl, requestBuildInfo = ^ServiceRequestBuildInfo(requestParametersBuildInfo = ^ServiceRequestParametersBuildInfo(parameterBuildInfoList = $idParamBuildInfos))),
+                              ^ServiceMapping(service = $productByIdService, owner = $prodServiceSetImpl, requestBuildInfo = ^ServiceRequestBuildInfo(requestParametersBuildInfo = ^ServiceRequestParametersBuildInfo(parameterBuildInfoList = $idParamBuildInfos1))),
+                              ^ServiceMapping(service = $productByNameService, owner = $prodServiceSetImpl, requestBuildInfo = ^ServiceRequestBuildInfo(requestParametersBuildInfo = ^ServiceRequestParametersBuildInfo(parameterBuildInfoList = $idParamBuildInfos1)))];
    
    $prodServiceSetImpl->mutateAdd('servicesMapping', $prodServicesMapping);
    $prodServiceSetImpl->mutateAdd('propertyMappings', $prodSetPropMappings);

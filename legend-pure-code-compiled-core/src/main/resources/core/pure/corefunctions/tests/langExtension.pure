@@ -18,3 +18,50 @@ function <<test.Test>> meta::pure::functions::lang::tests::orElse::testOrElse():
    assertEquals('A', ['A']->orElse('B'));
    assertEquals('B', []->cast(@String)->orElse('B'));
 }
+
+
+###Pure
+import meta::pure::functions::lang::tests::subType::*;
+
+Class meta::pure::functions::lang::tests::subType::A 
+{
+  <<equality.Key>> id: Integer[1];
+}
+
+Class meta::pure::functions::lang::tests::subType::B  extends A {}
+Class meta::pure::functions::lang::tests::subType::C  extends A {}
+Class meta::pure::functions::lang::tests::subType::D  extends A {}
+
+Class meta::pure::functions::lang::tests::subType::X
+{
+  a_many    : A[*];
+  a_one     : A[1];
+  a_there   : A[0..1];
+  a_missing : A[0..1];
+}
+
+/*
+ * ToFix: whenSubType not implemented yet due to limitations on the use of the @Type syntax
+ * in compiled mode.  See core/pure/corefunctions/langExtension.pure for details.
+ */
+function <<test.Test, test.ToFix>> meta::pure::functions::lang::tests::subType::testWhenSubType():Boolean[1]
+{
+  let x = ^X(
+    a_many  = [^A(id=1), ^B(id=2), ^C(id=3), ^B(id=4), ^C(id=5)],
+    a_one   = ^C(id=6),
+    a_there = ^C(id=7)
+  );
+
+   assertEquals([^B(id=2), ^B(id=4)],                               $x.a_many->whenSubType(@B));
+   assertEquals([^C(id=3), ^C(id=5)],                               $x.a_many->whenSubType(@C));
+   assertEquals([^A(id=1), ^B(id=2), ^C(id=3), ^B(id=4), ^C(id=5)], $x.a_many->whenSubType(@A));
+   assertEquals([],                                                 $x.a_many->whenSubType(@D));
+
+   assertEquals(^C(id=6),                                           $x.a_one->whenSubType(@C));
+   assertEquals([],                                                 $x.a_one->whenSubType(@B));
+
+   assertEquals(^C(id=7),                                           $x.a_there->whenSubType(@C));
+   assertEquals([],                                                 $x.a_there->whenSubType(@B));
+
+   assertEquals([],                                                 $x.a_missing->whenSubType(@C));
+}

@@ -13,11 +13,13 @@
 // limitations under the License.
 
 import meta::external::shared::format::binding::*;
+import meta::pure::executionPlan::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::pure::metamodel::path::*;
 import meta::pure::router::extension::*;
 
 Class meta::external::shared::format::router::extension::ExternalFormatModuleExtension extends ModuleExtension
 {
-   generatePathReference   : Function<{Binding[1], Path<Nil,Any|*>[1] -> PathReference[1]}>[0..1];
+   generatePathReference                          : Function<{Binding[1], Path<Nil,Any|*>[1] -> PathReference[1]}>[0..1];
+   executionPlan_generation_generateSerializeNode : Function<{Boolean[1], Binding[1], ExecutionNode[*] -> ExecutionNode[1]}>[0..1];  
 }
