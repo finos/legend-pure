@@ -183,7 +183,10 @@ function <<access.private>> meta::protocols::generation::java::translation::gene
 
   javaMethod('public', $returnType, 'translate', $parameters,
              j_return(
-                j_invoke($parameters->at(1), 'getEnumValue', [j_string($e->elementToPath()), j_invoke($parameters->at(0), 'name', [], javaString())], $returnType)
+                j_conditional(j_eq($parameters->at(0), j_null()), 
+                              j_null(),
+                              j_invoke($parameters->at(1), 'getEnumValue', [j_string($e->elementToPath()), j_invoke($parameters->at(0), 'name', [], javaString())], $returnType)
+                )
              )
   );
 }
