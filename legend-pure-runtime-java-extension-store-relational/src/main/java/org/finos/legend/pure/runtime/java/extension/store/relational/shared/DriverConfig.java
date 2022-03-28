@@ -23,6 +23,8 @@ public interface DriverConfig
 
     String buildDriverConnectionUrl(String login, String password, String authToken, String hostIP, String hostPort, String hostName);
 
+    String buildDriverConnectionUrl(String login, String password, String authToken, String hostIP, String hostPort, String hostName, String verifyParam);
+
     String buildDriverConnectionUrl(String login, String password, String authToken, String schema, Iterable<? extends ObjectIntPair<String>> hostPortPairs);
 
     MapIterable<DataSourceProperty, String> getDatasourceProperties();
