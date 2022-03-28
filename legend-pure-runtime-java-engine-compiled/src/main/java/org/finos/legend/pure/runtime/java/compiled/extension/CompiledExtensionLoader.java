@@ -14,32 +14,20 @@
 
 package org.finos.legend.pure.runtime.java.compiled.extension;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
 
-import java.util.Iterator;
 import java.util.ServiceLoader;
 
 public class CompiledExtensionLoader
 {
     public static MutableList<CompiledExtension> extensions()
     {
-        MutableList<CompiledExtension> result = Lists.mutable.empty();
+        return Lists.mutable.withAll(ServiceLoader.load(CompiledExtension.class));
+    }
 
-        Iterator<CompiledExtension> it = ServiceLoader.load(CompiledExtension.class).iterator();
-        while (it.hasNext())
-        {
-            try
-            {
-                CompiledExtension e = it.next();
-                result.add(e);
-            }
-            catch (Throwable z)
-            {
-                //z.printStackTrace();
-                // Needs to be silent ... during the build process
-            }
-        }
-        return result;
+    public static MutableList<CompiledExtension> extensions(ClassLoader classLoader)
+    {
+        return Lists.mutable.withAll(ServiceLoader.load(CompiledExtension.class, classLoader));
     }
 }

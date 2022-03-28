@@ -24,8 +24,8 @@ public class CoreExtensionCompiled extends BaseCompiledExtension
     public CoreExtensionCompiled()
     {
         super(
-                Lists.mutable.empty(),
-                Lists.mutable.with(StringJavaSource.newStringJavaSource("org.finos.legend.pure.generated", "CoreGen",
+                Lists.fixedSize.empty(),
+                Lists.fixedSize.with(StringJavaSource.newStringJavaSource("org.finos.legend.pure.generated", "CoreGen",
                         "package org.finos.legend.pure.generated;\n" +
                                 "\n" +
                                 "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Bridge;\n" +
@@ -40,8 +40,8 @@ public class CoreExtensionCompiled extends BaseCompiledExtension
                                 "import org.eclipse.collections.api.block.function.Function0;\n" +
                                 "import org.eclipse.collections.api.block.function.Function2;\n" +
                                 "import org.eclipse.collections.api.block.function.Function3;\n" +
+                                "import org.eclipse.collections.api.factory.Lists;\n" +
                                 "import org.eclipse.collections.api.list.ListIterable;\n" +
-                                "import org.eclipse.collections.impl.factory.Lists;\n" +
                                 "import org.eclipse.collections.impl.map.mutable.UnifiedMap;\n" +
                                 "import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;\n" +
                                 "import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;\n" +
@@ -302,13 +302,12 @@ public class CoreExtensionCompiled extends BaseCompiledExtension
                                 "        }\n" +
                                 "    }\n" +
                                 "}\n")),
-                Lists.mutable.empty(),
-                Lists.mutable.empty());
+                Lists.fixedSize.empty(),
+                Lists.fixedSize.empty());
     }
 
     public static CompiledExtension extension()
     {
         return new CoreExtensionCompiled();
     }
-
 }
