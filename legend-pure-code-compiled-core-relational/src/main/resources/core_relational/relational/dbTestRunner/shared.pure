@@ -62,7 +62,7 @@ function meta::relational::dbTestRunner::runTestsWith(
           '    Tests Ignored = ' + $ignoredTests->size()->toString() + '\n'
           );
           
-  $failedTests->isEmpty();
+  assert($failedTests->isEmpty());
 }
 
 function meta::relational::dbTestRunner::getTestConnection(dbType:DatabaseType[1], extensions:meta::pure::router::extension::RouterExtension[*]):RelationalDatabaseConnection[0..1]
