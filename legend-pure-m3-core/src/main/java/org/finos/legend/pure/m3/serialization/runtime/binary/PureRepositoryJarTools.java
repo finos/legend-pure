@@ -36,23 +36,8 @@ public class PureRepositoryJarTools
     public static final String DEFINITION_INDEX_NAME = META_INF_DIR_NAME + "/" + DEFINITION_INDEX_FILENAME;
     public static final String REFERENCE_INDEX_NAME = META_INF_DIR_NAME + "/" + REFERENCE_INDEX_FILENAME;
 
-    public static final Function<String, String> PURE_PATH_TO_BINARY_PATH = new Function<String, String>()
-    {
-        @Override
-        public String valueOf(String purePath)
-        {
-            return purePathToBinaryPath(purePath);
-        }
-    };
-
-    public static final Function<String, String> BINARY_PATH_TO_PURE_PATH = new Function<String, String>()
-    {
-        @Override
-        public String valueOf(String binPath)
-        {
-            return binaryPathToPurePath(binPath);
-        }
-    };
+    public static final Function<String, String> PURE_PATH_TO_BINARY_PATH = PureRepositoryJarTools::purePathToBinaryPath;
+    public static final Function<String, String> BINARY_PATH_TO_PURE_PATH = PureRepositoryJarTools::binaryPathToPurePath;
 
     public static String purePathToBinaryPath(String purePath)
     {
@@ -62,10 +47,7 @@ public class PureRepositoryJarTools
         }
         int start = (purePath.charAt(0) == '/') ? 1 : 0;
         int end = purePath.length() - 3;
-        StringBuilder binaryPath = new StringBuilder(end + 2 - start);
-        binaryPath.append(purePath, start, end);
-        binaryPath.append('c');
-        return binaryPath.toString();
+        return purePath.substring(start, end) + 'c';
     }
 
     public static boolean isPureBinaryPath(String path)
@@ -79,11 +61,7 @@ public class PureRepositoryJarTools
         {
             throw new IllegalArgumentException("Invalid binary Pure path: " + binPath);
         }
-        StringBuilder purePath = new StringBuilder(binPath.length() + 3);
-        purePath.append('/');
-        purePath.append(binPath, 0, binPath.length() - 1);
-        purePath.append("ure");
-        return purePath.toString();
+        return '/' + binPath.substring(0, binPath.length() - 1) + "ure";
     }
 
     public static boolean hasPureJarExtension(Path path)

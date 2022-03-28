@@ -15,13 +15,10 @@
 package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.predicate.Predicate;
-import org.eclipse.collections.api.block.procedure.Procedure;
-import org.eclipse.collections.api.block.procedure.Procedure2;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
@@ -85,31 +82,20 @@ public class SourceRegistry
         return find(string, true, null);
     }
 
-    public RichIterable<SourceCoordinates> find(final String string, final boolean caseSensitive, final Pattern sourceIdPattern)
+    public RichIterable<SourceCoordinates> find(String string, boolean caseSensitive, Pattern sourceIdPattern)
     {
-        final MutableList<SourceCoordinates> results = Lists.mutable.empty();
+        MutableList<SourceCoordinates> results = Lists.mutable.empty();
         if (sourceIdPattern == null)
         {
-            this.sourcesById.valuesView().forEach(new Procedure<Source>()
-            {
-                @Override
-                public void value(Source source)
-                {
-                    results.addAllIterable(source.find(string, caseSensitive));
-                }
-            });
+            this.sourcesById.forEachValue(source -> results.addAllIterable(source.find(string, caseSensitive)));
         }
         else
         {
-            this.sourcesById.forEachKeyValue(new Procedure2<String, Source>()
+            this.sourcesById.forEachKeyValue((id, source) ->
             {
-                @Override
-                public void value(String id, Source source)
+                if (sourceIdPattern.matcher(id).matches())
                 {
-                    if (sourceIdPattern.matcher(id).matches())
-                    {
-                        results.addAllIterable(source.find(string, caseSensitive));
-                    }
+                    results.addAllIterable(source.find(string, caseSensitive));
                 }
             });
         }
@@ -121,60 +107,35 @@ public class SourceRegistry
         return find(pattern, null);
     }
 
-    public RichIterable<SourceCoordinates> find(final Pattern pattern, final Pattern sourceIdPattern)
+    public RichIterable<SourceCoordinates> find(Pattern pattern, Pattern sourceIdPattern)
     {
-        final MutableList<SourceCoordinates> results = Lists.mutable.empty();
+        MutableList<SourceCoordinates> results = Lists.mutable.empty();
         if (sourceIdPattern == null)
         {
-            this.sourcesById.valuesView().forEach(new Procedure<Source>()
-            {
-                @Override
-                public void value(Source source)
-                {
-                    results.addAllIterable(source.find(pattern));
-                }
-            });
+            this.sourcesById.forEachValue(source -> results.addAllIterable(source.find(pattern)));
         }
         else
         {
-            this.sourcesById.forEachKeyValue(new Procedure2<String, Source>()
+            this.sourcesById.forEachKeyValue((id, source) ->
             {
-                @Override
-                public void value(String id, Source source)
+                if (sourceIdPattern.matcher(id).matches())
                 {
-                    if (sourceIdPattern.matcher(id).matches())
-                    {
-                        results.addAllIterable(source.find(pattern));
-                    }
+                    results.addAllIterable(source.find(pattern));
                 }
             });
         }
         return results;
     }
 
-    public RichIterable<String> findSourceIds(final Pattern sourceIdPattern)
+    public RichIterable<String> findSourceIds(Pattern sourceIdPattern)
     {
-        return this.sourcesById.keysView().select(new Predicate<String>()
-        {
-            @Override
-            public boolean accept(String id)
-            {
-                return sourceIdPattern.matcher(id).matches();
-            }
-        });
+        return this.sourcesById.keysView().select(id -> sourceIdPattern.matcher(id).matches(), Lists.mutable.empty());
     }
 
     public RichIterable<String> findSourceIds(String fileName)
     {
-        final String lowerCaseFileName = fileName.toLowerCase();
-        return this.sourcesById.keysView().select(new Predicate<String>()
-        {
-            @Override
-            public boolean accept(String id)
-            {
-                return id.toLowerCase().contains(lowerCaseFileName);
-            }
-        });
+        String lowerCaseFileName = fileName.toLowerCase();
+        return this.sourcesById.keysView().select(id -> id.toLowerCase().contains(lowerCaseFileName), Lists.mutable.empty());
     }
 
     void registerSource(Source source)
