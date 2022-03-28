@@ -29,7 +29,7 @@ function meta::relational::dbTestRunner::runDynaFunctionDatabaseTest(dynaFunc:Dy
   runDynaFunctionDatabaseTest($dynaFunc, $expectedResult, [] , $testConfig);
 } 
 
-function meta::relational::dbTestRunner::runDynaFunctionDatabaseTest(dynaFunc:DynaFunction[1], expectedResult:Literal[1..*], expectedDelta:Literal[*], testConfig:DbTestConfig[1]): String[0..1]
+function meta::relational::dbTestRunner::runDynaFunctionDatabaseTest(dynaFunc:DynaFunction[1], expectedResult:Literal[1..*], equalityComparator: Function<{Any[1..*],Any[1..*]->Boolean[1]}>[0..1] , testConfig:DbTestConfig[1]): String[0..1]
 { 
   //sqlQueryGenerator
   let sqlQuery = defaultDynaFunctionSqlQueryGenerator($dynaFunc,$expectedResult, $testConfig);
@@ -52,26 +52,16 @@ function meta::relational::dbTestRunner::runDynaFunctionDatabaseTest(dynaFunc:Dy
           let res = executePlan($plan,defaultRelationalExtensions());
           if($res->isEmpty(),
               | [],                                  //legend engine not available 
-              | if (equal($res.values,$newExpectedResult.value),
-                | [],
-                | // check if values are within delta 
-                  
-                  let withinDelta = if($expectedDelta->size()!= $newExpectedResult->size(),
-                                      | false,
-                                      | zip(zip($res.values ,$newExpectedResult.value ), $expectedDelta.value )->map(x|
-                                             $x->match([
-                                               a:Pair<Pair<Number,Number>,Number>[1] |
-                                                     if( abs($a.first->cast(@Pair<Number,Number>).first - $a.first->cast(@Pair<Number,Number>).second) <= abs($a.second->cast(@Number)), |true, |false);,
-                                               b:Any[1] | true;
-                                             ]))->and();
-                                   );
-                  if($withinDelta , 
+              | let areEqual = if($equalityComparator->isNotEmpty(),
+                                  | $equalityComparator->toOne()->eval($res.values, $newExpectedResult.value);, // expected values are wrapped in Literals currently
+                                  | equal($res.values, $newExpectedResult.value)
+                                 );
+                  if($areEqual , 
                     | [],
                     | let expectedStr = $newExpectedResult.value->map(v|$v->toString())->makeString('[',', ',']');
                       let resStr = $res.values->map(v|$v->toString())->makeString('[',', ',']');
                       'Result assert failed ,expected Values : '+ $expectedStr  +', actual Values : ' + $resStr;
-                   );
-                );
+                    );
               );
        );
     );
@@ -95,6 +85,21 @@ function meta::relational::dbTestRunner::overwriteDynaFunctionExpectedResult(exp
           b: Boolean[1] | if($b==true, |^Literal(value=1), |^Literal(value=0)),  // if dynaFunc returns true , returns 1 , else 0  
           a: Any[1] |  $expectedResult
     ]);
+}
+
+function meta::relational::dbTestRunner::floatEqualityComparatorGenerator(tolerance:Any[1..*]) :  Function<{Any[1..*], Any[1..*] -> Boolean[1]}>[1]
+{
+  {actual:Any[1..*], expected:Any[1..*] |      
+        assert($expected->size() == $actual->size());
+        assert($expected->size() == $tolerance->size());
+        
+        zip(zip($actual ,$expected ), $tolerance )->map(x|
+                  $x->match([
+                    a:Pair<Pair<Number,Number>,Number>[1] |
+                          if( abs($a.first->cast(@Pair<Number,Number>).first - $a.first->cast(@Pair<Number,Number>).second) <= abs($a.second->cast(@Number)), |true, |false);,
+                    b:Any[1] | false;
+                  ]))->and();
+  }
 }
 
 function meta::relational::dbTestRunner::wrapSQLStringInExecutionPlan(sqlString:String[1], resultTypes:meta::relational::metamodel::datatype::DataType[1..*], dbType:DatabaseType[1], connection:DatabaseConnection[1]):ExecutionPlan[1]

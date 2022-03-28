@@ -75,16 +75,16 @@ function <<dbTest.Test>> meta::relational::tests::dbSpecificTests::sqlQueryTests
 {
   let dynaFunc = ^DynaFunction(name='pow', parameters=[^Literal(value=1.1), ^Literal(value=3) ]);
   let expected = ^Literal(value=1.3310000000000004);
-  let expectedDelta = ^Literal(value=0.035);                                         // check this delta 
-  runDynaFunctionDatabaseTest($dynaFunc, $expected, $expectedDelta, $config);
+  let equalityComparator =  floatEqualityComparatorGenerator([0.035]);
+  runDynaFunctionDatabaseTest($dynaFunc, $expected, $equalityComparator, $config);
 }
 
 function <<dbTest.Test>> meta::relational::tests::dbSpecificTests::sqlQueryTests::dynaFunctions::pow::testDecimal1(config:DbTestConfig[1]):String[0..1]
 {
   let dynaFunc = ^DynaFunction(name='pow', parameters=[^Literal(value=1.8), ^Literal(value=3)]);
   let expected = ^Literal(value=5.832000000000001);
-  let expectedDelta = ^Literal(value=0.035);  
-  runDynaFunctionDatabaseTest($dynaFunc, $expected, $expectedDelta, $config);
+  let equalityComparator = floatEqualityComparatorGenerator([0.035]);
+  runDynaFunctionDatabaseTest($dynaFunc, $expected, $equalityComparator, $config);
 }
 
 function <<dbTest.Test>> meta::relational::tests::dbSpecificTests::sqlQueryTests::dynaFunctions::exp::testDecimal(config:DbTestConfig[1]):String[0..1]
