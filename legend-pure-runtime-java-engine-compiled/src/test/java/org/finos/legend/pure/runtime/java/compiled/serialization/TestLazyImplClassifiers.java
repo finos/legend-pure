@@ -43,7 +43,7 @@ public class TestLazyImplClassifiers extends AbstractPureTestWithCoreCompiled
     {
         MutableMap<String, byte[]> fileBytes = Maps.mutable.empty();
         DistributedBinaryGraphSerializer.newSerializer(runtime).serializeToInMemoryByteArrays(fileBytes);
-        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromInMemoryByteArrays(fileBytes);
+        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.newBuilder(fileBytes).build();
         this.metadataLazy = MetadataLazy.newMetadata(Thread.currentThread().getContextClassLoader(), deserializer);
     }
 

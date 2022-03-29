@@ -72,16 +72,9 @@ public class CodeStorageTools
             return null;
         }
 
-        if (path.charAt(0) == '/')
-        {
-            int index = path.indexOf('/', 1);
-            return (index == -1) ? path.substring(1) : path.substring(1, index);
-        }
-        else
-        {
-            int index = path.indexOf('/');
-            return (index == -1) ? path : path.substring(0, index);
-        }
+        int start = (path.charAt(0) == '/') ? 1 : 0;
+        int end = path.indexOf('/', start);
+        return (end == -1) ? path.substring(start) : path.substring(start, end);
     }
 
     public static String canonicalizePath(String path)
@@ -101,7 +94,7 @@ public class CodeStorageTools
             {
                 return canonicalPath;
             }
-            return new StringBuilder(canonicalPath.length()).append(CodeStorage.ROOT_PATH).append(canonicalPath, 0, canonicalPath.length() - CodeStorage.PATH_SEPARATOR.length()).toString();
+            return CodeStorage.ROOT_PATH + canonicalPath.substring(0, canonicalPath.length() - CodeStorage.PATH_SEPARATOR.length());
         }
         return canonicalPath.startsWith(CodeStorage.ROOT_PATH) ? canonicalPath : (CodeStorage.ROOT_PATH + canonicalPath);
     }

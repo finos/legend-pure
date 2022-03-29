@@ -27,7 +27,6 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.SourceI
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.AbstractNative;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
-
 public class New extends AbstractNative
 {
     public New()
@@ -54,10 +53,9 @@ public class New extends AbstractNative
             String newId = InstantiationHelpers.manageId(parametersValues, processorSupport);
             return "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class) + (addGenericType ? TypeProcessor.buildTypeArgumentsString(genericType, false, processorSupport) : "")
                     + "(\"" + newId + "\")" + (addGenericType ? "._classifierGenericType("
-                    + InstantiationHelpers.buildGenericType(genericType, processorSupport) + ")" : "")+ (_Class.computeConstraintsInHierarchy(_class,processorSupport).isEmpty()?"":"._validate(false,"+ SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation())+",es)")
+                    + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "") + (_Class.computeConstraintsInHierarchy(_class, processorSupport).isEmpty() ? "" : "._validate(false, " + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ", es)")
                     + InstantiationHelpers.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, processorContext).makeString("");
         }
-
     }
 
     private String formatDefaultValueString(String methodName, String value)

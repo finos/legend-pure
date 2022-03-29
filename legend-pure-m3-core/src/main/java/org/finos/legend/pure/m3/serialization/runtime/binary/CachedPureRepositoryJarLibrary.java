@@ -16,16 +16,14 @@ package org.finos.legend.pure.m3.serialization.runtime.binary;
 
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.procedure.Procedure2;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.eclipse.collections.impl.utility.Iterate;
 
@@ -68,9 +66,7 @@ public class CachedPureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
     @Override
     public MapIterable<String, byte[]> readFiles(Iterable<String> filePaths)
     {
-        MutableMap<String, byte[]> results = Maps.mutable.empty();
-        putFileBytes(filePaths, results);
-        return results;
+        return withFileBytes(filePaths, Maps.mutable.empty());
     }
 
     @Override
@@ -79,41 +75,27 @@ public class CachedPureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
         ImmutableList<String> repoFiles = this.filesByRepo.get(repositoryName);
         if (repoFiles == null)
         {
-            throw new IllegalArgumentException("Cannot find repository: " + repositoryName);
+            throw new IllegalArgumentException("Unknown repository: " + repositoryName);
         }
-        MutableMap<String, byte[]> results = UnifiedMap.newMap(repoFiles.size());
-        putFileBytes(repoFiles, results);
-        return results;
+        return withFileBytes(repoFiles, Maps.mutable.withInitialCapacity(repoFiles.size()));
     }
 
     @Override
     public MapIterable<String, byte[]> readRepositoryFiles(Iterable<String> repositoryNames)
     {
         MutableMap<String, byte[]> results = Maps.mutable.empty();
-        for (String repositoryName : repositoryNames)
+        repositoryNames.forEach(repositoryName ->
         {
-            ImmutableList<String> repoFiles = this.filesByRepo.get(repositoryName);
-            if (repoFiles == null)
-            {
-                throw new IllegalArgumentException("Cannot find repository: " + repositoryName);
-            }
-            putFileBytes(repoFiles, results);
-        }
+            withFileBytes(getRepositoryFiles(repositoryName), results);
+        });
         return results;
     }
 
     @Override
     public MapIterable<String, byte[]> readAllFiles()
     {
-        final MutableMap<String, byte[]> results = UnifiedMap.newMap(this.fileBytes.size());
-        this.fileBytes.forEachKeyValue(new Procedure2<String, byte[]>()
-        {
-            @Override
-            public void value(String filePath, byte[] bytes)
-            {
-                results.put(filePath, Arrays.copyOf(bytes, bytes.length));
-            }
-        });
+        MutableMap<String, byte[]> results = Maps.mutable.withInitialCapacity(this.fileBytes.size());
+        this.fileBytes.forEachKeyValue((filePath, bytes) -> results.put(filePath, Arrays.copyOf(bytes, bytes.length)));
         return results;
     }
 
@@ -128,12 +110,10 @@ public class CachedPureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
         return files;
     }
 
-    private void putFileBytes(Iterable<String> filePaths, MutableMap<String, byte[]> target)
+    private MutableMap<String, byte[]> withFileBytes(Iterable<String> filePaths, MutableMap<String, byte[]> target)
     {
-        for (String filePath : filePaths)
-        {
-            target.put(filePath, readFile(filePath));
-        }
+        filePaths.forEach(f -> target.put(f, readFile(f)));
+        return target;
     }
 
     private static Pair<ImmutableMap<String, byte[]>, ImmutableMap<String, ImmutableList<String>>> cacheFiles(Iterable<? extends PureRepositoryJar> jars)
@@ -151,7 +131,7 @@ public class CachedPureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
 
     public static CachedPureRepositoryJarLibrary newLibrary(Iterable<? extends PureRepositoryJar> jars)
     {
-        return new CachedPureRepositoryJarLibrary((jars instanceof LazyIterable) ? FastList.newList(jars) : jars);
+        return new CachedPureRepositoryJarLibrary((jars instanceof LazyIterable) ? Lists.mutable.withAll(jars) : jars);
     }
 
     public static CachedPureRepositoryJarLibrary newLibrary(PureRepositoryJar... jars)
@@ -161,7 +141,7 @@ public class CachedPureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
 
     public static CachedPureRepositoryJarLibrary newLibraryFromPaths(Iterable<? extends Path> paths)
     {
-        return newLibrary(Iterate.collect(paths, PureRepositoryJars.PATH_TO_JAR));
+        return newLibrary(Iterate.collect(paths, PureRepositoryJars::get));
     }
 
     public static CachedPureRepositoryJarLibrary newLibraryFromDirectory(Path directory)
@@ -178,6 +158,6 @@ public class CachedPureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
 
     public static CachedPureRepositoryJarLibrary newLibraryFromURLs(Iterable<? extends URL> urls)
     {
-        return newLibrary(Iterate.collect(urls, PureRepositoryJars.URL_TO_JAR));
+        return newLibrary(Iterate.collect(urls, PureRepositoryJars::get));
     }
 }
