@@ -16,7 +16,7 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.finos.legend.pure.m4.serialization.Reader;
 
-class EagerStringIndex extends StringIndex
+class EagerStringIndex extends AbstractStringIndex
 {
     private final String[] otherStrings;
 

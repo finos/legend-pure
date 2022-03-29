@@ -14,17 +14,20 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
-import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.primitive.ObjectIntMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Sets;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.Writer;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 
 import java.util.Objects;
 
-class SimpleStringCache extends StringCache
+class SimpleStringCache extends AbstractStringCache
 {
-    private SimpleStringCache(ListIterable<String> classifierIds, ListIterable<String> otherStrings)
+    private SimpleStringCache(ObjectIntMap<String> classifierIds, ObjectIntMap<String> otherStrings)
     {
         super(classifierIds, otherStrings);
     }
@@ -35,26 +38,22 @@ class SimpleStringCache extends StringCache
         writer.writeStringArray(getOtherStringsArray());
     }
 
-    public static Builder<SimpleStringCache> newBuilder()
+    static SimpleStringCache fromNodes(Iterable<? extends CoreInstance> nodes, IdBuilder idBuilder, ProcessorSupport processorSupport)
     {
-        return new SimpleStringCacheBuilder();
+        SimpleStringCollector collector = new SimpleStringCollector();
+        collectStrings(collector, nodes, idBuilder, processorSupport);
+        MutableList<String> classifierIds = collector.classifierIds.toSortedList();
+        MutableList<String> otherStrings = collector.otherStrings.asLazy().reject(collector.classifierIds::contains).toSortedList();
+        return new SimpleStringCache(listToIndexIdMap(classifierIds, 0), listToIndexIdMap(otherStrings, classifierIds.size()));
     }
 
-    private static class SimpleStringCacheBuilder extends Builder<SimpleStringCache>
+    private static class SimpleStringCollector implements StringCollector
     {
         private final MutableSet<String> classifierIds = Sets.mutable.empty();
         private final MutableSet<String> otherStrings = Sets.mutable.empty();
 
         @Override
-        public SimpleStringCache build()
-        {
-            MutableList<String> classifierIds = this.classifierIds.toSortedList();
-            MutableList<String> otherStrings = this.otherStrings.asLazy().reject(this.classifierIds::contains).toSortedList();
-            return new SimpleStringCache(classifierIds, otherStrings);
-        }
-
-        @Override
-        protected void collectObj(String classifierId, String identifier, String name)
+        public void collectObj(String classifierId, String identifier, String name)
         {
             addClassifierId(classifierId);
             addOtherString(identifier);
@@ -62,26 +61,26 @@ class SimpleStringCache extends StringCache
         }
 
         @Override
-        protected void collectSourceId(String sourceId)
+        public void collectSourceId(String sourceId)
         {
             addOtherString(sourceId);
         }
 
         @Override
-        protected void collectProperty(String property)
+        public void collectProperty(String property)
         {
             addOtherString(property);
         }
 
         @Override
-        protected void collectRef(String classifierId, String identifier)
+        public void collectRef(String classifierId, String identifier)
         {
             addClassifierId(classifierId);
             addOtherString(identifier);
         }
 
         @Override
-        protected void collectPrimitiveString(String string)
+        public void collectPrimitiveString(String string)
         {
             addOtherString(string);
         }

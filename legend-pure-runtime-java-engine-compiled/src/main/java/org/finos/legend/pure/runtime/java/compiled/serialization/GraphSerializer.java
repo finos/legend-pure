@@ -43,6 +43,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuild
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.coreinstance.JavaCompiledCoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.metadata.Metadata;
+import org.finos.legend.pure.runtime.java.compiled.serialization.model.Enum;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
@@ -68,8 +69,9 @@ public class GraphSerializer
         String identifier = idBuilder.buildId(instance);
         String classifierString = classifierCaches.getClassifierId(instance.getClassifier());
         ListIterable<PropertyValue> propertyValues = collectProperties(instance, idBuilder, classifierCaches, processorSupport);
-        boolean isEnum = classifierCaches.isEnum(instance);
-        return Obj.newObj(classifierString, identifier, instance.getName(), propertyValues, sourceInformation, isEnum);
+        return classifierCaches.isEnum(instance) ?
+                new Enum(sourceInformation, identifier, classifierString, instance.getName(), propertyValues) :
+                new Obj(sourceInformation, identifier, classifierString, instance.getName(), propertyValues);
     }
 
     private static ListIterable<PropertyValue> collectProperties(CoreInstance instance, IdBuilder idBuilder, ClassifierCaches classifierCaches, ProcessorSupport processorSupport)

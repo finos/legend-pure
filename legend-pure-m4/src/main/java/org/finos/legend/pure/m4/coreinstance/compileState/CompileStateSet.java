@@ -20,9 +20,6 @@ import org.eclipse.collections.impl.set.immutable.AbstractImmutableSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.function.Consumer;
 
 public class CompileStateSet extends AbstractImmutableSet<CompileState>
 {
@@ -31,7 +28,7 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
     private static final int ALL_BIT_FLAGS = (1 << ALL_STATES.length) - 1;
     private static final int ORDINARY_BIT_FLAGS = toBitSet(CompileState.PROCESSED, CompileState.VALIDATED);
 
-    private final int bits;
+    private int bits;
 
     private CompileStateSet(int bits)
     {
@@ -53,7 +50,7 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
 
         if (object instanceof CompileStateSet)
         {
-            return this.bits == ((CompileStateSet) object).bits;
+            return this.bits == ((CompileStateSet)object).bits;
         }
 
         if (!(object instanceof Set))
@@ -82,7 +79,7 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
     @Override
     public boolean contains(Object o)
     {
-        return (o instanceof CompileState) && contains((CompileState) o);
+        return (o instanceof CompileState) && contains((CompileState)o);
     }
 
     public boolean contains(CompileState state)
@@ -97,51 +94,39 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
     }
 
     @Override
-    public boolean isEmpty()
-    {
-        return this.bits == 0;
-    }
-
-    @Override
     public CompileState getFirst()
     {
-        return getFirst(this.bits);
+        return (this.bits == 0) ? null : ALL_STATES[Integer.numberOfTrailingZeros(this.bits)];
     }
 
     @Override
     public CompileState getLast()
     {
-        return getLast(this.bits);
-    }
-
-    @Override
-    public void forEach(Consumer<? super CompileState> consumer)
-    {
-        forEach(this.bits, consumer);
+        return (this.bits == 0) ? null : ALL_STATES[31 - Integer.numberOfLeadingZeros(this.bits)];
     }
 
     @Override
     public void each(Procedure<? super CompileState> procedure)
     {
-        forEach(this.bits, procedure);
+        if (this.bits != 0)
+        {
+            for (CompileState state : this)
+            {
+                procedure.value(state);
+            }
+        }
     }
 
     @Override
     public Iterator<CompileState> iterator()
     {
-        return new CompileStateSetIterator(this.bits);
-    }
-
-    @Override
-    public Spliterator<CompileState> spliterator()
-    {
-        return Spliterators.spliterator(this, Spliterator.DISTINCT | Spliterator.IMMUTABLE | Spliterator.NONNULL);
+        return new CompileStateSetIterator();
     }
 
     @Override
     public CompileStateSet clone()
     {
-        return this;
+        return fromBitSet(this.bits);
     }
 
     @Override
@@ -168,13 +153,14 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
         return fromBitSet(removeCompileStatesFromBitSet(this.bits, states));
     }
 
-    private static class CompileStateSetIterator implements Iterator<CompileState>
+    private class CompileStateSetIterator implements Iterator<CompileState>
     {
         private int unseen;
+        private int lastReturned = 0;
 
-        private CompileStateSetIterator(int bits)
+        private CompileStateSetIterator()
         {
-            this.unseen = bits;
+            this.unseen = CompileStateSet.this.bits;
         }
 
         @Override
@@ -190,18 +176,20 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
             {
                 throw new NoSuchElementException();
             }
-            int next = this.unseen & -this.unseen;
-            this.unseen -= next;
-            return getFirst(next);
+            this.lastReturned = this.unseen & -this.unseen;
+            this.unseen -= this.lastReturned;
+            return ALL_STATES[Integer.numberOfTrailingZeros(this.lastReturned)];
         }
 
         @Override
-        public void forEachRemaining(Consumer<? super CompileState> action)
+        public void remove()
         {
-            while (this.unseen != 0)
+            if (this.lastReturned == 0)
             {
-                this.unseen = consumeNext(this.unseen, action);
+                throw new IllegalStateException();
             }
+            CompileStateSet.this.bits &= ~this.lastReturned;
+            this.lastReturned = 0;
         }
     }
 
@@ -239,7 +227,7 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
     {
         if (states instanceof CompileStateSet)
         {
-            return addCompileStatesToBitSet(bits, (CompileStateSet) states);
+            return addCompileStatesToBitSet(bits, (CompileStateSet)states);
         }
 
         int result = bits;
@@ -274,7 +262,7 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
     {
         if (states instanceof CompileStateSet)
         {
-            return removeCompileStatesFromBitSet(bits, (CompileStateSet) states);
+            return removeCompileStatesFromBitSet(bits, (CompileStateSet)states);
         }
 
         int result = bits;
@@ -312,7 +300,7 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
 
     public static int toBitSet(Iterable<? extends CompileState> states)
     {
-        return (states instanceof CompileStateSet) ? toBitSet((CompileStateSet) states) : addCompileStatesToBitSet(0, states);
+        return (states instanceof CompileStateSet) ? toBitSet((CompileStateSet)states) : addCompileStatesToBitSet(0, states);
     }
 
     /**
@@ -371,31 +359,5 @@ public class CompileStateSet extends AbstractImmutableSet<CompileState>
     private static CompileStateSet fromNormalizedBitSet(int bits)
     {
         return (bits < CACHED_SETS.length) ? CACHED_SETS[bits] : new CompileStateSet(bits);
-    }
-
-    private static CompileState getFirst(int bits)
-    {
-        return (bits == 0) ? null : ALL_STATES[Integer.numberOfTrailingZeros(bits)];
-    }
-
-    private static CompileState getLast(int bits)
-    {
-        return (bits == 0) ? null : ALL_STATES[31 - Integer.numberOfLeadingZeros(bits)];
-    }
-
-    private static void forEach(int bits, Consumer<? super CompileState> consumer)
-    {
-        while (bits != 0)
-        {
-            bits = consumeNext(bits, consumer);
-        }
-    }
-
-    private static int consumeNext(int bits, Consumer<? super CompileState> consumer)
-    {
-        int next = bits & -bits;
-        CompileState state = getFirst(next);
-        consumer.accept(state);
-        return bits - next;
     }
 }

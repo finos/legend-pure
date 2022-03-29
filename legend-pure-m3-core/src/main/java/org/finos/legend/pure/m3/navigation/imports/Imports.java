@@ -14,15 +14,19 @@
 
 package org.finos.legend.pure.m3.navigation.imports;
 
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.set.mutable.UnifiedSet;
+import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.Import;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -30,23 +34,40 @@ import org.finos.legend.pure.m4.coreinstance.indexing.IndexSpecifications;
 
 public class Imports
 {
+    public static final Predicate2<CoreInstance, String> IS_IMPORT_GROUP_FOR_SOURCE = new Predicate2<CoreInstance, String>()
+    {
+        @Override
+        public boolean accept(CoreInstance importGroup, String sourceId)
+        {
+            return isImportGroupForSource(importGroup, sourceId);
+        }
+    };
+
     private Imports()
     {
     }
 
     public static SetIterable<PackageableElement> getImportGroupPackages(ImportGroup importGroup, ProcessorSupport processorSupport)
     {
-        MutableSet<PackageableElement> packages = Sets.mutable.empty();
 
         // Get core imports
-        ImportGroup coreImport = (ImportGroup) processorSupport.package_getByUserPath(M3Paths.coreImport);
-        coreImport._imports().collect(imp -> (PackageableElement) processorSupport.package_getByUserPath(imp._path()), packages);
+        ImportGroup coreImport = (ImportGroup)processorSupport.package_getByUserPath(M3Paths.coreImport);
+        RichIterable<? extends Import> coreImports =  coreImport._imports();
 
         // Get import group imports
-        importGroup._imports().collect(imp -> (PackageableElement) processorSupport.package_getByUserPath(imp._path()), packages);
+        RichIterable<? extends Import> importGroupImports = importGroup._imports();
 
-        // Remove null
-        return packages.without(null);
+        // Combine all imports and get packages
+        MutableSet<PackageableElement> pkgs = UnifiedSet.newSet(coreImports.size() + importGroupImports.size());
+        for (Import imp : LazyIterate.concatenate((ListIterable<Import>) coreImports, (ListIterable<Import>) importGroupImports))
+        {
+            PackageableElement pkg = (PackageableElement)getImportPackage(imp, processorSupport);
+            if (pkg != null)
+            {
+                pkgs.add(pkg);
+            }
+        }
+        return pkgs;
     }
 
     public static CoreInstance getImportPackage(CoreInstance imp, ProcessorSupport processorSupport)
@@ -58,7 +79,7 @@ public class Imports
     public static ListIterable<? extends CoreInstance> getImportGroupsForSource(String sourceId, ProcessorSupport processorSupport)
     {
         CoreInstance imports = processorSupport.package_getByUserPath("system::imports");
-        return (imports == null) ? Lists.immutable.empty() : getImportGroupsForSourceFromSystemImports(imports, sourceId);
+        return (imports == null) ? Lists.immutable.<CoreInstance>empty() : getImportGroupsForSourceFromSystemImports(imports, sourceId);
     }
 
     public static ListIterable<? extends CoreInstance> getImportGroupsForSourceFromSystemImports(CoreInstance systemImports, String sourceId)

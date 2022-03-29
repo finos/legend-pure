@@ -30,7 +30,7 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.JavaPackageAndImportBuilder;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.EnumProcessor;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphDeserializer;
-import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedMetadataSpecification;
+import org.finos.legend.pure.runtime.java.compiled.serialization.model.Enum;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
@@ -41,7 +41,6 @@ import org.finos.legend.pure.runtime.java.compiled.serialization.model.RValueVis
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.Objects;
 
 public class MetadataLazy implements Metadata
@@ -307,7 +306,7 @@ public class MetadataLazy implements Metadata
 
     private Constructor<? extends CoreInstance> getConstructor(String classifier, Obj obj)
     {
-        if (obj.isEnum())
+        if (obj instanceof Enum)
         {
             Constructor<? extends CoreInstance> constructor = this.enumConstructor;
             if (constructor == null)
@@ -368,37 +367,14 @@ public class MetadataLazy implements Metadata
     public static MetadataLazy fromClassLoader(ClassLoader classLoader)
     {
         Objects.requireNonNull(classLoader, "class loader may not be null");
-        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.newBuilder(classLoader)
-                .withNoMetadataName()
-                .withObjValidation()
-                .build();
+        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromClassLoader(classLoader);
         return new MetadataLazy(classLoader, deserializer);
     }
 
     public static MetadataLazy fromClassLoader(ClassLoader classLoader, String metadataName)
     {
         Objects.requireNonNull(classLoader, "class loader may not be null");
-        return fromClassLoader(classLoader, Lists.fixedSize.with(metadataName));
-    }
-
-    public static MetadataLazy fromClassLoader(ClassLoader classLoader, String metadataName, String... moreMetadataNames)
-    {
-        Objects.requireNonNull(classLoader, "class loader may not be null");
-        return fromClassLoader(classLoader, Sets.mutable.with(moreMetadataNames).with(metadataName));
-    }
-
-    public static MetadataLazy fromClassLoader(ClassLoader classLoader, Iterable<String> metadataNames)
-    {
-        Objects.requireNonNull(classLoader, "class loader may not be null");
-        Objects.requireNonNull(classLoader, "metadataNames may not be null");
-        List<DistributedMetadataSpecification> specs = DistributedMetadataSpecification.loadSpecifications(classLoader, metadataNames);
-        if (specs.isEmpty())
-        {
-            throw new IllegalArgumentException("metadata names are required");
-        }
-        DistributedBinaryGraphDeserializer.Builder builder = DistributedBinaryGraphDeserializer.newBuilder(classLoader).withObjValidation();
-        specs.forEach(spec -> builder.withMetadataName(spec.getName()));
-        DistributedBinaryGraphDeserializer deserializer = builder.build();
+        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromClassLoader(metadataName, classLoader);
         return new MetadataLazy(classLoader, deserializer);
     }
 }

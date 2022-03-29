@@ -21,6 +21,7 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.DateFunctions;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.LatestDate;
 import org.finos.legend.pure.m4.serialization.Reader;
+import org.finos.legend.pure.runtime.java.compiled.serialization.model.Enum;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
@@ -37,18 +38,23 @@ abstract class AbstractBinaryObjDeserializer implements BinaryObjDeserializer
     @Override
     public Obj deserialize(Reader reader)
     {
-        byte code = reader.readByte();
-        boolean isEnum = BinaryGraphSerializationTypes.isEnum(code);
-        String classifier = readClassifier(reader);
+        boolean isEnum = reader.readBoolean();
+        SourceInformation sourceInformation = readSourceInformation(reader);
         String identifier = readIdentifier(reader);
-        String name = BinaryGraphSerializationTypes.hasName(code) ? readName(reader) : null;
-        SourceInformation sourceInformation = BinaryGraphSerializationTypes.hasSourceInfo(code) ? readSourceInformation(reader) : null;
+        String classifier = readClassifier(reader);
+        String name = readName(reader);
         ListIterable<PropertyValue> propertiesList = readPropertyValues(reader);
-        return Obj.newObj(classifier, identifier, name, propertiesList, sourceInformation, isEnum);
+        return isEnum ? new Enum(sourceInformation, identifier, classifier, name, propertiesList) : new Obj(sourceInformation, identifier, classifier, name, propertiesList);
     }
 
     protected SourceInformation readSourceInformation(Reader reader)
     {
+        boolean hasSourceInfo = reader.readBoolean();
+        if (!hasSourceInfo)
+        {
+            return null;
+        }
+
         String sourceId = readString(reader);
         int startLine = reader.readInt();
         int startColumn = reader.readInt();

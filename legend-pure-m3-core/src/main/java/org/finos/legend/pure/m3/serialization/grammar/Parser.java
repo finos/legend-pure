@@ -31,11 +31,50 @@ import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 
 public interface Parser extends CoreInstanceFactoriesRegistry
 {
-    Function<Parser, String> GET_NAME = Parser::getName;
-    Function<Parser, RichIterable<MatchRunner>> GET_PROCESSORS = Parser::getProcessors;
-    Function<Parser, RichIterable<MatchRunner>> GET_UNLOAD_WALKERS = Parser::getUnLoadWalkers;
-    Function<Parser, RichIterable<MatchRunner>> GET_UNLOAD_UNBINDERS = Parser::getUnLoadUnbinders;
-    Function<Parser, RichIterable<ExternalReferenceSerializer>> GET_REFERENCE_SERIALIZERS = Parser::getExternalReferenceSerializers;
+    public static final Function<Parser, String> GET_NAME = new Function<Parser, String>()
+    {
+        @Override
+        public String valueOf(Parser parser)
+        {
+            return parser.getName();
+        }
+    };
+
+    public static final Function<Parser, RichIterable<MatchRunner>> GET_PROCESSORS = new Function<Parser, RichIterable<MatchRunner>>()
+    {
+        @Override
+        public RichIterable<MatchRunner> valueOf(Parser parser)
+        {
+            return parser.getProcessors();
+        }
+    };
+
+    public static final Function<Parser, RichIterable<MatchRunner>> GET_UNLOAD_WALKERS = new Function<Parser, RichIterable<MatchRunner>>()
+    {
+        @Override
+        public RichIterable<MatchRunner> valueOf(Parser parser)
+        {
+            return parser.getUnLoadWalkers();
+        }
+    };
+
+    public static final Function<Parser, RichIterable<MatchRunner>> GET_UNLOAD_UNBINDERS = new Function<Parser, RichIterable<MatchRunner>>()
+    {
+        @Override
+        public RichIterable<MatchRunner> valueOf(Parser parser)
+        {
+            return parser.getUnLoadUnbinders();
+        }
+    };
+
+    public static final Function<Parser, RichIterable<ExternalReferenceSerializer>> GET_REFERENCE_SERIALIZERS = new Function<Parser, RichIterable<ExternalReferenceSerializer>>()
+    {
+        @Override
+        public RichIterable<ExternalReferenceSerializer> valueOf(Parser parser)
+        {
+            return parser.getExternalReferenceSerializers();
+        }
+    };
 
     /**
      * Parser name.  No two parsers may have the same name.

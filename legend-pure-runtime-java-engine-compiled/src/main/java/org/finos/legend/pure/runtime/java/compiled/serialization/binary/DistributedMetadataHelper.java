@@ -3,14 +3,12 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 class DistributedMetadataHelper
 {
     private static final String META_DATA_DIRNAME = "metadata/";
-    private static final String SPECS_DIRNAME = META_DATA_DIRNAME + "specs/";
     private static final String CLASSIFIERS_DIRNAME = META_DATA_DIRNAME + "classifiers/";
     private static final String STRINGS_DIRNAME = META_DATA_DIRNAME + "strings/";
     private static final String BINARIES_DIRNAME = META_DATA_DIRNAME + "bin/";
 
     private static final String BIN_FILE_EXTENSION = ".bin";
     private static final String INDEX_FILE_EXTENSION = ".idx";
-    private static final String METADATA_SPEC_FILE_EXTENSION = ".json";
 
     // Metadata name
 
@@ -90,34 +88,6 @@ class DistributedMetadataHelper
     static String getMetadataIdPrefix(String metadataName)
     {
         return (metadataName == null) ? null : ('$' + metadataName + '$');
-    }
-
-    // Metadata specification paths
-
-    static String getMetadataSpecificationsDirectory()
-    {
-        return SPECS_DIRNAME;
-    }
-
-    static String getMetadataSpecificationFilePath(String metadataName)
-    {
-        return SPECS_DIRNAME + metadataName + METADATA_SPEC_FILE_EXTENSION;
-    }
-
-    static boolean isMetadataSpecificationFilePath(String path)
-    {
-        return (path != null) &&
-                (path.length() > (SPECS_DIRNAME.length() + METADATA_SPEC_FILE_EXTENSION.length())) &&
-                path.startsWith(SPECS_DIRNAME) &&
-                path.endsWith(METADATA_SPEC_FILE_EXTENSION) &&
-                isValidMetadataName(path, SPECS_DIRNAME.length(), path.length() - METADATA_SPEC_FILE_EXTENSION.length());
-    }
-
-    static boolean isMetadataSpecificationFileName(String fileName)
-    {
-        return (fileName != null) &&
-                fileName.endsWith(METADATA_SPEC_FILE_EXTENSION) &&
-                isValidMetadataName(fileName, 0, fileName.length() - METADATA_SPEC_FILE_EXTENSION.length());
     }
 
     // Metadata file paths

@@ -15,10 +15,9 @@
 package org.finos.legend.pure.m3.serialization.filesystem.usercodestorage;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
+import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 
 public abstract class AbstractMultipleRepositoryCodeStorage extends AbstractRepositoryCodeStorage
@@ -28,11 +27,6 @@ public abstract class AbstractMultipleRepositoryCodeStorage extends AbstractRepo
     protected AbstractMultipleRepositoryCodeStorage(Iterable<? extends CodeRepository> repositories)
     {
         this.repositories = indexRepositories(repositories);
-    }
-
-    protected AbstractMultipleRepositoryCodeStorage(CodeRepository... repositories)
-    {
-        this(ArrayAdapter.adapt(repositories));
     }
 
     protected AbstractMultipleRepositoryCodeStorage(CodeRepository repository)
@@ -65,14 +59,14 @@ public abstract class AbstractMultipleRepositoryCodeStorage extends AbstractRepo
     private static ImmutableMap<String, CodeRepository> indexRepositories(Iterable<? extends CodeRepository> repositories)
     {
         MutableMap<String, CodeRepository> index = Maps.mutable.empty();
-        repositories.forEach(repository ->
+        for (CodeRepository repository : repositories)
         {
             CodeRepository old = index.put(repository.getName(), repository);
             if ((old != null) && (old != repository))
             {
                 throw new IllegalArgumentException("Name conflict for " + repository.getName());
             }
-        });
+        }
         return index.toImmutable();
     }
 }

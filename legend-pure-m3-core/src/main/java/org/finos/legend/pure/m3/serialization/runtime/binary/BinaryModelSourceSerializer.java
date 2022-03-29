@@ -15,9 +15,9 @@
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.block.function.Function2;
+import org.eclipse.collections.api.block.function.primitive.IntToObjectFunction;
+import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.list.primitive.MutableIntList;
@@ -26,19 +26,23 @@ import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
 import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.impl.block.factory.Predicates;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.Maps;
+import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.factory.primitive.IntLists;
 import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
 import org.eclipse.collections.impl.utility.Iterate;
-import org.finos.legend.pure.m3.navigation.Instance;
+import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
+import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.imports.Imports;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.navigation.type.Type;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
@@ -46,10 +50,11 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializationHelper;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializer;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceSerializerLibrary;
-import org.finos.legend.pure.m4.ModelRepository;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.Writer;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 
@@ -59,6 +64,35 @@ import java.util.Queue;
 
 public class BinaryModelSourceSerializer
 {
+    private static final Function2<String, CoreInstance, ListIterable<String>> GET_PROPERTY_REAL_KEY = new Function2<String, CoreInstance, ListIterable<String>>()
+    {
+        @Override
+        public ListIterable<String> value(String propertyName, CoreInstance instance)
+        {
+            return instance.getRealKeyByName(propertyName);
+        }
+    };
+
+    private static final Predicate<Object> SHOULD_SERIALIZE_PROPERTY = Predicates.notIn(M3PropertyPaths.BACK_REFERENCE_PROPERTY_PATHS);
+
+    private final Predicate<CoreInstance> isFromThisSource = new Predicate<CoreInstance>()
+    {
+        @Override
+        public boolean accept(CoreInstance instance)
+        {
+            return isFromThisSource(instance);
+        }
+    };
+
+    private final IntToObjectFunction<String> getStringById = new IntToObjectFunction<String>()
+    {
+        @Override
+        public String valueOf(int id)
+        {
+            return BinaryModelSourceSerializer.this.strings.get(id);
+        }
+    };
+
     private final Source source;
     private final ModelRepository repository;
     private final ProcessorSupport processorSupport;
@@ -167,7 +201,7 @@ public class BinaryModelSourceSerializer
     private void prepareMainIndexes()
     {
         ListMultimap<Parser, CoreInstance> elements = this.source.getElementsByParser();
-        for (Parser parser : this.source.getElementsByParser().keysView().toSortedListBy(Parser::getName))
+        for (Parser parser : this.source.getElementsByParser().keysView().toSortedListBy(Parser.GET_NAME))
         {
             possiblyRegisterString(parser.getName());
             for (CoreInstance instance : elements.get(parser))
@@ -203,7 +237,7 @@ public class BinaryModelSourceSerializer
     {
         // Write instances by parser
         ListMultimap<Parser, CoreInstance> instancesByParser = this.source.getElementsByParser();
-        ListIterable<Parser> parsersSortedByName = instancesByParser.keysView().toSortedListBy(Parser::getName);
+        ListIterable<Parser> parsersSortedByName = instancesByParser.keysView().toSortedListBy(Parser.GET_NAME);
         writer.writeInt(parsersSortedByName.size());
         for (Parser parser : parsersSortedByName)
         {
@@ -307,9 +341,10 @@ public class BinaryModelSourceSerializer
         ListMultimap<Parser, CoreInstance> elementsByParser = this.source.getElementsByParser();
         if (elementsByParser != null)
         {
-            elementsByParser.keyMultiValuePairsView()
-                    .toSortedListBy(pair -> pair.getOne().getName())
-                    .forEach(pair -> Iterate.addAllIterable(pair.getTwo(), this.serializationQueue));
+            for (Parser parser : elementsByParser.keysView().toSortedListBy(Parser.GET_NAME))
+            {
+                Iterate.addAllIterable(elementsByParser.get(parser), this.serializationQueue);
+            }
         }
 
         // Add import groups
@@ -358,9 +393,9 @@ public class BinaryModelSourceSerializer
         serializeCompileState(instance, writer);
 
         // Serialize properties
-        ListIterable<ListIterable<String>> realKeys = instance.getKeys().toSortedList().collect(instance::getRealKeyByName).reject(M3PropertyPaths.BACK_REFERENCE_PROPERTY_PATHS::contains);
+        ListIterable<ListIterable<String>> realKeys = instance.getKeys().toSortedList().collectWith(GET_PROPERTY_REAL_KEY, instance).select(SHOULD_SERIALIZE_PROPERTY);
         writer.writeInt(realKeys.size());
-        realKeys.forEach(realKey ->
+        for (ListIterable<String> realKey : realKeys)
         {
             try
             {
@@ -368,15 +403,18 @@ public class BinaryModelSourceSerializer
                 writer.writeInt(realKeyId);
 
                 ListIterable<? extends CoreInstance> values = getPropertyValueToMany(instance, realKey.getLast());
-                ListIterable<? extends CoreInstance> valuesToSerialize = M3PropertyPaths.children.equals(realKey) ? values.select(this::isFromThisSource) : values;
+                ListIterable<? extends CoreInstance> valuesToSerialize = M3PropertyPaths.children.equals(realKey) ? values.select(this.isFromThisSource) : values;
                 writer.writeInt(valuesToSerialize.size());
-                valuesToSerialize.forEach(value -> serializePropertyValue(value, writer));
+                for (CoreInstance value : valuesToSerialize)
+                {
+                    serializePropertyValue(value, writer);
+                }
             }
             catch (RuntimeException e)
             {
                 throw new RuntimeException("Error serializing values for property " + realKey, e);
             }
-        });
+        }
     }
 
     private void serializeClassifier(CoreInstance instance, Writer writer)
@@ -608,7 +646,7 @@ public class BinaryModelSourceSerializer
                 if (!isPackageableElement(referenceInstance))
                 {
                     // Not a PackageableElement and couldn't find a serializer
-                    throw new RuntimeException(buildUnsupportedExternalReferenceExceptionMessage(referenceInstance));
+                    throwUnsupportedExternalReferenceException(referenceInstance);
                 }
                 // PackageableElement reference we haven't registered (will be registered by side effect)
                 writePackageableElementExternalReference(referenceInstance, writer);
@@ -646,7 +684,7 @@ public class BinaryModelSourceSerializer
             if (serializer == null)
             {
                 // Couldn't find a serializer
-                throw new RuntimeException(buildUnsupportedExternalReferenceExceptionMessage(referenceInstance));
+                throwUnsupportedExternalReferenceException(referenceInstance);
             }
             int serializerId = getStringReferenceId(serializer.getTypePath());
             instanceWriter.writeInt(serializerId);
@@ -657,7 +695,10 @@ public class BinaryModelSourceSerializer
             catch (Exception e)
             {
                 // Exception occurred during serialization
-                StringBuilder message = new StringBuilder("Error serializing ").append(referenceInstance).append(" with serializer for type ").append(serializer.getTypePath());
+                StringBuilder message = new StringBuilder("Error serializaing ");
+                message.append(referenceInstance);
+                message.append(" with serializer for type ");
+                message.append(serializer.getTypePath());
                 SourceInformation sourceInfo = referenceInstance.getSourceInformation();
                 if (sourceInfo != null)
                 {
@@ -832,8 +873,24 @@ public class BinaryModelSourceSerializer
     private int[] getStringReferenceIds(ListIterable<String> strings)
     {
         int[] ids = new int[strings.size()];
-        strings.forEachWithIndex((string, i) -> ids[i] = getStringReferenceId(string));
+        int i = 0;
+        for (String string : strings)
+        {
+            ids[i] = getStringReferenceId(string);
+            i++;
+        }
         return ids;
+    }
+
+    private void registerStrings(Iterable<String> strings)
+    {
+        for (String string : strings)
+        {
+            if (!this.stringIds.containsKey(string))
+            {
+                registerString(string);
+            }
+        }
     }
 
     private int getPropertyRealKeyId(ListIterable<String> propertyRealKey)
@@ -848,7 +905,7 @@ public class BinaryModelSourceSerializer
 
     private int registerPropertyRealKey(ListIterable<String> propertyRealKey)
     {
-        propertyRealKey.forEach(this::possiblyRegisterString);
+        registerStrings(propertyRealKey);
         int id = this.propertyRealKeys.size();
         this.propertyRealKeys.add(propertyRealKey);
         this.propertyRealKeyIds.put(propertyRealKey, id);
@@ -872,17 +929,18 @@ public class BinaryModelSourceSerializer
         return null;
     }
 
-    private String buildUnsupportedExternalReferenceExceptionMessage(CoreInstance instance)
+    private void throwUnsupportedExternalReferenceException(CoreInstance instance)
     {
         StringBuilder message = new StringBuilder("External reference cannot be created for instance of ");
         PackageableElement.writeUserPathForPackageableElement(message, instance.getClassifier());
-        message.append(": ").append(instance);
+        message.append(": ");
+        message.append(instance);
         SourceInformation sourceInfo = instance.getSourceInformation();
         if (sourceInfo != null)
         {
             sourceInfo.appendMessage(message.append(" (source information: ")).append(')');
         }
-        return message.toString();
+        throw new RuntimeException(message.toString());
     }
 
     private String getElementPath(CoreInstance element)
@@ -964,8 +1022,8 @@ public class BinaryModelSourceSerializer
     {
         BinaryModelSourceSerializer serializer = new BinaryModelSourceSerializer(source, modelRepository, processorSupport, parserLibrary);
         serializer.serialize(writer);
-        RichIterable<String> serializedInstances = serializer.sourceNewInstancePathIds.asLazy().collect(serializer.strings::get).concatenate(serializer.sourceOtherInstancePathIds.asLazy().collect(serializer.strings::get));
-        RichIterable<String> externalReferences = serializer.externalPackageableElementReferences.asLazy().collect(serializer.strings::get);
+        RichIterable<String> serializedInstances = LazyIterate.concatenate(serializer.sourceNewInstancePathIds.asLazy().collect(serializer.getStringById), serializer.sourceOtherInstancePathIds.asLazy().collect(serializer.getStringById));
+        RichIterable<String> externalReferences = serializer.externalPackageableElementReferences.asLazy().collect(serializer.getStringById);
         return new SourceSerializationResult(source.getId(), serializedInstances, externalReferences);
     }
 

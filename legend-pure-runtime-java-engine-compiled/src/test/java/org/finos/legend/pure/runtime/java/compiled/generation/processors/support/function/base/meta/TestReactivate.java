@@ -31,33 +31,37 @@ import java.util.regex.Pattern;
 public class TestReactivate extends AbstractTestReactivate
 {
     @BeforeClass
-    public static void setUp()
-    {
+    public static void setUp() {
         setUpRuntime(getFunctionExecution());
     }
-
     @After
-    public void cleanRuntime()
-    {
+    public void cleanRuntime() {
         runtime.delete("testSource.pure");
     }
-
     @Test
     public void testVariableScopeFail()
     {
-        Exception e = Assert.assertThrows(Exception.class, this::compileAndExecuteVariableScopeFailure);
-        Throwable cause = ThrowableTools.findRootThrowable(e);
-        Assert.assertEquals(PureJavaCompileException.class, cause.getClass());
+        try
+        {
+            compileAndExecuteVariableScopeFailure();
+            Assert.fail();
+        }
+        catch (RuntimeException ex)
+        {
+            Throwable cause = ThrowableTools.findRootThrowable(ex);
+            Assert.assertEquals(PureJavaCompileException.class, cause.getClass());
 
-        String expected = Pattern.quote("1 error compiling /" + JavaPackageAndImportBuilder.rootPackageFolder() + "/DynaClass.java\n" +
-                "/" + JavaPackageAndImportBuilder.rootPackageFolder() + "/DynaClass.java:") + "\\d*" + Pattern.quote(": error: cannot find symbol\n" +
-                "       return (long)CompiledSupport.plus(Lists.mutable.<java.lang.Long>with(_a,3l));\n" +
-                "                                                                            ^\n" +
-                "  symbol:   variable _a\n" +
-                "  location: class " + JavaPackageAndImportBuilder.rootPackage() + ".DynaClass\n");
-        Pattern expectedPattern = Pattern.compile(expected);
-        Matcher matcher = expectedPattern.matcher(cause.getMessage());
-        Assert.assertTrue("Failed to find pattern in message:\n" + cause.getMessage(), matcher.find());
+            String expected = Pattern.quote("1 error compiling /" + JavaPackageAndImportBuilder.rootPackageFolder() + "/DynaClass.java\n" +
+                    "/"  + JavaPackageAndImportBuilder.rootPackageFolder() + "/DynaClass.java:") + "\\d*" + Pattern.quote(": error: cannot find symbol\n" +
+                    "       return (long)CompiledSupport.plus(Lists.mutable.<java.lang.Long>with(_a,3l));\n" +
+                    "                                                                            ^\n" +
+                    "  symbol:   variable _a\n" +
+                    "  location: class " + JavaPackageAndImportBuilder.rootPackage() + ".DynaClass\n");
+            Pattern expectedPattern = Pattern.compile(expected);
+            Matcher matcher = expectedPattern.matcher(cause.getMessage());
+            Assert.assertTrue("Failed to find pattern in message:\n" + cause.getMessage(), matcher.find());
+        }
+
     }
 
     protected static FunctionExecution getFunctionExecution()
