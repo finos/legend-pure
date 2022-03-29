@@ -21,7 +21,6 @@ import meta::relational::metamodel::operation::*;
 import meta::relational::postProcessor::reAliasColumnName::*;
 import meta::relational::metamodel::relation::*;
 import meta::relational::metamodel::*;
-import meta::pure::functions::collection::*;
 
 function meta::relational::postProcessor::reAliasColumnName::trimColumnName(query:SelectSQLQuery[1],connection:DatabaseConnection[1]):Result<SelectSQLQuery|1>[1]
 {
@@ -49,18 +48,10 @@ function meta::relational::postProcessor::reAliasColumnName::trimColumnName(quer
 function meta::relational::postProcessor::reAliasColumnName::lengthConfig(runtime: Runtime[1]):Integer[1]
 {
   let type =  $runtime.connections->filter(c|$c->instanceOf(DatabaseConnection))->cast(@DatabaseConnection).type;
-  let config = newMap([
-    pair(DatabaseType.DB2, 128),
-    pair(DatabaseType.SybaseIQ, 255),
-    pair(DatabaseType.Snowflake, 255),
-    pair(DatabaseType.H2, 255)
-  ]);
-
-  let length = $config->get($type->cast(@DatabaseType)->toOne());
-  if($length->isEmpty(),
-     | fail('Db not configured for column rename');0;,
-     | $length
-  )->toOne();
+  if($type==DatabaseType.DB2,
+     |128,
+     |if($type==DatabaseType.SybaseIQ,|255,|fail('Db not configured for column rename');0;)
+     );
 }
 
 function  meta::relational::postProcessor::reAliasColumnName::search(q:RelationalOperationElement[*],runtime:Runtime[1] ): Pair<String,String>[*]
@@ -81,11 +72,9 @@ function  meta::relational::postProcessor::reAliasColumnName::search(q:Relationa
                      u:UnaryOperation[1]|$u.nested->search($runtime);,
                      d: DynaFunction[1]| $d.parameters->search($runtime);,
                      b: BinaryOperation[1] |$b.left->search($runtime)->concatenate($b.right->search($runtime));,
-                     a: Alias[1] | let maxLength = lengthConfig($runtime);
-                                   if( $a.name->length()>=$maxLength,|pair($a.name->replace('"','')->substring(0,$maxLength-10), $a.name),|[])->concatenate($a.relationalElement->search($runtime));,
+                     a: Alias[1] |if( $a.name->length()>=lengthConfig($runtime),|pair($a.name->replace('"','')->substring(0,120), $a.name),|[])->concatenate($a.relationalElement->search($runtime));,
                      js: JoinStrings[1]| $js.strings->search($runtime)->concatenate($js.prefix->search($runtime))->concatenate($js.suffix->search($runtime))->concatenate($js.separator->search($runtime));,
-                     c: Column[1]| let maxLength = lengthConfig($runtime);
-                                   if( $c.name->length()>=$maxLength,|pair($c.name->replace('"','')->substring(0,$maxLength-10), $c.name),|[]);,
+                     c: Column[1]|if( $c.name->length()>=lengthConfig($runtime),|pair($c.name->replace('"','')->substring(0,120), $c.name),|[]);,
                      any:Any[1]| [];
                    ]);
             );
