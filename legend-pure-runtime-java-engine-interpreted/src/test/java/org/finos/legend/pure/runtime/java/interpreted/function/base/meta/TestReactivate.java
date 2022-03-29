@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.meta;
 
+import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.meta.AbstractTestReactivate;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -25,29 +26,25 @@ import org.junit.Test;
 public class TestReactivate extends AbstractTestReactivate
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
+
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("testSource.pure");
     }
+
     @Test
     public void testVariableScopeFail()
     {
-        try
-        {
-            compileAndExecuteVariableScopeFailure();
-            Assert.fail();
-        }
-        catch (RuntimeException ex)
-        {
-            assertOriginatingPureException("Variable 'a' is not defined in the current variable context", ex);
-        }
-
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, this::compileAndExecuteVariableScopeFailure);
+        assertOriginatingPureException("Variable 'a' is not defined in the current variable context", e);
     }
 
-     protected static FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
     }

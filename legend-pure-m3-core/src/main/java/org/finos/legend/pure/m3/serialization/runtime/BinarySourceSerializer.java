@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
@@ -24,7 +25,6 @@ import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -60,7 +60,7 @@ public class BinarySourceSerializer
                 writer.writeString(parserName);
                 parserIds.put(parserName, parserIds.size());
             }
-            MutableList<Source> sortedSources = sourceRegistry.getSources().toSortedListBy(Source.SOURCE_ID);
+            MutableList<Source> sortedSources = sourceRegistry.getSources().toSortedListBy(Source::getId);
             writer.writeInt(sortedSources.size());
             for (Source source : sortedSources)
             {
@@ -84,7 +84,7 @@ public class BinarySourceSerializer
             ListMultimap<Parser, CoreInstance> elementsByParser = source.getElementsByParser();
             if (elementsByParser != null)
             {
-                elementsByParser.keysView().collect(Parser.GET_NAME, parserNames);
+                elementsByParser.keysView().collect(Parser::getName, parserNames);
             }
         }
         return parserNames;
@@ -108,7 +108,7 @@ public class BinarySourceSerializer
         }
         else
         {
-            MutableList<Parser> parsers = elementsByParser.keysView().toSortedListBy(Parser.GET_NAME);
+            MutableList<Parser> parsers = elementsByParser.keysView().toSortedListBy(Parser::getName);
             writer.writeInt(parsers.size());
             for (Parser parser : parsers)
             {

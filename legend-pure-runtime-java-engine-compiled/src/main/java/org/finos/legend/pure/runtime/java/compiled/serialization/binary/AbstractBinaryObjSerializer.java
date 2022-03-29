@@ -18,7 +18,6 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate;
 import org.finos.legend.pure.m4.serialization.Writer;
-import org.finos.legend.pure.runtime.java.compiled.serialization.model.Enum;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.EnumRef;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.ObjRef;
@@ -35,31 +34,29 @@ abstract class AbstractBinaryObjSerializer implements BinaryObjSerializer
     @Override
     public void serializeObj(Writer writer, Obj obj)
     {
-        writer.writeBoolean(obj instanceof Enum);
-        writeSourceInformation(writer, obj.getSourceInformation());
-        writeIdentifier(writer, obj.getIdentifier());
+        writer.writeByte(BinaryGraphSerializationTypes.getObjSerializationCode(obj));
         writeClassifier(writer, obj.getClassifier());
-        writeName(writer, obj.getName());
+        writeIdentifier(writer, obj.getIdentifier());
+        if (obj.getName() != null)
+        {
+            writeName(writer, obj.getName());
+        }
+        if (obj.getSourceInformation() != null)
+        {
+            writeSourceInformation(writer, obj.getSourceInformation());
+        }
         writePropertyValues(writer, obj);
     }
 
     protected void writeSourceInformation(Writer writer, SourceInformation sourceInformation)
     {
-        if (sourceInformation == null)
-        {
-            writer.writeBoolean(false);
-        }
-        else
-        {
-            writer.writeBoolean(true);
-            writeString(writer, sourceInformation.getSourceId());
-            writer.writeInt(sourceInformation.getStartLine());
-            writer.writeInt(sourceInformation.getStartColumn());
-            writer.writeInt(sourceInformation.getLine());
-            writer.writeInt(sourceInformation.getColumn());
-            writer.writeInt(sourceInformation.getEndLine());
-            writer.writeInt(sourceInformation.getEndColumn());
-        }
+        writeString(writer, sourceInformation.getSourceId());
+        writer.writeInt(sourceInformation.getStartLine());
+        writer.writeInt(sourceInformation.getStartColumn());
+        writer.writeInt(sourceInformation.getLine());
+        writer.writeInt(sourceInformation.getColumn());
+        writer.writeInt(sourceInformation.getEndLine());
+        writer.writeInt(sourceInformation.getEndColumn());
     }
 
     protected void writeIdentifier(Writer writer, String identifier)

@@ -14,12 +14,12 @@
 
 package org.finos.legend.pure.runtime.java.compiled.compiler;
 
-import org.eclipse.collections.api.list.ImmutableList;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.JavaCompilerEventObserver;
+import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
 
 public class Compile
 {
@@ -28,38 +28,43 @@ public class Compile
 
     public Compile(PureJavaCompiler pureJavaCompiler, JavaCompilerEventObserver observer)
     {
-        this.observer = observer;
+        this.observer = (observer == null) ? VoidJavaCompilerEventObserver.VOID_JAVA_COMPILER_EVENT_OBSERVER : observer;
         this.pureJavaCompiler = pureJavaCompiler;
     }
 
-    public void compileJavaCodeForSources(ListIterable<Pair<String, ImmutableList<StringJavaSource>>> javaSourcesByCompileGroup) throws PureJavaCompileException
+    public Compile(PureJavaCompiler pureJavaCompiler)
     {
-        for(Pair<String, ImmutableList<StringJavaSource>> javaSources : javaSourcesByCompileGroup)
+        this(pureJavaCompiler, null);
+    }
+
+    public void compileJavaCodeForSources(Iterable<? extends Pair<? extends String, ? extends Iterable<? extends StringJavaSource>>> javaSourcesByCompileGroup) throws PureJavaCompileException
+    {
+        for (Pair<? extends String, ? extends Iterable<? extends StringJavaSource>> javaSources : javaSourcesByCompileGroup)
         {
-            this.compile(javaSources.getOne(), javaSources.getTwo());
+            compile(javaSources.getOne(), javaSources.getTwo());
         }
     }
 
-    public void compile(String compileGroup, ListIterable<StringJavaSource> javaSources) throws PureJavaCompileException
+    public void compile(String compileGroup, Iterable<? extends StringJavaSource> javaSources) throws PureJavaCompileException
     {
-        if (javaSources.notEmpty())
+        this.observer.startCompilingJavaFiles(compileGroup);
+        MutableMap<String, StringJavaSource> javaSourcesByName = Maps.mutable.empty();
+        javaSources.forEach(javaSource ->
         {
-            this.observer.startCompilingJavaFiles(compileGroup);
-            MutableMap<String, StringJavaSource> javaSourcesByName = UnifiedMap.newMap(javaSources.size());
-            for (StringJavaSource javaSource : javaSources)
+            StringJavaSource oldSource = javaSourcesByName.put(javaSource.getName(), javaSource);
+            if ((oldSource != null) && !oldSource.getCode().equals(javaSource.getCode()))
             {
-                StringJavaSource oldSource = javaSourcesByName.put(javaSource.getName(), javaSource);
-                if ((oldSource != null) && !oldSource.getCode().equals(javaSource.getCode()))
-                {
-                    throw new RuntimeException("Java source " + javaSource.getName() + " defined more than once with different code.\n\nSOURCE 1:\n" + oldSource.getCode() + "\n\n\n==================\nSOURCE 2:\n" + javaSource.getCode());
-                }
+                throw new RuntimeException("Java source " + javaSource.getName() + " defined more than once with different code.\n\nSOURCE 1:\n" + oldSource.getCode() + "\n\n\n==================\nSOURCE 2:\n" + javaSource.getCode());
             }
+        });
+        if (javaSourcesByName.notEmpty())
+        {
             this.pureJavaCompiler.compile(javaSourcesByName.valuesView());
-            this.observer.endCompilingJavaFiles(compileGroup);
         }
+        this.observer.endCompilingJavaFiles(compileGroup);
     }
 
-    public void compileExternalizableAPI(ListIterable<StringJavaSource> externalizableSources) throws PureJavaCompileException
+    public void compileExternalizableAPI(ListIterable<? extends StringJavaSource> externalizableSources) throws PureJavaCompileException
     {
         this.pureJavaCompiler.compile(externalizableSources);
     }

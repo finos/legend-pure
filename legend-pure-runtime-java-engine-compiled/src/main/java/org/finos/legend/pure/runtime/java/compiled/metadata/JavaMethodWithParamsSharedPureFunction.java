@@ -15,7 +15,6 @@
 package org.finos.legend.pure.runtime.java.compiled.metadata;
 
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.block.factory.Predicates;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
@@ -26,20 +25,20 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public final class JavaMethodWithParamsSharedPureFunction implements SharedPureFunction
+public final class JavaMethodWithParamsSharedPureFunction implements SharedPureFunction<Object>
 {
-    private Method method;
-    private Class paramClasses[];
+    private final Method method;
+    private final Class<?>[] paramClasses;
     private final SourceInformation sourceInformation;
 
-    public JavaMethodWithParamsSharedPureFunction(Method method, Class[] paramClasses, SourceInformation sourceInformation)
+    public JavaMethodWithParamsSharedPureFunction(Method method, Class<?>[] paramClasses, SourceInformation sourceInformation)
     {
         this.method = method;
         this.paramClasses = paramClasses;
         this.sourceInformation = sourceInformation;
     }
 
-    public Class[] getParametersTypes()
+    public Class<?>[] getParametersTypes()
     {
         return this.paramClasses;
     }
@@ -53,34 +52,34 @@ public final class JavaMethodWithParamsSharedPureFunction implements SharedPureF
         }
         catch (IllegalArgumentException e)
         {
-            for (int i = 0; i < vars.size(); i++)
+            vars.forEachWithIndex((var, i) ->
             {
-                if (!this.paramClasses[i].isInstance(vars.get(i)))
+                if (!this.paramClasses[i].isInstance(var))
                 {
-                    String argumentType = CompiledSupport.getPureClassName(vars.get(i));
+                    String argumentType = CompiledSupport.getPureClassName(var);
                     String paramType = CompiledSupport.getPureClassName(this.paramClasses[i]);
                     throw new PureExecutionException(this.sourceInformation, "Error during dynamic function evaluation. The type " + argumentType + " is not compatible with the type " + paramType, e);
                 }
-            }
-            throw new RuntimeException(e);
+            });
+            throw e;
         }
-        catch (IllegalAccessException ex)
+        catch (IllegalAccessException e)
         {
-            throw new PureExecutionException("Failed to invoke java function.", ex);
+            throw new PureExecutionException("Failed to invoke java function.", e);
         }
-        catch (InvocationTargetException ex)
+        catch (Exception e)
         {
-            PureException pureException = PureException.findPureException(ex);
+            PureException pureException = PureException.findPureException(e);
             if (pureException != null)
             {
                 throw pureException;
             }
             StringBuilder builder = new StringBuilder("Unexpected error executing function");
-            if (vars.notEmpty() && vars.anySatisfy(Predicates.instanceOf(ExecutionSupport.class).not()))
+            if (vars.notEmpty() && vars.anySatisfy(v -> !(v instanceof ExecutionSupport)))
             {
-                vars.asLazy().reject(Predicates.instanceOf(ExecutionSupport.class)).appendString(builder, " with params [", ", ", "]");
+                vars.asLazy().reject(v -> v instanceof ExecutionSupport).appendString(builder, " with params [", ", ", "]");
             }
-            throw new RuntimeException(builder.toString(), ex);
+            throw new RuntimeException(builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e);
         }
     }
 }

@@ -163,6 +163,19 @@
         </dependency>
 
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
         </dependency>
@@ -217,7 +230,8 @@
             <artifactId>legend-pure-m3-dsl-graph</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
-        </dependency>        <dependency>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.test-framework</groupId>
             <artifactId>jersey-test-framework-core</artifactId>
             <scope>test</scope>
@@ -243,7 +257,6 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
 </project>
