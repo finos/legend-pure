@@ -15,13 +15,14 @@
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
 import org.eclipse.collections.api.collection.MutableCollection;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.ImmutableSet;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.Maps;
+import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 
@@ -132,7 +133,7 @@ public class PureRepositoryJarMetadata
         Map<String, String> rawIndex;
         try
         {
-            rawIndex = (Map<String, String>) JSONValue.parseWithException(reader);
+            rawIndex = (Map<String, String>)JSONValue.parseWithException(reader);
         }
         catch (ParseException e)
         {
@@ -146,17 +147,17 @@ public class PureRepositoryJarMetadata
         Map<?, ?> rawIndex;
         try
         {
-            rawIndex = (Map<?, ?>) JSONValue.parseWithException(reader);
+            rawIndex = (Map<?, ?>)JSONValue.parseWithException(reader);
         }
         catch (ParseException e)
         {
             throw new RuntimeException("Invalid Pure jar: could not parse external reference index (" + PureRepositoryJarTools.REFERENCE_INDEX_NAME + ")", e);
         }
 
-        MutableMap<String, ImmutableSet<String>> index = Maps.mutable.withInitialCapacity(rawIndex.size());
+        MutableMap<String, ImmutableSet<String>> index = UnifiedMap.newMap(rawIndex.size());
         for (Map.Entry<?, ?> keyValue : rawIndex.entrySet())
         {
-            index.put((String) keyValue.getKey(), Sets.immutable.withAll((Iterable<String>) keyValue.getValue()));
+            index.put((String)keyValue.getKey(), Sets.immutable.withAll((Iterable<String>)keyValue.getValue()));
         }
         return index.toImmutable();
     }
@@ -217,8 +218,7 @@ public class PureRepositoryJarMetadata
         // Check if we are lucky and can find it right away
         // Stick to Path.resolve(String) to accommodate JSI, whose Path's are special.
         Path givenPath = root.resolve(name);
-        for (String moreName : moreNames)
-        {
+        for (String moreName : moreNames) {
             givenPath = givenPath.resolve(moreName);
         }
         if (Files.exists(givenPath))
@@ -258,8 +258,15 @@ public class PureRepositoryJarMetadata
         }
     }
 
-    private static DirectoryStream.Filter<Path> caseInsensitiveNameEquals(String name)
+    private static DirectoryStream.Filter<Path> caseInsensitiveNameEquals(final String name)
     {
-        return entry -> name.equalsIgnoreCase(entry.getFileName().toString());
+        return new DirectoryStream.Filter<Path>()
+        {
+            @Override
+            public boolean accept(Path entry)
+            {
+                return name.equalsIgnoreCase(entry.getFileName().toString());
+            }
+        };
     }
 }

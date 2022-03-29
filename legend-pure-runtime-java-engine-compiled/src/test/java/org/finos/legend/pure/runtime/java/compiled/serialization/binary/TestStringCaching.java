@@ -17,9 +17,6 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.MutableMap;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m4.tools.GraphNodeIterable;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
-import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,40 +32,43 @@ public abstract class TestStringCaching<T extends StringCache> extends AbstractP
     @Test
     public void testStringCaching()
     {
-        GraphSerializer.ClassifierCaches classifierCaches = new GraphSerializer.ClassifierCaches(processorSupport);
-        IdBuilder idBuilder = IdBuilder.newIdBuilder(processorSupport);
-        T cache = newBuilder().withObjs(GraphNodeIterable.allInstancesFromRepository(repository).collect(node -> GraphSerializer.buildObj(node, idBuilder, classifierCaches, processorSupport))).build();
-        Assert.assertEquals(0, cache.getStringId(null));
-
+        T cache = buildCache();
         String[] expectedClassifiers = getExpectedClassifiers(cache);
         String[] expectedOtherStrings = getExpectedOtherStrings(cache);
 
         MutableMap<String, byte[]> serialization = Maps.mutable.empty();
         serialize(cache, FileWriters.fromInMemoryByteArrayMap(serialization));
         StringIndex index = buildIndex(FileReaders.fromInMemoryByteArrays(serialization));
-        Assert.assertNull(index.getString(0));
 
         for (int i = 0; i < expectedClassifiers.length; i++)
         {
-            Assert.assertEquals(expectedClassifiers[i], index.getString(StringCacheOrIndex.classifierIdStringIndexToId(i)));
+            Assert.assertEquals(expectedClassifiers[i], index.getString(i));
         }
 
         for (int i = 0; i < expectedOtherStrings.length; i++)
         {
-            Assert.assertEquals(expectedOtherStrings[i], index.getString(StringCacheOrIndex.otherStringIndexToId(i)));
+            Assert.assertEquals(expectedOtherStrings[i], index.getString(i + expectedClassifiers.length));
         }
     }
 
-    protected abstract StringCache.Builder<T> newBuilder();
+    protected abstract T buildCache();
 
     protected String[] getExpectedClassifiers(T cache)
     {
-        return cache.getClassifierStringArray();
+        if (cache instanceof AbstractStringCache)
+        {
+            return ((AbstractStringCache) cache).getClassifierStringArray();
+        }
+        throw new UnsupportedOperationException("Implement getExpectedClassifiers");
     }
 
     protected String[] getExpectedOtherStrings(T cache)
     {
-        return cache.getOtherStringsArray();
+        if (cache instanceof AbstractStringCache)
+        {
+            return ((AbstractStringCache) cache).getOtherStringsArray();
+        }
+        throw new UnsupportedOperationException("Implement getExpectedOtherStrings");
     }
 
     protected abstract void serialize(T cache, FileWriter fileWriter);

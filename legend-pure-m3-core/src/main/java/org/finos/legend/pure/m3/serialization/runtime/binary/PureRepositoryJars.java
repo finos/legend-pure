@@ -30,11 +30,50 @@ import java.util.jar.JarInputStream;
 
 public class PureRepositoryJars
 {
-    public static final Function<Path, PureRepositoryJar> PATH_TO_JAR = PureRepositoryJars::get;
-    public static final Function<URL, PureRepositoryJar> URL_TO_JAR = PureRepositoryJars::get;
-    public static final Function<byte[], PureRepositoryJar> BYTE_ARRAY_TO_JAR = PureRepositoryJars::get;
-    public static final Function<ByteArrayOutputStream, PureRepositoryJar> BYTE_ARRAY_OUTPUT_STREAM_TO_JAR = PureRepositoryJars::get;
-    public static final Function<ByteIterable, PureRepositoryJar> BYTE_ITERABLE_TO_JAR = PureRepositoryJars::get;
+    public static final Function<Path, PureRepositoryJar> PATH_TO_JAR = new Function<Path, PureRepositoryJar>()
+    {
+        @Override
+        public PureRepositoryJar valueOf(Path path)
+        {
+            return get(path);
+        }
+    };
+
+    public static final Function<URL, PureRepositoryJar> URL_TO_JAR = new Function<URL, PureRepositoryJar>()
+    {
+        @Override
+        public PureRepositoryJar valueOf(URL url)
+        {
+            return get(url);
+        }
+    };
+
+    public static final Function<byte[], PureRepositoryJar> BYTE_ARRAY_TO_JAR = new Function<byte[], PureRepositoryJar>()
+    {
+        @Override
+        public PureRepositoryJar valueOf(byte[] bytes)
+        {
+            return get(bytes);
+        }
+    };
+
+    public static final Function<ByteArrayOutputStream, PureRepositoryJar> BYTE_ARRAY_OUTPUT_STREAM_TO_JAR = new Function<ByteArrayOutputStream, PureRepositoryJar>()
+    {
+        @Override
+        public PureRepositoryJar valueOf(ByteArrayOutputStream bytes)
+        {
+            return get(bytes);
+        }
+    };
+
+    public static final Function<ByteIterable, PureRepositoryJar> BYTE_ITERABLE_TO_JAR = new Function<ByteIterable, PureRepositoryJar>()
+    {
+        @Override
+        public PureRepositoryJar valueOf(ByteIterable bytes)
+        {
+            return get(bytes);
+        }
+    };
 
     private PureRepositoryJars()
     {

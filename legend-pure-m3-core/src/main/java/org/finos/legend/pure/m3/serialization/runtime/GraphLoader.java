@@ -278,7 +278,7 @@ public class GraphLoader
 
     private void loadDeserializationResults(ListIterable<SourceDeserializationResult> results, Message message)
     {
-        ListIterable<DeserializationNode> nodes = LazyIterate.select(results, SourceDeserializationResult::hasDeserializationNodes).flatCollect(SourceDeserializationResult::getDeserializationNodes).toList();
+        ListIterable<DeserializationNode> nodes = LazyIterate.select(results, SourceDeserializationResult.HAS_NODES).flatCollect(SourceDeserializationResult.GET_NODES).toList();
         initializeNodes(nodes, message);
         resolveReferences(nodes, message);
 

@@ -15,9 +15,6 @@
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
@@ -26,7 +23,11 @@ import org.eclipse.collections.api.multimap.set.MutableSetMultimap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.block.factory.Functions;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Multimaps;
+import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
@@ -38,10 +39,7 @@ import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.Writer;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -58,7 +56,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Before
     public void setUpLibrary() throws IOException
     {
-        this.library = buildLibrary(runtime, PlatformCodeRepository.NAME);
+        this.library = buildLibrary(this.runtime, PlatformCodeRepository.NAME);
     }
 
     @Test
@@ -101,13 +99,13 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     {
         ByteArrayOutputStream expectedStream = new ByteArrayOutputStream();
         Writer writer = BinaryWriters.newBinaryWriter(expectedStream);
-        for (Source source : runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
+        for (Source source : this.runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
         {
             String purePath = source.getId();
             String binPath = PureRepositoryJarTools.purePathToBinaryPath(purePath);
 
             expectedStream.reset();
-            BinaryModelSourceSerializer.serialize(writer, source, runtime);
+            BinaryModelSourceSerializer.serialize(writer, source, this.runtime);
 
             Assert.assertArrayEquals("Byte mismatch for " + purePath, expectedStream.toByteArray(), this.library.readFile(binPath));
         }
@@ -121,25 +119,25 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
 
     protected void testReadFiles(String... files)
     {
-        testReadFiles(runtime, this.library, files);
+        testReadFiles(this.runtime, this.library, files);
     }
 
     @Test
     public void testReadRepository()
     {
-        testReadRepositories(runtime, this.library, PlatformCodeRepository.NAME);
+        testReadRepositories(this.runtime, this.library, PlatformCodeRepository.NAME);
     }
 
     @Test
     public void testReadAll()
     {
-        testReadAll(runtime, this.library);
+        testReadAll(this.runtime, this.library);
     }
 
     @Test
     public void testGetAllFiles()
     {
-        MutableSet<String> expected = runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()).collect(s -> PureRepositoryJarTools.purePathToBinaryPath(s.getId()), Sets.mutable.empty());
+        MutableSet<String> expected = this.runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()).collect(Functions.chain(Source.SOURCE_ID, PureRepositoryJarTools.PURE_PATH_TO_BINARY_PATH)).toSet();
         Verify.assertSetsEqual(expected, this.library.getAllFiles().toSet());
     }
 
@@ -157,7 +155,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
         Verify.assertSetsEqual(platformFiles, this.library.getDirectoryFiles("platform/").toSet());
         Verify.assertSetsEqual(platformFiles, this.library.getDirectoryFiles("/platform/").toSet());
 
-//        MutableSet<String> coreFunctionsFiles = runtime.getSourceRegistry().getSources().collect(Source.SOURCE_ID).selectWith(StringPredicates2.startsWith(), "/platform/pure/corefunctions").collect(PureRepositoryJarTools.PURE_PATH_TO_BINARY_PATH).toSet();
+//        MutableSet<String> coreFunctionsFiles = this.runtime.getSourceRegistry().getSources().collect(Source.SOURCE_ID).selectWith(StringPredicates2.startsWith(), "/platform/pure/corefunctions").collect(PureRepositoryJarTools.PURE_PATH_TO_BINARY_PATH).toSet();
 //        Verify.assertNotEmpty(coreFunctionsFiles);
 //        Verify.assertSetsEqual(coreFunctionsFiles, this.library.getDirectoryFiles("platform/pure/corefunctions").toSet());
 //        Verify.assertSetsEqual(coreFunctionsFiles, this.library.getDirectoryFiles("/platform/pure/corefunctions").toSet());
@@ -171,7 +169,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     @Test
     public void testGetRequiredFiles_SingleInstance()
     {
-        for (Source source : runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
+        for (Source source : this.runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
         {
             String purePath = source.getId();
             String binPath = PureRepositoryJarTools.purePathToBinaryPath(purePath);
@@ -193,7 +191,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
         MutableSet<String> instanceFiles = Sets.mutable.empty();
         for (String instancePath : instancePaths)
         {
-            CoreInstance instance = runtime.getCoreInstance(instancePath);
+            CoreInstance instance = this.runtime.getCoreInstance(instancePath);
             Assert.assertNotNull("Could not find " + instancePath, instance);
             instanceFiles.add(PureRepositoryJarTools.purePathToBinaryPath(instance.getSourceInformation().getSourceId()));
         }
@@ -209,7 +207,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
         SetIterable<String> m3Dependencies = this.library.getFileDependencies(m3BinPath);
         Verify.assertSetsEqual(Sets.mutable.with(m3BinPath), m3Dependencies.toSet());
 
-        for (Source source : runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
+        for (Source source : this.runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
         {
             String purePath = source.getId();
             String binPath = PureRepositoryJarTools.purePathToBinaryPath(purePath);
@@ -243,7 +241,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
         Verify.assertSetsEqual(this.library.getAllFiles().toSet(), this.library.getDependentFiles(m3BinPath).toSet());
 
         MutableSetMultimap<String, String> allExpectedDependents = Multimaps.mutable.set.empty();
-        for (Source source : runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
+        for (Source source : this.runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
         {
             String purePath = source.getId();
             String binPath = PureRepositoryJarTools.purePathToBinaryPath(purePath);
@@ -253,7 +251,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
             }
         }
 
-        for (Source source : runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
+        for (Source source : this.runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
         {
             String purePath = source.getId();
             String binPath = PureRepositoryJarTools.purePathToBinaryPath(purePath);
@@ -275,7 +273,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
         String dateBinPath = "platform/pure/equality.pc";
 
         MutableSetMultimap<String, String> allExpectedDependents = Multimaps.mutable.set.empty();
-        for (Source source : runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
+        for (Source source : this.runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
         {
             String purePath = source.getId();
             String binPath = PureRepositoryJarTools.purePathToBinaryPath(purePath);

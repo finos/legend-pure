@@ -27,11 +27,12 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.FullJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
 
+
 public class NewWithKeyExpr extends AbstractNative
 {
     public NewWithKeyExpr()
     {
-        super("new_Class_1__String_1__KeyExpression_MANY__T_1_");
+       super("new_Class_1__String_1__KeyExpression_MANY__T_1_");
     }
 
     @Override
@@ -49,10 +50,11 @@ public class NewWithKeyExpr extends AbstractNative
         CoreInstance _class = Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport);
         return "new " + JavaPackageAndImportBuilder.buildImplClassReferenceFromType(_class) + (addGenericType ? TypeProcessor.buildTypeArgumentsString(genericType, false, processorSupport) : "")
                 + "(\"" + newId + "\")" + (addGenericType ? "._classifierGenericType("
-                + InstantiationHelpers.buildGenericType(genericType, processorContext) + ")" : "")
+                + InstantiationHelpers.buildGenericType(genericType, processorSupport) + ")" : "")
                 + InstantiationHelpers.manageDefaultValues(this::formatDefaultValueString, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), false, processorContext).makeString("")
                 + InstantiationHelpers.manageKeyValues(genericType, Instance.getValueForMetaPropertyToOneResolved(genericType, M3Properties.rawType, processorSupport), keyValues, processorContext)
-                + (_Class.computeConstraintsInHierarchy(_class, processorSupport).isEmpty() ? "" : "._validate(false, " + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ", es)");
+               + (_Class.computeConstraintsInHierarchy(_class,processorSupport).isEmpty()?"":"._validate(false,"+ SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation())+",es)");
+
     }
 
     @Override
@@ -63,10 +65,10 @@ public class NewWithKeyExpr extends AbstractNative
                 "            @Override\n" +
                 "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return value((" + FullJavaPaths.Class + ")vars.get(0), (String)vars.get(1), (RichIterable<? extends " + FullJavaPaths.KeyExpression + ">)vars.get(2), es);\n" +
+                "                return value((" + FullJavaPaths.Class + ")vars.get(0), (String)vars.get(1), (RichIterable<? extends "  + FullJavaPaths.KeyExpression + ">)vars.get(2), es);\n" +
                 "            }\n" +
                 "            @Override\n" +
-                "            public Object value(" + FullJavaPaths.Class + " clazz, String name, RichIterable<? extends " + FullJavaPaths.KeyExpression + "> keyExpressions, final ExecutionSupport es)\n" +
+                "            public Object value(" + FullJavaPaths.Class + " clazz, String name, RichIterable<? extends "  + FullJavaPaths.KeyExpression + "> keyExpressions, final ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return CoreGen.newObject(clazz, name, keyExpressions, es);\n" +
                 "            }\n" +

@@ -16,16 +16,15 @@ package org.finos.legend.pure.maven.javaCompiled;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.utility.Iterate;
-import org.eclipse.collections.impl.utility.ListIterate;
+import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.impl.list.mutable.ListAdapter;
+import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.configuration.PureRepositoriesExternal;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -35,6 +34,7 @@ import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
 import org.finos.legend.pure.m3.serialization.runtime.cache.CacheState;
 import org.finos.legend.pure.m3.serialization.runtime.cache.ClassLoaderPureGraphCache;
+import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtensionLoader;
 import org.finos.legend.pure.runtime.java.compiled.generation.Generate;
@@ -43,11 +43,12 @@ import org.finos.legend.pure.runtime.java.compiled.generation.JavaStandaloneLibr
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -64,19 +65,16 @@ public class PureCompiledJarMojo extends AbstractMojo
     private File classesDirectory;
 
     @Parameter
-    private Set<String> repositories;
+    private String[] repositories;
 
     @Parameter
-    private Set<String> excludedRepositories;
+    private String[] excludedRepositories;
 
     @Parameter
-    private Set<String> extraRepositories;
+    private String[] extraRepositories;
 
     @Parameter(defaultValue = "true")
     private boolean generateMetadata;
-
-    @Parameter(defaultValue = "monolithic")
-    private GenerationType generationType;
 
     @Parameter(defaultValue = "false")
     private boolean useSingleDir;
@@ -85,22 +83,22 @@ public class PureCompiledJarMojo extends AbstractMojo
     private boolean generateSources;
 
     @Override
-    public void execute() throws MojoExecutionException
+    public void execute() throws MojoExecutionException, MojoFailureException
     {
         try
         {
             getLog().info("Generating Java Compiled JAR");
-            getLog().info("  Requested repositories: " + this.repositories);
-            getLog().info("  Excluded repositories: " + this.excludedRepositories);
-            getLog().info("  Extra repositories: " + this.extraRepositories);
-            getLog().info("  Generation type: " + this.generationType);
-            ListIterable<CodeRepository> resolvedRepositories = resolveRepositories();
-            getLog().info(resolvedRepositories.asLazy().collect(CodeRepository::getName).makeString("  Resolved repositories: ", ", ", ""));
+            getLog().info("  Requested repositories: " + Arrays.toString(this.repositories));
+            getLog().info("  Excluded repositories: " + Arrays.toString(this.excludedRepositories));
+            getLog().info("  Extra repositories: " + Arrays.toString(this.extraRepositories));
+            RichIterable<CodeRepository> resolvedRepositories = resolveRepositories(repositories, excludedRepositories, extraRepositories);
+            getLog().info("  Repositories with resolved dependencies: "+resolvedRepositories);
 
-            Path distributedMetadataDirectory;
+            Path distributedMetadataDirectory = null;
+            Path codegenDirectory = null;
+
             if (!this.generateMetadata)
             {
-                distributedMetadataDirectory = null;
                 getLog().info("  Classes output directory: " + this.classesDirectory);
                 getLog().info("  No metadata output");
             }
@@ -116,29 +114,132 @@ public class PureCompiledJarMojo extends AbstractMojo
                 getLog().info("  Distributed metadata output directory: " + distributedMetadataDirectory);
             }
 
-            Path codegenDirectory;
             if (this.generateSources)
             {
                 codegenDirectory = this.targetDirectory.toPath().resolve("generated");
                 getLog().info("  Codegen output directory: " + codegenDirectory);
             }
-            else
-            {
-                codegenDirectory = null;
-            }
 
             long start = System.nanoTime();
 
-            // Generate metadata and Java sources
-            Generate generate = generate(start, resolvedRepositories, distributedMetadataDirectory, codegenDirectory);
+            // Initialize runtime
+            PureRuntime runtime;
+            try
+            {
+                getLog().info("  Beginning Pure initialization");
+                SetIterable<CodeRepository> repositoriesForCompilation = PureCodeStorage.getRepositoryDependencies(PureRepositoriesExternal.repositories(), resolvedRepositories);
+
+                // Add the project output to the plugin classloader
+                URL[] urlsForClassLoader = ListAdapter.adapt(project.getCompileClasspathElements()).collect(mavenCompilePath -> {
+                    try
+                    {
+                        return new File(mavenCompilePath).toURI().toURL();
+                    }
+                    catch (MalformedURLException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }).toArray(new URL[0]);
+                getLog().info("    Project classLoader URLs " + Arrays.toString(urlsForClassLoader));
+                ClassLoader classLoader = new URLClassLoader(urlsForClassLoader, PureCompiledJarMojo.class.getClassLoader());
+
+                // Initialize from PAR files cache
+                PureCodeStorage codeStorage = new PureCodeStorage(null, new ClassLoaderCodeStorage(classLoader, repositoriesForCompilation));
+                ClassLoaderPureGraphCache graphCache = new ClassLoaderPureGraphCache(classLoader);
+                runtime = new PureRuntimeBuilder(codeStorage).withCache(graphCache).setTransactionalByDefault(false).buildAndTryToInitializeFromCache();
+                if (!runtime.isInitialized())
+                {
+                    CacheState cacheState = graphCache.getCacheState();
+                    if (cacheState != null)
+                    {
+                        String lastStackTrace = cacheState.getLastStackTrace();
+                        if (lastStackTrace != null)
+                        {
+                            getLog().warn("    Cache initialization failure: " + lastStackTrace);
+                        }
+                    }
+                    getLog().info("    Initialization from caches failed - compiling from scratch");
+                    runtime.reset();
+                    runtime.loadAndCompileCore();
+                    runtime.loadAndCompileSystem();
+                }
+                getLog().info(String.format("    Finished Pure initialization (%.6fs)", (System.nanoTime() - start) / 1_000_000_000.0));
+            }
+            catch (PureException e)
+            {
+                getLog().error(String.format("    Error initializing Pure (%.6fs)", (System.nanoTime() - start) / 1_000_000_000.0), e);
+                throw new MojoFailureException(e.getInfo(), e);
+            }
+            catch (Exception e)
+            {
+                getLog().error(String.format("    Error initializing Pure (%.6fs)", (System.nanoTime() - start) / 1_000_000_000.0), e);
+                throw new MojoExecutionException("    Error initializing Pure", e);
+            }
+
+            if (generateMetadata)
+            {
+                // Write distributed metadata
+                String writeMetadataStep = "writing distributed Pure metadata";
+                long writeMetadataStart = startStep(writeMetadataStep);
+                try
+                {
+                    DistributedBinaryGraphSerializer.serialize(runtime, distributedMetadataDirectory);
+                    completeStep(writeMetadataStep, writeMetadataStart);
+                }
+                catch (Exception e)
+                {
+                    throw mojoException(e, writeMetadataStep, writeMetadataStart, start);
+                }
+            }
+
+            JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, JavaPackageAndImportBuilder.externalizablePackage());
+            // Generate Java sources
+            Generate generate;
+            String generateStep = "Pure compiled mode Java code generation";
+            long generateStart = startStep(generateStep);
+            try
+            {
+                generate = generator.generateOnly(this.generateSources, codegenDirectory);
+                completeStep(generateStep, generateStart);
+            }
+            catch (Exception e)
+            {
+                throw mojoException(e, generateStep, generateStart, start);
+            }
+            // Set generator and runtime to null so the memory can be cleaned up
+            generator = null;
+            runtime = null;
 
             // Compile Java sources
-            PureJavaCompiler compiler = compileJavaSources(start, generate);
+            PureJavaCompiler compiler;
+            String compilationStep = "Pure compiled mode Java code compilation";
+            long compilationStart = startStep(compilationStep);
+            try
+            {
+                compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSources(), generate.getExternalizableSources(), false);
+                completeStep(compilationStep, compilationStart);
+            }
+            catch (Exception e)
+            {
+                throw mojoException(e, compilationStep, compilationStart, start);
+            }
 
             // Write class files
-            writeJavaClassFiles(start, compiler);
+            String writeClassFilesStep = "writing Pure compiled mode Java classes";
+            long writeClassFilesStart = startStep(writeClassFilesStep);
+            try
+            {
+                compiler.writeClassJavaSources(this.classesDirectory.toPath());
+                completeStep(writeClassFilesStep, writeClassFilesStart);
+            }
+            catch (Exception e)
+            {
+                throw mojoException(e, writeClassFilesStep, writeClassFilesStart, start);
+            }
+            // Set compiler to null so the memory can be cleaned up
+            compiler = null;
 
-            getLog().info(String.format("  Finished building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
+            getLog().info(String.format("  Finished building Pure compiled mode jar (%.6fs)", (System.nanoTime() - start) / 1_000_000_000.0));
         }
         catch (Exception e)
         {
@@ -154,238 +255,36 @@ public class PureCompiledJarMojo extends AbstractMojo
 
     private void completeStep(String step, long stepStart)
     {
-        getLog().info(String.format("    Finished %s (%.9fs)", step, durationSinceInSeconds(stepStart)));
+        getLog().info(String.format("    Finished %s (%.6fs)", step, (System.nanoTime() - stepStart) / 1_000_000_000.0));
     }
 
-    private ListIterable<CodeRepository> resolveRepositories()
+    private MojoExecutionException mojoException(Exception e, String step, long stepStart, long start) throws MojoExecutionException
     {
-        if ((this.extraRepositories != null) && !this.extraRepositories.isEmpty())
-        {
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            PureRepositoriesExternal.addRepositories(Iterate.collect(this.extraRepositories, r -> GenericCodeRepository.build(classLoader, r), Lists.mutable.withInitialCapacity(excludedRepositories.size())));
-        }
-
-        MutableList<CodeRepository> selectedRepos = (this.repositories == null) ?
-                PureRepositoriesExternal.repositories().toList() :
-                Iterate.collect(this.repositories, PureRepositoriesExternal::getRepository, Lists.mutable.withInitialCapacity(this.repositories.size()));
-        if ((this.excludedRepositories != null) && !this.excludedRepositories.isEmpty())
-        {
-            selectedRepos.removeIf(r -> this.excludedRepositories.contains(r.getName()));
-        }
-        return selectedRepos;
+        long failureTime = System.nanoTime();
+        getLog().error(String.format("    Error %s (%.6fs)", step, (failureTime - stepStart) / 1_000_000_000.0), e);
+        getLog().error(String.format("    FAILURE building Pure compiled mode jar (%.6fs)", (failureTime - start) / 1_000_000_000.0));
+        return new MojoExecutionException("    Error writing Pure compiled mode Java code and metadata", e);
     }
 
-    private Generate generate(long start, ListIterable<CodeRepository> resolvedRepositories, Path distributedMetadataDirectory, Path codegenDirectory) throws MojoExecutionException
+    private RichIterable<CodeRepository> resolveRepositories(String[] repositories, String[] excludedRepositories, String[] extraRepositories)
     {
-        // Initialize runtime
-        PureRuntime runtime = initializeRuntime(start, resolvedRepositories);
-
-        // Possibly write distributed metadata
-        if (this.generateMetadata)
+        if (extraRepositories != null)
         {
-            switch (this.generationType)
-            {
-                case monolithic:
-                {
-                    generateMetadata(start, runtime, distributedMetadataDirectory);
-                    break;
-                }
-                case modular:
-                {
-                    generateModularMetadata(start, runtime, resolvedRepositories, distributedMetadataDirectory);
-                    break;
-                }
-                default:
-                {
-                    throw new MojoExecutionException("Unhandled generation type: " + this.generationType);
-                }
-            }
-        }
-
-        // Generate Java sources
-        String generateStep = "Pure compiled mode Java code generation";
-        long generateStart = startStep(generateStep);
-        Generate generate;
-        try
-        {
-            JavaStandaloneLibraryGenerator generator = JavaStandaloneLibraryGenerator.newGenerator(runtime, CompiledExtensionLoader.extensions(), false, JavaPackageAndImportBuilder.externalizablePackage());
-            switch (this.generationType)
-            {
-                case monolithic:
-                {
-                    generate = generator.generateOnly(this.generateSources, codegenDirectory);
-                    break;
-                }
-                case modular:
-                {
-                    generate = generator.generateOnly(repositories, this.generateSources, codegenDirectory);
-                    break;
-                }
-                default:
-                {
-                    throw new MojoExecutionException("Unhandled generation type: " + this.generationType);
-                }
-            }
-            completeStep(generateStep, generateStart);
-        }
-        catch (Exception e)
-        {
-            throw mojoException(e, generateStep, generateStart, start);
-        }
-        return generate;
-    }
-
-    private PureRuntime initializeRuntime(long start, RichIterable<CodeRepository> resolvedRepositories) throws MojoExecutionException
-    {
-        try
-        {
-            getLog().info("  Beginning Pure initialization");
-            SetIterable<CodeRepository> repositoriesForCompilation = PureCodeStorage.getRepositoryDependencies(PureRepositoriesExternal.repositories(), resolvedRepositories);
-
-            // Add the project output to the plugin classloader
-            URL[] urlsForClassLoader = ListIterate.collect(this.project.getCompileClasspathElements(), mavenCompilePath ->
-            {
+            RichIterable<CodeRepository> resolvedRepositories = ArrayIterate.collect(extraRepositories, r -> {
                 try
                 {
-                    return Paths.get(mavenCompilePath).toUri().toURL();
+                    return GenericCodeRepository.build(new FileInputStream(r));
                 }
-                catch (MalformedURLException e)
+                catch (FileNotFoundException e)
                 {
                     throw new RuntimeException(e);
                 }
-            }).toArray(new URL[0]);
-            getLog().info("    Project classLoader URLs " + Arrays.toString(urlsForClassLoader));
-            ClassLoader classLoader = new URLClassLoader(urlsForClassLoader, Thread.currentThread().getContextClassLoader());
+            });
+            PureRepositoriesExternal.addRepositories(resolvedRepositories);
+        }
 
-            // Initialize from PAR files cache
-            PureCodeStorage codeStorage = new PureCodeStorage(null, new ClassLoaderCodeStorage(classLoader, repositoriesForCompilation));
-            ClassLoaderPureGraphCache graphCache = new ClassLoaderPureGraphCache(classLoader);
-            PureRuntime runtime = new PureRuntimeBuilder(codeStorage).withCache(graphCache).setTransactionalByDefault(false).buildAndTryToInitializeFromCache();
-            if (!runtime.isInitialized())
-            {
-                CacheState cacheState = graphCache.getCacheState();
-                if (cacheState != null)
-                {
-                    String lastStackTrace = cacheState.getLastStackTrace();
-                    if (lastStackTrace != null)
-                    {
-                        getLog().warn("    Cache initialization failure: " + lastStackTrace);
-                    }
-                }
-                getLog().info("    Initialization from caches failed - compiling from scratch");
-                runtime.reset();
-                runtime.loadAndCompileCore();
-                runtime.loadAndCompileSystem();
-            }
-            getLog().info(String.format("    Finished Pure initialization (%.9fs)", durationSinceInSeconds(start)));
-            return runtime;
-        }
-        catch (Exception e)
-        {
-            getLog().error(String.format("    Error initializing Pure (%.9fs)", durationSinceInSeconds(start)), e);
-            throw new MojoExecutionException("Error initializing Pure", e);
-        }
-    }
-
-    private void generateMetadata(long start, PureRuntime runtime, Path distributedMetadataDirectory) throws MojoExecutionException
-    {
-        String writeMetadataStep = "writing distributed Pure metadata";
-        long writeMetadataStart = startStep(writeMetadataStep);
-        try
-        {
-            DistributedBinaryGraphSerializer.newSerializer(runtime).serializeToDirectory(distributedMetadataDirectory);
-            completeStep(writeMetadataStep, writeMetadataStart);
-        }
-        catch (Exception e)
-        {
-            throw mojoException(e, writeMetadataStep, writeMetadataStart, start);
-        }
-    }
-
-    private void generateModularMetadata(long start, PureRuntime runtime, ListIterable<CodeRepository> resolvedRepositories, Path distributedMetadataDirectory) throws MojoExecutionException
-    {
-        String writeMetadataStep = "writing distributed Pure metadata";
-        long writeMetadataStart = startStep(writeMetadataStep);
-        try
-        {
-            for (CodeRepository repository : resolvedRepositories)
-            {
-                generateModularMetadata(start, runtime, repository.getName(), distributedMetadataDirectory);
-            }
-            completeStep(writeMetadataStep, writeMetadataStart);
-        }
-        catch (Exception e)
-        {
-            throw mojoException(e, writeMetadataStep, writeMetadataStart, start);
-        }
-    }
-
-    private void generateModularMetadata(long start, PureRuntime runtime, String repository, Path distributedMetadataDirectory) throws MojoExecutionException
-    {
-        String writeMetadataStep = "writing distributed Pure metadata for " + repository;
-        long writeMetadataStart = startStep(writeMetadataStep);
-        try
-        {
-            DistributedBinaryGraphSerializer.newSerializer(runtime, repository).serializeToDirectory(distributedMetadataDirectory);
-            completeStep(writeMetadataStep, writeMetadataStart);
-        }
-        catch (Exception e)
-        {
-            throw mojoException(e, writeMetadataStep, writeMetadataStart, start);
-        }
-    }
-
-    private PureJavaCompiler compileJavaSources(long start, Generate generate) throws MojoExecutionException
-    {
-        String compilationStep = "Pure compiled mode Java code compilation";
-        long compilationStart = startStep(compilationStep);
-        try
-        {
-            PureJavaCompiler compiler = JavaStandaloneLibraryGenerator.compileOnly(generate.getJavaSourcesByGroup(), generate.getExternalizableSources(), false);
-            completeStep(compilationStep, compilationStart);
-            return compiler;
-        }
-        catch (Exception e)
-        {
-            throw mojoException(e, compilationStep, compilationStart, start);
-        }
-    }
-
-    private void writeJavaClassFiles(long start, PureJavaCompiler compiler) throws MojoExecutionException
-    {
-        String writeClassFilesStep = "writing Pure compiled mode Java classes";
-        long writeClassFilesStart = startStep(writeClassFilesStep);
-        try
-        {
-            compiler.writeClassJavaSources(this.classesDirectory.toPath());
-            completeStep(writeClassFilesStep, writeClassFilesStart);
-        }
-        catch (Exception e)
-        {
-            throw mojoException(e, writeClassFilesStep, writeClassFilesStart, start);
-        }
-    }
-
-    private MojoExecutionException mojoException(Exception e, String step, long stepStart, long start)
-    {
-        long failureTime = System.nanoTime();
-        getLog().error(String.format("    Error %s (%.9fs)", step, durationInSeconds(stepStart, failureTime)), e);
-        getLog().error(String.format("    FAILURE building Pure compiled mode jar (%.9fs)", durationInSeconds(start, failureTime)));
-        return (e instanceof MojoExecutionException) ? (MojoExecutionException) e : new MojoExecutionException("Error writing Pure compiled mode Java code and metadata", e);
-    }
-
-    private double durationSinceInSeconds(long startNanos)
-    {
-        return durationInSeconds(startNanos, System.nanoTime());
-    }
-
-    private double durationInSeconds(long startNanos, long endNanos)
-    {
-        return (endNanos - startNanos) / 1_000_000_000.0;
-    }
-
-    public enum GenerationType
-    {
-        monolithic, modular
+        RichIterable<CodeRepository> selectedRepos = repositories == null?PureRepositoriesExternal.repositories():ArrayIterate.collect(repositories, PureRepositoriesExternal::getRepository);
+        Set<String> excludedRepositoriesSet = Sets.mutable.of(excludedRepositories == null?new String[0]:excludedRepositories);
+        return selectedRepos.select(r -> !excludedRepositoriesSet.contains(r.getName()));
     }
 }

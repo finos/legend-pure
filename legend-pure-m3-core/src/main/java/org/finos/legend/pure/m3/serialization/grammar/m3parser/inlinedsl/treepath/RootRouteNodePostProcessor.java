@@ -119,7 +119,7 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
         }
     }
 
-    private void secondPass(RootRouteNode root, ListMultimap<String, RouteNode> resolvedTreeNodes, Matcher matcher, ProcessorState state, ProcessorSupport processorSupport) throws PureCompilationException
+    private void secondPass(final RootRouteNode root, final ListMultimap<String, RouteNode> resolvedTreeNodes, final Matcher matcher, final ProcessorState state, final ProcessorSupport processorSupport) throws PureCompilationException
     {
         resolvedTreeNodes.forEachKey(s ->
         {
@@ -144,7 +144,7 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
         to._children(FastList.<PropertyRouteNode>newList(to._children().size() + from._children().size()).withAll(to._children()).withAll(from._children()));
         if (from instanceof NewPropertyRouteNode)
         {
-            ((NewPropertyRouteNode) to)._specifications(FastList.<ValueSpecification>newList(((NewPropertyRouteNode) to)._specifications().size() + ((NewPropertyRouteNode) from)._specifications().size()).withAll(((NewPropertyRouteNode) to)._specifications()).withAll(((NewPropertyRouteNode) from)._specifications()));
+            ((NewPropertyRouteNode)to)._specifications(FastList.<ValueSpecification>newList(((NewPropertyRouteNode)to)._specifications().size() + ((NewPropertyRouteNode)from)._specifications().size()).withAll(((NewPropertyRouteNode)to)._specifications()).withAll(((NewPropertyRouteNode)from)._specifications()));
         }
         if (to instanceof PropertyRouteNode && ((PropertyRouteNode) to)._root() == null)
         {
@@ -250,7 +250,7 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
     {
         RichIterable<? extends RouteNodePropertyStub> includedProperties = treePathNode._included();
         RichIterable<? extends RouteNodePropertyStub> excludedProperties = treePathNode._excluded();
-        MutableList<CoreInstance> resolvedProperties = Lists.mutable.empty();
+        MutableList<CoreInstance> resolvedProperties = FastList.newList();
         if ("true".equals(treePathNode._includeAll()))
         {
             resolvedProperties.addAllIterable(getPrimitiveOrOfGivenTypeProperties(_class, processorSupport));

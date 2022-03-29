@@ -15,10 +15,8 @@
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.factory.Sets;
-import org.eclipse.collections.api.factory.Stacks;
+import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.block.procedure.Procedure2;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
@@ -28,14 +26,37 @@ import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.stack.MutableStack;
+import org.eclipse.collections.impl.block.factory.Comparators;
+import org.eclipse.collections.impl.block.factory.StringPredicates2;
+import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Multimaps;
+import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.impl.factory.Stacks;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
+import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.Version;
-
-import java.util.Objects;
 
 public abstract class AbstractPureRepositoryJarLibrary implements PureRepositoryJarLibrary
 {
+    private static final Function<PureRepositoryJar, String> JAR_PLATFORM_VERSION = new Function<PureRepositoryJar, String>()
+    {
+        @Override
+        public String valueOf(PureRepositoryJar jar)
+        {
+            return jar.getMetadata().getPurePlatformVersion();
+        }
+    };
+
+    private static final Function<PureRepositoryJar, String> JAR_MODEL_VERSION = new Function<PureRepositoryJar, String>()
+    {
+        @Override
+        public String valueOf(PureRepositoryJar jar)
+        {
+            return jar.getMetadata().getPureModelVersion();
+        }
+    };
+
     private final String pureModelVersion;
     private final Index index;
 
@@ -116,7 +137,7 @@ public abstract class AbstractPureRepositoryJarLibrary implements PureRepository
         {
             prefix += '/';
         }
-        return getRepositoryFiles(repositoryName).selectWith(String::startsWith, prefix);
+        return getRepositoryFiles(repositoryName).selectWith(StringPredicates2.startsWith(), prefix);
     }
 
     @Override
@@ -172,7 +193,7 @@ public abstract class AbstractPureRepositoryJarLibrary implements PureRepository
      */
     private SetIterable<String> getFileDependencies(MutableStack<String> filePaths)
     {
-        MutableSet<String> results = Sets.mutable.withInitialCapacity(Math.max(filePaths.size(), 16));
+        MutableSet<String> results = UnifiedSet.newSet(Math.max(filePaths.size(), 16));
         while (filePaths.notEmpty())
         {
             String filePath = filePaths.pop();
@@ -217,7 +238,7 @@ public abstract class AbstractPureRepositoryJarLibrary implements PureRepository
      */
     private SetIterable<String> getDependentFiles(MutableStack<String> filePaths)
     {
-        MutableSet<String> results = Sets.mutable.withInitialCapacity(filePaths.size());
+        MutableSet<String> results = UnifiedSet.newSet(filePaths.size());
         while (filePaths.notEmpty())
         {
             String filePath = filePaths.pop();
@@ -283,8 +304,8 @@ public abstract class AbstractPureRepositoryJarLibrary implements PureRepository
             }
             case 1:
             {
-                String platformVersion = platformVersions.getAny();
-                if (!Objects.equals(Version.PLATFORM, platformVersion))
+                String platformVersion = platformVersions.getFirst();
+                if (!Comparators.nullSafeEquals(Version.PLATFORM, platformVersion))
                 {
                     throw new IllegalArgumentException("Pure platform version mismatch: cannot load a jar for " + platformVersion + " into a system at version " + Version.PLATFORM);
                 }
@@ -301,35 +322,49 @@ public abstract class AbstractPureRepositoryJarLibrary implements PureRepository
         {
             throw new IllegalArgumentException(modelVersions.toSortedList().makeString("Model version mismatch: ", ", ", ""));
         }
-        return modelVersions.getAny();
+        return modelVersions.getFirst();
     }
+
 
     private static Index buildIndex(Iterable<? extends PureRepositoryJar> jars)
     {
-        MutableMap<String, String> instanceDefinitions = Maps.mutable.empty();
-        MutableMap<String, ImmutableSet<String>> externalReferencesByFile = Maps.mutable.empty();
-        MutableSetMultimap<String, String> filesByExternalReference = Multimaps.mutable.set.empty();
-        jars.forEach(jar ->
+        final MutableMap<String, String> instanceDefinitions = Maps.mutable.empty();
+        Procedure2<String, String> addToInstanceDefinitions = new Procedure2<String, String>()
         {
-            PureRepositoryJarMetadata metadata = jar.getMetadata();
-            metadata.getDefinitionIndex().forEachKeyValue((instancePath, filePath) ->
+            @Override
+            public void value(String instancePath, String filePath)
             {
                 String old = instanceDefinitions.put(instancePath, filePath);
                 if (old != null)
                 {
                     throw new IllegalArgumentException("Multiple definition files for " + instancePath);
                 }
-            });
-            metadata.getExternalReferenceIndex().forEachKeyValue((filePath, instancePaths) ->
+            }
+        };
+        final MutableMap<String, ImmutableSet<String>> externalReferencesByFile = Maps.mutable.empty();
+        final MutableSetMultimap<String, String> filesByExternalReference = Multimaps.mutable.set.empty();
+        Procedure2<String, ImmutableSet<String>> addToExternalReferenceIndexes = new Procedure2<String, ImmutableSet<String>>()
+        {
+            @Override
+            public void value(String filePath, ImmutableSet<String> instancePaths)
             {
                 ImmutableSet<String> old = externalReferencesByFile.put(filePath, instancePaths);
                 if (old != null)
                 {
                     throw new IllegalArgumentException("Multiple external reference indexes for " + filePath);
                 }
-                instancePaths.forEach(instancePath -> filesByExternalReference.put(instancePath, filePath));
-            });
-        });
+                for (String instancePath : instancePaths)
+                {
+                    filesByExternalReference.put(instancePath, filePath);
+                }
+            }
+        };
+        for (PureRepositoryJar jar : jars)
+        {
+            PureRepositoryJarMetadata metadata = jar.getMetadata();
+            metadata.getDefinitionIndex().forEachKeyValue(addToInstanceDefinitions);
+            metadata.getExternalReferenceIndex().forEachKeyValue(addToExternalReferenceIndexes);
+        }
 
         return new Index(instanceDefinitions.toImmutable(), externalReferencesByFile.toImmutable(), filesByExternalReference.toImmutable());
     }

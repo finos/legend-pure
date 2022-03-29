@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.binary.reference;
 
-import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
@@ -42,7 +42,7 @@ public class ExternalReferenceSerializerLibrary
 
     public static ExternalReferenceSerializerLibrary newLibrary(ParserLibrary parsers)
     {
-        return newLibrary(parsers.getParsers().flatCollect(Parser::getExternalReferenceSerializers));
+        return newLibrary(parsers.getParsers().flatCollect(Parser.GET_REFERENCE_SERIALIZERS));
     }
 
     public static ExternalReferenceSerializerLibrary newLibrary(PureRuntime runtime)
@@ -53,7 +53,7 @@ public class ExternalReferenceSerializerLibrary
     private static ImmutableMap<String, ExternalReferenceSerializer> indexByType(Iterable<? extends ExternalReferenceSerializer> serializers)
     {
         MutableMap<String, ExternalReferenceSerializer> serializersByType = Maps.mutable.empty();
-        serializers.forEach(serializer ->
+        for (ExternalReferenceSerializer serializer : serializers)
         {
             String typePath = serializer.getTypePath();
             ExternalReferenceSerializer old = serializersByType.put(typePath, serializer);
@@ -61,7 +61,7 @@ public class ExternalReferenceSerializerLibrary
             {
                 throw new RuntimeException("Multiple serializers for " + typePath);
             }
-        });
+        }
         return serializersByType.toImmutable();
     }
 }

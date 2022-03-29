@@ -16,24 +16,46 @@ package org.finos.legend.pure.m3.serialization.runtime.binary;
 
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.factory.Lists;
-import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.multimap.set.SetMultimap;
+import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
+import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.utility.Iterate;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
+import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class SimplePureRepositoryJarLibrary extends AbstractPureRepositoryJarLibrary
 {
+    private static final Function<String, String> GET_FILE_REPO = new Function<String, String>()
+    {
+        @Override
+        public String valueOf(String filePath)
+        {
+            return getFileRepository(filePath);
+        }
+    };
+
+    private static final Filter<Path> HAS_PURE_JAR_EXTENSION = new Filter<Path>()
+    {
+        @Override
+        public boolean accept(Path entry) throws IOException
+        {
+            return PureRepositoryJarTools.hasPureJarExtension(entry);
+        }
+    };
+
     private final ImmutableMap<String, PureRepositoryJar> jarsByRepository;
 
     private SimplePureRepositoryJarLibrary(Iterable<? extends PureRepositoryJar> jars)
@@ -63,7 +85,7 @@ public class SimplePureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
     @Override
     public MapIterable<String, byte[]> readFiles(Iterable<String> filePaths)
     {
-        SetMultimap<String, String> filesByRepository = Iterate.groupBy(filePaths, AbstractPureRepositoryJarLibrary::getFileRepository, Multimaps.mutable.set.empty());
+        SetMultimap<String, String> filesByRepository = Iterate.groupBy(filePaths, GET_FILE_REPO, Multimaps.mutable.set.<String, String>empty());
         int size = filesByRepository.size();
         if (size == 0)
         {
@@ -76,7 +98,7 @@ public class SimplePureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
             return Maps.immutable.with(filePath, bytes);
         }
 
-        MutableMap<String, byte[]> result = Maps.mutable.withInitialCapacity(size);
+        MutableMap<String, byte[]> result = UnifiedMap.newMap(size);
         for (String repo : filesByRepository.keysView())
         {
             PureRepositoryJar repoJar = this.jarsByRepository.get(repo);
@@ -87,7 +109,7 @@ public class SimplePureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
         }
         if (result.size() < size)
         {
-            MutableList<String> missing = Lists.mutable.withInitialCapacity(size - result.size());
+            MutableList<String> missing = FastList.newList(size - result.size());
             for (String filePath : filePaths)
             {
                 if (!result.containsKey(filePath))
@@ -168,7 +190,7 @@ public class SimplePureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
 
     public static SimplePureRepositoryJarLibrary newLibrary(Iterable<? extends PureRepositoryJar> jars)
     {
-        return new SimplePureRepositoryJarLibrary((jars instanceof LazyIterable) ? Lists.mutable.withAll(jars) : jars);
+        return new SimplePureRepositoryJarLibrary((jars instanceof LazyIterable) ? FastList.newList(jars) : jars);
     }
 
     public static SimplePureRepositoryJarLibrary newLibrary(PureRepositoryJar... jars)
@@ -178,12 +200,12 @@ public class SimplePureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
 
     public static SimplePureRepositoryJarLibrary newLibraryFromPaths(Iterable<? extends Path> paths)
     {
-        return newLibrary(Iterate.collect(paths, PureRepositoryJars::get));
+        return newLibrary(Iterate.collect(paths, PureRepositoryJars.PATH_TO_JAR));
     }
 
     public static SimplePureRepositoryJarLibrary newLibraryFromDirectory(Path directory)
     {
-        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(directory, PureRepositoryJarTools::hasPureJarExtension))
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(directory, HAS_PURE_JAR_EXTENSION))
         {
             return newLibraryFromPaths(dirStream);
         }
@@ -195,6 +217,6 @@ public class SimplePureRepositoryJarLibrary extends AbstractPureRepositoryJarLib
 
     public static SimplePureRepositoryJarLibrary newLibraryFromURLs(Iterable<? extends URL> urls)
     {
-        return newLibrary(Iterate.collect(urls, PureRepositoryJars::get));
+        return newLibrary(Iterate.collect(urls, PureRepositoryJars.URL_TO_JAR));
     }
 }

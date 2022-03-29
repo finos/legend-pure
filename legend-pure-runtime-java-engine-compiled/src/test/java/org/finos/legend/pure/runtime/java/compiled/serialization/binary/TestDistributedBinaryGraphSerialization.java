@@ -33,6 +33,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.function.Function;
 
 public abstract class TestDistributedBinaryGraphSerialization extends AbstractPureTestWithCoreCompiled
 {
@@ -45,37 +46,40 @@ public abstract class TestDistributedBinaryGraphSerialization extends AbstractPu
     @Test
     public void testFromRuntime() throws IOException
     {
-        ListIterable<Obj> expectedObjs = getExpectedObjsFromRuntime();
-        testSerialization(DistributedBinaryGraphSerializer.newSerializer(runtime), expectedObjs);
+        testFromRuntime(null);
     }
 
-    private ListIterable<Obj> getExpectedObjsFromRuntime()
+    @Test
+    public void testFromRuntimeWithMetadataName() throws IOException
+    {
+        testFromRuntime("withRuntime");
+    }
+
+    private void testFromRuntime(String metadataName) throws IOException
+    {
+        ListIterable<Obj> expectedObjs = getExpectedObjsFromRuntime(metadataName);
+        testSerialization(expectedObjs, metadataName, m -> DistributedBinaryGraphSerializer.newSerializer(m, runtime));
+    }
+
+    private ListIterable<Obj> getExpectedObjsFromRuntime(String metadataName)
     {
         MutableSet<CoreInstance> ignoredClassifiers = PrimitiveUtilities.getPrimitiveTypes(repository).toSet();
         ArrayAdapter.adapt(M3Paths.EnumStub, M3Paths.ImportStub, M3Paths.PropertyStub, M3Paths.RouteNodePropertyStub).collect(processorSupport::package_getByUserPath, ignoredClassifiers);
-        IdBuilder idBuilder = IdBuilder.newIdBuilder(processorSupport);
+        IdBuilder idBuilder = IdBuilder.newIdBuilder(DistributedMetadataHelper.getMetadataIdPrefix(metadataName), processorSupport);
         GraphSerializer.ClassifierCaches classifierCaches = new GraphSerializer.ClassifierCaches(processorSupport);
         return GraphNodeIterable.fromModelRepository(repository)
                 .reject(i -> ignoredClassifiers.contains(i.getClassifier()))
                 .collect(i -> GraphSerializer.buildObj(i, idBuilder, classifierCaches, processorSupport), Lists.mutable.empty());
     }
 
-    private void testSerialization(DistributedBinaryGraphSerializer serializer, ListIterable<Obj> expectedObjs, String... metadataNames) throws IOException
+    private void testSerialization(ListIterable<Obj> expectedObjs, String metadataName, Function<String, DistributedBinaryGraphSerializer> serializerFn) throws IOException
     {
         // Serialize
+        DistributedBinaryGraphSerializer serializer = serializerFn.apply(metadataName);
         serializer.serialize(getFileWriter());
 
         // Deserialize
-        DistributedBinaryGraphDeserializer.Builder deserializerBuilder = DistributedBinaryGraphDeserializer.newBuilder(getFileReader());
-        if ((metadataNames == null) || (metadataNames.length == 0))
-        {
-            deserializerBuilder.withNoMetadataName();
-        }
-        else
-        {
-            deserializerBuilder.withMetadataNames(metadataNames);
-        }
-        DistributedBinaryGraphDeserializer deserializer = deserializerBuilder.build();
+        DistributedBinaryGraphDeserializer deserializer = DistributedBinaryGraphDeserializer.fromFileReader(metadataName, getFileReader());
 
         // Validate classifiers
         ListMultimap<String, Obj> objsByClassifier = expectedObjs.groupBy(Obj::getClassifier);

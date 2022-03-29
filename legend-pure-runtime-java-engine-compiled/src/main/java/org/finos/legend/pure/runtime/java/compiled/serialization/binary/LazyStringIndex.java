@@ -16,7 +16,7 @@ package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
 import org.finos.legend.pure.m4.serialization.Reader;
 
-class LazyStringIndex extends StringIndex
+class LazyStringIndex extends AbstractStringIndex
 {
     private final String metadataName;
     private final FileReader fileReader;

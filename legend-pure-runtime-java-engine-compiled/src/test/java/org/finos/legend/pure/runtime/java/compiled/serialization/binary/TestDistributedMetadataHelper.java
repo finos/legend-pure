@@ -84,21 +84,6 @@ public class TestDistributedMetadataHelper
     }
 
     @Test
-    public void testGetMetadataSpecificationsDirectory()
-    {
-        Assert.assertEquals("metadata/specs/", DistributedMetadataHelper.getMetadataSpecificationsDirectory());
-    }
-
-    @Test
-    public void testGetMetadataSpecificationFilePath()
-    {
-        Assert.assertEquals("metadata/specs/abc.json", DistributedMetadataHelper.getMetadataSpecificationFilePath("abc"));
-        Assert.assertEquals("metadata/specs/_.json", DistributedMetadataHelper.getMetadataSpecificationFilePath("_"));
-        Assert.assertEquals("metadata/specs/core.json", DistributedMetadataHelper.getMetadataSpecificationFilePath("core"));
-        Assert.assertEquals("metadata/specs/platform.json", DistributedMetadataHelper.getMetadataSpecificationFilePath("platform"));
-    }
-
-    @Test
     public void testGetMetadataPartitionBinFilePath()
     {
         Assert.assertEquals("metadata/bin/0.bin", DistributedMetadataHelper.getMetadataPartitionBinFilePath(null, 0));
