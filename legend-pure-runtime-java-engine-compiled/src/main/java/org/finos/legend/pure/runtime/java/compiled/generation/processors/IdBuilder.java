@@ -18,6 +18,8 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElem
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Annotation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Enum;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.PrimitiveType;
@@ -137,7 +139,16 @@ public class IdBuilder
     {
         StringBuilder builder = new StringBuilder();
         org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement.writeUserPathForPackageableElement(builder, property.getValueForMetaPropertyToOne(M3Properties.owner));
-        return builder.append('.').append(property.getName()).toString();
+        StringBuilder prefix = builder.append('.').append(property.getName());
+        if(property.getValueForMetaPropertyToOne(M3Properties.owner) instanceof Association && !(property instanceof QualifiedProperty))
+        {
+            String targetType = ((AbstractProperty) property)._classifierGenericType()._typeArguments().toList().get(0)._rawType()._name();
+            return prefix.append('.').append(targetType).toString();
+        }
+        else
+        {
+            return prefix.toString();
+        }
     }
 
     // LambdaFunction
