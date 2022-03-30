@@ -54,7 +54,7 @@ function meta::pure::router::builder::propagateVoid(v:ValueSpecification[1], ele
 }
 
 function meta::pure::router::builder::build(v:ValueSpecification[1], l:List<PermutationSet>[*], last:SetImplementation[0..1], mapping:Mapping[1], exeCtx: ExecutionContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):ValueSpecification[1]
-{  
+{
     $v->match([
                f:FunctionExpression[1]| if($f->isSerialize($extensions),
                                                  | // Not routing tree part in serialize function call
@@ -71,118 +71,24 @@ function meta::pure::router::builder::build(v:ValueSpecification[1], l:List<Perm
                                           ),
                r:ExtendedRoutedValueSpecification[1]| let s = $l.values->filter(v|$v.id->toString() == $r.id).sets->toOne();
                                                       let value = $r.value;
-                                                      let final = if ($value->instanceOf(FunctionExpression) && ( ($value->cast(@FunctionExpression).func->instanceOf(Property) && !($value->cast(@FunctionExpression)->meta::pure::milestoning::isMilestonedGeneratedDateProperty())) || $value->cast(@FunctionExpression).func->instanceOf(QualifiedProperty)),
-                                                         | let f = $value->cast(@FunctionExpression);
-                                                           let params = $f.parametersValues->evaluateAndDeactivate()->map(v|$v->build($l, $last, $r.mapping, $exeCtx, $extensions, $debug));
-                                                           $params->at(0)->match(
-                                                              [
-                                                                 e:ExtendedRoutedValueSpecification[1]|
-
-                                                                    let propNameReturnTypePair =  $f.func->match([
-                                                                          p:Property<Nil,Any|*>[1]|pair($p.name->toOne(), $p.classifierGenericType.typeArguments->at(1).rawType->toOne()),
-                                                                          qp:QualifiedProperty<Any>[1]|pair($qp.name->toOne(), $qp.genericType.rawType->toOne())
-                                                                          ])->toOne();
-                                                                    let propertyName = $propNameReturnTypePair.first;
-                                                                    let setImplementation = $params->at(0)->cast(@ExtendedRoutedValueSpecification).sets->toOne();
-                                                                    let newParams = $setImplementation->match([
-                                                                                              o:OtherwiseEmbeddedSetImplementation[1]| let pMapping = $o.propertyMappingsByPropertyName($propertyName);
-                                                                                                                                       let oldP = $params->at(0)->cast(@ExtendedRoutedValueSpecification);
-                                                                                                                                       if( $pMapping->isEmpty()
-                                                                                                                                           ,|^$oldP(propertyMapping=$o.otherwisePropertyMapping);
-                                                                                                                                           ,|^$oldP(propertyMapping=$o))->concatenate($params->tail());,
-                                                                                              a:Any[1]| $params
-                                                                             ]);
-                                                                    if (!$propNameReturnTypePair.second->instanceOf(DataType),
-                                                                        |  let source = $params->at(0)->cast(@ExtendedRoutedValueSpecification).sets->toOne();
-                                                                           let target = $s->toOne();
-                                                                           let sources = $source->resolveOperation($e.mapping);
-                                                                           let targets = $target->resolveOperation($e.mapping);
-                                                                           let propertyMappings = $sources->map(
-                                                                                                      s|$targets->map(t|
-                                                                                                         let targetIds = $e.mapping.allSuperSetImplementationIds($t.id);
-                                                                                                         print(if($debug.debug,|$debug.space+'  Looking up propertyMapping for property "'+$propertyName+'" from "'+$s.id+'" to "'+$targetIds->joinStrings('[', ',', ']')+'"',|''));
-                                                                                                         let resByProperty = $targetIds->map(targetId | $s->cast(@InstanceSetImplementation)->meta::pure::mapping::propertyMappingByPropertyNameAndTargetIdWithInlineResolution($propertyName, $targetId))->first();
-                                                                                                         let res = if($resByProperty->isEmpty(),| $e.mapping._associationPropertyMappingsByIdRecursive($s.id)->filter(pm|$pm.targetSetImplementationId == $t.id && $pm.property.name==$propertyName),
-                                                                                                                                                | $resByProperty);
-                                                                                                         print(if($debug.debug,|$debug.space+' -> Found: '+$res->size()->toString(),|''));
-                                                                                                         $res;
-                                                                                                         );
-                                                                                                      );
-
-
-                                                                           let fWithBuiltExprSeq = if ($f.func->instanceOf(QualifiedProperty)
-                                                                                                            ,| print(if($debug.debug,|$debug.space+'\n\t',|''));
-                                                                                                               let qp = $f.func->cast(@QualifiedProperty<Any>)->evaluateAndDeactivate();
-                                                                                                               let routedExprSeq=$qp.expressionSequence->map(es|$es->build($l, $r.sets->first(), $e.mapping, $exeCtx, $extensions, $debug));
-                                                                                                               let newQp = ^$qp(expressionSequence=$routedExprSeq, owner=^PropertyOwner());
-                                                                                                               ^$f(func=$newQp);
-                                                                                                            ,|$f);
-
-                                                                           let isMappedInHierarchy = {|!$sources->at(0).class->generalizations()->cast(@Class<Any>)->map(c|$e.mapping.rootClassMappingByClass($c))->filter(s|$s->instanceOf(InstanceSetImplementation))->map(s|$s->cast(@InstanceSetImplementation).propertyMappingByPropertyNameAndTargetId($propertyName, $targets->at(0).id))->isEmpty()};
-
-                                                                           if ($value->cast(@FunctionExpression).func->instanceOf(Property) && $targets->size() == 1 && $sources->size() == 1 && $sources->toOne().id != 'embdedded_todo' && $targets->toOne().id != 'embdedded_todo' && $propertyMappings->isEmpty() && !$isMappedInHierarchy->eval(),
-                                                                              |print(if($debug.debug,|$debug.space+' -> VOID\n',|''));
-                                                                               ^Void(genericType=^GenericType(rawType=Nil), multiplicity=PureOne)->evaluateAndDeactivate();,
-                                                                              |print(if($debug.debug,|$debug.space+'\n',|''));
-                                                                               let res = ^$r(
-                                                                                              sets = $s,
-                                                                                              value = ^$fWithBuiltExprSeq(parametersValues=$newParams),
-                                                                                              propertyMapping = $propertyMappings->removeDuplicates({a,b|$a.property == $b.property && $a.sourceSetImplementationId == $b.sourceSetImplementationId && $a.targetSetImplementationId == $b.targetSetImplementationId})
-                                                                                          );
-                                                                               if ($res.value->cast(@FunctionExpression).func->instanceOf(QualifiedProperty), | $res->propagateVoid($res.value->cast(@FunctionExpression).func->cast(@QualifiedProperty<Any>).expressionSequence);, | $res);
-                                                                           );,
-                                                                        |if($value->cast(@FunctionExpression).func->instanceOf(Property),
-                                                                          |   print(if($debug.debug,|$debug.space+'   Looking up propertyMapping for property "'+$f.func->cast(@Property<Nil,Any|*>).name->toOne()+'" in "'+$params->at(0)->cast(@ExtendedRoutedValueSpecification).sets->toOne().id+'" \n',|''));
-                                                                             let setImplementation = $params->at(0)->cast(@ExtendedRoutedValueSpecification).sets->toOne();
-                                                                             let property = $f.func->cast(@Property<Nil,Any|*>);
-                                                                             let propertyMappings = $setImplementation->match([
-                                                                                               i:InstanceSetImplementation[1]|let pMapping = $i->propertyMappingsByPropertyName($propertyName);
-                                                                                                                              if($pMapping->isEmpty() && ($i->isNoMappingPassThru($property) || $i->isNoMappingDefaultToEmpty($property) || $i->isPartOfMerge()  ),
-                                                                                                                                 | [],
-                                                                                                                                 {|  
-                                                                                                                                    assert(!$pMapping->isEmpty(), | 'No property mapping found for: "'+$propertyName+'" in "'+$setImplementation.id+'" in the mapping "'+$setImplementation.parent->elementToPath()+'"');
-                                                                                                                                    $pMapping->toOne();
-                                                                                                                                 }
-                                                                                                                              );,
-                                                                                               o:OperationSetImplementation[1]|  $o->resolveOperation($e.mapping)->map(i|  let pMapping = $i->match([e:EmbeddedSetImplementation[1]| $e->propertyMappingsByPropertyName($propertyName),
-                                                                                                                                                                                                   a:InstanceSetImplementation[1]| $i.propertyMappingsByPropertyName($propertyName)
-                                                                                                                                                                                                ]);  
-                                                                                                                                                                      if($pMapping->isEmpty() && ($i->isNoMappingPassThru($property) || $i->isNoMappingDefaultToEmpty($property) || $o->instanceOf(MergeOperationSetImplementation)),
-                                                                                                                                                                        | [],                         
-                                                                                                                                                                        {| assert(!$pMapping->isEmpty(), | 'No property mapping found for: ' + $propertyName + ' in mapping ' + $i.class.name->toOne() + '[' + $i.id + ']');
-                                                                                                                                                                          $pMapping->toOne();
-                                                                                                                                                                        }
-                                                                                                                                                                      );
-                                                                                                                                         )
-                                                                                                                           ;]);
-
-                                                                             print(if($debug.debug,|$debug.space+'  propertyMappings found "'+$propertyMappings->size()->toString() +'" \n',|''));
-
-                                                                             ^$r(
-                                                                               sets = $s,
-                                                                               value = ^$f(parametersValues=$newParams),
-                                                                               propertyMapping = $propertyMappings->removeDuplicates({a,b|$a.property == $b.property && $a.sourceSetImplementationId == $b.sourceSetImplementationId && $a.targetSetImplementationId == $b.targetSetImplementationId})
-                                                                             );
-                                                                          ,| ^$r(
-                                                                                sets = $s,
-                                                                                value = ^$f(parametersValues=$newParams)
-                                                                             )
-                                                                          )
-                                                                    );,
-                                                                 z:Void[1]|$z,
-                                                                 v:ValueSpecification[1]|
-                                                                    ^$r(
-                                                                        sets = $s,
-                                                                        value = $r.value->evaluateAndDeactivate()
-                                                                     )
-                                                              ]
-                                                           );
-                                                          ,
-                                                         |^$r(
-                                                            sets = $s,
-                                                            value = $r.value->evaluateAndDeactivate()->build($l, $s, $r.mapping, $exeCtx, $extensions, $debug)
-                                                          )
-                                                      );
+                                                      let final = if($value->instanceOf(FunctionExpression) && ( ($value->cast(@FunctionExpression).func->instanceOf(Property) && !($value->cast(@FunctionExpression)->meta::pure::milestoning::isMilestonedGeneratedDateProperty())) || $value->cast(@FunctionExpression).func->instanceOf(QualifiedProperty)),
+                                                                     | buildSimpleProperty($r, $value, $s, $l, $last, $exeCtx, $extensions, $debug),
+                                                                     {|
+                                                                       let expanded = if($value->instanceOf(FunctionExpression) && $value->cast(@FunctionExpression)->isExpandableGraphFetch(),
+                                                                                         {|
+                                                                                            let fe    = $value->cast(@SimpleFunctionExpression);
+                                                                                            let p1    = $fe.parametersValues->at(1)->cast(@InstanceValue);
+                                                                                            let newP1 = ^$p1(values=$r.graphFetchTree);
+                                                                                            ^$fe(parametersValues=$fe.parametersValues->at(0)->concatenate($newP1)->concatenate($fe.parametersValues->tail()->tail()));
+                                                                                         },
+                                                                                         | $value
+                                                                                      );
+                                                                       ^$r(
+                                                                          sets = $s,
+                                                                          value = $expanded->evaluateAndDeactivate()->build($l, $s, $r.mapping, $exeCtx, $extensions, $debug)
+                                                                       );
+                                                                     }
+                                                                  );
                                                       $final->propagateVoid($final);
 
                                                       ,
@@ -217,6 +123,157 @@ function meta::pure::router::builder::build(v:ValueSpecification[1], l:List<Perm
                v:VariableExpression[1]| $v,
                a:TDSRoutedValueSpecification[1]| $a->propagateVoid($a.value);
              ]);
+}
+
+function <<access.private>> meta::pure::router::builder::buildSimpleProperty(r:ExtendedRoutedValueSpecification[1], value:ValueSpecification[1], s:SetImplementation[1], l:List<PermutationSet>[*], last:SetImplementation[0..1], exeCtx: ExecutionContext[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):ValueSpecification[1]
+{
+   let f = $value->cast(@FunctionExpression);
+   let params = $f.parametersValues->evaluateAndDeactivate()->map(v|$v->build($l, $last, $r.mapping, $exeCtx, $extensions, $debug));
+   $params->at(0)->match([
+      {e:ExtendedRoutedValueSpecification[1]|
+         let propNameReturnTypePair =  $f.func->match([
+            p:Property<Nil,Any|*>[1]     | pair($p.name->toOne(), $p.classifierGenericType.typeArguments->at(1).rawType->toOne()),
+            qp:QualifiedProperty<Any>[1] | pair($qp.name->toOne(), $qp.genericType.rawType->toOne())
+         ])->toOne();
+         let propertyName = $propNameReturnTypePair.first;
+         let setImplementation = $params->at(0)->cast(@ExtendedRoutedValueSpecification).sets->toOne();
+         let newParams = $setImplementation->match([
+            {o:OtherwiseEmbeddedSetImplementation[1]|
+               let pMapping = $o.propertyMappingsByPropertyName($propertyName);
+               let oldP = $params->at(0)->cast(@ExtendedRoutedValueSpecification);
+               if($pMapping->isEmpty(),
+                  | ^$oldP(propertyMapping=$o.otherwisePropertyMapping);,
+                  | ^$oldP(propertyMapping=$o)
+               )->concatenate($params->tail());
+            },
+            a:Any[1]| $params
+         ]);
+
+         if(!$propNameReturnTypePair.second->instanceOf(DataType),
+            {|
+               let source = $params->at(0)->cast(@ExtendedRoutedValueSpecification).sets->toOne();
+               let target = $s->toOne();
+               let sources = $source->resolveOperation($e.mapping);
+               let targets = $target->resolveOperation($e.mapping);
+               let propertyMappings = $sources->map({s|
+                  $targets->map({t|
+                     let targetIds = $e.mapping.allSuperSetImplementationIds($t.id);
+                     print(if($debug.debug,|$debug.space+'  Looking up propertyMapping for property "'+$propertyName+'" from "'+$s.id+'" to "'+$targetIds->joinStrings('[', ',', ']')+'"',|''));
+                     let resByProperty = $targetIds->map(targetId | $s->cast(@InstanceSetImplementation)->meta::pure::mapping::propertyMappingByPropertyNameAndTargetIdWithInlineResolution($propertyName, $targetId))->first();
+                     let res = if($resByProperty->isEmpty(),| $e.mapping._associationPropertyMappingsByIdRecursive($s.id)->filter(pm|$pm.targetSetImplementationId == $t.id && $pm.property.name==$propertyName),
+                                                                                                                                                | $resByProperty);
+                     print(if($debug.debug,|$debug.space+' -> Found: '+$res->size()->toString(),|''));
+                     $res;
+                  });
+               });
+
+
+               let fWithBuiltExprSeq = if($f.func->instanceOf(QualifiedProperty),
+                                          {|
+                                             print(if($debug.debug,|$debug.space+'\n\t',|''));
+                                             let qp = $f.func->cast(@QualifiedProperty<Any>)->evaluateAndDeactivate();
+                                             let routedExprSeq=$qp.expressionSequence->map(es|$es->build($l, $r.sets->first(), $e.mapping, $exeCtx, $extensions, $debug));
+                                             let newQp = ^$qp(expressionSequence=$routedExprSeq, owner=^PropertyOwner());
+                                             ^$f(func=$newQp);
+                                          },
+                                          |$f
+                                       );
+
+               let isMappedInHierarchy = {|
+                  !$sources->at(0).class->generalizations()->cast(@Class<Any>)
+                     ->map(c|$e.mapping.rootClassMappingByClass($c))
+                     ->filter(s|$s->instanceOf(InstanceSetImplementation))
+                     ->map(s|$s->cast(@InstanceSetImplementation).propertyMappingByPropertyNameAndTargetId($propertyName, $targets->at(0).id))
+                     ->isEmpty()
+               };
+
+               if($value->cast(@FunctionExpression).func->instanceOf(Property) && $targets->size() == 1 && $sources->size() == 1 && $sources->toOne().id != 'embdedded_todo' && $targets->toOne().id != 'embdedded_todo' && $propertyMappings->isEmpty() && !$isMappedInHierarchy->eval(),
+                  {|
+                     print(if($debug.debug,|$debug.space+' -> VOID\n',|''));
+                     ^Void(genericType=^GenericType(rawType=Nil), multiplicity=PureOne)->evaluateAndDeactivate();
+                  },
+                  {|
+                     print(if($debug.debug,|$debug.space+'\n',|''));
+                     let res = ^$r(
+                        sets = $s,
+                        value = ^$fWithBuiltExprSeq(parametersValues=$newParams),
+                        propertyMapping = $propertyMappings->removeDuplicates({a,b|$a.property == $b.property && $a.sourceSetImplementationId == $b.sourceSetImplementationId && $a.targetSetImplementationId == $b.targetSetImplementationId})
+                     );
+                     if($res.value->cast(@FunctionExpression).func->instanceOf(QualifiedProperty),
+                        | $res->propagateVoid($res.value->cast(@FunctionExpression).func->cast(@QualifiedProperty<Any>).expressionSequence);,
+                        | $res
+                     );
+                  }
+               );
+            },
+            {|
+               if($value->cast(@FunctionExpression).func->instanceOf(Property),
+                  {|
+                     print(if($debug.debug,|$debug.space+'   Looking up propertyMapping for property "'+$f.func->cast(@Property<Nil,Any|*>).name->toOne()+'" in "'+$params->at(0)->cast(@ExtendedRoutedValueSpecification).sets->toOne().id+'" \n',|''));
+                     let setImplementation = $params->at(0)->cast(@ExtendedRoutedValueSpecification).sets->toOne();
+                     let property = $f.func->cast(@Property<Nil,Any|*>);
+                     let propertyMappings = $setImplementation->match([
+                        {i:InstanceSetImplementation[1]|
+                           let pMapping = $i->propertyMappingsByPropertyName($propertyName);
+                           if($pMapping->isEmpty() && ($i->isNoMappingPassThru($property) || $i->isNoMappingDefaultToEmpty($property) || $i->isPartOfMerge() || $exeCtx->instanceOf(AllowNoMappingExecutionContext)),
+                              | [],
+                              {|
+                                 assert(!$pMapping->isEmpty(), | 'No property mapping found for: "'+$propertyName+'" in "'+$setImplementation.id+'" in the mapping "'+$setImplementation.parent->elementToPath()+'"');
+                                 $pMapping->toOne();
+                              }
+                           );
+                        },
+                        {o:OperationSetImplementation[1]|
+                           $o->resolveOperation($e.mapping)->map({i|
+                              let pMapping = $i->match([
+                                 e:EmbeddedSetImplementation[1]| $e->propertyMappingsByPropertyName($propertyName),
+                                 a:InstanceSetImplementation[1]| $i.propertyMappingsByPropertyName($propertyName)
+                              ]);
+
+                              if($pMapping->isEmpty() && ($i->isNoMappingPassThru($property) || $i->isNoMappingDefaultToEmpty($property) || $o->instanceOf(MergeOperationSetImplementation)),
+                                 | [],
+                                 {|
+                                    assert(!$pMapping->isEmpty(), | 'No property mapping found for: ' + $propertyName + ' in mapping ' + $i.class.name->toOne() + '[' + $i.id + ']');
+                                    $pMapping->toOne();
+                                 }
+                              );
+                           })
+                        }
+                     ]);
+
+                     print(if($debug.debug,|$debug.space+'  propertyMappings found "'+$propertyMappings->size()->toString() +'" \n',|''));
+
+                     ^$r(
+                        sets = $s,
+                        value = ^$f(parametersValues=$newParams),
+                        propertyMapping = $propertyMappings->removeDuplicates({a,b|$a.property == $b.property && $a.sourceSetImplementationId == $b.sourceSetImplementationId && $a.targetSetImplementationId == $b.targetSetImplementationId})
+                     );
+                  },
+                  {|
+                     ^$r(
+                        sets = $s,
+                        value = ^$f(parametersValues=$newParams)
+                     )
+                  }
+               );
+            }
+         );
+      },
+      z:Void[1]|$z,
+      {v:ValueSpecification[1]|
+         ^$r(
+            sets = $s,
+            value = $r.value->evaluateAndDeactivate()
+         )
+      }
+   ]);
+}
+
+function meta::pure::graphFetch::execution::isExpandableGraphFetch(fe:FunctionExpression[1]):Boolean[1]
+{
+   $fe.func == meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__T_MANY_ ||
+   $fe.func == meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__Integer_1__T_MANY_ ||
+   $fe.func == meta::pure::graphFetch::execution::graphFetchChecked_T_MANY__RootGraphFetchTree_1__Checked_MANY_
 }
 
 function meta::pure::graphFetch::execution::isSerialize(fe:FunctionExpression[1], extensions:meta::pure::router::extension::RouterExtension[*]):Boolean[1]

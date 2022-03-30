@@ -27,6 +27,9 @@ import meta::pure::router::operations::*;
 import meta::pure::mapping::*;
 import meta::pure::mapping::aggregationAware::*;
 
+Class meta::pure::router::routing::AllowNoMappingExecutionContext extends ExecutionContext
+{   
+}
 
 Class meta::pure::graphFetch::routing::RoutedGraphFetchTree extends GraphFetchTree
 {
@@ -81,6 +84,10 @@ Class meta::pure::router::routing::RoutingState
    classMappingsByClass:Map<Class<Any>,List<SetImplementation>>[1];
    
    isDeepFetchRouting : Boolean[1];
+   
+   checked : Boolean[0..1];
+   graphFetchTree : RootGraphFetchTree<Any>[0..1];
+   batchSize : Integer[0..1];
 
    classMappingsForClass(class:Class<Any>[1])
    {
@@ -168,8 +175,9 @@ function meta::pure::router::routing::processClass(c:Class<Any>[1], i:InstanceVa
                                                        runtime = $runtime,
                                                        mapping = $mapping,
                                                        executionContext = $executionContext,
-                                                       value = $i);
-
+                                                       value = $i,
+                                                       checked = $s.checked,
+                                                       graphFetchTree = $s.graphFetchTree);
         let newSet = if (!$existingSetCanBeUsed,|^PermutationSet(id = $state.counter+1, sets = $classMapping),|[]);
 
         let res = ^$state(
@@ -404,7 +412,7 @@ function meta::pure::router::routing::processProperty(p:AbstractProperty<Any>[1]
 {
    let s = $state.propertyMap.v->filter(p|$p.first == '__propertyOwner').second->evaluateAndDeactivate();
    let permSets = if($s == 0,|[]->cast(@SetImplementation), |$s->cast(@ExtendedRoutedValueSpecification).sets);
-   let foundMappings = $p->findMappingsFromProperty($mapping, $permSets, $state, $extensions);
+   let foundMappings = $p->findMappingsFromProperty($mapping, $permSets, $state, $executionContext, $extensions);
             if ($foundMappings->isEmpty(),
                | let found = $state.propertyMap.v->filter(p|$p.first == '__propertyOwner').second->evaluateAndDeactivate();
                  if ($found == 0,
@@ -423,7 +431,9 @@ function meta::pure::router::routing::processProperty(p:AbstractProperty<Any>[1]
                                          runtime = $runtime,
                                          mapping = $mapping,
                                          executionContext = $executionContext,
-                                         value = $i
+                                         value = $i,
+                                         checked = $state.checked,
+                                         graphFetchTree = $state.graphFetchTree
                               );
 
                   let newSet = if ($existingSet->isEmpty(),|^PermutationSet(id = $state.counter+1, sets = $foundMappings),|[]);
@@ -604,6 +614,9 @@ function meta::pure::router::routing::shouldStop(f:Function<Any>[1], extensions:
       meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__T_MANY_,
       meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__Integer_1__T_MANY_,
       meta::pure::graphFetch::execution::graphFetchChecked_T_MANY__RootGraphFetchTree_1__Checked_MANY_,
+      meta::pure::graphFetch::execution::graphFetchUnexpanded_T_MANY__RootGraphFetchTree_1__T_MANY_,
+      meta::pure::graphFetch::execution::graphFetchCheckedUnexpanded_T_MANY__RootGraphFetchTree_1__Checked_MANY_,
+      meta::pure::dataQuality::checked_T_MANY__Checked_MANY_,
       meta::pure::graphFetch::execution::serialize_T_MANY__RootGraphFetchTree_1__String_1_,
       meta::pure::graphFetch::execution::serialize_Checked_MANY__RootGraphFetchTree_1__String_1_,
       meta::pure::tds::tdsRows_TabularDataSet_1__TDSRow_MANY_,
@@ -723,7 +736,7 @@ function meta::pure::router::routing::routeFunctionExpressionProperty(p:Property
                                       let resolvedClassMappings = if($classMapping->isNotEmpty(),
                                                                      | $classMapping,
                                                                      | $subTypes->map(s|$s->cast(@Class<Any>)->getClassMappings($v))->removeDuplicates());
-                                      assert($resolvedClassMappings != [], | 'The class \''+$sourceClass.name->toOne()+'\' can\'t be found in the mapping \''+$mapping.name->toOne()+'\'');
+                                      assert($resolvedClassMappings != [] || $executionContext->instanceOf(AllowNoMappingExecutionContext), | 'The class \''+$sourceClass.name->toOne()+'\' can\'t be found in the mapping \''+$mapping.name->toOne()+'\'');
                                       if ($resolvedClassMappings->isEmpty(),
                                          |^$last(value=^$fe(parametersValues = $newPV));,
                                          |
@@ -735,7 +748,9 @@ function meta::pure::router::routing::routeFunctionExpressionProperty(p:Property
                                                         runtime = $runtime,
                                                         mapping = $mapping,
                                                         executionContext = $executionContext,
-                                                        value = ^$fe(parametersValues = $newPV)
+                                                        value = ^$fe(parametersValues = $newPV),
+                                                        checked = $v.checked,
+                                                        graphFetchTree = $v.graphFetchTree
                                                    );
                                            ^$last(
                                               value= $r
@@ -748,7 +763,7 @@ function meta::pure::router::routing::routeFunctionExpressionProperty(p:Property
                                            ^$last(
                                               value= $routed
                                            );,
-                                         | let foundSets = $p->findMappingsFromProperty($mapping, $last.value->match([v:ExtendedRoutedValueSpecification[1]|$v.sets, a:Any[1]|[]->cast(@SetImplementation)]), $v, $extensions);//is this for embedded?
+                                         | let foundSets = $p->findMappingsFromProperty($mapping, $last.value->match([v:ExtendedRoutedValueSpecification[1]|$v.sets, a:Any[1]|[]->cast(@SetImplementation)]), $v, $executionContext, $extensions);//is this for embedded?
                                            if ($foundSets->isEmpty(),
                                               |^$last(value=^$fe(parametersValues = $newPV)),
                                               | // Can't assert because of embedded
@@ -761,7 +776,6 @@ function meta::pure::router::routing::routeFunctionExpressionProperty(p:Property
                                                             |$last.counter+1
                                                            )->toString();
              
-
                                                let added = ^ExtendedRoutedValueSpecification(
                                                                   genericType = $fe.genericType,
                                                                   multiplicity = $fe.multiplicity,
@@ -770,7 +784,9 @@ function meta::pure::router::routing::routeFunctionExpressionProperty(p:Property
                                                                   runtime = $runtime,
                                                                   mapping = $mapping,
                                                                   executionContext = $executionContext,
-                                                                  value = ^$fe(parametersValues = $newPV)
+                                                                  value = ^$fe(parametersValues = $newPV),
+                                                                  checked = $v.checked,
+                                                                  graphFetchTree = $v.graphFetchTree
                                                              );
                                                 let oldPropertyMap = $last.propertyMap;
                                                 let newSet = if (!$existingSetCanBeUsed,|^PermutationSet(id = $last.counter+1, sets = $foundSets),|[]);
@@ -804,7 +820,6 @@ function meta::pure::router::routing::routeFunctionExpressionProperty(p:Property
 function meta::pure::router::routing::routeFunctionExpressionFunctionDefinition(f:Function<Any>[1], fe:FunctionExpression[1], state:RoutingState[1], mapping:Mapping[1], runtime:Runtime[1], executionContext:ExecutionContext[1], vars:Map<VariableExpression, ValueSpecification>[1], inScopeVars:Map<String, List<Any>>[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):RoutingState[1]
 {
    print(if($debug.debug,|$debug.space+if($f->instanceOf(NativeFunction),|'NativeFunction',|'FunctionDefinition')+' : '+$f->asString()+'\n',|''));
-   
    let res = $extensions.routing_routeFunctionExpressionFunctionDefinition->filter(e|$e.first->eval($fe));
    assert($res->size() <= 1, |'Only one match is authorized');
    
@@ -828,7 +843,7 @@ function meta::pure::router::routing::routeFunctionExpressionFunctionDefinition(
         let newRuntime = $fromMappingUpdates.runtime;
         let newExecutionContext = $fromMappingUpdates.executionContext;
 
-        let v = $fromMappingUpdates.state;
+        let v = $fromMappingUpdates.state->updateCheckedState($fe, $inScopeVars);
          if ($fe.parametersValues->isEmpty(),
             | ^$v(),
             | // First pass (everything but lambda & ColumnSpecification)
@@ -849,7 +864,7 @@ function meta::pure::router::routing::routeFunctionExpressionFunctionDefinition(
                                                                  $extensions,  
                                                                  ^$debug(space = $debug.space+'  ')
                                               );
-
+             
               let firstPass = $firstPassResults.value->evaluateAndDeactivate()->cast(@ValueSpecification);
              // Build mapping
               let routed = $firstPass->map(fp|$fp->match([f:FunctionRoutedValueSpecification[1]|$f.value,v:ValueSpecification[1]|$v]))->filter(p|!$p->isFunction() && $p->instanceOf(ExtendedRoutedValueSpecification))->cast(@ExtendedRoutedValueSpecification)->concatenate($v.routed->evaluateAndDeactivate());
@@ -953,9 +968,7 @@ function meta::pure::router::routing::routeFunctionExpressionFunctionDefinition(
               let secondPass = if ($f->in([meta::pure::functions::lang::subType_Any_m__T_1__T_m_, meta::pure::functions::lang::whenSubType_Any_1__T_1__T_$0_1$_, meta::pure::functions::lang::whenSubType_Any_$0_1$__T_1__T_$0_1$_, meta::pure::functions::lang::whenSubType_Any_MANY__T_1__T_MANY_]),
                                       | let first = $secondPassPre->at(0);
                                         let second = $secondPassPre->at(1);
-                                        let firstValue = $first.value->toOne()->cast(@ExtendedRoutedValueSpecification);
-                                        let oldValue = $firstValue.sets;
-//                                        $second->println();
+                                        let firstValue = $first.value->toOne()->cast(@ValueSpecification);
                                         let castedExtendInfo = $second.value->toOne()->cast(@ExtendedRoutedValueSpecification)->evaluateAndDeactivate();
                                         ^$first(value = $firstValue->propogateSubType($castedExtendInfo.id,$castedExtendInfo.sets, $extensions))->add($second);,
                                       | $secondPassPre
@@ -1024,7 +1037,9 @@ function meta::pure::router::routing::routeFunctionExpressionFunctionDefinition(
                                                                                                                                                      runtime = $newRuntime,
                                                                                                                                                      mapping = $newMapping,
                                                                                                                                                      executionContext = $newExecutionContext,
-                                                                                                                                                     value = ^$fullRes(func=$newQp));
+                                                                                                                                                     value = ^$fullRes(func=$newQp),
+                                                                                                                                                     checked = $v.checked,
+                                                                                                                                                     graphFetchTree = $v.graphFetchTree);
                                                                                                        ^$routedExprSeq(value=$qpVal, pathPrefix=$v.pathPrefix);
                                                                                                        ]);
                                                        ]);
@@ -1039,6 +1054,7 @@ function meta::pure::router::routing::routeFunctionExpressionFunctionDefinition(
                                              );
                           print(if($debug.debug,|$debug.space+'~>NQS) ('+$lastSecondPass.sets->size()->toString()+') '+$possiblyWrapperd->evaluateAndDeactivate()->asString()+'\n',|''));
                           ^$lastSecondPass(shouldBeRouted = if ($f == letFunction_String_1__T_m__T_m_,|false,|$lastSecondPass.shouldBeRouted || $f == getAll_Class_1__T_MANY_ || $f == getAllVersions_Class_1__T_MANY_ || $f==getAll_Class_1__Date_1__T_MANY_ || $f==getAll_Class_1__Date_1__Date_1__T_MANY_ || $f == getAllVersionsInRange_Class_1__Date_1__Date_1__T_MANY_ || $f == getAllForEachDate_Class_1__Date_MANY__T_MANY_), value=$possiblyWrapperd, pathPrefix=$v.pathPrefix);
+                        
                       ,| let newVars = $fullRes->mapVariables(newMap([]->cast(@Pair<VariableExpression, ValueSpecification>), VariableExpression->classPropertyByName('name')->cast(@Property<VariableExpression,String|1>)),$inScopeVars);
                          assert($f->cast(@FunctionDefinition<Any>).expressionSequence->size() <= 1, | 'Function ' +$f->cast(@FunctionDefinition<Any>)->elementToPath() + ' is not yet supported as functions with more than one expression can not be routed');
                          ^$lastSecondPass(
@@ -1048,6 +1064,37 @@ function meta::pure::router::routing::routeFunctionExpressionFunctionDefinition(
          );
      );
   );
+}
+
+function <<access.private>> meta::pure::router::routing::updateCheckedState(state:RoutingState[1], fe:FunctionExpression[1], inScopeVars:Map<String, List<Any>>[1]):RoutingState[1]
+{
+   if($fe.func == meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__T_MANY_,
+      | ^$state(checked = false, graphFetchTree = getFunctionParameterValue($fe, $inScopeVars, 1)->cast(@RootGraphFetchTree<Any>)->toOne()->ensureConstraintsRequirements()),
+      | 
+   if($fe.func == meta::pure::graphFetch::execution::graphFetch_T_MANY__RootGraphFetchTree_1__Integer_1__T_MANY_,
+      | ^$state(checked = false, graphFetchTree = getFunctionParameterValue($fe, $inScopeVars, 1)->cast(@RootGraphFetchTree<Any>)->toOne()->ensureConstraintsRequirements(), batchSize = getFunctionParameterValue($fe, $inScopeVars, 2)->cast(@Integer)->toOne()),
+      | 
+   if($fe.func == meta::pure::graphFetch::execution::graphFetchChecked_T_MANY__RootGraphFetchTree_1__Checked_MANY_,
+      |^$state(checked = true, graphFetchTree = getFunctionParameterValue($fe, $inScopeVars, 1)->cast(@RootGraphFetchTree<Any>)->toOne()->ensureConstraintsRequirements()),
+      | 
+   if($fe.func == meta::pure::graphFetch::execution::graphFetchUnexpanded_T_MANY__RootGraphFetchTree_1__T_MANY_,
+      | ^$state(checked = false, graphFetchTree = getFunctionParameterValue($fe, $inScopeVars, 1)->cast(@RootGraphFetchTree<Any>)->toOne()),
+      | 
+   if($fe.func == meta::pure::graphFetch::execution::graphFetchCheckedUnexpanded_T_MANY__RootGraphFetchTree_1__Checked_MANY_,
+      | ^$state(checked = true, graphFetchTree = getFunctionParameterValue($fe, $inScopeVars, 1)->cast(@RootGraphFetchTree<Any>)->toOne()),
+      | 
+   if($fe.func ==meta::pure::dataQuality::checked_T_MANY__Checked_MANY_,
+      | ^$state(checked = true),
+      | $state
+   ))))));
+}
+
+function meta::pure::router::routing::getFunctionParameterValue(fe:FunctionExpression[1], inScopeVars:Map<String, List<Any>>[1], index: Integer[1]):Any[*]
+{
+   $fe.parametersValues->evaluateAndDeactivate()->at($index)->match([
+      i:InstanceValue[1]| $i.values,
+      v:VariableExpression[1]|  $inScopeVars->get($v.name->toOne()).values
+      ]);
 }
 
 function meta::pure::router::routing::processAggregationValueFunction(fn:Function<Any>[1], routed:ExtendedRoutedValueSpecification[*], state:RoutingState[1], mapping:Mapping[1], runtime:Runtime[1], executionContext:ExecutionContext[1], vars:Map<VariableExpression, ValueSpecification>[1], inScopeVars:Map<String, List<Any>>[1], extensions:meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):RoutingState[1]
@@ -1150,9 +1197,16 @@ function meta::pure::router::routing::processLambda(i:InstanceValue[1], routed:E
                               f:FunctionDefinition<Any>[1]| if($state.shouldBeRouted,|$func->functionType().parameters->evaluateAndDeactivate()->map(
                                                                                                           p | let class = $p.genericType.rawType;
                                                                                                               if (!$class->toOne()->instanceOf(DataType) && $class != TDSRow ,
-                                                                                                                  | let map = $routed->filter(v|$v->evaluateAndDeactivate().value.genericType.rawType->toOne()->_subTypeOf($class->toOne()););
-                                                                                                                    assert(!$map->isEmpty(),| 'Error mapping not found for class '+$class.name->toOne()+' cache:\''+$routed.sets.class.name->joinStrings(', ')+'\'');
-                                                                                                                    pair($p.name, $map->at(0)->cast(@Any));,
+                                                                                                                  {| 
+                                                                                                                     let map = $routed->filter(v|$v->evaluateAndDeactivate().value.genericType.rawType->toOne()->_subTypeOf($class->toOne()););
+                                                                                                                     if($map->isEmpty() && $executionContext->instanceOf(AllowNoMappingExecutionContext),
+                                                                                                                        | [],
+                                                                                                                        {|
+                                                                                                                           assert(!$map->isEmpty(),| 'Error mapping not found for class '+$class.name->toOne()+' cache:\''+$routed.sets.class.name->joinStrings(', ')+'\'');
+                                                                                                                           pair($p.name, $map->at(0)->cast(@Any));
+                                                                                                                        }
+                                                                                                                     );
+                                                                                                                  },
                                                                                                                   |[]
                                                                                                               );
                                                                                                           );,

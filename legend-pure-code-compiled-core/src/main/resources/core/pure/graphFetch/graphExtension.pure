@@ -363,96 +363,99 @@ function <<access.private>> meta::pure::graphFetch::enrichSourceTreeNodeForPrope
    let requiredProperty = if($isPropertyTemporalMilestoned, |$setImplementation.class->propertyByName($tgtPgft.property->edgePointPropertyName()->toOne()), |$tgtPgft.property);
    let propertyMappings = $setImplementation.propertyMappings->filter(pm|$pm.property == $requiredProperty)->cast(@PurePropertyMapping);
    
-   assert($propertyMappings->isNotEmpty() || ($requiredProperty->isNotEmpty() && ($setImplementation->isNoMappingPassThru($requiredProperty->toOne()) || $setImplementation->isNoMappingDefaultToEmpty($requiredProperty->toOne()) || $setImplementation->isPartOfMerge())),|'No mapping found for property \'' + $tgtPgft.property.name->toOne() + '\'');
+   if($propertyMappings->isNotEmpty() || ($requiredProperty->isNotEmpty() && ($setImplementation->isNoMappingPassThru($requiredProperty->toOne()) || $setImplementation->isNoMappingDefaultToEmpty($requiredProperty->toOne()) || $setImplementation->isPartOfMerge())),
+      {|
+         let returnType   = $tgtPgft.property->functionReturnType().rawType->toOne();
 
-   let returnType   = $tgtPgft.property->functionReturnType().rawType->toOne();
-                  
-   let childSetImpls = $returnType->match([
-      {c:Class<Any>[1]|
-         let childSIs = $tgtPgft->match([
-            r:RoutedPropertyGraphFetchTree[1] | $r.sets,
-            r:PropertyGraphFetchTree[1]       | $setImplementation.parent.rootClassMappingByClass($c)
-         ]);
-               
-         let childSIsResolved = $childSIs->map(childSI|
-            $childSI->match([
-               {o:OperationSetImplementation[1] | 
-                  assert($o.parameters.setImplementation->forAll(s|$s->instanceOf(PureInstanceSetImplementation)), |'Unsupported types: ' + $o.parameters.setImplementation->filter(i|!$i->instanceOf(PureInstanceSetImplementation))->type()->elementToPath());
-                  $o->meta::pure::router::clustering::resolveInstanceSetImplementations($extensions);
-               },
-               {e:EmbeddedSetImplementation[1] |
-                  [];
-               },
-               {i:InstanceSetImplementation[1] |
-                  assert($i->instanceOf(PureInstanceSetImplementation), 'Unsupported type: ' + $childSI->type()->elementToPath());
-                  $i;
-               }
-            ])->cast(@PureInstanceSetImplementation)
-         );
-               
-         assert($propertyMappings->isEmpty() || $childSIsResolved->isNotEmpty(), |'Mapping ' + $setImplementation.parent->elementToPath() + ' does not map class from tree: ' + $c->elementToPath());
-         $childSIsResolved;
-      },
-      {a:Any[1]| []}
-   ]);
+         let childSetImpls = $returnType->match([
+            {c:Class<Any>[1]|
+               let childSIs = $tgtPgft->match([
+                  r:RoutedPropertyGraphFetchTree[1] | $r.sets,
+                  r:PropertyGraphFetchTree[1]       | $setImplementation.parent.rootClassMappingByClass($c)
+               ]);
 
-   let propertyPaths = $propertyMappings->match([
-      {none:PurePropertyMapping[0] |
-         if($setImplementation->isNoMappingPassThru($requiredProperty->toOne()),
-            {| 
-               let path = ^PropertyPathNode(
-                  class    = $setImplementation.srcClass->toOne()->cast(@Class<Any>),
-                  property = $setImplementation->noMappingPassThruSourceProperty($requiredProperty->toOne())->toOne()
+               let childSIsResolved = $childSIs->map(childSI|
+                  $childSI->match([
+                     {o:OperationSetImplementation[1] |
+                        assert($o.parameters.setImplementation->forAll(s|$s->instanceOf(PureInstanceSetImplementation)), |'Unsupported types: ' + $o.parameters.setImplementation->filter(i|!$i->instanceOf(PureInstanceSetImplementation))->type()->elementToPath());
+                        $o->meta::pure::router::clustering::resolveInstanceSetImplementations($extensions);
+                     },
+                     {e:EmbeddedSetImplementation[1] |
+                        [];
+                     },
+                     {i:InstanceSetImplementation[1] |
+                        assert($i->instanceOf(PureInstanceSetImplementation), 'Unsupported type: ' + $childSI->type()->elementToPath());
+                        $i;
+                     }
+                  ])->cast(@PureInstanceSetImplementation)
                );
-               ^Res(current=list($path), result=list($path));
+
+               assert($propertyMappings->isEmpty() || $childSIsResolved->isNotEmpty(), |'Mapping ' + $setImplementation.parent->elementToPath() + ' does not map class from tree: ' + $c->elementToPath());
+               $childSIsResolved;
             },
-            {| 
-              assert($setImplementation->isNoMappingDefaultToEmpty($requiredProperty->toOne()) || $setImplementation->isPartOfMerge(), |'No mapping found for property \'' + $tgtPgft.property.name->toOne() + '\''); 
-              [];
+            {a:Any[1]| []}
+         ]);
+
+         let propertyPaths = $propertyMappings->match([
+            {none:PurePropertyMapping[0] |
+               if($setImplementation->isNoMappingPassThru($requiredProperty->toOne()),
+                  {|
+                     let path = ^PropertyPathNode(
+                        class    = $setImplementation.srcClass->toOne()->cast(@Class<Any>),
+                        property = $setImplementation->noMappingPassThruSourceProperty($requiredProperty->toOne())->toOne()
+                     );
+                     ^Res(current=list($path), result=list($path));
+                  },
+                  {|
+                    assert($setImplementation->isNoMappingDefaultToEmpty($requiredProperty->toOne()) || $setImplementation->isPartOfMerge(), |'No mapping found for property \'' + $tgtPgft.property.name->toOne() + '\'');
+                    [];
+                  }
+               );
+            },
+            {pms:PurePropertyMapping[*] |
+               $pms->map(pm| $pm.transform.expressionSequence->at(0)->evaluateAndDeactivate()->scanProperties(^List<PropertyPathNode>(), [], []));
             }
+         ]);
+
+         let inlinedPropertyTree = $propertyPaths.result->buildPropertyTree()->inlineQualifiedPropertyNodes();
+
+         let setClasses = $childSetImpls->map(s | $s.srcClass);
+
+         let inlinedGraphTree          = $inlinedPropertyTree->propertyTreeToGraphFetchTree($owner);
+         let inlinedPropertyGraphTrees = $inlinedGraphTree.subTrees->cast(@PropertyGraphFetchTree);
+
+         let withSubTypes        = $inlinedPropertyGraphTrees->concatenate($inlinedPropertyGraphTrees->map(pgft | let appendAtPath = $propertyPaths.current->filter(path| $path.values->size() > 1);
+                                                                                                                  if($appendAtPath->isEmpty(),
+                                                                                                                     | $setClasses->map(sc | if($sc->getAllTypeGeneralisationsExcluded()->contains($pgft.property.genericType.rawType->toOne()), | ^$pgft(subType=$sc->cast(@Class<Any>)), | [])),
+                                                                                                                     | $pgft->getSubTreeNodesAtPath(list($appendAtPath.values->tail()), $setClasses->cast(@Class<Any>), $extensions)
+                                                                                                                  );
+                                                                                                           ));
+
+         let srcNodeProperties   = $withSubTypes->filter(p | $owner->getAllTypeGeneralisations()->contains($p.property->meta::pure::functions::meta::ownerClass()));
+         let withFoundProperties = $srcNode->addSubTrees($srcNodeProperties);
+
+
+         let withNextSetImpl     = $childSetImpls->fold(
+                                      {setImpl, tree |
+                                         let appendAtPaths = $propertyPaths.current->filter(path| $path.values->isNotEmpty());
+                                         if($appendAtPaths->isEmpty(),
+                                            | $tree->enrichSourceTreeNode($setImpl, $tgtPgft, $extensions),
+                                            | $appendAtPaths->fold({path,tree | $tree->enrichSourceTreeNodeAtPath($path, $setImpl, $tgtPgft, $extensions)}, $tree)
+                                         );
+                                      },
+                                      $withFoundProperties
+                                   );
+
+
+         let withQPsRecorded     = $propertyPaths.result->filter(path| $path.values->exists(x| $x.property->instanceOf(QualifiedProperty)))
+                                                        ->fold({path, gt| $gt->recordQualifiedProperties($path)}, $withNextSetImpl);
+
+         if($isPropertyTemporalMilestoned,
+            | ^$withQPsRecorded(subTrees=$withQPsRecorded.subTrees->map(st| $st->switchToMilestoneProperties($tgtPgft.parameters->evaluateAndDeactivate()))),
+            | $withQPsRecorded
          );
       },
-      {pms:PurePropertyMapping[*] |
-         $pms->map(pm| $pm.transform.expressionSequence->at(0)->evaluateAndDeactivate()->scanProperties(^List<PropertyPathNode>(), [], []));
-      }
-   ]);
-
-   let inlinedPropertyTree = $propertyPaths.result->buildPropertyTree()->inlineQualifiedPropertyNodes();
-
-   let setClasses = $childSetImpls->map(s | $s.srcClass);
-
-   let inlinedGraphTree          = $inlinedPropertyTree->propertyTreeToGraphFetchTree($owner);
-   let inlinedPropertyGraphTrees = $inlinedGraphTree.subTrees->cast(@PropertyGraphFetchTree);
-
-   let withSubTypes        = $inlinedPropertyGraphTrees->concatenate($inlinedPropertyGraphTrees->map(pgft | let appendAtPath = $propertyPaths.current->filter(path| $path.values->size() > 1);
-                                                                                                            if($appendAtPath->isEmpty(),
-                                                                                                               | $setClasses->map(sc | if($sc->getAllTypeGeneralisationsExcluded()->contains($pgft.property.genericType.rawType->toOne()), | ^$pgft(subType=$sc->cast(@Class<Any>)), | [])),
-                                                                                                               | $pgft->getSubTreeNodesAtPath(list($appendAtPath.values->tail()), $setClasses->cast(@Class<Any>), $extensions)
-                                                                                                            );
-                                                                                                     ));
-
-   let srcNodeProperties   = $withSubTypes->filter(p | $owner->getAllTypeGeneralisations()->contains($p.property->meta::pure::functions::meta::ownerClass()));
-   let withFoundProperties = $srcNode->addSubTrees($srcNodeProperties);
-   
-
-   let withNextSetImpl     = $childSetImpls->fold(
-                                {setImpl, tree |
-                                   let appendAtPaths = $propertyPaths.current->filter(path| $path.values->isNotEmpty());
-                                   if($appendAtPaths->isEmpty(),
-                                      | $tree->enrichSourceTreeNode($setImpl, $tgtPgft, $extensions),
-                                      | $appendAtPaths->fold({path,tree | $tree->enrichSourceTreeNodeAtPath($path, $setImpl, $tgtPgft, $extensions)}, $tree)
-                                   );
-                                },
-                                $withFoundProperties
-                             );
-
-
-   let withQPsRecorded     = $propertyPaths.result->filter(path| $path.values->exists(x| $x.property->instanceOf(QualifiedProperty)))
-                                                  ->fold({path, gt| $gt->recordQualifiedProperties($path)}, $withNextSetImpl);
-
-   if($isPropertyTemporalMilestoned,
-      | ^$withQPsRecorded(subTrees=$withQPsRecorded.subTrees->map(st| $st->switchToMilestoneProperties($tgtPgft.parameters->evaluateAndDeactivate()))),
-      | $withQPsRecorded
+      | $srcNode
    );
 }
 

@@ -73,11 +73,11 @@ function meta::pure::executionPlan::engine::java::graphFetch::common::generateCo
 
 function meta::pure::executionPlan::engine::java::graphFetch::common::typeFromStoreLocalNode(storeLocalNode: LocalGraphFetchExecutionNode[1]):meta::pure::metamodel::type::Class<Any>[1]
 {
-   if ($storeLocalNode.resultType->cast(@ClassResultType).setImplementations->size() > 1,
+   if ($storeLocalNode.resultType->cast(@ClassResultType).setImplementations->size() != 1,
        | $storeLocalNode.resultType->cast(@ClassResultType).type->cast(@meta::pure::metamodel::type::Class<Any>),
        | let setImpl = $storeLocalNode.resultType->cast(@ClassResultType).setImplementations->toOne()->cast(@InstanceSetImplementation);
          $setImpl.mappingClass->isNotEmpty()->if(| $setImpl.mappingClass->toOne(), | $setImpl.class);
-   )
+   );
 }
 
 function meta::pure::executionPlan::engine::java::graphFetch::common::graphImplClass(storeLocalNode: LocalGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1]):meta::external::language::java::metamodel::Class[1]

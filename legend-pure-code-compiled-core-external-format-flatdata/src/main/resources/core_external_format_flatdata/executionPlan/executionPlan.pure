@@ -116,6 +116,35 @@ function meta::external::format::flatdata::executionPlan::planJavaGenerate(path:
    ]
 }
 
+function meta::external::format::flatdata::executionPlan::getInternalizeDetails(binding:Binding[1], debug:DebugContext[1]): InternalizeDetails[1]
+{
+  print(if($debug.debug,|$debug.space+'(getInternalizeDetails for FlatData\n', |''));
+
+  let bd = bindDetails($binding);
+  assert($bd->instanceOf(FlatDataBindingDetail), | 'Detailed binding failed: ' + $bd->cast(@FailedBindingDetail).errorMessages->joinStrings('\n'));
+  let bindingDetail = $bd->cast(@FlatDataBindingDetail);
+
+  ^InternalizeDetails
+  (
+    bindingDetail     = $bindingDetail,
+    sourceRecordClass = RawFlatData,
+    graphFetchTrees   = #{RawFlatData {number, lineNumber, record, recordValues {address, rawValue}}}#,
+    generator         = {node:InternalizeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]|
+                          print(if($debug.debug,|$debug.space+'('+$path+') generateForInternalize for FlatData\n', |''));
+
+                          let schemaDataClass = $bindingDetail.schemaBindingDetail.class->map(c| $c->createSchemaDataClass($path, $context, $debug->indent()));
+                          let rootClass       = $node.resultType->cast(@ClassResultType).type->cast(@meta::pure::metamodel::type::Class<Any>);
+                          let specificsClass  = createDeserializeSpecificsClass($rootClass, $binding.schemaSet->toOne(), $bindingDetail, $path, $context);
+
+                          newProject()
+                              ->addClasses($specificsClass)
+                              ->concatenate($schemaDataClass)
+                              ->toOneMany()->mergeProjects()
+                              ->generatedCode($specificsClass);
+                        }
+  );
+}
+
 Class <<access.private>> meta::external::format::flatdata::executionPlan::SerializeData
 {
    bindingDetail : FlatDataBindingDetail[1];
@@ -363,7 +392,7 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::gen
    
    let bindingDetail   = $context->nodeInfosForPath($path).data->toOne()->cast(@FlatDataBindingDetail);
    let readableClasses = $bindingDetail.sectionBindingDetails.class;
-   let project         = $readableClasses->createDataClassesProject($path, $context, $debug->indent());
+   let project         = $readableClasses->createDataClassesProject($bindingDetail, $path, $context, $debug->indent());
    let schemaDataClass = $bindingDetail.schemaBindingDetail.class->map(c| $c->createSchemaDataClass($path, $context, $debug->indent()));
    let specificsClass  = createDeserializeSpecificsClass($node, $path, $context);
 
@@ -376,13 +405,18 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::gen
 
 function <<access.private>> meta::external::format::flatdata::executionPlan::createDeserializeSpecificsClass(node:FlatDataDeserializeExecutionNode[1], path:String[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
 {   
+  let rootClass     = $node.tree->toOne().class;
+  let schemaSet     = $node.binding.schemaSet->toOne();
+  let bindingDetail = $context->nodeInfosForPath($path).data->toOne()->cast(@FlatDataBindingDetail);
+  createDeserializeSpecificsClass($rootClass, $schemaSet, $bindingDetail, $path, $context);
+}
+
+function <<access.private>> meta::external::format::flatdata::executionPlan::createDeserializeSpecificsClass(rootClass:meta::pure::metamodel::type::Class<Any>[1], schemaSet:SchemaSet[1], bindingDetail:FlatDataBindingDetail[1], path:String[1], context:GenerationContext[1]): meta::external::language::java::metamodel::Class[1]
+{
    let conventions             = $context.conventions;
-   let bindingDetail           = $context->nodeInfosForPath($path).data->toOne()->cast(@FlatDataBindingDetail);
-   let rootClass               = $node.tree->toOne().class;   
    let rootInterface           = $conventions->className($rootClass);
    let contextType             = javaParameterizedType($conventions->className(_FlatDataContext), $rootInterface);
    let factoryType             = javaParameterizedType($conventions->className(_ParsedFlatDataToObject), $rootInterface);
-   let schemaSet               = $node.binding.schemaSet->toOne();
    let flatData                = $schemaSet.schemas->at(0).detail->cast(@FlatData);
    let maximumSchemaObjectSize = javaField('private', javaLong(), 'maximumSchemaObjectSize', j_long(0));
 
@@ -993,7 +1027,7 @@ function <<access.private>> meta::external::format::flatdata::executionPlan::cre
    let schemaClass = $withPropertyMethods->addAlloyStoreObjectReferenceMethodsForClass($context);
    mergeProjects([
       newProject()->addClass($schemaClass),
-      $schemaClass->createConstraintCheckingForClass($class, $context, false, $debug)
+      $schemaClass->createConstraintCheckingForClass($class, [], $context, ^ConstraintCheckingGenerationContext(enableConstraints=false, topLevelOnly=false), $debug)
    ]);
 }
 

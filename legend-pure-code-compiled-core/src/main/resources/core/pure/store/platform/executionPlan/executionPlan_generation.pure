@@ -52,11 +52,16 @@ function <<access.private>> meta::pure::store::platform::executionPlan::generati
 
 function <<access.private>> meta::pure::store::platform::executionPlan::generation::serializeFunctionProcessor(fe:FunctionExpression[1], runtime:Runtime[0..1], inScopeVars : Map<String, List<Any>>[1], advancedRouting: Boolean[0..1], exeCtx:ExecutionContext[1], extensions : RouterExtension[*], debug:DebugContext[1]):ExecutionNode[1]
 {
-   let children = $fe.parametersValues->evaluateAndDeactivate()->at(0)->meta::pure::store::platform::executionPlan::generation::processValueSpecification($runtime, $inScopeVars, $advancedRouting, $exeCtx, $extensions, $debug);
+   let params     = $fe.parametersValues->evaluateAndDeactivate();
+   let collection = $params->at(0);   
+   let children   = $collection->meta::pure::store::platform::executionPlan::generation::processValueSpecification($runtime, $inScopeVars, $advancedRouting, $exeCtx, $extensions, $debug);
+   
+   // Curtail the expression so that only the serialize part that is represented by the node is held
+   let substitute = ^InstanceValue(values=[], genericType=$collection.genericType, multiplicity=ZeroMany);
    
    ^PureExpressionPlatformExecutionNode
    (
-      expression = $fe,
+      expression = ^$fe(parametersValues=$substitute->concatenate($params->tail())),
       resultType = ^ResultType(type=$fe.genericType.rawType->toOne()),
       executionNodes = $children,
       fromCluster = meta::pure::store::platform::executionPlan::generation::generatePlatformClusterForFunction($fe, $inScopeVars)

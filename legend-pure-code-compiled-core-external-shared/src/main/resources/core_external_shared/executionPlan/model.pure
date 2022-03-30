@@ -13,10 +13,14 @@
 // limitations under the License.
 
 import meta::external::shared::format::binding::*;
+import meta::external::shared::format::binding::validation::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::metamodel::*;
 import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::engine::java::*;
+import meta::pure::graphFetch::*;
 import meta::pure::mapping::modelToModel::*;
+import meta::pure::router::extension::*;
 import meta::pure::runtime::*;
 
 Class meta::external::shared::format::executionPlan::DataQualityExecutionNode extends ExecutionNode
@@ -36,10 +40,53 @@ Class meta::external::shared::format::executionPlan::ExternalFormatDeserializeEx
    pathOffset : PathReference[0..1];
 }
 
+Class meta::external::shared::format::executionPlan::InternalizeExecutionNode extends ExecutionNode
+{
+   pathOffset : PathReference[0..1];
+   binding    : Binding[1];
+   dataSource : InternalizeDataSource[1];
+   enableConstraints : Boolean[1];
+   checked           : Boolean[1];   
+   graphFetchTree    : RootGraphFetchTree<Any>[0..1];
+}
+
+Class meta::external::shared::format::executionPlan::InternalizeDataSource
+{
+}
+
+Class meta::external::shared::format::executionPlan::UrlConstant extends InternalizeDataSource
+{
+  url: String[1];
+}
+
+Class meta::external::shared::format::executionPlan::StringConstant extends InternalizeDataSource
+{
+  data: String[1];
+}
+
+Class meta::external::shared::format::executionPlan::RuntimeVariable extends InternalizeDataSource
+{
+  variable: String[1];
+  type: Type[1];
+}
+
 Class meta::external::shared::format::executionPlan::UrlStreamExecutionNode extends ExecutionNode
 {
    url : String[1];
 }
+
+// ------------------------------------------------------------------------------------------------------------------------
+// URL
+// ------------------------------------------------------------------------------------------------------------------------
+
+Class meta::external::shared::format::executionPlan::Url
+{
+   url : String[1];
+}
+
+// ------------------------------------------------------------------------------------------------------------------------
+// Connections - Deprecated to be replaced by internalize
+// ------------------------------------------------------------------------------------------------------------------------
 
 Class meta::external::shared::format::executionPlan::ExternalFormatConnection extends Connection
 [
@@ -61,4 +108,16 @@ Class <<typemodifiers.abstract>> meta::external::shared::format::executionPlan::
 Class meta::external::shared::format::executionPlan::UrlStreamExternalSource extends ExternalSource
 {
    url : String[1];
+}
+
+// ------------------------------------------------------------------------------------------------------------------------
+// Classes for planning and binding state
+// ------------------------------------------------------------------------------------------------------------------------
+
+Class meta::external::shared::format::executionPlan::InternalizeDetails
+{
+  bindingDetail     : BindingDetail[1];
+  sourceRecordClass : Class<Any>[1];
+  graphFetchTrees   : RootGraphFetchTree<Any>[*];
+  generator         : Function<{InternalizeExecutionNode[1], String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> GeneratedCode[1]}>[1];
 }

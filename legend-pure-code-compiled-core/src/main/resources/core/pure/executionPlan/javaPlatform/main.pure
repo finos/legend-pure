@@ -86,18 +86,11 @@ Class meta::pure::executionPlan::engine::java::typeInfo::EnumerationTypeInfo ext
    enumeration() { $this.type->cast(@meta::pure::metamodel::type::Enumeration<Any>) }: meta::pure::metamodel::type::Enumeration<Any>[1];
 }
 
-Class <<typemodifiers.abstract>> meta::pure::executionPlan::engine::java::typeInfo::ConstraintInfo
+Class meta::pure::executionPlan::engine::java::typeInfo::ConstraintInfo
 {
-   constraint:Constraint[1];
-}
-
-Class meta::pure::executionPlan::engine::java::typeInfo::SupportedConstraintInfo extends ConstraintInfo
-{
-}
-
-Class meta::pure::executionPlan::engine::java::typeInfo::AlwaysDefectConstraintInfo extends ConstraintInfo
-{
-   defectMessage: String[1];
+   id           : String[1];       
+   constraint   : Constraint[1];
+   propertyTree : meta::pure::lineage::scanProperties::propertyTree::PropertyPathTree[1];
 }
 
 Class meta::pure::executionPlan::engine::java::typeInfo::ClassTypeInfo extends TypeInfo

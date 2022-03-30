@@ -1,0 +1,304 @@
+// Copyright 2021 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::external::shared::format::binding::*;
+import meta::pure::dataQuality::*;
+import meta::external::shared::format::executionPlan::*;
+import meta::external::shared::format::executionPlan::test::*;
+import meta::external::shared::format::metamodel::*;
+import meta::external::shared::functions::*;
+import meta::pure::executionPlan::*;
+import meta::pure::executionPlan::toString::*;
+import meta::pure::graphFetch::execution::*;
+import meta::pure::mapping::*;
+import meta::pure::mapping::modelToModel::*;
+import meta::pure::model::unit::*;
+import meta::pure::runtime::*;
+
+Class meta::external::shared::format::executionPlan::test::Person
+[
+   firstNameNotEmpty : $this.firstName->isNotEmpty(),
+   lastNameNotEmpty : $this.lastName->isNotEmpty()
+]
+{
+  firstName : String[1];
+  lastName  : String[1];
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::shared::format::executionPlan::test::planInternalizeFromRuntimeString(): Boolean[1]
+{
+  let binding    = testBinding();
+  let planString = buildPlan({data:String[1]| $binding->internalize(Person, $data)});
+  let expected = 'Sequence\n' +
+                 '(\n' +
+                 '  type = Class[Person:impls=]\n' +
+                 '  resultSizeRange = *\n' +
+                 '  (\n' +
+                 '    FunctionParametersValidationNode\n' +
+                 '    (\n' +
+                 '      functionParameters = [data:String[1]]\n' +
+                 '    )\n' +
+                 '    Internalize\n' +
+                 '    (\n' +
+                 '      type = Class[Person:impls=]\n' +
+                 '      resultSizeRange = *\n' +
+                 '      binding = meta::external::shared::format::executionPlan::test::MyBinding[application/x.flatdata]\n' +
+                 '      enableConstraints = true\n' +
+                 '      checked = false\n' +
+                 '      dataSource = $data of type String\n' +
+                 '    )\n' +
+                 '  )\n' +
+                 ')\n';
+
+   assertEquals($expected, $planString);   
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::shared::format::executionPlan::test::planInternalizeFromRuntimeByteStream(): Boolean[1]
+{
+  let binding    = testBinding();
+  let planString = buildPlan({stream:ByteStream[1]| $binding->internalize(Person, $stream)});
+
+  let expected = 'Sequence\n' +
+                 '(\n' +
+                 '  type = Class[Person:impls=]\n' +
+                 '  resultSizeRange = *\n' +
+                 '  (\n' +
+                 '    FunctionParametersValidationNode\n' +
+                 '    (\n' +
+                 '      functionParameters = [stream:ByteStream[1]]\n' +
+                 '    )\n' +
+                 '    Internalize\n' +
+                 '    (\n' +
+                 '      type = Class[Person:impls=]\n' +
+                 '      resultSizeRange = *\n' +
+                 '      binding = meta::external::shared::format::executionPlan::test::MyBinding[application/x.flatdata]\n' +
+                 '      enableConstraints = true\n' +
+                 '      checked = false\n' +
+                 '      dataSource = $stream of type ByteStream\n' +
+                 '    )\n' +
+                 '  )\n' +
+                 ')\n';
+
+   assertEquals($expected, $planString);
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::shared::format::executionPlan::test::planInternalizeFromRuntimeUrl(): Boolean[1]
+{
+  let binding    = testBinding();
+  let planString = buildPlan({url:String[1]| $binding->internalize(Person, ^Url(url=$url))});
+   
+  let expected = 'Sequence\n' +
+                 '(\n' +
+                 '  type = Class[Person:impls=]\n' +
+                 '  resultSizeRange = *\n' +
+                 '  (\n' +
+                 '    FunctionParametersValidationNode\n' +
+                 '    (\n' +
+                 '      functionParameters = [url:String[1]]\n' +
+                 '    )\n' +
+                 '    Internalize\n' +
+                 '    (\n' +
+                 '      type = Class[Person:impls=]\n' +
+                 '      resultSizeRange = *\n' +
+                 '      binding = meta::external::shared::format::executionPlan::test::MyBinding[application/x.flatdata]\n' +
+                 '      enableConstraints = true\n' +
+                 '      checked = false\n' +
+                 '      dataSource = $url of type Url\n' +
+                 '    )\n' +
+                 '  )\n' +
+                 ')\n';
+
+   assertEquals($expected, $planString);   
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::shared::format::executionPlan::test::planInternalizeFromConstantString(): Boolean[1]
+{
+  let binding    = testBinding();
+  let planString = buildPlan({| $binding->internalize(Person, 'FIRST_NAME,LAST_NAME\nFred,Bloggs')});
+
+  let expected = 'Internalize\n' +
+                 '(\n' +
+                 '  type = Class[Person:impls=]\n' +
+                 '  resultSizeRange = *\n' +
+                 '  binding = meta::external::shared::format::executionPlan::test::MyBinding[application/x.flatdata]\n' +
+                 '  enableConstraints = true\n' +
+                 '  checked = false\n' +
+                 '  dataSource = Data: FIRST_NAME,LAST_NAME\\nFred,Bloggs\n' +
+                 ')\n';
+
+   assertEquals($expected, $planString);
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::shared::format::executionPlan::test::planInternalizeFromConstantUrl(): Boolean[1]
+{
+  let binding    = testBinding();
+  let planString = buildPlan({| $binding->internalize(Person, ^Url(url='file:/path/filename.csv'))});
+
+  let expected = 'Internalize\n' +
+                 '(\n' +
+                 '  type = Class[Person:impls=]\n' +
+                 '  resultSizeRange = *\n' +
+                 '  binding = meta::external::shared::format::executionPlan::test::MyBinding[application/x.flatdata]\n' +
+                 '  enableConstraints = true\n' +
+                 '  checked = false\n' +
+                 '  dataSource = URL: file:/path/filename.csv\n' +
+                 ')\n';
+
+   assertEquals($expected, $planString);
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::shared::format::executionPlan::test::planInternalizeCheck(): Boolean[1]
+{
+  let binding    = testBinding();
+  let planString = buildPlan({| $binding->internalize(Person, ^Url(url='file:/path/filename.csv'))->checked()});
+
+  let expected = 'Internalize\n' +
+                 '(\n' +
+                 '  type = Class[Person:impls=]\n' +
+                 '  resultSizeRange = *\n' +
+                 '  binding = meta::external::shared::format::executionPlan::test::MyBinding[application/x.flatdata]\n' +
+                 '  enableConstraints = true\n' +
+                 '  checked = true\n' +
+                 '  dataSource = URL: file:/path/filename.csv\n' +
+                 ')\n';
+
+   assertEquals($expected, $planString);
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::shared::format::executionPlan::test::planInternalizeGraphFetch(): Boolean[1]
+{
+  let binding    = testBinding();
+  let gft = #{Person{firstName}}#;
+  let planString = buildPlan({| $binding->internalize(Person, ^Url(url='file:/path/filename.csv'))->graphFetch($gft)});
+
+  let expected = 'Internalize\n' +
+                 '(\n' +
+                 '  type = Class[Person:impls=]\n' +
+                 '  resultSizeRange = *\n' +
+                 '  binding = meta::external::shared::format::executionPlan::test::MyBinding[application/x.flatdata]\n' +
+                 '  enableConstraints = true\n' +
+                 '  checked = false\n' +
+                 '  graphFetchTree = #{meta::external::shared::format::executionPlan::test::Person{firstName,lastName}}#\n' +
+                 '  dataSource = URL: file:/path/filename.csv\n' +
+                 ')\n';
+
+   assertEquals($expected, $planString);
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::shared::format::executionPlan::test::planInternalizeGraphFetchUnexpanded(): Boolean[1]
+{
+  let binding    = testBinding();
+  let gft = #{Person{firstName}}#;
+  let planString = buildPlan({| $binding->internalize(Person, ^Url(url='file:/path/filename.csv'))->graphFetchUnexpanded($gft)});
+
+  let expected = 'Internalize\n' +
+                 '(\n' +
+                 '  type = Class[Person:impls=]\n' +
+                 '  resultSizeRange = *\n' +
+                 '  binding = meta::external::shared::format::executionPlan::test::MyBinding[application/x.flatdata]\n' +
+                 '  enableConstraints = true\n' +
+                 '  checked = false\n' +
+                 '  graphFetchTree = #{meta::external::shared::format::executionPlan::test::Person{firstName}}#\n' +
+                 '  dataSource = URL: file:/path/filename.csv\n' +
+                 ')\n';
+
+   assertEquals($expected, $planString);
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::shared::format::executionPlan::test::planInternalizeGraphFetchCheckedUnexpanded(): Boolean[1]
+{
+  let binding    = testBinding();
+  let gft = #{Person{firstName}}#;
+  let planString = buildPlan({| $binding->internalize(Person, ^Url(url='file:/path/filename.csv'))->graphFetchCheckedUnexpanded($gft)});
+
+  let expected = 'Internalize\n' +
+                 '(\n' +
+                 '  type = Class[Person:impls=]\n' +
+                 '  resultSizeRange = *\n' +
+                 '  binding = meta::external::shared::format::executionPlan::test::MyBinding[application/x.flatdata]\n' +
+                 '  enableConstraints = true\n' +
+                 '  checked = true\n' +
+                 '  graphFetchTree = #{meta::external::shared::format::executionPlan::test::Person{firstName}}#\n' +
+                 '  dataSource = URL: file:/path/filename.csv\n' +
+                 ')\n';
+
+   assertEquals($expected, $planString);
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::shared::format::executionPlan::test::planInternalizeGraphFetchChecked(): Boolean[1]
+{
+  let binding    = testBinding();
+  let gft = #{Person{firstName}}#;
+  let planString = buildPlan({| $binding->internalize(Person, ^Url(url='file:/path/filename.csv'))->graphFetchChecked($gft)});
+
+  let expected = 'Internalize\n' +
+                 '(\n' +
+                 '  type = Class[Person:impls=]\n' +
+                 '  resultSizeRange = *\n' +
+                 '  binding = meta::external::shared::format::executionPlan::test::MyBinding[application/x.flatdata]\n' +
+                 '  enableConstraints = true\n' +
+                 '  checked = true\n' +
+                 '  graphFetchTree = #{meta::external::shared::format::executionPlan::test::Person{firstName,lastName}}#\n' +
+                 '  dataSource = URL: file:/path/filename.csv\n' +
+                 ')\n';
+
+   assertEquals($expected, $planString);
+}
+
+function <<access.private>> meta::external::shared::format::executionPlan::test::testBinding(): Binding[1]
+{
+  ^Binding(
+    name        = 'MyBinding',
+    package     = Person.package,
+    contentType = 'application/x.flatdata',
+    modelUnit   = ^ModelUnit()
+  );
+}
+
+function meta::external::shared::format::executionPlan::test::buildPlan(query:FunctionDefinition<Any>[1]): String[1]
+{
+   let extensions = meta::external::shared::format::routerExtensions('externalFormat', []);
+   let plan = $query->buildPlan($extensions, false);
+   $plan->planToString(false, $extensions);
+}
+
+function meta::external::shared::format::executionPlan::test::buildPlan(query:FunctionDefinition<Any>[1], extensions:meta::pure::router::extension::RouterExtension[*], generatePlatformCode:Boolean[1]): ExecutionPlan[1]
+{
+   let funcBody = $query.expressionSequence->at(0)->evaluateAndDeactivate();
+   let q = inlineQualifiedProperties($funcBody, $query->openVariableValues()->toOne());
+   let newQuery = ^$query(expressionSequence=$q);
+
+   let plan       = executionPlan($newQuery, ^ExecutionContext(), $extensions, noDebug());
+   if($generatePlatformCode, 
+      | $plan->generatePlatformCode(^PlatformCodeGenerationConfig(platform=Platform.JAVA), $extensions), 
+      | $plan);
+}
+
+function <<access.private>> meta::external::shared::format::executionPlan::test::inlineQualifiedProperties(vs: ValueSpecification[1], openVars:Map<String, List<Any>>[1]):ValueSpecification[1]
+{
+   $vs->match([
+      fe : FunctionExpression[1] | ^$fe(parametersValues = $fe.parametersValues->evaluateAndDeactivate()->map(x | $x->inlineQualifiedProperties($openVars))),                                   
+      iv : InstanceValue[1] | ^$iv
+                              (
+                                 values = $iv.values->evaluateAndDeactivate()->map(val | $val->match([
+                                    l : LambdaFunction<Any>[1] | ^$l(expressionSequence = $l.expressionSequence->evaluateAndDeactivate()->at(0)->inlineQualifiedProperties($openVars)),
+                                    v : ValueSpecification[1] | $v->inlineQualifiedProperties($openVars),
+                                    a : Any[1] | $a
+                                 ]))
+
+                              ),
+      ve : VariableExpression[1] | let resolved = $ve->resolve(^Map<VariableExpression, ValueSpecification>(), $openVars); if($resolved->isEmpty(), | $ve, | $resolved->toOne());,
+      v  : ValueSpecification[1] | $v
+   ]);
+}

@@ -13,9 +13,18 @@
 // limitations under the License.
 
 import meta::external::shared::format::binding::*;
-import meta::pure::metamodel::path::*;
+import meta::pure::executionPlan::engine::java::platform::*;
+import meta::pure::executionPlan::engine::*;
+import meta::external::language::java::factory::*;
+import meta::pure::executionPlan::engine::java::naming::*;
+import meta::external::language::java::factory::project::*;
+import meta::pure::executionPlan::engine::java::graphFetch::json::*;
+import meta::external::language::java::transform::*;
+import meta::pure::executionPlan::engine::java::typeInfo::*;
+import meta::external::shared::format::binding::validation::*;
 import meta::external::shared::format::executionPlan::*;
 
+import meta::external::format::json::binding::validation::*;
 import meta::external::format::json::executionPlan::*;
 import meta::external::format::json::executionPlan::engine::java::jsonDeserialize::*;
 import meta::external::format::json::executionPlan::engine::java::jsonSerialize::*;
@@ -24,6 +33,8 @@ import meta::pure::executionPlan::*;
 import meta::pure::executionPlan::engine::java::*;
 import meta::pure::executionPlan::toString::*;
 import meta::pure::graphFetch::*;
+import meta::pure::mapping::modelToModel::*;
+import meta::pure::metamodel::path::*;
 import meta::pure::router::extension::*;
 import meta::pure::runtime::*;
 
@@ -119,4 +130,66 @@ function meta::external::format::json::executionPlan::planJavaGenerate(path:Stri
        node:JsonSerializeExecutionNode[1]   | generateForJsonSerialize($node, $path, $context, $extensions, $debug),
        node:JsonDeserializeExecutionNode[1] | generateForJsonDeserialize($node, $path, $context, $extensions, $debug)
    ]
+}
+
+function meta::external::format::json::executionPlan::getInternalizeDetails(binding:Binding[1], debug:DebugContext[1]): InternalizeDetails[1]
+{
+  print(if($debug.debug,|$debug.space+'getInternalizeDetails for JSON\n', |''));
+
+  let bindingDetail = bindDetails($binding);
+  assert($bindingDetail->instanceOf(JsonSchemaBindingDetail), | 'Detailed binding failed: ' + $bindingDetail->cast(@FailedBindingDetail).errorMessages->joinStrings('\n'));
+
+  ^InternalizeDetails
+  (
+    bindingDetail     = $bindingDetail,
+    sourceRecordClass = JsonDataRecord,
+    graphFetchTrees   = #{JsonDataRecord {number, record}}#,
+    generator         = {node:InternalizeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]|             
+       print(if($debug.debug,|$debug.space+'('+$path+') generateForInternalize for JSON\n', |''));   
+
+       let conventions       = $context.conventions;
+       let pureClass         = $node.resultType.type->cast(@Class<Any>)->toOne();
+       let dependentClass    = $context.typeInfos->classDependenciesViaPropertiesWithsubTypes($pureClass);
+       let readableClasses   = $pureClass->concatenate($dependentClass);
+       let readableEnums     = $context.typeInfos->enumDependenciesViaProperties($pureClass);
+       let storeReaderProject = createJsonReading($pureClass, $conventions->className($pureClass), $path, $readableClasses, $readableEnums, $context, $debug->indent());
+       
+       let storeStreamReadingContext = $conventions->iStoreStreamReadingExecutionNodeContextParam();   
+       
+       let streamReaderMethodCodes = $node.dataSource->match([
+          url: UrlConstant[1]         | $conventions->jsonReaderClass($path, $pureClass)
+                                          ->j_new($storeStreamReadingContext->j_invoke('createUrl', j_string($url.url))->j_invoke('openStream', []))
+                                          ->j_return()
+                                          ->j_ioExTryCatch(),
+          data: StringConstant[1]     | $conventions->jsonReaderClass($path, $pureClass)
+                                          ->j_new(j_new(javaClass('java.io.ByteArrayInputStream'), j_string($data.data)->j_invoke('getBytes', [])))
+                                          ->j_return()
+                                          ->j_ioExTryCatch(),
+          runtime: RuntimeVariable[1] | assert(false, 'RuntimeVariable is not yet supported'); [];//TODO
+       ]);
+
+       $conventions->jsonReaderClass($path, $pureClass)
+               ->j_new($storeStreamReadingContext->j_invoke('createUrl', j_string('$json.url'))->j_invoke('openStream', []))
+               ->j_return()
+               ->j_ioExTryCatch();
+          
+       let executeClassWithImports = $conventions->planNodeClass('public', $path, 'Execute')
+         ->usingKnownPackages($conventions->knownPackages())
+         ->imports($conventions->standardImports())
+         ->imports([IStoreStreamReadingExecutionNodeSpecifics, StoreStreamReader, IStoreStreamReadingExecutionNodeContext]->map(x | $conventions->className($x)))
+         ->implements($conventions->className(IStoreStreamReadingExecutionNodeSpecifics));
+
+       let executeClass = $executeClassWithImports->addMethod(
+          javaMethod(['public'], $conventions->className(StoreStreamReader), 'streamReader', [$conventions->iStoreStreamReadingExecutionNodeContextParam()], $streamReaderMethodCodes)
+       );
+       
+       let executeProject = newProject()->addClasses($executeClass);
+       let allProjects    = $executeProject
+         ->concatenate($storeReaderProject)
+         ->concatenate($streamReaderMethodCodes->dependencies()->resolveAndGetProjects())
+         ->toOneMany();
+
+       $allProjects->mergeProjects()->generatedCode($executeClass);
+    }
+  );
 }

@@ -81,7 +81,7 @@ function meta::pure::executionPlan::engine::java::graphFetch::inMemory::prepareF
                                                              $context.typeInfos
                                                           );,
 
-      p : InMemoryGraphFetchExecutionNode[1]            | if($p->nodeIsMerged(),  
+      p : InMemoryGraphFetchExecutionNode[1]            | if($p->nodeIsMerged(),
                                                              |  let classesUsedInMerge = $p.graphFetchTree.sets.parent.classMappings->filter(m|$m->instanceOf(MergeOperationSetImplementation))->cast(@MergeOperationSetImplementation).parameters.setImplementation->cast(@PureInstanceSetImplementation).srcClass->cast(@meta::pure::metamodel::type::Class<Any>);
                                                                  $context.typeInfos->addForClassesWithAllProperties($classesUsedInMerge);,
                                                              |   $context.typeInfos;
@@ -124,34 +124,29 @@ function meta::pure::executionPlan::engine::java::graphFetch::inMemory::enrichFo
 function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::inMemory::generateInMemoryStoreRootNodeProject(node: InMemoryRootGraphFetchExecutionNode[1], path: String[1], context: GenerationContext[1], extensions: RouterExtension[*], debug: DebugContext[1]):Project[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') generateCodeForInMemoryRootGraphFetch\n', |''));
-   if ($node->nodeIsMerged(),
+   if($node->nodeIsMerged(),
       | meta::pure::executionPlan::engine::java::graphFetch::inMemory::generateInMemoryStoreMergeRootNodes($node,$path,$context,$extensions,$debug);,
-       |
+      {|
+         let conventions    = $context.conventions;
+         let graphFetchTree = $node.graphFetchTree->cast(@RoutedGraphFetchTree);
 
-            let conventions    = $context.conventions;
-            let graphFetchTree = $node.graphFetchTree->cast(@RoutedGraphFetchTree);
+         let graphImpl      = $node->graphImplClass($path, $context);
+         let currentSet     = $graphFetchTree.sets->toOne()->cast(@InstanceSetImplementation);
+         let input          = j_parameter(javaObject(), 'input');
 
-            let graphImpl      = $node->graphImplClass($path, $context);
-            let currentSet     = $graphFetchTree.sets->toOne()->cast(@InstanceSetImplementation);
-            let input          = j_parameter(javaObject(), 'input');
+         let executeClassWithImports = $context.conventions->planNodeClass('public', $path, 'Execute')
+            ->implements($conventions->className(IInMemoryRootGraphFetchExecutionNodeSpecifics));
 
-            let executeClassWithImports = $context.conventions->planNodeClass('public', $path, 'Execute')
-               ->usingKnownPackages($conventions->knownPackages())
-               ->imports($conventions->standardImports())
-               ->imports([IReferencedObject, GraphInstance, IStoreStreamReadingExecutionNodeContext, IInMemoryRootGraphFetchMergeExecutionNodeSpecifics]->map(x | $conventions->className($x)))
-               ->implements($conventions->className(IInMemoryRootGraphFetchExecutionNodeSpecifics));
+         let transformMethodCodes = $input->setTransformerCodes($currentSet, $graphFetchTree, $graphImpl, true, true, $context, $extensions, $debug);
 
-            let transformMethodCodes = $input->setTransformerCodes($currentSet, $graphFetchTree, $graphImpl, true, true, $context, $extensions, $debug);
-   let transformMethod      = javaMethod(['public'], javaObject(), 'transform', [$input], $transformMethodCodes);
+         let transformMethod      = javaMethod(['public'], javaObject(), 'transform', [$input], $transformMethodCodes);
    
-   let executeClass   = $executeClassWithImports->addMethod($transformMethod);
-   let executeProject = newProject()->addClasses($executeClass);
-   let allProjects    = $executeProject->concatenate($transformMethodCodes->dependencies()->resolveAndGetProjects())->toOneMany();
-   $allProjects->mergeProjects();
-
-     );
-
-
+         let executeClass   = $executeClassWithImports->addMethod($transformMethod);
+         let executeProject = newProject()->addClasses($executeClass);
+         let allProjects    = $executeProject->concatenate($transformMethodCodes->dependencies()->resolveAndGetProjects())->toOneMany();
+         $allProjects->mergeProjects();
+      }
+   );
 }
 
 
@@ -173,7 +168,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
    let resultPath =  $path+'.n1';
    let resultGraphImpl = $initialNode->graphImplClass($resultPath, $context);
    let rootSet = $node.graphFetchTree->cast(@RoutedRootGraphFetchTree<Any>).sets->cast(@OperationSetImplementation)->toOne();
-     
+
 
    let input = j_parameter(javaList(javaObject()), 'input');
 
@@ -253,7 +248,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
       let parentSet = $pm.owner->toOne()->cast(@InstanceSetImplementation);
       let parentSrc = j_parameter($conventions->className($parentSet->sourceClass($extensions)), 'src');
       let transform = $parentSet->generatePropertyMappingTransform($property, $pm, $parentSrc, $conventions, $extensions, $debug->indent());
-      j_lambda($parentSrc, $transform);
+      j_lambda($parentSrc, $transform->toOne());
    });
    
    let targetSetTransformers = $propertyMappings->map({pm |
@@ -488,13 +483,13 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
    let isMerged = $set->isPartOfMerge();
    let transform = if ($setHasExplosion,
                        | $set->cast(@PureInstanceSetImplementation)->propertyExplosionCodes($primitiveSubTrees, $result, $graphImplClass, $src, $wrapAsGraphInstance, $resolveToList, $conventions, $extensions, $debug),
-                       |  let inScopeSubTrees =   $primitiveSubTrees->filter( t| $set->propertyMappingsByPropertyName($t.property->cast(@Property<Nil,Any|*>).name->toOne())->head() ->isNotEmpty() && $isMerged || !$isMerged ); 
-                       
+                       | let inScopeSubTrees =   $primitiveSubTrees->filter( t| $set->propertyMappingsByPropertyName($t.property->cast(@Property<Nil,Any|*>).name->toOne())->head() ->isNotEmpty() && $isMerged || !$isMerged );
+
                          let propertyValues = $inScopeSubTrees->map({st |
                             let prop = $st.property->cast(@Property<Nil,Any|*>);
                             let propertyMapping =  $set->propertyMappingsByPropertyName($prop.name->toOne())->head();
-                            $set->generatePropertyMappingTransform($prop, $propertyMapping, $src, $conventions, $extensions, $debug->indent());
-                      
+                            let value = $set->generatePropertyMappingTransform($prop, $propertyMapping, $src, $conventions, $extensions, $debug->indent());
+                            $value->map(v| pair($prop, $v));
                          });
                          let milestoneDateGetter   = {strategy: SingleDateTemporalStrategy[1] |
                             let propertyName = temporalStrategyToPropertyName($strategy);
@@ -511,7 +506,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
                                                          | [$milestoneDateGetter->eval(^ProcessingTemporal()), $milestoneDateGetter->eval(^BusinessTemporal())],
                                                          | []
                                                      )));
-                         $result->objectCreationCodes($graphImplClass, $set, $src, $milestoningDateValues->concatenate($inScopeSubTrees.property->cast(@Property<Nil,Any|*>)->zip($propertyValues)), $wrapAsGraphInstance, $conventions);
+                         $result->objectCreationCodes($graphImplClass, $set, $src, $milestoningDateValues->concatenate($propertyValues), $wrapAsGraphInstance, $conventions);
                    );
    
    [$src->j_declare($input->j_cast($srcJavaClass))]->concatenate($set->applyTypeFilter($src, $transform, $context, $extensions, $debug->indent()))->toOneMany();
@@ -529,8 +524,8 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
 
 /* Property mapping helpers */
 
-function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::inMemory::generatePropertyMappingTransform(setImpl: InstanceSetImplementation[1], property: Property<Nil,Any|*>[1], propertyMapping: PropertyMapping[0..1], src: Code[1], conventions: Conventions[1], extensions: RouterExtension[*], debug: DebugContext[1]): Code[1]
-{  
+function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch::inMemory::generatePropertyMappingTransform(setImpl: InstanceSetImplementation[1], property: Property<Nil,Any|*>[1], propertyMapping: PropertyMapping[0..1], src: Code[1], conventions: Conventions[1], extensions: RouterExtension[*], debug: DebugContext[1]): Code[0..1]
+{
    print(if($debug.debug,|$debug.space+'generatePropertyMappingTransform: \''+$property.name->toOne()+'\'\n', |''));
    
    let isNoMappingPassThru       = $propertyMapping->isEmpty() && $property.owner->instanceOf(meta::pure::metamodel::type::Class) && $setImpl->isNoMappingPassThru($property);
@@ -553,7 +548,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
          ));
       },
       {|
-         if ($isNoMappingDefaultToEmpty || $isMergedUnMappedProperty,
+         if($isNoMappingDefaultToEmpty || $isMergedUnMappedProperty,
             {| 
                if (isJavaList($propertyJavaType), 
                    | $propertyJavaType->j_emptyList(), 
@@ -561,25 +556,28 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
                )
             },
             {|
-               assert($propertyMapping->isNotEmpty(), | 'No mapping found for property - \'' + $property.name->toOne() + '\'');
+               if($propertyMapping->isNotEmpty(),
+                  {|
+                     let transformFunction = $propertyMapping->toOne()->match([ppm : PurePropertyMapping[1] | $ppm.transform]->concatenate($extensions.java_graphFetch_inMemory_generatePropertyMapping1)->toOneMany());
+                     let transformType     = $conventions->pureTypeToJavaType(if($transformFunction->functionReturnType().rawType == Nil, | $property->functionReturnType(), | $transformFunction->functionReturnType()), $property->functionReturnMultiplicity());
+                     let javaExpression    = $transformFunction.expressionSequence->at(0)->evaluateAndDeactivate()->generateJava($conventions, $debug->indent());
+                     let valueTransformer  = $propertyMapping->toOne()->match([ppm : PurePropertyMapping[1] | $ppm.transformer]->concatenate($extensions.java_graphFetch_inMemory_generatePropertyMapping2)->toOneMany());
+                     let code              = if ($valueTransformer->isEmpty(), | $javaExpression, | $javaExpression->applyTransformer($valueTransformer->toOne(), $conventions, $debug->indent()));
+                     let returnType        = if ($valueTransformer->isEmpty(), | $transformType,  | if($transformType->isJavaList(), | $conventions->enumerationType($valueTransformer->toOne())->javaList(), | $conventions->enumerationType($valueTransformer->toOne())));
 
-               let transformFunction = $propertyMapping->toOne()->match([ppm : PurePropertyMapping[1] | $ppm.transform]->concatenate($extensions.java_graphFetch_inMemory_generatePropertyMapping1)->toOneMany());
-               let transformType     = $conventions->pureTypeToJavaType(if($transformFunction->functionReturnType().rawType == Nil, | $property->functionReturnType(), | $transformFunction->functionReturnType()), $property->functionReturnMultiplicity());
-               let javaExpression    = $transformFunction.expressionSequence->at(0)->evaluateAndDeactivate()->generateJava($conventions, $debug->indent());
-               let valueTransformer  = $propertyMapping->toOne()->match([ppm : PurePropertyMapping[1] | $ppm.transformer]->concatenate($extensions.java_graphFetch_inMemory_generatePropertyMapping2)->toOneMany());
-               let code              = if ($valueTransformer->isEmpty(), | $javaExpression, | $javaExpression->applyTransformer($valueTransformer->toOne(), $conventions, $debug->indent()));
-               let returnType        = if ($valueTransformer->isEmpty(), | $transformType,  | if($transformType->isJavaList(), | $conventions->enumerationType($valueTransformer->toOne())->javaList(), | $conventions->enumerationType($valueTransformer->toOne())));
-
-               if ($returnType == $code.type,
-                   |$code,
-                   |
-               if ($returnType->isJavaList() && ($returnType->elementTypeOfJavaList() == $code.type->toBoxed()),
-                   |$code->j_listOf($returnType),
-                   |
-               if ($returnType->isJavaList(),
-                   |$code->j_listOf($returnType),
-                   |$code->j_cast($returnType)
-               )));
+                     if ($returnType == $code.type,
+                         |$code,
+                         |
+                     if ($returnType->isJavaList() && ($returnType->elementTypeOfJavaList() == $code.type->toBoxed()),
+                         |$code->j_listOf($returnType),
+                         |
+                     if ($returnType->isJavaList(),
+                         |$code->j_listOf($returnType),
+                         |$code->j_cast($returnType)
+                     )));
+                  },
+                  | []
+               )
             }
          )
       }
