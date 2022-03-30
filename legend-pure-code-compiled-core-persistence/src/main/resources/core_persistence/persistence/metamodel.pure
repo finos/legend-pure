@@ -107,7 +107,7 @@ Class
 meta::pure::persistence::metamodel::persister::Persister
 {
    connection: Connection[0..1];
-   binding: Binding[1];
+   binding: Binding[0..1];
 }
 
 Class
