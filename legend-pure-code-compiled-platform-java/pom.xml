@@ -26,29 +26,38 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>legend-pure-code-compiled-platform</artifactId>
+    <artifactId>legend-pure-code-compiled-platform-java</artifactId>
     <packaging>jar</packaging>
-    <name>Legend Pure - Code - PAR - Platform</name>
+    <name>Legend Pure - Code - Platform - JAVA</name>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-maven-compilation-par</artifactId>
-                <configuration>
-                    <purePlatformVersion>${project.version}</purePlatformVersion>
-                    <repositories>
-                        <repository>platform</repository>
-                    </repositories>
-                </configuration>
+                <artifactId>legend-pure-maven-java-compiled</artifactId>
                 <executions>
                     <execution>
                         <phase>compile</phase>
                         <goals>
-                            <goal>build-pure-jar</goal>
+                            <goal>build-pure-compiled-jar</goal>
                         </goals>
+                        <configuration>
+                            <generateSources>false</generateSources>
+                            <generationType>modular</generationType>
+                            <useSingleDir>true</useSingleDir>
+                            <repositories>
+                                <repository>platform</repository>
+                            </repositories>
+                        </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-code-compiled-platform-par</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

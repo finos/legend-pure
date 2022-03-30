@@ -70,9 +70,12 @@ public class PureSession
 
     public Message message = new Message("");
 
-    public PureSession(SourceLocationConfiguration sourceLocationConfiguration)
+    public MutableList<RepositoryCodeStorage> repos;
+
+    public PureSession(SourceLocationConfiguration sourceLocationConfiguration, MutableList<RepositoryCodeStorage> repos)
     {
         this.sourceLocationConfiguration = sourceLocationConfiguration;
+        this.repos = repos;
         this.initialize();
     }
 
@@ -84,28 +87,11 @@ public class PureSession
             .flatMap(s -> Optional.ofNullable(s.welcomeFileDirectory))
             .orElse(System.getProperty("java.io.tmpdir"));
 
-        String ideFilesLocation = Optional.ofNullable(sourceLocationConfiguration)
-            .flatMap(s -> Optional.ofNullable(s.ideFilesLocation))
-            .orElse("legend-pure-ide-light/src/main/resources/pure_ide");
-
         this.functionExecution = new FunctionExecutionInterpreted(VoidExecutionActivityListener.VOID_EXECUTION_ACTIVITY_LISTENER);
 
         try
         {
-            MutableList<RepositoryCodeStorage> repos = Lists.mutable
-                    .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
-                    .with(this.buildCore(""))
-                    .with(this.buildCore("persistence"))
-                    .with(this.buildCore("relational"))
-                    .with(this.buildCore("servicestore"))
-                    .with(this.buildCore("external-shared"))
-                    .with(this.buildCore("external-format-flatdata"))
-                    .with(this.buildCore("external-format-json"))
-                    .with(this.buildCore("external-format-xml"))
-                    .with(this.buildCore("external-query-graphql"))
-                    .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
-
-            this.codeStorage = new PureCodeStorage(Paths.get(rootPath), repos.toArray(new RepositoryCodeStorage[0]));
+            this.codeStorage = new PureCodeStorage(Paths.get(rootPath), this.repos.toArray(new RepositoryCodeStorage[0]));
             this.pureRuntime = new PureRuntimeBuilder(this.codeStorage).withMessage(this.message).setUseFastCompiler(true).build();
             this.functionExecution.init(this.pureRuntime, this.message);
             this.codeStorage.initialize(this.message);
@@ -115,16 +101,6 @@ public class PureSession
             throw new RuntimeException(e);
         }
         return this.functionExecution;
-    }
-
-    public MutableFSCodeStorage buildCore(String suffix) throws IOException
-    {
-        String resources = "legend-pure-code-compiled-core" + (suffix.equals("") ? "" : "-" + suffix) + "/src/main/resources";
-        String module = "core" + (suffix.equals("") ? "" : "_" + suffix);
-        return new MutableFSCodeStorage(
-                GenericCodeRepository.build(Paths.get(resources + "/" + module.replace("-", "_") + ".definition.json")),
-                Paths.get(resources + "/" + module.replace("-","_"))
-        );
     }
 
     public MutableCodeStorage getCodeStorage()

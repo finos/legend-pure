@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.ide.light.session;
+package org.finos.legend.pure.ide.light;
 
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
@@ -25,7 +25,7 @@ public class PureIDECodeRepository extends CodeRepository
     private static final String NAME = "pure_ide";
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("((meta)|(system)|(apps::pure))(::.*)?");
 
-    PureIDECodeRepository()
+    public PureIDECodeRepository()
     {
         super(NAME, PACKAGE_PATTERN);
     }
