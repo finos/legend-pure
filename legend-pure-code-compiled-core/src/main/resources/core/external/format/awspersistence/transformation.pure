@@ -1,0 +1,78 @@
+// Copyright 2020 Goldman Sachs
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import meta::json::*;
+import meta::pure::generation::*;
+import meta::pure::generation::metamodel::*;
+import meta::pure::persistence::metamodel::*;
+import meta::external::format::awspersistence::generation::*;
+import meta::external::format::awspersistence::metamodel::*;
+
+import meta::pure::persistence::metamodel::*;
+import meta::pure::persistence::metamodel::trigger::*;
+import meta::legend::service::metamodel::*;
+import meta::pure::persistence::metamodel::batch::*;
+import meta::pure::persistence::metamodel::batch::targetspecification::*;
+import meta::pure::persistence::metamodel::batch::deduplication::*;
+import meta::pure::persistence::metamodel::batch::mode::snapshot::*;
+import meta::pure::persistence::metamodel::batch::audit::*;
+
+
+function  meta::external::format::awspersistence::generation::transform(input: AwsPersistenceConfig[1]): AwsPersistenceOutput[*]
+{
+  meta::legend::test::mayExecuteLegendTest(
+       {clientVersion, serverVersion, serializationKind, host, port|
+                   let fStr = 'meta::protocols::pure::'+$clientVersion+'::invocation::generation::awspersistence::legendGenerateAwsPersistence_AwsPersistenceConfig_1__String_1__Integer_1__String_1__AwsPersistenceOutput_MANY_';
+                   let xf = $fStr->pathToElement()->cast(@Function<{AwsPersistenceConfig[1], String[1], Integer[1], String[1]->AwsPersistenceOutput[*]}>);
+                   $xf->evaluate([$input, $host, $port, $serverVersion]->map(v|list($v)))->toOneMany()->cast(@AwsPersistenceOutput);},
+       | meta::external::format::awspersistence::generation::internal_transform($input)
+    )->toOneMany();   
+}
+
+function <<access.private,Generation.Transformation>> meta::external::format::awspersistence::generation::internal_transform(input: AwsPersistenceConfig[1]): AwsPersistenceOutput[*]
+{
+   let possibleElement = $input.allPackageScopeElements()->filter(p|$p->instanceOf(Persistence))->cast(@Persistence);
+   assertNotEmpty($possibleElement, | 'No Persistence was found');
+   assertFalse($possibleElement->size()>1, | 'More than one Persistence was found');
+   $input->meta::external::format::awspersistence::generation::generateAwsPersistenceFromPure($possibleElement->toOne()->cast(@Persistence));
+}
+
+
+function meta::external::format::awspersistence::generation::generateAwsPersistenceFromPureWithScope(config: AwsPersistenceConfig[1]): AwsPersistenceOutput[*]
+{
+   let scopeElements = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Persistence))->cast(@Persistence);
+   assertNotEmpty($scopeElements, 'At least one Persistence is needed to transform into cloud-persistent backend form');
+   $scopeElements->map(p| $config->meta::external::format::awspersistence::generation::generateAwsPersistenceFromPure($p));
+}
+
+function meta::external::format::awspersistence::generation::generateAwsPersistenceFromPure(config: AwsPersistenceConfig[1], p: Persistence[1]): AwsPersistenceOutput[*]
+{
+   let content = $p->generateAwsPersistenceBackend();
+   let out = ^AwsPersistenceOutput(content=$content,fileName=$p->elementToPath()->pathToFileName('awspersistence'), format='json');
+   $out;
+}
+
+function meta::external::format::awspersistence::generation::generateAwsPersistenceBackend(p: Persistence[1]): String[1]
+{
+  let jsonConfig = config(false, false, true, true);
+  let content = meta::external::format::awspersistence::serialization::serialize($p);
+  $content->toJSONElement(meta::external::format::awspersistence::generation::extraJsonSerializers(), 1000, $jsonConfig)->toCompactJSONString();
+}
+
+function meta::external::format::awspersistence::generation::extraJsonSerializers():Function<{Nil[1],JSONState[1] ->JSONElement[1]}>[*]
+{
+  [
+    // TODO: Add based on what _type we want etc. on the CNAS side
+  ]
+}
