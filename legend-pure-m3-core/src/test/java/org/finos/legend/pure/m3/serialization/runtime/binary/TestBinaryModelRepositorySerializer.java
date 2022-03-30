@@ -14,11 +14,11 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -56,7 +56,8 @@ import java.util.jar.JarInputStream;
 public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getExtra());
     }
 
@@ -67,20 +68,20 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
         byte[] bytes;
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream())
         {
-            BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, this.runtime);
+            BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, runtime);
             bytes = stream.toByteArray();
         }
 
         // Build expected definition index
         MutableMap<String, String> expectedDefinitionIndex = Maps.mutable.empty();
-        for (Source source : this.runtime.getSourceRegistry().getSources().select(s->!s.isInMemory()))
+        for (Source source : runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
         {
             String binaryPath = PureRepositoryJarTools.purePathToBinaryPath(source.getId());
             for (CoreInstance instance : source.getNewInstances())
             {
                 expectedDefinitionIndex.put(PackageableElement.getUserPathForPackageableElement(instance), binaryPath);
             }
-            for (CoreInstance importGroup : Imports.getImportGroupsForSource(source.getId(), this.processorSupport))
+            for (CoreInstance importGroup : Imports.getImportGroupsForSource(source.getId(), processorSupport))
             {
                 expectedDefinitionIndex.put(PackageableElement.getUserPathForPackageableElement(importGroup), binaryPath);
             }
@@ -111,19 +112,19 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
 
             JarEntry definitionIndexEntry = stream.getNextJarEntry();
             Assert.assertEquals(PureRepositoryJarTools.DEFINITION_INDEX_NAME, definitionIndexEntry.getName());
-            JSONObject definitionIndex = (JSONObject)JSONValue.parse(new InputStreamReader(stream));
+            JSONObject definitionIndex = (JSONObject) JSONValue.parse(new InputStreamReader(stream));
             stream.closeEntry();
             Verify.assertMapsEqual(expectedDefinitionIndex, definitionIndex);
 
             JarEntry referenceIndexEntry = stream.getNextJarEntry();
             Assert.assertEquals(PureRepositoryJarTools.REFERENCE_INDEX_NAME, referenceIndexEntry.getName());
-            JSONObject referenceIndex = (JSONObject)JSONValue.parse(new InputStreamReader(stream));
+            JSONObject referenceIndex = (JSONObject) JSONValue.parse(new InputStreamReader(stream));
             stream.closeEntry();
-            for (Entry<?, ?> entry : ((Map<?, ?>)referenceIndex).entrySet())
+            for (Entry<?, ?> entry : ((Map<?, ?>) referenceIndex).entrySet())
             {
                 Object key = entry.getKey();
                 Verify.assertInstanceOf(String.class, key);
-                Source source = this.runtime.getSourceById(PureRepositoryJarTools.binaryPathToPurePath((String)key));
+                Source source = runtime.getSourceById(PureRepositoryJarTools.binaryPathToPurePath((String) key));
                 if (source == null)
                 {
                     Assert.fail("Invalid source in reference index: " + key);
@@ -131,10 +132,10 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
 
                 Object value = entry.getValue();
                 Verify.assertInstanceOf(JSONArray.class, value);
-                for (Object subvalue : (JSONArray)value)
+                for (Object subvalue : (JSONArray) value)
                 {
                     Verify.assertInstanceOf(String.class, subvalue);
-                    CoreInstance instance = this.runtime.getCoreInstance((String)subvalue);
+                    CoreInstance instance = runtime.getCoreInstance((String) subvalue);
                     Assert.assertNotNull("Invalid reference '" + subvalue + "' for source: " + key, instance);
                     Assert.assertTrue("No definition found for '" + subvalue + "' for source: " + key, definitionIndex.containsKey(subvalue));
                 }
@@ -146,7 +147,7 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
                 foundPaths.add(entry.getName());
             }
 
-            MutableSet<String> expectedPaths = this.runtime.getSourceRegistry().getSources().select(s->!s.isInMemory()).collect(Source::getId).collect(PureRepositoryJarTools.PURE_PATH_TO_BINARY_PATH).toSet();
+            MutableSet<String> expectedPaths = runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()).collect(Source::getId).collect(PureRepositoryJarTools::purePathToBinaryPath).toSet();
             Verify.assertSetsEqual(expectedPaths, foundPaths);
         }
     }
@@ -161,11 +162,11 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
 
             try (ByteArrayOutputStream stream = new ByteArrayOutputStream())
             {
-                BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, this.runtime);
+                BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, runtime);
                 bytes1 = stream.toByteArray();
 
                 stream.reset();
-                BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, this.runtime);
+                BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, runtime);
                 bytes2 = stream.toByteArray();
             }
 
@@ -178,9 +179,9 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
     {
         for (int i = 0; i < 10; i++)
         {
-            PureRuntime runtime2 = new PureRuntimeBuilder(this.runtime.getCodeStorage())
-                    .withRuntimeStatus(this.getPureRuntimeStatus()).build();
-            this.getFunctionExecution().init(runtime2, new Message(""));
+            PureRuntime runtime2 = new PureRuntimeBuilder(runtime.getCodeStorage())
+                    .withRuntimeStatus(getPureRuntimeStatus()).build();
+            getFunctionExecution().init(runtime2, new Message(""));
             runtime2.loadAndCompileCore();
 
             byte[] bytes1;
@@ -188,7 +189,7 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
 
             try (ByteArrayOutputStream stream = new ByteArrayOutputStream())
             {
-                BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, this.runtime);
+                BinaryModelRepositorySerializer.serialize(stream, PlatformCodeRepository.NAME, runtime);
                 bytes1 = stream.toByteArray();
 
                 stream.reset();
@@ -206,7 +207,7 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
         // Not a real repository
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream())
         {
-            BinaryModelRepositorySerializer.serialize(stream, "not a repository at all", this.runtime);
+            BinaryModelRepositorySerializer.serialize(stream, "not a repository at all", runtime);
         }
         catch (IllegalArgumentException e)
         {
@@ -216,7 +217,7 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
         // Real repository but not present
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream())
         {
-            BinaryModelRepositorySerializer.serialize(stream, SystemCodeRepository.NAME, this.runtime);
+            BinaryModelRepositorySerializer.serialize(stream, SystemCodeRepository.NAME, runtime);
         }
         catch (IllegalArgumentException e)
         {
@@ -230,13 +231,13 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
         TestCodeRepository testRepo = new TestCodeRepository("test");
         RepositoryCodeStorage classPathCodeStorage = new ClassLoaderCodeStorage(getRepositoryByName(PlatformCodeRepository.NAME), testRepo);
         PureCodeStorage codeStorage = new PureCodeStorage(null, classPathCodeStorage);
-        PureRuntime runtime2 = new PureRuntimeBuilder(codeStorage).withRuntimeStatus(this.getPureRuntimeStatus()).buildAndInitialize();
+        PureRuntime runtime2 = new PureRuntimeBuilder(codeStorage).withRuntimeStatus(getPureRuntimeStatus()).buildAndInitialize();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         BinaryModelRepositorySerializer.serialize(stream, "test", runtime2);
 
         PureRepositoryJar jar = PureRepositoryJars.get(stream);
-        MutableSet<String> serializedFiles = jar.getMetadata().getExternalReferenceIndex().keysView().collect(PureRepositoryJarTools.BINARY_PATH_TO_PURE_PATH, Sets.mutable.<String>empty());
+        MutableSet<String> serializedFiles = jar.getMetadata().getExternalReferenceIndex().keysView().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty());
         MutableSet<String> expectedFiles = classPathCodeStorage.getFileOrFiles("/test").toSet();
         Verify.assertSetsEqual(expectedFiles, serializedFiles);
     }

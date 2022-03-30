@@ -14,46 +14,48 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.finos.legend.pure.m3.coreinstance.helper.AnyStubHelper;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.Writer;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
-import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.MetadataJavaPaths;
 import org.finos.legend.pure.runtime.java.compiled.serialization.GraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.Objects;
 import java.util.jar.JarOutputStream;
 
-public class DistributedBinaryGraphSerializer
+public abstract class DistributedBinaryGraphSerializer
 {
     private static final int MAX_BIN_FILE_BYTES = 512 * 1024;
 
-    private final String metadataName;
-    private final Iterable<? extends CoreInstance> nodes;
-    private final ProcessorSupport processorSupport;
+    private final DistributedMetadataSpecification metadataSpecification;
+    protected final PureRuntime runtime;
+    protected final ProcessorSupport processorSupport;
     private final IdBuilder idBuilder;
+    private final GraphSerializer.ClassifierCaches classifierCaches;
 
-    private DistributedBinaryGraphSerializer(String metadataName, Iterable<? extends CoreInstance> nodes, ProcessorSupport processorSupport)
+    protected DistributedBinaryGraphSerializer(PureRuntime runtime, DistributedMetadataSpecification metadataSpecification)
     {
-        this.metadataName = DistributedMetadataHelper.validateMetadataNameIfPresent(metadataName);
-        this.nodes = nodes;
-        this.processorSupport = processorSupport;
-        this.idBuilder = IdBuilder.newIdBuilder(DistributedMetadataHelper.getMetadataIdPrefix(this.metadataName), this.processorSupport);
+        this.metadataSpecification = metadataSpecification;
+        this.runtime = runtime;
+        this.processorSupport = runtime.getProcessorSupport();
+        this.idBuilder = IdBuilder.newIdBuilder(DistributedMetadataHelper.getMetadataIdPrefix(getMetadataName()), this.processorSupport);
+        this.classifierCaches = new GraphSerializer.ClassifierCaches(this.processorSupport);
     }
 
     public void serializeToDirectory(Path directory)
@@ -73,14 +75,22 @@ public class DistributedBinaryGraphSerializer
 
     public void serialize(FileWriter fileWriter)
     {
-        MutableMap<String, MutableList<CoreInstance>> nodesByClassifierId = getNodesByClassifierId();
+        // Possibly write metadata specification
+        if (this.metadataSpecification != null)
+        {
+            this.metadataSpecification.writeSpecification(fileWriter);
+        }
+
+        // Compute instances for serialization
+        SerializationCollector serializationCollector = new SerializationCollector();
+        collectInstancesForSerialization(serializationCollector);
 
         // Build string cache
-        DistributedStringCache stringCache = DistributedStringCache.fromNodes(nodesByClassifierId.valuesView().flatCollect(l -> l), this.idBuilder, this.processorSupport);
+        DistributedStringCache stringCache = buildStringCache(serializationCollector);
         BinaryObjSerializer serializer = new BinaryObjSerializerWithStringCacheAndImplicitIdentifiers(stringCache);
 
         // Write string cache
-        stringCache.write(this.metadataName, fileWriter);
+        stringCache.write(getMetadataName(), fileWriter);
 
         // Write instances
         int partition = 0;
@@ -91,9 +101,9 @@ public class DistributedBinaryGraphSerializer
             ByteArrayOutputStream indexByteStream = new ByteArrayOutputStream();
             try (Writer indexWriter = BinaryWriters.newBinaryWriter(indexByteStream))
             {
-                for (String classifierId : nodesByClassifierId.keysView().toSortedList())
+                for (String classifierId : stringCache.getClassifierIds().toSortedList())
                 {
-                    ListIterable<CoreInstance> classifierObjs = nodesByClassifierId.get(classifierId).sortThisBy(this.idBuilder::buildId);
+                    ListIterable<Obj> classifierObjs = getClassifierObjs(serializationCollector.instancesForSerialization.remove(classifierId), serializationCollector.objUpdates.remove(classifierId));
 
                     // Initial index information
                     indexWriter.writeInt(classifierObjs.size()); // total obj count
@@ -104,20 +114,18 @@ public class DistributedBinaryGraphSerializer
                     ByteArrayOutputStream objByteStream = new ByteArrayOutputStream();
                     try (Writer objWriter = BinaryWriters.newBinaryWriter(objByteStream))
                     {
-                        GraphSerializer.ClassifierCaches classifierCaches = new GraphSerializer.ClassifierCaches(this.processorSupport);
-                        for (CoreInstance coreInstance : classifierObjs)
+                        for (Obj obj : classifierObjs)
                         {
-                            //Obj serialization
-                            Obj obj = GraphSerializer.buildObj(coreInstance, this.idBuilder, classifierCaches, this.processorSupport);
+                            // Obj serialization
                             objByteStream.reset();
                             serializer.serializeObj(objWriter, obj);
                             int objByteCount = objByteStream.size();
                             if (partitionTotalBytes + objByteCount > MAX_BIN_FILE_BYTES)
                             {
                                 // Write current partition
-                                try (Writer writer1 = fileWriter.getWriter(DistributedMetadataHelper.getMetadataPartitionBinFilePath(this.metadataName, partition)))
+                                try (Writer partitionWriter = fileWriter.getWriter(DistributedMetadataHelper.getMetadataPartitionBinFilePath(getMetadataName(), partition)))
                                 {
-                                    writer1.writeBytes(binByteStream.toByteArray());
+                                    partitionWriter.writeBytes(binByteStream.toByteArray());
                                     binByteStream.reset();
                                 }
 
@@ -148,7 +156,7 @@ public class DistributedBinaryGraphSerializer
                     }
 
                     // Write classifier index
-                    try (Writer writer1 = fileWriter.getWriter(DistributedMetadataHelper.getMetadataClassifierIndexFilePath(this.metadataName, classifierId)))
+                    try (Writer writer1 = fileWriter.getWriter(DistributedMetadataHelper.getMetadataClassifierIndexFilePath(getMetadataName(), classifierId)))
                     {
                         writer1.writeBytes(indexByteStream.toByteArray());
                         indexByteStream.reset();
@@ -160,51 +168,136 @@ public class DistributedBinaryGraphSerializer
         // Write final partition
         if (binByteStream.size() > 0)
         {
-            try (Writer writer = fileWriter.getWriter(DistributedMetadataHelper.getMetadataPartitionBinFilePath(this.metadataName, partition)))
+            try (Writer writer = fileWriter.getWriter(DistributedMetadataHelper.getMetadataPartitionBinFilePath(getMetadataName(), partition)))
             {
                 writer.writeBytes(binByteStream.toByteArray());
             }
         }
     }
 
-    private MutableMap<String, MutableList<CoreInstance>> getNodesByClassifierId()
+    protected String getMetadataName()
     {
-        MutableMap<String, MutableList<CoreInstance>> nodesByClassifierId = Maps.mutable.empty();
-        MutableMap<CoreInstance, String> classifierIdCache = Maps.mutable.empty();
-        MutableSet<CoreInstance> excludedTypes = PrimitiveUtilities.getPrimitiveTypes(this.processorSupport).toSet();
-        AnyStubHelper.getStubClasses().collect(this.processorSupport::package_getByUserPath, excludedTypes);
-        this.nodes.forEach(node ->
-        {
-            CoreInstance classifier = node.getClassifier();
-            if (!excludedTypes.contains(classifier))
-            {
-                String classifierId = classifierIdCache.getIfAbsentPutWithKey(classifier, MetadataJavaPaths::buildMetadataKeyFromType);
-                nodesByClassifierId.getIfAbsentPut(classifierId, Lists.mutable::empty).add(node);
-            }
-        });
-        return nodesByClassifierId;
+        return (this.metadataSpecification == null) ? null : this.metadataSpecification.getName();
     }
 
-    public static DistributedBinaryGraphSerializer newSerializer(String metadataName, Iterable<? extends CoreInstance> nodes, ProcessorSupport processorSupport)
+    protected abstract void collectInstancesForSerialization(SerializationCollector serializationCollector);
+
+    private DistributedStringCache buildStringCache(SerializationCollector serializationCollector)
     {
-        Objects.requireNonNull(nodes, "nodes may not be null");
-        Objects.requireNonNull(processorSupport, "processorSupport may not be null");
-        return new DistributedBinaryGraphSerializer(metadataName, nodes, processorSupport);
+        StringCache.Builder<DistributedStringCache> stringCacheBuilder = DistributedStringCache.newBuilder();
+        serializationCollector.instancesForSerialization.forEachValue(instances -> instances.forEach(i -> stringCacheBuilder.withObj(buildObj(i))));
+        serializationCollector.objUpdates.forEachValue(stringCacheBuilder::withObjs);
+        return stringCacheBuilder.build();
+    }
+
+    private ListIterable<Obj> getClassifierObjs(ListIterable<? extends CoreInstance> classifierInstances, ListIterable<? extends Obj> classifierObjUpdates)
+    {
+        MutableList<Obj> classifierObjs = Lists.mutable.withInitialCapacity(((classifierInstances == null) ? 0 : classifierInstances.size()) + ((classifierObjUpdates == null) ? 0 : classifierObjUpdates.size()));
+        if (classifierInstances != null)
+        {
+            // skip duplicates while building Objs
+            MutableSet<CoreInstance> seenInstances = Sets.mutable.withInitialCapacity(classifierInstances.size());
+            classifierInstances.collectIf(seenInstances::add, this::buildObj, classifierObjs);
+        }
+        if (classifierObjUpdates != null)
+        {
+            classifierObjs.addAllIterable(classifierObjUpdates);
+        }
+        if (classifierObjs.size() > 1)
+        {
+            // TODO there is a known issue with id conflicts for ImportGroups - remove conflicts until issue is fixed
+            if (M3Paths.ImportGroup.equals(classifierObjs.get(0).getClassifier()))
+            {
+                MutableSet<String> ids = Sets.mutable.empty();
+                classifierObjs.removeIf(o -> !ids.add(o.getIdentifier()));
+            }
+
+            // If we have more than one, sort and then validate that we don't have identifier clashes
+            classifierObjs.sortThisBy(Obj::getIdentifier);
+            classifierObjs.injectInto((Obj) null, (previous, obj) ->
+            {
+                if ((previous != null) && obj.getIdentifier().equals(previous.getIdentifier()))
+                {
+                    throw new IllegalStateException("Obj identifier clash: " + previous.toString(true) + " vs " + obj.toString(true));
+                }
+                return obj;
+            });
+        }
+        return classifierObjs;
+    }
+
+    protected String buildClassifierId(CoreInstance instance)
+    {
+        return this.classifierCaches.getClassifierId(instance.getClassifier());
+    }
+
+    protected String buildInstanceId(CoreInstance instance)
+    {
+        return this.idBuilder.buildId(instance);
+    }
+
+    protected Obj buildObj(CoreInstance instance)
+    {
+        return GraphSerializer.buildObj(instance, this.idBuilder, this.classifierCaches, this.processorSupport);
+    }
+
+    @Deprecated
+    public static DistributedBinaryGraphSerializer newSerializer(String metadataName, PureRuntime runtime)
+    {
+        if (metadataName == null)
+        {
+            return newSerializer(runtime);
+        }
+        throw new UnsupportedOperationException();
     }
 
     public static DistributedBinaryGraphSerializer newSerializer(PureRuntime runtime)
     {
-        return newSerializer(null, runtime);
+        return new DistributedBinaryFullGraphSerializer(runtime);
     }
 
-    public static DistributedBinaryGraphSerializer newSerializer(String metadataName, PureRuntime runtime)
+    public static DistributedBinaryGraphSerializer newSerializer(PureRuntime runtime, String repositoryName)
     {
-        return newSerializer(metadataName, GraphNodeIterable.fromModelRepository(runtime.getModelRepository()), runtime.getProcessorSupport());
+        MutableCodeStorage codeStorage = runtime.getCodeStorage();
+        CodeRepository repository = codeStorage.getRepository(repositoryName);
+        if (repository == null)
+        {
+            throw new IllegalArgumentException("Unknown repository: \"" + repositoryName + "\"");
+        }
+        RichIterable<CodeRepository> allRepositories = codeStorage.getAllRepositories();
+        if (allRepositories.anySatisfy(r -> (r != repository) && r.isVisible(repository)))
+        {
+            StringBuilder builder = new StringBuilder("Cannot serialize repository \"").append(repositoryName).append(("\", with "));
+            allRepositories.collectIf(r -> (r != repository) && r.isVisible(repository), CodeRepository::getName, Lists.mutable.empty())
+                    .sortThis()
+                    .appendString(builder, "\"", "\", \"", "\" in the runtime");
+            throw new IllegalArgumentException(builder.toString());
+        }
+        MutableSet<String> directDependencies = allRepositories.collectIf(r -> (r != repository) && repository.isVisible(r), CodeRepository::getName, Sets.mutable.empty());
+        DistributedMetadataSpecification metadataSpecification = DistributedMetadataSpecification.newSpecification(repositoryName, directDependencies);
+        return new DistributedBinaryRepositorySerializer(metadataSpecification, runtime);
     }
 
     public static void serialize(PureRuntime runtime, Path directory)
     {
         newSerializer(runtime).serializeToDirectory(directory);
+    }
+
+    protected class SerializationCollector
+    {
+        private final MutableMap<String, MutableList<CoreInstance>> instancesForSerialization = Maps.mutable.empty();
+        private final MutableMap<String, MutableList<Obj>> objUpdates = Maps.mutable.empty();
+
+        public void collectInstanceForSerialization(CoreInstance instance)
+        {
+            String classifierId = buildClassifierId(instance);
+            this.instancesForSerialization.getIfAbsentPut(classifierId, Lists.mutable::empty).add(instance);
+        }
+
+        public void collectObjUpdate(Obj objUpdate)
+        {
+            this.objUpdates.getIfAbsentPut(objUpdate.getClassifier(), Lists.mutable::empty).add(objUpdate);
+        }
     }
 
     private static class ObjIndexInfo

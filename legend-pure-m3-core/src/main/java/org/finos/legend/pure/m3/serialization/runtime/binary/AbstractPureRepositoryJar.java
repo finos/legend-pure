@@ -14,12 +14,11 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 
 abstract class AbstractPureRepositoryJar implements PureRepositoryJar
 {
@@ -49,12 +48,12 @@ abstract class AbstractPureRepositoryJar implements PureRepositoryJar
             }
             case 1:
             {
-                String filePath = filePathSet.getFirst();
+                String filePath = filePathSet.getAny();
                 return Maps.immutable.with(filePath, readFile(filePath));
             }
             default:
             {
-                MutableMap<String, byte[]> fileBytes = UnifiedMap.newMap(size);
+                MutableMap<String, byte[]> fileBytes = Maps.mutable.withInitialCapacity(size);
                 readFilesFromNonEmptySet(filePathSet, fileBytes);
                 return fileBytes;
             }
