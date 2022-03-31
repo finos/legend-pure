@@ -15,19 +15,19 @@
 package org.finos.legend.pure.runtime.java.compiled.compiler;
 
 import io.github.classgraph.ClassGraph;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.jar.JarOutputStream;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.jar.JarOutputStream;
 
 public class PureJavaCompiler
 {
@@ -55,14 +55,10 @@ public class PureJavaCompiler
 
     public static void compile(JavaCompiler compiler, Iterable<? extends StringJavaSource> javaSources, JavaFileManager fileManager) throws PureJavaCompileException
     {
-        MutableList<String> options = FastList.newList();
-        options.add("-source");
-        options.add("1.7");
-        options.add("-target");
-        options.add("1.7");
-        options.add("-classpath");
-        options.add(new ClassGraph().getClasspath());
-
+        MutableList<String> options = Lists.mutable.with(
+                "-source", "1.7",
+                "-target", "1.7",
+                "-classpath", new ClassGraph().getClasspath());
         DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<>();
         CompilationTask task = compiler.getTask(null, fileManager, diagnosticCollector, options, null, javaSources);
         if (!task.call())
