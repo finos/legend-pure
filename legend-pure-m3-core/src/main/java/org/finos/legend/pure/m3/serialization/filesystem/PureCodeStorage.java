@@ -22,19 +22,22 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.list.primitive.LongList;
 import org.eclipse.collections.api.map.ImmutableMap;
+import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.api.stack.MutableStack;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.factory.Stacks;
 import org.eclipse.collections.impl.factory.primitive.LongLists;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
-import org.eclipse.collections.impl.utility.LazyIterate;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.eclipse.collections.impl.utility.StringIterate;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.*;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.ScratchCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNode;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageNodeStatus;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorageTools;
@@ -60,6 +63,8 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public class PureCodeStorage implements MutableCodeStorage
 {
@@ -434,21 +439,21 @@ public class PureCodeStorage implements MutableCodeStorage
     public boolean isVersioned(String path)
     {
         RepositoryCodeStorage codeStorage = getCodeStorage(path);
-        return (codeStorage instanceof VersionControlledCodeStorage) && ((VersionControlledCodeStorage)codeStorage).isVersioned(path);
+        return (codeStorage instanceof VersionControlledCodeStorage) && ((VersionControlledCodeStorage) codeStorage).isVersioned(path);
     }
 
     @Override
     public long getCurrentRevision(String path)
     {
         RepositoryCodeStorage codeStorage = getCodeStorage(path);
-        return (codeStorage instanceof VersionControlledCodeStorage) ? ((VersionControlledCodeStorage)codeStorage).getCurrentRevision(path) : -1;
+        return (codeStorage instanceof VersionControlledCodeStorage) ? ((VersionControlledCodeStorage) codeStorage).getCurrentRevision(path) : -1;
     }
 
     @Override
     public LongList getAllRevisions(String path)
     {
         RepositoryCodeStorage codeStorage = getCodeStorage(path);
-        return (codeStorage instanceof VersionControlledCodeStorage) ? ((VersionControlledCodeStorage)codeStorage).getAllRevisions(path) : LongLists.immutable.empty();
+        return (codeStorage instanceof VersionControlledCodeStorage) ? ((VersionControlledCodeStorage) codeStorage).getAllRevisions(path) : LongLists.immutable.empty();
     }
 
     @Override
@@ -459,7 +464,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             if (codeStorage instanceof VersionControlledCodeStorage)
             {
-                allRevisions.addAllIterable(((VersionControlledCodeStorage)codeStorage).getAllRevisionLogs(paths));
+                allRevisions.addAllIterable(((VersionControlledCodeStorage) codeStorage).getAllRevisionLogs(paths));
             }
         }
         return allRevisions;
@@ -481,7 +486,7 @@ public class PureCodeStorage implements MutableCodeStorage
             }
             if (codeStorage == null)
             {
-                codeStorage = (VersionControlledCodeStorage)pathCodeStorage;
+                codeStorage = (VersionControlledCodeStorage) pathCodeStorage;
             }
             else if (codeStorage != pathCodeStorage)
             {
@@ -518,7 +523,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             if (codeStorage instanceof VersionControlledCodeStorage)
             {
-                nodes.addAllIterable(((VersionControlledCodeStorage)codeStorage).getModifiedUserFiles());
+                nodes.addAllIterable(((VersionControlledCodeStorage) codeStorage).getModifiedUserFiles());
             }
         }
         return nodes;
@@ -532,7 +537,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             if (codeStorage instanceof VersionControlledCodeStorage)
             {
-                nodes.addAllIterable(((VersionControlledCodeStorage)codeStorage).getUnversionedFiles());
+                nodes.addAllIterable(((VersionControlledCodeStorage) codeStorage).getUnversionedFiles());
             }
         }
         return nodes;
@@ -564,7 +569,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             throw new IllegalArgumentException("Cannot write content to " + path);
         }
-        return ((MutableRepositoryCodeStorage)codeStorage).writeContent(path);
+        return ((MutableRepositoryCodeStorage) codeStorage).writeContent(path);
     }
 
     @Override
@@ -594,7 +599,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             throw new IllegalArgumentException("Cannot write content to '" + path + "'");
         }
-        ((MutableRepositoryCodeStorage)codeStorage).writeContent(path, content);
+        ((MutableRepositoryCodeStorage) codeStorage).writeContent(path, content);
     }
 
     @Override
@@ -605,7 +610,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             throw new IllegalArgumentException("Cannot create file " + path);
         }
-        ((MutableRepositoryCodeStorage)codeStorage).createFile(path);
+        ((MutableRepositoryCodeStorage) codeStorage).createFile(path);
     }
 
     @Override
@@ -616,7 +621,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             throw new IllegalArgumentException("Cannot create folder " + path);
         }
-        ((MutableRepositoryCodeStorage)codeStorage).createFolder(path);
+        ((MutableRepositoryCodeStorage) codeStorage).createFolder(path);
     }
 
     @Override
@@ -627,7 +632,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             throw new IllegalArgumentException("Cannot delete file " + path);
         }
-        ((MutableRepositoryCodeStorage)codeStorage).deleteFile(path);
+        ((MutableRepositoryCodeStorage) codeStorage).deleteFile(path);
     }
 
     @Override
@@ -646,13 +651,13 @@ public class PureCodeStorage implements MutableCodeStorage
 
         if (sourceCodeStorage.equals(destinationCodeStorage))
         {
-            ((MutableRepositoryCodeStorage)sourceCodeStorage).moveFile(sourcePath, destinationPath);
+            ((MutableRepositoryCodeStorage) sourceCodeStorage).moveFile(sourcePath, destinationPath);
         }
         else
         {
-            ((MutableRepositoryCodeStorage)destinationCodeStorage).createFile(destinationPath);
-            ((MutableRepositoryCodeStorage)destinationCodeStorage).writeContent(destinationPath, ((MutableRepositoryCodeStorage)sourceCodeStorage).getContentAsText(sourcePath));
-            ((MutableRepositoryCodeStorage)sourceCodeStorage).deleteFile(sourcePath);
+            ((MutableRepositoryCodeStorage) destinationCodeStorage).createFile(destinationPath);
+            ((MutableRepositoryCodeStorage) destinationCodeStorage).writeContent(destinationPath, sourceCodeStorage.getContentAsText(sourcePath));
+            ((MutableRepositoryCodeStorage) sourceCodeStorage).deleteFile(sourcePath);
         }
     }
 
@@ -664,7 +669,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             throw new IllegalArgumentException("Cannot mark " + path + " as resolved");
         }
-        ((MutableVersionControlledCodeStorage)codeStorage).markAsResolved(path);
+        ((MutableVersionControlledCodeStorage) codeStorage).markAsResolved(path);
     }
 
     @Override
@@ -675,7 +680,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             if (codeStorage instanceof MutableVersionControlledCodeStorage)
             {
-                ((MutableVersionControlledCodeStorage)codeStorage).update(report, version);
+                ((MutableVersionControlledCodeStorage) codeStorage).update(report, version);
             }
         }
         return report;
@@ -693,7 +698,7 @@ public class PureCodeStorage implements MutableCodeStorage
         RepositoryCodeStorage codeStorage = getCodeStorage(path);
         if (codeStorage instanceof MutableVersionControlledCodeStorage)
         {
-            ((MutableVersionControlledCodeStorage)codeStorage).update(report, path, version);
+            ((MutableVersionControlledCodeStorage) codeStorage).update(report, path, version);
         }
 
         return report;
@@ -703,7 +708,7 @@ public class PureCodeStorage implements MutableCodeStorage
     public RichIterable<String> revert(String path)
     {
         RepositoryCodeStorage codeStorage = getCodeStorage(path);
-        return (codeStorage instanceof MutableVersionControlledCodeStorage) ? ((MutableVersionControlledCodeStorage)codeStorage).revert(path) : Lists.immutable.<String>empty();
+        return (codeStorage instanceof MutableVersionControlledCodeStorage) ? ((MutableVersionControlledCodeStorage) codeStorage).revert(path) : Lists.immutable.empty();
     }
 
     @Override
@@ -714,7 +719,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             throw new IllegalArgumentException("Cannot getBase for " + path);
         }
-        return ((MutableVersionControlledCodeStorage)codeStorage).getBase(path);
+        return ((MutableVersionControlledCodeStorage) codeStorage).getBase(path);
     }
 
     @Override
@@ -725,7 +730,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             throw new IllegalArgumentException("Cannot getConflictOld for " + path);
         }
-        return ((MutableVersionControlledCodeStorage)codeStorage).getConflictOld(path);
+        return ((MutableVersionControlledCodeStorage) codeStorage).getConflictOld(path);
     }
 
     @Override
@@ -736,7 +741,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             throw new IllegalArgumentException("Cannot getConflictNew for " + path);
         }
-        return ((MutableVersionControlledCodeStorage)codeStorage).getConflictNew(path);
+        return ((MutableVersionControlledCodeStorage) codeStorage).getConflictNew(path);
     }
 
     @Override
@@ -761,7 +766,7 @@ public class PureCodeStorage implements MutableCodeStorage
             }
             if (codeStorage == null)
             {
-                codeStorage = (MutableVersionControlledCodeStorage)pathCodeStorage;
+                codeStorage = (MutableVersionControlledCodeStorage) pathCodeStorage;
             }
             else if (codeStorage != pathCodeStorage)
             {
@@ -785,7 +790,7 @@ public class PureCodeStorage implements MutableCodeStorage
             {
                 try
                 {
-                    ((MutableVersionControlledCodeStorage)codeStorage).cleanup();
+                    ((MutableVersionControlledCodeStorage) codeStorage).cleanup();
                 }
                 catch (Exception e)
                 {
@@ -798,7 +803,7 @@ public class PureCodeStorage implements MutableCodeStorage
             Exception e = exceptions.get(0);
             if (e instanceof PureVCSException)
             {
-                throw (PureVCSException)e;
+                throw (PureVCSException) e;
             }
             throw new PureVCSException("Error performing cleanup", e);
         }
@@ -827,7 +832,7 @@ public class PureCodeStorage implements MutableCodeStorage
             {
                 if (codeStorage instanceof MutableVersionControlledCodeStorage)
                 {
-                    ((MutableVersionControlledCodeStorage)codeStorage).applyPatch(path, patchFile);
+                    ((MutableVersionControlledCodeStorage) codeStorage).applyPatch(path, patchFile);
                 }
             }
         }
@@ -835,7 +840,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             if (e instanceof PureVCSException)
             {
-                throw (PureVCSException)e;
+                throw (PureVCSException) e;
             }
             throw new PureVCSException("Error applying patch", e);
         }
@@ -850,7 +855,7 @@ public class PureCodeStorage implements MutableCodeStorage
             {
                 if (codeStorage instanceof MutableVersionControlledCodeStorage)
                 {
-                    if (((MutableVersionControlledCodeStorage)codeStorage).hasConflicts(path))
+                    if (((MutableVersionControlledCodeStorage) codeStorage).hasConflicts(path))
                     {
                         return true;
                     }
@@ -861,7 +866,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             if (e instanceof PureVCSException)
             {
-                throw (PureVCSException)e;
+                throw (PureVCSException) e;
             }
             throw new PureVCSException("Error checking file conflicts", e);
         }
@@ -921,7 +926,7 @@ public class PureCodeStorage implements MutableCodeStorage
         {
             if (repository instanceof SVNCodeRepository)
             {
-                svnCodeRepositories.add((SVNCodeRepository)repository);
+                svnCodeRepositories.add((SVNCodeRepository) repository);
             }
             else if (repository instanceof PlatformCodeRepository || repository instanceof GenericCodeRepository)
             {
@@ -1024,14 +1029,30 @@ public class PureCodeStorage implements MutableCodeStorage
         return null;
     }
 
-    public static final Function<Source, String> GET_SOURCE_REPO =
-            (Source source) ->
-            {
-                String repoName = getSourceRepoName(source.getId());
-                return null == repoName ? null : repoName.startsWith("model") ? "model-all" : repoName;
-            };
+    public static boolean isSourceInRepository(String sourceId, String repository)
+    {
+        if ((sourceId == null) || sourceId.isEmpty())
+        {
+            return false;
+        }
 
+        int start = (sourceId.charAt(0) == '/') ? 1 : 0;
+        int nextSlash = sourceId.indexOf('/', start);
 
+        if (repository == null)
+        {
+            return nextSlash == -1;
+        }
+
+        int length = (nextSlash == -1) ? (sourceId.length() - start) : (nextSlash - start);
+        return (length == repository.length()) && sourceId.startsWith(repository, start);
+    }
+
+    public static final Function<Source, String> GET_SOURCE_REPO = source ->
+    {
+        String repoName = getSourceRepoName(source.getId());
+        return null == repoName ? null : repoName.startsWith("model") ? "model-all" : repoName;
+    };
 
 
     public static RichIterable<CodeRepository> getVisibleRepositories(RichIterable<CodeRepository> codeRepositories, CodeRepository repository)
@@ -1039,23 +1060,27 @@ public class PureCodeStorage implements MutableCodeStorage
         return codeRepositories.select(repository::isVisible);
     }
 
-    public static SetIterable<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, Iterable<String> repositoryNames)
+    public static MutableSet<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, CodeRepository repository)
     {
-        return getRepositoryDependenciesByName(codeRepositories, Stacks.mutable.withAll(LazyIterate.collect(repositoryNames, (String repo) -> codeRepositories.select(p ->p.getName().equals(repo)).getFirst())));
+        ArrayDeque<CodeRepository> deque = new ArrayDeque<>(codeRepositories.size());
+        deque.add(repository);
+        return getRepositoryDependenciesByName(codeRepositories, deque);
     }
 
-    private static SetIterable<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, MutableStack<CodeRepository> stack)
+    public static MutableSet<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, Iterable<String> repositoryNames)
+    {
+        return getRepositoryDependenciesByName(codeRepositories, buildDequeFromNames(codeRepositories, repositoryNames));
+    }
+
+    private static MutableSet<String> getRepositoryDependenciesByName(RichIterable<CodeRepository> codeRepositories, Deque<CodeRepository> deque)
     {
         MutableSet<String> results = Sets.mutable.with();
-        while (stack.notEmpty())
+        while (!deque.isEmpty())
         {
-            CodeRepository repository = stack.pop();
+            CodeRepository repository = deque.removeLast();
             if (results.add(repository.getName()))
             {
-                for (CodeRepository visible : getVisibleRepositories(codeRepositories, repository))
-                {
-                    stack.push(visible);
-                }
+                codeRepositories.select(repository::isVisible, deque);
             }
         }
         return results;
@@ -1063,26 +1088,25 @@ public class PureCodeStorage implements MutableCodeStorage
 
     public static SetIterable<CodeRepository> getRepositoryDependencies(RichIterable<CodeRepository> codeRepositories, CodeRepository repository)
     {
-        return getRepositoryDependencies(codeRepositories, Stacks.mutable.with(repository));
+        Deque<CodeRepository> deque = new ArrayDeque<>(codeRepositories.size());
+        deque.add(repository);
+        return getRepositoryDependencies(codeRepositories, deque);
     }
 
     public static SetIterable<CodeRepository> getRepositoryDependencies(RichIterable<CodeRepository> codeRepositories, Iterable<? extends CodeRepository> repositories)
     {
-        return getRepositoryDependencies(codeRepositories, Stacks.mutable.withAll(repositories));
+        return getRepositoryDependencies(codeRepositories, Iterate.addAllTo(repositories, new ArrayDeque<>()));
     }
 
-    private static SetIterable<CodeRepository> getRepositoryDependencies(RichIterable<CodeRepository> codeRepositories, MutableStack<CodeRepository> stack)
+    private static MutableSet<CodeRepository> getRepositoryDependencies(RichIterable<CodeRepository> codeRepositories, Deque<CodeRepository> deque)
     {
         MutableSet<CodeRepository> results = Sets.mutable.with();
-        while (stack.notEmpty())
+        while (!deque.isEmpty())
         {
-            CodeRepository repository = stack.pop();
+            CodeRepository repository = deque.removeLast();
             if (results.add(repository))
             {
-                for (CodeRepository visible : getVisibleRepositories(codeRepositories, repository))
-                {
-                    stack.push(visible);
-                }
+                codeRepositories.select(repository::isVisible, deque);
             }
         }
         return results;
@@ -1090,28 +1114,36 @@ public class PureCodeStorage implements MutableCodeStorage
 
     public static SetIterable<String> getRepositoriesDependendingOnByName(RichIterable<CodeRepository> codeRepositories, Iterable<String> repositoryNames)
     {
-        return getRepositoriesDependendingOnByName(codeRepositories, Stacks.mutable.withAll(LazyIterate.collect(repositoryNames, (String repo) -> codeRepositories.select(p ->p.getName().equals(repo)).getFirst())));
+        return getRepositoriesDependendingOnByName(codeRepositories, buildDequeFromNames(codeRepositories, repositoryNames));
     }
 
-    private static SetIterable<String> getRepositoriesDependendingOnByName(RichIterable<CodeRepository> codeRepositories, MutableStack<CodeRepository> stack)
+    private static SetIterable<String> getRepositoriesDependendingOnByName(RichIterable<CodeRepository> codeRepositories, Deque<CodeRepository> deque)
     {
         MutableSet<String> results = Sets.mutable.with();
-        while (stack.notEmpty())
+        while (!deque.isEmpty())
         {
-            CodeRepository repository = stack.pop();
+            CodeRepository repository = deque.removeLast();
             if (results.add(repository.getName()))
             {
-                for (CodeRepository repoWithVisibility : getRepositoriesWithVisibilityOn(codeRepositories, repository))
-                {
-                    stack.push(repoWithVisibility);
-                }
+                codeRepositories.select(r -> r.isVisible(repository), deque);
             }
         }
         return results;
     }
 
-    private static RichIterable<CodeRepository> getRepositoriesWithVisibilityOn(RichIterable<CodeRepository> codeRepositories, CodeRepository repository)
+    private static Deque<CodeRepository> buildDequeFromNames(RichIterable<CodeRepository> codeRepositories, Iterable<String> repositoryNames)
     {
-        return codeRepositories.select(r -> r.isVisible(repository));
+        MapIterable<String, CodeRepository> codeRepositoriesByName = codeRepositories.groupByUniqueKey(CodeRepository::getName);
+        Deque<CodeRepository> deque = new ArrayDeque<>();
+        repositoryNames.forEach(n ->
+        {
+            CodeRepository repository = codeRepositoriesByName.get(n);
+            if (repository == null)
+            {
+                throw new IllegalArgumentException("Unknown repository: \"" + n + "\"");
+            }
+            deque.add(repository);
+        });
+        return deque;
     }
 }

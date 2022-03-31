@@ -15,23 +15,23 @@
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
 import org.eclipse.collections.api.collection.MutableCollection;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
-import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.Counter;
 import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
-import org.finos.legend.pure.m3.navigation._package._Package;
-import org.finos.legend.pure.m3.coreinstance.factory.CompositeCoreInstanceFactory;
 import org.finos.legend.pure.m3.coreinstance.M3CoreInstanceFactoryRegistry;
+import org.finos.legend.pure.m3.coreinstance.factory.CompositeCoreInstanceFactory;
+import org.finos.legend.pure.m3.navigation.M3PropertyPaths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation._package._Package;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.AbstractReference;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ExternalReferenceDeserializationHelper;
@@ -41,10 +41,10 @@ import org.finos.legend.pure.m3.serialization.runtime.binary.reference.Reference
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.ReferenceFactory;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.SimpleReferenceFactory;
 import org.finos.legend.pure.m3.serialization.runtime.binary.reference.UnresolvableReferenceException;
-import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.coreinstance.compileState.CompileStateSet;
 import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 
@@ -215,7 +215,7 @@ public class BinaryModelSourceDeserializer
     private void readPropertyRealKeyIndex(Reader reader)
     {
         int count = reader.readInt();
-        MutableList<ListIterable<String>> results = FastList.newList(count);
+        MutableList<ListIterable<String>> results = Lists.mutable.withInitialCapacity(count);
         for (int i = 0; i < count; i++)
         {
             String[] strings = readStringsById(reader);
@@ -230,7 +230,7 @@ public class BinaryModelSourceDeserializer
         int count = reader.readInt();
 
         // Second, read the nodes in an intermediate form
-        MutableList<InternalNode> nodes = FastList.newList(count);
+        MutableList<InternalNode> nodes = Lists.mutable.withInitialCapacity(count);
         this.internalNodes = nodes.asUnmodifiable();
         for (int i = 0; i < count; i++)
         {
@@ -242,35 +242,32 @@ public class BinaryModelSourceDeserializer
 
     private InternalNode readInstance(Reader reader)
     {
-        String name = null;
-        String pkg = null;
+        String name;
+        String pkg;
         byte type = reader.readByte();
         switch (type)
         {
             case BinaryModelSerializationTypes.TOP_LEVEL_INSTANCE:
+            case BinaryModelSerializationTypes.ENUM_INSTANCE:
+            case BinaryModelSerializationTypes.OTHER_INSTANCE:
             {
+                // Name but no package
                 name = readStringById(reader);
+                pkg = null;
                 break;
             }
             case BinaryModelSerializationTypes.PACKAGED_INSTANCE:
             {
+                // Name and package
                 name = readStringById(reader);
                 pkg = readStringById(reader);
                 break;
             }
-            case BinaryModelSerializationTypes.ENUM_INSTANCE:
-            {
-                name = readStringById(reader);
-                break;
-            }
-            case BinaryModelSerializationTypes.OTHER_INSTANCE:
-            {
-                name = readStringById(reader);
-                break;
-            }
             case BinaryModelSerializationTypes.ANONYMOUS_INSTANCE:
             {
-                // Nothing to read
+                // No name or package
+                name = null;
+                pkg = null;
                 break;
             }
             default:
@@ -300,7 +297,7 @@ public class BinaryModelSourceDeserializer
             ListIterable<String> realKey = this.propertyRealKeys.get(realKeyId);
 
             int valueCount = reader.readInt();
-            MutableList<Reference> values = FastList.newList(valueCount);
+            MutableList<Reference> values = Lists.mutable.withInitialCapacity(valueCount);
             for (int j = 0; j < valueCount; j++)
             {
                 Reference value = readReference(reader);
@@ -598,8 +595,8 @@ public class BinaryModelSourceDeserializer
         @Override
         public ReferenceResolutionResult resolveReferences(ModelRepository repository, ProcessorSupport processorSupport)
         {
-            int newlyResolved = 0;
-            int unresolved = 0;
+            Counter newlyResolved = new Counter();
+            Counter unresolved = new Counter();
 
             // Resolve classifier
             if (this.instance.getClassifier() == null)
@@ -609,60 +606,47 @@ public class BinaryModelSourceDeserializer
                     if (this.classifierReference.resolve(repository, processorSupport))
                     {
                         this.instance.setClassifier(this.classifierReference.getResolvedInstance());
-                        newlyResolved++;
+                        newlyResolved.increment();
                     }
                     else
                     {
-                        unresolved++;
+                        unresolved.increment();
                     }
                 }
                 catch (UnresolvableReferenceException e)
                 {
-                    StringBuilder message = new StringBuilder("Error resolving reference to classifier ");
-                    message.append(this.classifierPath);
-                    message.append(" for ");
-                    writeInstanceErrorInfo(message);
-                    throw new RuntimeException(message.toString(), e);
+                    StringBuilder message = new StringBuilder("Error resolving reference to classifier ").append(this.classifierPath).append(" for ");
+                    throw new RuntimeException(writeInstanceErrorInfo(message).toString(), e);
                 }
             }
 
             // Resolve property values
             if (this.properties.notEmpty())
             {
-                for (Pair<ListIterable<String>, ListIterable<Reference>> propertyReferencesPair : this.properties.keyValuesView())
+                this.properties.forEachKeyValue((realKey, references) -> references.forEachWithIndex((reference, index) ->
                 {
-                    int index = 0;
-                    for (Reference reference : propertyReferencesPair.getTwo())
+                    if (!reference.isResolved())
                     {
-                        if (!reference.isResolved())
+                        try
                         {
-                            try
+                            if (reference.resolve(repository, processorSupport))
                             {
-                                if (reference.resolve(repository, processorSupport))
-                                {
-                                    newlyResolved++;
-                                }
-                                else
-                                {
-                                    unresolved++;
-                                }
+                                newlyResolved.increment();
                             }
-                            catch (UnresolvableReferenceException e)
+                            else
                             {
-                                StringBuilder message = new StringBuilder("Error resolving reference to value ");
-                                message.append(index);
-                                message.append(" for property '");
-                                message.append(propertyReferencesPair.getOne().getLast());
-                                message.append("' for ");
-                                writeInstanceErrorInfo(message);
-                                throw new RuntimeException(message.toString(), e);
+                                unresolved.increment();
                             }
                         }
-                        index++;
+                        catch (UnresolvableReferenceException e)
+                        {
+                            StringBuilder message = new StringBuilder("Error resolving reference to value ").append(index).append(" for property '").append(realKey.getLast()).append("' for ");
+                            throw new RuntimeException(writeInstanceErrorInfo(message).toString(), e);
+                        }
                     }
-                }
+                }));
             }
-            return new ReferenceResolutionResult(newlyResolved, unresolved);
+            return new ReferenceResolutionResult(newlyResolved.getCount(), unresolved.getCount());
         }
 
         @Override
@@ -672,14 +656,14 @@ public class BinaryModelSourceDeserializer
             {
                 return;
             }
-            for (ListIterable<String> propertyKey : this.properties.keysView().toList())
+            this.properties.keysView().toList().forEach(propertyKey ->
             {
                 ListIterable<Reference> references = this.properties.get(propertyKey);
-                if (references.allSatisfy(Reference.IS_RESOLVED))
+                if (references.allSatisfy(Reference::isResolved))
                 {
                     this.properties.remove(propertyKey);
                     ListIterable<? extends CoreInstance> existingValues = this.instance.getValueForMetaPropertyToMany(propertyKey.getLast());
-                    ListIterable<CoreInstance> serializedValues = references.collect(Reference.GET_RESOLVED_INSTANCE);
+                    ListIterable<CoreInstance> serializedValues = references.collect(Reference::getResolvedInstance);
                     if (existingValues.isEmpty())
                     {
                         try
@@ -688,22 +672,16 @@ public class BinaryModelSourceDeserializer
                         }
                         catch (Exception e)
                         {
-                            StringBuilder message = new StringBuilder("Error populating property '");
-                            message.append(propertyKey.getLast());
-                            message.append("' for ");
-                            writeInstanceErrorInfo(message);
-                            message.append(" with");
+                            StringBuilder message = new StringBuilder("Error populating property '").append(propertyKey.getLast()).append("' for ");
+                            writeInstanceErrorInfo(message).append(" with");
                             int count = serializedValues.size();
                             if (count == 1)
                             {
-                                message.append(": ");
-                                message.append(serializedValues.get(0));
+                                message.append(": ").append(serializedValues.get(0));
                             }
                             else
                             {
-                                message.append(" ");
-                                message.append(count);
-                                message.append(" values: ");
+                                message.append(" ").append(count).append(" values: ");
                                 if (count > 10)
                                 {
                                     LazyIterate.take(serializedValues, 10).appendString(message, "[", ", ", ", ...]");
@@ -718,10 +696,10 @@ public class BinaryModelSourceDeserializer
                     }
                     else
                     {
-                        MutableList<CoreInstance> allValues = FastList.newList(serializedValues.size() + existingValues.size());
+                        MutableList<CoreInstance> allValues = Lists.mutable.withInitialCapacity(serializedValues.size() + existingValues.size());
                         allValues.addAllIterable(serializedValues);
-                        MutableMap<String, CoreInstance> valuesByName = serializedValues.toMap(CoreInstance.GET_NAME, Functions.<CoreInstance>getPassThru());
-                        for (CoreInstance value : existingValues)
+                        MutableMap<String, CoreInstance> valuesByName = serializedValues.toMap(CoreInstance::getName, Functions.getPassThru());
+                        existingValues.forEach(value ->
                         {
                             String name = value.getName();
                             CoreInstance other = valuesByName.put(name, value);
@@ -733,29 +711,23 @@ public class BinaryModelSourceDeserializer
                             {
                                 throw new RuntimeException("Error populating property '" + propertyKey.getLast() + "' for " + this.instance + ": multiple values named '" + name + "'");
                             }
-                        }
+                        });
                         try
                         {
                             this.instance.setKeyValues(propertyKey, allValues);
                         }
                         catch (Exception e)
                         {
-                            StringBuilder message = new StringBuilder("Error populating property '");
-                            message.append(propertyKey.getLast());
-                            message.append("' for ");
-                            writeInstanceErrorInfo(message);
-                            message.append(" with additional");
+                            StringBuilder message = new StringBuilder("Error populating property '").append(propertyKey.getLast()).append("' for ");
+                            writeInstanceErrorInfo(message).append(" with additional");
                             int count = serializedValues.size();
                             if (count == 1)
                             {
-                                message.append(" value: ");
-                                message.append(serializedValues.get(0));
+                                message.append(" value: ").append(serializedValues.get(0));
                             }
                             else
                             {
-                                message.append(" ");
-                                message.append(count);
-                                message.append(" values: ");
+                                message.append(" ").append(count).append(" values: ");
                                 if (count > 10)
                                 {
                                     LazyIterate.take(serializedValues, 10).appendString(message, "[", ", ", ", ...]");
@@ -770,7 +742,7 @@ public class BinaryModelSourceDeserializer
                         }
                     }
                 }
-            }
+            });
         }
 
         @Override
@@ -780,10 +752,7 @@ public class BinaryModelSourceDeserializer
             {
                 target.add(this.classifierReference);
             }
-            for (ListIterable<Reference> references : this.properties.valuesView())
-            {
-                references.reject(Reference.IS_RESOLVED, target);
-            }
+            this.properties.forEachValue(references -> references.reject(Reference::isResolved, target));
         }
 
         @Override
@@ -820,16 +789,12 @@ public class BinaryModelSourceDeserializer
                 boolean packageResolved = this.pkg.resolve(repository, processorSupport);
                 if (!packageResolved)
                 {
-                    StringBuilder message = new StringBuilder("Could not resolve package reference for ");
-                    writeInstanceErrorInfo(message);
-                    throw new RuntimeException(message.toString());
+                    throw new RuntimeException(appendInstanceErrorInfo("Could not resolve package reference for "));
                 }
             }
             catch (UnresolvableReferenceException e)
             {
-                StringBuilder message = new StringBuilder("Could not resolve package reference for ");
-                writeInstanceErrorInfo(message);
-                throw new RuntimeException(message.toString(), e);
+                throw new RuntimeException(appendInstanceErrorInfo("Could not resolve package reference for "), e);
             }
             CoreInstance parent = this.pkg.getResolvedInstance();
             synchronized (parent)
@@ -862,7 +827,12 @@ public class BinaryModelSourceDeserializer
             return repository.newCoreInstanceMultiPass(this.name, this.classifierPath, typeInfo, this.sourceInfo, this.compileStateBitSet);
         }
 
-        private void writeInstanceErrorInfo(StringBuilder message)
+        private String appendInstanceErrorInfo(String messageStart)
+        {
+            return writeInstanceErrorInfo(new StringBuilder(messageStart)).toString();
+        }
+
+        private StringBuilder writeInstanceErrorInfo(StringBuilder message)
         {
             if (isAnonymous())
             {
@@ -870,17 +840,14 @@ public class BinaryModelSourceDeserializer
             }
             else
             {
-                message.append("instance '");
-                message.append(this.name);
-                message.append("'");
+                message.append("instance '").append(this.name).append("'");
             }
-            message.append(" (classifier=");
-            message.append(this.classifierPath);
+            message.append(" (classifier=").append(this.classifierPath);
             if (this.sourceInfo != null)
             {
                 this.sourceInfo.appendMessage(message.append(", source info="));
             }
-            message.append(")");
+            return message.append(')');
         }
     }
 

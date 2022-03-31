@@ -14,9 +14,9 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.binary;
 
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Sets;
 
 public class SourceSerializationResult
 {
