@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.runtime.java.compiled.compiler;
 
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.test.Verify;
@@ -22,23 +21,24 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiled;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.tools.ToolProvider;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
+import javax.tools.SimpleJavaFileObject;
+import javax.tools.ToolProvider;
 
 public class TestMemoryFileManager extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -54,16 +54,8 @@ public class TestMemoryFileManager extends AbstractPureTestWithCoreCompiled
                           "    print(Person,3);\n" +
                           "}\n");
 
-        PureJavaCompiler compiler = ((FunctionExecutionCompiled)this.functionExecution).getJavaCompiler();
-        Function<ClassJavaSource, URI> getURI = new Function<ClassJavaSource, URI>()
-        {
-            @Override
-            public URI valueOf(ClassJavaSource source)
-            {
-                return source.toUri();
-            }
-        };
-        MutableMap<URI, ClassJavaSource> expectedSourcesByURI = compiler.getFileManager().getAllClassJavaSources(true).groupByUniqueKey(getURI, Maps.mutable.<URI, ClassJavaSource>empty());
+        PureJavaCompiler compiler = ((FunctionExecutionCompiled) functionExecution).getJavaCompiler();
+        MutableMap<URI, ClassJavaSource> expectedSourcesByURI = compiler.getFileManager().getAllClassJavaSources(true).groupByUniqueKey(SimpleJavaFileObject::toUri, Maps.mutable.empty());
         Verify.assertNotEmpty(expectedSourcesByURI);
 
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -78,7 +70,7 @@ public class TestMemoryFileManager extends AbstractPureTestWithCoreCompiled
             fileManager.loadClassesFromZipInputStream(jarStream);
         }
 
-        MutableMap<URI, ClassJavaSource> actualSourcesByURI = fileManager.getAllClassJavaSources(true).groupByUniqueKey(getURI, Maps.mutable.<URI, ClassJavaSource>empty());
+        MutableMap<URI, ClassJavaSource> actualSourcesByURI = fileManager.getAllClassJavaSources(true).groupByUniqueKey(SimpleJavaFileObject::toUri, Maps.mutable.empty());
         Verify.assertSetsEqual(expectedSourcesByURI.keySet(), actualSourcesByURI.keySet());
         for (URI uri : expectedSourcesByURI.keysView())
         {

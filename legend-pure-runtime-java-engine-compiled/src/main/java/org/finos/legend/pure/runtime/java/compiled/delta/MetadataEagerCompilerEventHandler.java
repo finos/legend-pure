@@ -42,21 +42,14 @@ public class MetadataEagerCompilerEventHandler implements CompilerEventHandlerMe
     private final ModelRepository repository;
     private final MetadataEventObserver observer;
     private final Message message;
-    private final IdBuilder idBuilder;
     private final ProcessorSupport processorSupport;
 
-    public MetadataEagerCompilerEventHandler(ModelRepository repository, MetadataEventObserver observer, Message message, IdBuilder idBuilder, ProcessorSupport processorSupport)
+    public MetadataEagerCompilerEventHandler(ModelRepository repository, MetadataEventObserver observer, Message message, ProcessorSupport processorSupport)
     {
         this.repository = repository;
         this.observer = observer;
         this.message = message;
-        this.idBuilder = (idBuilder == null) ? IdBuilder.newIdBuilder(processorSupport) : idBuilder;
         this.processorSupport = processorSupport;
-    }
-
-    public MetadataEagerCompilerEventHandler(ModelRepository repository, MetadataEventObserver observer, Message message, ProcessorSupport processorSupport)
-    {
-        this(repository, observer, message, null, processorSupport);
     }
 
     @Override
@@ -87,7 +80,7 @@ public class MetadataEagerCompilerEventHandler implements CompilerEventHandlerMe
     @Override
     public void buildMetadata(RichIterable<CoreInstance> newInstances)
     {
-        this.metadataEager = MetadataBuilder.indexNew(this.metadataEager, newInstances, this.idBuilder, new M3ProcessorSupport(this.repository));
+        this.metadataEager = MetadataBuilder.indexNew(this.metadataEager, newInstances, IdBuilder.newIdBuilder(this.processorSupport), new M3ProcessorSupport(this.repository));
     }
 
     @Override
@@ -109,7 +102,7 @@ public class MetadataEagerCompilerEventHandler implements CompilerEventHandlerMe
             this.message.setMessage("Instantiating Graph");
         }
 
-        this.metadataEager = MetadataBuilder.indexAll(this.repository.getTopLevels(), this.idBuilder, this.processorSupport);
+        this.metadataEager = MetadataBuilder.indexAll(this.repository.getTopLevels(), IdBuilder.newIdBuilder(this.processorSupport), this.processorSupport);
 
         if (this.message != null)
         {
