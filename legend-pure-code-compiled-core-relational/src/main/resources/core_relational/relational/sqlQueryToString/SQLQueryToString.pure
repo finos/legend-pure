@@ -98,7 +98,8 @@ function meta::relational::functions::sqlQueryToString::createDbConfig( dbType:D
 
 function meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1]):DbConfig[1]
 {
-   createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers, getDynaFunctionMappings($dbType), getLiteralProcessors($dbType, $dbTimeZone));
+   let literalProcessors = getLiteralProcessors($dbType, $dbTimeZone);
+   createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers, getDynaFunctionMappings($dbType, $literalProcessors), $literalProcessors);
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1], dynaFuncDispatch:meta::pure::metamodel::function::Function<{DynaFunction[1], GenerationState[1]->DynaFunctionToSql[1]}>[1], literalProcessors:Map<Type,LiteralProcessor>[1]):DbConfig[1]
@@ -373,10 +374,10 @@ function meta::relational::functions::sqlQueryToString::processLiteralListForPla
    ->joinStrings(',');
 }
 
-function meta::relational::functions::sqlQueryToString::processLiteralValue(a:Any[1], dbTimeZone:String[0..1], dbType:DatabaseType[1], quoteIdentifiers:Boolean[0..1]) : String[1]
+function meta::relational::functions::sqlQueryToString::processLiteralValue(a:Any[1], literalProcessors:Map<Type,LiteralProcessor>[1]) : String[1]
 {
-   let dbConfig = createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers);
-   processLiteralValue($a, $dbConfig);
+   let processor = getLiteralProcessorForType($literalProcessors, $a->type());
+   $processor.formatValue($a);
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processLiteralValue(a:Any[1], dbConfig : DbConfig[1]) : String[1]
@@ -701,13 +702,13 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
                                 ]));
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::processLiteralValue(value:Any[1], dbTimeZone:String[1]):String[1]
-{
-    $value->match([s:String[1]  | '\'' + $s->replace('\'', '\'\'') + '\'',
-                   n:Number[1]  | $n->toString(),
-                   b:Boolean[1] | '\'' + $b->toString() + '\'',
-                   d:Date[1]    | '\'' + $d->convertDateToSqlString($dbTimeZone) + '\''])
-}
+// function <<access.private>> meta::relational::functions::sqlQueryToString::processLiteralValue(value:Any[1], dbTimeZone:String[1]):String[1]
+// {
+//     $value->match([s:String[1]  | '\'' + $s->replace('\'', '\'\'') + '\'',
+//                    n:Number[1]  | $n->toString(),
+//                    b:Boolean[1] | '\'' + $b->toString() + '\'',
+//                    d:Date[1]    | '\'' + $d->convertDateToSqlString($dbTimeZone) + '\''])
+// }
 
 function meta::relational::functions::sqlQueryToString::convertDateToSqlString(date:Date[1], dbTimeZone:String[0..1]):String[1]
 {
@@ -1149,13 +1150,15 @@ function meta::relational::functions::sqlQueryToString::getDatabaseTypes():Datab
 }
 
 //TO DO - Remove notASybaseAse and list all DBs for 'trim' function instead
-function <<access.private>> meta::relational::functions::sqlQueryToString::getDynaFunctionMappings(dbType:DatabaseType[1]):meta::pure::metamodel::function::Function<{DynaFunction[1], GenerationState[1]->DynaFunctionToSql[1]}>[1]
+function <<access.private>> meta::relational::functions::sqlQueryToString::getDynaFunctionMappings(dbType:DatabaseType[1], literalProcessors:Map<Type,LiteralProcessor>[1]):meta::pure::metamodel::function::Function<{DynaFunction[1], GenerationState[1]->DynaFunctionToSql[1]}>[1]
 {
    let allTypes = getDatabaseTypes();
    let aSybase    = [DatabaseType.Sybase, DatabaseType.SybaseIQ];
    let notASybase = $allTypes->filter(x|!$x->in($aSybase));
    let sybaseAse  = [DatabaseType.Sybase];
    let notASybaseAse = $allTypes->filter(x|!$x->in($sybaseAse));
+   let sybaseIQ  = [DatabaseType.SybaseIQ];
+   let notASybaseIQ = $allTypes->filter(x|!$x->in($sybaseIQ));
    assert($dbType->in($allTypes), 'The dbType ' + $dbType->toString() + ' is not supported yet');
 
    let selectInsideWhen  = ^GenerationState(generationSide=GenerationSide.Select, withinWhenClause=true);
@@ -1206,7 +1209,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='%s', transform={p:String[*]|$p->joinStrings(' + ')})),
                                                  choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='%s', transform={p:String[*]|$p->joinStrings(' + ')})),
                                                  choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='concat%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})) ]),
-      forDynafunction('contains',              [ choice($allTypes,                 $allStates,            ^ToSql(format=likePattern('%%%s%%'), transform={p:String[2]|$p->transformLikeParams($dbType)}))]),
+      forDynafunction('contains',              [ choice($notASybaseIQ,             $allStates,            ^ToSql(format=likePattern('%%%s%%'), transform={p:String[2]|$p->transformLikeParams()})),
+                                                 choice($sybaseIQ,                 $allStates,            ^ToSql(format=likePattern('%%%s%%'), transform={p:String[2]|$p->transformLikeParamsSybaseIQ()}))]),
       forDynafunction('convertDate',           [ choice($aSybase,                  $allStates,            ^ToSql(format='%s', transform={p:String[*] | $p->convertToDateIQ()})),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='%s', transform={p:String[*] | $p->convertToDateDB2()})),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='%s', transform={p:String[*] | $p->convertToDateH2()})),
@@ -1229,12 +1233,12 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='convert(%s, CHAR)'))]),
       forDynafunction('cos',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='cos(%s)'))]),
       forDynafunction('count',                 [ choice($allTypes,                 $allStates,            ^ToSql(format='count(%s)', transform={p:String[*]|if($p->isEmpty(),|'*',|$p)}))]),
-      forDynafunction('dateDiff',              [ choice($aSybase,                  $allStates,            ^ToSql(format='datediff(%s,%s,%s)', transform={p:String[*]|[$p->at(2)->processDateDiffDurationUnit(DatabaseType.SybaseIQ),$p->at(0),$p->at(1)]})),
-                                                 choice(DatabaseType.H2,           $allStates,            ^ToSql(format='datediff(%s,%s,%s)', transform={p:String[*]|[$p->at(2)->processDateDiffDurationUnit(DatabaseType.H2),$p->at(0),$p->at(1)]})),
-                                                 choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='date_diff(%s,%s,%s)', transform={p:String[*]|[$p->at(2)->processDateDiffDurationUnit(DatabaseType.Presto),$p->at(0),$p->at(1)]})),
+      forDynafunction('dateDiff',              [ choice($aSybase,                  $allStates,            ^ToSql(format='datediff(%s,%s,%s)', transform={p:String[*]|[$p->at(2)->processDateDiffDurationUnitSybaseIQ(),$p->at(0),$p->at(1)]})),
+                                                 choice(DatabaseType.H2,           $allStates,            ^ToSql(format='datediff(%s,%s,%s)', transform={p:String[*]|[$p->at(2)->processDateDiffDurationUnitH2(),$p->at(0),$p->at(1)]})),
+                                                 choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='date_diff(%s,%s,%s)', transform={p:String[*]|[$p->at(2)->processDateDiffDurationUnitPresto(),$p->at(0),$p->at(1)]})),
                                                  choice(DatabaseType.MemSQL,       $allStates,            ^ToSql(format='%s', transform={p:String[*]|generateDateDiffExpressionForMemSQL ([$p->at(1),$p->at(0), $p->at(2)])})),
                                                  choice(DatabaseType.Postgres,     $allStates,            ^ToSql(format='%s', transform={p:String[*]|generateDateDiffExpressionForPostgres($p)})),
-                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='datediff(%s,%s,%s)', transform={p:String[*]|[$p->at(2)->processDateDiffDurationUnit(DatabaseType.Snowflake),$p->at(0),$p->at(1)]})),
+                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='datediff(%s,%s,%s)', transform={p:String[*]|[$p->at(2)->processDateDiffDurationUnitSnowflake(),$p->at(0),$p->at(1)]})),
                                                  choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='%s' , transform={p:String[2..3] | $p->dateDiffDatabricks()}))]),
       forDynafunction('datePart',              [ choice(DatabaseType.SybaseIQ,     $allStates,            ^ToSql(format='date(%s)')),
                                                  choice(DatabaseType.Sybase,       $allStates,            ^ToSql(format='cast(%s as date)')),
@@ -1259,7 +1263,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
       forDynafunction('denseRank',             [ choice($allTypes,                 $allStates,            ^ToSql(format='dense_rank()'))]),
       forDynafunction('distinct',              [ choice($allTypes,                 $allStates,            ^ToSql(format='distinct(%s)', transform={p:String[*]|if($p->isEmpty(),|'*',|$p)}))]),
       forDynafunction('divide',                [ choice($allTypes,                 $allStates,            ^ToSql(format='((1.0 * %s) / %s)'))]),
-      forDynafunction('endsWith',              [ choice($allTypes,                 $allStates,            ^ToSql(format=likePattern('%%%s'), transform={p:String[2]|$p->transformLikeParams($dbType)}))]),
+      forDynafunction('endsWith',              [ choice($notASybaseIQ,             $allStates,            ^ToSql(format=likePattern('%%%s'), transform={p:String[2]|$p->transformLikeParams()})),
+                                                 choice($sybaseIQ,                 $allStates,            ^ToSql(format=likePattern('%%%s'), transform={p:String[2]|$p->transformLikeParamsSybaseIQ()})) ]),
       forDynafunction('equal',                 [ choice($allTypes,                 $allStates,            ^ToSql(format='%s = %s'))]),
       forDynafunction('exists',                [ choice($allTypes,                 $allStates,            ^ToSql(format='exists(%s)'))]),
       forDynafunction('exp',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='exp(%s)'))]),
@@ -1357,10 +1362,11 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
       forDynafunction('isNumeric',             [ choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='(lower(%s) = upper(%s))')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='(lower(%s) = upper(%s))')),
                                                  choice($aSybase,                  $allStates,            ^ToSql(format='isnumeric(%s)'))]),
-      forDynafunction('isAlphaNumeric',        [ choice($aSybase,                  $allStates,            ^ToSql(format=likePatternWithoutEscape('%%%s%%'), transform={p:String[1]|$p->transformAlphaNumericParams($dbType)})),
-                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format=regexpPattern('%s'), transform={p:String[1]|$p->transformAlphaNumericParams($dbType)})),
-                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='rlike(%s)', transform={p:String[1]|$p->transformAlphaNumericParams($dbType)})),
-                                                 choice(DatabaseType.H2,           $allStates,            ^ToSql(format=regexpPattern('%s'), transform={p:String[1]|$p->transformAlphaNumericParams($dbType)}))]),
+      forDynafunction('isAlphaNumeric',        [ choice(DatabaseType.Sybase,       $allStates,            ^ToSql(format=likePatternWithoutEscape('%%%s%%'), transform={p:String[1]|$p->transformAlphaNumericParams()})),
+                                                 choice(DatabaseType.SybaseIQ,     $allStates,            ^ToSql(format=likePatternWithoutEscape('%%%s%%'), transform={p:String[1]|$p->transformAlphaNumericParamsSybaseIQ()})),
+                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format=regexpPattern('%s'), transform={p:String[1]|$p->transformAlphaNumericParams()})),
+                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='rlike(%s)', transform={p:String[1]|$p->transformAlphaNumericParams()})),
+                                                 choice(DatabaseType.H2,           $allStates,            ^ToSql(format=regexpPattern('%s'), transform={p:String[1]|$p->transformAlphaNumericParams()}))]),
       forDynafunction('joinStrings',           [ choice($aSybase,                  $allStates,            ^ToSql(format='list(%s,%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='listagg(%s,%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='group_concat(%s separator %s)')),
@@ -1395,11 +1401,11 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='ltrim(%s)')),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='ltrim(%s)')),
                                                  choice(DatabaseType.SqlServer,    $allStates,            ^ToSql(format='ltrim(%s)'))]),
-      forDynafunction('matches',               [ choice($aSybase,                  $allStates,            ^ToSql(format=regexpPattern('%s'), transform={p:String[2]|$p->transformRegexpParams($dbType)})),
-                                                 choice(DatabaseType.H2,           $allStates,            ^ToSql(format=regexpPattern('%s'), transform={p:String[2]|$p->transformRegexpParams($dbType)})),
-                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format=regexpPattern('%s'), transform={p:String[2]|$p->transformRegexpParams($dbType)})),
-                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='rlike(%s)', transform={p:String[2]|$p->transformRegexpParams($dbType)})),
-                                                 choice(DatabaseType.Presto,       $allStates,            ^ToSql(format=regexpLikePattern('%s','%s'), transform={p:String[2]|$p->transformRegexpParams($dbType)}))]),
+      forDynafunction('matches',               [ choice($aSybase,                  $allStates,            ^ToSql(format=regexpPattern('%s'), transform={p:String[2]|$p->transformRegexpParams()})),
+                                                 choice(DatabaseType.H2,           $allStates,            ^ToSql(format=regexpPattern('%s'), transform={p:String[2]|$p->transformRegexpParams()})),
+                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format=regexpPattern('%s'), transform={p:String[2]|$p->transformRegexpParams()})),
+                                                 choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='rlike(%s)', transform={p:String[2]|$p->transformRegexpParams()})),
+                                                 choice(DatabaseType.Presto,       $allStates,            ^ToSql(format=regexpLikePattern('%s','%s'), transform={p:String[2]|$p->transformRegexpParams()}))]),
       forDynafunction('max',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='max(%s)'))]),
       forDynafunction('min',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='min(%s)'))]),
       forDynafunction('minute',                [ choice($aSybase,                  $allStates,            ^ToSql(format='minute(%s)')),
@@ -1519,7 +1525,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.Databricks,   $allStates,            ^ToSql(format='date_sub(%s, case when dayofweek(%s) = %s then 7 else dayofweek(%s) - %s end)', transform={p:String[1..2] | $p->formatMostRecentDatabricks('current_date()')}, parametersWithinWhenClause = [false, false])),
                                                  choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='dateadd(DAY, case when %s - DAYOFWEEK(%s) +1  >= 0 then %s  - DAYOFWEEK(%s) -1 - 7 else %s - DAYOFWEEK(%s) -1 end, %s)', transform={p:String[1..2] | $p->formatMostRecentMemSnowflake('current_date')}, parametersWithinWhenClause = [false, false])),
                                                  choice(DatabaseType.Presto,       $allStates,            ^ToSql(format='date_add(\'day\', case when %s - day_of_week(%s) >= 0 then %s - day_of_week(%s) - 7 else %s - day_of_week(%s) end, %s)', transform={p:String[1..2] | $p->formatMostRecentPresto('current_date')}, parametersWithinWhenClause = [false, false]))]),
-      forDynafunction('percentile',            [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform = {p:String[*] | $p->transformPercentile($dbType)}))]),
+      forDynafunction('percentile',            [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform = {p:String[*] | $p->transformPercentile($literalProcessors)}))]),
       forDynafunction('quarter',               [ choice($aSybase ,                 $allStates,            ^ToSql(format='quarter(%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='quarter(%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='quarter(%s)')),
@@ -1595,11 +1601,12 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
                                                  choice(DatabaseType.BigQuery,     $allStates,            ^ToSql(format='extract( second from %s)'))]),
       forDynafunction('sin',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='sin(%s)'))]),
       forDynafunction('size',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='count(%s)', transform={p:String[*]|if($p->isEmpty(),|'*',|$p)}))]),
-      forDynafunction('sqlFalse',              [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|processLiteralValue(false, [], $dbType, [])}))]),
+      forDynafunction('sqlFalse',              [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|processLiteralValue(false, $literalProcessors)}))]),
       forDynafunction('sqlNull',               [ choice($allTypes,                 $allStates,            ^ToSql(format='null'))]),
-      forDynafunction('sqlTrue',               [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|processLiteralValue(true, [], $dbType, [])}))]),
+      forDynafunction('sqlTrue',               [ choice($allTypes,                 $allStates,            ^ToSql(format='%s', transform={p:String[*]|processLiteralValue(true, $literalProcessors)}))]),
       forDynafunction('sqrt',                  [ choice($allTypes,                 $allStates,            ^ToSql(format='sqrt(%s)'))]),
-      forDynafunction('startsWith',            [ choice($allTypes,                 $allStates,            ^ToSql(format=likePattern('%s%%'), transform={p:String[2]|$p->transformLikeParams($dbType)}))]),
+      forDynafunction('startsWith',            [ choice($notASybaseIQ,             $allStates,            ^ToSql(format=likePattern('%s%%'), transform={p:String[2]|$p->transformLikeParams()})),
+                                                 choice($sybaseIQ,                 $allStates,            ^ToSql(format=likePattern('%s%%'), transform={p:String[2]|$p->transformLikeParamsSybaseIQ()}))]),
       forDynafunction('sub',                   [ choice($allTypes,                 $allStates,            ^ToSql(format='%s-%s'))]),
       forDynafunction('substring',             [ choice($aSybase,                  $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
                                                  choice(DatabaseType.Composite,    $allStates,            ^ToSql(format='substring%s', transform={p:String[*]|$p->joinStrings('(', ', ', ')')})),
@@ -1743,7 +1750,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::regex
    '%s regexp \'' + '^' +$query + '$' +'\''
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::transformRegexpParams(params: String[2], dbType: DatabaseType[1]):String[*]
+function <<access.private>> meta::relational::functions::sqlQueryToString::transformRegexpParams(params: String[2]):String[*]
 {
    let regExpression = $params->at(1)->meta::relational::functions::sqlQueryToString::removeQuotes();
    $params->at(0)->concatenate($regExpression);
@@ -1754,33 +1761,43 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::likeP
    '%s like \'' + $query + '\'%s'
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::transformLikeParams(params: String[2], dbType: DatabaseType[1]):String[*]
+function <<access.private>> meta::relational::functions::sqlQueryToString::transformLikeParams(params: String[2]):String[*]
 {
-   let likeExpression = $params->at(1)->meta::relational::functions::sqlQueryToString::removeQuotes()->escapeLikeExpr($dbType);
+   let likeExpression = $params->at(1)->meta::relational::functions::sqlQueryToString::removeQuotes()->escapeLikeExpr();
    $params->at(0)
       ->concatenate($likeExpression)
-      ->concatenate(likeEscapeClause($likeExpression, $dbType));
+      ->concatenate('');
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::escapeLikeExpr(query: String[1], dbType: DatabaseType[1]):String[1]
+function <<access.private>> meta::relational::functions::sqlQueryToString::escapeLikeExpr(query: String[1]):String[1]
 {
    // Escaping references...
-   // Sybase IQ: http://infocenter.sybase.com/help/index.jsp?topic=/com.sybase.infocenter.dc38151.1520/html/iqrefbb/CACGCGGC.htm
    // DB2: https://www.ibm.com/support/knowledgecenter/SSEPGG_9.7.0/com.ibm.db2.luw.sql.ref.doc/doc/r0000751.html
    // H2: http://www.h2database.com/html/grammar.html#condition_right_hand_side
 
-   let common = $query
-      ->replace('_', '\\_')
-      ->replace('%', '\\%');
-
-   if($dbType == DatabaseType.SybaseIQ,
-      | $common->replace('[', '\\['),
-      | $common);
+   $query->replace('_', '\\_')->replace('%', '\\%')
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::likeEscapeClause(expr: String[1], dbType: DatabaseType[1]):String[*]
+function <<access.private>> meta::relational::functions::sqlQueryToString::transformLikeParamsSybaseIQ(params: String[2]):String[*]
 {
-   if($dbType == DatabaseType.SybaseIQ && $expr->contains('\\'),
+   let likeExpression = $params->at(1)->meta::relational::functions::sqlQueryToString::removeQuotes()->escapeLikeExprSybaseIQ();
+   $params->at(0)
+      ->concatenate($likeExpression)
+      ->concatenate(likeEscapeClauseSybaseIQ($likeExpression));
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::escapeLikeExprSybaseIQ(query: String[1]):String[1]
+{
+   // Escaping references...
+   // Sybase IQ: http://infocenter.sybase.com/help/index.jsp?topic=/com.sybase.infocenter.dc38151.1520/html/iqrefbb/CACGCGGC.htm
+  $query
+      ->replace('_', '\\_')
+      ->replace('%', '\\%')->replace('[', '\\[');
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::likeEscapeClauseSybaseIQ(expr: String[1]):String[*]
+{
+   if($expr->contains('\\'),
       |' escape \'\\\'',
       |'');
 }
@@ -1790,9 +1807,16 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::likeP
    '%s not like \'' + $query + '\''
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::transformAlphaNumericParams(params: String[1], dbType: DatabaseType[1]):String[*]
+function <<access.private>> meta::relational::functions::sqlQueryToString::transformAlphaNumericParams(params: String[1]):String[*]
 {
-   let param =  if($dbType == DatabaseType.SybaseIQ,|'\'[^a-zA-Z0-9]\'',|'\'[a-zA-Z0-9]*\'');
+   let param =  '\'[a-zA-Z0-9]*\'';
+   let expression = $param->meta::relational::functions::sqlQueryToString::removeQuotes();
+   $params->at(0)->concatenate($expression);
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::transformAlphaNumericParamsSybaseIQ(params: String[1]):String[*]
+{
+   let param =  '\'[^a-zA-Z0-9]\'';
    let expression = $param->meta::relational::functions::sqlQueryToString::removeQuotes();
    $params->at(0)->concatenate($expression);
 }
@@ -2279,20 +2303,41 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::sybas
    ]
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::processDateDiffDurationUnit(durationUnit:String[1], dbType:DatabaseType[1]):String[1]
+function <<access.private>> meta::relational::functions::sqlQueryToString::processDateDiffDurationUnitH2(durationUnit:String[1]):String[1]
 {
    let enumList = [DurationUnit.YEARS,DurationUnit.MONTHS,DurationUnit.WEEKS,DurationUnit.DAYS,DurationUnit.HOURS,DurationUnit.MINUTES,DurationUnit.SECONDS,DurationUnit.MILLISECONDS]->map(e|$e->toString());
-   let dbs = [pair(DatabaseType.H2, list(['year', 'month', 'week', 'day', 'hour', 'minute', 'second', 'millisecond'])),
-              pair(DatabaseType.SybaseIQ, list(['yy', 'mm', 'wk', 'dd', 'hh', 'mi', 'ss', 'ms'])),
-              pair(DatabaseType.Presto, list(['\'year\'', '\'month\'', '\'week\'', '\'day\'', '\'hour\'', '\'minute\'', '\'second\'', '\'millisecond\''])),
-              pair(DatabaseType.Snowflake, list(['year', 'month', 'week', 'day', 'hour', 'minute', 'second','']))]->newMap();
-   let dbTypeUnitPair = $dbs->get($dbType);
-   let dbUnitType = $enumList->zip($dbTypeUnitPair.values)->filter(h | $h.first == $durationUnit).second->toOne();
-   assert($dbUnitType->isNotEmpty(), $durationUnit + ' is not supported by ' + toString($dbType) + ' in the DateDiff Function.');
+   let dbUnitTypeList = ['year', 'month', 'week', 'day', 'hour', 'minute', 'second', 'millisecond'];
+   let dbUnitType = $enumList->zip($dbUnitTypeList)->filter(h | $h.first == $durationUnit).second->toOne();
+   assert($dbUnitType->isNotEmpty(), $durationUnit + ' is not supported by H2 in the DateDiff Function.');
    $dbUnitType;
 }
 
+function <<access.private>> meta::relational::functions::sqlQueryToString::processDateDiffDurationUnitSybaseIQ(durationUnit:String[1]):String[1]
+{
+   let enumList = [DurationUnit.YEARS,DurationUnit.MONTHS,DurationUnit.WEEKS,DurationUnit.DAYS,DurationUnit.HOURS,DurationUnit.MINUTES,DurationUnit.SECONDS,DurationUnit.MILLISECONDS]->map(e|$e->toString());
+   let dbUnitTypeList = ['yy', 'mm', 'wk', 'dd', 'hh', 'mi', 'ss', 'ms'];
+   let dbUnitType = $enumList->zip($dbUnitTypeList)->filter(h | $h.first == $durationUnit).second->toOne();
+   assert($dbUnitType->isNotEmpty(), $durationUnit + ' is not supported by SybaseIQ in the DateDiff Function.');
+   $dbUnitType;
+}
 
+function <<access.private>> meta::relational::functions::sqlQueryToString::processDateDiffDurationUnitPresto(durationUnit:String[1]):String[1]
+{
+   let enumList = [DurationUnit.YEARS,DurationUnit.MONTHS,DurationUnit.WEEKS,DurationUnit.DAYS,DurationUnit.HOURS,DurationUnit.MINUTES,DurationUnit.SECONDS,DurationUnit.MILLISECONDS]->map(e|$e->toString());
+   let dbUnitTypeList = ['\'year\'', '\'month\'', '\'week\'', '\'day\'', '\'hour\'', '\'minute\'', '\'second\'', '\'millisecond\''];
+   let dbUnitType = $enumList->zip($dbUnitTypeList)->filter(h | $h.first == $durationUnit).second->toOne();
+   assert($dbUnitType->isNotEmpty(), $durationUnit + ' is not supported by Presto in the DateDiff Function.');
+   $dbUnitType;
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::processDateDiffDurationUnitSnowflake(durationUnit:String[1]):String[1]
+{
+   let enumList = [DurationUnit.YEARS,DurationUnit.MONTHS,DurationUnit.WEEKS,DurationUnit.DAYS,DurationUnit.HOURS,DurationUnit.MINUTES,DurationUnit.SECONDS,DurationUnit.MILLISECONDS]->map(e|$e->toString());
+   let dbUnitTypeList = ['year', 'month', 'week', 'day', 'hour', 'minute', 'second',''];
+   let dbUnitType = $enumList->zip($dbUnitTypeList)->filter(h | $h.first == $durationUnit).second->toOne();
+   assert($dbUnitType->isNotEmpty(), $durationUnit + ' is not supported by Snowflake in the DateDiff Function.');
+   $dbUnitType;
+}
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processIdentifier(originalIdentifier:String[1], dbConfig : DbConfig[1]):String[1]
 {
@@ -2550,9 +2595,9 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::dateT
            pair('YYYY-MM-DDTHH:MI:SS.FF', 121)]);
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::transformPercentile(args: String[*], dbType: DatabaseType[1]): String[1]
+function <<access.private>> meta::relational::functions::sqlQueryToString::transformPercentile(args: String[*], literalProcessors:Map<Type,LiteralProcessor>[1] ): String[1]
 {
-   let boolProc = getLiteralProcessorForType(getLiteralProcessors($dbType, []), Boolean);
+   let boolProc = getLiteralProcessorForType( $literalProcessors, Boolean);
    let trueVal  = $boolProc.formatValue(true);
    let falseVal = $boolProc.formatValue(false);
 
