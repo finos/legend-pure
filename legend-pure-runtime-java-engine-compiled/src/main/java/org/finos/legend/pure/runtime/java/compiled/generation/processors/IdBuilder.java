@@ -18,6 +18,7 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -105,13 +106,47 @@ public class IdBuilder
         return instance.getName();
     }
 
-    // AbstractProperty
+    // QualifiedProperty
 
-    private static String buildIdForAbstractProperty(CoreInstance property)
+    private static String buildIdForQualifiedProperty(CoreInstance property)
     {
-        StringBuilder builder = new StringBuilder();
-        PackageableElement.writeUserPathForPackageableElement(builder, property.getValueForMetaPropertyToOne(M3Properties.owner));
-        return builder.append('.').append(property.getName()).toString();
+        return PackageableElement.writeUserPathForPackageableElement(new StringBuilder(), property.getValueForMetaPropertyToOne(M3Properties.owner))
+                .append('.').append(property.getName()).toString();
+    }
+
+    // Property
+
+    private static String buildIdForProperty(CoreInstance property)
+    {
+        CoreInstance owner = property.getValueForMetaPropertyToOne(M3Properties.owner);
+        String propertyProperty;
+        int index = owner.getValueForMetaPropertyToMany(M3Properties.properties).indexOf(property);
+        if (index == -1)
+        {
+            index = owner.getValueForMetaPropertyToMany(M3Properties.originalMilestonedProperties).indexOf(property);
+            if (index == -1)
+            {
+                StringBuilder builder = new StringBuilder("Error generating id for property '").append(property.getName()).append("' owned by ");
+                PackageableElement.writeUserPathForPackageableElement(builder, owner);
+                builder.append(": could not find it in either '").append(M3Properties.properties).append("' or '").append(M3Properties.originalMilestonedProperties).append("'");
+                throw new IllegalStateException(builder.toString());
+            }
+            propertyProperty = M3Properties.originalMilestonedProperties;
+        }
+        else
+        {
+            propertyProperty = M3Properties.properties;
+        }
+
+        StringBuilder builder = PackageableElement.writeUserPathForPackageableElement(new StringBuilder(), owner);
+        builder.append('.').append(propertyProperty);
+        builder.append('.').append(property.getName());
+        if (owner instanceof Association)
+        {
+            // associations can have multiple properties with the same name
+            builder.append('_').append(index);
+        }
+        return builder.toString();
     }
 
     // LambdaFunction
@@ -184,11 +219,12 @@ public class IdBuilder
     private static void registerStandardIdBuilderFunctions(MutableMap<CoreInstance, Function<? super CoreInstance, String>> map, ProcessorSupport processorSupport)
     {
         PrimitiveUtilities.getPrimitiveTypes(processorSupport).forEach(t -> map.put(t, IdBuilder::buildIdForPrimitiveValue));
-        registerIdBuilderFunction(map, M3Paths.AbstractProperty, IdBuilder::buildIdForAbstractProperty, processorSupport);
         registerIdBuilderFunction(map, M3Paths.Annotation, IdBuilder::buildIdForAnnotation, processorSupport);
         registerIdBuilderFunction(map, M3Paths.Enum, IdBuilder::buildIdForEnumValue, processorSupport);
         registerIdBuilderFunction(map, M3Paths.LambdaFunction, IdBuilder::buildIdForLambdaFunction, processorSupport);
         registerIdBuilderFunction(map, M3Paths.PackageableElement, IdBuilder::buildIdForPackageableElement, processorSupport);
+        registerIdBuilderFunction(map, M3Paths.Property, IdBuilder::buildIdForProperty, processorSupport);
+        registerIdBuilderFunction(map, M3Paths.QualifiedProperty, IdBuilder::buildIdForQualifiedProperty, processorSupport);
     }
 
     private static void registerIdBuilderFunction(MutableMap<CoreInstance, Function<? super CoreInstance, String>> map, String classifierPath, Function<? super CoreInstance, String> function, ProcessorSupport processorSupport)
