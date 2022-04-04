@@ -253,7 +253,7 @@ Class meta::pure::persistence::metamodel::persister::deduplication::MaxVersionDe
 Class meta::pure::persistence::metamodel::persister::deduplication::DuplicateCountDeduplicationStrategy extends DeduplicationStrategy
 {
    {doc.doc = 'The name of the output field where duplicate counts will be recorded in the underlying system.'}
-   duplicateCountField: String[1];
+   duplicateCountName: String[1];
 }
 
 /**********
