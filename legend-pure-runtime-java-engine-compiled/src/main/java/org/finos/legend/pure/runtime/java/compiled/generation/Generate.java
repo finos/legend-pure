@@ -33,6 +33,7 @@ import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompile
 
 import java.util.LinkedHashMap;
 import java.util.SortedMap;
+import java.util.function.Function;
 
 public class Generate
 {
@@ -79,7 +80,7 @@ public class Generate
         return javaSources;
     }
 
-    public void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, JavaSourceCodeGenerator sourceCodeGenerator)
+    void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, Function<? super String, ? extends JavaSourceCodeGenerator> sourceCodeGeneratorFn)
     {
         if (this.message != null)
         {
@@ -96,11 +97,18 @@ public class Generate
             {
                 if (!PlatformCodeRepository.NAME.equals(compileGroup) && sources.notEmpty())
                 {
+                    JavaSourceCodeGenerator sourceCodeGenerator = sourceCodeGeneratorFn.apply(compileGroup);
                     ListIterable<StringJavaSource> compileGroupJavaSources = generate(compileGroup, sources, sourceCodeGenerator, sourceCounter, totalSourceCount);
                     this.javaSourcesByGroup.put(compileGroup, compileGroupJavaSources.toImmutable());
                 }
             });
         }
+
+    }
+
+    public void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, JavaSourceCodeGenerator sourceCodeGenerator)
+    {
+        generateJavaCodeForSources(compiledSourcesByRepo, compileGroup -> sourceCodeGenerator);
     }
 
     public void generateExternalizableAPI(JavaSourceCodeGenerator sourceCodeGenerator, String pack)
