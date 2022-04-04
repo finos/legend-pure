@@ -497,7 +497,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
 
     TypeView cview_31(
         type=meta::pure::persistence::metamodel::persister::deduplication::MaxVersionDeduplicationStrategy,
-        position=(956.20404, 1293.04109),
+        position=(848.20404, 1322.04109),
         width=214.05078,
         height=44.00000,
         stereotypesVisible=true,
@@ -507,11 +507,11 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_32(
-        type=meta::pure::persistence::metamodel::persister::deduplication::AnyVersionDeduplicationStrategy,
-        position=(1075.19356, 1247.41394),
-        width=213.37695,
-        height=30.00000,
+    TypeView cview_83(
+        type=meta::pure::persistence::metamodel::persister::deduplication::DuplicateCountDeduplicationStrategy,
+        position=(1072.92156, 1321.32554),
+        width=236.01758,
+        height=44.00000,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -521,8 +521,20 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
 
     TypeView cview_30(
         type=meta::pure::persistence::metamodel::persister::deduplication::NoDeduplicationStrategy,
-        position=(887.21282, 1247.40086),
+        position=(811.21282, 1260.40086),
         width=163.34961,
+        height=30.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_32(
+        type=meta::pure::persistence::metamodel::persister::deduplication::AnyVersionDeduplicationStrategy,
+        position=(1168.19356, 1260.41394),
+        width=213.37695,
         height=30.00000,
         stereotypesVisible=true,
         attributesVisible=true,
@@ -579,7 +591,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
     GeneralizationView gview_5(
         source=cview_31,
         target=cview_49,
-        points=[(1063.22943,1315.04109),(1063.46714,1199.12120)],
+        points=[(955.22943,1344.04109),(1063.46714,1199.12120)],
         label='',
         color=#000000,
         lineWidth=-1.0,
@@ -588,7 +600,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
     GeneralizationView gview_6(
         source=cview_32,
         target=cview_49,
-        points=[(1181.88204,1262.41394),(1063.46714,1199.12120)],
+        points=[(1274.88204,1275.41394),(1063.46714,1199.12120)],
         label='',
         color=#000000,
         lineWidth=-1.0,
@@ -597,7 +609,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
     GeneralizationView gview_7(
         source=cview_30,
         target=cview_49,
-        points=[(968.88763,1262.40086),(1063.46714,1199.12120)],
+        points=[(892.88763,1275.40086),(1063.46714,1199.12120)],
         label='',
         color=#000000,
         lineWidth=-1.0,
@@ -760,6 +772,15 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         source=cview_78,
         target=cview_82,
         points=[(1952.77972,796.15234),(1952.25981,539.44853)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
+    GeneralizationView gview_26(
+        source=cview_83,
+        target=cview_49,
+        points=[(1190.93035,1343.32554),(1063.46715,1199.12120)],
         label='',
         color=#000000,
         lineWidth=-1.0,
