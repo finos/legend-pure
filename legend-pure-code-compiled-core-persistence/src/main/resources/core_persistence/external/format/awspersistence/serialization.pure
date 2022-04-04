@@ -137,7 +137,9 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
     s3:AwsS3Connection[1]| [],
     rdb:RelationalDatabaseConnection[1]|
       if ($rdb.type == DatabaseType.Snowflake, 
-        | let x = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Store) && $p->fullPackageName('::')==$rdb.element);
+        | assertInstanceOf($rdb.element, meta::relational::metamodel::Database, 'Expected engine to present element with type Database, instead found type %s', [ $rdb.element->type() ]);
+          let db = $rdb.element->cast(@Database);
+          let x = $config.allPackageScopeElements()->filter(p|$p->instanceOf(Store) && $p->fullPackageName('::')==$db->fullPackageName('::'));
           assertSize($x, 1, 'Expected exactly one store in Connection, found <%d> (should be precluded by engine pureModel construction)', [$x->size()]);
           let store = $x->toOne()->cast(@Database);
           let storeName = $store->fullPackageName('::');
