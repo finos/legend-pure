@@ -25,6 +25,7 @@
                         <repository>platform</repository>
                         <repository>core</repository>
                         <repository>core_external_shared</repository>
+                        <repository>core_relational</repository>
                         <repository>core_persistence</repository>
                     </repositories>
                     <extraRepositories>
@@ -90,6 +91,11 @@
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-core-external-shared</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-code-compiled-core-relational</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>
