@@ -147,30 +147,6 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_79(
-        type=meta::external::shared::format::binding::Binding,
-        position=(1621.36040, 363.94853),
-        width=171.63135,
-        height=86.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
-    TypeView cview_80(
-        type=meta::pure::runtime::Connection,
-        position=(1643.36040, 300.94853),
-        width=104.35840,
-        height=44.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
     TypeView cview_10(
         type=meta::pure::persistence::metamodel::persister::BatchPersister,
         position=(1271.47949, 510.00000),
@@ -543,6 +519,66 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         color=#FFFFCC,
         lineWidth=1.0)
 
+    TypeView cview_84(
+        type=meta::pure::persistence::metamodel::persister::sink::Sink,
+        position=(1701.92156, 295.32554),
+        width=225.77539,
+        height=58.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_86(
+        type=meta::pure::persistence::metamodel::persister::sink::ObjectStorageSink,
+        position=(1825.92156, 382.32554),
+        width=228.44727,
+        height=44.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_85(
+        type=meta::pure::persistence::metamodel::persister::sink::RelationalSink,
+        position=(1588.92156, 381.32554),
+        width=223.10352,
+        height=44.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_80(
+        type=meta::pure::runtime::Connection,
+        position=(1648.36040, 459.94853),
+        width=104.35840,
+        height=44.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_79(
+        type=meta::external::shared::format::binding::Binding,
+        position=(2148.36040, 361.94853),
+        width=171.63135,
+        height=86.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
     GeneralizationView gview_0(
         source=cview_4,
         target=cview_3,
@@ -781,6 +817,24 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         source=cview_83,
         target=cview_49,
         points=[(1190.93035,1343.32554),(1063.46715,1199.12120)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
+    GeneralizationView gview_27(
+        source=cview_85,
+        target=cview_84,
+        points=[(1700.47332,403.32554),(1814.80926,324.32554)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
+    GeneralizationView gview_28(
+        source=cview_86,
+        target=cview_84,
+        points=[(1940.14519,404.32554),(1814.80926,324.32554)],
         label='',
         color=#000000,
         lineWidth=-1.0,
@@ -1039,34 +1093,6 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         lineStyle=SIMPLE)
 
     PropertyView pview_18(
-        property=meta::pure::persistence::metamodel::persister::Persister.binding,
-        source=cview_8,
-        target=cview_79
-,        points=[(1352.36040,405.94853),(1707.17607,406.94853)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
-
-    PropertyView pview_19(
-        property=meta::pure::persistence::metamodel::persister::Persister.connection,
-        source=cview_8,
-        target=cview_80
-,        points=[(1334.36040,321.94853),(1695.53959,322.94853)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
-
-    PropertyView pview_20(
         property=meta::pure::persistence::metamodel::persister::targetshape::MultiFlatTarget.parts,
         source=cview_16,
         target=cview_81
@@ -1080,7 +1106,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_21(
+    PropertyView pview_19(
         property=meta::pure::persistence::metamodel::persister::targetshape::MultiFlatTargetPart.deduplicationStrategy,
         source=cview_81,
         target=cview_49
@@ -1094,11 +1120,67 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_22(
+    PropertyView pview_20(
         property=meta::pure::persistence::metamodel::persister::BatchPersister.ingestMode,
         source=cview_10,
         target=cview_82
 ,        points=[(1381.03320,539.39321),(1952.25981,539.44853)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_21(
+        property=meta::pure::persistence::metamodel::persister::Persister.sink,
+        source=cview_8,
+        target=cview_84
+,        points=[(1271.92156,323.32554),(1814.80926,324.32554)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_22(
+        property=meta::pure::persistence::metamodel::persister::sink::RelationalSink.connection,
+        source=cview_85,
+        target=cview_80
+,        points=[(1700.47332,403.32554),(1700.53960,481.94853)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_23(
+        property=meta::pure::persistence::metamodel::persister::sink::ObjectStorageSink.connection,
+        source=cview_86,
+        target=cview_80
+,        points=[(1866.92156,408.32554),(1866.92156,481.32554),(1700.53960,481.94853)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_24(
+        property=meta::pure::persistence::metamodel::persister::sink::ObjectStorageSink.binding,
+        source=cview_86,
+        target=cview_79
+,        points=[(1940.14519,404.32554),(2234.17607,404.94853)],
         label='',
         propertyPosition=(0.0,0.0),
         multiplicityPosition=(0.0,0.0),

@@ -159,17 +159,4 @@ Diagram meta::external::persistence::aws::Persistence_Diagram(width=0.0, height=
         nameVisible=true,
         lineStyle=SIMPLE)
 
-    PropertyView pview_3(
-        property=meta::pure::persistence::metamodel::persister::Persister.connection,
-        source=cview_8,
-        target=cview_14
-,        points=[(1206.86251,528.57046),(1503.84721,529.50405)],
-        label='',
-        propertyPosition=(0.0,0.0),
-        multiplicityPosition=(0.0,0.0),
-        color=#000000,
-        lineWidth=-1.0,
-        stereotypesVisible=true,
-        nameVisible=true,
-        lineStyle=SIMPLE)
 }

@@ -23,6 +23,7 @@ import meta::pure::persistence::metamodel::persister::audit::*;
 import meta::pure::persistence::metamodel::persister::deduplication::*;
 import meta::pure::persistence::metamodel::persister::ingestmode::*;
 import meta::pure::persistence::metamodel::persister::ingestmode::delta::merge::*;
+import meta::pure::persistence::metamodel::persister::sink::*;
 import meta::pure::persistence::metamodel::persister::targetshape::*;
 import meta::pure::persistence::metamodel::persister::transactionmilestoning::*;
 import meta::pure::persistence::metamodel::persister::validitymilestoning::*;
@@ -106,8 +107,7 @@ Class
 {doc.doc = 'The strategy for persisting input data.'}
 meta::pure::persistence::metamodel::persister::Persister
 {
-   connection: Connection[0..1];
-   binding: Binding[0..1];
+   sink: Sink[1];
 }
 
 Class
@@ -154,6 +154,32 @@ Class
 meta::pure::persistence::metamodel::notifier::PagerDutyNotifyee extends Notifyee
 {
    url: String[1];
+}
+
+/**********
+ * sink
+ **********/
+
+Class
+<<typemodifiers.abstract>>
+{doc.doc = 'Runtime properties for the sink to which datsets will be persisted.'}
+meta::pure::persistence::metamodel::persister::sink::Sink
+{
+}
+
+Class
+{doc.doc = 'Runtime properties for relational sinks.'}
+meta::pure::persistence::metamodel::persister::sink::RelationalSink extends Sink
+{
+   connection: Connection[0..1];
+}
+
+Class
+{doc.doc = 'Runtime properties for object storage sinks.'}
+meta::pure::persistence::metamodel::persister::sink::ObjectStorageSink extends Sink
+{
+   connection: Connection[1];
+   binding: Binding[1];
 }
 
 /**********
