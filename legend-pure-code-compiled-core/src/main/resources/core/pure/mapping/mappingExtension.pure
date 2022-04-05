@@ -230,7 +230,7 @@ function meta::pure::router::analytics::getStoreFromSetImpl(set: SetImplementati
 
 
 
-function meta::pure::router::routing::findMappingsFromProperty(p:AbstractProperty<Any>[1], mapping:Mapping[1], sourceMappings:SetImplementation[*], state:RoutingState[1], extensions:meta::pure::router::extension::RouterExtension[*]):SetImplementation[*]
+function meta::pure::router::routing::findMappingsFromProperty(p:AbstractProperty<Any>[1], mapping:Mapping[1], sourceMappings:SetImplementation[*], state:RoutingState[1], executionContext:ExecutionContext[1], extensions:meta::pure::router::extension::RouterExtension[*]):SetImplementation[*]
 {
    let c = $p->functionReturnType().rawType->toOne();
    if ($c->instanceOf(DataType),
@@ -256,7 +256,7 @@ function meta::pure::router::routing::findMappingsFromProperty(p:AbstractPropert
                                                     |$classMappingsById
                                                  );,
                                                | let otherwiseTargetIds = $sourceMappings->filter(s|$s->instanceOf(OtherwiseEmbeddedSetImplementation))->cast(@OtherwiseEmbeddedSetImplementation).otherwisePropertyMapping.targetSetImplementationId;
-                                                 let classMappingsById = if ($otherwiseTargetIds->isEmpty(),|[],|findMappingsFromProperty($p, $mapping, $mapping._classMappingByIdRecursive($otherwiseTargetIds), $state, $extensions));
+                                                 let classMappingsById = if ($otherwiseTargetIds->isEmpty(),|[],|findMappingsFromProperty($p, $mapping, $mapping._classMappingByIdRecursive($otherwiseTargetIds), $state, $executionContext, $extensions));
                                                  if($classMappingsById->isEmpty(),
                                                     |$mapping.rootClassMappingByClass($c->cast(@Class<Any>))->potentiallyResolveOperation($mapping),
                                                     |$classMappingsById
@@ -271,14 +271,17 @@ function meta::pure::router::routing::findMappingsFromProperty(p:AbstractPropert
                           );
 
        // We don't find anything in the old flow (if the source is an operation and the target type is not directly mapped...
-       if ($classMapping->isEmpty(),
+       if($classMapping->isEmpty() && $executionContext->instanceOf(AllowNoMappingExecutionContext),
+          | [],
+          |
+       if($classMapping->isEmpty(),
           |let mappings = $state.classMappingsForClass($p->functionReturnType().rawType->toOne()->cast(@Class<Any>));
            if ($mappings->isEmpty() || $state.isDeepFetchRouting,
                |^EmbeddedSetImplementation(id='embdedded_todo', root=true, class=$p->functionReturnType().rawType->toOne()->cast(@Class<Any>), parent = $mapping, property=$p->cast(@Property<Nil,Any|*>), targetSetImplementationId='todo', sourceSetImplementationId='todo'),
                |$mappings
            );,
           |$classMapping
-       );
+       ));
    );
 }
 

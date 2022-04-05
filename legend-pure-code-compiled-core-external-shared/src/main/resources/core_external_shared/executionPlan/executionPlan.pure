@@ -13,11 +13,17 @@
 // limitations under the License.
 
 import meta::external::language::java::factory::*;
+import meta::pure::graphFetch::routing::*;
+import meta::pure::router::routing::*;
+import meta::pure::graphFetch::*;
+import meta::pure::runtime::*;
 import meta::external::language::java::factory::project::*;
 import meta::external::language::java::metamodel::*;
 import meta::external::language::java::metamodel::project::*;
 import meta::external::language::java::transform::*;
+import meta::external::shared::format::*;
 import meta::external::shared::format::binding::*;
+import meta::external::shared::format::binding::validation::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::executionPlan::engine::*;
 import meta::external::shared::format::metamodel::*;
@@ -27,26 +33,84 @@ import meta::pure::executionPlan::engine::java::*;
 import meta::pure::executionPlan::engine::java::naming::*;
 import meta::pure::executionPlan::engine::java::typeInfo::*;
 import meta::pure::executionPlan::toString::*;
+import meta::pure::functions::meta::*;
+import meta::pure::graphFetch::*;
+import meta::pure::lineage::scanProperties::*;
+import meta::pure::lineage::scanProperties::propertyTree::*;
 import meta::pure::metamodel::serialization::grammar::*;
+import meta::pure::model::unit::*;
 import meta::pure::router::extension::*;
 
-function meta::external::shared::format::executionPlan::createDataClassesProject(classes:meta::pure::metamodel::type::Class<Any>[*], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+
+function meta::external::shared::format::executionPlan::processValueSpecification(vs:ValueSpecification[1], inScopeVars : Map<String, List<Any>>[1], advancedRouting: Boolean[0..1], ext:RoutedValueSpecification[0..1], exeCtx:ExecutionContext[1], extensions : RouterExtension[*], debug:DebugContext[1]):ExecutionNode[0..1]
 {
-   print(if($debug.debug,|$debug.space+'('+$path+') createDataClassesProject\n', |''));
-   mergeProjects($classes->map(c| $c->createDataClass($path, $context, $debug->indent()))->toOneMany());
+   $vs->match([
+      f:SimpleFunctionExpression[1]         | if($f.func->in(internalizeFunctions()), | $f->internalizeFunctionProcessor($inScopeVars, $ext->cast(@ExtendedRoutedValueSpecification), $exeCtx, $debug), | $f.parametersValues->map(fe| $fe->processValueSpecification($inScopeVars, $advancedRouting, $ext, $exeCtx, $extensions, $debug))->toOne()),
+      e:ExtendedRoutedValueSpecification[1] | $e.value->processValueSpecification($inScopeVars, $advancedRouting, $ext, $exeCtx, $extensions, $debug),
+      i:InstanceValue[1]                    | [],
+      v:ValueSpecification[1]               | []
+   ]);
 }
 
-function meta::external::shared::format::executionPlan::generateDataTestProject(packageName:String[1], baseJavaPackage:String[1]): Project[1]
-{
-   let conventions = engineConventions(meta::external::shared::format::routerExtensions('externalFormat', []))->setBasePackageName($baseJavaPackage);
+function meta::external::shared::format::executionPlan::internalizeFunctionProcessor(fe:FunctionExpression[1], inScopeVars : Map<String, List<Any>>[1], ext:ExtendedRoutedValueSpecification[0..1], exeCtx:ExecutionContext[1], debug:DebugContext[1]):ExecutionNode[1]
+{  
+   let checked = $ext.checked->isTrue();
+   let graphFetchTree = $ext.graphFetchTree;
+   let enableConstraints        = $exeCtx.enableConstraints->isEmpty() || $exeCtx.enableConstraints->toOne();
+   let bindingArg      = $fe.parametersValues->at(0);
+   
+   assert($bindingArg->instanceOf(InstanceValue), 'Only literal binding is supported');
+   let binding         = $bindingArg->cast(@InstanceValue).values->cast(@Binding)->toOne();
 
-   let package   = $packageName->pathToElement()->cast(@Package);
-   let classes   = $package.children->filter(pe| $pe->instanceOf(meta::pure::metamodel::type::Class))->cast(@meta::pure::metamodel::type::Class<Any>);
-   let typeInfos = $classes->fold({c, ti| $ti->addForClass($c, true, true, false, true)}, newTypeInfoSet());
-   let context   = ^GenerationContext(typeInfos=$typeInfos, conventions=$conventions);
+   let classArg        = $fe.parametersValues->at(1);
+   assert($classArg->instanceOf(InstanceValue), 'Only literal class is supported');
+   let class         = $classArg->cast(@InstanceValue).values->cast(@meta::pure::metamodel::type::Class<Any>)->toOne();
 
-   let project = mergeProjects(generateTypes($context, noDebug())->concatenate($classes->map(c| $c->createDataClass('node', $context, noDebug())))->toOneMany());
-   newProject()->addClasses($project->allClasses()->map(cl | $cl->inferImports()));
+   let dataSource = if($fe.func.name == 'internalize_Binding_1__Class_1__String_1__T_MANY_',
+                      {|
+                        $fe.parametersValues->at(2)->match([
+                          {var:VariableExpression[1] | ^RuntimeVariable(variable=$var.name->toOne(), type=$var.genericType.rawType->toOne())},
+                          {ins:InstanceValue[1]      | ^StringConstant(data=$ins.values->cast(@String)->toOne())}
+                        ]);
+                      },
+                      |
+                    if($fe.func.name == 'internalize_Binding_1__Class_1__ByteStream_1__T_MANY_',
+                      {|
+                        $fe.parametersValues->at(2)->match([
+                          {var:VariableExpression[1] | ^RuntimeVariable(variable=$var.name->toOne(), type=$var.genericType.rawType->toOne())}
+                          // TODO Handle operations on ByteStream such as unzip
+                        ]);
+                      },
+                      |
+                    if($fe.func.name == 'internalize_Binding_1__Class_1__Url_1__T_MANY_',
+                      {|
+                        assert($fe.parametersValues->at(2)->instanceOf(SimpleFunctionExpression), 'Url must be created using new (^)');
+                        let new = $fe.parametersValues->at(2)->cast(@SimpleFunctionExpression);
+                        assert($new.func.name == 'new_Class_1__String_1__KeyExpression_MANY__T_1_', 'Url must be created using new (^)');
+                        let url = $new.parametersValues->at(2)->cast(@InstanceValue).values
+                          ->cast(@KeyExpression)
+                          ->filter(kv|$kv.key.values == 'url')
+                          ->toOne().expression;
+                        $url->match([
+                          {var:VariableExpression[1] | ^RuntimeVariable(variable=$var.name->toOne(), type=Url)},
+                          {ins:InstanceValue[1]      | ^UrlConstant(url=$ins.values->cast(@String)->toOne())}
+                        ]);
+                      },
+                      {|
+                        fail('Unknown internalize funtion: ' + $fe.func.name->toOne());
+                        ^StringConstant(data='');
+                      }
+                    )));
+
+   ^InternalizeExecutionNode(
+      resultType      = ^ClassResultType(type=$class),
+      resultSizeRange = ZeroMany,
+      dataSource      = $dataSource,
+      binding         = $binding,
+      enableConstraints = $enableConstraints,
+      checked           = $checked,
+      graphFetchTree    = $graphFetchTree
+   );
 }
 
 function meta::external::shared::format::executionPlan::generateDataQualityNode(deserializeNode:ExecutionNode[1], enableConstraints:Boolean[1], checked:Boolean[1]): ExecutionNode[1]
@@ -105,8 +169,155 @@ function meta::external::shared::format::executionPlan::printPlanNodeToString(sp
          $space + '  url = ' + $node.url + '\n' +
          $node->childrenToString($space+'  ', $extensions) + '\n' +
          $space + ')\n'
+      },
+      {node:InternalizeExecutionNode[1] |
+         'Internalize\n' +
+         $space + '(' + header($node, $space, $extensions) + '\n' +
+         $space + '  binding = ' + $node.binding->elementToPath() + '[' + $node.binding.contentType + ']\n' +
+         $space + '  enableConstraints = ' + $node.enableConstraints->toString() + '\n' +
+         $space + '  checked = ' + $node.checked->toString() + '\n' +
+         if($node.graphFetchTree->isEmpty(), | '', | $space + '  graphFetchTree = ' + $node.graphFetchTree->toOne()->sortTree()->asString(true)->replace('\n', '')->replace(' ', '') + '\n') +
+         $space + '  dataSource = ' + $node.dataSource->match([
+           url:UrlConstant[1]     | 'URL: '+$url.url,
+           str:StringConstant[1]  | 'Data: '+$str.data->substring(0,min($str.data->length(), 100))->replace('\n', '\\n')->replace('\r', '\\r')+if($str.data->length()>100, |'...', |''),
+           var:RuntimeVariable[1] | '$'+$var.variable+' of type '+$var.type.name->toOne()
+         ]) + '\n' +
+         if($node.executionNodes->isEmpty(), |'', |$node->childrenToString($space+'  ', $extensions) + '\n') +
+         $node.implementation->printImplementation('implementation', $space+'  ', $extensions) +
+         $space + ')\n'
       }
    ]
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Java binding
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+function meta::external::shared::format::executionPlan::planJavaPrepare(path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], externalFormatExtensions:ExternalFormatExtension[*], debug:DebugContext[1]): Function<{Nil[1]->GenerationContext[1]}>[*]
+{
+  [node:InternalizeExecutionNode[1]   | prepareForInternalize($node, $path, $context, $extensions, $externalFormatExtensions, $debug),
+   node:DataQualityExecutionNode[1]   | prepareForDataQuality($node, $path, $context, $extensions, $externalFormatExtensions, $debug)]
+}
+
+function meta::external::shared::format::executionPlan::planJavaGenerate(path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], externalFormatExtensions:ExternalFormatExtension[*], debug:DebugContext[1]): Function<{Nil[1]->GeneratedCode[1]}>[*]
+{
+  node:InternalizeExecutionNode[1]   | generateForInternalize($node, $path, $context, $extensions, $debug)
+}
+
+function <<access.private>> meta::external::shared::format::executionPlan::prepareForDataQuality(node:DataQualityExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], externalFormatExtensions:ExternalFormatExtension[*], debug:DebugContext[1]): GenerationContext[1]
+{
+  print(if($debug.debug,|$debug.space+'('+$path+') prepare DataQualityExecutionNode\n', |''));
+
+  let conventions     = $context.conventions;
+
+  let childInfo    = $context->childNodeInfosForPath($path)->toOne();
+
+  let class       = $node.resultType->cast(@ClassResultType).type->cast(@meta::pure::metamodel::type::Class<Any>);
+  let simpleType  = ^SimpleJavaType(pureType=$class, javaType=$conventions->className($class));  
+  let returnType  = if($node.checked && $childInfo.returnType->instanceOf(CheckedJavaType),
+                       | $childInfo.returnType,
+                       |
+                    if($node.checked,                       
+                       | ^CheckedJavaType(checkedOf=$simpleType, source=$childInfo.returnType),
+                       | ^SimpleJavaType(pureType=$class, javaType=$conventions->className($class))
+                    ));
+
+  let nodeInfo = ^NodeInfo(
+    path            = $path,
+    graphFetchTrees = $childInfo.graphFetchTrees,
+    returnType      = $returnType
+  );
+
+  $context
+    ->addNodeInfo($nodeInfo);
+}
+
+function <<access.private>> meta::external::shared::format::executionPlan::prepareForInternalize(node:InternalizeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], externalFormatExtensions:ExternalFormatExtension[*], debug:DebugContext[1]): GenerationContext[1]
+{
+  print(if($debug.debug,|$debug.space+'('+$path+') prepare InternalizeExecutionNode\n', |''));
+
+  let conventions     = $context.conventions;
+  let formatExtension = $externalFormatExtensions->getExtensionForContentType($node.binding.contentType);
+  let details         = $formatExtension.getInternalizeDetails->eval($node.binding, $debug);
+
+  let class       = $node.resultType->cast(@ClassResultType).type->cast(@meta::pure::metamodel::type::Class<Any>);
+  let simpleType  = ^SimpleJavaType(pureType=$class, javaType=$conventions->className($class));  
+  let returnType  = if($node.checked, | ^CheckedJavaType(checkedOf = $simpleType, source=^SimpleJavaType(pureType=$details.sourceRecordClass, javaType=$conventions->className($details.sourceRecordClass))), | $simpleType);
+   
+  let resolvedModel = $node.binding.modelUnit->resolve();
+  let tree = $node.graphFetchTree;
+   
+  let typeInfosFromBinding = $context.typeInfos
+    ->map(ti| $resolvedModel.classes     ->fold({cl, ti| $ti->addForClassWithAllProperties($cl)}, $ti))
+    ->map(ti| $resolvedModel.enumerations->fold({en, ti| $ti->addForType($en)},                   $ti))
+    ->map(ti| $ti->addForClassWithAllProperties($details.sourceRecordClass));
+
+  let newTypeInfos = if($tree->isEmpty(), 
+                        | $typeInfosFromBinding->addConstraints($class),
+                        | $typeInfosFromBinding->addConstraintsForGraphFetchTree($tree->toOne())
+                        );
+
+  let nodeInfo = ^NodeInfo(
+    path            = $path,
+    returnType      = $returnType,
+    graphFetchTrees = $details.graphFetchTrees,
+    data            = $details
+  );
+
+  $context
+    ->setTypeInfos($newTypeInfos)
+    ->addNodeInfo($nodeInfo);
+}
+
+function <<access.private>> meta::external::shared::format::executionPlan::generateForInternalize(node:InternalizeExecutionNode[1], path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1]): GeneratedCode[1]
+{
+   print(if($debug.debug,|$debug.space+'('+$path+') generate InternalizeExecutionNode\n', |''));
+   let details = $context->nodeInfosForPath($path).data->toOne()->cast(@InternalizeDetails);
+   
+   assert($details.bindingDetail->instanceOf(SuccessfulBindingDetail), | 'Detailed binding failed: ' + $details.bindingDetail->cast(@FailedBindingDetail).errorMessages->joinStrings('\n'));
+   let bindingDetail = $details.bindingDetail->cast(@SuccessfulBindingDetail);
+   
+   let pureClass = $node.resultType.type->cast(@meta::pure::metamodel::type::Class<Any>)->toOne();
+   let dependentClass = $context.typeInfos->classDependenciesViaPropertiesWithsubTypes($pureClass);
+   
+   let mainClassProject = $pureClass->createDataClassesProject($bindingDetail, $path, $context, ^ConstraintCheckingGenerationContext(enableConstraints=$node.enableConstraints, topLevelOnly=$node.graphFetchTree->isEmpty(), graphFetchTree=$node.graphFetchTree), $debug->indent());
+   let project = if($dependentClass->isEmpty(), 
+                    | $mainClassProject, 
+                    | $mainClassProject->concatenate($dependentClass->createDataClassesProject($bindingDetail, $path, $context, ^ConstraintCheckingGenerationContext(enableConstraints=false, topLevelOnly=false), $debug->indent()))
+                    );
+   
+   let generatedCode = $details.generator->eval($node, $path, $context, $extensions, $debug);
+
+   let allProjects = $generatedCode.project
+      ->concatenate($project)
+      ->toOneMany(); 
+   ^$generatedCode(project = $allProjects->mergeProjects());
+}
+
+function meta::external::shared::format::executionPlan::createDataClassesProject(classes:meta::pure::metamodel::type::Class<Any>[*], bindingDetail:SuccessfulBindingDetail[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+{
+   createDataClassesProject($classes, $bindingDetail, $path, $context, ^ConstraintCheckingGenerationContext(enableConstraints=true, topLevelOnly=false), $debug)
+}
+
+function meta::external::shared::format::executionPlan::createDataClassesProject(classes:meta::pure::metamodel::type::Class<Any>[*], bindingDetail:SuccessfulBindingDetail[1], path:String[1], context:GenerationContext[1], constraintContext:ConstraintCheckingGenerationContext[1], debug:DebugContext[1]): Project[1]
+{
+   print(if($debug.debug,|$debug.space+'('+$path+') createDataClassesProject\n', |''));
+   mergeProjects($classes->map(c| $c->createDataClass($bindingDetail, $path, $context, $constraintContext, $debug->indent()))->toOneMany());
+}
+
+function meta::external::shared::format::executionPlan::generateDataTestProject(packageName:String[1], baseJavaPackage:String[1]): Project[1]
+{
+   let conventions = engineConventions(meta::external::shared::format::routerExtensions('externalFormat', []))->setBasePackageName($baseJavaPackage);
+
+   let package   = $packageName->pathToElement()->cast(@Package);
+   let classes   = $package.children->filter(pe| $pe->instanceOf(meta::pure::metamodel::type::Class))->cast(@meta::pure::metamodel::type::Class<Any>);
+   let typeInfos = $classes->fold({c, ti| $ti->addForClass($c, true, true, false, true)}, newTypeInfoSet());
+   let context   = ^GenerationContext(typeInfos=$typeInfos, conventions=$conventions);
+
+   let bindingDetail = ^SuccessfulBindingDetail(fetchMappedPropertiesForClass={c:meta::pure::metamodel::type::Class<Any>[1]| $typeInfos->allProperties($c)});
+
+   let project = mergeProjects(generateTypes($context, noDebug())->concatenate($classes->map(c| $c->createDataClass($bindingDetail, 'node', $context, noDebug())))->toOneMany());
+   newProject()->addClasses($project->allClasses()->map(cl | $cl->inferImports()));
 }
 
 Class <<access.private>> meta::external::shared::format::executionPlan::PropertyDetails
@@ -126,7 +337,12 @@ Class <<access.private>> meta::external::shared::format::executionPlan::Property
    isViaAssociation() {$this.property.owner->instanceOf(Association)}: Boolean[1];
 }
 
-function meta::external::shared::format::executionPlan::createDataClass(class:meta::pure::metamodel::type::Class<Any>[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+function meta::external::shared::format::executionPlan::createDataClass(class:meta::pure::metamodel::type::Class<Any>[1], bindingDetail:SuccessfulBindingDetail[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): Project[1]
+{
+   createDataClass($class, $bindingDetail, $path, $context, ^ConstraintCheckingGenerationContext(enableConstraints=true, topLevelOnly=false), $debug)   
+}
+
+function meta::external::shared::format::executionPlan::createDataClass(class:meta::pure::metamodel::type::Class<Any>[1], bindingDetail:SuccessfulBindingDetail[1], path:String[1], context:GenerationContext[1], constraintContext:ConstraintCheckingGenerationContext[1], debug:DebugContext[1]): Project[1]
 {
    print(if($debug.debug,|$debug.space+'('+$path+') createDataClass for '+$class->elementToPath()+'\n', |''));
    
@@ -134,9 +350,7 @@ function meta::external::shared::format::executionPlan::createDataClass(class:me
    let pureDate    = $conventions->className(PureDate);
    let defects     = j_variable(javaList($conventions->defectClass()), 'defects');
 
-   let mappedProperties = if(!$context->nodeInfosForPath($path).data->isEmpty(),
-                             |$context->nodeInfosForPath($path).data->toOne()->cast(@meta::external::shared::format::binding::validation::SuccessfulBindingDetail).mappedPropertiesForClass($class),
-                             |$context.typeInfos->allProperties($class));
+   let mappedProperties = $bindingDetail.mappedPropertiesForClass($class);
 
    let baseClass = $conventions->dataClass($class, $path)->addModifiers('public')
       ->implements($conventions->className($class))
@@ -286,7 +500,7 @@ function meta::external::shared::format::executionPlan::createDataClass(class:me
         })
       ->addAlloyStoreObjectReferenceMethodsForClass($context);
 
-   let constraintChecking = $dataClass->createConstraintCheckingForClass($class, $context, $debug);
+   let constraintChecking = if($constraintContext.enableConstraints, | $dataClass->createConstraintCheckingForClass($class, $path, $context, $constraintContext, $debug), | newProject());
    let instanceSizing     = $dataClass->updateImplementationClassWithInstanceSizeMethods($context);
    mergeProjects(newProject()->concatenate([$constraintChecking, $instanceSizing])->toOneMany());
 }
@@ -386,12 +600,6 @@ function <<access.private>> meta::external::shared::format::executionPlan::adder
    );
 }
 
-function meta::external::shared::format::executionPlan::dataClass(conventions:Conventions[1], class:meta::pure::metamodel::type::Class<Any>[1], path:String[1]): meta::external::language::java::metamodel::Class[1]
-{
-  $conventions->planNodeClass([], $path, $conventions->identifier($class->elementToPath('_')) + '_Impl');
-}
-
-
 function meta::external::shared::format::executionPlan::occursFromMultiplicity(mult:Multiplicity[1]): Pair<Code, Code>[1]
 {
    if($mult == PureOne,
@@ -417,4 +625,3 @@ function meta::external::shared::format::executionPlan::printConnection(extensio
       }
    ];
 }
-

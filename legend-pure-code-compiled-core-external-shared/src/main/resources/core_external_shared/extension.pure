@@ -13,9 +13,13 @@
 // limitations under the License.
 
 import meta::external::language::java::factory::*;
+import meta::pure::store::*;
+import meta::pure::router::clustering::*;
+import meta::pure::router::routing::*;
 import meta::external::language::java::transform::*;
 import meta::external::shared::format::*;
 import meta::external::shared::format::binding::*;
+import meta::external::shared::format::binding::validation::*;
 import meta::external::shared::format::executionPlan::*;
 import meta::external::shared::format::router::extension::*;
 import meta::external::shared::runtime::*;
@@ -37,7 +41,7 @@ function meta::external::shared::format::routerExtensions(type:String[1], extern
       type = $type,
       plan_javaRuntime_enginePlatformDependencies_conventions = meta::external::shared::format::executionPlan::engine::extendJavaEngineDependencies_Conventions_1__Conventions_1_,
       serializerExtension      = meta::external::shared::format::serializerExtensionName_String_1__String_1_,
-      routing_extraShouldStop  = serializeFunctions(),
+      routing_extraShouldStop  = bindingRouterFunctions(),
       executionPlan_generation_isConnectionForClass =
          {class:Class<Any>[1] |
             [
@@ -75,12 +79,13 @@ function meta::external::shared::format::routerExtensions(type:String[1], extern
          },
       plan_javaRuntime_main_prepare2 = 
          {path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] |
-            planPrepareDataQuality($path, $context, $extensions, $debug)
+            planJavaPrepare($path, $context, $extensions, $externalFormatExtensions, $debug)
                ->concatenate($externalFormatExtensions.planJavaPrepare->map(x|$x->eval($path, $context, $extensions, $debug)));
          },
       plan_javaRuntime_main_generatePlatformCode1 = 
          {path:String[1], context:GenerationContext[1], extensions:RouterExtension[*], debug:DebugContext[1] |
-            $externalFormatExtensions.planJavaGenerate->map(x|$x->eval($path, $context, $extensions, $debug));
+            planJavaGenerate($path, $context, $extensions, $externalFormatExtensions, $debug)
+              ->concatenate($externalFormatExtensions.planJavaGenerate->map(x|$x->eval($path, $context, $extensions, $debug)));
          },
       moduleExtensions = [
          ^ExternalFormatModuleExtension(
@@ -96,11 +101,46 @@ function meta::external::shared::format::routerExtensions(type:String[1], extern
                                                                   $formatExtension.generateSerializeNode->eval($checked, $binding, $children);
                                                              }
          ),
-       ^PlatformStoreExtension(module = 'platform',
-                               routing_extraIsSerialize = isSerialize_FunctionExpression_1__Boolean_1_,
-                               executionPlan_generation_nodeForFunctionExpression = executionPlan_generation_nodeForPlatformFunctionExpression($externalFormatExtensions)
-                              )
-      ]
+         ^PlatformStoreExtension(module = 'platform',
+                                 routing_extraIsSerialize = isSerialize_FunctionExpression_1__Boolean_1_,
+                                 executionPlan_generation_nodeForFunctionExpression = executionPlan_generation_nodeForPlatformFunctionExpression($externalFormatExtensions)
+                                )
+      ],
+      routing_routeFunctionExpressionFunctionDefinition = pair(
+         fe:FunctionExpression[1] | $fe.func->in(internalizeFunctions()) ,
+         {fe:FunctionExpression[1], state:RoutingState[1], runtime : Runtime[1], mapping: Mapping[1], executionContext:ExecutionContext[1] |
+            let newSet = ^InternalizeSetImplementation(id = 'Internalize',
+                                                       root = true,
+                                                       class = $fe.genericType.rawType->cast(@Class<Any>)->toOne(),
+                                                       parent = $mapping);
+
+            let routed = ^ExtendedRoutedValueSpecification(genericType = $fe.genericType,
+                                                       multiplicity = $fe.multiplicity,
+                                                       id = 'Internalize',
+                                                       runtime = $runtime,
+                                                       mapping = $mapping,
+                                                       executionContext = $executionContext,
+                                                       checked = $state.checked,
+                                                       graphFetchTree = $state.graphFetchTree,
+                                                       sets = $newSet,
+                                                       value = $fe);
+            ^$state(value = $routed);}
+      ),
+      cluster_cluster_ExtendedRoutedValueSpecification = {r:ExtendedRoutedValueSpecification[1], openVariables:Map<String, List<Any>>[1], mapping:Mapping[1] |
+                                                                                    {isi:InternalizeSetImplementation[*]|
+                                                                                       let bindingArg = $r.value->cast(@SimpleFunctionExpression).parametersValues->at(0);
+                                                                                       assert($bindingArg->instanceOf(InstanceValue), 'Only literal binding is supported');
+                                                                                       let binding = $bindingArg->cast(@InstanceValue).values->cast(@Binding)->toOne();
+                                                                                       ^ClusteredValueSpecification(
+                                                                                          genericType  = $r.genericType,
+                                                                                          multiplicity = $r.multiplicity,
+                                                                                          s = meta::external::shared::format::router::systemMapping::internalizeSystemMapping(),
+                                                                                          store = ^InternalizeStore(name = $binding.name->toOne()+'Store', package = $binding.package, binding = $binding),
+                                                                                          openVars = $openVariables,
+                                                                                          val = $r,
+                                                                                          exeCtx = $r.executionContext,
+                                                                                          executable = false
+                                                                                       );}}
    );
 
    let perFormat = $externalFormatExtensions->map(formatExt| ^RouterExtension(type                                                    = $type+':'+$formatExt.externalFormat, 
@@ -113,9 +153,10 @@ function meta::external::shared::format::routerExtensions(type:String[1], extern
 
 function <<access.private>> meta::external::shared::format::executionPlan_generation_nodeForPlatformFunctionExpression(externalFormatExtensions:ExternalFormatExtension[*]): PureFunctionToProcessFunctionPair[*]
 {
-   let processor = {fe:FunctionExpression[1], runtime:Runtime[0..1], inScopeVars : Map<String, List<Any>>[1], advancedRouting: Boolean[0..1], exeCtx:ExecutionContext[1], extensions : RouterExtension[*], debug:DebugContext[1] |
-                         externalizeFunctionProcessor($fe, $runtime, $inScopeVars, $advancedRouting, $exeCtx, $extensions, $externalFormatExtensions, $debug);};
-   serializeFunctions()->map(func | ^PureFunctionToProcessFunctionPair(first = $func, second = $processor));
+   let externalizer  = {fe:FunctionExpression[1], runtime:Runtime[0..1], inScopeVars : Map<String, List<Any>>[1], advancedRouting: Boolean[0..1], exeCtx:ExecutionContext[1], extensions : RouterExtension[*], debug:DebugContext[1] |
+                         externalizeFunctionProcessor($fe, $runtime, $inScopeVars, $advancedRouting, $exeCtx, $extensions, $externalFormatExtensions, $debug);
+                       };
+   externalizeFunctions()->map(func | ^PureFunctionToProcessFunctionPair(first = $func, second = $externalizer));
 }
 
 function <<access.private>> meta::external::shared::format::externalizeFunctionProcessor(fe:FunctionExpression[1], runtime:Runtime[0..1], inScopeVars : Map<String, List<Any>>[1], advancedRouting: Boolean[0..1], exeCtx:ExecutionContext[1], extensions : RouterExtension[*], externalFormatExtensions:ExternalFormatExtension[*], debug:DebugContext[1]):ExecutionNode[1]
@@ -135,14 +176,14 @@ function <<access.private>> meta::external::shared::format::serializerExtensionN
    'meta::protocols::pure::' + $version + '::external::shared::format::serializerExtension_String_1__SerializerExtension_1_'
 }
 
-function <<access.private>> meta::external::shared::format::getExtensionForContentType(externalFormatExtensions:ExternalFormatExtension[*], contentType:String[1]): ExternalFormatExtension[1]
+function meta::external::shared::format::getExtensionForContentType(externalFormatExtensions:ExternalFormatExtension[*], contentType:String[1]): ExternalFormatExtension[1]
 {
    let formatExtension = $externalFormatExtensions->filter(ext| $ext.contentType == $contentType);
    assert($formatExtension->size() == 1, | 'Expected to find 1 extension for ' + $contentType + ', found ' + $formatExtension->size()->toString());
    $formatExtension->toOne();
 }
 
-function <<access.private>> meta::external::shared::format::getExtensionForFormat(externalFormatExtensions:ExternalFormatExtension[*], format:String[1]): ExternalFormatExtension[1]
+function meta::external::shared::format::getExtensionForFormat(externalFormatExtensions:ExternalFormatExtension[*], format:String[1]): ExternalFormatExtension[1]
 {
    let formatExtension = $externalFormatExtensions->filter(ext| $ext.externalFormat == $format);
    assert($formatExtension->size() == 1, | 'Expected to find 1 extension for ' + $format + ', found ' + $formatExtension->size()->toString());
@@ -159,9 +200,19 @@ Class meta::external::shared::format::ExternalFormatExtension
    generatePathReference   : Function<{Path<Nil,Any|*>[1] -> PathReference[1]}>[0..1];
    printPlanNodeToString   : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[1];
    
+   getInternalizeDetails   : Function<{Binding[1], DebugContext[1] -> InternalizeDetails[1]}>[1];
    planJavaPrepare         : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GenerationContext[1]}>[*]}>[1];
    planJavaGenerate        : Function<{String[1], GenerationContext[1], RouterExtension[*], DebugContext[1] -> Function<{Nil[1]->GeneratedCode[1]}>[*]}>[1];
    plan_javaRuntime_enginePlatformDependencies_conventions : Function<{Conventions[1]->Conventions[1]}>[0..1];
 
    serializerExtension     : Function<{String[1]->String[1]}>[1];
+}
+
+Class meta::external::shared::format::InternalizeSetImplementation extends SetImplementation
+{
+}
+
+Class meta::external::shared::format::InternalizeStore extends meta::pure::store::Store
+{
+    binding : Binding[1];
 }

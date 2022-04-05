@@ -50,13 +50,13 @@ function meta::pure::executionPlan::tests::templateFunctionsList():String[*]
 function meta::pure::executionPlan::tests::assertPlanGenerationForOptionalParameter(dbType:DatabaseType[1], expectedPlan:String[1]):Boolean[1]
 {
    let generatedPlan = executionPlan({optionalID: String[0..1], optionalActive: Boolean[0..1]|Interaction.all()->filter(i|$i.id==$optionalID && $i.active==$optionalActive)->project(col(i|$i.time, 'Time'))}, simpleRelationalMapping, ^Runtime(connections=^DatabaseConnection(element = relationalDB, type=$dbType)), meta::pure::router::extension::defaultRelationalExtensions());
-   let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions()); 
+   let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions());
    assertEquals($expectedPlan, $result);
    assertSameElements(templateFunctionsList(),$generatedPlan.processingTemplateFunctions);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_SybaseIQ():Boolean[1]      
-{  
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_SybaseIQ():Boolean[1]
+{
    let expectedPlan ='Sequence\n'+
                      '(\n'+
                      '  type = TDS[(Time, Integer, INT, "")]\n'+
@@ -74,11 +74,11 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '    )\n'+
                      '  )\n'+
                      ')\n';
-   
-   assertPlanGenerationForOptionalParameter(DatabaseType.SybaseIQ, $expectedPlan);                     
+
+   assertPlanGenerationForOptionalParameter(DatabaseType.SybaseIQ, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_DB2():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_DB2():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -97,11 +97,11 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '    )\n'+
                      '  )\n'+
                      ')\n';
-                                   
+
    assertPlanGenerationForOptionalParameter(DatabaseType.DB2, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Sybase():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Sybase():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -119,12 +119,12 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '      connection = DatabaseConnection(type = "Sybase")\n'+
                      '    )\n'+
                      '  )\n'+
-                     ')\n'; 
-   
-   assertPlanGenerationForOptionalParameter(DatabaseType.Sybase, $expectedPlan); 
+                     ')\n';
+
+   assertPlanGenerationForOptionalParameter(DatabaseType.Sybase, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_MemSQL():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_MemSQL():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -142,12 +142,12 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '      connection = DatabaseConnection(type = "MemSQL")\n'+
                      '    )\n'+
                      '  )\n'+
-                     ')\n'; 
-   
+                     ')\n';
+
    assertPlanGenerationForOptionalParameter(DatabaseType.MemSQL, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Snowflake():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Snowflake():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -166,11 +166,11 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '    )\n'+
                      '  )\n'+
                      ')\n';
-   
+
    assertPlanGenerationForOptionalParameter(DatabaseType.Snowflake, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Presto():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Presto():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -189,11 +189,11 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '    )\n'+
                      '  )\n'+
                      ')\n';
-   
+
    assertPlanGenerationForOptionalParameter(DatabaseType.Presto, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_SqlServer():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_SqlServer():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -212,11 +212,11 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '    )\n'+
                      '  )\n'+
                      ')\n';
-   
+
    assertPlanGenerationForOptionalParameter(DatabaseType.SqlServer, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Redshift():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Redshift():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -235,11 +235,11 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '    )\n'+
                      '  )\n'+
                      ')\n';
-   
+
    assertPlanGenerationForOptionalParameter(DatabaseType.Redshift, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_BigQuery():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_BigQuery():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -257,12 +257,12 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '      connection = DatabaseConnection(type = "BigQuery")\n'+
                      '    )\n'+
                      '  )\n'+
-                     ')\n'; 
-   
+                     ')\n';
+
    assertPlanGenerationForOptionalParameter(DatabaseType.BigQuery, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Composite():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Composite():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -281,11 +281,11 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '    )\n'+
                      '  )\n'+
                      ')\n';
-   
+
    assertPlanGenerationForOptionalParameter(DatabaseType.Composite, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Hive():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Hive():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -304,11 +304,11 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '    )\n'+
                      '  )\n'+
                      ')\n';
-   
+
    assertPlanGenerationForOptionalParameter(DatabaseType.Hive, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Postgres():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_Postgres():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -327,11 +327,11 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '    )\n'+
                      '  )\n'+
                      ')\n';
-   
+
    assertPlanGenerationForOptionalParameter(DatabaseType.Postgres, $expectedPlan);
 }
 
-function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_H2():Boolean[1]      
+function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_H2():Boolean[1]
 {
    let expectedPlan ='Sequence\n'+
                      '(\n'+
@@ -350,7 +350,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                      '    )\n'+
                      '  )\n'+
                      ')\n';
-   
+
    assertPlanGenerationForOptionalParameter(DatabaseType.H2, $expectedPlan);
 }
 
@@ -385,7 +385,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
    let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions());
    let expected = 'Sequence\n'+
                   '(\n'+
-                  '  type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]\n'+
+                  '  type = Class[Order:impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]\n'+
                   '  resultSizeRange = *\n'+
                   '  (\n'+
                   '    FunctionParametersValidationNode\n'+
@@ -394,7 +394,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                   '    )\n'+
                   '    Relational\n'+
                   '    (\n'+
-                  '      type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]\n'+
+                  '      type = Class[Order:impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]\n'+
                   '      resultSizeRange = *\n'+
                   '      resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]\n'+
                   '      sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where (${optionalVarPlaceHolderOperationSelector(optionalPnl![], \'"orderPnlView_d#2_d#2_m5".pnl = ${varPlaceHolderToString(optionalPnl![]  "" "" "null")}\', \'"orderPnlView_d#2_d#2_m5".pnl is null\')})\n'+
@@ -413,7 +413,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
    let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions());
    let expected = 'Sequence\n'+
                   '(\n'+
-                  '  type = Class[impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
+                  '  type = Class[Person:impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
                   '  resultSizeRange = *\n'+
                   '  (\n'+
                   '    FunctionParametersValidationNode\n'+
@@ -422,7 +422,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                   '    )\n'+
                   '    Relational\n'+
                   '    (\n'+
-                  '      type = Class[impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
+                  '      type = Class[Person:impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
                   '      resultSizeRange = *\n'+
                   '      resultColumns = [("pk_0", INT), ("firstName", VARCHAR(200)), ("age", INT), ("lastName", VARCHAR(200))]\n'+
                   '      sql = select "root".ID as "pk_0", "root".FIRSTNAME as "firstName", "root".AGE as "age", "root".LASTNAME as "lastName" from personTable as "root" where (${optionalVarPlaceHolderOperationSelector(optionalAge![], \'"root".AGE = ${varPlaceHolderToString(optionalAge![]  "" "" "null")}\', \'"root".AGE is null\')})\n'+
@@ -442,7 +442,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
    let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions());
    let expected = 'Sequence\n'+
                   '(\n'+
-                  '  type = Class[impls=(meta::relational::tests::model::simple::Location | simpleRelationalMappingInc.meta_relational_tests_model_simple_Location)]\n'+
+                  '  type = Class[Location:impls=(meta::relational::tests::model::simple::Location | simpleRelationalMappingInc.meta_relational_tests_model_simple_Location)]\n'+
                   '  resultSizeRange = *\n'+
                   '  (\n'+
                   '    FunctionParametersValidationNode\n'+
@@ -451,7 +451,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                   '    )\n'+
                   '    Relational\n'+
                   '    (\n'+
-                  '      type = Class[impls=(meta::relational::tests::model::simple::Location | simpleRelationalMappingInc.meta_relational_tests_model_simple_Location)]\n'+
+                  '      type = Class[Location:impls=(meta::relational::tests::model::simple::Location | simpleRelationalMappingInc.meta_relational_tests_model_simple_Location)]\n'+
                   '      resultSizeRange = *\n'+
                   '      resultColumns = [("pk_0", INT), ("place", VARCHAR(200)), ("censusdate", DATE)]\n'+
                   '      sql = select "root".ID as "pk_0", "root".PLACE as "place", "root".date as "censusdate" from locationTable as "root" where (${optionalVarPlaceHolderOperationSelector(optionalCensusDate![], \'"root".date = ${varPlaceHolderToString(optionalCensusDate![]  "\\\'" "\\\'" "null")}\', \'"root".date is null\')})\n'+
@@ -472,7 +472,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
    let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions());
    let expected = 'Sequence\n'+
                   '(\n'+
-                  '  type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]\n'+
+                  '  type = Class[Order:impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]\n'+
                   '  resultSizeRange = *\n'+
                   '  (\n'+
                   '    FunctionParametersValidationNode\n'+
@@ -481,7 +481,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOpt
                   '    )\n'+
                   '    Relational\n'+
                   '    (\n'+
-                  '      type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]\n'+
+                  '      type = Class[Order:impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]\n'+
                   '      resultSizeRange = *\n'+
                   '      resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]\n'+
                   '      sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where (${optionalVarPlaceHolderOperationSelector(optionalSettlementDateTime![], \'"root".settlementDateTime = ${varPlaceHolderToString(optionalSettlementDateTime![]  "\\\'" "\\\'" "null")}\', \'"root".settlementDateTime is null\')})\n'+
@@ -511,7 +511,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithTwo
    let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions());
    let expected = 'Sequence\n'+
                   '(\n'+
-                  '  type = Class[impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
+                  '  type = Class[Address:impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
                   '  resultSizeRange = *\n'+
                   '  (\n'+
                   '    FunctionParametersValidationNode\n'+
@@ -520,7 +520,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithTwo
                   '    )\n'+
                   '    Relational\n'+
                   '    (\n'+
-                  '      type = Class[impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
+                  '      type = Class[Address:impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
                   '      resultSizeRange = *\n'+
                   '      resultColumns = [("pk_0", INT), ("name", VARCHAR(200)), ("street", VARCHAR(100)), ("type", INT), ("comments", VARCHAR(100))]\n'+
                   '      sql = select "root".ID as "pk_0", "root".NAME as "name", "root".STREET as "street", "root".TYPE as "type", "root".COMMENTS as "comments" from addressTable as "root" where (${optionalVarPlaceHolderOperationSelector(optionalLeft![], optionalVarPlaceHolderOperationSelector(optionalRight![], \'${varPlaceHolderToString(optionalLeft![]  "\\\'" "\\\'" "null")} = ${varPlaceHolderToString(optionalRight![]  "\\\'" "\\\'" "null")}\', \'1 = 0\'), optionalVarPlaceHolderOperationSelector(optionalRight![], \'1 = 0\', \'1 = 1\'))})\n'+
@@ -538,7 +538,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithTwo
    let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions());
    let expected = 'Sequence\n'+
                   '(\n'+
-                  '  type = Class[impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
+                  '  type = Class[Address:impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
                   '  resultSizeRange = *\n'+
                   '  (\n'+
                   '    FunctionParametersValidationNode\n'+
@@ -547,7 +547,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithTwo
                   '    )\n'+
                   '    Relational\n'+
                   '    (\n'+
-                  '      type = Class[impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
+                  '      type = Class[Address:impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
                   '      resultSizeRange = *\n'+
                   '      resultColumns = [("pk_0", INT), ("name", VARCHAR(200)), ("street", VARCHAR(100)), ("type", INT), ("comments", VARCHAR(100))]\n'+
                   '      sql = select "root".ID as "pk_0", "root".NAME as "name", "root".STREET as "street", "root".TYPE as "type", "root".COMMENTS as "comments" from addressTable as "root" where (${optionalVarPlaceHolderOperationSelector(optionalIntLeft![], optionalVarPlaceHolderOperationSelector(optionalIntRight![], \'${varPlaceHolderToString(optionalIntLeft![]  "" "" "null")} = ${varPlaceHolderToString(optionalIntRight![]  "" "" "null")}\', \'1 = 0\'), optionalVarPlaceHolderOperationSelector(optionalIntRight![], \'1 = 0\', \'1 = 1\'))})\n'+
@@ -565,7 +565,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithTwo
    let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions());
    let expected = 'Sequence\n'+
                   '(\n'+
-                  '  type = Class[impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
+                  '  type = Class[Address:impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
                   '  resultSizeRange = *\n'+
                   '  (\n'+
                   '    FunctionParametersValidationNode\n'+
@@ -574,7 +574,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithTwo
                   '    )\n'+
                   '    Relational\n'+
                   '    (\n'+
-                  '      type = Class[impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
+                  '      type = Class[Address:impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
                   '      resultSizeRange = *\n'+
                   '      resultColumns = [("pk_0", INT), ("name", VARCHAR(200)), ("street", VARCHAR(100)), ("type", INT), ("comments", VARCHAR(100))]\n'+
                   '      sql = select "root".ID as "pk_0", "root".NAME as "name", "root".STREET as "street", "root".TYPE as "type", "root".COMMENTS as "comments" from addressTable as "root" where (${optionalVarPlaceHolderOperationSelector(optionalFloatLeft![], optionalVarPlaceHolderOperationSelector(optionalFloatRight![], \'${varPlaceHolderToString(optionalFloatLeft![]  "" "" "null")} = ${varPlaceHolderToString(optionalFloatRight![]  "" "" "null")}\', \'1 = 0\'), optionalVarPlaceHolderOperationSelector(optionalFloatRight![], \'1 = 0\', \'1 = 1\'))})\n'+
@@ -593,7 +593,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithTwo
    let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions());
    let expected = 'Sequence\n'+
                   '(\n'+
-                  '  type = Class[impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
+                  '  type = Class[Address:impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
                   '  resultSizeRange = *\n'+
                   '  (\n'+
                   '    FunctionParametersValidationNode\n'+
@@ -602,7 +602,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithTwo
                   '    )\n'+
                   '    Relational\n'+
                   '    (\n'+
-                  '      type = Class[impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
+                  '      type = Class[Address:impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
                   '      resultSizeRange = *\n'+
                   '      resultColumns = [("pk_0", INT), ("name", VARCHAR(200)), ("street", VARCHAR(100)), ("type", INT), ("comments", VARCHAR(100))]\n'+
                   '      sql = select "root".ID as "pk_0", "root".NAME as "name", "root".STREET as "street", "root".TYPE as "type", "root".COMMENTS as "comments" from addressTable as "root" where (${optionalVarPlaceHolderOperationSelector(optionalDateLeft![], optionalVarPlaceHolderOperationSelector(optionalDateRight![], \'${varPlaceHolderToString(optionalDateLeft![]  "\\\'" "\\\'" "null")} = ${varPlaceHolderToString(optionalDateRight![]  "\\\'" "\\\'" "null")}\', \'1 = 0\'), optionalVarPlaceHolderOperationSelector(optionalDateRight![], \'1 = 0\', \'1 = 1\'))})\n'+
@@ -623,7 +623,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithTwo
    let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions());
    let expected = 'Sequence\n'+
                   '(\n'+
-                  '  type = Class[impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
+                  '  type = Class[Address:impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
                   '  resultSizeRange = *\n'+
                   '  (\n'+
                   '    FunctionParametersValidationNode\n'+
@@ -632,7 +632,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithTwo
                   '    )\n'+
                   '    Relational\n'+
                   '    (\n'+
-                  '      type = Class[impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
+                  '      type = Class[Address:impls=(meta::relational::tests::model::simple::Address | simpleRelationalMappingInc.meta_relational_tests_model_simple_Address)]\n'+
                   '      resultSizeRange = *\n'+
                   '      resultColumns = [("pk_0", INT), ("name", VARCHAR(200)), ("street", VARCHAR(100)), ("type", INT), ("comments", VARCHAR(100))]\n'+
                   '      sql = select "root".ID as "pk_0", "root".NAME as "name", "root".STREET as "street", "root".TYPE as "type", "root".COMMENTS as "comments" from addressTable as "root" where (${optionalVarPlaceHolderOperationSelector(optionalLeft![], optionalVarPlaceHolderOperationSelector(optionalRight![], \'${varPlaceHolderToString(optionalLeft![]  "\\\'" "\\\'" "null")} = ${varPlaceHolderToString(optionalRight![]  "\\\'" "\\\'" "null")}\', \'1 = 0\'), optionalVarPlaceHolderOperationSelector(optionalRight![], \'1 = 0\', \'1 = 1\'))})\n'+
@@ -649,7 +649,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDa
 {
    let planWithString = executionPlanForQueryWithDateTimeConstantForDatabaseConnectionTimeZone(%2019-4-8T18:00:00, []);
    let planAsString = $planWithString.second;
-   let expected = 'Relational (   type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]   sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'2019-04-08 18:00:00\'   connection = TestDatabaseConnection(type = "H2") ) ';
+   let expected = 'Relational (   type = Class[Order:impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]   sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'2019-04-08 18:00:00\'   connection = TestDatabaseConnection(type = "H2") ) ';
    assertEquals($expected, $planAsString);
    assert($planAsString->indexOf('settlementDateTime = \'2019-04-08 18:00:00\'') != -1);
    assertSameElements(templateFunctionsList(),$planWithString.first.processingTemplateFunctions);
@@ -659,7 +659,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDa
 {
    let planWithString = executionPlanForQueryWithDateTimeConstantForDatabaseConnectionTimeZone(%2019-4-8T18:00:00, 'GMT');
    let planAsString = $planWithString.second;
-   let expected = 'Relational (   type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]   sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'2019-04-08 18:00:00\'   connection = TestDatabaseConnection(type = "H2") ) ';
+   let expected = 'Relational (   type = Class[Order:impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]   sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'2019-04-08 18:00:00\'   connection = TestDatabaseConnection(type = "H2") ) ';
    assertEquals($expected, $planAsString);
    assert($planAsString->indexOf('settlementDateTime = \'2019-04-08 18:00:00\'') != -1);
    assertSameElements(templateFunctionsList(),$planWithString.first.processingTemplateFunctions);
@@ -669,7 +669,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDa
 {
    let planWithString = executionPlanForQueryWithDateTimeConstantForDatabaseConnectionTimeZone(%2019-4-8T18:00:00, 'EST');
    let planAsString = $planWithString.second;
-   let expected = 'Relational (   type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]   sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'2019-04-08 13:00:00\'   connection = TestDatabaseConnection(type = "H2") ) ';
+   let expected = 'Relational (   type = Class[Order:impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]   sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'2019-04-08 13:00:00\'   connection = TestDatabaseConnection(type = "H2") ) ';
    assertEquals($expected, $planAsString);
    assert($planAsString->indexOf('settlementDateTime = \'2019-04-08 13:00:00\'') != -1);
    assertSameElements(['<#function GMTtoTZ tz paramDate><#return (tz+" "+paramDate)?date.@alloyDate></#function><#function renderCollectionWithTz collection timeZone separator prefix suffix defaultValue><#assign result = [] /><#list collection as c><#assign result = [prefix + (timeZone+" "+c)?date.@alloyDate + suffix] + result></#list><#return result?reverse?join(separator, defaultValue)></#function>',
@@ -684,7 +684,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDa
 {
    let planWithString = executionPlanForQueryWithDateTimeVariableForDatabaseConnectionTimeZone([]);
    let planAsString = $planWithString.second;
-   let expected = 'Sequence (   type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   (     FunctionParametersValidationNode     (       functionParameters = [dt:DateTime[1]]     )     Relational     (       type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]       resultSizeRange = *       resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]       sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'${dt}\'       connection = TestDatabaseConnection(type = "H2")     )   ) ) ';
+   let expected = 'Sequence (   type = Class[Order:impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   (     FunctionParametersValidationNode     (       functionParameters = [dt:DateTime[1]]     )     Relational     (       type = Class[Order:impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]       resultSizeRange = *       resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]       sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'${dt}\'       connection = TestDatabaseConnection(type = "H2")     )   ) ) ';
    assertEquals($expected, $planAsString);
    assert($planAsString->indexOf('settlementDateTime = \'${dt}\'') != -1);
    assertSameElements(templateFunctionsList(),$planWithString.first.processingTemplateFunctions);
@@ -694,7 +694,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDa
 {
    let planWithString = executionPlanForQueryWithDateTimeVariableForDatabaseConnectionTimeZone('US/Arizona');
    let planAsString = $planWithString.second;
-   let expected = 'Sequence (   type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   (     FunctionParametersValidationNode     (       functionParameters = [dt:DateTime[1]]     )     Relational     (       type = Class[impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]       resultSizeRange = *       resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]       sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'${GMTtoTZ( "[US/Arizona]" dt)}\'       connection = TestDatabaseConnection(type = "H2")     )   ) ) ';
+   let expected = 'Sequence (   type = Class[Order:impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]   resultSizeRange = *   (     FunctionParametersValidationNode     (       functionParameters = [dt:DateTime[1]]     )     Relational     (       type = Class[Order:impls=(meta::relational::tests::model::simple::Order | simpleRelationalMapping.meta_relational_tests_model_simple_Order)]       resultSizeRange = *       resultColumns = [("pk_0", INT), ("id", INT), ("quantity", INT), ("date", DATE), ("settlementDateTime", TIMESTAMP), ("pnl", FLOAT), ("zeroPnl", "")]       sql = select "root".ID as "pk_0", "root".ID as "id", "root".quantity as "quantity", "root".orderDate as "date", "root".settlementDateTime as "settlementDateTime", "orderpnlview_0".pnl as "pnl", case when "orderpnlview_0".pnl = 0 then \'true\' else \'false\' end as "zeroPnl" from orderTable as "root" left outer join (select distinct "root".ORDER_ID as ORDER_ID, "root".pnl as pnl, "accounttable_0".ID as accountId, "salespersontable_0".NAME as supportContact, "salespersontable_0".PERSON_ID as supportContactId from orderPnlTable as "root" left outer join orderTable as "ordertable_1" on ("root".ORDER_ID = "ordertable_1".ID) left outer join accountTable as "accounttable_0" on ("ordertable_1".accountID = "accounttable_0".ID) left outer join salesPersonTable as "salespersontable_0" on ("ordertable_1".accountID = "salespersontable_0".ACCOUNT_ID) where "root".pnl > 0) as "orderpnlview_0" on ("orderpnlview_0".ORDER_ID = "root".ID) where "root".settlementDateTime = \'${GMTtoTZ( "[US/Arizona]" dt)}\'       connection = TestDatabaseConnection(type = "H2")     )   ) ) ';
    assertEquals($expected, $planAsString);
    assert($planAsString->indexOf('settlementDateTime = \'${GMTtoTZ( "[US/Arizona]" dt)}\'') != -1);
    assertSameElements(['<#function GMTtoTZ tz paramDate><#return (tz+" "+paramDate)?date.@alloyDate></#function><#function renderCollectionWithTz collection timeZone separator prefix suffix defaultValue><#assign result = [] /><#list collection as c><#assign result = [prefix + (timeZone+" "+c)?date.@alloyDate + suffix] + result></#list><#return result?reverse?join(separator, defaultValue)></#function>',
@@ -728,7 +728,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::simpleExpression():Bool
    let result = executionPlan({|Person.all()->filter(p|$p.firstName == 'bla')}, simpleRelationalMapping, meta::relational::tests::testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
    assertEquals('Relational\n'+
                 '(\n'+
-                '  type = Class[impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
+                '  type = Class[Person:impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
                 '  resultSizeRange = *\n'+
                 '  resultColumns = [("pk_0", INT), ("firstName", VARCHAR(200)), ("age", INT), ("lastName", VARCHAR(200))]\n'+
                 '  sql = select "root".ID as "pk_0", "root".FIRSTNAME as "firstName", "root".AGE as "age", "root".LASTNAME as "lastName" from personTable as "root" where "root".FIRSTNAME = \'bla\'\n'+
@@ -741,7 +741,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::inheritance():Boolean[1
    let result = executionPlan(|meta::relational::tests::model::inheritance::RoadVehicle.all(), inheritanceMappingDB, meta::relational::tests::testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
    assertEquals('Relational\n'+
                 '(\n'+
-                '  type = Class[impls=(meta::relational::tests::model::inheritance::Bicycle | inheritanceMain.map2),(meta::relational::tests::model::inheritance::Car | inheritanceMain.map1)]\n'+
+                '  type = Class[RoadVehicle:impls=(meta::relational::tests::model::inheritance::Bicycle | inheritanceMain.map2),(meta::relational::tests::model::inheritance::Car | inheritanceMain.map1)]\n'+
                 '  resultSizeRange = *\n'+
                 '  resultColumns = [(u_type, INT), ("pk_0_0", INT), ("pk_0_1", INT), ("id", INT), ("wheelCount", INT), ("description", INT), ("engineType", INT)]\n'+
                 '  sql = select "unionBase".u_type as u_type, "unionBase"."pk_0_0" as "pk_0_0", "unionBase"."pk_0_1" as "pk_0_1", "unionBase"."id" as "id", "unionBase"."wheelCount" as "wheelCount", "unionBase"."description" as "description", "unionBase"."engineType" as "engineType" from (select \'0\' as u_type, "root".ID as "pk_0_0", null as "pk_0_1", "root".ID as "id", "root".db_bic_wheelCount as "wheelCount", "root".b_Description as "description", null as "engineType" from Bicycle as "root" UNION ALL select \'1\' as u_type, null as "pk_0_0", "root".ID as "pk_0_1", "root".ID as "id", "root".db_car_wheelCount as "wheelCount", "root".c_Description as "description", "root".engineType as "engineType" from Car as "root") as "unionBase"\n'+
@@ -756,7 +756,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::simpleExpressionWithVar
 
    assertEquals('Sequence\n' +
                 '(\n' +
-                '  type = Class[impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n' +
+                '  type = Class[Person:impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n' +
                 '  resultSizeRange = *\n' +
                 '  (\n' +
                 '    FunctionParametersValidationNode\n' +
@@ -765,7 +765,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::simpleExpressionWithVar
                 '    )\n' +
                 '    Relational\n' +
                 '    (\n' +
-                '      type = Class[impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n' +
+                '      type = Class[Person:impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n' +
                 '      resultSizeRange = *\n' +
                 '      resultColumns = [(\"pk_0\", INT), (\"firstName\", VARCHAR(200)), (\"age\", INT), (\"lastName\", VARCHAR(200))]\n' +
                 '      sql = select \"root\".ID as \"pk_0\", \"root\".FIRSTNAME as \"firstName\", \"root\".AGE as \"age\", \"root\".LASTNAME as \"lastName\" from personTable as \"root\" where \"root\".FIRSTNAME = \'${var}\'\n' +
@@ -780,7 +780,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::simpleExpressionWithMul
    let result = executionPlan({var:String[1], age:Integer[1]|Person.all()->filter(p| ($p.firstName == $var) && ($p.age > $age))}, simpleRelationalMapping, meta::relational::tests::testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
    assertEquals('Sequence\n' +
                 '(\n' +
-                '  type = Class[impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n' +
+                '  type = Class[Person:impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n' +
                 '  resultSizeRange = *\n' +
                 '  (\n' +
                 '    FunctionParametersValidationNode\n' +
@@ -789,7 +789,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::simpleExpressionWithMul
                 '    )\n' +
                 '    Relational\n' +
                 '    (\n' +
-                '      type = Class[impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n' +
+                '      type = Class[Person:impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n' +
                 '      resultSizeRange = *\n' +
                 '      resultColumns = [(\"pk_0\", INT), (\"firstName\", VARCHAR(200)), (\"age\", INT), (\"lastName\", VARCHAR(200))]\n' +
                 '      sql = select \"root\".ID as \"pk_0\", \"root\".FIRSTNAME as \"firstName\", \"root\".AGE as \"age\", \"root\".LASTNAME as \"lastName\" from personTable as \"root\" where (\"root\".FIRSTNAME = \'${var}\' and (\"root\".AGE is not null and \"root\".AGE > ${age}))\n' +
@@ -807,19 +807,19 @@ function <<test.Test>> meta::pure::executionPlan::tests::testClassPropertyOpenVa
 
    assertEquals(
             'Sequence\n(\n' +
-            '  type = Class[impls=(meta::relational::tests::groupBy::datePeriods::domain::SalesCredit | myMapping.meta_relational_tests_groupBy_datePeriods_domain_SalesCredit)]\n' +
+            '  type = Class[SalesCredit:impls=(meta::relational::tests::groupBy::datePeriods::domain::SalesCredit | myMapping.meta_relational_tests_groupBy_datePeriods_domain_SalesCredit)]\n' +
             '  resultSizeRange = *\n'+
             '  (\n' +
             '    Allocation\n' +
             '    (\n' +
-            '      type = Class[impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n' +
+            '      type = Class[FiscalCalendarDate:impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n' +
             '      resultSizeRange = 1\n'+
             '      name = reportEndDate\n' +
             '      value = \n' +
             '        (\n' +
             '          Relational\n' +
             '          (\n' +
-            '            type = Class[impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n' +
+            '            type = Class[FiscalCalendarDate:impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n' +
             '            resultSizeRange = 1\n'+
             '            resultColumns = [("pk_0", DATE), ("pk_1", VARCHAR(15)), ("date", DATE), ("weekStart", DATE), ("weekEnd", DATE), ("day", INT), ("week", INT), ("dayOfWeekNumber", INT), ("yearEnd", DATE), ("yearStart", DATE)]\n'+
             '            sql = select \"root\".\"date\" as \"pk_0\", \"root\".\"calendar name\" as \"pk_1\", \"root\".\"date\" as \"date\", \"root\".\"fiscal week start\" as \"weekStart\", \"root\".\"fiscal week end\" as \"weekEnd\", \"root\".\"fiscal day\" as \"day\", \"root\".\"fiscal week\" as \"week\", \"root\".\"fiscal day of week\" as \"dayOfWeekNumber\", \"root\".\"fiscal year end\" as \"yearEnd\", \"root\".\"fiscal year start\" as \"yearStart\" from calendar as \"root\" where \"root\".\"date\" = \'2005-10-10\'\n' +
@@ -829,7 +829,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testClassPropertyOpenVa
             '    )\n' +
             '    Relational\n' +
             '    (\n' +
-            '      type = Class[impls=(meta::relational::tests::groupBy::datePeriods::domain::SalesCredit | myMapping.meta_relational_tests_groupBy_datePeriods_domain_SalesCredit)]\n' +
+            '      type = Class[SalesCredit:impls=(meta::relational::tests::groupBy::datePeriods::domain::SalesCredit | myMapping.meta_relational_tests_groupBy_datePeriods_domain_SalesCredit)]\n' +
             '      resultSizeRange = *\n'+
             '      resultColumns = [("pk_0", INT), ("grossValue", DOUBLE)]\n'+
             '      sql = select \"root\".key as \"pk_0\", \"root\".credits as \"grossValue\" from SALES_GCS as \"root\" left outer join calendar as \"calendar_0\" on (\"root\".tradeDate = \"calendar_0\".\"date\") where \"calendar_0\".\"date\" < \'${reportEndDate[\"date\"]}\'\n' +
@@ -861,14 +861,14 @@ function <<test.Test>> meta::pure::executionPlan::tests::testGroupByWithOpenVari
       '  (\n'+
       '    Allocation\n'+
       '    (\n'+
-      '      type = Class[impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n'+
+      '      type = Class[FiscalCalendarDate:impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n'+
       '      resultSizeRange = 1\n'+
       '      name = reportEndDate\n'+
       '      value = \n'+
       '        (\n'+
       '          Relational\n'+
       '          (\n'+
-      '            type = Class[impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n'+
+      '            type = Class[FiscalCalendarDate:impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n'+
       '            resultSizeRange = 1\n'+
       '            resultColumns = [("pk_0", DATE), ("pk_1", VARCHAR(15)), ("date", DATE), ("weekStart", DATE), ("weekEnd", DATE), ("day", INT), ("week", INT), ("dayOfWeekNumber", INT), ("yearEnd", DATE), ("yearStart", DATE)]\n'+
       '            sql = select "root"."date" as "pk_0", "root"."calendar name" as "pk_1", "root"."date" as "date", "root"."fiscal week start" as "weekStart", "root"."fiscal week end" as "weekEnd", "root"."fiscal day" as "day", "root"."fiscal week" as "week", "root"."fiscal day of week" as "dayOfWeekNumber", "root"."fiscal year end" as "yearEnd", "root"."fiscal year start" as "yearStart" from calendar as "root" where "root"."date" = \'2005-10-10\'\n'+
@@ -926,14 +926,14 @@ function <<test.Test>> meta::pure::executionPlan::tests::testGroupByWithTwoOpenV
       '    )\n'+
       '    Allocation\n'+
       '    (\n'+
-      '      type = Class[impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n'+
+      '      type = Class[FiscalCalendarDate:impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n'+
       '      resultSizeRange = 1\n'+
       '      name = reportEndDate\n'+
       '      value = \n'+
       '        (\n'+
       '          Relational\n'+
       '          (\n'+
-      '            type = Class[impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n'+
+      '            type = Class[FiscalCalendarDate:impls=(meta::relational::tests::groupBy::datePeriods::domain::FiscalCalendarDate | myMapping.meta_relational_tests_groupBy_datePeriods_domain_FiscalCalendarDate)]\n'+
       '            resultSizeRange = 1\n'+
       '            resultColumns = [("pk_0", DATE), ("pk_1", VARCHAR(15)), ("date", DATE), ("weekStart", DATE), ("weekEnd", DATE), ("day", INT), ("week", INT), ("dayOfWeekNumber", INT), ("yearEnd", DATE), ("yearStart", DATE)]\n'+
       '            sql = select "root"."date" as "pk_0", "root"."calendar name" as "pk_1", "root"."date" as "date", "root"."fiscal week start" as "weekStart", "root"."fiscal week end" as "weekEnd", "root"."fiscal day" as "day", "root"."fiscal week" as "week", "root"."fiscal day of week" as "dayOfWeekNumber", "root"."fiscal year end" as "yearEnd", "root"."fiscal year start" as "yearStart" from calendar as "root" where "root"."date" = \'2005-10-10\'\n'+
@@ -999,7 +999,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterWithOpenVaria
    assertEquals(
       'Sequence\n'+
       '(\n'+
-      '  type = Class[impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
+      '  type = Class[Firm:impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
       '  resultSizeRange = *\n'+
       '  (\n'+
       '    Allocation\n'+
@@ -1019,7 +1019,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterWithOpenVaria
       '    )\n'+
       '    Relational\n'+
       '    (\n'+
-      '      type = Class[impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
+      '      type = Class[Firm:impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
       '      resultSizeRange = *\n'+
       '      resultColumns = [("pk_0", INT), ("legalName", VARCHAR(200))]\n'+
       '      sql = select "root".ID as "pk_0", "root".LEGALNAME as "legalName" from firmTable as "root" where "root".LEGALNAME = \'${name}\'\n'+
@@ -1054,7 +1054,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testPlanForExecutionOpt
    assertEquals(
       'Sequence\n'+
       '(\n'+
-      '  type = Class[impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
+      '  type = Class[Firm:impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
       '  resultSizeRange = *\n'+
       '  (\n'+
       '    FunctionParametersValidationNode\n'+
@@ -1078,7 +1078,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testPlanForExecutionOpt
       '    )\n'+
       '    Relational\n'+
       '    (\n'+
-      '      type = Class[impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
+      '      type = Class[Firm:impls=(meta::relational::tests::model::simple::Firm | simpleRelationalMappingInc.meta_relational_tests_model_simple_Firm)]\n'+
       '      resultSizeRange = *\n'+
       '      resultColumns = [("pk_0", INT), ("legalName", VARCHAR(200))]\n'+
       '      sql = select "root".ID as "pk_0", "root".LEGALNAME as "legalName" from firmTable as "root" where "root".LEGALNAME = \'${name}\'\n'+
@@ -1116,7 +1116,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::twoRoutedExpressions():
                               , simpleRelationalMapping, meta::relational::tests::testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
    assertEquals('Sequence\n'+
                 '(\n'+
-                '  type = Class[impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
+                '  type = Class[Person:impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
                 '  resultSizeRange = *\n'+
                 '  (\n'+
                 '    Allocation\n'+
@@ -1138,7 +1138,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::twoRoutedExpressions():
                 '    )\n'+
                 '    Relational\n'+
                 '    (\n'+
-                '      type = Class[impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
+                '      type = Class[Person:impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
                 '      resultSizeRange = *\n'+
                 '      resultColumns = [("pk_0", INT), ("firstName", VARCHAR(200)), ("age", INT), ("lastName", VARCHAR(200))]\n'+
                 '      sql = select \"root\".ID as \"pk_0\", \"root\".FIRSTNAME as \"firstName\", \"root\".AGE as \"age\", \"root\".LASTNAME as \"lastName\" from personTable as \"root\" where \"root\".FIRSTNAME = \'${personName}\'\n'+
@@ -1156,7 +1156,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::twoExpressionWithConsta
                               , simpleRelationalMapping, meta::relational::tests::testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
    assertEquals('Sequence\n'+
                 '(\n'+
-                '  type = Class[impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
+                '  type = Class[Person:impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
                 '  resultSizeRange = *\n'+
                 '  (\n'+
                 '    Allocation\n'+
@@ -1176,7 +1176,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::twoExpressionWithConsta
                 '    )\n'+
                 '    Relational\n'+
                 '    (\n'+
-                '      type = Class[impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
+                '      type = Class[Person:impls=(meta::relational::tests::model::simple::Person | simpleRelationalMappingInc.meta_relational_tests_model_simple_Person)]\n'+
                 '      resultSizeRange = *\n'+
                 '      resultColumns = [("pk_0", INT), ("firstName", VARCHAR(200)), ("age", INT), ("lastName", VARCHAR(200))]\n'+
                 '      sql = select \"root\".ID as \"pk_0\", \"root\".FIRSTNAME as \"firstName\", \"root\".AGE as \"age\", \"root\".LASTNAME as \"lastName\" from personTable as \"root\" where \"root\".FIRSTNAME = \'${personName}\'\n'+
@@ -1856,7 +1856,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testExecutionPLanGenera
    let expected =
       'Relational\n'+
       '(\n'+
-      '  type = Class[impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
+      '  type = Class[_Firm:impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
       '  resultSizeRange = *\n'+
       '  resultColumns = [("pk_0", VARCHAR(200)), ("name", VARCHAR(200))]\n'+
       '  sql = select "root".name as "pk_0", "root".name as "name" from Firm as "root"\n'+
@@ -1873,14 +1873,14 @@ function <<test.Test>> meta::pure::executionPlan::tests::testExecutionPLanGenera
    let expected =
       'Allocation\n'+
       '(\n'+
-      '  type = Class[impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
+      '  type = Class[_Firm:impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
       '  resultSizeRange = *\n'+
       '  name = var\n'+
       '  value = \n'+
       '    (\n'+
       '      Relational\n'+
       '      (\n'+
-      '        type = Class[impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
+      '        type = Class[_Firm:impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
       '        resultSizeRange = *\n'+
       '        resultColumns = [("pk_0", VARCHAR(200)), ("name", VARCHAR(200))]\n'+
       '        sql = select "root".name as "pk_0", "root".name as "name" from Firm as "root"\n'+
@@ -1900,19 +1900,19 @@ function <<test.Test>> meta::pure::executionPlan::tests::testExecutionPLanGenera
    let expected =
       'Sequence\n'+
       '(\n'+
-      '  type = Class[impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
+      '  type = Class[_Firm:impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
       '  resultSizeRange = *\n'+
       '  (\n'+
       '    Allocation\n'+
       '    (\n'+
-      '      type = Class[impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
+      '      type = Class[_Firm:impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
       '      resultSizeRange = *\n'+
       '      name = var\n'+
       '      value = \n'+
       '        (\n'+
       '          Relational\n'+
       '          (\n'+
-      '            type = Class[impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
+      '            type = Class[_Firm:impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
       '            resultSizeRange = *\n'+
       '            resultColumns = [("pk_0", VARCHAR(200)), ("name", VARCHAR(200))]\n'+
       '            sql = select "root".name as "pk_0", "root".name as "name" from Firm as "root"\n'+
@@ -1922,7 +1922,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testExecutionPLanGenera
       '    )\n'+
       '    Relational\n'+
       '    (\n'+
-      '      type = Class[impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
+      '      type = Class[_Firm:impls=(meta::pure::mapping::modelToModel::test::shared::src::_Firm | relationalMapping.meta_pure_mapping_modelToModel_test_shared_src__Firm)]\n'+
       '      resultSizeRange = *\n'+
       '      resultColumns = [("pk_0", VARCHAR(200)), ("name", VARCHAR(200))]\n'+
       '      sql = select "root".name as "pk_0", "root".name as "name" from Firm as "root"\n'+
@@ -2246,7 +2246,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testQuoteIdentifiersFla
    let result = executionPlan({|Product.all()->filter(p|$p.name == 'bla')}, simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
    assertEquals('Relational\n'+
                 '(\n'+
-                '  type = Class[impls=(meta::relational::tests::model::simple::Product | simpleRelationalMapping.meta_relational_tests_model_simple_Product)]\n'+
+                '  type = Class[Product:impls=(meta::relational::tests::model::simple::Product | simpleRelationalMapping.meta_relational_tests_model_simple_Product)]\n'+
                 '  resultSizeRange = *\n'+
                 '  resultColumns = [("pk_0", INT), ("name", VARCHAR(200))]\n'+
                 '  sql = select "root"."ID" as "pk_0", "root"."NAME" as "name" from "productSchema"."productTable" as "root" where "root"."NAME" = \'bla\'\n'+
@@ -2294,7 +2294,7 @@ function <<test.Test>> meta::pure::executionPlan::tests::testQuoteIdentifiersFla
                                                              ));
    let graph = #{Product{name}}#;
    let result = executionPlan({|Product.all()->graphFetch($graph)->serialize($graph)}, simpleRelationalMapping, $runtime, meta::pure::router::extension::defaultRelationalExtensions());
-   assertEquals('PureExp(type=Stringexpression=[NodeIndex:0]->serialize(#{meta::relational::tests::model::simple::Product{name}}#)(GlobalGraphFetch(type=PartialClass[impls=[(meta::relational::tests::model::simple::Product|simpleRelationalMapping.meta_relational_tests_model_simple_Product)],propertiesWithParameters=[name]]resultSizeRange=*store=meta::relational::tests::dblocalGraphFetchExecutionNode=RelationalGraphFetch(type=PartialClass[impls=[(meta::relational::tests::model::simple::Product|simpleRelationalMapping.meta_relational_tests_model_simple_Product)],propertiesWithParameters=[name]]nodeIndex=0relationalNode=SQL(type=meta::pure::metamodel::type::AnyresultColumns=[("pk_0",INT),("name",VARCHAR(200))]sql=select"root"."ID"as"pk_0","root"."NAME"as"name"from"productSchema"."productTable"as"root"connection=TestDatabaseConnection(type="H2"))children=[])children=[])))', $result->planToStringWithoutFormatting(meta::pure::router::extension::defaultRelationalExtensions()));
+   assertEquals('PureExp(type=Stringexpression=->serialize(#{meta::relational::tests::model::simple::Product{name}}#)(GlobalGraphFetch(type=PartialClass[Product:impls=[(meta::relational::tests::model::simple::Product|simpleRelationalMapping.meta_relational_tests_model_simple_Product)],propertiesWithParameters=[name]]resultSizeRange=*store=meta::relational::tests::dblocalGraphFetchExecutionNode=RelationalGraphFetch(type=PartialClass[Product:impls=[(meta::relational::tests::model::simple::Product|simpleRelationalMapping.meta_relational_tests_model_simple_Product)],propertiesWithParameters=[name]]nodeIndex=0relationalNode=SQL(type=meta::pure::metamodel::type::AnyresultColumns=[("pk_0",INT),("name",VARCHAR(200))]sql=select"root"."ID"as"pk_0","root"."NAME"as"name"from"productSchema"."productTable"as"root"connection=TestDatabaseConnection(type="H2"))children=[])children=[])))', $result->planToStringWithoutFormatting(meta::pure::router::extension::defaultRelationalExtensions()));
 }
 
 function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanWithLocalH2ConnectionWithSQL():Boolean[1]

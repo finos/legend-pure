@@ -1,0 +1,17 @@
+import meta::pure::mapping::*;
+import meta::pure::graphFetch::execution::*;
+import meta::pure::router::extension::*;
+import meta::external::shared::format::executionPlan::*;
+import meta::pure::executionPlan::*;
+import meta::pure::router::execution::*;
+import meta::pure::runtime::*;
+
+function meta::external::shared::format::executionPlan::generation::planExecution(sq:meta::pure::mapping::StoreQuery[1], ext:RoutedValueSpecification[0..1], m:Mapping[0..1], runtime:Runtime[0..1], exeCtx:ExecutionContext[1], extensions : RouterExtension[*], debug:DebugContext[1]):ExecutionNode[1]
+{
+   $sq.fe->meta::external::shared::format::executionPlan::processValueSpecification($sq.inScopeVars, $sq.advancedRouting, $ext, $exeCtx, $extensions, $debug)->toOne();
+}
+
+function meta::external::shared::format::supports(f:FunctionExpression[1]):Boolean[1]
+{
+   $f.func->in(graphFetchFunctions()) || $f.func == meta::pure::dataQuality::checked_T_MANY__Checked_MANY_;
+}

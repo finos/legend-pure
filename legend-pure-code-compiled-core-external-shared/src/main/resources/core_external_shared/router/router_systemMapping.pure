@@ -1,0 +1,22 @@
+import meta::pure::mapping::modelToModel::*;
+import meta::pure::router::systemMapping::tests::*;
+import meta::relational::mapping::*;
+import meta::pure::router::systemMapping::*;
+import meta::pure::runtime::*;
+import meta::pure::mapping::*;
+
+function meta::external::shared::format::router::systemMapping::internalizeSystemMapping():SystemMapping[1]
+{
+   ^SystemMapping(
+      executeFunctionAsString='',
+      supportsFunctionAsString='meta::external::shared::format::supports_FunctionExpression_1__Boolean_1_',
+      planExecutionAsString='meta::external::shared::format::executionPlan::generation::planExecution_StoreQuery_1__RoutedValueSpecification_$0_1$__Mapping_$0_1$__Runtime_$0_1$__ExecutionContext_1__RouterExtension_MANY__DebugContext_1__ExecutionNode_1_',
+      localGetterOverrideMappedAsString='',
+      localGetterOverrideNonMappedAsString=''
+   )
+}
+
+function <<meta::pure::profiles::test.Test>> meta::external::shared::format::router::systemMapping::tests::testResolveSystem():Any[*]
+{
+   meta::external::shared::format::router::systemMapping::internalizeSystemMapping()->testSystemMappings();
+}

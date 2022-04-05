@@ -27,6 +27,7 @@ function meta::external::format::json::jsonFormatExtension(): meta::external::sh
       generatePathReference     = generatePathReference_Path_1__PathReference_1_,
       printPlanNodeToString     = printPlanNodeToString_String_1__RouterExtension_MANY__Function_MANY_,
       
+      getInternalizeDetails     = getInternalizeDetails_Binding_1__DebugContext_1__InternalizeDetails_1_,
       planJavaPrepare           = planJavaPrepare_String_1__GenerationContext_1__RouterExtension_MANY__DebugContext_1__Function_MANY_,
       planJavaGenerate          = planJavaGenerate_String_1__GenerationContext_1__RouterExtension_MANY__DebugContext_1__Function_MANY_,
       plan_javaRuntime_enginePlatformDependencies_conventions = meta::external::format::json::executionPlan::engine::extendJavaEngineDependencies_Conventions_1__Conventions_1_,

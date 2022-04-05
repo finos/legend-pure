@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import meta::protocols::pure::vX_X_X::metamodel::executionPlan::*;
+import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::*;
 import meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::shared::format::*;
 import meta::pure::mapping::*;
 import meta::pure::router::extension::*;
@@ -28,7 +29,8 @@ function meta::protocols::pure::vX_X_X::external::shared::format::serializerExte
          {mapping:Mapping[1], extensions:RouterExtension[*] |
             [
                d:meta::external::shared::format::executionPlan::DataQualityExecutionNode[1] | transformDataQualityNode($d, $mapping, $extensions),
-               u:meta::external::shared::format::executionPlan::UrlStreamExecutionNode[1]   | transformUrlStreamNode($u, $mapping, $extensions)
+               u:meta::external::shared::format::executionPlan::UrlStreamExecutionNode[1]   | transformUrlStreamNode($u, $mapping, $extensions),
+               i:meta::external::shared::format::executionPlan::InternalizeExecutionNode[1] | transformInternalizeExecutionNode($i, $mapping, $extensions)
             ]
          }   
    );
@@ -111,4 +113,74 @@ Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::execut
 Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::PathReference
 {
    _type: String[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::InternalizeExecutionNode extends ExecutionNode
+{
+   pathOffset        : meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::PathReference[0..1];
+   binding           : String[1];
+   contentType       : String[1];
+   dataSource        : meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::InternalizeDataSource[1];
+   enableConstraints : Boolean[1];
+   checked           : Boolean[1];
+   graphFetchTree    : meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RootGraphFetchTree[0..1]; 
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::InternalizeDataSource
+{
+   _type: String[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::UrlConstant extends meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::InternalizeDataSource
+{
+  url: String[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::StringConstant extends meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::InternalizeDataSource
+{
+  data: String[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::RuntimeVariable extends meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::InternalizeDataSource
+{
+  variable : String[1];
+  type     : String[1];
+}
+
+function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::external::shared::format::transformInternalizeExecutionNode(node:meta::external::shared::format::executionPlan::InternalizeExecutionNode[1], mapping:meta::pure::mapping::Mapping[1], extensions:RouterExtension[*]): ExecutionNode[1]
+{
+  let dataSource = $node.dataSource->match([
+    url:meta::external::shared::format::executionPlan::UrlConstant[1] |
+      ^meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::UrlConstant
+      (
+        _type = 'url',
+        url   = $url.url
+      ),
+    str:meta::external::shared::format::executionPlan::StringConstant[1] |
+      ^meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::StringConstant
+      (
+        _type = 'string',
+        data  = $str.data
+      ),
+    var:meta::external::shared::format::executionPlan::RuntimeVariable[1] |
+      ^meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::RuntimeVariable
+      (
+        _type    = 'variable',
+        variable = $var.variable,
+        type     = $var.type.name->toOne()
+      )
+  ]);
+
+  ^meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::InternalizeExecutionNode(
+    _type             = 'internalize',
+    resultType        = $node.resultType->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::executionPlan::transformResultType($mapping, $extensions),
+    resultSizeRange   = $node.resultSizeRange->map(s| $s->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::domain::transformMultiplicity()),
+    pathOffset        = [], // TODO [internalize] handle path offsets
+    binding           = $node.binding->elementToPath(),
+    contentType       = $node.binding.contentType,
+    dataSource        = $dataSource,
+    enableConstraints = $node.enableConstraints,
+    checked           = $node.checked,
+    graphFetchTree    = if($node.graphFetchTree->isEmpty(),|[],|$node.graphFetchTree->toOne()->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformGraphFetchTree([], newMap([]->cast(@Pair<String,List<Any>>)), $extensions)->cast(@meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::RootGraphFetchTree))
+  );
 }
