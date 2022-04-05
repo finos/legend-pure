@@ -213,12 +213,12 @@ public class PureCompiledJarMojo extends AbstractMojo
             {
                 case monolithic:
                 {
-                    generate = generator.generateOnly(this.generateSources, codegenDirectory);
+                    generate = generator.generateOnly(false, this.generateSources, codegenDirectory);
                     break;
                 }
                 case modular:
                 {
-                    generate = generator.generateOnly(repositories, this.generateSources, codegenDirectory);
+                    generate = generator.generateOnly(resolvedRepositories.collect(CodeRepository::getName), true, this.generateSources, codegenDirectory);
                     break;
                 }
                 default:
