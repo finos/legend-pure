@@ -204,7 +204,7 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
   let gap = $both->filter(b|
     let m = $b.first;
     let c = $b.second;
-    $m.type != $c.type || $m.name->makeString('"', '', '"') != $c.name;
+    ! ($m.type == $c.type && ($m.name == $c.name || $m.name->makeString('"', '', '"') == $c.name)); // Ignore quotes in the name, needed for case sensitivity in some DBs
   )->fold({b,accum|$accum->concatenate(
       format('    <%s,%s> is incompatible with <%s,%s>', [$b.first.name, $b.first.type, $b.second.name, $b.second.sqlType->toOne()->meta::relational::metamodel::datatype::dataTypeToSqlText()]))},
       []
@@ -216,3 +216,4 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
     '\n'
   ));
 }
+
