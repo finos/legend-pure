@@ -109,7 +109,7 @@ public class ClassCache
 
     private Class<?> getInterfaceForType(Type type)
     {
-        String javaClassName = CompiledSupport.fullyQualifiedJavaInterfaceNameForPackageableElement(type);
+        String javaClassName = CompiledSupport.fullyQualifiedJavaInterfaceNameForPackageableElement((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement) type);
         try
         {
             return this.classLoader.loadClass(javaClassName);

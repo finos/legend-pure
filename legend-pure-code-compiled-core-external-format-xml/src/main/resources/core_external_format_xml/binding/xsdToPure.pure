@@ -64,7 +64,7 @@ function meta::external::format::xml::binding::toPure::xsdToPure(schemaSet:Schem
       name        = $config.targetBinding->substring($sepPos+2),
       schemaSet   = $schemaSet,
       contentType = 'application/xml',
-      modelUnit   = newModelUnit()->include($generatedElements)
+      modelUnit   = newModelUnit()->include($generatedElements->cast(@PackageableElement))
    );
       
    $debug->log(|'\nGenerated the following model:\n\n'+$result->bindingToString());
@@ -555,7 +555,7 @@ function <<access.private>> meta::external::format::xml::binding::toPure::addRea
 // Type generation
 // ========================================================================================================================================================
 
-function <<access.private>> meta::external::format::xml::binding::toPure::generateTypes(context:GenerationContext[1], debug:DebugContext[1]): PackageableElement[*]
+function <<access.private>> meta::external::format::xml::binding::toPure::generateTypes(context:GenerationContext[1], debug:DebugContext[1]): Type[*]
 {
    $debug->log(|'--- Generating Types');
 
@@ -1700,7 +1700,7 @@ function <<access.private>> meta::external::format::xml::binding::toPure::applyA
    if($isAbstract->isTrue(), | $clazz->makeAbstract(), | $clazz);
 }
 
-function <<access.private>> meta::external::format::xml::binding::toPure::applyAnnotations(type:Type[1], annotations:XsdAnnotation[*]): Type[1]
+function <<access.private>> meta::external::format::xml::binding::toPure::applyAnnotations(type:AnnotatedElement[1], annotations:XsdAnnotation[*]): AnnotatedElement[1]
 {
    ^$type(taggedValues=$type.taggedValues->concatenate($annotations->annotationsToDoc()));
 }

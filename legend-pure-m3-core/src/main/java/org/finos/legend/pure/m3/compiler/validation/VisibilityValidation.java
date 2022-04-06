@@ -194,7 +194,7 @@ public class VisibilityValidation
             }
             else
             {
-                if (!Visibility.isVisibleInPackage(rawType, pkg, context, processorSupport))
+                if (!Visibility.isVisibleInPackage((ElementWithStereotypes)rawType, pkg, context, processorSupport))
                 {
                     throwAccessException(genericType.getSourceInformation(), rawType, pkg, processorSupport);
                 }

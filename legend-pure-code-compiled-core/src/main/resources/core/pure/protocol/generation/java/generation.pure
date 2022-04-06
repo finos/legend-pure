@@ -51,11 +51,12 @@ function meta::protocols::generation::java::conventions(purePackage:String[1], j
   ->setBasePackageName($javaPackage)
   ->setTypeAndPackageNameStrategy(
       {t,c|
-        let packageStr = $t.package->toOne()->elementToPath('.');
-        let package = $c.basePackageName + if ($packageStr->length() == $basePackageStr->length(), |'', |'.'+$t.package->toOne()->elementToPath('.')->substring($basePackageStr->length()+1));
+        let x = $t->cast(@PackageableElement);
+        let packageStr = $x.package->toOne()->elementToPath('.');
+        let package = $c.basePackageName + if ($packageStr->length() == $basePackageStr->length(), |'', |'.'+$x.package->toOne()->elementToPath('.')->substring($basePackageStr->length()+1));
         pair(
           $package->sanitizeIdentifier(),
-          $t.name->toOne()->sanitizeIdentifier()->toUpperFirstCharacter()->toOne()
+          $x.name->toOne()->sanitizeIdentifier()->toUpperFirstCharacter()->toOne()
         );}
   );
 }
