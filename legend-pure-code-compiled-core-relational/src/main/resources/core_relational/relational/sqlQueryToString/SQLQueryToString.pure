@@ -76,10 +76,7 @@ Class meta::relational::functions::sqlQueryToString::DbConfig
 
    literalProcessor(type:Type[1])
    {
-     let realType = if($type->instanceOf(Enumeration), | Enum, | $type);
-     if($realType->equal(VarPlaceHolder),
-      |^LiteralProcessor(format = '%s', transform = {v:VarPlaceHolder[1] | convertPlaceHolderToSQLString($v, $this.dbExtension.literalProcessor, $this.dbTimeZone)}),
-      |$this.dbExtension.literalProcessor->eval($realType));
+     getLiteralProcessorForType($type, $this.dbExtension.literalProcessor, $this.dbTimeZone);
    }: LiteralProcessor[1];
 }
 
@@ -137,7 +134,7 @@ function meta::relational::functions::sqlQueryToString::createDbExtension(dbType
    ^DbExtension(
       dynaFuncDispatch = getDynaFunctionMappings($dbType),
       isDbReservedIdentifier = {str:String[1]| $str->in($reservedWords)},
-      literalProcessor = {type:Type[1]| $literalProcessors->get($type)->toOne()}
+      literalProcessor = {type:Type[1]| $literalProcessors->get(if($type->instanceOf(Enumeration), | Enum, | $type))->toOne()}
    );
 }
 
@@ -255,6 +252,13 @@ Class <<access.private>> meta::relational::functions::sqlQueryToString::LiteralP
    transformValue(value:Any[1]) {
       $this.transform->eval($value)
    }:String[1];
+}
+
+function meta::relational::functions::sqlQueryToString::getLiteralProcessorForType(type:Type[1], literalProcessor: meta::pure::metamodel::function::Function<{Type[1] -> LiteralProcessor[1]}>[1], dbTimeZone:String[0..1]): LiteralProcessor[1]
+{
+   if($type->equal(VarPlaceHolder),
+      |^LiteralProcessor(format = '%s', transform = {v:VarPlaceHolder[1] | convertPlaceHolderToSQLString($v, $literalProcessor, $dbTimeZone)}),
+      |$literalProcessor->eval($type));
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::getLiteralProcessors(dbType:DatabaseType[1], dbTimeZone:String[0..1]):Map<Type,LiteralProcessor>[1]
@@ -2566,7 +2570,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::dateT
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::transformPercentile(args: String[*], dbType: DatabaseType[1]): String[1]
 {
-   let boolProc = createDbConfig($dbType, []).literalProcessor(Boolean);
+   let dbConfig = createDbConfig($dbType, []);
+   let boolProc = $dbConfig.literalProcessor(Boolean);
    let trueVal  = $boolProc.formatValue(true);
    let falseVal = $boolProc.formatValue(false);
 
