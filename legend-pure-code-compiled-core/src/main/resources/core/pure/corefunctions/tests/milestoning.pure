@@ -63,3 +63,20 @@ Class meta::pure::milestoning::tests::NonTemporalClassC
 {
 
 }
+
+Class <<temporal.businesstemporal>> meta::pure::milestoning::tests::BusinessTemporalClassD
+{
+
+}
+
+Association meta::pure::milestoning::tests::DuplicatePropAssociation
+{
+   propertyB: meta::pure::milestoning::tests::BusinessTemporalClassB[0..*];
+   propertyB: meta::pure::milestoning::tests::BusinessTemporalClassD[0..1];
+}
+
+function <<test.Test>> meta::pure::milestoning::tests::testReverseMilestoning(): Boolean[1]
+{
+   let prop =  meta::pure::milestoning::tests::BusinessTemporalClassB.propertiesFromAssociations->map(p | $p->meta::pure::milestoning::reverseMilestoningTransforms());
+   assertSameElements([meta::pure::milestoning::tests::BusinessTemporalClassB.propertiesFromAssociations->cast(@AbstractProperty<Any>)->toOne()->meta::pure::milestoning::originalPropertyNameForEdgePointProperty()], $prop.name);
+}
