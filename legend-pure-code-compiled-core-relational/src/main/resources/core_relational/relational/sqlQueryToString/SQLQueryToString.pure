@@ -61,9 +61,33 @@ Class meta::relational::functions::sqlQueryToString::DbConfig
    dbType:DatabaseType[1];
    dbTimeZone:String[0..1];
    quoteIdentifiers:Boolean[1];
-   dynaFuncDispatch:meta::pure::metamodel::function::Function<{DynaFunction[1], GenerationState[1]->DynaFunctionToSql[1]}>[1];
-   dbReservedIdentifiers : String[*];
-   literalProcessors:Map<Type,LiteralProcessor>[1];
+
+   dbExtension: DbExtension[1];
+   
+   dynaFuncDispatch(dynaFn:DynaFunction[1], state:GenerationState[1])
+   {
+     $this.dbExtension.dynaFuncDispatch->eval($dynaFn, $state);
+   }: DynaFunctionToSql[1];
+   
+   isDbReservedIdentifier(str:String[1])
+   {
+     $this.dbExtension.isDbReservedIdentifier->eval($str);
+   }: Boolean[1];
+
+   literalProcessor(type:Type[1])
+   {
+     let realType = if($type->instanceOf(Enumeration), | Enum, | $type);
+     if($realType->equal(VarPlaceHolder),
+      |^LiteralProcessor(format = '%s', transform = {v:VarPlaceHolder[1] | convertPlaceHolderToSQLString($v, $this.dbExtension.literalProcessor, $this.dbTimeZone)}),
+      |$this.dbExtension.literalProcessor->eval($realType));
+   }: LiteralProcessor[1];
+}
+
+Class meta::relational::functions::sqlQueryToString::DbExtension
+{
+   dynaFuncDispatch: meta::pure::metamodel::function::Function<{DynaFunction[1], GenerationState[1] -> DynaFunctionToSql[1]}>[1];
+   isDbReservedIdentifier: meta::pure::metamodel::function::Function<{String[1] -> Boolean[1]}>[1];
+   literalProcessor: meta::pure::metamodel::function::Function<{Type[1] -> LiteralProcessor[1]}>[1];
 }
 
 function meta::relational::functions::sqlQueryToString::sqlQueryToString(sqlQuery:SQLQuery[1], dbType:DatabaseType[1], extensions:RouterExtension[*]):String[1]
@@ -98,18 +122,22 @@ function meta::relational::functions::sqlQueryToString::createDbConfig( dbType:D
 
 function meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1]):DbConfig[1]
 {
-   createDbConfig($dbType, $dbTimeZone, $quoteIdentifiers, getDynaFunctionMappings($dbType), getLiteralProcessors($dbType, $dbTimeZone));
-}
-
-function <<access.private>> meta::relational::functions::sqlQueryToString::createDbConfig( dbType:DatabaseType[1], dbTimeZone:String[0..1], quoteIdentifiers:Boolean[0..1], dynaFuncDispatch:meta::pure::metamodel::function::Function<{DynaFunction[1], GenerationState[1]->DynaFunctionToSql[1]}>[1], literalProcessors:Map<Type,LiteralProcessor>[1]):DbConfig[1]
-{
    ^DbConfig(
       dbType = $dbType,
       dbTimeZone = $dbTimeZone,
       quoteIdentifiers = if($quoteIdentifiers->isEmpty(), |false, |$quoteIdentifiers->toOne()),
-      dynaFuncDispatch  = $dynaFuncDispatch,
-      dbReservedIdentifiers = dbReservedWords($dbType),
-      literalProcessors = $literalProcessors
+      dbExtension = $dbType->createDbExtension($dbTimeZone)
+   );
+}
+
+function meta::relational::functions::sqlQueryToString::createDbExtension(dbType:DatabaseType[1], dbTimeZone:String[0..1]):DbExtension[1]
+{
+   let reservedWords = dbReservedWords($dbType);
+   let literalProcessors = getLiteralProcessors($dbType, $dbTimeZone);
+   ^DbExtension(
+      dynaFuncDispatch = getDynaFunctionMappings($dbType),
+      isDbReservedIdentifier = {str:String[1]| $str->in($reservedWords)},
+      literalProcessor = {type:Type[1]| $literalProcessors->get($type)->toOne()}
    );
 }
 
@@ -262,15 +290,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getLi
                                       | newMap([]->cast(@Pair<Type, LiteralProcessor>))
                                  )))))));
 
-
-
-
-   let processors = $default->putAll($specific);
-
-   //put varPlaceHolderProcessor in last so we can reference other processors, this stops it having to rebuild for each var.
-   let varPlaceHolderProcessor = pair(VarPlaceHolder, ^LiteralProcessor(format = '%s',     transform = {v:VarPlaceHolder[1] | convertPlaceHolderToSQLString($v, $processors, $dbTimeZone)}));
-
-   $processors->putAll($varPlaceHolderProcessor);
+   $default->putAll($specific);
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::getLiteralProcessorsForSybaseASE(dbTimeZone:String[0..1]):Map<Type,LiteralProcessor>[1]
@@ -355,7 +375,7 @@ function  meta::relational::functions::sqlQueryToString::processLiteralDefaultFo
                     |$a->cast(@List<Any>).values->type(),
                     |let typeArgumentType = $a.classifierGenericType.typeArguments.rawType; if($typeArgumentType->isEmpty(),|String,|$typeArgumentType->toOne());),
                  |$a->type());
-   let processor = getLiteralProcessorForType($dbConfig.literalProcessors, $type);
+   let processor = $dbConfig.literalProcessor($type);
    if(!$a->type()==String,
       | if($a->type()==List,
            | $a->cast(@List<Any>)->processLiteralListForPlanService($type, $dbConfig, $dbType, $dbTimeZone)->joinStrings(','),
@@ -367,8 +387,8 @@ function meta::relational::functions::sqlQueryToString::processLiteralListForPla
 {
 
    $a.values->map(v|$v->match([
-                     s:String[1]| getLiteralProcessorForType($dbConfig.literalProcessors, $type).formatValue($s)->replace('\'\'', '\''),
-                     a:Any[1]| getLiteralProcessorForType($dbConfig.literalProcessors, $type).formatValue($a)
+                     s:String[1]| $dbConfig.literalProcessor($type).formatValue($s)->replace('\'\'', '\''),
+                     a:Any[1]| $dbConfig.literalProcessor($type).formatValue($a)
                   ]))
    ->joinStrings(',');
 }
@@ -381,14 +401,8 @@ function meta::relational::functions::sqlQueryToString::processLiteralValue(a:An
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::processLiteralValue(a:Any[1], dbConfig : DbConfig[1]) : String[1]
 {
-   let processor = getLiteralProcessorForType($dbConfig.literalProcessors, $a->type());
+   let processor = $dbConfig.literalProcessor($a->type());
    $processor.formatValue($a);
-}
-
-function <<access.private>> meta::relational::functions::sqlQueryToString::getLiteralProcessorForType(processors:Map<Type, LiteralProcessor>[1], type:Type[1]):LiteralProcessor[1]
-{
-   let realType = if ($type->instanceOf(Enumeration), | Enum, | $type);
-   $processors->get($realType)->toOne();
 }
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::convertStringToSQLString(s:String[1]):String[1]
@@ -401,9 +415,9 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::conve
    'null'
 }
 
-function <<access.private>> meta::relational::functions::sqlQueryToString::getPrefixAndSuffixForType(type:Type[1], processors:Map<Type, LiteralProcessor>[1]):Pair<String, String>[1]
+function <<access.private>> meta::relational::functions::sqlQueryToString::getPrefixAndSuffixForType(type:Type[1], literalProcessor: meta::pure::metamodel::function::Function<{Type[1] -> LiteralProcessor[1]}>[1]):Pair<String, String>[1]
 {
-   let lp           = $processors->get($type)->toOne();
+   let lp           = $literalProcessor->eval($type);
    // We need this replace here to mimic what we would have done if we had executed the format string on input.
    // %% is used in format to escape a required % symbol. We don't need to do this while building freemarker context
    let lpFormat     = $lp.format->replace('%%', '%');
@@ -422,11 +436,11 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getVa
        | $v.type);
 }
 
-function meta::relational::functions::sqlQueryToString::convertPlaceHolderToSQLString(v:VarPlaceHolder[1], processors:Map<Type, LiteralProcessor>[1], dbTimeZone:String[0..1]):String[1]
+function meta::relational::functions::sqlQueryToString::convertPlaceHolderToSQLString(v:VarPlaceHolder[1], literalProcessor: meta::pure::metamodel::function::Function<{Type[1] -> LiteralProcessor[1]}>[1], dbTimeZone:String[0..1]):String[1]
 {
    let vType        = $v->getVariableType();
 
-   let prefixSuffix = getPrefixAndSuffixForType($vType, $processors);
+   let prefixSuffix = getPrefixAndSuffixForType($vType, $literalProcessor);
    let prefix       = $prefixSuffix.first;
    let suffix       = $prefixSuffix.second;
    let value        = processPlaceHolder($v, $vType, $prefix, $suffix, $dbTimeZone);
@@ -865,7 +879,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
       |
    if ($func.name == 'not',
       | processNot($func,$dbConfig,$format,$generationState,$config, $extensions),
-      | let result = $dbConfig.dynaFuncDispatch->eval($func, $generationState);
+      | let result = $dbConfig.dynaFuncDispatch($func, $generationState);
 
         let params = if ($func.name->in(['and', 'or']),
                         | $func.parameters->map(p | $p->maybeWrapAsBooleanOperation($dbConfig.dbType, $extensions)),
@@ -1854,7 +1868,7 @@ function meta::relational::functions::sqlQueryToString::processColumnName(name:S
          | [],
          | if ($dbType == DatabaseType.SybaseIQ,
                |
-                  if($lowerName->in($dbConfig.dbReservedIdentifiers),
+                  if($dbConfig.isDbReservedIdentifier($lowerName),
                      | '"' + $lowerName + '"',
                      | []
                      ),
@@ -2302,7 +2316,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
                                     | $identifier
                                     )
                               )->map(identifier|
-                                 if(!$identifier->startsWith('"') && $dbConfig.dbReservedIdentifiers->contains($identifier),
+                                 if(!$identifier->startsWith('"') && $dbConfig.isDbReservedIdentifier($identifier),
                                     | '"%s"'->format($identifier),
                                     | $identifier
                                     )
@@ -2552,7 +2566,7 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::dateT
 
 function <<access.private>> meta::relational::functions::sqlQueryToString::transformPercentile(args: String[*], dbType: DatabaseType[1]): String[1]
 {
-   let boolProc = getLiteralProcessorForType(getLiteralProcessors($dbType, []), Boolean);
+   let boolProc = createDbConfig($dbType, []).literalProcessor(Boolean);
    let trueVal  = $boolProc.formatValue(true);
    let falseVal = $boolProc.formatValue(false);
 
