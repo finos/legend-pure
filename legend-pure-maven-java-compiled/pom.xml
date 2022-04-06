@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>1.52.2-SNAPSHOT</version>
+        <version>1.52.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -52,11 +52,6 @@
     </build>
 
     <dependencies>
-        <dependency>
-            <groupId>org.finos.legend.pure</groupId>
-            <artifactId>legend-pure-m4</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.finos.legend.pure</groupId>
             <artifactId>legend-pure-m3-core</artifactId>

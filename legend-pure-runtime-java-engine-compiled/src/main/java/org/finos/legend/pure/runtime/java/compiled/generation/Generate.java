@@ -15,104 +15,120 @@
 package org.finos.legend.pure.runtime.java.compiled.generation;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableOrderedMap;
+import org.eclipse.collections.api.map.OrderedMap;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.tuple.Tuples;
+import org.eclipse.collections.impl.Counter;
+import org.eclipse.collections.impl.map.ordered.mutable.OrderedMapAdapter;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.JavaCompilerEventObserver;
+import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
 
+import java.util.LinkedHashMap;
 import java.util.SortedMap;
+import java.util.function.Function;
 
 public class Generate
 {
     private final Message message;
     private final JavaCompilerEventObserver observer;
-    private final MutableList<Pair<String, ImmutableList<StringJavaSource>>> javaSources;
-    private ListIterable<StringJavaSource> externalizableSources = Lists.mutable.empty();
+    private final MutableOrderedMap<String, ImmutableList<StringJavaSource>> javaSourcesByGroup = OrderedMapAdapter.adapt(new LinkedHashMap<>());
+    private ImmutableList<StringJavaSource> externalizableSources = Lists.immutable.empty();
 
     public Generate(Message message, JavaCompilerEventObserver observer)
     {
         this.message = message;
-        this.observer = observer;
-        this.javaSources = FastList.newList();
+        this.observer = (observer == null) ? VoidJavaCompilerEventObserver.VOID_JAVA_COMPILER_EVENT_OBSERVER : observer;
     }
 
-    public int generate(String compileGroup, RichIterable<? extends Source> sources, JavaSourceCodeGenerator javaSourceCodeGenerator, MutableList<StringJavaSource> javaSources, int totalSourceCount, int start)
+    public Generate(Message message)
     {
-        int count = start;
+        this(message, null);
+    }
+
+    public Generate(JavaCompilerEventObserver observer)
+    {
+        this(null, observer);
+    }
+
+    public Generate()
+    {
+        this(null, null);
+    }
+
+    MutableList<StringJavaSource> generate(String compileGroup, RichIterable<? extends Source> sources, JavaSourceCodeGenerator javaSourceCodeGenerator, Counter sourceCounter, int totalSourceCount)
+    {
+        MutableList<StringJavaSource> javaSources = Lists.mutable.empty();
         this.observer.startGeneratingJavaFiles(compileGroup);
-        for (Source src : sources)
+        sources.forEach(source ->
         {
-            javaSources.addAllIterable(javaSourceCodeGenerator.generateCode(src));
-            count++;
+            javaSources.addAllIterable(javaSourceCodeGenerator.generateCode(source));
+            sourceCounter.increment();
             if (this.message != null)
             {
-                this.message.setMessage("Generating Java sources (" + count + "/" + totalSourceCount + ")");
+                this.message.setMessage("Generating Java sources (" + sourceCounter.getCount() + "/" + totalSourceCount + ")");
             }
-        }
+        });
         this.observer.endGeneratingJavaFiles(compileGroup, javaSources);
-        return count;
+        return javaSources;
+    }
+
+    void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, Function<? super String, ? extends JavaSourceCodeGenerator> sourceCodeGeneratorFn)
+    {
+        if (this.message != null)
+        {
+            this.message.setMessage("Generating and compiling Java source code ...");
+        }
+        compiledSourcesByRepo = ReposWithBadDependencies.combineReposWithBadDependencies(compiledSourcesByRepo);
+        Counter sourceCounter = new Counter();
+        compiledSourcesByRepo.forEach((compileGroup, sources) -> sourceCounter.add(sources.size()));
+        int totalSourceCount = sourceCounter.getCount();
+        if (totalSourceCount > 0)
+        {
+            sourceCounter.reset();
+            compiledSourcesByRepo.forEach((compileGroup, sources) ->
+            {
+                if (!PlatformCodeRepository.NAME.equals(compileGroup) && sources.notEmpty())
+                {
+                    JavaSourceCodeGenerator sourceCodeGenerator = sourceCodeGeneratorFn.apply(compileGroup);
+                    ListIterable<StringJavaSource> compileGroupJavaSources = generate(compileGroup, sources, sourceCodeGenerator, sourceCounter, totalSourceCount);
+                    this.javaSourcesByGroup.put(compileGroup, compileGroupJavaSources.toImmutable());
+                }
+            });
+        }
+
     }
 
     public void generateJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, JavaSourceCodeGenerator sourceCodeGenerator)
     {
-        try
-        {
-            if (this.message != null)
-            {
-                this.message.setMessage("Generating and compiling Java source code ...");
-            }
-
-            compiledSourcesByRepo = ReposWithBadDependencies.combineReposWithBadDependencies(compiledSourcesByRepo);
-
-            int totalSourceCount = compiledSourcesByRepo.size();
-
-            if (totalSourceCount > 0)
-            {
-                int count = 0;
-
-                for (String compileGroup : compiledSourcesByRepo.keySet())
-                {
-                    if (!PlatformCodeRepository.NAME.equals(compileGroup))
-                    {
-                        RichIterable<? extends Source> sources = compiledSourcesByRepo.get(compileGroup);
-                        MutableList<StringJavaSource> javaSources = FastList.newList();
-
-                        count = this.generate(compileGroup, sources, sourceCodeGenerator, javaSources, totalSourceCount, count);
-                        this.javaSources.add(Tuples.pair(compileGroup, javaSources.toImmutable()));
-                    }
-                }
-            }
-        }
-        catch (RuntimeException e)
-        {
-            throw e;
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        generateJavaCodeForSources(compiledSourcesByRepo, compileGroup -> sourceCodeGenerator);
     }
 
     public void generateExternalizableAPI(JavaSourceCodeGenerator sourceCodeGenerator, String pack)
     {
-        this.externalizableSources = sourceCodeGenerator.generateExternalizableAPI(pack);
+        this.externalizableSources = sourceCodeGenerator.generateExternalizableAPI(pack).toImmutable();
     }
 
+    public OrderedMap<String, ImmutableList<StringJavaSource>> getJavaSourcesByGroup()
+    {
+        return this.javaSourcesByGroup.asUnmodifiable();
+    }
+
+    @Deprecated
     public ListIterable<Pair<String, ImmutableList<StringJavaSource>>> getJavaSources()
     {
-        return this.javaSources.toImmutable();
+        return this.javaSourcesByGroup.keyValuesView().toList();
     }
 
     public ListIterable<StringJavaSource> getExternalizableSources()
     {
-        return this.externalizableSources.toImmutable();
+        return this.externalizableSources;
     }
 }

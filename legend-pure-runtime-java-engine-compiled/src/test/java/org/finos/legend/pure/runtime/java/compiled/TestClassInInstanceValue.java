@@ -24,7 +24,8 @@ import org.junit.Test;
 public class TestClassInInstanceValue extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
+    public static void setUp()
+    {
         setUpRuntime(getFunctionExecution());
     }
 
@@ -37,7 +38,7 @@ public class TestClassInInstanceValue extends AbstractPureTestWithCoreCompiled
     @Test
     public void testListOfClassesValue()
     {
-        compileTestSource("fromString.pure","Class A\n" +
+        compileTestSource("fromString.pure", "Class A\n" +
                           "{\n" +
                           "    test : String[1];\n" +
                           "}\n" +
@@ -53,7 +54,7 @@ public class TestClassInInstanceValue extends AbstractPureTestWithCoreCompiled
     @Test
     public void testListOfClassesValueAsParams()
     {
-        compileTestSource("fromString.pure","Class A\n" +
+        compileTestSource("fromString.pure", "Class A\n" +
                           "{\n" +
                           "    test : String[1];\n" +
                           "}\n" +
@@ -73,7 +74,7 @@ public class TestClassInInstanceValue extends AbstractPureTestWithCoreCompiled
     @Test
     public void testListOfClassesValueOneValueInList()
     {
-        compileTestSource("fromString.pure","Class A\n" +
+        compileTestSource("fromString.pure", "Class A\n" +
                           "{\n" +
                           "    test : String[1];\n" +
                           "}\n" +
@@ -93,7 +94,7 @@ public class TestClassInInstanceValue extends AbstractPureTestWithCoreCompiled
     @Test
     public void testListOfClassesWithCommonSupertype()
     {
-        compileTestSource("fromString.pure","import test::*;\n" +
+        compileTestSource("fromString.pure", "import test::*;\n" +
                 "Class test::A {}\n" +
                 "Class test::B extends A {}\n" +
                 "Class test::C extends A {}\n" +
@@ -106,7 +107,7 @@ public class TestClassInInstanceValue extends AbstractPureTestWithCoreCompiled
         compileAndExecute("test():Any[*]");
     }
 
-     protected static FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

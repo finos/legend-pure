@@ -32,7 +32,7 @@ function meta::external::query::graphQL::binding::toPure::introspection::Introsp
    let sepPos  = $config.targetBinding->lastIndexOf('::');
    let pkgName = $config.targetBinding->substring(0, $sepPos);   
    
-   let generatedElements = buildPureTypesFromGraphQLSchema($schemaSet.schemas->at(0).detail->cast(@GraphQLIntrospectionContainer).schema, $pkgName);   
+   let generatedElements = buildPureTypesFromGraphQLSchema($schemaSet.schemas->at(0).detail->cast(@GraphQLIntrospectionContainer).schema, $pkgName)->cast(@PackageableElement);
 
    ^Binding(
       package     = meta::external::query::graphQL::binding::toPure::buildTransientPackageFromString($pkgName),

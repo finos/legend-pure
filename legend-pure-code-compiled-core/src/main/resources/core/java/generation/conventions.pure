@@ -333,12 +333,22 @@ function meta::external::language::java::transform::identifier(conventions: Conv
    $conventions.identifierFactory->eval($name);
 }
 
+function meta::external::language::java::transform::className(conventions: Conventions[1], pe:meta::pure::metamodel::type::Type[1]): meta::external::language::java::metamodel::Class[1]
+{
+    meta::external::language::java::transform::className($conventions, $pe->cast(@PackageableElement));
+}
+
 function meta::external::language::java::transform::className(conventions: Conventions[1], pe:PackageableElement[1]): meta::external::language::java::metamodel::Class[1]
 {
    if($pe->instanceOf(meta::pure::metamodel::type::Type) && $conventions->isProvidedType($pe->cast(@meta::pure::metamodel::type::Type)),
       | $conventions->getProvidedType($pe->cast(@meta::pure::metamodel::type::Type)),
       | $conventions->generateClassName($pe, 'app', '')
    );
+}
+
+function meta::external::language::java::transform::implClassName(conventions: Conventions[1], pe:meta::pure::metamodel::type::Type[1]): meta::external::language::java::metamodel::Class[1]
+{
+   $conventions->generateClassName($pe->cast(@PackageableElement), 'internal', '_Impl');
 }
 
 function meta::external::language::java::transform::implClassName(conventions: Conventions[1], pe:PackageableElement[1]): meta::external::language::java::metamodel::Class[1]

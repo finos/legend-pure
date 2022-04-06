@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.compiler.unload.walk;
 
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ReferenceUsage;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
@@ -34,6 +35,10 @@ public class FunctionTypeUnloaderWalk implements MatchRunner<FunctionType>
     @Override
     public void run(FunctionType type, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
+        for (ReferenceUsage referenceUsage : type._referenceUsages())
+        {
+            matcher.fullMatch(referenceUsage._ownerCoreInstance(), state);
+        }
         if (type._functionCoreInstance().getFirst()!= null)
         {
             matcher.fullMatch(type._functionCoreInstance().getFirst(), state);

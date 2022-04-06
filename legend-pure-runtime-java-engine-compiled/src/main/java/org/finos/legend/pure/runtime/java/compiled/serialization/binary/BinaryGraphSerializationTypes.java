@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
+import org.finos.legend.pure.runtime.java.compiled.serialization.model.Obj;
+
 class BinaryGraphSerializationTypes
 {
     static final byte OBJ_REF = 1;
@@ -24,4 +26,46 @@ class BinaryGraphSerializationTypes
     static final byte PRIMITIVE_STRING = 6;
     static final byte PRIMITIVE_DATE = 7;
     static final byte PRIMITIVE_DECIMAL = 8;
+
+    private static final int IS_ENUM = 0b1;
+    private static final int HAS_NAME = 0b10;
+    private static final int HAS_SOURCE_INFO = 0b100;
+
+    static byte getObjSerializationCode(Obj obj)
+    {
+        int code = 0;
+        if (obj.isEnum())
+        {
+            code |= IS_ENUM;
+        }
+        if (obj.getName() != null)
+        {
+            code |= HAS_NAME;
+        }
+        if (obj.getSourceInformation() != null)
+        {
+            code |= HAS_SOURCE_INFO;
+        }
+        return (byte) code;
+    }
+
+    static boolean isEnum(byte code)
+    {
+        return hasFlag(code, IS_ENUM);
+    }
+
+    static boolean hasName(byte code)
+    {
+        return hasFlag(code, HAS_NAME);
+    }
+
+    static boolean hasSourceInfo(byte code)
+    {
+        return hasFlag(code, HAS_SOURCE_INFO);
+    }
+
+    private static boolean hasFlag(byte code, int flag)
+    {
+        return (code & flag) == flag;
+    }
 }

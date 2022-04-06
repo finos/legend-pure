@@ -14,17 +14,14 @@
 
 package org.finos.legend.pure.runtime.java.compiled.serialization.binary;
 
-import org.finos.legend.pure.m4.tools.GraphNodeIterable;
-import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
-
 public class TestDistributedStringCaching extends TestStringCaching<DistributedStringCache>
 {
     private static final String METADATA_NAME = "platform";
 
     @Override
-    protected DistributedStringCache buildCache()
+    protected StringCache.Builder<DistributedStringCache> newBuilder()
     {
-        return DistributedStringCache.fromNodes(GraphNodeIterable.allInstancesFromRepository(repository), IdBuilder.newIdBuilder(processorSupport), processorSupport);
+        return DistributedStringCache.newBuilder();
     }
 
     @Override

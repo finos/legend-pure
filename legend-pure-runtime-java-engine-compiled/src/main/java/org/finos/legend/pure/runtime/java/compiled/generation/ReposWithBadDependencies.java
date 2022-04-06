@@ -15,42 +15,46 @@
 package org.finos.legend.pure.runtime.java.compiled.generation;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.map.sorted.mutable.TreeSortedMap;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.serialization.runtime.Source;
 
 import java.util.SortedMap;
+import java.util.TreeMap;
 
-public class ReposWithBadDependencies
+class ReposWithBadDependencies
 {
-    public static SortedMap<String, RichIterable<? extends Source>> combineReposWithBadDependencies(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo)
+    // TEMPORARY WORKAROUND FOR BAD COMPILE DEPENDENCIES - NEED TO CLEAN UP ASSOCIATIONS
+    static SortedMap<String, ? extends RichIterable<? extends Source>> combineReposWithBadDependencies(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo)
     {
-        TreeSortedMap<String, RichIterable<? extends Source>> newMap = new TreeSortedMap<>(compiledSourcesByRepo.comparator());
-        if (compiledSourcesByRepo.size() > 0)
+        if (Iterate.noneSatisfy(compiledSourcesByRepo.keySet(), r -> "model_legacy".equals(r) || "model_candidate".equals(r)))
         {
-            //START TEMPORARY WORKAROUND FOR BAD COMPILE DEPENDENCIES - NEED TO CLEAN UP ASSOCIATIONS
-            ListIterable reposToCombine = Lists.mutable.of("model", "model_legacy", "model_candidate");
-            for (String group : compiledSourcesByRepo.keySet())
+            return compiledSourcesByRepo;
+        }
+
+        SortedMap<String, RichIterable<? extends Source>> newMap = new TreeMap<>(compiledSourcesByRepo.comparator());
+        MutableList<Source> combinedModelSources = Lists.mutable.empty();
+        compiledSourcesByRepo.forEach((repo, sources) ->
+        {
+            switch (repo)
             {
-                if (reposToCombine.contains(group))
+                case "model":
+                case "model_legacy":
+                case "model_candidate":
                 {
-                    RichIterable<? extends Source> vals = newMap.get("model");
-                    if (vals == null || vals.isEmpty())
-                    {
-                        newMap.put("model", compiledSourcesByRepo.get(group));
-                    }
-                    else
-                    {
-                        newMap.put("model", Lists.mutable.<Source>withAll(vals).withAll(compiledSourcesByRepo.get(group)));
-                    }
+                    combinedModelSources.addAllIterable(sources);
+                    break;
                 }
-                else
+                default:
                 {
-                    newMap.put(group, compiledSourcesByRepo.get(group));
+                    newMap.put(repo, sources);
                 }
             }
-            //END TEMPORARY WORKAROUND FOR BAD COMPILE DEPENDENCIES
+        });
+        if (combinedModelSources.notEmpty())
+        {
+            newMap.put("model", combinedModelSources);
         }
         return newMap;
     }
