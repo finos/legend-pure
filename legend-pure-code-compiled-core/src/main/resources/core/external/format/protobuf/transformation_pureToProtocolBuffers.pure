@@ -73,6 +73,11 @@ function meta::external::format::protobuf::generation::toOptionValue(any:Any[1])
               ])
 }
 
+function meta::external::format::protobuf::generation::elementToProtoPackage(e:Type[1]):String[1]
+{
+  $e->cast(@PackageableElement)->elementToProtoPackage();
+}
+
 function meta::external::format::protobuf::generation::elementToProtoPackage(e:PackageableElement[1]):String[1]
 {
   $e.package->toOne()->elementToPath('.')
