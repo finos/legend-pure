@@ -48,6 +48,7 @@
                             <repositories>
                                 <repository>platform</repository>
                                 <repository>core</repository>
+                                <repository>core_persistence</repository>
                                 <repository>core_relational</repository>
                                 <repository>core_servicestore</repository>
                                 <repository>core_external_shared</repository>
@@ -68,6 +69,11 @@
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
                         <artifactId>legend-pure-code-compiled-core</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.finos.legend.pure</groupId>
+                        <artifactId>legend-pure-code-compiled-core-persistence</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                     <dependency>
@@ -227,6 +233,11 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.pure</groupId>
+            <artifactId>legend-pure-code-compiled-core-persistence</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
