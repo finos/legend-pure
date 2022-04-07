@@ -54,7 +54,7 @@ public abstract class DistributedBinaryGraphSerializer
         this.metadataSpecification = metadataSpecification;
         this.runtime = runtime;
         this.processorSupport = runtime.getProcessorSupport();
-        this.idBuilder = IdBuilder.newIdBuilder(DistributedMetadataHelper.getMetadataIdPrefix(getMetadataName()), this.processorSupport);
+        this.idBuilder = newIdBuilder(this.metadataSpecification, this.processorSupport);
         this.classifierCaches = new GraphSerializer.ClassifierCaches(this.processorSupport);
     }
 
@@ -278,6 +278,21 @@ public abstract class DistributedBinaryGraphSerializer
     public static void serialize(PureRuntime runtime, Path directory)
     {
         newSerializer(runtime).serializeToDirectory(directory);
+    }
+
+    public static IdBuilder newIdBuilder(String metadataName, ProcessorSupport processorSupport)
+    {
+        return newIdBuilder_internal(DistributedMetadataHelper.validateMetadataNameIfPresent(metadataName), processorSupport);
+    }
+
+    public static IdBuilder newIdBuilder(DistributedMetadataSpecification metadataSpec, ProcessorSupport processorSupport)
+    {
+        return newIdBuilder_internal((metadataSpec == null) ? null : metadataSpec.getName(), processorSupport);
+    }
+
+    private static IdBuilder newIdBuilder_internal(String metadataName, ProcessorSupport processorSupport)
+    {
+        return IdBuilder.newIdBuilder(DistributedMetadataHelper.getMetadataIdPrefix(metadataName), processorSupport);
     }
 
     protected class SerializationCollector
