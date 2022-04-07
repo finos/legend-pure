@@ -60,20 +60,11 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
 {
 }
 
-Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPWorkloadIdentityFederationWithAWSAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPWorkloadIdentityFederationAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
 {
-    workloadProjectNumber : String[1];
     serviceAccountEmail : String[1];
     additionalGcpScopes: String[*];
-    workloadPoolId : String[1];
-    workloadProviderId: String[1];
-    awsAccountId: String[1];
-    awsRegion: String[1];
-    awsRole: String[1];
-    awsAccessKeyIdVaultReference: String[1];
-    awsSecretAccessKeyVaultReference: String[1];
 }
-
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::LocalH2DatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
 {
@@ -126,6 +117,8 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
 {
     projectId:String[1];
     defaultDataset:String[1];
+    proxyHost: String[0..1];
+    proxyPort: String[0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::TestDatabaseConnection extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection

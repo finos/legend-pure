@@ -95,6 +95,7 @@ public class PureSession
             MutableList<RepositoryCodeStorage> repos = Lists.mutable
                     .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
                     .with(this.buildCore(""))
+                    .with(this.buildCore("persistence"))
                     .with(this.buildCore("relational"))
                     .with(this.buildCore("servicestore"))
                     .with(this.buildCore("external-shared"))

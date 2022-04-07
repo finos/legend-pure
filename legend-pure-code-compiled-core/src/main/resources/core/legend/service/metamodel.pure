@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import meta::pure::runtime::*;
-import meta::pure::mapping::*;
 import meta::legend::service::metamodel::*;
+
 import meta::pure::executionPlan::*;
 
-Class meta::legend::service::metamodel::Service extends PackageableElement
+import meta::pure::mapping::*;
+
+import meta::pure::runtime::*;
+
+Class meta::legend::service::metamodel::Service extends PackageableElement, meta::pure::test::Testable
 [
    multiExecutionKeyMustBePartOfPattern: if($this.execution->instanceOf(meta::legend::service::metamodel::PureMultiExecution),|$this.pattern->contains('{'+ $this.execution->cast(@PureMultiExecution).executionKey+'}'),|true),
 
@@ -36,8 +39,9 @@ Class meta::legend::service::metamodel::Service extends PackageableElement
    autoActivateUpdates : Boolean[1];
    documentation : String[1];
    execution : Execution[1];
-   test :Test[1];
    tags: ServiceTag[*];
+
+   <<doc.deprecated>> test: Test[1];
 }
 
 Class meta::legend::service::metamodel::ServiceTag
@@ -81,17 +85,46 @@ Class  meta::legend::service::metamodel::KeyedExecutionParameter
    executionOptions : ExecutionOption[*];
 }
 
-Class meta::legend::service::metamodel::Test
+// Test Model
+Class meta::legend::service::metamodel::ServiceTestSuite extends meta::pure::test::TestSuite
+{
+  testData   : TestData[1];
+}
+
+Class meta::legend::service::metamodel::ServiceTest extends meta::pure::test::AtomicTest
+{
+  parameters : ParameterValue[*];
+}
+
+Class meta::legend::service::metamodel::ParameterValue
+{
+  name       : String[1];
+  value      : Any[*];
+}
+
+Class meta::legend::service::metamodel::TestData
+{
+  connectionsTestData : ConnectionTestData[*];
+}
+
+Class meta::legend::service::metamodel::ConnectionTestData
+{
+  connectionId : String[1];
+  testData     : meta::pure::data::EmbeddedData[1];
+}
+
+// Legacy Test Model
+Class <<doc.deprecated>> meta::legend::service::metamodel::Test
 {
 }
 
-Class meta::legend::service::metamodel::SingleExecutionTest extends Test
+Class <<doc.deprecated>> meta::legend::service::metamodel::SingleExecutionTest extends Test
 {
    data : String[1];
    asserts : TestContainer[1..*];
 }
 
-Class meta::legend::service::metamodel::MultiExecutionTest extends Test
+Class <<doc.deprecated>> meta::legend::service::metamodel::MultiExecutionTest extends Test
 {
    tests: KeyedSingleExecutionTest[*];
 
@@ -100,12 +133,12 @@ Class meta::legend::service::metamodel::MultiExecutionTest extends Test
    getResult(key:String[1]){$this.getResultForgiving($key)->toOne() }:KeyedSingleExecutionTest[1];
 }
 
-Class meta::legend::service::metamodel::KeyedSingleExecutionTest extends SingleExecutionTest
+Class <<doc.deprecated>> meta::legend::service::metamodel::KeyedSingleExecutionTest extends SingleExecutionTest
 {
    key:String[1];
 }
 
-Class meta::legend::service::metamodel::TestContainer
+Class <<doc.deprecated>> meta::legend::service::metamodel::TestContainer
 {
    parametersValues : Any[*];
    assert:FunctionDefinition<{Result<Any|*>[1]->Boolean[1]}>[1];
