@@ -15,9 +15,10 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors;
 
 import org.eclipse.collections.api.factory.Maps;
-import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.map.ConcurrentMutableMap;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -39,12 +40,15 @@ public class IdBuilder
     private final String defaultIdPrefix;
     private final ProcessorSupport processorSupport;
     private final MapIterable<CoreInstance, Function<? super CoreInstance, String>> idBuilders;
+    private final ConcurrentMutableMap<CoreInstance, Function<? super CoreInstance, String>> cache;
 
     private IdBuilder(String defaultIdPrefix, ProcessorSupport processorSupport)
     {
         this.defaultIdPrefix = defaultIdPrefix;
         this.processorSupport = processorSupport;
         this.idBuilders = registerIdBuilderFunctions(processorSupport);
+        this.cache = ConcurrentHashMap.newMap(this.idBuilders.size());
+        this.idBuilders.forEachKeyValue(this.cache::put);
     }
 
     public String buildId(CoreInstance instance)
@@ -61,17 +65,14 @@ public class IdBuilder
 
     private Function<? super CoreInstance, String> findBuilderFunction(CoreInstance classifier)
     {
-        Function<? super CoreInstance, String> function = this.idBuilders.get(classifier);
-        if (function != null)
-        {
-            return function;
-        }
+        return this.cache.getIfAbsentPutWithKey(classifier, this::computeBuilderFunction);
+    }
 
-        ListIterable<CoreInstance> genls = Type.getGeneralizationResolutionOrder(classifier, this.processorSupport);
-        // We can skip the first element, as it's always the classifier itself (which we already checked)
-        for (CoreInstance genl : genls.subList(1, genls.size()))
+    private Function<? super CoreInstance, String> computeBuilderFunction(CoreInstance classifier)
+    {
+        for (CoreInstance genl : Type.getGeneralizationResolutionOrder(classifier, this.processorSupport))
         {
-            function = this.idBuilders.get(genl);
+            Function<? super CoreInstance, String> function = this.idBuilders.get(genl);
             if (function != null)
             {
                 return function;
