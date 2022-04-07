@@ -41,18 +41,18 @@ class ByteBufferBinaryReader extends AbstractBinaryReader
     }
 
     @Override
-    public synchronized byte[] readBytes(int n)
+    public synchronized byte[] readBytes(byte[] bytes, int offset, int n)
     {
+        checkByteArray(bytes, offset, n);
         try
         {
-            byte[] result = new byte[n];
-            this.buffer.get(result, 0, n);
-            return result;
+            this.buffer.get(bytes, offset, n);
         }
         catch (BufferUnderflowException e)
         {
             throw new UnexpectedEndException(n, this.buffer.remaining());
         }
+        return bytes;
     }
 
     @Override
@@ -68,8 +68,8 @@ class ByteBufferBinaryReader extends AbstractBinaryReader
             throw new UnexpectedEndException(n, this.buffer.remaining());
         }
 
-        int newPosition = this.buffer.position() + (int)n;
-        ((Buffer)this.buffer).position(newPosition);
+        int newPosition = this.buffer.position() + (int) n;
+        ((Buffer) this.buffer).position(newPosition);
     }
 
     @Override
@@ -152,7 +152,7 @@ class ByteBufferBinaryReader extends AbstractBinaryReader
         }
         int offset = this.buffer.position();
         String string = byteArrayToString(this.buffer.array(), offset, length);
-        ((Buffer)this.buffer).position(offset + length);
+        ((Buffer) this.buffer).position(offset + length);
         return string;
     }
 

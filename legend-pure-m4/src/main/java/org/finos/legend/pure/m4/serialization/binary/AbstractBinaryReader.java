@@ -16,8 +16,6 @@ package org.finos.legend.pure.m4.serialization.binary;
 
 import org.finos.legend.pure.m4.serialization.Reader;
 
-import java.io.IOException;
-
 public abstract class AbstractBinaryReader extends AbstractBinaryReaderWriter implements Reader
 {
     @Override
@@ -44,21 +42,7 @@ public abstract class AbstractBinaryReader extends AbstractBinaryReaderWriter im
     public synchronized boolean readBoolean()
     {
         byte b = readByte();
-        switch (b)
-        {
-            case TRUE_BYTE:
-            {
-                return true;
-            }
-            case FALSE_BYTE:
-            {
-                return false;
-            }
-            default:
-            {
-                throw new RuntimeException(new IOException("Expected " + TRUE_BYTE + " or " + FALSE_BYTE + "; found " + b));
-            }
-        }
+        return byteToBoolean(b);
     }
 
     @Override

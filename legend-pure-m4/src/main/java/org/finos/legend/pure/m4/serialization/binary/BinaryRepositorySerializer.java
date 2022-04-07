@@ -15,29 +15,23 @@
 package org.finos.legend.pure.m4.serialization.binary;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.primitive.IntToObjectFunction;
-import org.eclipse.collections.api.block.procedure.primitive.IntObjectProcedure;
-import org.eclipse.collections.api.block.procedure.primitive.IntProcedure;
-import org.eclipse.collections.api.block.procedure.primitive.ObjectIntProcedure;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.factory.Stacks;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.api.list.primitive.IntList;
 import org.eclipse.collections.api.map.primitive.IntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.primitive.MutableIntSet;
 import org.eclipse.collections.api.stack.MutableStack;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Stacks;
+import org.eclipse.collections.impl.factory.primitive.IntLists;
+import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.impl.factory.primitive.IntSets;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.list.mutable.primitive.IntArrayList;
-import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;
-import org.eclipse.collections.impl.map.mutable.primitive.ObjectIntHashMap;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.Writer;
@@ -62,10 +56,10 @@ public class BinaryRepositorySerializer
     public void serialize(ModelRepository repository)
     {
         // Prepare for serialization
-        MutableIntObjectMap<byte[]> serializedNodesById = IntObjectHashMap.newMap();
-        MutableSet<CoreInstance> doneSet = UnifiedSet.newSet();
-        final MutableIntObjectMap<ListIterable<String>> keys = IntObjectHashMap.newMap();
-        MutableObjectIntMap<String> idsByFile = ObjectIntHashMap.newMap();
+        MutableIntObjectMap<byte[]> serializedNodesById = IntObjectMaps.mutable.empty();
+        MutableSet<CoreInstance> doneSet = Sets.mutable.empty();
+        MutableIntObjectMap<ListIterable<String>> keys = IntObjectMaps.mutable.empty();
+        MutableObjectIntMap<String> idsByFile = ObjectIntMaps.mutable.empty();
 
         MutableStack<CoreInstance> stack = Stacks.mutable.empty();
         for (CoreInstance instance : repository.getTopLevels())
@@ -79,15 +73,8 @@ public class BinaryRepositorySerializer
         this.writer.writeInt(repository.getAnonymousIdCounter());
 
         // Write files by id
-        final String[] fileNames = new String[idsByFile.size()];
-        idsByFile.forEachKeyValue(new ObjectIntProcedure<String>()
-        {
-            @Override
-            public void value(String fileName, int fileId)
-            {
-                fileNames[fileId] = fileName;
-            }
-        });
+        String[] fileNames = new String[idsByFile.size()];
+        idsByFile.forEachKeyValue((fileName, fileId) -> fileNames[fileId] = fileName);
         this.writer.writeStringArray(fileNames);
 
         // Write top level nodes
@@ -103,29 +90,22 @@ public class BinaryRepositorySerializer
 
         // Write all nodes
         this.writer.writeInt(serializedNodesById.size());
-        serializedNodesById.forEachKeyValue(new IntObjectProcedure<byte[]>()
+        serializedNodesById.forEachKeyValue((nodeId, nodeBytes) ->
         {
-            @Override
-            public void value(int nodeId, byte[] nodeBytes)
-            {
-                // Bytes
-                BinaryRepositorySerializer.this.writer.writeBytes(nodeBytes);
+            // Bytes
+            this.writer.writeBytes(nodeBytes);
 
-                // Add Possible realKeyPath
-                ListIterable<String> realKeys = keys.get(nodeId);
-                if (realKeys == null)
-                {
-                    BinaryRepositorySerializer.this.writer.writeBoolean(false);
-                }
-                else
-                {
-                    BinaryRepositorySerializer.this.writer.writeBoolean(true);
-                    BinaryRepositorySerializer.this.writer.writeInt(realKeys.size());
-                    for (String realKey : realKeys)
-                    {
-                        BinaryRepositorySerializer.this.writer.writeString(realKey);
-                    }
-                }
+            // Add possible realKeyPath
+            ListIterable<String> realKeys = keys.get(nodeId);
+            if (realKeys == null)
+            {
+                this.writer.writeBoolean(false);
+            }
+            else
+            {
+                this.writer.writeBoolean(true);
+                this.writer.writeInt(realKeys.size());
+                realKeys.forEach(this.writer::writeString);
             }
         });
     }
@@ -188,7 +168,7 @@ public class BinaryRepositorySerializer
                     serializeSourceInformation(writer, node.getSourceInformation(), idsByFile);
 
                     writer.writeInt(node.getKeys().size());
-                    for (String key : node.getKeys())
+                    node.getKeys().forEach(key ->
                     {
                         CoreInstance keyCoreInstance = node.getKeyByName(key);
                         keys.put(keyCoreInstance.getSyntheticId(), node.getRealKeyByName(key));
@@ -196,12 +176,12 @@ public class BinaryRepositorySerializer
                         writer.writeInt(keyCoreInstance.getSyntheticId());
                         ListIterable<? extends CoreInstance> values = node.getValueForMetaPropertyToMany(key);
                         writer.writeInt(values.size());
-                        for (CoreInstance value : values)
+                        values.forEach(value ->
                         {
                             push(value, stack, doneSet);
                             writer.writeInt(value.getSyntheticId());
-                        }
-                    }
+                        });
+                    });
                     if (nodeSerializations.containsKey(id))
                     {
                         throw new RuntimeException("ERROR");
@@ -213,12 +193,12 @@ public class BinaryRepositorySerializer
     }
 
     // Build
-    public static IntObjectMap<CoreInstance> build(InputStream stream, final ModelRepository repository, MessageCallBack message)
+    public static IntObjectMap<CoreInstance> build(InputStream stream, ModelRepository repository, MessageCallBack message)
     {
         return build(stream, repository, message, null);
     }
 
-    public static IntObjectMap<CoreInstance> build(InputStream stream, final ModelRepository repository, MessageCallBack message, final IntObjectMap<String> classifierIdToPath)
+    public static IntObjectMap<CoreInstance> build(InputStream stream, ModelRepository repository, MessageCallBack message, IntObjectMap<String> classifierIdToPath)
     {
         Reader reader = BinaryReaders.newBinaryReader(stream);
 
@@ -242,7 +222,7 @@ public class BinaryRepositorySerializer
         // Build intermediate nodes
         int nodeCount = reader.readInt();
         message.message("Loading from cache - Building '" + nodeCount + "' intermediate nodes");
-        final MutableIntObjectMap<IntermediateNode> nodes = IntObjectHashMap.newMap();
+        MutableIntObjectMap<IntermediateNode> nodes = IntObjectMaps.mutable.empty();
         for (int i = 0; i < nodeCount; i++)
         {
             IntermediateNode intermediateNode = readNode(reader, filesById);
@@ -252,19 +232,15 @@ public class BinaryRepositorySerializer
 
         // First pass
         message.message("Loading from cache - First pass node instantiation (" + nodes.size() + " nodes)");
-        final MutableIntObjectMap<CoreInstance> map = IntObjectHashMap.newMap();
-        topLevelIds.forEach(new IntProcedure()
+        MutableIntObjectMap<CoreInstance> map = IntObjectMaps.mutable.empty();
+        topLevelIds.forEach(id ->
         {
-            @Override
-            public void value(int id)
-            {
-                IntermediateNode node = nodes.get(id);
-                CoreInstance instance = createCoreInstance(repository, id, node, classifierIdToPath);;
-                repository.addTopLevel(instance);
-                map.put(id, instance);
-            }
+            IntermediateNode node = nodes.get(id);
+            CoreInstance instance = createCoreInstance(repository, id, node, classifierIdToPath);
+            repository.addTopLevel(instance);
+            map.put(id, instance);
         });
-        for (IntermediateNode node : nodes)
+        nodes.forEach(node ->
         {
             int id = node.getId();
             if (!topLevelIds.contains(id))
@@ -327,41 +303,29 @@ public class BinaryRepositorySerializer
                 }
                 map.put(id, coreInstance);
             }
-        }
+        });
 
         // Second pass
         message.message("Loading from cache<BR>Second pass node instantiation<BR>(" + nodes.size() + " nodes)");
-        final IntToObjectFunction<CoreInstance> getInstanceById = new IntToObjectFunction<CoreInstance>()
+        nodes.forEach(node ->
         {
-            @Override
-            public CoreInstance valueOf(int id)
-            {
-                return map.get(id);
-            }
-        };
-        for (IntermediateNode node : nodes)
-        {
-            final CoreInstance nodeInstance = map.get(node.getId());
+            CoreInstance nodeInstance = map.get(node.getId());
             if (nodeInstance.getClassifier() == null)
             {
                 nodeInstance.setClassifier(map.get(node.getClassifierId()));
             }
-            node.getKeyValues().forEachKeyValue(new IntObjectProcedure<IntList>()
+            node.getKeyValues().forEachKeyValue((realKeyId, valueIds) ->
             {
-                @Override
-                public void value(int realKeyId, IntList valueIds)
-                {
-                    ListIterable<String> realKey = nodes.get(realKeyId).getRealKey();
-                    ListIterable<CoreInstance> values = valueIds.collect(getInstanceById);
-                    nodeInstance.setKeyValues(realKey, values);
-                }
+                ListIterable<String> realKey = nodes.get(realKeyId).getRealKey();
+                ListIterable<CoreInstance> values = valueIds.collect(map::get);
+                nodeInstance.setKeyValues(realKey, values);
             });
-        }
+        });
 
         return map;
     }
 
-    private static CoreInstance createCoreInstance(ModelRepository repository, int id, IntermediateNode node, final IntObjectMap<String> classifierIdToPath)
+    private static CoreInstance createCoreInstance(ModelRepository repository, int id, IntermediateNode node, IntObjectMap<String> classifierIdToPath)
     {
         if (classifierIdToPath == null)
         {
@@ -379,7 +343,7 @@ public class BinaryRepositorySerializer
         return build(new ByteArrayInputStream(data), repository, message);
     }
 
-    public static IntObjectMap<CoreInstance> build(byte[] data, ModelRepository repository, MessageCallBack message, final IntObjectMap<String> classifierIdToPath)
+    public static IntObjectMap<CoreInstance> build(byte[] data, ModelRepository repository, MessageCallBack message, IntObjectMap<String> classifierIdToPath)
     {
         return build(new ByteArrayInputStream(data), repository, message, classifierIdToPath);
     }
@@ -408,14 +372,14 @@ public class BinaryRepositorySerializer
         {
             int propertyId = reader.readInt();
             int[] valueIds = reader.readIntArray();
-            node.put(propertyId, IntArrayList.newListWith(valueIds));
+            node.put(propertyId, IntLists.mutable.with(valueIds));
         }
 
         boolean hasRealKey = reader.readBoolean();
         if (hasRealKey)
         {
             int realKeySize = reader.readInt();
-            MutableList<String> realKey = FastList.newList(realKeySize);
+            MutableList<String> realKey = Lists.mutable.withInitialCapacity(realKeySize);
             for (int i = 0; i < realKeySize; i++)
             {
                 realKey.add(reader.readString());
@@ -424,7 +388,7 @@ public class BinaryRepositorySerializer
         }
         else
         {
-            node.setRealKey(Lists.immutable.<String>empty());
+            node.setRealKey(Lists.immutable.empty());
         }
 
         return node;

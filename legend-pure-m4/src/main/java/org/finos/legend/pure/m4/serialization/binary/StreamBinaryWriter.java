@@ -16,6 +16,7 @@ package org.finos.legend.pure.m4.serialization.binary;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 
 class StreamBinaryWriter extends AbstractSimpleBinaryWriter
 {
@@ -27,6 +28,33 @@ class StreamBinaryWriter extends AbstractSimpleBinaryWriter
     }
 
     @Override
+    public synchronized void writeByte(byte b)
+    {
+        try
+        {
+            this.stream.write(b);
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public synchronized void writeBytes(byte[] bytes, int offset, int length)
+    {
+        checkByteArray(bytes, offset, length);
+        try
+        {
+            this.stream.write(bytes, offset, length);
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
     public synchronized void close()
     {
         try
@@ -35,33 +63,7 @@ class StreamBinaryWriter extends AbstractSimpleBinaryWriter
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    protected void write(byte b)
-    {
-        try
-        {
-            this.stream.write(b);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    protected void write(byte[] bytes, int offset, int length)
-    {
-        try
-        {
-            this.stream.write(bytes, offset, length);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 }

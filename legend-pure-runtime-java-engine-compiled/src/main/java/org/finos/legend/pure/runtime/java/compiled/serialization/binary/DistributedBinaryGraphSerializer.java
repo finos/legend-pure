@@ -95,10 +95,10 @@ public abstract class DistributedBinaryGraphSerializer
         // Write instances
         int partition = 0;
         int partitionTotalBytes = 0;
-        ByteArrayOutputStream binByteStream = new ByteArrayOutputStream(MAX_BIN_FILE_BYTES);
+        WriterBufferOutputStream binByteStream = new WriterBufferOutputStream(MAX_BIN_FILE_BYTES);
         try (Writer binFileWriter = BinaryWriters.newBinaryWriter(binByteStream))
         {
-            ByteArrayOutputStream indexByteStream = new ByteArrayOutputStream();
+            WriterBufferOutputStream indexByteStream = new WriterBufferOutputStream();
             try (Writer indexWriter = BinaryWriters.newBinaryWriter(indexByteStream))
             {
                 for (String classifierId : stringCache.getClassifierIds().toSortedList())
@@ -111,13 +111,12 @@ public abstract class DistributedBinaryGraphSerializer
                     indexWriter.writeInt(partitionTotalBytes); // initial byte offset in partition
 
                     MutableList<ObjIndexInfo> partitionObjIndexInfos = Lists.mutable.empty();
-                    ByteArrayOutputStream objByteStream = new ByteArrayOutputStream();
+                    WriterBufferOutputStream objByteStream = new WriterBufferOutputStream();
                     try (Writer objWriter = BinaryWriters.newBinaryWriter(objByteStream))
                     {
                         for (Obj obj : classifierObjs)
                         {
                             // Obj serialization
-                            objByteStream.reset();
                             serializer.serializeObj(objWriter, obj);
                             int objByteCount = objByteStream.size();
                             if (partitionTotalBytes + objByteCount > MAX_BIN_FILE_BYTES)
@@ -125,8 +124,7 @@ public abstract class DistributedBinaryGraphSerializer
                                 // Write current partition
                                 try (Writer partitionWriter = fileWriter.getWriter(DistributedMetadataHelper.getMetadataPartitionBinFilePath(getMetadataName(), partition)))
                                 {
-                                    partitionWriter.writeBytes(binByteStream.toByteArray());
-                                    binByteStream.reset();
+                                    binByteStream.writeAndReset(partitionWriter);
                                 }
 
                                 // Write partition portion of classifier index
@@ -142,7 +140,7 @@ public abstract class DistributedBinaryGraphSerializer
                                 partitionTotalBytes = 0;
                                 partitionObjIndexInfos.clear();
                             }
-                            binFileWriter.writeBytes(objByteStream.toByteArray());
+                            objByteStream.writeAndReset(binFileWriter);
                             partitionTotalBytes += objByteCount;
                             partitionObjIndexInfos.add(new ObjIndexInfo(obj.getIdentifier(), objByteCount));
                         }
@@ -156,10 +154,9 @@ public abstract class DistributedBinaryGraphSerializer
                     }
 
                     // Write classifier index
-                    try (Writer writer1 = fileWriter.getWriter(DistributedMetadataHelper.getMetadataClassifierIndexFilePath(getMetadataName(), classifierId)))
+                    try (Writer indexFileWriter = fileWriter.getWriter(DistributedMetadataHelper.getMetadataClassifierIndexFilePath(getMetadataName(), classifierId)))
                     {
-                        writer1.writeBytes(indexByteStream.toByteArray());
-                        indexByteStream.reset();
+                        indexByteStream.writeAndReset(indexFileWriter);
                     }
                 }
             }
@@ -168,9 +165,9 @@ public abstract class DistributedBinaryGraphSerializer
         // Write final partition
         if (binByteStream.size() > 0)
         {
-            try (Writer writer = fileWriter.getWriter(DistributedMetadataHelper.getMetadataPartitionBinFilePath(getMetadataName(), partition)))
+            try (Writer partitionWriter = fileWriter.getWriter(DistributedMetadataHelper.getMetadataPartitionBinFilePath(getMetadataName(), partition)))
             {
-                writer.writeBytes(binByteStream.toByteArray());
+                binByteStream.write(partitionWriter);
             }
         }
     }
@@ -315,6 +312,30 @@ public abstract class DistributedBinaryGraphSerializer
         {
             writer.writeInt(stringCache.getStringId(this.identifier));
             writer.writeInt(this.size);
+        }
+    }
+
+    private static class WriterBufferOutputStream extends ByteArrayOutputStream
+    {
+        private WriterBufferOutputStream()
+        {
+            super();
+        }
+
+        private WriterBufferOutputStream(int size)
+        {
+            super(size);
+        }
+
+        private synchronized void write(Writer writer)
+        {
+            writer.writeBytes(this.buf, 0, this.count);
+        }
+
+        private synchronized void writeAndReset(Writer writer)
+        {
+            write(writer);
+            reset();
         }
     }
 }

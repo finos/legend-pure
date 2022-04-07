@@ -32,6 +32,37 @@ class ByteListBinaryReader extends AbstractSimpleBinaryReader
     }
 
     @Override
+    public synchronized byte readByte()
+    {
+        try
+        {
+            return this.bytes.get(this.current++);
+        }
+        catch (IndexOutOfBoundsException e)
+        {
+            throw new UnexpectedEndException(1, 0);
+        }
+    }
+
+    @Override
+    public synchronized byte[] readBytes(byte[] bytes, int offset, int n)
+    {
+        checkByteArray(bytes, offset, n);
+
+        int remaining = this.bytes.size() - this.current;
+        if (remaining < n)
+        {
+            throw new UnexpectedEndException(n, remaining);
+        }
+
+        for (int i = 0; i < n; i++)
+        {
+            bytes[offset + i] = this.bytes.get(this.current++);
+        }
+        return bytes;
+    }
+
+    @Override
     public void close()
     {
         // Do nothing
@@ -51,38 +82,5 @@ class ByteListBinaryReader extends AbstractSimpleBinaryReader
             throw new UnexpectedEndException(n, (long)this.bytes.size() - this.current);
         }
         this.current = (int)newPosition;
-    }
-
-    @Override
-    protected synchronized byte readOneByte()
-    {
-        try
-        {
-            return this.bytes.get(this.current++);
-        }
-        catch (IndexOutOfBoundsException e)
-        {
-            throw new UnexpectedEndException(1, 0);
-        }
-    }
-
-    @Override
-    protected synchronized void readNBytes(int n, byte[] bytes, int offset)
-    {
-        if (bytes == null)
-        {
-            throw new IllegalArgumentException("Destination byte array may not be null");
-        }
-
-        int remaining = this.bytes.size() - this.current;
-        if (remaining < n)
-        {
-            throw new UnexpectedEndException(n, remaining);
-        }
-
-        for (int i = 0; i < n; i++)
-        {
-            bytes[offset + i] = this.bytes.get(this.current++);
-        }
     }
 }

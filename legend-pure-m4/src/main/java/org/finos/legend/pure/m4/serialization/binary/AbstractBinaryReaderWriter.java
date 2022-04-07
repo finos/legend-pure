@@ -14,8 +14,11 @@
 
 package org.finos.legend.pure.m4.serialization.binary;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 public abstract class AbstractBinaryReaderWriter
 {
@@ -23,6 +26,30 @@ public abstract class AbstractBinaryReaderWriter
     protected static final byte FALSE_BYTE = 0;
 
     protected static final Charset STRING_CODING_CHARSET = StandardCharsets.UTF_8;
+
+    protected static byte booleanToByte(boolean b)
+    {
+        return b ? TRUE_BYTE : FALSE_BYTE;
+    }
+
+    protected static boolean byteToBoolean(byte b)
+    {
+        switch (b)
+        {
+            case TRUE_BYTE:
+            {
+                return true;
+            }
+            case FALSE_BYTE:
+            {
+                return false;
+            }
+            default:
+            {
+                throw new UncheckedIOException(new IOException("Expected " + TRUE_BYTE + " or " + FALSE_BYTE + "; found " + b));
+            }
+        }
+    }
 
     protected static byte[] stringToByteArray(String string)
     {
@@ -37,5 +64,14 @@ public abstract class AbstractBinaryReaderWriter
     protected static String byteArrayToString(byte[] bytes, int offset, int length)
     {
         return new String(bytes, offset, length, STRING_CODING_CHARSET);
+    }
+
+    protected static void checkByteArray(byte[] bytes, int offset, int length)
+    {
+        Objects.requireNonNull(bytes, "byte array may not be null");
+        if ((offset < 0) || (length < 0) || (length > (bytes.length - offset)))
+        {
+            throw new IndexOutOfBoundsException("Range [" + offset + ", " + offset + " + " + length + ") out of bounds for length " + bytes.length);
+        }
     }
 }
