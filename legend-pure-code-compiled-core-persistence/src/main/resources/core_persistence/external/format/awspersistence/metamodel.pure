@@ -3,6 +3,8 @@
 import meta::pure::persistence::metamodel::*;
 import meta::legend::service::metamodel::*;
 import meta::relational::metamodel::relation::*;
+import meta::pure::alloy::connections::alloy::authentication::*;
+import meta::pure::alloy::connections::alloy::specification::*;
 import meta::pure::persistence::metamodel::trigger::*;
 import meta::pure::persistence::metamodel::notifier::*;
 import meta::pure::persistence::metamodel::persister::*;
@@ -14,34 +16,53 @@ import meta::pure::runtime::*;
 
 import meta::relational::metamodel::*;
 
-Class meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShapeProperties
+Class meta::external::format::awspersistence::metamodel::ModelClassProperty
 {
   name: String[1];
   type: Type[1];
 }
 
-Class meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShape
+Class meta::external::format::awspersistence::metamodel::ModelClass
 {
   name: String[1];
   package: Package[1];
-  properties: meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShapeProperties[*];
+  properties: meta::external::format::awspersistence::metamodel::ModelClassProperty[*];
 }
 
-Class meta::external::format::awspersistence::metamodel::AwsPersistenceTargetRelationaType
+Class meta::external::format::awspersistence::metamodel::RelationalProperty
 {
   name: String[1];
   sqlType: String[1];
 }
 
+Class <<typemodifiers.abstract>> meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection
+{
+}
+
+Class meta::external::format::awspersistence::metamodel::RelationalConnection extends meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection
+{
+  schemaName: String[1];
+  tableName: String[1];
+  authenticationStrategy: AuthenticationStrategy[1];
+  targetSpecification: DatasourceSpecification[1];
+  columns: meta::external::format::awspersistence::metamodel::RelationalProperty[*];
+}
+
+Class meta::external::format::awspersistence::metamodel::S3Connection extends meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection
+{
+// S3 info goes here
+}
+
+
+
 
 Class meta::external::format::awspersistence::metamodel::AwsPersistenceTarget
 {
-  targetName: String[1];
-  connection: Connection[1];
-  targetRelationalType: meta::external::format::awspersistence::metamodel::AwsPersistenceTargetRelationaType[*];
+  name: String[1];
+  connection: meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection[1];
   // deduplicationStrategy: DeduplicationStrategy[1];
   ingestMode: meta::pure::persistence::metamodel::persister::ingestmode::IngestMode[1];
-  modelClass: meta::external::format::awspersistence::metamodel::AwsPersistenceTargetShape[1];
+  modelClass: meta::external::format::awspersistence::metamodel::ModelClass[1];
 }
 
 Class meta::external::format::awspersistence::metamodel::AwsPersistence

@@ -70,7 +70,7 @@ function meta::external::format::awspersistence::generation::generateAwsPersiste
 
 function meta::external::format::awspersistence::generation::generateAwsPersistenceBackendRaw(config: AwsPersistenceConfig[1], p: Persistence[1]): JSONElement[1]
 {
-  let jsonConfig = config(false, false, true, true);
+  let jsonConfig = config(true, false, true, true, '__type', false);
   let content = $config->meta::external::format::awspersistence::serialization::serialize($p);
   $content->toJSONElement(meta::external::format::awspersistence::generation::extraJsonSerializers(), 1000, $jsonConfig);
 }
