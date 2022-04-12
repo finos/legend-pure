@@ -49,11 +49,7 @@ function meta::relational::postProcessor::reAliasColumnName::trimColumnName(quer
 function meta::relational::postProcessor::reAliasColumnName::lengthConfig(runtime: Runtime[1]):Integer[1]
 {
   let type =  $runtime.connections->filter(c|$c->instanceOf(DatabaseConnection))->cast(@DatabaseConnection).type;
-  let config = newMap([
-    pair(DatabaseType.DB2, 128),
-    pair(DatabaseType.SybaseIQ, 255),
-    pair(DatabaseType.Snowflake, 255)
-  ]);
+  let config = dbAliasLimit();
 
   let length = $config->get($type->cast(@DatabaseType)->toOne());
   if($length->isEmpty(),
@@ -62,6 +58,15 @@ function meta::relational::postProcessor::reAliasColumnName::lengthConfig(runtim
   )->toOne();
 }
 
+function meta::relational::postProcessor::reAliasColumnName::dbAliasLimit():Map<DatabaseType, Integer>[1]
+{
+  newMap([
+    pair(DatabaseType.DB2, 128),
+    pair(DatabaseType.H2, 1000),
+    pair(DatabaseType.SybaseIQ, 255),
+    pair(DatabaseType.Snowflake, 255)
+  ]);
+}
 function  meta::relational::postProcessor::reAliasColumnName::search(q:RelationalOperationElement[*],runtime:Runtime[1] ): Pair<String,String>[*]
 {
    $q->map(r| $r->match([
