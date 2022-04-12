@@ -100,6 +100,19 @@ function <<meta::pure::profiles::test.Test>> meta::pure::mapping::modelToModel::
    assertSameElements(['first'] ,$res.values.streetAddress );
 }
 
+function meta::pure::mapping::modelToModel::test::createInstances::getName(src : _Firm[1]) : String[1]
+{
+   $src.name;
+}
+
+function meta::pure::mapping::modelToModel::test::createInstances::getFullName(src : _Firm[1]) : String[*]
+{
+   let employees = $src.employees;
+   if($employees->isNotEmpty(),
+       |$employees.fullName,
+       | [] );
+}
+
 ###Mapping
 import meta::pure::mapping::modelToModel::test::union::*;
 import meta::pure::mapping::modelToModel::test::shared::src::*;
@@ -138,6 +151,7 @@ Mapping meta::pure::mapping::modelToModel::test::createInstances::createInstance
 
 ###Mapping
 import meta::pure::mapping::modelToModel::*;
+import meta::pure::mapping::modelToModel::test::createInstances::*;
 import meta::pure::mapping::modelToModel::test::union::*;
 import meta::pure::mapping::modelToModel::test::shared::src::*;
 import meta::pure::mapping::modelToModel::test::shared::dest::*;
@@ -149,8 +163,8 @@ Mapping meta::pure::mapping::modelToModel::test::createInstances::createInstance
    FirmEmployee : Pure
             {
                ~src _Firm
-               firmName : $src.name,
-               fullName* : $src.employees.fullName
+               firmName : getName($src),
+               fullName* : getFullName($src)
             }
    
 )

@@ -179,44 +179,15 @@ function meta::pure::mapping::modelToModel::test::simple::testSimpleProjectAsser
    assertEquals('Yo', $rows->at(2).getString('lastName'));
 }
 
-function meta::pure::mapping::modelToModel::test::pmcd::projection::getEffectiveDate(src : Loans[1]) : StrictDate[0..1]
+function <<meta::pure::profiles::test.Test>> meta::pure::mapping::modelToModel::test::simple::testPropertyMappingWithFunctions(): Boolean[1]
 {
-   $src.effectiveDate->toOne();   
-}
-
-function meta::pure::mapping::modelToModel::test::pmcd::projection::getTransactionTime(src : Loans[1]) : DateTime[0..1]
-{
-   let transactionTime = $src.transactionTime;
-   if($transactionTime->isNotEmpty(),
-       |$transactionTime->toOne(),
-       | [] );
-}
-
-function <<meta::pure::profiles::test.Test>> meta::pure::mapping::modelToModel::test::pmcd::testM2MMappingPMCD(): Boolean[1]
-{
-   let theMapping = meta::pure::mapping::modelToModel::test::pmcd::projection::loansProjectionFieldsMapping;
+   let theMapping = meta::pure::mapping::modelToModel::test::createInstances::createInstancesModelMappingOneMany;
    let extensions = meta::pure::router::extension::defaultExtensions();
-   
    let domainElements = $theMapping->map(m|$m->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::mapping::transformMapping($extensions));
-   
-   let transform = $domainElements.classMappings->cast(@meta::protocols::pure::vX_X_X::metamodel::mapping::modelToModel::PureInstanceClassMapping).propertyMappings->map(m | $m.transform.body);
-   
+   let transform = $domainElements.classMappings->cast(@meta::protocols::pure::vX_X_X::metamodel::mapping::modelToModel::PureInstanceClassMapping).propertyMappings->map(m | $m.transform.body); 
    assertEmpty($transform->filter(t | $t->instanceOf(UnknownAppliedFunction)));
-   assert($transform->map(t | $t->cast(@AppliedFunction).function)->contains('meta::pure::mapping::modelToModel::test::pmcd::projection::getEffectiveDate'), 'PMCD generation failure for mapping meta::pure::mapping::modelToModel::test::pmcd::projection::loansProjectionFieldsMapping');
+   assert($transform->map(t | $t->cast(@AppliedFunction).function)->contains('meta::pure::mapping::modelToModel::test::createInstances::getFullName'), 'meta::pure::mapping::modelToModel::test::createInstances::createInstancesModelMappingOneMany');
 }
-
-###Mapping
-import meta::pure::mapping::modelToModel::test::pmcd::projection::*;
-
-Mapping meta::pure::mapping::modelToModel::test::pmcd::projection::loansProjectionFieldsMapping
-(   
-   LoansProjectionFields: Pure {      
-      ~src meta::pure::mapping::modelToModel::test::pmcd::models::Loans  
-      
-    effectiveDate : getEffectiveDate($src),
-    transactionTime	 : getTransactionTime($src)
-   }
-)
 
 ###Mapping
 import meta::pure::mapping::modelToModel::test::shared::src::*;
