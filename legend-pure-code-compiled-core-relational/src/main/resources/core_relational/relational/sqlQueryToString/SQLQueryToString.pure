@@ -63,12 +63,12 @@ Class meta::relational::functions::sqlQueryToString::DbConfig
    quoteIdentifiers:Boolean[1];
 
    dbExtension: DbExtension[1];
-   
+
    dynaFuncDispatch(dynaFn:DynaFunction[1], state:GenerationState[1])
    {
      $this.dbExtension.dynaFuncDispatch->eval($dynaFn, $state);
    }: DynaFunctionToSql[1];
-   
+
    isDbReservedIdentifier(str:String[1])
    {
      $this.dbExtension.isDbReservedIdentifier->eval($str);
@@ -997,7 +997,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    let castSuffix = if($s.returnType == String, | '::varchar', |
                     if($s.returnType == StrictDate, | '::date', |
                     if($s.returnType->isNotEmpty() && $s.returnType->toOne()->_subTypeOf(Date), | '::timestamp', |
-                    '')));
+                    if($s.returnType->isNotEmpty() && $s.returnType->toOne()->instanceOf(Enumeration), | '::varchar', |
+                    ''))));
 
    $elementAccess + $castSuffix;
 }
@@ -1025,7 +1026,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
    if ($s.returnType == Integer, | 'cast(' + $elementAccess + ' as integer)', |
    if ($s.returnType == StrictDate, | 'cast(' + $elementAccess + ' as date)', |
    if ($s.returnType->isNotEmpty() && $s.returnType->toOne()->_subTypeOf(Date), | 'cast(' + $elementAccess + ' as timestamp)', |
-   $elementAccess))))));
+   if ($s.returnType->isNotEmpty() && $s.returnType->toOne()->instanceOf(Enumeration), | 'cast(' + $elementAccess + ' as varchar)', |
+   $elementAccess)))))));
 }
 
 Class <<access.private>> meta::relational::functions::sqlQueryToString::DynaFunctionToSql
