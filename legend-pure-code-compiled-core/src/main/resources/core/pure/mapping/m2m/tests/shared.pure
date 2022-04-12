@@ -268,15 +268,3 @@ Class meta::pure::mapping::modelToModel::test::shared::src::ProductWithRegion
 {
    region : String[1];
 }
-
-Class meta::pure::mapping::modelToModel::test::pmcd::projection::LoansProjectionFields
-{
-   effectiveDate : StrictDate[0..1];
-   transactionTime : DateTime[0..1];
-}
-
-Class meta::pure::mapping::modelToModel::test::pmcd::models::Loans
-{
-   effectiveDate : StrictDate[0..1];
-   transactionTime : DateTime[0..1];
-}
