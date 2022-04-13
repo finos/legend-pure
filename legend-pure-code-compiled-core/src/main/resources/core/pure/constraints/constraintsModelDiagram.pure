@@ -193,13 +193,6 @@ Diagram meta::pure::metamodel::constraint::ConstraintModelDiagram(width=875.2690
        source=Class_$_0,
        target=Type_$_4)
 
-   GeneralizationView gview_15(color=#000000,
-       lineWidth=-1.0,
-       lineStyle=SIMPLE,
-       points=[(1184.69824,208.00000),(1369.55859,385.00000)],
-       label='',
-       source=Type_$_4,
-       target=PackageableElement_$_3)
 
    GeneralizationView gview_16(color=#000000,
        lineWidth=-1.0,
