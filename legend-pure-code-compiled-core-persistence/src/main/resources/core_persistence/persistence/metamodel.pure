@@ -28,11 +28,12 @@ import meta::pure::persistence::metamodel::persister::targetshape::*;
 import meta::pure::persistence::metamodel::persister::transactionmilestoning::*;
 import meta::pure::persistence::metamodel::persister::validitymilestoning::*;
 import meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::*;
-import meta::pure::persistence::metamodel::reader::*;
-import meta::pure::persistence::metamodel::target::*;
+import meta::pure::persistence::metamodel::test::*;
 import meta::pure::persistence::metamodel::trigger::*;
 
+import meta::pure::data::*;
 import meta::pure::runtime::*;
+import meta::pure::test::*;
 
 /**********
  * persistence
@@ -40,7 +41,7 @@ import meta::pure::runtime::*;
 
 Class
 {doc.doc = 'A persistence specification. This consists of a trigger that initiates persistence, a service that provides data to persist, a persister that writes that data to a store, and a notifier that updates on significant events.'}
-meta::pure::persistence::metamodel::Persistence extends PackageableElement
+meta::pure::persistence::metamodel::Persistence extends PackageableElement, Testable
 {
    {doc.doc = 'A functional description of this persistence specification.'}
    documentation: String[1];
@@ -509,4 +510,25 @@ meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::
 
    {doc.doc = 'The property in the model class or column in the TDS that provides the "thru" datetime for the validity (business) temporal dimension.'}
    sourceDateTimeThruField: String[1];
+}
+
+/**********
+ * testing
+ **********/
+
+Class meta::pure::persistence::metamodel::test::PersistenceTestSuite extends TestSuite
+{
+}
+
+Class meta::pure::persistence::metamodel::test::PersistenceTest extends AtomicTest
+{
+   sequenceNumber: Integer[1];
+   serviceParameters: ParameterValue[*];
+   testData: PersistenceTestData[*];
+}
+
+Class meta::pure::persistence::metamodel::test::PersistenceTestData
+{
+   connectionId: String[1];
+   data: EmbeddedData[1];
 }
