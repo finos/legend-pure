@@ -423,23 +423,11 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         color=#FFFFCC,
         lineWidth=1.0)
 
-    TypeView cview_64(
-        type=meta::pure::persistence::metamodel::persister::transactionmilestoning::BatchIdAndDateTimeTransactionMilestoning,
-        position=(1822.09872, 1514.65108),
-        width=275.14648,
-        height=100.00000,
-        stereotypesVisible=true,
-        attributesVisible=true,
-        attributeStereotypesVisible=true,
-        attributeTypesVisible=true,
-        color=#FFFFCC,
-        lineWidth=1.0)
-
     TypeView cview_65(
         type=meta::pure::persistence::metamodel::persister::transactionmilestoning::DateTimeTransactionMilestoning,
         position=(1978.82259, 1426.74566),
-        width=221.79688,
-        height=72.00000,
+        width=222.33447,
+        height=86.00000,
         stereotypesVisible=true,
         attributesVisible=true,
         attributeStereotypesVisible=true,
@@ -579,6 +567,90 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         color=#FFFFCC,
         lineWidth=1.0)
 
+    TypeView cview_64(
+        type=meta::pure::persistence::metamodel::persister::transactionmilestoning::BatchIdAndDateTimeTransactionMilestoning,
+        position=(1822.09872, 1529.65108),
+        width=275.14648,
+        height=114.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_87(
+        type=meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::ValidityDerivation,
+        position=(2348.42156, 1151.82554),
+        width=223.12109,
+        height=58.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_89(
+        type=meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::SourceSpecifiesValidFromDate,
+        position=(2232.42156, 1255.82554),
+        width=224.23438,
+        height=58.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_88(
+        type=meta::pure::persistence::metamodel::persister::validitymilestoning::derivation::SourceSpecifiesValidFromAndThruDate,
+        position=(2470.42156, 1255.82554),
+        width=247.38477,
+        height=72.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_90(
+        type=meta::pure::persistence::metamodel::persister::transactionmilestoning::derivation::TransactionDerivation,
+        position=(2339.42156, 1557.82554),
+        width=223.12109,
+        height=58.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_92(
+        type=meta::pure::persistence::metamodel::persister::transactionmilestoning::derivation::SourceSpecifiesTransactionInDate,
+        position=(2218.42156, 1658.82554),
+        width=231.13086,
+        height=58.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
+    TypeView cview_91(
+        type=meta::pure::persistence::metamodel::persister::transactionmilestoning::derivation::SourceSpecifiesTransactionInAndOutDate,
+        position=(2464.42156, 1658.82554),
+        width=261.38867,
+        height=72.00000,
+        stereotypesVisible=true,
+        attributesVisible=true,
+        attributeStereotypesVisible=true,
+        attributeTypesVisible=true,
+        color=#FFFFCC,
+        lineWidth=1.0)
+
     GeneralizationView gview_0(
         source=cview_4,
         target=cview_3,
@@ -672,7 +744,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
     GeneralizationView gview_10(
         source=cview_64,
         target=cview_60,
-        points=[(1959.67196,1564.65108),(1959.08759,1352.97893)],
+        points=[(1959.67196,1586.65108),(1959.08759,1352.97893)],
         label='',
         color=#000000,
         lineWidth=-1.0,
@@ -681,7 +753,7 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
     GeneralizationView gview_11(
         source=cview_65,
         target=cview_60,
-        points=[(2089.72102,1462.74566),(1959.08759,1352.97893)],
+        points=[(2089.98982,1469.74566),(1959.08759,1352.97893)],
         label='',
         color=#000000,
         lineWidth=-1.0,
@@ -835,6 +907,42 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         source=cview_86,
         target=cview_84,
         points=[(1940.14519,404.32554),(1814.80926,324.32554)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
+    GeneralizationView gview_29(
+        source=cview_88,
+        target=cview_87,
+        points=[(2594.11394,1291.82554),(2459.98211,1180.82554)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
+    GeneralizationView gview_30(
+        source=cview_89,
+        target=cview_87,
+        points=[(2344.53875,1284.82554),(2459.98211,1180.82554)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
+    GeneralizationView gview_31(
+        source=cview_91,
+        target=cview_90,
+        points=[(2595.11590,1694.82554),(2450.98211,1586.82554)],
+        label='',
+        color=#000000,
+        lineWidth=-1.0,
+        lineStyle=SIMPLE)
+
+    GeneralizationView gview_32(
+        source=cview_92,
+        target=cview_90,
+        points=[(2333.98699,1687.82554),(2450.98211,1586.82554)],
         label='',
         color=#000000,
         lineWidth=-1.0,
@@ -1181,6 +1289,48 @@ Diagram meta::pure::persistence::Persistence_Diagram(width=0.0, height=0.0)
         source=cview_86,
         target=cview_79
 ,        points=[(1940.14519,404.32554),(2234.17607,404.94853)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_25(
+        property=meta::pure::persistence::metamodel::persister::validitymilestoning::DateTimeValidityMilestoning.derivation,
+        source=cview_61,
+        target=cview_87
+,        points=[(1959.16299,1180.61701),(2459.98211,1180.82554)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_26(
+        property=meta::pure::persistence::metamodel::persister::transactionmilestoning::DateTimeTransactionMilestoning.derivation,
+        source=cview_65,
+        target=cview_90
+,        points=[(2089.98983,1469.74566),(2449.42156,1470.82554),(2450.98211,1586.82554)],
+        label='',
+        propertyPosition=(0.0,0.0),
+        multiplicityPosition=(0.0,0.0),
+        color=#000000,
+        lineWidth=-1.0,
+        stereotypesVisible=true,
+        nameVisible=true,
+        lineStyle=SIMPLE)
+
+    PropertyView pview_27(
+        property=meta::pure::persistence::metamodel::persister::transactionmilestoning::BatchIdAndDateTimeTransactionMilestoning.derivation,
+        source=cview_64,
+        target=cview_90
+,        points=[(1959.67196,1586.65108),(2450.98211,1586.82554)],
         label='',
         propertyPosition=(0.0,0.0),
         multiplicityPosition=(0.0,0.0),
