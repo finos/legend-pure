@@ -34,7 +34,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::prepareForP
    if($p.expression->cast(@FunctionExpression)->isSerialize($extensions),
       | prepareForSerialize($p, $path, $context, $debug),
       |
-   if($p.expression->cast(@FunctionExpression)->isUnionOnGraphFetch(),
+   if($p.expression->cast(@FunctionExpression)->isUnionOnGraphFetch(true),
       | prepareForUnionOnGraphFetch($p, $path, $context, $extensions, $debug) ,
       |
    if($p.expression->cast(@FunctionExpression)->isMergeOnGraphFetch(),
@@ -45,6 +45,8 @@ function <<access.private>> meta::pure::executionPlan::engine::java::prepareForP
 
 function <<access.private>> meta::pure::executionPlan::engine::java::prepareForUnionOnGraphFetch(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], extensions : meta::pure::router::extension::RouterExtension[*], debug:DebugContext[1]):GenerationContext[1]
 {
+   print(if($debug.debug,|$debug.space+'('+$path+') prepareForUnionOnGraphFetch\n', |''));
+   
    let childNodeInfos = $context->childNodeInfosForPath($path);
    ^$context(nodeInfos = $context.nodeInfos->concatenate(^NodeInfo(path = $path, returnType = $childNodeInfos->at(0).returnType, graphFetchTrees = $childNodeInfos.graphFetchTrees->removeDuplicatesBy(x | $x.class))));
 }
@@ -57,7 +59,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::prepareForM
 
 function <<access.private>> meta::pure::executionPlan::engine::java::prepareForExpression(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]):GenerationContext[1]
 {
-   print(if($debug.debug,|$debug.space+'prepareForPureExpression\n', |''));
+   print(if($debug.debug,|$debug.space+'('+$path+') prepareForPureExpression\n', |''));
 
    let resultType = $p.resultType;
 
@@ -84,7 +86,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::generateImp
    if($p.expression->cast(@FunctionExpression)->isParseObjectReferences(),
       | generateImplementationForParseObjectReferences($p, $path, $context, $extensions, $debug),
       |
-   if($p.expression->cast(@FunctionExpression)->isUnionOnGraphFetch(),
+   if($p.expression->cast(@FunctionExpression)->isUnionOnGraphFetch(true),
       | generateImplementationForUnionOnGraphFetch($p, $path, $context, $extensions, $debug);,
       |
     if($p.expression->cast(@FunctionExpression)->isMergeOnGraphFetch(),
