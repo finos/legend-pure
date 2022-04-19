@@ -140,19 +140,11 @@ function meta::protocols::pure::vX_X_X::transformation::toPureGraph::connection:
             // _type = 'apiToken',
             apiToken = $l.apiToken
          ),
-      b:meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPWorkloadIdentityFederationWithAWSAuthenticationStrategy[1] |
-         ^meta::pure::alloy::connections::alloy::authentication::GCPWorkloadIdentityFederationWithAWSAuthenticationStrategy(
+      b:meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPWorkloadIdentityFederationAuthenticationStrategy[1] |
+         ^meta::pure::alloy::connections::alloy::authentication::GCPWorkloadIdentityFederationAuthenticationStrategy(
             // _type = 'gcpWorkloadIdentityFederationWithAWS',
-            workloadProjectNumber = $b.workloadProjectNumber,
             serviceAccountEmail = $b.serviceAccountEmail,
-            additionalGcpScopes = $b.additionalGcpScopes,
-            workloadPoolId = $b.workloadPoolId,
-            workloadProviderId = $b.workloadProviderId,
-            awsAccountId = $b.awsAccountId,
-            awsRegion = $b.awsRegion,
-            awsRole = $b.awsRole,
-            awsAccessKeyIdVaultReference = $b.awsAccessKeyIdVaultReference,
-            awsSecretAccessKeyVaultReference = $b.awsSecretAccessKeyVaultReference
+            additionalGcpScopes = $b.additionalGcpScopes
          )
    ]);
 }
