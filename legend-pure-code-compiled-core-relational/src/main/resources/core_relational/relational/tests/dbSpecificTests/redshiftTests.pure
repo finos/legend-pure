@@ -18,30 +18,24 @@ import meta::relational::tests::dbSpecificTests::SqlServer::*;
 import meta::pure::alloy::connections::*;
 import meta::pure::functions::meta::*;
 
-function <<test.Test>> meta::relational::tests::dbSpecificTests::SqlServer::runSQLQueryTests():Boolean[1]
+function <<test.Test>> meta::relational::tests::dbSpecificTests::redshift::runSQLQueryTests():Boolean[1]
 {
-  let connection= meta::relational::dbTestRunner::getTestConnection(DatabaseType.SqlServer, meta::pure::router::extension::defaultRelationalExtensions());
+  let connection= meta::relational::dbTestRunner::getTestConnection(DatabaseType.Redshift, meta::pure::router::extension::defaultRelationalExtensions());
 
-  let allTests = collectTests(meta::relational::tests::dbSpecificTests::sqlQueryTests);
+  let allTests = collectTests(meta::relational::tests::dbSpecificTests::sqlQueryTests::dynaFunctions);
 
-  let unsupportedDynaFunctions = [
-    'indexOf',
-    'adjust',
-    'firstDayOfWeek',
-    'dayOfMonth',
-    'previousDayOfWeek',
-    'mostRecentDayOfWeek',
-    'mod', 'rem', 'log','joinStrings', 'dateDiff', 'sqlTrue', 'sqlFalse'
-    ];
+  let unsupportedDynaFunctions = ['adjust', 'dayOfWeekNumber', 'dayOfMonth', 'quarter', 'quarterNumber', 'datePart',
+                                  'dateDiff', 'firstDayOfWeek' , 'previousDayOfWeek', 'mostRecentDayOfWeek', 'firstDayOfMonth', 'firstDayOfThisMonth',
+                                   'firstDayOfQuarter', 'firstDayOfThisQuarter', 'firstDayOfYear' , 'firstDayOfThisYear' ,
+                                   'length', 'indexOf', 'ltrim', 'left' ];
 
   let failingSupportedDynaFunctions =[
-      'second', 'minute', 'hour', 'quarter', 'quarterNumber', 'year',
-      'firstDayOfMonth'
-      ];
+          'joinStrings'
+    ];
 
   let ignoredTests= $unsupportedDynaFunctions->concatenate($failingSupportedDynaFunctions)->map(dynaFuncName |
               let dynaFuncPackageName = 'meta::relational::tests::dbSpecificTests::sqlQueryTests::dynaFunctions::' + $dynaFuncName;
-             );
+              );
 
-  runTestsWith($allTests, $ignoredTests, DatabaseType.SqlServer, $connection,  []);
+  runTestsWith($allTests, $ignoredTests, DatabaseType.Redshift, $connection,  []);
 }

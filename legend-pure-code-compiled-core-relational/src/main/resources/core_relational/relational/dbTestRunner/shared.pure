@@ -18,7 +18,50 @@ import meta::pure::alloy::connections::*;
 
 Profile meta::relational::dbTestRunner::dbTest
 {
-   stereotypes : [ Test, Ignore ];
+   stereotypes : [ Test, Ignore, BeforePackage, AfterPackage];
+}
+
+
+Class meta::relational::dbTestRunner::DbTestCollection
+{
+  packageName :String[1];
+  testFunctions : Function<{DbTestConfig[1] -> String[0..1]}>[*];
+  beforeTests : Function<{DbTestConfig[1] -> String[0..1]}>[*];
+  afterTests : Function<{DbTestConfig[1] -> String[0..1]}>[*];
+  toFixTests : Function<{DbTestConfig[1] -> String[0..1]}>[*];
+  subCollections : DbTestCollection[*];
+}
+
+function meta::relational::dbTestRunner::collectTests(packagePath: String[1]): DbTestCollection[1]
+{
+  $packagePath->pathToElement()->cast(@Package)->collectTests();
+}
+
+function meta::relational::dbTestRunner::collectTests(pack: Package[1]): DbTestCollection[1]
+{
+  ^DbTestCollection(
+      packageName = $pack->elementToPath(),
+      testFunctions = $pack.children->map(c| $c->match([
+          f:Function<Any>[1]| if($f.stereotypes->contains(dbTest->stereotype('Test')), |$f->cast(@Function<{DbTestConfig[1] -> String[0..1]}>), |[]),
+          x:Any[1]| []
+      ])),
+      beforeTests= $pack.children->map(c| $c->match([
+          f:Function<Any>[1]| if($f.stereotypes->contains(dbTest->stereotype('BeforePackage')), |$f->cast(@Function<{DbTestConfig[1] -> String[0..1]}>), |[]),
+          x:Any[1]| []
+      ])),
+      afterTests= $pack.children->map(c| $c->match([
+          f:Function<Any>[1]| if($f.stereotypes->contains(dbTest->stereotype('AfterPackage')), |$f->cast(@Function<{DbTestConfig[1] -> String[0..1]}>), |[]),
+          x:Any[1]| []
+      ])),
+      toFixTests= $pack.children->map(c| $c->match([
+          f:Function<Any>[1]| if($f.stereotypes->contains(dbTest->stereotype('Ignore')), |$f->cast(@Function<{DbTestConfig[1] -> String[0..1]}>), |[]),
+          x:Any[1]| []
+      ])),
+      subCollections= $pack.children->map(c| $c->match([
+          p:Package[1]| collectTests($p),
+          x:Any[1]| []
+      ]))
+  );
 }
 
 Class meta::relational::dbTestRunner::DbTestConfig
@@ -28,41 +71,83 @@ Class meta::relational::dbTestRunner::DbTestConfig
    expectedSql: String[0..1];
 }
 
-function meta::relational::dbTestRunner::collectTests(pack: Package[1]): Function<{DbTestConfig[1] -> String[0..1]}>[*]
+function meta::relational::dbTestRunner::createDbConfig(dbTypeStr: String[1]): DbTestConfig[1]
 {
-   $pack.children->map(c| $c->match([
-      f:Function<Any>[1]| if($f.stereotypes->contains(dbTest->stereotype('Test')), |$f->cast(@Function<{DbTestConfig[1] -> String[0..1]}>), |[]),
-      p:Package[1]| collectTests($p),
-      x:Any[1]| []
-   ]));
+  createDbConfig($dbTypeStr,[]);
 }
 
+function meta::relational::dbTestRunner::createDbConfig(dbTypeStr: String[1], expectedSql:String[0..1]): DbTestConfig[1]
+{
+  let dbType = extractEnumValue(meta::relational::runtime::DatabaseType, $dbTypeStr);
+  let connection = meta::relational::dbTestRunner::getTestConnection($dbType, meta::pure::router::extension::defaultRelationalExtensions());
+  ^DbTestConfig(dbType=$dbType, connection=$connection, expectedSql=$expectedSql);
+}
+
+//helper function to run db specific tests from pure ide ( for development only)
 function meta::relational::dbTestRunner::runTestsWith(
-                                               allTests: Function<{DbTestConfig[1] -> String[0..1]}>[*],
-                                               ignoredTests : Function<{DbTestConfig[1] -> String[0..1]}>[*],
+                                               testCollection: DbTestCollection[1],
+                                               subTestCollectionsToIgnore : String[*],
                                                dbType: DatabaseType[1],
                                                connection: RelationalDatabaseConnection[0..1],
                                                expectedSqls: Map<Function<{DbTestConfig[1] -> String[0..1]}>, String>[0..1]
                                                ): Boolean[1]
 {
-  println('Running DB Tests for : '+ $dbType->toString());
-
-  //list of failed test ids with corresponding error messages
-  let failedTests = $allTests->filter(t|!$ignoredTests->contains($t))->map(f|
-      println('   running test : '+ $f->elementToPath());
-      let result = $f->eval(^DbTestConfig(dbType=$dbType, connection=$connection, expectedSql=if($expectedSqls->isEmpty(), |[], |$expectedSqls->toOne()->get($f))));
-      if($result->isEmpty(), |[], |$f->elementToPath() + ': ' + $result->toOne());
-  );
-
-  let passed= ($allTests->size() - ($ignoredTests->size() + $failedTests->size()));
+  let summary= runTestsWith($testCollection, $subTestCollectionsToIgnore, $dbType, $connection, $expectedSqls, '');
   println('Test Summary : \n' +
-          '    Tests Passed = ' +  $passed->toString()+ '\n' +
-          '    Tests Failed = ' +  $failedTests->size()->toString() + 
-                if($failedTests->isEmpty(), |'\n' , |$failedTests->joinStrings('\n                ','\n                ','\n')) + 
-          '    Tests Ignored = ' + $ignoredTests->size()->toString() + '\n'
+          '    Tests Passed = ' +  $summary.testsPassed->toString()+ '\n' +
+          '    Tests Failed = ' +  $summary.testsFailed->size()->toString() + 
+                if($summary.testsFailed->isEmpty(), |'\n' , |$summary.testsFailed->joinStrings('\n                ','\n                ','\n')) + 
+          '    Tests Ignored = ' + $summary.testsIgnored->toString() + '\n'
           );
           
-  assert($failedTests->isEmpty());
+  assert($summary.testsFailed->isEmpty());
+}
+
+Class meta::relational::dbTestRunner::TestSummary
+{
+  testsPassed: Integer[1];
+  testsFailed : String[*];           // test Ids with corresponding errors
+  testsIgnored: Integer[1];
+}
+
+function meta::relational::dbTestRunner::runTestsWith(
+                                               testCollection: DbTestCollection[1],
+                                               subTestCollectionsToIgnore : String[*],
+                                               dbType: DatabaseType[1],
+                                               connection: RelationalDatabaseConnection[0..1],
+                                               expectedSqls: Map< Function<{DbTestConfig[1] -> String[0..1]}>, String >[0..1], 
+                                               indent : String[1]
+                                               ): TestSummary[1]
+{
+  println($indent+ 'Running Test Collection : ' +$testCollection.packageName +  ' for : '+ $dbType->toString());
+  
+  if($subTestCollectionsToIgnore->contains($testCollection.packageName),
+     |  println($indent+ '      Test Collection Ignored');
+       ^TestSummary( testsFailed =  [], 
+                     testsIgnored = $testCollection.testFunctions->size() ,
+                     testsPassed =  0);,
+      | 
+        $testCollection.beforeTests-> map(f| $f->eval(^DbTestConfig(dbType=$dbType, connection=$connection)));
+      
+        //list of failed test ids with corresponding error messages
+        let failedTests = $testCollection.testFunctions->map(f|
+            println($indent+'   running test : '+ $f->elementToPath());
+            let result = $f->eval(^DbTestConfig(dbType=$dbType, connection=$connection, expectedSql=if($expectedSqls->isEmpty(), |[], |$expectedSqls->toOne()->get($f))));
+            if($result->isEmpty(), |[], |$f->elementToPath() + ': ' + $result->toOne());
+        );
+
+        $testCollection.afterTests-> map(f| $f->eval(^DbTestConfig(dbType=$dbType, connection=$connection)));
+
+        let testCollectionSummary = ^TestSummary( testsFailed = $failedTests, 
+                                                  testsIgnored = 0,
+                                                  testsPassed = $testCollection.testFunctions->size() - $failedTests->size());
+        
+        let subTestSummaries = $testCollection.subCollections->map(subCollection |runTestsWith($subCollection, $subTestCollectionsToIgnore, $dbType, $connection,  $expectedSqls, $indent+'    '));
+
+        ^TestSummary( testsFailed =  $subTestSummaries.testsFailed->fold({x,y| $x->concatenate($y)},$testCollectionSummary.testsFailed), 
+                      testsIgnored = $subTestSummaries.testsIgnored->fold({x,y| $x+$y},$testCollectionSummary.testsIgnored ), 
+                      testsPassed =  $subTestSummaries.testsPassed ->fold({x,y| $x+$y},$testCollectionSummary.testsPassed ));
+    );
 }
 
 function meta::relational::dbTestRunner::getTestConnection(dbType:DatabaseType[1], extensions:meta::pure::router::extension::RouterExtension[*]):RelationalDatabaseConnection[0..1]
