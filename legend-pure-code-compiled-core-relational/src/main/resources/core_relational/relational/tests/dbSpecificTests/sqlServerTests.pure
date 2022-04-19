@@ -31,10 +31,10 @@ function <<test.Test>> meta::relational::tests::dbSpecificTests::SqlServer::runS
     'dayOfMonth',
     'previousDayOfWeek',
     'mostRecentDayOfWeek',
-    'mod', 'rem', 'log','joinStrings'
+    'mod', 'rem', 'log','joinStrings', 'dateDiff', 'sqlTrue', 'sqlFalse'
     ];
 
-  let failingSupportedDynaFunctions =[ 
+  let failingSupportedDynaFunctions =[
       'second', 'minute', 'hour', 'quarter', 'quarterNumber', 'year', 
       'firstDayOfMonth'
       ];

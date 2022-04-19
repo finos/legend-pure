@@ -28,6 +28,11 @@ Class meta::relational::dbTestRunner::DbTestConfig
    expectedSql: String[0..1];
 }
 
+function meta::relational::dbTestRunner::collectTests(packagePath: String[1]): Function<{DbTestConfig[1] -> String[0..1]}>[*]
+{
+  $packagePath->pathToElement()->cast(@Package)->collectTests();
+}
+
 function meta::relational::dbTestRunner::collectTests(pack: Package[1]): Function<{DbTestConfig[1] -> String[0..1]}>[*]
 {
    $pack.children->map(c| $c->match([
