@@ -39,7 +39,7 @@ function <<test.Test>> meta::relational::tests::dbSpecificTests::snowflake::runS
 
   let ignoredTests= $unsupportedDynaFunctions->concatenate($failingSupportedDynaFunctions)->map(dynaFuncName |
               let dynaFuncPackageName = 'meta::relational::tests::dbSpecificTests::sqlQueryTests::dynaFunctions::' + $dynaFuncName;
-              $dynaFuncPackageName->pathToElement()->cast(@Package)->collectTests(););
+              );
               
   runTestsWith($allTests, $ignoredTests, DatabaseType.Snowflake, $connection,  []);
 }

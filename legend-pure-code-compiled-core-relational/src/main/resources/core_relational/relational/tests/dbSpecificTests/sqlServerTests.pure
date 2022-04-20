@@ -35,13 +35,13 @@ function <<test.Test>> meta::relational::tests::dbSpecificTests::SqlServer::runS
     ];
 
   let failingSupportedDynaFunctions =[
-      'second', 'minute', 'hour', 'quarter', 'quarterNumber', 'year', 
+      'second', 'minute', 'hour', 'quarter', 'quarterNumber', 'year',
       'firstDayOfMonth'
       ];
 
   let ignoredTests= $unsupportedDynaFunctions->concatenate($failingSupportedDynaFunctions)->map(dynaFuncName |
               let dynaFuncPackageName = 'meta::relational::tests::dbSpecificTests::sqlQueryTests::dynaFunctions::' + $dynaFuncName;
-              $dynaFuncPackageName->pathToElement()->cast(@Package)->collectTests(););
+             );
 
   runTestsWith($allTests, $ignoredTests, DatabaseType.SqlServer, $connection,  []);
 }

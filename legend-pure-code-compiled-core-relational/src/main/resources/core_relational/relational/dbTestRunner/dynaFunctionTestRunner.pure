@@ -92,7 +92,6 @@ function meta::relational::dbTestRunner::overwriteDynaFunctionExpectedResult(exp
 function meta::relational::dbTestRunner::defaultEqualityComparator(actual:Any[1..*], expected:Any[1..*] ): Boolean[1]
 {
   zip($actual ,$expected)->map(x| 
-  println($x);
             $x.first->match([
               n1:Number[1] |   $x.second->match([ 
                    n2:Number[1] |  (abs($n1 - $n2) == 0)  ||  (abs($n1 - $n2) == 0.0) ;
