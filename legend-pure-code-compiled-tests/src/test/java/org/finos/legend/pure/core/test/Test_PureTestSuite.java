@@ -193,7 +193,7 @@ public class Test_PureTestSuite extends TestSuite
         ClassLoader classLoader = Test_PureTestSuite.class.getClassLoader();
         return new CompiledExecutionSupport(
                 new JavaCompilerState(null, classLoader),
-                new CompiledProcessorSupport(classLoader, MetadataLazy.fromClassLoader(classLoader), Sets.mutable.empty()),
+                new CompiledProcessorSupport(classLoader, MetadataLazy.fromClassLoader(classLoader, CodeRepositoryProviderHelper.findCodeRepositories().collect(CodeRepository::getName)), Sets.mutable.empty()),
                 null,
                 new PureCodeStorage(null, new ClassLoaderCodeStorage(classLoader, codeRepos)),
                 null,

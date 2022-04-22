@@ -499,14 +499,14 @@ public abstract class DistributedBinaryGraphDeserializer
             for (String instanceId : instanceIds)
             {
                 SourceCoordinates sourceCoordinates = classifierIndex.getSourceCoordinates(instanceId);
+                if (sourceCoordinates == null && throwIfNotFound)
+                {
+                    throw new UnknownInstanceException(classifierId, instanceId);
+                }
                 if (sourceCoordinates != null)
                 {
                     sourceCoordinatesByFile.getIfAbsentPut(sourceCoordinates.getFilePath(), Lists.mutable::empty).add(sourceCoordinates);
                     size++;
-                }
-                else if (throwIfNotFound)
-                {
-                    throw new UnknownInstanceException(classifierId, instanceId);
                 }
             }
             if (size == 0)

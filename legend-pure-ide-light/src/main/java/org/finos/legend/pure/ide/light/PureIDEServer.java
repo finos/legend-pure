@@ -21,6 +21,8 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.federecio.dropwizard.swagger.SwaggerResource;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.finos.legend.pure.ide.light.api.*;
 import org.finos.legend.pure.ide.light.api.concept.Concept;
@@ -30,10 +32,18 @@ import org.finos.legend.pure.ide.light.api.execution.test.ExecuteTests;
 import org.finos.legend.pure.ide.light.api.find.FindInSources;
 import org.finos.legend.pure.ide.light.api.find.FindPureFile;
 import org.finos.legend.pure.ide.light.session.PureSession;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.MutableFSCodeStorage;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.EnumSet;
+import java.util.Optional;
 
 public class PureIDEServer extends Application<ServerConfiguration>
 {
@@ -62,14 +72,14 @@ public class PureIDEServer extends Application<ServerConfiguration>
     {
         environment.jersey().setUrlPattern("/*");
         environment.jersey().register(new SwaggerResource(
-            "",
-            configuration.swagger.getSwaggerViewConfiguration(),
-            configuration.swagger.getSwaggerOAuth2Configuration(),
-            configuration.swagger.getContextRoot() +
-                (configuration.swagger.getContextRoot().endsWith("/") ? "" : "/") + "api")
+                "",
+                configuration.swagger.getSwaggerViewConfiguration(),
+                configuration.swagger.getSwaggerOAuth2Configuration(),
+                configuration.swagger.getContextRoot() +
+                        (configuration.swagger.getContextRoot().endsWith("/") ? "" : "/") + "api")
         );
 
-        PureSession pureSession = new PureSession(configuration.sourceLocationConfiguration);
+        PureSession pureSession = new PureSession(configuration.sourceLocationConfiguration, buildRepositories(configuration.sourceLocationConfiguration));
 
         environment.jersey().register(new Concept(pureSession));
 
@@ -97,4 +107,42 @@ public class PureIDEServer extends Application<ServerConfiguration>
         corsFilter.setInitParameter(CrossOriginFilter.CHAIN_PREFLIGHT_PARAM, "false");
         corsFilter.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "*");
     }
+
+    protected MutableList<RepositoryCodeStorage> buildRepositories(SourceLocationConfiguration sourceLocationConfiguration)
+    {
+        try
+        {
+            String ideFilesLocation = Optional.ofNullable(sourceLocationConfiguration)
+                    .flatMap(s -> Optional.ofNullable(s.ideFilesLocation))
+                    .orElse("legend-pure-ide-light/src/main/resources/pure_ide");
+
+            return Lists.mutable
+                    .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
+                    .with(this.buildCore("", "legend",""))
+                    .with(this.buildCore("", "legend","persistence"))
+                    .with(this.buildCore("", "legend","relational"))
+                    .with(this.buildCore("", "legend","servicestore"))
+                    .with(this.buildCore("", "legend","external-shared"))
+                    .with(this.buildCore("", "legend","external-format-flatdata"))
+                    .with(this.buildCore("", "legend","external-format-json"))
+                    .with(this.buildCore("", "legend","external-format-xml"))
+                    .with(this.buildCore("", "legend","external-query-graphql"))
+                    .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected MutableFSCodeStorage buildCore(String path, String project, String module) throws IOException
+    {
+        String resources = path+(project.equals("")?"":project+"-")+"pure-code-compiled-core" + (module.equals("") ? "" : "-" + module) + "/src/main/resources";
+        String moduleName = "core" + (module.equals("") ? "" : "_" + module);
+        return new MutableFSCodeStorage(
+                GenericCodeRepository.build(Paths.get(resources + "/" + moduleName.replace("-", "_") + ".definition.json")),
+                Paths.get(resources + "/" + moduleName.replace("-","_"))
+        );
+    }
+
 }

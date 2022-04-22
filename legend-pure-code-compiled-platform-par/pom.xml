@@ -26,15 +26,30 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>legend-pure-m2-external-json</artifactId>
+    <artifactId>legend-pure-code-compiled-platform-par</artifactId>
     <packaging>jar</packaging>
-    <name>Legend Pure - Base - M2 Ext JSON</name>
+    <name>Legend Pure - Code - Platform - PAR</name>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-maven-compilation-par</artifactId>
+                <configuration>
+                    <purePlatformVersion>${project.version}</purePlatformVersion>
+                    <repositories>
+                        <repository>platform</repository>
+                    </repositories>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>build-pure-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>
