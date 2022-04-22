@@ -353,7 +353,8 @@ function meta::pure::functions::meta::findVariableExpressionsInValueSpecificatio
                                                          l : LambdaFunction<Any>[1] | $l.expressionSequence->map(e | $e->findVariableExpressionsInValueSpecification());,
                                                          t : Type[1] | [];,
                                                          a:Any[1] | [];]););,
-               ve:VariableExpression[1] | $ve;
+               ve:VariableExpression[1] | $ve,
+               r:meta::pure::router::RoutedValueSpecification[1]| $r.value->findVariableExpressionsInValueSpecification();
              ]
           );
 }
