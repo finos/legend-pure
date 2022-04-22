@@ -60,7 +60,8 @@
 
         <module>legend-pure-configuration-external</module>
 
-        <module>legend-pure-code-compiled-platform</module>
+        <module>legend-pure-code-compiled-platform-par</module>
+        <module>legend-pure-code-compiled-platform-java</module>
         <module>legend-pure-code-compiled-core</module>
         <module>legend-pure-code-compiled-core-persistence</module>
         <module>legend-pure-code-compiled-core-relational</module>
@@ -70,8 +71,7 @@
         <module>legend-pure-code-compiled-core-external-format-json</module>
         <module>legend-pure-code-compiled-core-external-format-xml</module>
         <module>legend-pure-code-compiled-core-external-query-graphql</module>
-
-        <module>legend-pure-code-java-compiled-core</module>
+        <module>legend-pure-code-compiled-tests</module>
 
         <module>legend-pure-maven-compilation-par</module>
         <module>legend-pure-maven-java-compiled</module>
@@ -482,12 +482,12 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-compiled-platform</artifactId>
+                <artifactId>legend-pure-code-compiled-platform-par</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-java-compiled-core</artifactId>
+                <artifactId>legend-pure-code-compiled-platform-java</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

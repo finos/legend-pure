@@ -29,23 +29,38 @@ public class PureRepositoriesExternal
 
     static
     {
-        addRepository(CodeRepository.newPlatformCodeRepository());
-        addRepositories(CodeRepositoryProviderHelper.findCodeRepositories());
+        refresh();
+    }
+
+    public static void refresh()
+    {
+        synchronized (REPOSITORIES_BY_NAME)
+        {
+            REPOSITORIES_BY_NAME.clear();
+            addRepository(CodeRepository.newPlatformCodeRepository());
+            addRepositories(CodeRepositoryProviderHelper.findCodeRepositories());
+        }
     }
 
     public static RichIterable<CodeRepository> repositories()
     {
-        return REPOSITORIES_BY_NAME.valuesView();
+        synchronized (REPOSITORIES_BY_NAME)
+        {
+            return REPOSITORIES_BY_NAME.valuesView();
+        }
     }
 
     public static CodeRepository getRepository(String repositoryName)
     {
-        CodeRepository found = REPOSITORIES_BY_NAME.get(repositoryName);
-        if (found == null)
+        synchronized (REPOSITORIES_BY_NAME)
         {
-            throw new RuntimeException("The code repository '" + repositoryName + "' can't be found!");
+            CodeRepository found = REPOSITORIES_BY_NAME.get(repositoryName);
+            if (found == null)
+            {
+                throw new RuntimeException("The code repository '" + repositoryName + "' can't be found!");
+            }
+            return found;
         }
-        return found;
     }
 
     public static void addRepositories(Iterable<? extends CodeRepository> repositories)
@@ -56,9 +71,12 @@ public class PureRepositoriesExternal
 
     private static void addRepository(CodeRepository repository)
     {
-        if (REPOSITORIES_BY_NAME.putIfAbsent(repository.getName(), repository) != null)
+        synchronized (REPOSITORIES_BY_NAME)
         {
-            throw new RuntimeException("The code repository " + repository.getName() + " already exists!");
+            if (REPOSITORIES_BY_NAME.putIfAbsent(repository.getName(), repository) != null)
+            {
+                throw new RuntimeException("The code repository " + repository.getName() + " already exists!");
+            }
         }
     }
 

@@ -4,6 +4,7 @@ import M3Lexer;
 
 AND : 'and' ;
 OR : 'or' ;
+CONSTRAINT: 'constraint' ;
 ASSOCIATION_MAPPING: 'AssociationMapping' ;
 BUSINESS_MILESTONING : 'business' ;
 BUSINESS_MILESTONING_FROM : 'BUS_FROM' ;

@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.maven.javaCompiled;
 
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -87,6 +88,7 @@ public class PureCompiledJarMojo extends AbstractMojo
     @Override
     public void execute() throws MojoExecutionException
     {
+        ClassLoader savedClassLoader  = Thread.currentThread().getContextClassLoader();
         try
         {
             getLog().info("Generating Java Compiled JAR");
@@ -94,6 +96,11 @@ public class PureCompiledJarMojo extends AbstractMojo
             getLog().info("  Excluded repositories: " + this.excludedRepositories);
             getLog().info("  Extra repositories: " + this.extraRepositories);
             getLog().info("  Generation type: " + this.generationType);
+
+            Thread.currentThread().setContextClassLoader(this.buildClassLoader(this.project));
+
+            PureRepositoriesExternal.refresh();
+
             ListIterable<CodeRepository> resolvedRepositories = resolveRepositories();
             getLog().info(resolvedRepositories.asLazy().collect(CodeRepository::getName).makeString("  Resolved repositories: ", ", ", ""));
 
@@ -143,6 +150,10 @@ public class PureCompiledJarMojo extends AbstractMojo
         catch (Exception e)
         {
             throw new MojoExecutionException("error", e);
+        }
+        finally
+        {
+            Thread.currentThread().setContextClassLoader(savedClassLoader);
         }
     }
 
@@ -242,24 +253,9 @@ public class PureCompiledJarMojo extends AbstractMojo
             getLog().info("  Beginning Pure initialization");
             SetIterable<CodeRepository> repositoriesForCompilation = PureCodeStorage.getRepositoryDependencies(PureRepositoriesExternal.repositories(), resolvedRepositories);
 
-            // Add the project output to the plugin classloader
-            URL[] urlsForClassLoader = ListIterate.collect(this.project.getCompileClasspathElements(), mavenCompilePath ->
-            {
-                try
-                {
-                    return Paths.get(mavenCompilePath).toUri().toURL();
-                }
-                catch (MalformedURLException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }).toArray(new URL[0]);
-            getLog().info("    Project classLoader URLs " + Arrays.toString(urlsForClassLoader));
-            ClassLoader classLoader = new URLClassLoader(urlsForClassLoader, Thread.currentThread().getContextClassLoader());
-
             // Initialize from PAR files cache
-            PureCodeStorage codeStorage = new PureCodeStorage(null, new ClassLoaderCodeStorage(classLoader, repositoriesForCompilation));
-            ClassLoaderPureGraphCache graphCache = new ClassLoaderPureGraphCache(classLoader);
+            PureCodeStorage codeStorage = new PureCodeStorage(null, new ClassLoaderCodeStorage(Thread.currentThread().getContextClassLoader(), repositoriesForCompilation));
+            ClassLoaderPureGraphCache graphCache = new ClassLoaderPureGraphCache(Thread.currentThread().getContextClassLoader());
             PureRuntime runtime = new PureRuntimeBuilder(codeStorage).withCache(graphCache).setTransactionalByDefault(false).buildAndTryToInitializeFromCache();
             if (!runtime.isInitialized())
             {
@@ -387,5 +383,23 @@ public class PureCompiledJarMojo extends AbstractMojo
     public enum GenerationType
     {
         monolithic, modular
+    }
+
+    private ClassLoader buildClassLoader(MavenProject project) throws DependencyResolutionRequiredException
+    {
+        // Add the project output to the plugin classloader
+        URL[] urlsForClassLoader = ListIterate.collect(project.getCompileClasspathElements(), mavenCompilePath ->
+        {
+            try
+            {
+                return Paths.get(mavenCompilePath).toUri().toURL();
+            }
+            catch (MalformedURLException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }).toArray(new URL[0]);
+        getLog().info("    Project classLoader URLs " + Arrays.toString(urlsForClassLoader));
+        return new URLClassLoader(urlsForClassLoader, Thread.currentThread().getContextClassLoader());
     }
 }

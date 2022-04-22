@@ -94,6 +94,10 @@ public class PureJarMojo extends AbstractMojo
 
     private RichIterable<CodeRepository> resolveRepositories(String[] repositories, String[] excludedRepositories, String[] extraRepositories)
     {
+        PureRepositoriesExternal.refresh();
+
+        getLog().info("  Repositories found: " + PureRepositoriesExternal.repositories());
+
         if (extraRepositories != null)
         {
             RichIterable<CodeRepository> resolvedRepositories = ArrayIterate.collect(extraRepositories, r -> {

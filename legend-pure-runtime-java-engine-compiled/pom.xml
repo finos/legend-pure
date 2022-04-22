@@ -65,7 +65,7 @@
                 <dependencies>
                     <dependency>
                         <groupId>org.finos.legend.pure</groupId>
-                        <artifactId>legend-pure-code-compiled-platform</artifactId>
+                        <artifactId>legend-pure-code-compiled-platform-par</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>
