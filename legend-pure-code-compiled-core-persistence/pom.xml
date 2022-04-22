@@ -5,7 +5,7 @@
     <parent>
         <artifactId>legend-pure</artifactId>
         <groupId>org.finos.legend.pure</groupId>
-        <version>1.54.1-SNAPSHOT</version>
+        <version>2.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
