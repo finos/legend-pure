@@ -54,7 +54,6 @@ public class TopGraphBuilder extends TopAntlrParserBaseVisitor<MutableListMultim
         this.oldState = oldState;
     }
 
-    @Override
     public MutableListMultimap<Parser, CoreInstance> visitDefinition(TopAntlrParser.DefinitionContext ctx)
     {
         this.count = 0;
@@ -63,7 +62,6 @@ public class TopGraphBuilder extends TopAntlrParserBaseVisitor<MutableListMultim
         return this.newInstancesByParser;
     }
 
-    @Override
     public MutableListMultimap<Parser, CoreInstance> visitTop(TopAntlrParser.TopContext ctx)
     {
         String parserName = ctx.CODE_BLOCK_START().getText().substring(4);

@@ -22,6 +22,7 @@ public class TestIntegerParsing extends AbstractPrimitiveParsingTest
     @Test
     public void testInteger()
     {
+        // todo
         assertParsesTo("17", "17");
         assertParsesTo("17", "0000017");
     }

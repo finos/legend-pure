@@ -105,7 +105,7 @@ public class JavaPurePrimitiveTypeMapping
         }
         if (support.instance_instanceOf(instance, M3Paths.Float))
         {
-            return "(java.lang.Double)" + instance.getName();
+            return "java.lang.Double.valueOf(" + instance.getName() + ")";
         }
         if (support.instance_instanceOf(instance, M3Paths.Decimal))
         {
