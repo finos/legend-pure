@@ -14,23 +14,31 @@
 
 package org.finos.legend.pure.m3.tests.function.base.json;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompiled
 {
-    @Before
-    public void compileInliner()
+    @After
+    public void cleanRuntime()
     {
-        this.compileTestSourceFromResource("/org/finos/legend/pure/m3/toJson/toJson.pure");
+        runtime.delete("fromString.pure");
+        runtime.delete("/test/testFile.pure");
+        runtime.compile();
     }
 
     /*
@@ -38,9 +46,9 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
      */
 
     @Test
-    public void testSerializationPrimitiveTypes() throws Exception
+    public void testSerializationPrimitiveTypes()
     {
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "import meta::json::*;\n" +
                         "function meta::pure::functions::asserts::assertJsonStringsEqual(expected:String[1], actual:String[1]):Boolean[1]\n" +
                         "{\n" +
@@ -53,13 +61,13 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
                         "                                         dateTimeType=date(2018,4,12,0,0,1), decimalType=3.14159265358979d);" +
                         "   assertJsonStringsEqual('{\"stringType\":\"Yoda\",\"dateTimeType\":\"2018-04-12T00:00:01+0000\",\"booleanType\":false,\"strictDateType\":\"2018-04-12\",\"floatType\":3.14159265358979,\"dateType\":\"2018\",\"integerType\":42,\"decimalType\":3.14159265358979}', $t->toJsonBeta(^meta::json::JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=false)));\n" +
                         "}\n");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
-    public void testSerializationEnumProperty() throws Exception
+    public void testSerializationEnumProperty()
     {
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "import meta::json::*;\n" +
                         "function test():Boolean[1]\n" +
                         "{\n" +
@@ -68,13 +76,13 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
                         "let expected2 = '{\"enumProperty\":\"M\",\"simple\":[]}';\n" +
                         "assert($t->toJsonBeta(^meta::json::JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=false)) == $expected1 || $t->toJsonBeta(^meta::json::JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=false)) == $expected2, |'');\n" +
                         "}");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
-    public void testSerializationClassProperty() throws Exception
+    public void testSerializationClassProperty()
     {
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "import meta::json::*;\n" +
                         "function test():Boolean[1]\n" +
                         "{\n" +
@@ -83,13 +91,13 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
                         "let expected2 = '{\"nestedClassProperty\":{\"enumProperty\":\"M\",\"simple\":[]}}';\n" +
                         "assert($t->toJsonBeta(^meta::json::JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=false)) == $expected1 || $t->toJsonBeta(^meta::json::JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=false)) == $expected2, |'');\n" +
                         "}");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
-    public void testSerializationClassWithAssociation() throws Exception
+    public void testSerializationClassWithAssociation()
     {
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "import meta::json::*;\n" +
                         "function test():Boolean[1]\n" +
                         "{\n" +
@@ -98,7 +106,7 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
                         "let expected2 = '{\"prop\":[42,1],\"c2\":{\"str\":\"Hey\"}}';\n" +
                         "assert($t->toJsonBeta(^meta::json::JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=false)) == $expected1 || $t->toJsonBeta(^meta::json::JSONSerializationConfig(typeKeyName='__TYPE', includeType=false, fullyQualifiedTypePath=false, serializeQualifiedProperties=false, serializePackageableElementName=false, removePropertiesWithEmptyValues=false)) == $expected2, |'');\n" +
                         "}");
-        this.execute("test():Boolean[1]");
+        execute("test():Boolean[1]");
     }
 
     @Test
@@ -351,5 +359,18 @@ public abstract class AbstractTestToJson extends AbstractPureTestWithCoreCompile
             throw new RuntimeException("Error parsing actual JSON: " + actualJson, e);
         }
         Assert.assertEquals(expected, actual);
+    }
+
+    protected static MutableCodeStorage getCodeStorage()
+    {
+        CodeRepository platform = CodeRepository.newPlatformCodeRepository();
+        CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, platform);
+        return new PureCodeStorage(null, new ClassLoaderCodeStorage(platform, test));
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        String code = readTextResource("org/finos/legend/pure/m3/toJson/toJson.pure", AbstractTestToJson.class.getClassLoader());
+        return Tuples.pair("/test/toJson.pure", code);
     }
 }

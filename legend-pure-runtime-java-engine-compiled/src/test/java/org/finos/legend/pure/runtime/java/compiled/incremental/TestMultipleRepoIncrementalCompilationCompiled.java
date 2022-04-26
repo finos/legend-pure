@@ -14,9 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.incremental;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.incremental.TestMultipleRepoIncrementalCompilation;
@@ -29,8 +28,9 @@ import org.junit.BeforeClass;
 public class TestMultipleRepoIncrementalCompilationCompiled extends TestMultipleRepoIncrementalCompilation
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getCodeStorage(), getCodeRepositories());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getCodeStorage());
     }
 
     protected static FunctionExecution getFunctionExecution()
@@ -41,11 +41,6 @@ public class TestMultipleRepoIncrementalCompilationCompiled extends TestMultiple
     @Override
     protected ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getAdditionalVerifiers()
     {
-        return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
-    }
-
-    public static Pair<String, String> getExtra()
-    {
-        return null;
+        return Lists.fixedSize.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
 }

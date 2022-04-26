@@ -14,28 +14,17 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.constraints;
 
-import org.finos.legend.pure.m3.tests.constraints.AbstractTestConstraints;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.tests.constraints.AbstractTestConstraints;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestConstraint extends AbstractTestConstraints
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
-        compileTestSource("employee.pure", "Class Employee" +
-                "{" +
-                "   lastName:String[1];" +
-                "}\n");
-    }
-
-    @After
-    public void cleanRuntime()
+    public static void setUp()
     {
-        runtime.delete("fromString.pure");
-        runtime.compile();
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getFactoryRegistryOverride(), getOptions(), getExtra());
     }
 
     protected static FunctionExecution getFunctionExecution()

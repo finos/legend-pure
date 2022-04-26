@@ -14,53 +14,52 @@
 
 package org.finos.legend.pure.m3.tests.function.base.string;
 
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
+import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestChunk extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("/test/testChunk.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testChunkZeroSize()
     {
-        try
-        {
-            compileTestSource("/test/testChunk.pure",
-                    "function test():Any[*]\n" +
-                            "{\n" +
-                            "   'the quick brown fox jumps over the lazy dog'->chunk(0)\n" +
-                            "}\n");
-            execute("test():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureExecutionException.class, "Invalid chunk size: 0", "/test/testChunk.pure", 3, 51, e);
-        }
+        compileTestSource("/test/testChunk.pure",
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "   'the quick brown fox jumps over the lazy dog'->chunk(0)\n" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Any[*]"));
+        assertPureException(PureExecutionException.class, "Invalid chunk size: 0", "/test/testChunk.pure", 3, 51, e);
     }
 
     @Test
     public void testChunkNegativeSize()
     {
-        try
-        {
-            compileTestSource("/test/testChunk.pure",
-                    "function test():Any[*]\n" +
-                            "{\n" +
-                            "   'the quick brown fox jumps over the lazy dog'->chunk(-1)\n" +
-                            "}\n");
-            execute("test():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureExecutionException.class, "Invalid chunk size: -1", "/test/testChunk.pure", 3, 51, e);
-        }
+        compileTestSource("/test/testChunk.pure",
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "   'the quick brown fox jumps over the lazy dog'->chunk(-1)\n" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test():Any[*]"));
+        assertPureException(PureExecutionException.class, "Invalid chunk size: -1", "/test/testChunk.pure", 3, 51, e);
     }
 
     @Test
@@ -87,5 +86,12 @@ public abstract class AbstractTestChunk extends AbstractPureTestWithCoreCompiled
         CoreInstance result = execute("test():Any[*]");
         Verify.assertInstanceOf(InstanceValue.class, result);
         Verify.assertListsEqual(Lists.mutable.with("the quick brown fox jumped over the lazy dog"), ((InstanceValue)result)._values().toList());
+    }
+
+    protected static MutableCodeStorage getCodeStorage()
+    {
+        CodeRepository platform = CodeRepository.newPlatformCodeRepository();
+        CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, platform);
+        return new PureCodeStorage(null, new ClassLoaderCodeStorage(platform, test));
     }
 }

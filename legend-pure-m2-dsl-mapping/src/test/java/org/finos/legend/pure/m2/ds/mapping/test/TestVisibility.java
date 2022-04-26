@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m2.ds.mapping.test;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -31,8 +31,9 @@ import org.junit.Test;
 public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getCodeStorage(), getCodeRepositories(), null);
+    public static void setUp()
+    {
+        setUpRuntime(getCodeStorage());
     }
 
     @After
@@ -41,6 +42,9 @@ public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
         runtime.delete("/datamart_datamt/testFile.pure");
         runtime.delete("/datamart_datamt/testFile2.pure");
         runtime.delete("/system/testFile.pure");
+        runtime.delete("/system/testFile1.pure");
+        runtime.delete("/system/testFile2.pure");
+        runtime.compile();
     }
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
@@ -64,26 +68,19 @@ public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
         compileTestSource(
                 "/datamart_datamt/testFile2.pure",
                 "Class datamarts::datamt::domain::TestClass2 {}\n");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::TestClass2"));
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::TestClass2"));
 
-        try
-        {
-            compileTestSource(
-                    "/system/testFile.pure",
-                    "function meta::pure::a():meta::pure::mapping::SetImplementation[*]{[]}\n" +
-                            "###Mapping\n" +
-                            "Mapping system::myMap(\n" +
-                            "   datamarts::datamt::domain::TestClass2[ppp]: Operation\n" +
-                            "           {\n" +
-                            "               meta::pure::a__SetImplementation_MANY_()\n" +
-                            "           }\n" +
-                            ")\n");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "datamarts::datamt::domain::TestClass2 is not visible in the file /system/testFile.pure", "/system/testFile.pure", 4, 31, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/system/testFile.pure",
+                "function meta::pure::a():meta::pure::mapping::SetImplementation[*]{[]}\n" +
+                        "###Mapping\n" +
+                        "Mapping system::myMap(\n" +
+                        "   datamarts::datamt::domain::TestClass2[ppp]: Operation\n" +
+                        "           {\n" +
+                        "               meta::pure::a__SetImplementation_MANY_()\n" +
+                        "           }\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::TestClass2 is not visible in the file /system/testFile.pure", "/system/testFile.pure", 4, 31, e);
     }
 
     @Test
@@ -92,28 +89,20 @@ public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
         compileTestSource(
                 "/datamart_datamt/testFile.pure",
                 "Enum datamarts::datamt::domain::TestEnum1{ VAL }\n");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::TestEnum1"));
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::TestEnum1"));
 
-        try
-        {
-
-            compileTestSource(
-                    "/system/testFile2.pure",
-                    "###Mapping\n" +
-                            "Mapping meta::pure::TestMapping1\n" +
-                            "(\n" +
-                            "\n" +
-                            "    datamarts::datamt::domain::TestEnum1: EnumerationMapping Foo\n" +
-                            "    {\n" +
-                            "        VAL:  'a'\n" +
-                            "    }\n" +
-                            ")\n");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "datamarts::datamt::domain::TestEnum1 is not visible in the file /system/testFile2.pure", "/system/testFile2.pure", 5, 32, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/system/testFile2.pure",
+                "###Mapping\n" +
+                        "Mapping meta::pure::TestMapping1\n" +
+                        "(\n" +
+                        "\n" +
+                        "    datamarts::datamt::domain::TestEnum1: EnumerationMapping Foo\n" +
+                        "    {\n" +
+                        "        VAL:  'a'\n" +
+                        "    }\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::TestEnum1 is not visible in the file /system/testFile2.pure", "/system/testFile2.pure", 5, 32, e);
     }
 
     @Test
@@ -130,22 +119,14 @@ public class TestVisibility extends AbstractPureMappingTestWithCoreCompiled
                         "               datamarts::datamt::mapping::a__SetImplementation_MANY_()\n" +
                         "           }\n" +
                         ")\n");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::TestClass2"));
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::TestClass2"));
 
-        try
-        {
-
-            compileTestSource(
-                    "/system/testFile1.pure",
-                    "###Mapping\n" +
-                            "Mapping system::myMap(\n" +
-                            "  include datamarts::datamt::mapping::myMap1\n" +
-                            ")\n");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "datamarts::datamt::mapping::myMap1 is not visible in the file /system/testFile1.pure", "/system/testFile1.pure", 2, 17, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/system/testFile1.pure",
+                "###Mapping\n" +
+                        "Mapping system::myMap(\n" +
+                        "  include datamarts::datamt::mapping::myMap1\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::mapping::myMap1 is not visible in the file /system/testFile1.pure", "/system/testFile1.pure", 2, 17, e);
     }
 }

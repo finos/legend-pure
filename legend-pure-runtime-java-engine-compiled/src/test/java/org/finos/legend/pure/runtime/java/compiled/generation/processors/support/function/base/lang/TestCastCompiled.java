@@ -29,7 +29,7 @@ public class TestCastCompiled extends AbstractTestCast
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution());
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getExtra());
     }
 
     protected static FunctionExecution getFunctionExecution()
@@ -103,7 +103,7 @@ public class TestCastCompiled extends AbstractTestCast
     @Override
     protected void checkPrimitiveNonConcreteOneRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: Integer cannot be cast to String", "/org/finos/legend/pure/m3/cast/cast.pure", 51, 10);
+        checkException(findRootException(e), "Cast exception: Integer cannot be cast to String", "/test/cast.pure", 51, 10);
     }
 
     @Override
@@ -115,7 +115,7 @@ public class TestCastCompiled extends AbstractTestCast
     @Override
     protected void checkNonPrimitiveNonConcreteOneRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/org/finos/legend/pure/m3/cast/cast.pure", 61, 12);
+        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/test/cast.pure", 61, 12);
     }
 
     @Override
@@ -127,7 +127,7 @@ public class TestCastCompiled extends AbstractTestCast
     @Override
     protected void checkPrimitiveNonConcreteManyRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: String cannot be cast to Number", "/org/finos/legend/pure/m3/cast/cast.pure", 56, 13);
+        checkException(findRootException(e), "Cast exception: String cannot be cast to Number", "/test/cast.pure", 56, 13);
     }
 
     @Override
@@ -139,7 +139,7 @@ public class TestCastCompiled extends AbstractTestCast
     @Override
     protected void checkNonPrimitiveNonConcreteManyRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/org/finos/legend/pure/m3/cast/cast.pure", 61, 12);
+        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/test/cast.pure", 61, 12);
     }
 
     @Override

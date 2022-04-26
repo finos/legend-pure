@@ -25,30 +25,10 @@ import org.junit.Test;
 public class TestAssertEquals extends PureExpressionTest
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), extra);
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getExtra());
     }
-
-    public static Pair<String, String> extra = Tuples.pair("/system/extra.pure","function meta::pure::functions::asserts::assertEquals(expected:Any[*], actual:Any[*]):Boolean[1]\n" +
-            "{\n" +
-            "    if(eq($expected->size(), 1) && eq($actual->size(), 1),\n" +
-            "       | assertEquals($expected, $actual, '\\nexpected: %r\\nactual:   %r', [$expected->toOne(), $actual->toOne()]),\n" +
-            "       | assertEquals($expected, $actual, '\\nexpected: %s\\nactual:   %s', [$expected->map(x | $x->toRepresentation())->joinStrings('[', ', ', ']'), $actual->map(x | $x->toRepresentation())->joinStrings('[', ', ', ']')]));\n" +
-            "}\n" +
-            "\n" +
-            "function meta::pure::functions::asserts::assertEquals(expected:Any[*], actual:Any[*], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
-            "{\n" +
-            "    assert(equal($expected, $actual), $formatString, $formatArgs);\n" +
-            "}\n" +
-            "\n" +
-            "function meta::pure::functions::asserts::assertEquals(expected:Any[*], actual:Any[*], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
-            "{\n" +
-            "    assert(equal($expected, $actual), $message);\n" +
-            "}" +
-            "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
-            "{\n" +
-            "    assert($condition, | format($formatString, $formatArgs));\n" +
-            "}");
 
     @Test
     public void testFailure()
@@ -67,5 +47,31 @@ public class TestAssertEquals extends PureExpressionTest
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair(
+                "testAssertEquals.pure",
+                "function meta::pure::functions::asserts::assertEquals(expected:Any[*], actual:Any[*]):Boolean[1]\n" +
+                        "{\n" +
+                        "    if(eq($expected->size(), 1) && eq($actual->size(), 1),\n" +
+                        "       | assertEquals($expected, $actual, '\\nexpected: %r\\nactual:   %r', [$expected->toOne(), $actual->toOne()]),\n" +
+                        "       | assertEquals($expected, $actual, '\\nexpected: %s\\nactual:   %s', [$expected->map(x | $x->toRepresentation())->joinStrings('[', ', ', ']'), $actual->map(x | $x->toRepresentation())->joinStrings('[', ', ', ']')]));\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertEquals(expected:Any[*], actual:Any[*], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert(equal($expected, $actual), $formatString, $formatArgs);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertEquals(expected:Any[*], actual:Any[*], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert(equal($expected, $actual), $message);\n" +
+                        "}" +
+                        "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert($condition, | format($formatString, $formatArgs));\n" +
+                        "}\n");
     }
 }

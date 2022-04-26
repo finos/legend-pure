@@ -14,25 +14,32 @@
 
 package org.finos.legend.pure.m3.serialization.filesystem;
 
-import org.eclipse.collections.api.set.MutableSet;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 
 import java.util.regex.Pattern;
 
 public class TestCodeRepositoryWithDependencies extends CodeRepository
 {
-    private final MutableSet<String> deps;
+    private final SetIterable<String> dependencies;
 
-    public TestCodeRepositoryWithDependencies(String name, Pattern allowedPackagesPattern, MutableSet<CodeRepository> deps)
+    public TestCodeRepositoryWithDependencies(String name, Pattern allowedPackagesPattern, Iterable<? extends CodeRepository> dependencies)
     {
         super(name, allowedPackagesPattern);
-        this.deps = deps.collect(CodeRepository::getName);
+        this.dependencies = Iterate.collect(dependencies, CodeRepository::getName, Sets.mutable.empty());
+    }
+
+    public TestCodeRepositoryWithDependencies(String name, Pattern allowedPackagesPattern, CodeRepository... dependencies)
+    {
+        this(name, allowedPackagesPattern, ArrayAdapter.adapt(dependencies));
     }
 
     @Override
     public boolean isVisible(CodeRepository other)
     {
-        return other == this || this.deps.contains(other.getName());
+        return (other == this) || ((other != null) && this.dependencies.contains(other.getName()));
     }
 }
-

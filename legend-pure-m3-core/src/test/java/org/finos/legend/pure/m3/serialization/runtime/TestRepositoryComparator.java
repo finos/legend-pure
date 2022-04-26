@@ -47,7 +47,7 @@ public class TestRepositoryComparator extends AbstractPureTestWithCoreCompiledPl
                 CodeRepository.newPlatformCodeRepository()
         ).withAll(CodeRepositoryProviderHelper.findCodeRepositories());
         repositoriesByName = repositories.groupByUniqueKey(CodeRepository::getName);
-        setUpRuntime(new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories)), repositories, getExtra());
+        setUpRuntime(new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories)), getExtra());
     }
 
     @Test

@@ -14,7 +14,6 @@
 
 package org.finos.legend.pure.m3.tests.milestoning;
 
-
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;

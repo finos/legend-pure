@@ -14,8 +14,14 @@
 
 package org.finos.legend.pure.m3.inlinedsl.path.inference;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
@@ -29,7 +35,12 @@ public class TestFunctionTypeInferenceInPath extends AbstractPureTestWithCoreCom
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime();
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(), GenericCodeRepository.build("test", "((test)|(meta))(::.*)?", PlatformCodeRepository.NAME));
     }
 
     @After
@@ -80,7 +91,7 @@ public class TestFunctionTypeInferenceInPath extends AbstractPureTestWithCoreCom
                         "    $numbers->plus();\n" +
                         "}\n" +
                         "\n" +
-                        "function go():Any[*]\n" +
+                        "function test::go():Any[*]\n" +
                         "{\n" +
                         "   Trade.all()->groupBy([#/Trade/product/name#],\n" +
                         "                        ['prodName'],\n" +
@@ -131,7 +142,7 @@ public class TestFunctionTypeInferenceInPath extends AbstractPureTestWithCoreCom
                 "    $numbers->plus();\n" +
                 "}\n" +
                 "\n" +
-                "function go():Any[*]\n" +
+                "function test::go():Any[*]\n" +
                 "{\n" +
                 "   Trade.all()->groupBy([#/Trade/product/name#], ['prodName'], meta::pure::functions::collection::agg('cnt', x|$x.quantity, y|$y->sum()));\n" +
                 "   'ok';\n" +
@@ -175,7 +186,7 @@ public class TestFunctionTypeInferenceInPath extends AbstractPureTestWithCoreCom
                         "}\n" +
                         "\n" +
                         "\n" +
-                        "function go():Any[*]\n" +
+                        "function test::go():Any[*]\n" +
                         "{\n" +
                         "   Trade.all()->groupBy([#/Trade/product/name#], ['prodName'], meta::pure::functions::collection::agg('cnt', x|$x.name, y|$y->sum()));\n" +
                         "   'ok';\n" +
@@ -187,11 +198,12 @@ public class TestFunctionTypeInferenceInPath extends AbstractPureTestWithCoreCom
     public void inferTheTypeOfACollectionOfLambdaAndPath_Success()
     {
         compileTestSource(SOURCE_ID,
-                        "Class Person\n" +
+                "import test::*;\n" +
+                        "Class test::Person\n" +
                         "{\n" +
                         "   age:Integer[1];\n" +
                         "}\n" +
-                        "function a(k:FunctionExpression[1]):Any[*]\n" +
+                        "function test::a(k:FunctionExpression[1]):Any[*]\n" +
                         "{\n" +
                         "   let f = [f:Person[1]|2, #/Person/age#];\n" +
                         "   let z = $f->at(0)->eval(^Person(age=3))+4;\n" +
@@ -203,11 +215,12 @@ public class TestFunctionTypeInferenceInPath extends AbstractPureTestWithCoreCom
     {
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () ->
                 compileTestSource(SOURCE_ID,
-                        "Class Person\n" +
+                        "import test::*;\n" +
+                                "Class test::Person\n" +
                                 "{\n" +
                                 "   age:Integer[1];\n" +
                                 "}\n" +
-                                "function a(k:FunctionExpression[1]):Any[*]\n" +
+                                "function test::a(k:FunctionExpression[1]):Any[*]\n" +
                                 "{\n" +
                                 "   let f = [f:Person[1]|'2', #/Person/age#];\n" +
                                 "   let z = $f->at(0)->eval(^Person(age=3))+4;\n" +
@@ -219,6 +232,6 @@ public class TestFunctionTypeInferenceInPath extends AbstractPureTestWithCoreCom
                 "\tmeta::pure::functions::math::plus(Float[*]):Float[1]\n" +
                 "\tmeta::pure::functions::math::plus(Integer[*]):Integer[1]\n" +
                 "\tmeta::pure::functions::math::plus(Number[*]):Number[1]\n" +
-                "\tmeta::pure::functions::string::plus(String[*]):String[1]\n", SOURCE_ID, 8, 43, e);
+                "\tmeta::pure::functions::string::plus(String[*]):String[1]\n", SOURCE_ID, 9, 43, e);
     }
 }

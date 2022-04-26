@@ -15,12 +15,16 @@
 package org.finos.legend.pure.m3.tests.incremental.milestoning;
 
 
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -28,36 +32,56 @@ import org.junit.Test;
 
 public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
 {
-
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getExtra());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
     }
 
     @After
-    public void cleanRuntime() {
-        runtime.delete("userId.pure");
-        runtime.delete("sourceId.pure");
+    public void cleanRuntime()
+    {
+        runtime.delete("A.pure");
+        runtime.delete("association.pure");
+        runtime.delete("associationAB.pure");
+        runtime.delete("B.pure");
+        runtime.delete("classes.pure");
+        runtime.delete("classA.pure");
+        runtime.delete("classB.pure");
+        runtime.delete("go.pure");
+        runtime.delete("location.pure");
+        runtime.delete("profiles.pure");
         runtime.delete("sourceA.pure");
         runtime.delete("sourceB.pure");
-        runtime.delete("classes.pure");
-        runtime.delete("classB.pure");
-        runtime.delete("association.pure");
-        runtime.delete("testFunc.pure");
+        runtime.delete("sourceId.pure");
+        runtime.delete("sourceId1.pure");
+        runtime.delete("sourceId2.pure");
+        runtime.delete("sourceIdClassA.pure");
+        runtime.delete("sourceIdClassB.pure");
         runtime.delete("test.pure");
-        runtime.delete("/model/go.pure");
+        runtime.delete("testFunc.pure");
+        runtime.delete("trader.pure");
+        runtime.delete("userId.pure");
+        runtime.delete("/test/associationB_C.pure");
+        runtime.delete("/test/associationB_C.pure");
+        runtime.delete("/test/baseClass.pure");
+        runtime.delete("/test/go.pure");
+        runtime.delete("/test/myAssociation.pure");
         runtime.delete("/test/myClass.pure");
-
-        try
-        {
-            runtime.compile();
-        } catch (PureCompilationException e) {
-            setUp();
-        }
+        runtime.delete("/test/specializationClassB.pure");
+        runtime.delete("/test/specializationClassC.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testBusinessTemporalClassStability() throws Exception
+    public void testBusinessTemporalClassStability()
     {
         String classAWithBusinessTemporalStereotype = "Class <<temporal.businesstemporal>> test::A{}";
         String classAWithNoStereotype = "Class test::A{}";
@@ -72,11 +96,11 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", classAWithBusinessTemporalStereotype)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testBusinessTemporalClassToNonTemporalClassStability() throws Exception
+    public void testBusinessTemporalClassToNonTemporalClassStability()
     {
         String businessTemporalClassB = "Class <<temporal.businesstemporal>> B{}";
         String bDependentClassA = "Class A{b : B[0..1];}";
@@ -90,11 +114,11 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 33)
                         .createInMemorySource("sourceA.pure", bDependentClassA)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testBusinessTemporalClassToNonTemporalClassStabilityViaAssociation() throws Exception
+    public void testBusinessTemporalClassToNonTemporalClassStabilityViaAssociation()
     {
         String classA = "Class A{}";
         String businessTemporalClassB = "Class <<temporal.businesstemporal>> B{}";
@@ -111,11 +135,11 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: b(_:A[1],_:StrictDate[1])", "userId.pure", 1, 41)
                         .createInMemorySource("association.pure", association)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
-    public void testNonTemporalClassToBusinessTemporalClassStability() throws Exception
+    public void testNonTemporalClassToBusinessTemporalClassStability()
     {
         String businessTemporalClassB = "Class <<temporal.businesstemporal>> B{}";
         String bDependentClassA = "Class A{     \n" +
@@ -132,11 +156,11 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compileWithExpectedCompileFailure("B has not been defined!", "sourceA.pure", 2, 6)
                         .createInMemorySource("sourceB.pure", businessTemporalClassB)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
-    public void testNonTemporalClassToBusinessTemporalClassStabilityViaAssociationRemoveAssn() throws Exception
+    public void testNonTemporalClassToBusinessTemporalClassStabilityViaAssociationRemoveAssn()
     {
         String classes = "Class A{}\n" +
                 "Class <<temporal.businesstemporal>> B{}\n";
@@ -155,11 +179,11 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: b(_:A[1],_:StrictDate[1])", "userId.pure", 1, 41)
                         .createInMemorySource("association.pure", association)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
-    public void testNonTemporalClassToBusinessTemporalClassStabilityViaAssociationRemoveTargetType() throws Exception
+    public void testNonTemporalClassToBusinessTemporalClassStabilityViaAssociationRemoveTargetType()
     {
         String classA = "Class A{}\n";
         String classB = "Class <<temporal.businesstemporal>> B{}\n";
@@ -179,12 +203,12 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compileWithExpectedCompileFailure("B has not been defined!", "association.pure", 3, 6)
                         .createInMemorySource("classB.pure", classB)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
 
     @Test
-    public void testFunctionToBusinessTemporalClassStability() throws Exception
+    public void testFunctionToBusinessTemporalClassStability()
     {
         String classAndBWithBusinessTemporalStereotype = "Class A{b : B[0..1];} Class <<temporal.businesstemporal>> B{}";
         String classAndBNoStereotype = "Class A{b : B[0..1];} Class  B{}";
@@ -200,12 +224,11 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", classAndBWithBusinessTemporalStereotype)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
-
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
-    public void testStabilityOfEnablingDisablingBusinessTemporalStereotype() throws Exception
+    public void testStabilityOfEnablingDisablingBusinessTemporalStereotype()
     {
         String classA = "Class A{b:B[0..1];}";
         String classBNoStereotype = "Class B{}";
@@ -222,11 +245,11 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .deleteSource("sourceId2.pure")
                         .createInMemorySource("sourceId2.pure", classBNoStereotype)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
-    public void testStabilityOfMilestonedQualifiedPropertyUnbindingWithAutomap() throws Exception
+    public void testStabilityOfMilestonedQualifiedPropertyUnbindingWithAutomap()
     {
         String classes = "Class A {b:B[*];} " +
                 "Class B {c:C[1];}" +
@@ -243,12 +266,11 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", classes)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
-
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
-    public void testStabilityOfNoArgMilestonedProperty() throws Exception
+    public void testStabilityOfNoArgMilestonedProperty()
     {
         String classes = "Class <<temporal.businesstemporal>> A {b:B[*];} " +
                 "Class <<temporal.businesstemporal>> B {attr:Integer[1];}";
@@ -264,18 +286,22 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", classes)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
-
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
-    public void testStabilityOfMilestonedQualifiedPropertyInFunctionExpression() throws Exception
+    public void testStabilityOfMilestonedQualifiedPropertyInFunctionExpressionWithoutAutoMap()
     {
         testStabilityOfMilestonedQualifiedPropertyInFunctionExpressionWithAutoMap(false);
+    }
+
+    @Test
+    public void testStabilityOfMilestonedQualifiedPropertyInFunctionExpressionWithAutoMap()
+    {
         testStabilityOfMilestonedQualifiedPropertyInFunctionExpressionWithAutoMap(true);
     }
 
-    private void testStabilityOfMilestonedQualifiedPropertyInFunctionExpressionWithAutoMap(boolean withAutoMap) throws Exception
+    private void testStabilityOfMilestonedQualifiedPropertyInFunctionExpressionWithAutoMap(boolean withAutoMap)
     {
         String classA = "Class <<temporal.businesstemporal>> A {b:B[" + (withAutoMap ? "*" : "1") + "];} ";
         String classBNonTemporal = "Class B {attr:Integer[1];}";
@@ -298,30 +324,25 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .deleteSource("sourceIdClassB.pure")
                         .createInMemorySource("sourceIdClassB.pure", classBNonTemporal)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
-
-        this.runtime.delete("sourceIdClassA.pure");
-        this.runtime.delete("sourceIdClassB.pure");
-        this.runtime.delete("userId.pure");
-
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
-    public void testUpdatingPropertiesWithNonMilestoningStereotypes() throws Exception
+    public void testUpdatingPropertiesWithNonMilestoningStereotypes()
     {
         String profiles = "Profile datamarts::DataM23::domain::cmaoperationalstore::OperationalStore{ stereotypes:[ datasetKey ]; }\n";
         String classes = "Class <<meta::pure::service::service.disableStreaming>> A {<<datamarts::DataM23::domain::cmaoperationalstore::OperationalStore.datasetKey>> str:String[1];} ";
-        this.runtime.createInMemorySource("classes.pure", classes);
-        this.runtime.createInMemorySource("profiles.pure", profiles);
+        runtime.createInMemorySource("classes.pure", classes);
+        runtime.createInMemorySource("profiles.pure", profiles);
 
-        this.runtime.compile();
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
 
-        this.runtime.getIncrementalCompiler().updateSource(this.runtime.getSourceById("profiles.pure"), "");
-        this.runtime.getIncrementalCompiler().updateSource(this.runtime.getSourceById("classes.pure"), "");
-        this.runtime.compile();
+        runtime.getIncrementalCompiler().updateSource(runtime.getSourceById("profiles.pure"), "");
+        runtime.getIncrementalCompiler().updateSource(runtime.getSourceById("classes.pure"), "");
+        runtime.compile();
 
-        Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+        Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
     }
 
     @Test
@@ -334,49 +355,49 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                 "{|A.all(%2016)->filter(a|$a.b.value == '')}" +
                 "}";
 
-        this.runtime.createInMemorySource("A.pure", a);
-        this.runtime.createInMemorySource("B.pure", b);
-        this.runtime.createInMemorySource("go.pure", go);
-        this.runtime.compile();
+        runtime.createInMemorySource("A.pure", a);
+        runtime.createInMemorySource("B.pure", b);
+        runtime.createInMemorySource("go.pure", go);
+        runtime.compile();
 
-        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(this.runtime,
+        RuntimeVerifier.replaceWithCompileErrorCompileAndReloadMultipleTimesIsStable(runtime,
                 Lists.fixedSize.of(Tuples.pair("B.pure", bNoMilestoning)), "Can't find the property 'value' in the class B",
                 "go.pure", 1, 52);
     }
 
     @Test
-    public void testFunctionExpressionUnbindingOfSynthetizedMilestonedPropertyDoesNotReResolveUnboundProperties() throws Exception
+    public void testFunctionExpressionUnbindingOfSynthetizedMilestonedPropertyDoesNotReResolveUnboundProperties()
     {
-        String baseClass = "Class <<temporal.businesstemporal>> A{id:Integer[0..1];}\n";
-        String specializationClassB = "Class <<temporal.businesstemporal>> B extends A{value:String[0..1];}\n";
-        String specializationClassC = "Class <<temporal.businesstemporal>> C extends A{}\n";
-        String associationB_C = "Association controllers::B_C{\n" +
-                "   b: B[*];\n" +
-                "   c: C[0..1];" +
+        String baseClass = "Class <<temporal.businesstemporal>> test::A{id:Integer[0..1];}\n";
+        String specializationClassB = "Class <<temporal.businesstemporal>> test::B extends test::A{value:String[0..1];}\n";
+        String specializationClassC = "Class <<temporal.businesstemporal>> test::C extends test::A{}\n";
+        String associationB_C = "Association test::controllers::B_C{\n" +
+                "   b: test::B[*];\n" +
+                "   c: test::C[0..1];" +
                 "}\n";
-        String go = "function go():Any[*]{" + "{|C.all(%2016)->filter(c|$c.b.value == '')}" + "}";
+        String go = "function test::go():Any[*]{" + "{|test::C.all(%2016)->filter(c|$c.b.value == '')}" + "}";
 
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder()
-                        .createInMemorySource("/model/baseClass.pure", baseClass)
-                        .createInMemorySource("/model/specializationClassB.pure", specializationClassB)
-                        .createInMemorySource("/model/specializationClassC.pure", specializationClassC)
-                        .createInMemorySource("/model/associationB_C.pure", associationB_C)
-                        .createInMemorySource("/model/go.pure", go)
+                        .createInMemorySource("/test/baseClass.pure", baseClass)
+                        .createInMemorySource("/test/specializationClassB.pure", specializationClassB)
+                        .createInMemorySource("/test/specializationClassC.pure", specializationClassC)
+                        .createInMemorySource("/test/associationB_C.pure", associationB_C)
+                        .createInMemorySource("/test/go.pure", go)
                         .compile(),
                 new RuntimeTestScriptBuilder()
-                        .deleteSource("/model/associationB_C.pure")
-                        .deleteSource("/model/go.pure")
+                        .deleteSource("/test/associationB_C.pure")
+                        .deleteSource("/test/go.pure")
                         .compile()
-                        .createInMemorySource("/model/associationB_C.pure", associationB_C)
-                        .createInMemorySource("/model/go.pure", go)
+                        .createInMemorySource("/test/associationB_C.pure", associationB_C)
+                        .createInMemorySource("/test/go.pure", go)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
-        int size = this.runtime.getModelRepository().serialize().length;
+                , runtime, functionExecution, Lists.fixedSize.empty());
+        int size = runtime.getModelRepository().serialize().length;
 
-        this.runtime.modify("/model/baseClass.pure", baseClass + " ");
-        this.runtime.compile();
+        runtime.modify("/test/baseClass.pure", baseClass + " ");
+        runtime.compile();
 
-        Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+        Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
     }
 
     @Test
@@ -401,7 +422,7 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .createInMemorySource(classSourceId, classSource)
                         .createInMemorySource(assocSourceId, assocSource)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -417,7 +438,7 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .createInMemorySource("go.pure", go)
                         .compile(),
                 new RuntimeTestScriptBuilder().deleteSource("trader.pure").compileIgnoreExceptions().createInMemorySource("trader.pure", trader).compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -432,7 +453,7 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .createInMemorySource("go.pure", go)
                         .compile(),
                 new RuntimeTestScriptBuilder().deleteSource("trader.pure").compileIgnoreExceptions().createInMemorySource("trader.pure", trader).compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -449,7 +470,7 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .createInMemorySource("go.pure", go)
                         .compile(),
                 new RuntimeTestScriptBuilder().compile().deleteSource("location.pure").createInMemorySource("location.pure", businessTemporalLocation).compile().deleteSource("location.pure").createInMemorySource("location.pure", location).compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -468,8 +489,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compile()
                         .updateSource(sourceId, sourceCode)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }
@@ -490,8 +511,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compile()
                         .updateSource(sourceId, sourceCode)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }
@@ -514,8 +535,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compile()
                         .createInMemorySource("associationAB.pure", associationAB)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }
@@ -539,8 +560,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compile()
                         .updateSource("classB.pure", classB)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }
@@ -564,8 +585,8 @@ public class TestMilestoning extends AbstractPureTestWithCoreCompiledPlatform
                         .compile()
                         .updateSource("classB.pure", classB)
                         .compile(),
-                this.runtime,
-                this.functionExecution,
+                runtime,
+                functionExecution,
                 this.getAdditionalVerifiers()
         );
     }

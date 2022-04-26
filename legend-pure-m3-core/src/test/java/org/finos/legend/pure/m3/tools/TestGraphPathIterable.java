@@ -14,14 +14,16 @@
 
 package org.finos.legend.pure.m3.tools;
 
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,7 +33,7 @@ public class TestGraphPathIterable extends AbstractPureTestWithCoreCompiledPlatf
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getExtra());
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
         compileTestSource("/test/testModel.pure",
                 "import test::domain::*;\n" +
                         "Class test::domain::ClassA\n" +
@@ -46,6 +48,13 @@ public class TestGraphPathIterable extends AbstractPureTestWithCoreCompiledPlatf
                         "}\n");
     }
 
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
+    }
+
     @Test
     public void testFromPackage()
     {
@@ -57,9 +66,7 @@ public class TestGraphPathIterable extends AbstractPureTestWithCoreCompiledPlatf
     public void testClassAToClassB()
     {
         CoreInstance classB = runtime.getCoreInstance("test::domain::ClassB");
-        Predicate<GraphPath> endsWithClassB = Predicates.attributePredicate(Functions.bind(GraphPath::resolve, processorSupport), Predicates.equal(classB));
-
-        MutableSet<String> paths1 = GraphPathIterable.newGraphPathIterable(Lists.immutable.with("test::domain::ClassA"), Predicates.equal(classB), 5, processorSupport).collectIf(endsWithClassB, GraphPath::getDescription).toSet();
+        MutableSet<String> paths1 = GraphPathIterable.newGraphPathIterable(Lists.immutable.with("test::domain::ClassA"), classB::equals, 5, processorSupport).collectIf(p -> classB.equals(p.resolve(processorSupport)), GraphPath::getDescription).toSet();
         Verify.assertSetsEqual(Sets.mutable.with("test::domain::ClassA.package.children[1]", "test::domain::ClassA.properties[1].genericType.rawType.resolvedNode", "test::domain::ClassA.properties[1].classifierGenericType.typeArguments[1].rawType.resolvedNode"), paths1);
     }
 

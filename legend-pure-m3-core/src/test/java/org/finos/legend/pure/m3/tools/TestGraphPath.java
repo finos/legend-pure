@@ -14,11 +14,16 @@
 
 package org.finos.legend.pure.m3.tools;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,7 +33,7 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiledPlatform
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getExtra());
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
         compileTestSource("/test/testModel.pure",
                 "import test::domain::*;\n" +
                         "Class test::domain::ClassA\n" +
@@ -50,6 +55,13 @@ public class TestGraphPath extends AbstractPureTestWithCoreCompiledPlatform
                         "   Actus: x -> $x * 120;\n" +
                         "   Stadium: x -> $x * 625;\n" +
                         "}\n");
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
     }
 
     @Test

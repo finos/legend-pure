@@ -14,15 +14,15 @@
 
 package org.finos.legend.pure.m3.tests.property;
 
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.junit.Assert;
 import org.junit.Test;
 
-public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform {
-
-    private static String DECLARATION = "import test::long::path::*;\n"
+public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreCompiledPlatform
+{
+    private static final String DECLARATION = "import test::long::path::*;\n"
             + "Class my::exampleRootType\n"
             + "{\n"
             + "}\n"
@@ -59,22 +59,22 @@ public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreC
         compileTestSource("defaultValueSource.pure", DECLARATION
                 + "function testDefaultValue():Any[*]\n"
                 + "{"
-                +    "   print(^test::long::path::A(),5);\n"
+                + "   print(^test::long::path::A(),5);\n"
                 + "}\n"
                 + "function setAllValues():Any[*]\n"
                 + "{"
                 + "   print(^test::long::path::A(stringProperty='default', "
-                +         "classProperty=^my::exampleRootType(), "
-                +         "enumProperty = EnumWithDefault.DefaultValue,"
-                +         "floatProperty = 0.12,"
-                +         "inheritProperty = 0.12,"
-                +         "booleanProperty = false,"
-                +         "integerProperty = 0,"
-                +         "collectionProperty=['one', 'two'],"
-                +         "enumCollection=[EnumWithDefault.DefaultValue, EnumWithDefault.AnotherValue],"
-                +         "classCollection=[^my::exampleRootType(), ^my::exampleSubType()],"
-                +         "singleProperty=['one'],"
-                +         "anyProperty='anyString'),5);\n"
+                + "classProperty=^my::exampleRootType(), "
+                + "enumProperty = EnumWithDefault.DefaultValue,"
+                + "floatProperty = 0.12,"
+                + "inheritProperty = 0.12,"
+                + "booleanProperty = false,"
+                + "integerProperty = 0,"
+                + "collectionProperty=['one', 'two'],"
+                + "enumCollection=[EnumWithDefault.DefaultValue, EnumWithDefault.AnotherValue],"
+                + "classCollection=[^my::exampleRootType(), ^my::exampleSubType()],"
+                + "singleProperty=['one'],"
+                + "anyProperty='anyString'),5);\n"
                 + "}"
 
         );
@@ -100,7 +100,7 @@ public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreC
         );
 
         CoreInstance func = runtime.getFunction("testDefaultValueOverridden():Any[*]");
-        functionExecution.start(func, FastList.<CoreInstance>newList());
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
@@ -125,13 +125,13 @@ public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreC
     public void testDefaultValueWithDynamicNew()
     {
         compileTestSource("defaultValueSource.pure", DECLARATION
-                        + "function test():Any[*] \n{"
-                        + " let r = dynamicNew(A, \n"
-                        + "     [ ^KeyValue(key='stringProperty',value='dynamicNew')]);\n"
-                        + " print($r, 1);\n"
-                        + "}\n");
+                + "function test():Any[*] \n{"
+                + " let r = dynamicNew(A, \n"
+                + "     [ ^KeyValue(key='stringProperty',value='dynamicNew')]);\n"
+                + " print($r, 1);\n"
+                + "}\n");
         CoreInstance func = runtime.getFunction("test():Any[*]");
-        functionExecution.start(func, FastList.<CoreInstance>newList());
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
@@ -146,6 +146,6 @@ public abstract class AbstractTestDefaultValue extends AbstractPureTestWithCoreC
                 + " print($r, 1);\n"
                 + "}\n");
         CoreInstance func = runtime.getFunction("test():Any[*]");
-        functionExecution.start(func, FastList.<CoreInstance>newList());
+        functionExecution.start(func, Lists.immutable.empty());
     }
 }

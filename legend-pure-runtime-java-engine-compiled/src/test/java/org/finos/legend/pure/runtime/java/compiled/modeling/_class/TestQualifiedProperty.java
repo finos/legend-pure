@@ -14,23 +14,40 @@
 
 package org.finos.legend.pure.runtime.java.compiled.modeling._class;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.generated.CoreJavaModelFactoryRegistry;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.tools.test.ToFix;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class TestQualifiedProperty extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getFactoryRegistryOverride());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+    }
+
+    @After
+    public void clearRuntime()
+    {
+        runtime.delete("/test/testSource.pure");
+        runtime.compile();
     }
 
     @Test
@@ -57,8 +74,8 @@ public class TestQualifiedProperty extends AbstractPureTestWithCoreCompiled
                         "    ' ' +\n" +
                         "    ^TestClass2(name='Benedict').getNameFunction()->eval()\n" +
                         "}\n");
-        CoreInstance func = this.runtime.getFunction("test::testFn():Any[*]");
-        CoreInstance result = this.functionExecution.start(func, Lists.immutable.<CoreInstance>empty());
+        CoreInstance func = runtime.getFunction("test::testFn():Any[*]");
+        CoreInstance result = functionExecution.start(func, Lists.immutable.empty());
         Assert.assertEquals("Daniel Benedict", PrimitiveUtilities.getStringValue(result.getValueForMetaPropertyToOne(M3Properties.values)));
     }
 
@@ -92,8 +109,8 @@ public class TestQualifiedProperty extends AbstractPureTestWithCoreCompiled
                         "    '\\n' +\n" +
                         "    ^TestClass2(name='Daniel Benedict').getNames()->joinStrings(', ')\n" +
                         "}\n");
-        CoreInstance func = this.runtime.getFunction("test::testFn():Any[*]");
-        CoreInstance result = this.functionExecution.start(func, Lists.immutable.<CoreInstance>empty());
+        CoreInstance func = runtime.getFunction("test::testFn():Any[*]");
+        CoreInstance result = functionExecution.start(func, Lists.immutable.empty());
         Assert.assertEquals("Daniel, Benedict\nBenedict", PrimitiveUtilities.getStringValue(result.getValueForMetaPropertyToOne(M3Properties.values)));
     }
 
@@ -105,5 +122,11 @@ public class TestQualifiedProperty extends AbstractPureTestWithCoreCompiled
     protected static CoreInstanceFactoryRegistry getFactoryRegistryOverride()
     {
         return CoreJavaModelFactoryRegistry.REGISTRY;
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
     }
 }

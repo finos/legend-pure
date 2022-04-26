@@ -14,13 +14,12 @@
 
 package org.finos.legend.pure.m2.relational.incremental;
 
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m2.relational.AbstractPureRelationalTestWithCoreCompiled;
 import org.finos.legend.pure.m2.relational.RelationalGraphWalker;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
@@ -44,8 +43,7 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
     private static final String CLASS_MAPPING_SOURCE_ID = "classMappingSourceId.pure";
     private static final String MAPPING = "###Mapping\n";
     private static final String CLASS_MAPPING_PERSON_RELATIONAL = "Mapping myMap(Person:Relational{name : [db]myTable.name})";
-    private static final String CLASS_MAPPING = MAPPING +
-            CLASS_MAPPING_PERSON_RELATIONAL;
+    private static final String CLASS_MAPPING = MAPPING + CLASS_MAPPING_PERSON_RELATIONAL;
 
     private static final String FUNCTION_TEST_CLASS_MAPPINGS_SIZE = "###Pure\n" +
             "function test():Boolean[1]{assert(1 == myMap.classMappings->size(), |'');}";
@@ -65,27 +63,28 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
 
     private static final String ORG_TABLE =
             "Table orgTable\n" +
-            "    (\n" +
-            "        id INT,\n" +
-            "        filterVal INT,\n" +
-            "        parentId INT,\n" +
-            "        name VARCHAR(200),\n" +
-            "        employeeCount INT\n" +
-            "    )\n";
+                    "    (\n" +
+                    "        id INT,\n" +
+                    "        filterVal INT,\n" +
+                    "        parentId INT,\n" +
+                    "        name VARCHAR(200),\n" +
+                    "        employeeCount INT\n" +
+                    "    )\n";
 
     private static final String ORG_TABLE_WITHOUT_EMPLOYEE_COUNT =
             "Table orgTable\n" +
-            "    (\n" +
-            "        id INT,\n" +
-            "        filterVal INT,\n" +
-            "        parentId INT,\n" +
-            "        name VARCHAR(200)\n"+
-            "    )\n";
+                    "    (\n" +
+                    "        id INT,\n" +
+                    "        filterVal INT,\n" +
+                    "        parentId INT,\n" +
+                    "        name VARCHAR(200)\n" +
+                    "    )\n";
 
-    private static final String getComplexDatabase(String orgTable){
-        return  RELATIONAL + "Database myDB\n" +
+    private static String getComplexDatabase(String orgTable)
+    {
+        return RELATIONAL + "Database myDB\n" +
                 "(\n" +
-                    orgTable +
+                orgTable +
                 "    \n" +
                 "    Table otherTable\n" +
                 "    (\n" +
@@ -110,7 +109,8 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
                 ")";
     }
 
-    private static final String getComplexMapping(MutableList<String> extraAttributes){
+    private static String getComplexMapping(MutableList<String> extraAttributes)
+    {
         return MAPPING + "Mapping myMap\n" +
                 "(\n" +
                 "    Org: Relational\n" +
@@ -119,12 +119,12 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
                 "        name: [myDB]orgTable.name,\n" +
                 "        parent : [myDB]@OrgOrgParent,\n" +
                 "        children : [myDB]@OrgParentOrg\n" +
-                (extraAttributes.isEmpty() ? "" :extraAttributes.makeString("\t\t,","","\n"))+
+                (extraAttributes.isEmpty() ? "" : extraAttributes.makeString("\t\t,", "", "\n")) +
                 "    }\n" +
                 ")";
     }
 
-    private static String childOrgEmployeeCountAttr = "childOrgEmployeeCount : [myDB]@OrgParentOrg | max([myDB]orgTable.employeeCount)";
+    private static final String childOrgEmployeeCountAttr = "childOrgEmployeeCount : [myDB]@OrgParentOrg | max([myDB]orgTable.employeeCount)";
 
     private static final ImmutableMap<String, String> TEST_SOURCES = Maps.immutable.with(
             CLASS_MAPPING_SOURCE_ID, CLASS_MAPPING,
@@ -132,7 +132,7 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
             RELATIONAL_DB_SOURCE_ID, RELATIONAL_DATABASE);
 
     private static final ImmutableMap<String, String> COMPLEX_TEST_SOURCES = Maps.immutable.with(
-            CLASS_MAPPING_SOURCE_ID, getComplexMapping(FastList.<String>newListWith(childOrgEmployeeCountAttr)),
+            CLASS_MAPPING_SOURCE_ID, getComplexMapping(Lists.mutable.with(childOrgEmployeeCountAttr)),
             CLASS_SOURCE_ID, CLASS_ORG,
             RELATIONAL_DB_SOURCE_ID, getComplexDatabase(ORG_TABLE));
 
@@ -174,53 +174,49 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
             RELATIONAL_DB_SOURCE_ID, DB_FOR_TRANSFORM);
 
     @Test
-    public void testDeleteAndReloadEachSource() throws Exception
+    public void testDeleteAndReloadEachSource()
     {
-        this.testDeleteAndReloadEachSource(
-                TEST_SOURCES, FUNCTION_TEST_CLASS_MAPPINGS_SIZE);
+        testDeleteAndReloadEachSource(TEST_SOURCES, FUNCTION_TEST_CLASS_MAPPINGS_SIZE);
     }
 
     @Test
-    public void testDeleteAndReloadEachComplexSource() throws Exception
+    public void testDeleteAndReloadEachComplexSource()
     {
-        this.testDeleteAndReloadEachSource(
-                COMPLEX_TEST_SOURCES, FUNCTION_TEST_CLASS_MAPPINGS_SIZE);
+        testDeleteAndReloadEachSource(COMPLEX_TEST_SOURCES, FUNCTION_TEST_CLASS_MAPPINGS_SIZE);
     }
 
     @Test
-    public void testDeleteAndReloadEachSourceWithTransform() throws Exception
+    public void testDeleteAndReloadEachSourceWithTransform()
     {
-        this.testDeleteAndReloadEachSource(
-                TEST_SOURCES_WITH_MAPPING_TRANSFORM, FUNCTION_TEST_CLASS_MAPPINGS_SIZE);
+        testDeleteAndReloadEachSource(TEST_SOURCES_WITH_MAPPING_TRANSFORM, FUNCTION_TEST_CLASS_MAPPINGS_SIZE);
     }
 
     public void testDeleteAndReloadEachSource(ImmutableMap<String, String> sources, String testFunctionSource)
     {
         for (Pair<String, String> source : sources.keyValuesView())
         {
-            System.out.println("Deleting " + source.getOne());
+//            System.out.println("Deleting " + source.getOne());
             new RuntimeTestScriptBuilder().createInMemorySources(sources)
                     .createInMemorySource("functionSourceId.pure", testFunctionSource)
-                    .compile().run(this.runtime, this.functionExecution);
+                    .compile().run(runtime, functionExecution);
 
-            RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(this.runtime, this.functionExecution,
+            RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution,
                     Lists.fixedSize.of(source), this.getAdditionalVerifiers());
 
             //reset so that the next iteration has a clean environment
-            this.setUpRuntime();
+            setUpRuntime();
         }
-
     }
 
     @Test
-    public void testDeleteAndReloadSourcePairs() throws Exception
+    public void testDeleteAndReloadSourcePairs()
     {
         this.testDeleteAndReloadTwoSources(
                 TEST_SOURCES, FUNCTION_TEST_CLASS_MAPPINGS_SIZE);
     }
 
     @Test
-    public void testDeleteAndReloadComplexSourcePairs() throws Exception
+    public void testDeleteAndReloadComplexSourcePairs()
     {
         this.testDeleteAndReloadTwoSources(
                 COMPLEX_TEST_SOURCES, FUNCTION_TEST_CLASS_MAPPINGS_SIZE);
@@ -238,17 +234,16 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
             {
                 new RuntimeTestScriptBuilder().createInMemorySources(sources)
                         .createInMemorySource("functionSourceId.pure", testFunctionSource)
-                        .compile().run(this.runtime, this.functionExecution);
+                        .compile().run(runtime, functionExecution);
 
-                RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(this.runtime, this.functionExecution,
+                RuntimeVerifier.deleteCompileAndReloadMultipleTimesIsStable(runtime, functionExecution,
                         Lists.fixedSize.of(source, secondSource),
                         this.getAdditionalVerifiers());
 
                 //reset so that the next iteration has a clean environment
-                this.setUpRuntime();
+                setUpRuntime();
             }
         }
-
     }
 
     @Test
@@ -311,93 +306,93 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
     public void testOtherwiseEmbeddedUnbind()
     {
 
-        String classSource =  "import other::*;\n" +
-                        "\n" +
-                        "Class other::Person\n" +
-                        "{\n" +
-                        "    name:String[1];\n" +
-                        "    firm:Firm[1];\n" +
-                        "}\n" +
-                        "Class other::Firm\n" +
-                        "{\n" +
-                        "    legalName:String[1];\n" +
-                        "    otherInformation:String[1];\n" +
-                        "}\n" ;
+        String classSource = "import other::*;\n" +
+                "\n" +
+                "Class other::Person\n" +
+                "{\n" +
+                "    name:String[1];\n" +
+                "    firm:Firm[1];\n" +
+                "}\n" +
+                "Class other::Firm\n" +
+                "{\n" +
+                "    legalName:String[1];\n" +
+                "    otherInformation:String[1];\n" +
+                "}\n";
 
-        String dbSource =  "###Relational\n" +
-                        "Database mapping::db(\n" +
-                        "   Table employeeFirmDenormTable\n" +
-                        "   (\n" +
-                        "    id INT PRIMARY KEY,\n" +
-                        "    name VARCHAR(200),\n" +
-                        "    firmId INT,\n" +
-                        "    legalName VARCHAR(200),\n" +
-                        "    address1 VARCHAR(200),\n" +
-                        "    postcode VARCHAR(10)\n" +
-                        "   )\n" +
-                        "   Table FirmInfoTable\n" +
-                        "   (\n" +
-                        "    id INT PRIMARY KEY,\n" +
-                        "    name VARCHAR(200),\n" +
-                        "    other VARCHAR(200)\n" +
-                        "   )\n" +
-                        "   Join PersonFirmJoin(employeeFirmDenormTable.firmId = FirmInfoTable.id)\n" +
-                        ")\n" ;
+        String dbSource = "###Relational\n" +
+                "Database mapping::db(\n" +
+                "   Table employeeFirmDenormTable\n" +
+                "   (\n" +
+                "    id INT PRIMARY KEY,\n" +
+                "    name VARCHAR(200),\n" +
+                "    firmId INT,\n" +
+                "    legalName VARCHAR(200),\n" +
+                "    address1 VARCHAR(200),\n" +
+                "    postcode VARCHAR(10)\n" +
+                "   )\n" +
+                "   Table FirmInfoTable\n" +
+                "   (\n" +
+                "    id INT PRIMARY KEY,\n" +
+                "    name VARCHAR(200),\n" +
+                "    other VARCHAR(200)\n" +
+                "   )\n" +
+                "   Join PersonFirmJoin(employeeFirmDenormTable.firmId = FirmInfoTable.id)\n" +
+                ")\n";
 
 
         String mappingSource = "###Mapping\n" +
-                        "import other::*;\n" +
-                        "import mapping::*;\n" +
-                        "Mapping mappingPackage::myMapping\n" +
-                        "(\n" +
-                        "    Firm[firm1]: Relational\n" +
-                        "    {\n" +
-                        "       legalName : [db]FirmInfoTable.name ,\n" +
-                        "       otherInformation: [db]FirmInfoTable.other\n" +
-                        "    }\n" +
-                        "    Person[alias1]: Relational\n" +
-                        "    {\n" +
-                        "        name : [db]employeeFirmDenormTable.name,\n" +
-                        "        firm\n" +
-                        "        (\n" +
-                        "            legalName : [db]employeeFirmDenormTable.legalName\n" +
-                        "        ) Otherwise ( [firm1]:[db]@PersonFirmJoin) \n" +
-                        "    }\n" +
-                        ")\n";
+                "import other::*;\n" +
+                "import mapping::*;\n" +
+                "Mapping mappingPackage::myMapping\n" +
+                "(\n" +
+                "    Firm[firm1]: Relational\n" +
+                "    {\n" +
+                "       legalName : [db]FirmInfoTable.name ,\n" +
+                "       otherInformation: [db]FirmInfoTable.other\n" +
+                "    }\n" +
+                "    Person[alias1]: Relational\n" +
+                "    {\n" +
+                "        name : [db]employeeFirmDenormTable.name,\n" +
+                "        firm\n" +
+                "        (\n" +
+                "            legalName : [db]employeeFirmDenormTable.legalName\n" +
+                "        ) Otherwise ( [firm1]:[db]@PersonFirmJoin) \n" +
+                "    }\n" +
+                ")\n";
 
         this.testDeleteAndReloadEachSource(Maps.immutable.of("1.pure", classSource, "2.pure", dbSource, "3.pure", mappingSource),
                 "###Pure\n function test():Boolean[1]{assert(2 == mappingPackage::myMapping.classMappings->size(), |'');}");
     }
 
     @Test
-    public void testUnbindingOfRelationalOperationElementWithJoin() throws Exception
+    public void testUnbindingOfRelationalOperationElementWithJoin()
     {
         new RuntimeTestScriptBuilder().createInMemorySources(COMPLEX_TEST_SOURCES)
-                .compile().run(this.runtime, this.functionExecution);
+                .compile().run(runtime, functionExecution);
 
-        RelationalGraphWalker graphWalker = new RelationalGraphWalker(this.runtime, this.processorSupport);
+        RelationalGraphWalker graphWalker = new RelationalGraphWalker(runtime, processorSupport);
 
         CoreInstance childOrgEmployeeCountsAttr = getPropertyMapping(graphWalker, "myMap", "Org", "childOrgEmployeeCount");
         Assert.assertNotNull(childOrgEmployeeCountsAttr);
 
-        new RuntimeTestScriptBuilder().deleteSource(CLASS_MAPPING_SOURCE_ID).createInMemorySource(CLASS_MAPPING_SOURCE_ID, getComplexMapping(FastList.<String>newList())).compile().run(this.runtime, this.functionExecution);
+        new RuntimeTestScriptBuilder().deleteSource(CLASS_MAPPING_SOURCE_ID).createInMemorySource(CLASS_MAPPING_SOURCE_ID, getComplexMapping(Lists.mutable.empty())).compile().run(runtime, functionExecution);
         CoreInstance childOrgEmployeeCountsAttr2 = getPropertyMapping(graphWalker, "myMap", "Org", "childOrgEmployeeCount");
         Assert.assertNull(childOrgEmployeeCountsAttr2);
     }
 
     @Test
-    public void testBindUnbindOfColumnMappedToInputParamOfDynaFunction() throws Exception
+    public void testBindUnbindOfColumnMappedToInputParamOfDynaFunction()
     {
-            RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(COMPLEX_TEST_SOURCES)
-                            .compile(),
-                    new RuntimeTestScriptBuilder()
-                            .deleteSource(RELATIONAL_DB_SOURCE_ID)
-                            .createInMemorySource(RELATIONAL_DB_SOURCE_ID, getComplexDatabase(ORG_TABLE_WITHOUT_EMPLOYEE_COUNT))
-                            .compileWithExpectedCompileFailure("The column 'employeeCount' can't be found in the table 'orgTable'", null, 10, 69)
-                            .deleteSource(RELATIONAL_DB_SOURCE_ID)
-                            .createInMemorySource(RELATIONAL_DB_SOURCE_ID, getComplexDatabase(ORG_TABLE))
-                            .compile()
-                    , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+        RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(COMPLEX_TEST_SOURCES)
+                        .compile(),
+                new RuntimeTestScriptBuilder()
+                        .deleteSource(RELATIONAL_DB_SOURCE_ID)
+                        .createInMemorySource(RELATIONAL_DB_SOURCE_ID, getComplexDatabase(ORG_TABLE_WITHOUT_EMPLOYEE_COUNT))
+                        .compileWithExpectedCompileFailure("The column 'employeeCount' can't be found in the table 'orgTable'", null, 10, 69)
+                        .deleteSource(RELATIONAL_DB_SOURCE_ID)
+                        .createInMemorySource(RELATIONAL_DB_SOURCE_ID, getComplexDatabase(ORG_TABLE))
+                        .compile()
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
 
@@ -406,18 +401,18 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
     {
         String classSource =
                 "import other::*;\n" +
-                "Class other::Person\n" +
-                "{\n" +
-                "    name:String[1];\n" +
-                "    firm:Firm[1];\n" +
-                "    addressLine1:String[1];\n" +
-                "}\n" +
-                "Class other::Firm\n" +
-                "{\n" +
-                "    legalName:String[1];\n" +
-                "    employees:Person[*];\n" +
-                "}";
-        String dbSource =   "###Relational\n" +
+                        "Class other::Person\n" +
+                        "{\n" +
+                        "    name:String[1];\n" +
+                        "    firm:Firm[1];\n" +
+                        "    addressLine1:String[1];\n" +
+                        "}\n" +
+                        "Class other::Firm\n" +
+                        "{\n" +
+                        "    legalName:String[1];\n" +
+                        "    employees:Person[*];\n" +
+                        "}";
+        String dbSource = "###Relational\n" +
                 "Database mapping::db(\n" +
                 "   Table employeeTable\n" +
                 "   (\n" +
@@ -443,8 +438,8 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
                 "    employeeFirmId : employeeTable.firmId,\n" +
                 "    addressLine :  @employee_address | addressTable.line\n" +
                 "   )\n" +
-                "   Join employee_address(employeeTable.id=addressTable.id)\n "+
-                "   Join firm_employees(firmTable.id=employeeAddressView.employeeFirmId)\n"+
+                "   Join employee_address(employeeTable.id=addressTable.id)\n " +
+                "   Join firm_employees(firmTable.id=employeeAddressView.employeeFirmId)\n" +
                 ")";
         String mappingSource =
                 "###Mapping\n" +
@@ -455,7 +450,7 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
                         "    Person: Relational\n" +
                         "    {\n" +
                         "        name : [db]employeeAddressView.employeeName,\n" +
-                       "         addressLine1 : [db]employeeAddressView.addressLine" +
+                        "         addressLine1 : [db]employeeAddressView.addressLine" +
                         "    }\n" +
                         "    Firm: Relational\n" +
                         "    {\n" +
@@ -464,14 +459,14 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
                         "    }\n" +
                         ")\n";
 
-         this.testDeleteAndReloadEachSource(Maps.immutable.of("1.pure", classSource, "2.pure", dbSource, "3.pure", mappingSource),
+        this.testDeleteAndReloadEachSource(Maps.immutable.of("1.pure", classSource, "2.pure", dbSource, "3.pure", mappingSource),
                 "###Pure\n function test():Boolean[1]{assert(1 == mappingPackage::myMapping.classMappings->size(), |'');}");
     }
 
     @Test
     public void testMilestoningMappingUnbindStability()
     {
-        String modelTrade="Class my::Trade{\n" +
+        String modelTrade = "Class my::Trade{\n" +
                 "   id:Integer[1];\n" +
                 "   product:my::Product[1];\n" +
                 "}";
@@ -481,7 +476,7 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
         String modelProductTemporal = "Class <<temporal.businesstemporal>> my::Product{\n" +
                 "   id:Integer[1];\n" +
                 "}";
-        String storeAndMapping="###Mapping\n" +
+        String storeAndMapping = "###Mapping\n" +
                 "import meta::relational::tests::*;\n" +
                 "import my::*;\n" +
                 "\n" +
@@ -512,10 +507,11 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
                         .deleteSource("modelProduct.pure")
                         .createInMemorySource("modelProductTemporal.pure", modelProductTemporal)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
-    private CoreInstance getPropertyMapping(RelationalGraphWalker graphWalker, String mappingName, String className, String attributeName){
+    private CoreInstance getPropertyMapping(RelationalGraphWalker graphWalker, String mappingName, String className, String attributeName)
+    {
         CoreInstance mapping = graphWalker.getMapping(mappingName);
         CoreInstance orgMapping = graphWalker.getClassMapping(mapping, className);
         return graphWalker.getClassMappingImplementationPropertyMapping(orgMapping, attributeName);
@@ -525,5 +521,4 @@ public class TestPureRuntimeClassMapping extends AbstractPureRelationalTestWithC
     {
         return Lists.fixedSize.of();
     }
-
 }

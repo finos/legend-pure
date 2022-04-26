@@ -14,17 +14,17 @@
 
 package org.finos.legend.pure.m3.compiler.visibility;
 
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.ElementWithStereotypes;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.Stereotype;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 /**
@@ -72,12 +72,12 @@ public enum AccessLevel
      * @param processorSupport processor support
      * @return whether the instance has an explicit access level
      */
-    public static boolean hasExplicitAccessLevel(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function instance, ProcessorSupport processorSupport)
+    public static boolean hasExplicitAccessLevel(Function<?> instance, ProcessorSupport processorSupport)
     {
-        ListIterable<? extends Stereotype> stereotypes = (ListIterable<? extends Stereotype>)ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>)instance._stereotypesCoreInstance(), processorSupport);
+        ListIterable<? extends Stereotype> stereotypes = (ListIterable<? extends Stereotype>) ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>) instance._stereotypesCoreInstance(), processorSupport);
         if (stereotypes.notEmpty())
         {
-            Profile profile = (Profile)processorSupport.package_getByUserPath(M3Paths.access);
+            Profile profile = (Profile) processorSupport.package_getByUserPath(M3Paths.access);
             for (Stereotype st : stereotypes)
             {
                 if (st._profile() == profile)
@@ -98,7 +98,7 @@ public enum AccessLevel
      */
     public static ListIterable<Stereotype> getAccessLevelStereotypes(ElementWithStereotypes packageableElement, ProcessorSupport processorSupport)
     {
-        ListIterable<Stereotype> stereotypes = (ListIterable<Stereotype>)ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>)packageableElement._stereotypesCoreInstance(), processorSupport);
+        ListIterable<Stereotype> stereotypes = (ListIterable<Stereotype>) ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>) packageableElement._stereotypesCoreInstance(), processorSupport);
         if (stereotypes.isEmpty())
         {
             return Lists.immutable.empty();
@@ -125,24 +125,19 @@ public enum AccessLevel
      * @param processorSupport   processor support
      * @return access level
      */
-    public static AccessLevel getAccessLevel(ElementWithStereotypes packageableElement, Context context, final ProcessorSupport processorSupport)
+    public static AccessLevel getAccessLevel(ElementWithStereotypes packageableElement, Context context, ProcessorSupport processorSupport)
     {
-        return (context == null) ? calculateAccessLevel(packageableElement, processorSupport) : context.getIfAbsentPutAccessLevel(packageableElement, new Function<CoreInstance, AccessLevel>()
-        {
-            @Override
-            public AccessLevel valueOf(CoreInstance instance)
-            {
-                return calculateAccessLevel((ElementWithStereotypes)instance, processorSupport);
-            }
-        });
+        return (context == null) ?
+                calculateAccessLevel(packageableElement, processorSupport) :
+                context.getIfAbsentPutAccessLevel(packageableElement, instance -> calculateAccessLevel((ElementWithStereotypes) instance, processorSupport));
     }
 
     private static AccessLevel calculateAccessLevel(ElementWithStereotypes packageableElement, ProcessorSupport processorSupport)
     {
-        ListIterable<? extends Stereotype> stereotypes = (ListIterable<? extends Stereotype>)ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>)packageableElement._stereotypesCoreInstance(), processorSupport);
+        ListIterable<? extends Stereotype> stereotypes = (ListIterable<? extends Stereotype>) ImportStub.withImportStubByPasses((ListIterable<? extends CoreInstance>) packageableElement._stereotypesCoreInstance(), processorSupport);
         if (stereotypes.notEmpty())
         {
-            Profile accessProfile = (Profile)processorSupport.package_getByUserPath(M3Paths.access);
+            Profile accessProfile = (Profile) processorSupport.package_getByUserPath(M3Paths.access);
             for (Stereotype st : stereotypes)
             {
                 if (st._profile() == accessProfile)

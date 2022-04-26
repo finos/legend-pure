@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m3.inlinedsl.graph;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -33,8 +33,9 @@ import org.junit.Test;
 public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getCodeStorage(), getCodeRepositories(), null);
+    public static void setUp()
+    {
+        setUpRuntime(getCodeStorage(), null);
     }
 
     @After
@@ -43,16 +44,10 @@ public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithC
         runtime.delete("/datamart_datamt/testFile1.pure");
         runtime.delete("/datamart_datamt/testFile2.pure");
         runtime.delete("/datamart_datamt/testFile3.pure");
+        runtime.delete("/datamart_dtm/testFile3.pure");
         runtime.delete("/model/testFile1.pure");
         runtime.delete("/model/testFile3.pure");
-
-        try
-        {
-            runtime.compile();
-        } catch (PureCompilationException e)
-        {
-            setUp();
-        }
+        runtime.compile();
     }
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
@@ -77,39 +72,32 @@ public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithC
     @Test
     public void testClassReferenceVisibilityInGraph()
     {
-        this.assertRepoExists("datamart_datamt");
-        this.assertRepoExists("datamart_dtm");
+        assertRepoExists("datamart_datamt");
+        assertRepoExists("datamart_dtm");
 
-        this.compileTestSource(
+        compileTestSource(
                 "/datamart_datamt/testFile1.pure",
                 "Class datamarts::datamt::domain::A\n" +
                         "{\n" +
                         "  name : String[1];\n" +
                         "}\n");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::A"));
-        try
-        {
-            this.compileTestSource(
-                    "/datamart_dtm/testFile3.pure",
-                            "function datamarts::dtm::domain::testFn1():Any[*]\n" +
-                            "{\n" +
-                            "  #{datamarts::datamt::domain::A{name}}#\n" +
-                            "}\n");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not visible in the file /datamart_dtm/testFile3.pure", "/datamart_dtm/testFile3.pure", 3, 5, 3, 32, 3, 32, e);
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::A"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/datamart_dtm/testFile3.pure",
+                "function datamarts::dtm::domain::testFn1():Any[*]\n" +
+                        "{\n" +
+                        "  #{datamarts::datamt::domain::A{name}}#\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not visible in the file /datamart_dtm/testFile3.pure", "/datamart_dtm/testFile3.pure", 3, 5, 3, 32, 3, 32, e);
     }
 
     @Test
     public void testSubTypeClassReferenceVisibilityInGraph()
     {
-        this.assertRepoExists("datamart_datamt");
-        this.assertRepoExists("model");
+        assertRepoExists("datamart_datamt");
+        assertRepoExists("model");
 
-        this.compileTestSource(
+        compileTestSource(
                 "/model/testFile1.pure",
                 "Class model::domain::A\n" +
                         "{\n" +
@@ -118,27 +106,20 @@ public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithC
                         "}\n" +
                         "Class model::domain::B {}"
         );
-        this.compileTestSource(
+        compileTestSource(
                 "/datamart_datamt/testFile2.pure",
                 "Class datamarts::datamt::domain::C extends model::domain::B {}"
         );
-        try
-        {
-            this.compileTestSource(
-                    "/model/testFile3.pure",
-                            "function model::domain::testFn1():Any[*]\n" +
-                            "{\n" +
-                            "  #{model::domain::A{name,b->subType(@datamarts::datamt::domain::C)}}#\n" +
-                            "}\n");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureCompilationException.class, "datamarts::datamt::domain::C is not visible in the file /model/testFile3.pure", "/model/testFile3.pure", 3, 39, 3, 39, 3, 66, e);
-            this.runtime.delete("/model/testFile3.pure");
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/model/testFile3.pure",
+                "function model::domain::testFn1():Any[*]\n" +
+                        "{\n" +
+                        "  #{model::domain::A{name,b->subType(@datamarts::datamt::domain::C)}}#\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::C is not visible in the file /model/testFile3.pure", "/model/testFile3.pure", 3, 39, 3, 39, 3, 66, e);
+        runtime.delete("/model/testFile3.pure");
 
-        this.compileTestSource(
+        compileTestSource(
                 "/datamart_datamt/testFile3.pure",
                 "function datamarts::datamt::domain::testFn1():Any[*]\n" +
                         "{\n" +
@@ -150,35 +131,28 @@ public class TestVisibilityAndAccessibilityInGraph extends AbstractPureTestWithC
     @Test
     public void testReferenceAccessibilityInGraph()
     {
-        this.assertRepoExists("datamart_datamt");
-        this.assertRepoExists("datamart_dtm");
+        assertRepoExists("datamart_datamt");
+        assertRepoExists("datamart_dtm");
 
-        this.compileTestSource(
+        compileTestSource(
                 "/datamart_datamt/testFile1.pure",
                 "Class <<access.private>> datamarts::datamt::domain::A\n" +
                         "{\n" +
                         "  name : String[1];\n" +
                         "}\n");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::A"));
-        try
-        {
-            this.compileTestSource(
-                    "/datamart_dtm/testFile3.pure",
-                            "function datamarts::dtm::domain::testFn1():Any[*]\n" +
-                            "{\n" +
-                            "  #{datamarts::datamt::domain::A{name}}#\n" +
-                            "}\n");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not accessible in datamarts::dtm::domain", "/datamart_dtm/testFile3.pure", 3, 5, 3, 32, 3, 32, e);
-            this.runtime.delete("/datamart_dtm/testFile3.pure");
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::A"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/datamart_dtm/testFile3.pure",
+                "function datamarts::dtm::domain::testFn1():Any[*]\n" +
+                        "{\n" +
+                        "  #{datamarts::datamt::domain::A{name}}#\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not accessible in datamarts::dtm::domain", "/datamart_dtm/testFile3.pure", 3, 5, 3, 32, 3, 32, e);
+        runtime.delete("/datamart_dtm/testFile3.pure");
 
-        this.compileTestSource(
+        compileTestSource(
                 "/datamart_datamt/testFile3.pure",
-                        "function datamarts::datamt::domain::testFn1():Any[*]\n" +
+                "function datamarts::datamt::domain::testFn1():Any[*]\n" +
                         "{\n" +
                         "  #{datamarts::datamt::domain::A{name}}#\n" +
                         "}\n"

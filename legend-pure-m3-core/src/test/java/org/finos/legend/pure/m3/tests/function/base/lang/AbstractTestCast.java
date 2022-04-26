@@ -14,26 +14,25 @@
 
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 {
-    @Before
-    public void compileInliner()
-    {
-        compileTestSourceFromResource("/org/finos/legend/pure/m3/cast/cast.pure");
-    }
-
     @After
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
-        runtime.delete("/org/finos/legend/pure/m3/cast/cast.pure");
         runtime.compile();
     }
 
@@ -41,7 +40,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
     public void testCastError()
     {
         compileTestSource("fromString.pure",
-                        "Class A\n" +
+                "Class A\n" +
                         "{\n" +
                         "  prop3:String[1];\n" +
                         "}\n" +
@@ -84,7 +83,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkInvalidCastWithTypeParametersRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: List<X> cannot be cast to List<Y>", "/org/finos/legend/pure/m3/cast/cast.pure", 46, 11);
+        checkException(findRootException(e), "Cast exception: List<X> cannot be cast to List<Y>", "/test/cast.pure", 46, 11);
     }
 
     @Test
@@ -120,7 +119,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkPrimitiveConcreteOneRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: Integer cannot be cast to String", "/org/finos/legend/pure/m3/cast/cast.pure", 31, 10);
+        checkException(findRootException(e), "Cast exception: Integer cannot be cast to String", "/test/cast.pure", 31, 10);
     }
 
     @Test
@@ -143,7 +142,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkPrimitiveConcreteManyRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: String cannot be cast to Number", "/org/finos/legend/pure/m3/cast/cast.pure", 36, 13);
+        checkException(findRootException(e), "Cast exception: String cannot be cast to Number", "/test/cast.pure", 36, 13);
     }
 
     @Test
@@ -166,7 +165,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkNonPrimitiveConcreteOneRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/org/finos/legend/pure/m3/cast/cast.pure", 41, 12);
+        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/test/cast.pure", 41, 12);
     }
 
     @Test
@@ -189,7 +188,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkNonPrimitiveConcreteManyRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/org/finos/legend/pure/m3/cast/cast.pure", 41, 12);
+        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/test/cast.pure", 41, 12);
     }
 
     @Test
@@ -212,7 +211,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkPrimitiveNonConcreteOneRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: Integer cannot be cast to String", "/org/finos/legend/pure/m3/cast/cast.pure", 67, 26);
+        checkException(findRootException(e), "Cast exception: Integer cannot be cast to String", "/test/cast.pure", 67, 26);
     }
 
     @Test
@@ -235,7 +234,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkPrimitiveNonConcreteManyRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: String cannot be cast to Number", "/org/finos/legend/pure/m3/cast/cast.pure", 68, 17);
+        checkException(findRootException(e), "Cast exception: String cannot be cast to Number", "/test/cast.pure", 68, 17);
     }
 
     @Test
@@ -258,7 +257,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkNonPrimitiveNonConcreteOneRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/org/finos/legend/pure/m3/cast/cast.pure", 67, 26);
+        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/test/cast.pure", 67, 26);
     }
 
     @Test
@@ -281,7 +280,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkNonPrimitiveNonConcreteManyRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/org/finos/legend/pure/m3/cast/cast.pure", 68, 17);
+        checkException(findRootException(e), "Cast exception: X cannot be cast to Y", "/test/cast.pure", 68, 17);
     }
 
     @Test
@@ -304,7 +303,7 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
 
     protected void checkEnumToStringCastRootException(PureExecutionException e)
     {
-        checkException(findRootException(e), "Cast exception: Month cannot be cast to String", "/org/finos/legend/pure/m3/cast/cast.pure", 31, 10);
+        checkException(findRootException(e), "Cast exception: Month cannot be cast to String", "/test/cast.pure", 31, 10);
     }
 
     @Test
@@ -342,5 +341,18 @@ public abstract class AbstractTestCast extends AbstractPureTestWithCoreCompiled
             }
         }
         return (t instanceof Exception) ? (Exception) t : null;
+    }
+
+    protected static MutableCodeStorage getCodeStorage()
+    {
+        CodeRepository platform = CodeRepository.newPlatformCodeRepository();
+        CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, platform);
+        return new PureCodeStorage(null, new ClassLoaderCodeStorage(platform, test));
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        String code = readTextResource("org/finos/legend/pure/m3/cast/cast.pure", AbstractTestCast.class.getClassLoader());
+        return Tuples.pair("/test/cast.pure", code);
     }
 }

@@ -18,7 +18,6 @@ import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.finos.legend.pure.runtime.java.compiled.execution.sourceInformation.PureCompiledExecutionException;
 import org.junit.After;
@@ -32,53 +31,48 @@ import java.nio.file.Paths;
 public class TestGenerationWithPureStacktraceIncluded extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getCodeStorage(), getCodeRepositories());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getCodeStorage());
     }
 
     @After
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
     public void testExceptionStacktrace()
     {
-        try
-        {
-            String genericFunc = "function generic():Any[1]\n" +
-                    "{\n" +
-                    "   55;\n" +
-                    "}\n";
-            compileTestSource("genericFunc.pure", genericFunc);
+        String genericFunc = "function generic():Any[1]\n" +
+                "{\n" +
+                "   55;\n" +
+                "}\n";
+        compileTestSource("genericFunc.pure", genericFunc);
 
-            String icFunc = "function invalidCast():String[1]\n" +
-                    "{\n" +
-                    "   generic()->cast(@String);" +
-                    "}\n";
-            compileTestSource("invalidCast.pure", icFunc);
-            String noOPFunc = "function noOP():Any[*]\n" +
-                    "{\n" +
-                    "   invalidCast();" +
-                    "}\n";
-            compileTestSource("noOP.pure", noOPFunc);
-            compileTestSource("pureStacktaceTest.pure",
-                            "function test():Any[*]\n" +
-                            "{\n" +
-                            "   print('whatever',1);noOP();\n" +
-                            "}\n");
-            this.compileAndExecute("test():Any[*]");
-            Assert.fail();
-        }
-        catch (PureCompiledExecutionException e)
-        {
-            StringBuilder sb = new StringBuilder();
-            e.printPureStackTrace(sb);
-            Assert.assertEquals("resource:invalidCast.pure line:3 column:15\n" +
-                    "resource:noOP.pure line:3 column:4\n" +
-                    "resource:pureStacktaceTest.pure line:3 column:24\n", sb.toString());
-        }
+        String icFunc = "function invalidCast():String[1]\n" +
+                "{\n" +
+                "   generic()->cast(@String);" +
+                "}\n";
+        compileTestSource("invalidCast.pure", icFunc);
+        String noOPFunc = "function noOP():Any[*]\n" +
+                "{\n" +
+                "   invalidCast();" +
+                "}\n";
+        compileTestSource("noOP.pure", noOPFunc);
+        compileTestSource("pureStacktaceTest.pure",
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "   print('whatever',1);noOP();\n" +
+                        "}\n");
+        PureCompiledExecutionException e = Assert.assertThrows(PureCompiledExecutionException.class, () -> execute("test():Any[*]"));
+        StringBuilder sb = new StringBuilder();
+        e.printPureStackTrace(sb);
+        Assert.assertEquals("resource:invalidCast.pure line:3 column:15\n" +
+                "resource:noOP.pure line:3 column:4\n" +
+                "resource:pureStacktaceTest.pure line:3 column:24\n", sb.toString());
     }
 
     @Test
@@ -86,7 +80,7 @@ public class TestGenerationWithPureStacktraceIncluded extends AbstractPureTestWi
     {
         String code =
                 "Class A { qp(){ func55($this); }:Number[1]; } \n" +
-                "function func55(a:A[1]):Number[1] { 55; }";
+                        "function func55(a:A[1]):Number[1] { 55; }";
         compileTestSource("fromString.pure", code);
     }
 
@@ -120,8 +114,6 @@ public class TestGenerationWithPureStacktraceIncluded extends AbstractPureTestWi
                 "";
         compileTestSource("fromString.pure", code);
     }
-
-
 
     protected static FunctionExecution getFunctionExecution()
     {
