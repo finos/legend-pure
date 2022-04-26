@@ -76,7 +76,8 @@ function meta::pure::executionPlan::engine::applyJavaEngineDependencies(conventi
    let jDataParsingException = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.inMemory.DataParsingException');
 
    let jPredefinedExpressions = javaClass('public', 'org.finos.legend.engine.plan.dependencies.store.platform.PredefinedExpressions')
-      ->addMethod(javaMethod('public', javaObject(), 'now', []));
+      ->addMethod(javaMethod('public', javaObject(), 'now', []))
+      ->addMethod(javaMethod('public', javaString(), 'currentUserId', []));
 
    let jIGraphInstance = javaClass('public', 'org.finos.legend.engine.plan.dependencies.domain.graphFetch.IGraphInstance')
       ->addMethod(javaMethod('public', javaTypeVar('T'), 'getValue', []))
