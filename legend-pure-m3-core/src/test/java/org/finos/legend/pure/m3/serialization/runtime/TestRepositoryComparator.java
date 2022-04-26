@@ -14,15 +14,16 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MapIterable;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepositoryProviderHelper;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -30,14 +31,12 @@ import org.junit.Test;
 
 public class TestRepositoryComparator extends AbstractPureTestWithCoreCompiledPlatform
 {
-    @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getCodeStorage(), getCodeRepositories(), getExtra());
-    }
+    private static MapIterable<String, CodeRepository> repositoriesByName;
 
-    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    @BeforeClass
+    public static void setUp()
     {
-        return Lists.immutable.with(
+        MutableList<CodeRepository> repositories = Lists.mutable.with(
                 SVNCodeRepository.newDatamartCodeRepository("dtm"),
                 SVNCodeRepository.newDatamartCodeRepository("datamt"),
                 SVNCodeRepository.newModelCodeRepository(""),
@@ -46,12 +45,9 @@ public class TestRepositoryComparator extends AbstractPureTestWithCoreCompiledPl
                 SVNCodeRepository.newModelValidationCodeRepository(),
                 SVNCodeRepository.newSystemCodeRepository(),
                 CodeRepository.newPlatformCodeRepository()
-        ).newWithAll(CodeRepositoryProviderHelper.findCodeRepositories());
-    }
-
-    protected static MutableCodeStorage getCodeStorage()
-    {
-        return new PureCodeStorage(null, new ClassLoaderCodeStorage(getCodeRepositories()));
+        ).withAll(CodeRepositoryProviderHelper.findCodeRepositories());
+        repositoriesByName = repositories.groupByUniqueKey(CodeRepository::getName);
+        setUpRuntime(new PureCodeStorage(null, new ClassLoaderCodeStorage(repositories)), repositories, getExtra());
     }
 
     @Test
@@ -61,10 +57,45 @@ public class TestRepositoryComparator extends AbstractPureTestWithCoreCompiledPl
         assertRepoExists("model_validation");
         assertRepoExists("system");
         assertRepoExists("datamart_datamt");
-        RepositoryComparator comp = new RepositoryComparator(getCodeRepositories());
-        Assert.assertEquals(0, comp.compare("model", "model"));
-        Assert.assertEquals(-1, comp.compare("model", "model_validation"));
-        Assert.assertEquals(1, comp.compare("model_validation", "model"));
-        Assert.assertEquals(Lists.immutable.with("system", "model", "model_validation", "datamart_datamt"), Lists.immutable.with("model", "model_validation", "datamart_datamt", "system").toSortedList(comp));
+        RepositoryComparator comp = new RepositoryComparator(repositoriesByName.valuesView());
+        assertComparison(0, comp, "model", "model");
+        assertComparison(-1, comp, "model", "model_validation");
+        assertComparison(1, comp, "model_validation", "model");
+
+        MutableList<String> sortedRepos = Lists.mutable.with("model", "model_validation", "datamart_datamt", "system").sortThis(comp);
+        assertIsSorted(sortedRepos);
+    }
+
+    @Test
+    public void testSortAllRepos()
+    {
+        RepositoryComparator comp = new RepositoryComparator(repositoriesByName.valuesView());
+        MutableList<String> repoNames = repositoriesByName.keysView().toSortedList(comp);
+        assertIsSorted(repoNames);
+    }
+
+    private void assertComparison(int expected, RepositoryComparator comparator, String first, String second)
+    {
+        int actual = comparator.compare(first, second);
+        int expectedSignum = Integer.signum(expected);
+        int actualSignum = Integer.signum(actual);
+        if (expectedSignum != actualSignum)
+        {
+            Assert.assertEquals("comparing \"" + first + "\" and \"" + second + "\"", expected, actual);
+        }
+    }
+
+    private void assertIsSorted(ListIterable<String> repoNames)
+    {
+        repoNames.forEachWithIndex((repoName, i) ->
+        {
+            int start = ++i;
+            CodeRepository repo1 = repositoriesByName.get(repoName);
+            // check that no repo later in the list is visible to the current repo
+            if ((start < repoNames.size()) && repoNames.subList(start, repoNames.size()).anySatisfy(rn2 -> repo1.isVisible(repositoriesByName.get(rn2))))
+            {
+                Assert.fail(repoNames.makeString("Repositories not properly sorted: ", ", ", ""));
+            }
+        });
     }
 }
