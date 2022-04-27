@@ -126,7 +126,8 @@ function meta::relational::functions::pureToSqlQuery::union::managePrimaryKeys(a
                                                           |if($state.importDataFlow==true,
                                                               |$s.resolvePrimaryKey()->map(p|
                                                                 let column = $p->cast(@TableAliasColumn).column;
-                                                                ^Alias(name='"'+$column.name+'_'+$setImpls->indexOf($s)->toString()+'"', relationalElement = $column.type->getDefaultLiteralValue());),
+                                                                let relationalElement = if($state.importDataFlowImplementationCount->isEmpty(), |$column.type->getDefaultLiteralValue(), |$sqlNull);
+                                                                ^Alias(name='"'+$column.name+'_'+$setImpls->indexOf($s)->toString()+'"', relationalElement = $relationalElement);),
                                                               |range(0, $s.resolvePrimaryKey()->size(), 1)->map(p| ^Alias(name='"pk_'+$p->toString()+'_'+$setImpls->indexOf($s)->toString()+'"', relationalElement = $sqlNull))
                                                            )
 
