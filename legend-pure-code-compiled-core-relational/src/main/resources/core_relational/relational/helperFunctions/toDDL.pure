@@ -22,13 +22,7 @@ import meta::relational::runtime::*;
 import meta::relational::metamodel::relation::*;
 import apps::pure::api::relational::toDDL::*;
 
-function meta::relational::functions::toDDL::dropAndCreateTableSql(database:Database[1], schemaName:String[1], tableName:String[1], applyContraints:Boolean[1]):String[1]
-{
-   dropTableStatement($database, $schemaName, $tableName) + '\n'
-   + createTableStatement($database, $schemaName, $tableName, getTableToTableIdentityFunction(), $applyContraints);
-
-}
-
+// execute DDL statements
 function meta::relational::functions::toDDL::dropAndCreateTableInDb(database:Database[1], tableName: String[1], c:DatabaseConnection[1]) : Boolean[1]
 {
     dropAndCreateTableInDb($database, 'default', $tableName, $c);
@@ -73,6 +67,27 @@ function meta::relational::functions::toDDL::dropAndCreateSchemaInDb(schema: Str
    true;
 }
 
+function
+{doc.doc = 'Input CSV file must contain one empty line between each table and two empty lines after the last table'}
+meta::relational::functions::database::loadCsvDataToDbTable(csvData:List<String>[*],
+                                                         db:Database[1],
+                                                         databaseConnection:DatabaseConnection[1],
+                                                         tablePostProcessor:Function<{Table[1]->Table[1]}>[1]
+                                                         ):Any[*]
+{
+   let dbConfig = createDbConfig($databaseConnection.type);
+   loadCsvDataToDbTable($csvData, $db, $dbConfig, $tablePostProcessor)->map(sql|executeInDb($sql, $databaseConnection));
+}
+
+
+// generate DDL statements
+
+function meta::relational::functions::toDDL::dropAndCreateTableSql(database:Database[1], schemaName:String[1], tableName:String[1], applyContraints:Boolean[1]):String[1]
+{
+   dropTableStatement($database, $schemaName, $tableName) + '\n'
+   + createTableStatement($database, $schemaName, $tableName, getTableToTableIdentityFunction(), $applyContraints);
+}
+
 function meta::relational::functions::toDDL::createSchemaStatement(schema:String[1]) : String[1]
 {
    'Create Schema ' + $schema + ';';
@@ -88,11 +103,6 @@ function meta::relational::functions::toDDL::dropTableStatement(database:Databas
     dropTableStatement($database, 'default', $tableName);
 }
 
-function meta::relational::functions::toDDL::createTableStatement(database:Database[1], tableName: String[1]) : String[1]
-{
-    createTableStatement($database, 'default', $tableName);
-}
-
 function meta::relational::functions::toDDL::dropTableStatement(database:Database[1], schema: String[1], tableName: String[1]) : String[1]
 {
    dropTableStatement($database, $schema, $tableName, getTableToTableIdentityFunction());
@@ -101,8 +111,17 @@ function meta::relational::functions::toDDL::dropTableStatement(database:Databas
 function meta::relational::functions::toDDL::dropTableStatement(database:Database[1], schema: String[1], tableName: String[1], tablePostProcess: Function<{Table[1]->Table[1]}>[1]) : String[1]
 {
    let t = $tablePostProcess->eval(getTable($database, $schema, $tableName));
+   dropTableStatement($t);
+}
 
-   'Drop table if exists '+if($t.schema.name == 'default',|'',|$t.schema.name+'.')+$t.name+';';
+function meta::relational::functions::toDDL::dropTableStatement(t:Table[1]) : String[1]
+{
+  'Drop table if exists '+if($t.schema.name == 'default',|'',|$t.schema.name+'.')+$t.name+';';
+}
+
+function meta::relational::functions::toDDL::createTableStatement(database:Database[1], tableName: String[1]) : String[1]
+{
+    createTableStatement($database, 'default', $tableName);
 }
 
 function meta::relational::functions::toDDL::createTableStatement(database:Database[1], schema: String[1], tableName: String[1]) : String[1]
@@ -113,16 +132,20 @@ function meta::relational::functions::toDDL::createTableStatement(database:Datab
 function <<access.private>> meta::relational::functions::toDDL::createTableStatement(database:Database[1], schema: String[1], tableName: String[1], tablePostProcess: Function<{Table[1]->Table[1]}>[1], applyConstraints:Boolean[1]) : String[1]
 {
    // if no db type provided, then assume we are doing this for H2
-   let dbConfig = createDbConfig(DatabaseType.H2);
    createTableStatement($database, DatabaseType.H2, $schema, $tableName, $tablePostProcess, $applyConstraints);
 }
 
 function <<access.private>> meta::relational::functions::toDDL::createTableStatement(database:Database[1], dbType:DatabaseType[1], schema: String[1], tableName: String[1], tablePostProcess: Function<{Table[1]->Table[1]}>[1], applyConstraints:Boolean[1]) : String[1]
 {
-   let dbConfig = createDbConfig($dbType);
    let t = $tablePostProcess->eval(getTable($database, $schema, $tableName));
+   $t->createTableStatement($dbType, $applyConstraints);
+}
 
-   'Create Table '+if($t.schema.name == 'default',|'',|$t.schema.name+'.')+$t.name+
+function <<access.private>> meta::relational::functions::toDDL::createTableStatement(t:Table[1], dbType:DatabaseType[1],  applyConstraints:Boolean[1]) : String[1]
+{
+   let dbConfig = createDbConfig($dbType);
+
+  'Create Table '+if($t.schema.name == 'default',|'',|$t.schema.name+'.')+$t.name+
       + '('
       + $t.columns->cast(@meta::relational::metamodel::Column)
          ->map(c | $c.name->meta::relational::functions::sqlQueryToString::processColumnName($dbConfig) + ' ' + meta::relational::functions::toDDL::getColumnTypeSqlText($c.type, $dbConfig.dbType) + if($c.nullable->isEmpty() || $applyConstraints == false, | '', | if($c.nullable == true , | ' NULL', | ' NOT NULL' )))

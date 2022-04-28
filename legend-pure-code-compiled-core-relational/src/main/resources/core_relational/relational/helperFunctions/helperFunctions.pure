@@ -24,6 +24,7 @@ import meta::relational::metamodel::relation::*;
 import meta::relational::metamodel::*;
 import meta::relational::mapping::*;
 import meta::relational::functions::toDDL::*;
+import meta::relational::metamodel::join::*;
 
 function meta::relational::mapping::sql(result:Result<Any|*>[1]):String[1]
 {
@@ -50,120 +51,6 @@ function meta::relational::mapping::sqlRemoveFormatting(sql : String[1]):String[
    $sql->replace('\n', '')->replace('\t', '')
 }
 
-function meta::relational::runtime::extractDBs(m:meta::pure::mapping::Mapping[*], r:Runtime[1]):Database[*]
-{
-   let allMappings = $m->concatenate(getMappingsFromRuntime($r));
-
-   let dbFromMappings = $allMappings->map(m| let db = $m->extractDBs();
-                                            print(if($db->size() > 1, |'WARNING: The system found multiple databases in the mapping "'+$m->elementToPath()+'": '+$db.name->joinStrings(','), |''));
-                                            $db;);
-   let dbFromRuntime = $r.connections.element->filter(c | $c->instanceOf(Database))->cast(@Database);
-
-   $dbFromMappings->concatenate($dbFromRuntime)->removeDuplicates();
-}
-
-function meta::relational::runtime::extractDBs(m:meta::pure::mapping::Mapping[1]):Database[*]
-{
-   $m->extractDBs($m);
-}
-
-function <<access.private>> meta::relational::runtime::extractDBs(m:meta::pure::mapping::Mapping[1], topMapping: meta::pure::mapping::Mapping[1]):Database[*]
-{
-   $m.includes.included->map(i|$i->extractDBs($topMapping))
-   ->concatenate(
-      $m.classMappings->filter(r|$r->instanceOf(meta::relational::mapping::RootRelationalInstanceSetImplementation))->cast(@meta::relational::mapping::RootRelationalInstanceSetImplementation).mainTableAlias.database->map(n|$topMapping.resolveStore($n)->cast(@Database))
-   )->removeDuplicates();
-}
-
-function meta::relational::functions::database::setUpData(t:String[1], mapping:Mapping[1]):String[*]
-{
-   let databases = $mapping->extractDBs()->removeDuplicates();
-
-   print(if($databases->size() > 1, |'WARNING: The system found multiple databases in the mapping "'+$mapping->elementToPath()+'": '+$databases.name->joinStrings(','), |''));
-
-   let database = if ($databases->size() == 1, | $databases->at(0), | ^Database(name='Default_CatchAll', includes = $databases));
-
-   meta::alloy::service::execution::setUpDataSQLs($t, $database);
-}
-
-
-function meta::relational::functions::database::setUpData(t:String[1], mapping:Mapping[*], runtime:Runtime[1]):String[*]
-{
-   let databases = $mapping->extractDBs($runtime);
-
-   let database = if ($databases->size() == 1, | $databases->at(0), | ^Database(name='Default_CatchAll', includes = $databases));
-
-   meta::alloy::service::execution::setUpDataSQLs($t, $database);
-}
-
-function meta::relational::functions::database::setUpData(records:List<String>[*], mapping:Mapping[*], runtime:Runtime[1]):String[*]
-{
-   let databases = $mapping->extractDBs($runtime);
-
-   let database = if ($databases->size() == 1, | $databases->at(0), | ^Database(name='Default_CatchAll', includes = $databases));
-
-   meta::alloy::service::execution::setUpDataSQLs($records, $database);
-}
-
-// This function is needed because split does not preserve empty strings
-// We work around by inserting a non-empty value, doing a split, and then removing the non-empty value
-function <<access.private>> meta::alloy::service::execution::splitWithEmptyValue(s:String[1]) : String[*]
-{
-   let delimForEmptyCsvField = '|EMPTY|';
-
-   $s->meta::alloy::service::execution::replaceWithEmptyValue($delimForEmptyCsvField)
-        ->split(',')
-        ->map(csv_val| if($csv_val == $delimForEmptyCsvField, | '' ,| $csv_val));
-}
-
-function <<access.private>> meta::alloy::service::execution::replaceWithEmptyValue(s:String[1], delimForEmptyCsvField: String[1]) : String[1]
-{
-   let news = if($s->endsWith(','), | $s + $delimForEmptyCsvField, |$s);
-
-   let replaced = $news->replace(',,', ','+$delimForEmptyCsvField+',');
-
-   if ($replaced->contains(',,'), | meta::alloy::service::execution::replaceWithEmptyValue($replaced, $delimForEmptyCsvField), | $replaced);
-}
-
-function <<access.private>> meta::alloy::service::execution::schemaAndTableSetup(db:Database[1]):String[*]
-{
-   let allSchemas = $db->allSchemas();
-
-   let schemaSetup = $allSchemas->map({schema |
-      [
-         meta::relational::functions::toDDL::dropSchemaStatement($schema.name),
-         meta::relational::functions::toDDL::createSchemaStatement($schema.name)
-      ]
-   });
-
-   let tableSetup = $allSchemas->map({schema |
-      $schema.tables->map({t |
-         [
-            dropTableStatement($db, $schema.name, $t.name),
-            createTableStatement($db, $schema.name, $t.name)
-         ]
-      })
-   });
-
-   $schemaSetup->concatenate($tableSetup);
-}
-
-function meta::alloy::service::execution::setUpDataSQLs(data:String[1], db:Database[1]) : String[*]
-{
-   let schemaAndTableSetup = $db->meta::alloy::service::execution::schemaAndTableSetup();
-
-   let formattedData = $data->split('\n')
-                            ->map(l|list($l->meta::alloy::service::execution::splitWithEmptyValue()))
-                            ->concatenate(list(''));
-
-   $schemaAndTableSetup->concatenate(loadCsvDataToDbTable($formattedData, $db, t:Table[1]|$t));
-}
-
-function meta::alloy::service::execution::setUpDataSQLs(records:List<String>[*], db:Database[1]) : String[*]
-{
-   let schemaAndTableSetup = $db->meta::alloy::service::execution::schemaAndTableSetup();
-   $schemaAndTableSetup->concatenate(loadCsvDataToDbTable($records, $db, t:Table[1]|$t));
-}
 
 function {service.contentType='text/csv', service.contentDisposition='attachment;filename=result.csv'} meta::csv::toCSV(t:TabularDataSet[1]):String[1]
 {
@@ -218,6 +105,8 @@ function <<access.private>> meta::csv::escapeCSVString(string:String[1]):String[
       | '"' + $string->replace('"', '""') + '"',
       | $string);
 }
+
+//pureTOSQL helper functions
 
 function meta::relational::mapping::findPropertySequence(v:ValueSpecification[1]):Pair<Class<Any>,AbstractProperty<Any>>[*]
 {
@@ -340,4 +229,32 @@ function meta::relational::mapping::findMainClassInGetAllExpression(vs:ValueSpec
 {
    let getAllFe = $vs->findExpressionsForFunctionInValueSpecification([getAll_Class_1__T_MANY_, getAll_Class_1__Date_1__T_MANY_, getAll_Class_1__Date_1__Date_1__T_MANY_]);
    if($getAllFe->isEmpty(), | Any, | $getAllFe.parametersValues->at(0)->cast(@ExtendedRoutedValueSpecification)->byPassRouterInfo()->cast(@InstanceValue).values->toOne()->cast(@Class<Any>));
+}
+
+
+//milestoning
+function meta::relational::functions::database::findTablesInDbHierarchy(d:Database[1], targetDBs:Database[*]):Table[*]
+{
+   findTablesInDbHierarchy($d, $targetDBs, false);
+}
+
+function meta::relational::functions::database::findTablesInDbHierarchy(d:Database[1], targetDBs:Database[*], includeIncludes : Boolean[1]):Table[*]
+{
+   let shouldInclude = $targetDBs->contains($d) || $includeIncludes;
+   if($shouldInclude,|$d.schemas.tables,|[])->concatenate($d.includes->map(d|$d->cast(@Database)->findTablesInDbHierarchy($targetDBs, $shouldInclude)));
+}
+
+function meta::relational::metamodel::relation::schema(n:NamedRelation[1]):Schema[1]
+{
+    $n->match([v:View[1]|$v.schema,t:Table[1]|$t.schema]);
+}
+
+function meta::relational::metamodel::relation::allJoins(n:Database[1]):Join[*]
+{
+   $n.joins->concatenate($n.includes->map(d|$d->cast(@Database)->allJoins()));
+}
+
+function meta::relational::metamodel::relation::allFilters(n:Database[1]):Filter[*]
+{
+    $n.filters->concatenate($n.includes->map(d|$d->cast(@Database)->allFilters()));
 }
