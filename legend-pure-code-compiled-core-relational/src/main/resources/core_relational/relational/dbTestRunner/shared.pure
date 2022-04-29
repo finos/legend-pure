@@ -71,14 +71,19 @@ Class meta::relational::dbTestRunner::DbTestConfig
    expectedSql: String[0..1];
 }
 
-function meta::relational::dbTestRunner::createDbConfig(dbTypeStr: String[1]): DbTestConfig[1]
+function meta::relational::dbTestRunner::createDbTestConfig(dbTypeStr: String[1]): DbTestConfig[1]
 {
-  createDbConfig($dbTypeStr,[]);
+  createDbTestConfig($dbTypeStr,[]);
 }
 
-function meta::relational::dbTestRunner::createDbConfig(dbTypeStr: String[1], expectedSql:String[0..1]): DbTestConfig[1]
+function meta::relational::dbTestRunner::createDbTestConfig(dbTypeStr: String[1], expectedSql:String[0..1]): DbTestConfig[1]
 {
   let dbType = extractEnumValue(meta::relational::runtime::DatabaseType, $dbTypeStr);
+  meta::relational::dbTestRunner::createDbTestConfig($dbType, $expectedSql);
+}
+
+function meta::relational::dbTestRunner::createDbTestConfig(dbType: meta::relational::runtime::DatabaseType[1], expectedSql:String[0..1]): DbTestConfig[1]
+{
   let connection = meta::relational::dbTestRunner::getTestConnection($dbType, meta::pure::router::extension::defaultRelationalExtensions());
   ^DbTestConfig(dbType=$dbType, connection=$connection, expectedSql=$expectedSql);
 }
