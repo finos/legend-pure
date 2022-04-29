@@ -311,11 +311,14 @@ function meta::pure::functions::meta::reverseProperties(class:Class<Any>[1]):Pro
 
 function meta::pure::functions::meta::findExpressionsForFunctionInValueSpecification(vs:ValueSpecification[1], funcs:Function<Any>[*]):FunctionExpression[*]
 {
-   $vs->match([fe:FunctionExpression[1] | $fe.func->match([
+   $vs->match([fe:FunctionExpression[1] | 
+                                            let res = $fe.parametersValues->map(v | $v->findExpressionsForFunctionInValueSpecification($funcs));
+                                            if ( !($fe.func->instanceOf(Property) || $fe.func->instanceOf(QualifiedProperty)) && ($funcs->isEmpty() || $fe.func->in($funcs)), 
+                                            | [$fe]->concatenate($res), 
+                                            | $fe.func->match([
                                                             fd:ConcreteFunctionDefinition<Any>[1] | $fd->findExpressionsForFunctionInFunctionDefinition($funcs),
-                                                            a:Any[1] | let res = $fe.parametersValues->map(v | $v->findExpressionsForFunctionInValueSpecification($funcs));
-                                                                       if ( !($a->instanceOf(Property) || $a->instanceOf(QualifiedProperty)) && ($funcs->isEmpty() || $a->in($funcs)), | [$fe]->concatenate($res), | $res );
-                                                         ]),
+                                                            a:Any[1] | $res
+                                                            ]););,
                i:InstanceValue[1] | $i.values->map( v |
                                                          $v->match([a: ValueSpecification[1] | $a->findExpressionsForFunctionInValueSpecification($funcs);,
                                                          k : KeyExpression[1] | $k.expression->findExpressionsForFunctionInValueSpecification($funcs);,
