@@ -106,6 +106,7 @@ Class meta::relational::functions::sqlQueryToString::DbExtension
    windowColumnProcessor: meta::pure::metamodel::function::Function<{WindowColumn[1], SqlGenerationContext[1] -> String[1]}>[0..1];
    semiStructuredObjectNavigationProcessor: meta::pure::metamodel::function::Function<{SemiStructuredObjectNavigation[1], SqlGenerationContext[1] -> String[1]}>[0..1];
    joinStringsProcessor: meta::pure::metamodel::function::Function<{JoinStrings[1], SqlGenerationContext[1] -> String[1]}>[0..1];
+   relationalDatabaseCommandsProvider : meta::relational::functions::sqlQueryToString::RelationalDatabaseCommandsProvider [1];
 }
 
 Class meta::relational::functions::sqlQueryToString::SqlGenerationContext
@@ -206,7 +207,8 @@ function meta::relational::functions::sqlQueryToString::createDbExtension(dbType
       literalProcessor = {type:Type[1]| $literalProcessors->get(if($type->instanceOf(Enumeration), | Enum, | $type))->toOne()},
       windowColumnProcessor = $windowColumnProcessor,
       semiStructuredObjectNavigationProcessor = $semiStructuredObjectNavigationProcessor,
-      joinStringsProcessor = $joinStringsProcessor
+      joinStringsProcessor = $joinStringsProcessor,
+      relationalDatabaseCommandsProvider = meta::relational::functions::sqlQueryToString::createRelationalDatabaseCommandsProvider($dbType)
    );
 }
 

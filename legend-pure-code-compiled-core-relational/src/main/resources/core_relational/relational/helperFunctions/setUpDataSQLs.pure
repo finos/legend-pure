@@ -59,11 +59,16 @@ function meta::relational::functions::database::setUpData(records:List<String>[*
 
 function meta::alloy::service::execution::setUpDataSQLs(data:String[1], db:Database[1]) : String[*]
 {
+  meta::alloy::service::execution::setUpDataSQLs($data, $db, createDbConfig(DatabaseType.H2));
+}
+
+function meta::alloy::service::execution::setUpDataSQLs(data:String[1], db:Database[1], dbConfig:DbConfig[1]) : String[*]
+{
    let formattedData = $data->split('\n')
                             ->map(l|list($l->meta::alloy::service::execution::splitWithEmptyValue()))
                             ->concatenate(list(''));
   
-    meta::alloy::service::execution::setUpDataSQLs($formattedData, $db);
+    meta::alloy::service::execution::setUpDataSQLs($formattedData, $db, $dbConfig);
 }
 
 // This function is needed because split does not preserve empty strings
@@ -86,30 +91,41 @@ function <<access.private>> meta::alloy::service::execution::replaceWithEmptyVal
    if ($replaced->contains(',,'), | meta::alloy::service::execution::replaceWithEmptyValue($replaced, $delimForEmptyCsvField), | $replaced);
 }
 
-function  {doc.doc = 'Helper function generate a list of SQL commands to setup schemas and table from given store definition and insert given data'}
-meta::alloy::service::execution::setUpDataSQLs(records:List<String>[*], db:Database[1]) : String[*]
+
+function meta::alloy::service::execution::setUpDataSQLs(records:List<String>[*], db:Database[1]) : String[*]
 {
-   let schemaAndTableSetup = $db->meta::alloy::service::execution::schemaAndTableSetup();
-   $schemaAndTableSetup->concatenate(loadCsvDataToDbTable($records, $db, t:Table[1]|$t));
+  meta::alloy::service::execution::setUpDataSQLs($records, $db, createDbConfig(DatabaseType.H2));
+}
+
+function  {doc.doc = 'Helper function generate a list of SQL commands to setup schemas and table from given store definition and insert given data'}
+meta::alloy::service::execution::setUpDataSQLs(records:List<String>[*], db:Database[1], dbConfig:DbConfig[1]) : String[*]
+{
+   let schemaAndTableSetup = $db->meta::alloy::service::execution::schemaAndTableSetup($dbConfig);
+   $schemaAndTableSetup->concatenate(loadCsvDataToDbTable($records, $db, $dbConfig, t:Table[1]|$t));
+}
+
+function <<access.private>> meta::alloy::service::execution::schemaAndTableSetup(db:Database[1]):String[*]
+{
+  meta::alloy::service::execution::schemaAndTableSetup($db, createDbConfig(DatabaseType.H2) );
 }
 
 //DDL SQL commands generation
-function <<access.private>> meta::alloy::service::execution::schemaAndTableSetup(db:Database[1]):String[*]
+function meta::alloy::service::execution::schemaAndTableSetup(db:Database[1], dbConfig:DbConfig[1]):String[*]
 {
    let allSchemas = $db->allSchemas();
 
    let schemaSetup = $allSchemas->map({schema |
       [
-         meta::relational::functions::toDDL::dropSchemaStatement($schema.name),
-         meta::relational::functions::toDDL::createSchemaStatement($schema.name)
+         meta::relational::functions::toDDL::dropSchemaStatement($schema.name,  $dbConfig),
+         meta::relational::functions::toDDL::createSchemaStatement($schema.name, $dbConfig)
       ]
    });
 
    let tableSetup = $allSchemas->map({schema |
       $schema.tables->map({t |
          [
-            dropTableStatement($db, $schema.name, $t.name),
-            createTableStatement($db, $schema.name, $t.name)
+            dropTableStatement($db, $schema.name, $t.name, $dbConfig),
+            createTableStatement($db, $schema.name, $t.name, $dbConfig)
          ]
       })
    });
@@ -187,13 +203,8 @@ function meta::relational::functions::database::loadValuesToDbTable2(data : List
 
 function meta::relational::functions::database::loadValuesToDbTable2(data : List<List<String>>[1], table:Table[1],columns : Column[*], dbConfig: DbConfig[1]) : String[*]
 {
-   $data.values->map(row |  let sql = 'insert into ' + if($table.schema.name=='default', |'' ,|$table.schema.name + '.') + $table.name + ' ('
-            + $columns.name->map(colName | $colName->meta::relational::functions::sqlQueryToString::processColumnName($dbConfig))->joinStrings(',')
-            +') '
-            + 'values ('
-            + $row.values->meta::relational::functions::database::testDataSQLgeneration::convertValuesToCsv($columns.type)
-            + ');';
-   );
+   assert($dbConfig.dbExtension.relationalDatabaseCommandsProvider->size()==1, ' No unique commands provider found for given db config');
+   $dbConfig.dbExtension.relationalDatabaseCommandsProvider.loadValuesToDbTable->eval($data, $table, $columns, $dbConfig);
 }
 
 function meta::relational::functions::database::testDataSQLgeneration::convertValuesToCsv(str : String[*], types : Any[*]):String[1]
