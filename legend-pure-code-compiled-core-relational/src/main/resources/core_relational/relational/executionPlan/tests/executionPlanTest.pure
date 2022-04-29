@@ -55,6 +55,14 @@ function meta::pure::executionPlan::tests::assertPlanGenerationForOptionalParame
    assertSameElements(templateFunctionsList(),$generatedPlan.processingTemplateFunctions);
 }
 
+function meta::pure::executionPlan::tests::assertPlanGenerationForOptionalParameterWithGreaterThanLessThan(func:FunctionDefinition<Any>[1], dbType:DatabaseType[1], expectedPlan:String[1]):Boolean[1]
+{
+   let generatedPlan = executionPlan($func, simpleRelationalMapping, ^Runtime(connections=^DatabaseConnection(element = relationalDB, type=$dbType)), meta::pure::router::extension::defaultRelationalExtensions());
+   let result = $generatedPlan->planToString(meta::pure::router::extension::defaultRelationalExtensions()); 
+   assertEquals($expectedPlan, $result);
+   assertSameElements(templateFunctionsList(),$generatedPlan.processingTemplateFunctions);
+}
+
 function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithOptionalParameter_SybaseIQ():Boolean[1]      
 {  
    let expectedPlan ='Sequence\n'+
@@ -643,6 +651,102 @@ function <<test.Test>> meta::pure::executionPlan::tests::testFilterEqualsWithTwo
 
    assertEquals($expected, $result);
    assertSameElements(templateFunctionsList(),$generatedPlan.processingTemplateFunctions);
+}
+
+function <<test.Test>> meta::pure::executionPlan::tests::testGreaterThanLessThanEqualsWithOptionalParameter_SybaseIQ():Boolean[1]      
+{  
+   let func = {optionalAgeLowerLimit: Integer[0..1], optionalAgeHigherLimit: Integer[0..1]|Person.all()->filter(p|$p.age>$optionalAgeLowerLimit && ($p.age<=$optionalAgeHigherLimit))->project(col(a|$a.firstName, 'firstName'))};
+   let expectedPlan ='Sequence\n'+
+                     '(\n'+
+                     '  type = TDS[(firstName, String, VARCHAR(200), "")]\n'+
+                     '  (\n'+
+                     '    FunctionParametersValidationNode\n'+
+                     '    (\n'+
+                     '      functionParameters = [optionalAgeLowerLimit:Integer[0..1], optionalAgeHigherLimit:Integer[0..1]]\n'+
+                     '    )\n'+
+                     '    Relational\n'+
+                     '    (\n'+
+                     '      type = TDS[(firstName, String, VARCHAR(200), "")]\n'+
+                     '      resultColumns = [("firstName", VARCHAR(200))]\n'+
+                     '      sql = select "root".FIRSTNAME as "firstName" from personTable as "root" where ((("root".AGE is not null and ${varPlaceHolderToString(optionalAgeLowerLimit![]  "" "" "null")} is not null) and "root".AGE > ${varPlaceHolderToString(optionalAgeLowerLimit![]  "" "" "null")}) and (("root".AGE is not null and ${varPlaceHolderToString(optionalAgeHigherLimit![]  "" "" "null")} is not null) and "root".AGE <= ${varPlaceHolderToString(optionalAgeHigherLimit![]  "" "" "null")}))\n'+
+                     '      connection = DatabaseConnection(type = "SybaseIQ")\n'+
+                     '    )\n'+
+                     '  )\n'+
+                     ')\n';
+   
+   assertPlanGenerationForOptionalParameterWithGreaterThanLessThan($func, DatabaseType.SybaseIQ, $expectedPlan); 
+}
+
+function <<test.Test>> meta::pure::executionPlan::tests::testGreaterThanLessThanEqualsWithOptionalParameter_H2():Boolean[1]      
+{  
+   let func = {optionalAgeLowerLimit: Integer[0..1], optionalAgeHigherLimit: Integer[0..1]|Person.all()->filter(p|$p.age>$optionalAgeLowerLimit && ($p.age<=$optionalAgeHigherLimit))->project(col(a|$a.firstName, 'firstName'))};
+   let expectedPlan ='Sequence\n'+
+                     '(\n'+
+                     '  type = TDS[(firstName, String, VARCHAR(200), "")]\n'+
+                     '  (\n'+
+                     '    FunctionParametersValidationNode\n'+
+                     '    (\n'+
+                     '      functionParameters = [optionalAgeLowerLimit:Integer[0..1], optionalAgeHigherLimit:Integer[0..1]]\n'+
+                     '    )\n'+
+                     '    Relational\n'+
+                     '    (\n'+
+                     '      type = TDS[(firstName, String, VARCHAR(200), "")]\n'+
+                     '      resultColumns = [("firstName", VARCHAR(200))]\n'+
+                     '      sql = select "root".FIRSTNAME as "firstName" from personTable as "root" where ((("root".AGE is not null and ${varPlaceHolderToString(optionalAgeLowerLimit![]  "" "" "null")} is not null) and "root".AGE > ${varPlaceHolderToString(optionalAgeLowerLimit![]  "" "" "null")}) and (("root".AGE is not null and ${varPlaceHolderToString(optionalAgeHigherLimit![]  "" "" "null")} is not null) and "root".AGE <= ${varPlaceHolderToString(optionalAgeHigherLimit![]  "" "" "null")}))\n'+
+                     '      connection = DatabaseConnection(type = "H2")\n'+
+                     '    )\n'+
+                     '  )\n'+
+                     ')\n';
+   
+   assertPlanGenerationForOptionalParameterWithGreaterThanLessThan($func, DatabaseType.H2, $expectedPlan); 
+}
+
+function <<test.Test>> meta::pure::executionPlan::tests::testLessThanGreaterThanEqualsWithOptionalParameter_SybaseIQ():Boolean[1]      
+{  
+   let func = {optionalAgeLowerLimit: Integer[0..1], optionalAgeHigherLimit: Integer[0..1]|Person.all()->filter(p|$p.age<$optionalAgeLowerLimit && ($p.age>=$optionalAgeHigherLimit))->project(col(a|$a.firstName, 'firstName'))};
+   let expectedPlan ='Sequence\n'+
+                     '(\n'+
+                     '  type = TDS[(firstName, String, VARCHAR(200), "")]\n'+
+                     '  (\n'+
+                     '    FunctionParametersValidationNode\n'+
+                     '    (\n'+
+                     '      functionParameters = [optionalAgeLowerLimit:Integer[0..1], optionalAgeHigherLimit:Integer[0..1]]\n'+
+                     '    )\n'+
+                     '    Relational\n'+
+                     '    (\n'+
+                     '      type = TDS[(firstName, String, VARCHAR(200), "")]\n'+
+                     '      resultColumns = [("firstName", VARCHAR(200))]\n'+
+                     '      sql = select "root".FIRSTNAME as "firstName" from personTable as "root" where ((("root".AGE is not null and ${varPlaceHolderToString(optionalAgeLowerLimit![]  "" "" "null")} is not null) and "root".AGE < ${varPlaceHolderToString(optionalAgeLowerLimit![]  "" "" "null")}) and (("root".AGE is not null and ${varPlaceHolderToString(optionalAgeHigherLimit![]  "" "" "null")} is not null) and "root".AGE >= ${varPlaceHolderToString(optionalAgeHigherLimit![]  "" "" "null")}))\n'+
+                     '      connection = DatabaseConnection(type = "SybaseIQ")\n'+
+                     '    )\n'+
+                     '  )\n'+
+                     ')\n';
+   
+   assertPlanGenerationForOptionalParameterWithGreaterThanLessThan($func, DatabaseType.SybaseIQ, $expectedPlan); 
+}
+
+function <<test.Test>> meta::pure::executionPlan::tests::testLessThanGreaterThanEqualsWithOptionalParameter_H2():Boolean[1]      
+{  
+   let func = {optionalAgeLowerLimit: Integer[0..1], optionalAgeHigherLimit: Integer[0..1]|Person.all()->filter(p|$p.age<$optionalAgeLowerLimit && ($p.age>=$optionalAgeHigherLimit))->project(col(a|$a.firstName, 'firstName'))};
+   let expectedPlan ='Sequence\n'+
+                     '(\n'+
+                     '  type = TDS[(firstName, String, VARCHAR(200), "")]\n'+
+                     '  (\n'+
+                     '    FunctionParametersValidationNode\n'+
+                     '    (\n'+
+                     '      functionParameters = [optionalAgeLowerLimit:Integer[0..1], optionalAgeHigherLimit:Integer[0..1]]\n'+
+                     '    )\n'+
+                     '    Relational\n'+
+                     '    (\n'+
+                     '      type = TDS[(firstName, String, VARCHAR(200), "")]\n'+
+                     '      resultColumns = [("firstName", VARCHAR(200))]\n'+
+                     '      sql = select "root".FIRSTNAME as "firstName" from personTable as "root" where ((("root".AGE is not null and ${varPlaceHolderToString(optionalAgeLowerLimit![]  "" "" "null")} is not null) and "root".AGE < ${varPlaceHolderToString(optionalAgeLowerLimit![]  "" "" "null")}) and (("root".AGE is not null and ${varPlaceHolderToString(optionalAgeHigherLimit![]  "" "" "null")} is not null) and "root".AGE >= ${varPlaceHolderToString(optionalAgeHigherLimit![]  "" "" "null")}))\n'+
+                     '      connection = DatabaseConnection(type = "H2")\n'+
+                     '    )\n'+
+                     '  )\n'+
+                     ')\n';
+   
+   assertPlanGenerationForOptionalParameterWithGreaterThanLessThan($func, DatabaseType.H2, $expectedPlan); 
 }
 
 function <<test.Test>> meta::pure::executionPlan::tests::datetime::testPlanForDateTimeConstantParameterNoTimeZone():Boolean[1]

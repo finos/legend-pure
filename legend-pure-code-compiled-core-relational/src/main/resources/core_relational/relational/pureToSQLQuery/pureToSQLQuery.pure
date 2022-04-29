@@ -2850,9 +2850,13 @@ function <<access.private>> meta::relational::functions::pureToSqlQuery::process
                                                              );
 
    let distinctTransformers = $propertyMappings->filter(m|$m->instanceOf(RelationalPropertyMapping))->cast(@RelationalPropertyMapping).transformer->distinct();
+   let semiStructuredMappings = $propertyMappings->filter(m|$m->instanceOf(RelationalPropertyMapping))->forAll(x|$x->instanceOf(SemiStructuredRelationalPropertyMapping));
 
    assertFalse($distinctTransformers->size() > 1, 'Unable to determine a unique Enum property mapping for an if stmt (returning an Enum)');
-   assertFalse($distinctTransformers->isEmpty(), 'Unable to determine the Enum property mapping for an if stmt (returning an Enum)');
+   if ($semiStructuredMappings,
+       | print(if(!$context.debug, |'', |$context.space+'  Ignoring distinct transformer check as all property mappings are semi structured property mappings\n'));,
+       | assertFalse($distinctTransformers->isEmpty(), 'Unable to determine the Enum property mapping for an if stmt (returning an Enum)');
+   );
 
    print(if(!$context.debug, |'',
             | $context.space+'  Found '+$distinctTransformers->size()->toString()+' distinct transformers\n'));
@@ -5793,7 +5797,10 @@ function meta::relational::functions::pureToSqlQuery::enumToStoreValue(enumWrapp
              assertEquals($enumPropMapping.property, $property, 'The mapping must be for the enum property');
              );
 
-    let sourceVal = $enumPropMapping.transformer->toOne()->cast(@EnumerationMapping<Any> ).toSourceValues($enum);
+    let sourceVal = if ($enumPropMapping->instanceOf(SemiStructuredRelationalPropertyMapping),
+                        | $enum->id(),
+                        | $enumPropMapping.transformer->toOne()->cast(@EnumerationMapping<Any> ).toSourceValues($enum)
+                    );
 
     if ($sourceVal->size() == 1,
         | ^Literal(value=$sourceVal->toOne()),

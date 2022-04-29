@@ -180,6 +180,11 @@ function <<access.private>> meta::protocols::pure::v1_18_0::transformation::from
    );
 }
 
+function <<access.private>> meta::protocols::pure::v1_18_0::transformation::fromPureGraph::findValidPaths(p:Type[*], extensions:meta::pure::router::extension::RouterExtension[*]):String[*]
+{
+    $p->cast(@PackageableElement)->meta::protocols::pure::v1_18_0::transformation::fromPureGraph::findValidPaths($extensions);
+}
+
 function <<access.private>> meta::protocols::pure::v1_18_0::transformation::fromPureGraph::findValidPaths(p:PackageableElement[*], extensions:meta::pure::router::extension::RouterExtension[*]):String[*]
 {
    let validForTests = ['meta::java::generation::tests', 'meta::pure::tests', 'apps::pure', 'apps::global']->concatenate($extensions.validTestPackages);

@@ -25,7 +25,9 @@ public class CodeRepositoryProviderHelper
     public static RichIterable<CodeRepository> findCodeRepositories()
     {
         MutableList<CodeRepository> repositories = Lists.mutable.empty();
-        for (CodeRepositoryProvider codeRepositoryProvider : ServiceLoader.load(CodeRepositoryProvider.class))
+        ServiceLoader<CodeRepositoryProvider> serviceLoader = ServiceLoader.load(CodeRepositoryProvider.class);
+        serviceLoader.reload();
+        for (CodeRepositoryProvider codeRepositoryProvider : serviceLoader)
         {
             repositories.add(codeRepositoryProvider.repository());
         }

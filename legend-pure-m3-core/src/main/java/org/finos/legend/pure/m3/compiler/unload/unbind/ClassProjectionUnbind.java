@@ -14,15 +14,16 @@
 
 package org.finos.legend.pure.m3.compiler.unload.unbind;
 
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.projection.ProjectionUtil;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.AnnotatedElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RootRouteNode;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.treepath.RootRouteNodeCoreInstanceWrapper;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassProjection;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericTypeCoreInstanceWrapper;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
@@ -57,7 +58,7 @@ public class ClassProjectionUnbind implements MatchRunner<ClassProjection>
             try
             {
                 Type projectedClass = (Type)ImportStub.withImportStubByPass(projectionSpecification._type()._rawTypeCoreInstance(), state.getProcessorSupport());
-                ProjectionUtil.removedCopiedAnnotations(projectedClass, classProjection, state.getProcessorSupport());
+                ProjectionUtil.removedCopiedAnnotations((AnnotatedElement)projectedClass, classProjection, state.getProcessorSupport());
                 ProjectionUtil.removedCopiedAnnotations(projectionSpecification, classProjection, state.getProcessorSupport());
             }
             catch (PureCompilationException pe)

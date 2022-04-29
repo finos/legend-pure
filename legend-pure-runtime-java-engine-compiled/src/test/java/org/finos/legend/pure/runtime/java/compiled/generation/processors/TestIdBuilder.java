@@ -1,12 +1,12 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
 import org.eclipse.collections.api.map.primitive.ObjectIntMap;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
@@ -16,6 +16,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeReposito
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntimeBuilder;
+import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.tools.GraphNodeIterable;
 import org.junit.Assert;
@@ -45,6 +46,38 @@ public class TestIdBuilder
     public void testIdUniquenessWithPrefix()
     {
         testIdUniqueness(IdBuilder.newIdBuilder("$core$", processorSupport));
+    }
+
+    @Test
+    public void testBadIds()
+    {
+        IdBuilder idBuilder = IdBuilder.newIdBuilder(processorSupport);
+        MutableSet<CoreInstance> excludedClassifiers = PrimitiveUtilities.getPrimitiveTypes(processorSupport).toSet();
+        MutableMap<CoreInstance, MutableSet<String>> badIdsByClassifier = Maps.mutable.empty();
+        GraphNodeIterable.fromModelRepository(runtime.getModelRepository())
+                .forEach(instance ->
+                {
+                    CoreInstance classifier = instance.getClassifier();
+                    if (!excludedClassifiers.contains(classifier))
+                    {
+                        String id = idBuilder.buildId(instance);
+                        if (ModelRepository.isAnonymousInstanceName(id))
+                        {
+                            badIdsByClassifier.getIfAbsentPut(classifier, Sets.mutable::empty).add(id);
+                        }
+                    }
+                });
+        if (badIdsByClassifier.notEmpty())
+        {
+            MutableMap<CoreInstance, String> classifierPaths = badIdsByClassifier.keysView().toMap(c -> c, PackageableElement::getUserPathForPackageableElement);
+            StringBuilder builder = new StringBuilder("The following ids have conflicts:");
+            badIdsByClassifier.keysView().toSortedListBy(classifierPaths::get).forEach(classifier ->
+            {
+                builder.append("\n\t").append(classifierPaths.get(classifier)).append(":\n\t\t");
+                badIdsByClassifier.get(classifier).toSortedList().appendString(builder, ", ");
+            });
+            Assert.fail(builder.toString());
+        }
     }
 
     private void testIdUniqueness(IdBuilder idBuilder)

@@ -33,6 +33,7 @@ import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompileExcep
 import org.finos.legend.pure.runtime.java.compiled.compiler.PureJavaCompiler;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.IdBuilder;
 import org.finos.legend.pure.runtime.java.compiled.serialization.binary.DistributedBinaryGraphSerializer;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.VoidJavaCompilerEventObserver;
 
@@ -62,32 +63,62 @@ public class JavaStandaloneLibraryGenerator
 
     public PureJavaCompiler compile(String repo, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
     {
-        return compile(getSourcesToCompile(repo), writeJavaSourcesToDisk, pathToWriteTo);
+        return compile(repo, false, writeJavaSourcesToDisk, pathToWriteTo);
+    }
+
+    public PureJavaCompiler compile(String repo, boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
+    {
+        return compile(getSourcesToCompile(repo), modularMetadataIds, writeJavaSourcesToDisk, pathToWriteTo);
     }
 
     public PureJavaCompiler compile(Iterable<String> repos, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
     {
-        return compile(getSourcesToCompile(repos), writeJavaSourcesToDisk, pathToWriteTo);
+        return compile(repos, false, writeJavaSourcesToDisk, pathToWriteTo);
+    }
+
+    public PureJavaCompiler compile(Iterable<String> repos, boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
+    {
+        return compile(getSourcesToCompile(repos), modularMetadataIds, writeJavaSourcesToDisk, pathToWriteTo);
     }
 
     public PureJavaCompiler compile(boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
     {
-        return compile(getSourcesToCompile(), writeJavaSourcesToDisk, pathToWriteTo);
+        return compile(false, writeJavaSourcesToDisk, pathToWriteTo);
+    }
+
+    public PureJavaCompiler compile(boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
+    {
+        return compile(getSourcesToCompile(), modularMetadataIds, writeJavaSourcesToDisk, pathToWriteTo);
     }
 
     public Generate generateOnly(String repo, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
     {
-        return generateOnly(getSourcesToCompile(repo), writeJavaSourcesToDisk, pathToWriteTo);
+        return generateOnly(repo, false, writeJavaSourcesToDisk, pathToWriteTo);
+    }
+
+    public Generate generateOnly(String repo, boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
+    {
+        return generateOnly(getSourcesToCompile(repo), modularMetadataIds, writeJavaSourcesToDisk, pathToWriteTo);
     }
 
     public Generate generateOnly(Iterable<String> repos, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
     {
-        return generateOnly(getSourcesToCompile(repos), writeJavaSourcesToDisk, pathToWriteTo);
+        return generateOnly(repos, false, writeJavaSourcesToDisk, pathToWriteTo);
+    }
+
+    public Generate generateOnly(Iterable<String> repos, boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
+    {
+        return generateOnly(getSourcesToCompile(repos), modularMetadataIds, writeJavaSourcesToDisk, pathToWriteTo);
     }
 
     public Generate generateOnly(boolean writeJavaSourcesToDisk, Path pathToWriteTo)
     {
-        return generateOnly(getSourcesToCompile(), writeJavaSourcesToDisk, pathToWriteTo);
+        return generateOnly(false, writeJavaSourcesToDisk, pathToWriteTo);
+    }
+
+    public Generate generateOnly(boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
+    {
+        return generateOnly(getSourcesToCompile(), modularMetadataIds, writeJavaSourcesToDisk, pathToWriteTo);
     }
 
     public PureJavaCompiler compile() throws PureJavaCompileException
@@ -133,33 +164,56 @@ public class JavaStandaloneLibraryGenerator
         compileAndWriteClasses(jarOutputStream);
     }
 
-    private PureJavaCompiler compile(SortedMap<String, MutableList<Source>> sourcesToCompile, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
+    private PureJavaCompiler compile(SortedMap<String, MutableList<Source>> sourcesToCompile, boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo) throws PureJavaCompileException
     {
-        JavaSourceCodeGenerator javaSourceCodeGenerator = getSourceCodeGenerator(writeJavaSourcesToDisk, pathToWriteTo);
         GenerateAndCompile generateAndCompile = new GenerateAndCompile();
-        generateAndCompile.generateAndCompileJavaCodeForSources(sourcesToCompile, javaSourceCodeGenerator);
-        if (this.addExternalAPI)
+        if (modularMetadataIds)
         {
-            generateAndCompile.generateAndCompileExternalizableAPI(javaSourceCodeGenerator, this.externalAPIPackage);
+            generateAndCompile.generateAndCompileJavaCodeForSources(sourcesToCompile, group -> getSourceCodeGenerator(group, writeJavaSourcesToDisk, pathToWriteTo));
+            if (this.addExternalAPI)
+            {
+                generateAndCompile.generateAndCompileExternalizableAPI(getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo), this.externalAPIPackage);
+            }
+        }
+        else
+        {
+            JavaSourceCodeGenerator javaSourceCodeGenerator = getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo);
+            generateAndCompile.generateAndCompileJavaCodeForSources(sourcesToCompile, javaSourceCodeGenerator);
+            if (this.addExternalAPI)
+            {
+                generateAndCompile.generateAndCompileExternalizableAPI(javaSourceCodeGenerator, this.externalAPIPackage);
+            }
         }
         return generateAndCompile.getPureJavaCompiler();
     }
 
-    private Generate generateOnly(SortedMap<String, MutableList<Source>> sourcesToCompile, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
+    private Generate generateOnly(SortedMap<String, MutableList<Source>> sourcesToCompile, boolean modularMetadataIds, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
     {
-        JavaSourceCodeGenerator javaSourceCodeGenerator = getSourceCodeGenerator(writeJavaSourcesToDisk, pathToWriteTo);
         Generate generate = new Generate();
-        generate.generateJavaCodeForSources(sourcesToCompile, javaSourceCodeGenerator);
-        if (this.addExternalAPI)
+        if (modularMetadataIds)
         {
-            generate.generateExternalizableAPI(javaSourceCodeGenerator, this.externalAPIPackage);
+            generate.generateJavaCodeForSources(sourcesToCompile, group -> getSourceCodeGenerator("$" + group + "$", writeJavaSourcesToDisk, pathToWriteTo));
+            if (this.addExternalAPI)
+            {
+                generate.generateExternalizableAPI(getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo), this.externalAPIPackage);
+            }
+        }
+        else
+        {
+            JavaSourceCodeGenerator javaSourceCodeGenerator = getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo);
+            generate.generateJavaCodeForSources(sourcesToCompile, javaSourceCodeGenerator);
+            if (this.addExternalAPI)
+            {
+                generate.generateExternalizableAPI(javaSourceCodeGenerator, this.externalAPIPackage);
+            }
         }
         return generate;
     }
 
-    private JavaSourceCodeGenerator getSourceCodeGenerator(boolean writeJavaSourcesToDisk, Path pathToWriteTo)
+    private JavaSourceCodeGenerator getSourceCodeGenerator(String idPrefix, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
     {
-        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(this.runtime.getProcessorSupport(), this.runtime.getCodeStorage(), writeJavaSourcesToDisk, pathToWriteTo, false, this.extensions, "UserCode", this.externalAPIPackage);
+        IdBuilder idBuilder = IdBuilder.newIdBuilder(idPrefix, this.runtime.getProcessorSupport());
+        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(this.runtime.getProcessorSupport(), idBuilder, this.runtime.getCodeStorage(), writeJavaSourcesToDisk, pathToWriteTo, false, this.extensions, "UserCode", this.externalAPIPackage);
         javaSourceCodeGenerator.collectClassesToSerialize();
         return javaSourceCodeGenerator;
     }
@@ -196,7 +250,7 @@ public class JavaStandaloneLibraryGenerator
     private SortedMap<String, MutableList<Source>> getSourcesToCompile(Predicate<String> repoFilter)
     {
         MutableMap<String, MutableList<Source>> sourcesByRepo = groupSourcesByRepo(repoFilter);
-        SortedMap<String, MutableList<Source>> sortedMap = new TreeMap<>(new RepositoryComparator(runtime.getCodeStorage().getAllRepositories()));
+        SortedMap<String, MutableList<Source>> sortedMap = new TreeMap<>(new RepositoryComparator(this.runtime.getCodeStorage().getAllRepositories()));
         sortedMap.putAll(sourcesByRepo);
         return sortedMap;
     }

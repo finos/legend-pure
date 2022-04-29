@@ -307,14 +307,14 @@ class DistributedBinaryRepositorySerializer extends DistributedBinaryGraphSerial
         }
     }
 
-    private class PackageableElementUpdate<E extends PackageableElement> extends InstanceUpdate<E>
+    private class PackageableElementUpdate<E extends CoreInstance> extends InstanceUpdate<E>
     {
         private final MutableSet<ReferenceUsage> refUsages = Sets.mutable.empty();
 
         protected PackageableElementUpdate(E instance)
         {
             super(instance);
-            instance._referenceUsages().asLazy()
+            ((PackageableElement)instance)._referenceUsages().asLazy()
                     .select(r -> isInRepository(AnyStubHelper.fromStub(r._ownerCoreInstance())))
                     .forEach(this.refUsages::add);
         }

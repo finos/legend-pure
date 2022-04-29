@@ -27,6 +27,7 @@ import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.statelistener.JavaCompilerEventObserver;
 
 import java.util.SortedMap;
+import java.util.function.Function;
 
 /**
  * Utility that generates and compiles
@@ -66,8 +67,7 @@ public class GenerateAndCompile
         return this.pureJavaCompiler;
     }
 
-
-    public void generateAndCompileJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, JavaSourceCodeGenerator sourceCodeGenerator)
+    void generateAndCompileJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, Function<? super String, ? extends JavaSourceCodeGenerator> sourceCodeGeneratorFn)
     {
         if (this.message != null)
         {
@@ -85,7 +85,7 @@ public class GenerateAndCompile
             {
                 if (!PlatformCodeRepository.NAME.equals(compileGroup) && sources.notEmpty())
                 {
-                    ListIterable<StringJavaSource> compileGroupJavaSources = this.generate.generate(compileGroup, sources, sourceCodeGenerator, sourceCounter, totalSourceCount);
+                    ListIterable<StringJavaSource> compileGroupJavaSources = this.generate.generate(compileGroup, sources, sourceCodeGeneratorFn.apply(compileGroup), sourceCounter, totalSourceCount);
                     try
                     {
                         this.compile.compile(compileGroup, compileGroupJavaSources);
@@ -97,6 +97,11 @@ public class GenerateAndCompile
                 }
             });
         }
+    }
+
+    public void generateAndCompileJavaCodeForSources(SortedMap<String, ? extends RichIterable<? extends Source>> compiledSourcesByRepo, JavaSourceCodeGenerator sourceCodeGenerator)
+    {
+        generateAndCompileJavaCodeForSources(compiledSourcesByRepo, compileGroup -> sourceCodeGenerator);
     }
 
     void generateAndCompileExternalizableAPI(JavaSourceCodeGenerator sourceCodeGenerator, String externalAPIPackage) throws PureJavaCompileException

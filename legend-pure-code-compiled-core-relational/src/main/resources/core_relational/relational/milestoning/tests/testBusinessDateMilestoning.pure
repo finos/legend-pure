@@ -366,8 +366,7 @@ function <<test.Test>> meta::relational::tests::milestoning::businessdate::testB
    assertSameSQL('select "ordertable_1".type as "productType" from OrderTable as "root" left outer join ProductTable as "producttable_0" on ("root".prodFk = "producttable_0".id and "producttable_0".from_z <= "root".orderDate and "producttable_0".thru_z > "root".orderDate) left outer join (select "ordertable_2".id as id, "orderdetailstable_0".settlementDate as settlementDate, "producttable_1".type as type from OrderTable as "ordertable_2" left outer join ProductTable as "producttable_1" on ("ordertable_2".prodFk = "producttable_1".id) left outer join OrderDetailsTable as "orderdetailstable_0" on ("ordertable_2".id = "orderdetailstable_0".id) where "producttable_1".from_z <= "orderdetailstable_0".settlementDate and "producttable_1".thru_z > "orderdetailstable_0".settlementDate) as "ordertable_1" on ("root".id = "ordertable_1".id) where "producttable_0".type = \'STOCK\'',$result);
 }
 
-//Alloy Exclusion Reason : Date propagation Not Supported
-function <<test.Test , test.ExcludeAlloy>> meta::relational::tests::milestoning::businessdate::testBusinessDateInjectionFromParentVarReferenceWithProject():Boolean[1]
+function <<test.Test>> meta::relational::tests::milestoning::businessdate::testBusinessDateInjectionFromParentVarReferenceWithProject():Boolean[1]
 {
    let result = execute(|Order.all()->filter(o|$o.product($o.orderDate->toOne()).type=='STOCK')->project(o|$o.product($o.orderDate->toOne())->map(p|$p.classification.type)->first(),'productType'), milestoningmap, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
    let tds = $result.values->at(0);
@@ -739,8 +738,7 @@ function <<test.Test>> meta::relational::tests::milestoning::businessdate::testF
 
 }
 
-//Alloy Exclusion Reason: Date Propagation
-function <<test.Test, test.ExcludeAlloy>> meta::relational::tests::milestoning::businessdate::testIsolationOfMilestoningFiltersReferencedInAllPartsOfIfStmt():Boolean[1]
+function <<test.Test>> meta::relational::tests::milestoning::businessdate::testIsolationOfMilestoningFiltersReferencedInAllPartsOfIfStmt():Boolean[1]
 {
     let result = execute(|Order.all()->filter(o| $o.productName(%2015-8-15) == 'ProductName' ), milestoningmap, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions());
     let orders = $result.values;
