@@ -17,14 +17,13 @@ package org.finos.legend.pure.m2.relational.serialization.grammar.v1;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalGraphBuilder;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.navigation.EmbeddedRelationalInstanceSetImplementationNavigationHandler;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.navigation.FilterMappingNavigationHandler;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.navigation.JoinTreeNodeNavigationHandler;
@@ -32,7 +31,6 @@ import org.finos.legend.pure.m2.relational.serialization.grammar.v1.navigation.R
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.navigation.RelationalPropertyMappingNavigationHandler;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.navigation.TableAliasColumnNavigationHandler;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.navigation.TableAliasNavigationHandler;
-import org.finos.legend.pure.m2.relational.serialization.grammar.v1.antlr.RelationalGraphBuilder;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.DatabaseProcessor;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.RelationalAssociationImplementationProcessor;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.processor.RelationalInstanceSetImplementationProcessor;
@@ -112,7 +110,7 @@ public class RelationalParser implements IRelationalParser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+//                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseDefinition(false, code, sourceName, addLines, offset, repository, listener, context, count, importId);
             }
             else
@@ -141,7 +139,7 @@ public class RelationalParser implements IRelationalParser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+//                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseMapping(false, content, id, extendsId, setSourceInfo, root, classPath, classSourceInfo, mappingPath, sourceName, offset, importId, repository, context);
             }
             else
@@ -178,7 +176,7 @@ public class RelationalParser implements IRelationalParser
         {
             if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
+//                System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseMilestoningDefinition(false, type, content, sourceName, rowOffset, colOffset, importId);
             }
             else
@@ -191,31 +189,31 @@ public class RelationalParser implements IRelationalParser
     @Override
     public RichIterable<MatchRunner> getProcessors()
     {
-        return FastList.<MatchRunner>newListWith(new DatabaseProcessor(), new RelationalInstanceSetImplementationProcessor(), new RelationalAssociationImplementationProcessor());
+        return Lists.immutable.with(new DatabaseProcessor(), new RelationalInstanceSetImplementationProcessor(), new RelationalAssociationImplementationProcessor());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadWalkers()
     {
-        return Lists.immutable.<MatchRunner>with(new DatabaseUnloadWalker(), new TableAliasUnloadWalker(), new TableAliasColumnUnloadWalker(), new JoinTreeNodeUnloadWalker(), new FilterMappingUnloadWalker());
+        return Lists.immutable.with(new DatabaseUnloadWalker(), new TableAliasUnloadWalker(), new TableAliasColumnUnloadWalker(), new JoinTreeNodeUnloadWalker(), new FilterMappingUnloadWalker());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadUnbinders()
     {
-        return Lists.immutable.<MatchRunner>with(new DatabaseUnloadUnbind(), new RelationalInstanceSetImplementationUnloadUnbind(), new RelationalAssociationImplementationUnbind());
+        return Lists.immutable.with(new DatabaseUnloadUnbind(), new RelationalInstanceSetImplementationUnloadUnbind(), new RelationalAssociationImplementationUnbind());
     }
 
     @Override
     public RichIterable<MatchRunner> getValidators()
     {
-        return Lists.immutable.<MatchRunner>with(new RelationalInstanceSetImplementationValidator(), new RelationalAssociationImplementationValidator());
+        return Lists.immutable.with(new RelationalInstanceSetImplementationValidator(), new RelationalAssociationImplementationValidator());
     }
 
     @Override
     public RichIterable<NavigationHandler> getNavigationHandlers()
     {
-        return Lists.immutable.<NavigationHandler>with(new TableAliasNavigationHandler(), new JoinTreeNodeNavigationHandler(), new TableAliasColumnNavigationHandler(), new FilterMappingNavigationHandler(), new RelationalAssociationImplementationNavigationHandler(), new RelationalPropertyMappingNavigationHandler(), new EmbeddedRelationalInstanceSetImplementationNavigationHandler());
+        return Lists.immutable.with(new TableAliasNavigationHandler(), new JoinTreeNodeNavigationHandler(), new TableAliasColumnNavigationHandler(), new FilterMappingNavigationHandler(), new RelationalAssociationImplementationNavigationHandler(), new RelationalPropertyMappingNavigationHandler(), new EmbeddedRelationalInstanceSetImplementationNavigationHandler());
     }
 
     @Override
