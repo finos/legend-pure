@@ -311,27 +311,37 @@ function meta::pure::functions::meta::reverseProperties(class:Class<Any>[1]):Pro
 
 function meta::pure::functions::meta::findExpressionsForFunctionInValueSpecification(vs:ValueSpecification[1], funcs:Function<Any>[*]):FunctionExpression[*]
 {
+   findExpressionsForFunctionInValueSpecification($vs, $funcs, []);
+}
+
+function <<access.private>> meta::pure::functions::meta::findExpressionsForFunctionInValueSpecification(vs:ValueSpecification[1], funcs:Function<Any>[*], visitedConcreteFuncs:ConcreteFunctionDefinition<Any>[*]):FunctionExpression[*]
+{
    $vs->match([fe:FunctionExpression[1] | 
-                                            let res = $fe.parametersValues->map(v | $v->findExpressionsForFunctionInValueSpecification($funcs));
+                                            let res = $fe.parametersValues->map(v | $v->findExpressionsForFunctionInValueSpecification($funcs, $visitedConcreteFuncs));
                                             if ( !($fe.func->instanceOf(Property) || $fe.func->instanceOf(QualifiedProperty)) && ($funcs->isEmpty() || $fe.func->in($funcs)), 
                                             | [$fe]->concatenate($res), 
                                             | $fe.func->match([
-                                                            fd:ConcreteFunctionDefinition<Any>[1] | $fd->findExpressionsForFunctionInFunctionDefinition($funcs),
+                                                            fd:ConcreteFunctionDefinition<Any>[1] | if($fd->in($visitedConcreteFuncs),|$res ,|$fd->findExpressionsForFunctionInFunctionDefinition($funcs, $visitedConcreteFuncs)),
                                                             a:Any[1] | $res
                                                             ]););,
                i:InstanceValue[1] | $i.values->map( v |
-                                                         $v->match([a: ValueSpecification[1] | $a->findExpressionsForFunctionInValueSpecification($funcs);,
-                                                         k : KeyExpression[1] | $k.expression->findExpressionsForFunctionInValueSpecification($funcs);,
-                                                         l : LambdaFunction<Any>[1] | $l.expressionSequence->map(e | $e->findExpressionsForFunctionInValueSpecification($funcs));,
+                                                         $v->match([a: ValueSpecification[1] | $a->findExpressionsForFunctionInValueSpecification($funcs, $visitedConcreteFuncs);,
+                                                         k : KeyExpression[1] | $k.expression->findExpressionsForFunctionInValueSpecification($funcs, $visitedConcreteFuncs);,
+                                                         l : LambdaFunction<Any>[1] | $l.expressionSequence->map(e | $e->findExpressionsForFunctionInValueSpecification($funcs, $visitedConcreteFuncs));,
                                                          a:Any[1] | []]););,
-             ve:VariableExpression[1] | []]
+               ve:VariableExpression[1] | []]
           );
 
 }
 
 function meta::pure::functions::meta::findExpressionsForFunctionInFunctionDefinition(func:FunctionDefinition<Any>[1], funcs:Function<Any>[*]):FunctionExpression[*]
 {
-   $func.expressionSequence->evaluateAndDeactivate()->map(vs | $vs->findExpressionsForFunctionInValueSpecification($funcs));
+   findExpressionsForFunctionInFunctionDefinition($func, $funcs, []);
+}
+
+function <<access.private>> meta::pure::functions::meta::findExpressionsForFunctionInFunctionDefinition(func:FunctionDefinition<Any>[1], funcs:Function<Any>[*], visitedConcreteFuncs:ConcreteFunctionDefinition<Any>[*]):FunctionExpression[*]
+{
+   $func.expressionSequence->evaluateAndDeactivate()->map(vs | $vs->findExpressionsForFunctionInValueSpecification($funcs, $visitedConcreteFuncs->add($func->cast(@ConcreteFunctionDefinition<Any>))));
 }
 
 function meta::pure::functions::meta::findPropertiesInValueSpecification(vs:ValueSpecification[1]):AbstractProperty<Any>[*]
