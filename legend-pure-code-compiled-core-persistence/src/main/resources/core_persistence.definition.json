@@ -1,5 +1,0 @@
-{
-  "name" : "core_persistence",
-  "pattern" : "(meta)(::.*)?",
-  "dependencies" : ["platform", "core", "core_external_shared"]
-}

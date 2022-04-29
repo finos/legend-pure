@@ -16,13 +16,11 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>org.finos</groupId>
         <artifactId>finos</artifactId>
         <version>4</version>
     </parent>
-
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
@@ -63,14 +61,7 @@
         <module>legend-pure-code-compiled-platform-par</module>
         <module>legend-pure-code-compiled-platform-java</module>
         <module>legend-pure-code-compiled-core</module>
-        <module>legend-pure-code-compiled-core-persistence</module>
-        <module>legend-pure-code-compiled-core-relational</module>
-        <module>legend-pure-code-compiled-core-servicestore</module>
         <module>legend-pure-code-compiled-core-external-shared</module>
-        <module>legend-pure-code-compiled-core-external-format-flatdata</module>
-        <module>legend-pure-code-compiled-core-external-format-json</module>
-        <module>legend-pure-code-compiled-core-external-format-xml</module>
-        <module>legend-pure-code-compiled-core-external-query-graphql</module>
         <module>legend-pure-code-compiled-tests</module>
 
         <module>legend-pure-maven-compilation-par</module>
@@ -442,42 +433,7 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-compiled-core-persistence</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-compiled-core-relational</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-compiled-core-servicestore</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-code-compiled-core-external-shared</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-compiled-core-external-format-xml</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-compiled-core-external-format-flatdata</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-compiled-core-external-format-json</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.finos.legend.pure</groupId>
-                <artifactId>legend-pure-code-compiled-core-external-query-graphql</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -528,6 +484,11 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-m3-dsl-graph</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-ide-light</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -994,6 +955,11 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-code-compiled-tests</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.test-framework</groupId>
