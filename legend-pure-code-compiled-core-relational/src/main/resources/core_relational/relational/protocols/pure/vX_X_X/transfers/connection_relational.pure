@@ -175,6 +175,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
       s:meta::pure::alloy::connections::alloy::specification::StaticDatasourceSpecification[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::StaticDatasourceSpecification(
             _type = 'static',
+            tempTableIsolationStrategy = $s.tempTableIsolationStrategy,
             host = $s.host,
             port = $s.port,
             databaseName = $s.databaseName
@@ -182,6 +183,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
       e:meta::pure::alloy::connections::alloy::specification::EmbeddedH2DatasourceSpecification[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::EmbeddedH2DatasourceSpecification(
             _type = 'h2Embedded',
+            tempTableIsolationStrategy = $e.tempTableIsolationStrategy,
             databaseName = $e.databaseName,
             directory = $e.directory,
             autoServerMode = $e.autoServerMode
@@ -189,12 +191,14 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
       l:meta::pure::alloy::connections::alloy::specification::LocalH2DatasourceSpecification[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::LocalH2DatasourceSpecification(
              _type = 'h2Local',
+             tempTableIsolationStrategy = $l.tempTableIsolationStrategy,
              testDataSetupCsv = $l.testDataSetupCsv,
              testDataSetupSqls = $l.testDataSetupSqls
          ),
        d:meta::pure::alloy::connections::alloy::specification::DatabricksDatasourceSpecification[1] |
           ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatabricksDatasourceSpecification(
               _type = 'databricks',
+              tempTableIsolationStrategy = $d.tempTableIsolationStrategy,
               hostname = $d.hostname,
               port = $d.port,
               protocol = $d.protocol,
@@ -203,6 +207,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
       s:meta::pure::alloy::connections::alloy::specification::SnowflakeDatasourceSpecification[1] |
         ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::SnowflakeDatasourceSpecification(
             _type = 'snowflake',
+            tempTableIsolationStrategy = $s.tempTableIsolationStrategy,
             accountName = $s.accountName,
             region = $s.region,
             warehouseName = $s.warehouseName,
@@ -219,6 +224,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
       b:meta::pure::alloy::connections::alloy::specification::BigQueryDatasourceSpecification[1] |
          ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::BigQueryDatasourceSpecification(
              _type = 'bigQuery',
+             tempTableIsolationStrategy = $b.tempTableIsolationStrategy,
              projectId = $b.projectId,
              defaultDataset = $b.defaultDataset,
              proxyHost = $b.proxyHost,
@@ -227,6 +233,7 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::connectio
      r:meta::pure::legend::connections::legend::specification::RedshiftDatasourceSpecification[1] |
                                                   ^meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::legend::specification::RedshiftDatasourceSpecification(
                                                                    _type = 'redshift',
+                                                                   tempTableIsolationStrategy = $r.tempTableIsolationStrategy,
                                                                    clusterID = $r.clusterID,
                                                                    port =$r.port,
                                                                    region = $r.region,

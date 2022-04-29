@@ -175,4 +175,5 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::l
 Class <<typemodifiers.abstract>> meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
 {
    _type: String[1];
+   tempTableIsolationStrategy: meta::relational::commands::TempTableIsolationStrategy[0..1];
 }

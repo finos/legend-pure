@@ -471,6 +471,12 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::proce
       );
 }
 
+function  meta::relational::functions::sqlQueryToString::stringToPlaceHolder(s:String[1]):String[1]
+{
+   let l = ^Literal(value = ^VarPlaceHolder(name= $s, type = $s->type()));
+   $l.value->cast(@VarPlaceHolder)->processPlaceHolder($l.value->cast(@VarPlaceHolder)->getVariableType(), '', '', []);
+}
+
 function <<access.private>> meta::relational::functions::sqlQueryToString::isCollectionPlaceHolder(v:VarPlaceHolder[1]):Boolean[1]
 {
    $v.multiplicity->isNotEmpty() && $v.multiplicity == ZeroMany;
@@ -2587,4 +2593,80 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::trans
    let order = if($ascending == $trueVal, | 'asc', | 'desc');
 
    $func + '(' + $percentile + ') within group (order by ' + $column + ' ' + $order + ')';
+}
+
+Class meta::relational::commands::RelationalDatabaseCommandsProvider
+{
+   createTempTable: FunctionDefinition<{meta::relational::commands::CreateTempTableSQLQuery[1]->String[*]}>[0..1];
+   dropTempTable: FunctionDefinition<{meta::relational::commands::DropTempTableSQLQuery[1]->String[*]}>[0..1];
+   loadTempTable: FunctionDefinition<{meta::relational::commands::LoadTempTableSQLQuery[1]->String[*]}>[0..1];
+   rollbackLoadTempTable: FunctionDefinition<{meta::relational::commands::TruncateTempTableSQLQuery[1]->String[*]}>[0..1];
+   createSchema: FunctionDefinition<{meta::relational::commands::CreateSchemaSQLQuery[1]->String[*]}>[0..1];
+   dropSchema: FunctionDefinition<{meta::relational::commands::DropSchemaSQLQuery[1]->String[*]}>[0..1];
+   tempTablePath: FunctionDefinition<{Table[1]->String[1]}>[0..1];
+}
+
+function meta::relational::executionPlan::relationalCommands::translateToRelationalDatabaseCommands(command: meta::relational::commands::RelationalDatabaseSQLQueryCommands[1], dbType: DatabaseType[1]): meta::relational::commands::RelationalDatabaseCommands[1]
+{
+   ^meta::relational::commands::RelationalDatabaseCommands(
+                                        createSchema      = ^meta::relational::commands::RelationalDatabaseCommand(execute = getRelationalDatabaseCommandsProvider($dbType).createSchema->toOne()->eval($command.createSchema.execute) , rollback = getRelationalDatabaseCommandsProvider($dbType).dropSchema->toOne()->eval($command.createSchema.rollback)),
+                                        createTempTable   = ^meta::relational::commands::RelationalDatabaseCommand(execute = getRelationalDatabaseCommandsProvider($dbType).createTempTable->toOne()->eval($command.createTempTable.execute) , rollback = getRelationalDatabaseCommandsProvider($dbType).dropTempTable->toOne()->eval($command.createTempTable.rollback)),
+                                        loadTempTable     = ^meta::relational::commands::RelationalDatabaseCommand(execute = getRelationalDatabaseCommandsProvider($dbType).loadTempTable->toOne()->eval($command.loadTempTable.execute), rollback = getRelationalDatabaseCommandsProvider($dbType).rollbackLoadTempTable->toOne()->eval($command.loadTempTable.rollback))); 
+}
+
+function meta::relational::functions::sqlQueryToString::getRelationalDatabaseCommandsProvider(dbType: DatabaseType[1]): meta::relational::commands::RelationalDatabaseCommandsProvider[0..1]
+{
+   
+   if($dbType == DatabaseType.Snowflake,
+      |^meta::relational::commands::RelationalDatabaseCommandsProvider(
+         createTempTable = meta::relational::functions::sqlQueryToString::createTempTableForSnowflake_CreateTempTableSQLQuery_1__String_MANY_,
+         dropTempTable = meta::relational::functions::sqlQueryToString::dropTempTableForSnowflake_DropTempTableSQLQuery_1__String_MANY_,
+         loadTempTable = meta::relational::functions::sqlQueryToString::loadTempTableForSnowflake_LoadTempTableSQLQuery_1__String_MANY_,
+         rollbackLoadTempTable = meta::relational::functions::sqlQueryToString::rollbackLoadTempTableForSnowflake_TruncateTempTableSQLQuery_1__String_MANY_,
+         createSchema = meta::relational::functions::sqlQueryToString::createSchemaForSnowflake_CreateSchemaSQLQuery_1__String_MANY_,
+         dropSchema = meta::relational::functions::sqlQueryToString::dropSchemaForSnowflake_DropSchemaSQLQuery_1__String_MANY_,
+         tempTablePath = meta::relational::functions::sqlQueryToString::gernerateTableNameForSnowflake_Table_1__String_1_
+                                                                 ),
+      |[]);
+}
+
+function meta::relational::functions::sqlQueryToString::createTempTableForSnowflake(createTempTableSQLQuery:meta::relational::commands::CreateTempTableSQLQuery[1]): String[*]
+{
+   'CREATE LOCAL TEMP TABLE ' + $createTempTableSQLQuery.tempTable.schema.database.name->toOne() + '.'+$createTempTableSQLQuery.tempTable.schema.name->toOne() + '.' + $createTempTableSQLQuery.tempTable.name->toOne() + '('+$createTempTableSQLQuery.tempTable.columns->cast(@Column).name->toOne()+');';
+}
+
+function meta::relational::functions::sqlQueryToString::dropTempTableForSnowflake(dropTempTableSQLQuery: meta::relational::commands::DropTempTableSQLQuery[1]): String[*]
+{
+   'DROP TABLE IF EXISTS ' + $dropTempTableSQLQuery.tempTable.schema.database.name->toOne() + '.'+$dropTempTableSQLQuery.tempTable.schema.name->toOne() + '.'+$dropTempTableSQLQuery.tempTable.name->toOne()+';';
+}
+
+function meta::relational::functions::sqlQueryToString::loadTempTableForSnowflake(loadTempTableSQLQuery: meta::relational::commands::LoadTempTableSQLQuery[1]): String[*]
+{
+   let loadTempTableCommand = 'PUT file://'+$loadTempTableSQLQuery.csvFileLocationVarPlaceHolder->toOne() + ' \'@'+$loadTempTableSQLQuery.tempTable.schema.database.name->toOne() + '.'+$loadTempTableSQLQuery.tempTable.schema.name->toOne()+'.%' + $loadTempTableSQLQuery.tempTable.name->toOne() +  '\' PARALLEL= 16 AUTO_COMPRESS=TRUE;';
+   let copyIntoCommand = 'COPY INTO '+$loadTempTableSQLQuery.tempTable.schema.database.name->toOne() + '.'+$loadTempTableSQLQuery.tempTable.schema.name->toOne() + '.' + $loadTempTableSQLQuery.tempTable.name->toOne() + ' FROM \'@'+$loadTempTableSQLQuery.tempTable.schema.database.name->toOne() + '.'+$loadTempTableSQLQuery.tempTable.schema.name->toOne() + '.%' + $loadTempTableSQLQuery.tempTable.name->toOne() + '\' file_format = (type= CSV field_optionally_enclosed_by = \'"\' skip_header=1);';
+   [$loadTempTableCommand, $copyIntoCommand];
+}
+
+function meta::relational::functions::sqlQueryToString::rollbackLoadTempTableForSnowflake(truncateTempTableSQLQuery: meta::relational::commands::TruncateTempTableSQLQuery[1]): String[*]
+{
+   let truncateCommand = 'TRUNCATE TABLE IF EXISTS ' + $truncateTempTableSQLQuery.tempTable.schema.database.name->toOne() + '.'+ $truncateTempTableSQLQuery.tempTable.schema.name->toOne() + '.' + $truncateTempTableSQLQuery.tempTable.name->toOne() + ';'; 
+   let removeCommand = 'REMOVE \'@' + $truncateTempTableSQLQuery.tempTable.schema.database.name->toOne() + '.' + $truncateTempTableSQLQuery.tempTable.schema.name->toOne() + '.%' + $truncateTempTableSQLQuery.tempTable.name->toOne() + '\';';
+   [$truncateCommand, $removeCommand];
+}
+
+function meta::relational::functions::sqlQueryToString::createSchemaForSnowflake(createSchemaSQLQuery: meta::relational::commands::CreateSchemaSQLQuery[1]): String[*]
+{
+   let createSchemaCommand = 'CREATE SCHEMA IF NOT EXISTS ' + $createSchemaSQLQuery.tempTable.schema.database.name->toOne()+'.' + $createSchemaSQLQuery.tempTable.schema.name->toOne() + ';';
+   let useDbCommand = 'USE ' + $createSchemaSQLQuery.originalDatabaseVarPlaceHolder->toOne() + ';';
+   [$createSchemaCommand, $useDbCommand];
+}
+
+function meta::relational::functions::sqlQueryToString::dropSchemaForSnowflake(dropSchemaSQLQuery: meta::relational::commands::DropSchemaSQLQuery[1]): String[*]
+{
+   'DROP SCHEMA ' + $dropSchemaSQLQuery.tempTable.schema.database.name->toOne() + '.'+$dropSchemaSQLQuery.tempTable.schema.name->toOne() + ';';
+}
+
+function meta::relational::functions::sqlQueryToString::gernerateTableNameForSnowflake(tempTable: Table[1]): String[1]
+{
+   $tempTable.schema.database.name->toOne() + '.' + $tempTable.schema.name->toOne() + '.' + $tempTable.name->toOne();
 }

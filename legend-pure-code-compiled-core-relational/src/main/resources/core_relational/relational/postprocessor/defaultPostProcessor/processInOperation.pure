@@ -93,6 +93,9 @@ function meta::relational::postProcessor::processInOperation(query:SQLQuery[1], 
 
 function meta::relational::postProcessor::generatePostProcessorResult(changedFunctions:Pair<RelationalOperationElement, RelationalOperationElement>[*], query:SQLQuery[1], connection:DatabaseConnection[1], dbThreshold:Integer[1], runtime:Runtime[1], store:Database[1], exeCtx:ExecutionContext[1], extensions:RouterExtension[*]):PostProcessorResult[1]
 {
+   let supportedDbTypesForCreateAndPopulateTempTableNode = [DatabaseType.Snowflake, DatabaseType.H2, DatabaseType.SybaseIQ, DatabaseType.DB2, DatabaseType.MemSQL];
+   assert($supportedDbTypesForCreateAndPopulateTempTableNode->contains($connection.type), 'CreateAndPopulateTempTableNode currently does not support the following dbType: ' + $connection.type->toString());
+
    let getTypeLambda = {val:Any[1] |if($val->instanceOf(VarPlaceHolder), | $val->cast(@VarPlaceHolder).type, | $val->type())};
 
    $changedFunctions->fold({func, result |
@@ -102,8 +105,15 @@ function meta::relational::postProcessor::generatePostProcessorResult(changedFun
                           let outerAllocationNodeName               = if($newInFunction.parameters->at(1)->instanceOf(VarPlaceHolder),
                                                                          |$newInFunction.parameters->at(1)->cast(@VarPlaceHolder).name,
                                                                          |$newInFunction.parameters->at(1)->cast(@SelectSQLQuery).data.alias.name->toOne()->replace('tempTableForIn_', prefixForWrapperAllocationNodeName()));
-                          let tempTableName                         = $outerAllocationNodeName->replace(prefixForWrapperAllocationNodeName(), 'tempTableForIn_');
-                          let tempTableColumnName                   = 'ColumnForStoringInCollection';
+      
+                          let databaseVarName                       = 'db_name';
+                          let schemaVarName                         = 'schema_name';
+                          let tempTableVarName                      = 'temp_table_name';
+                          let tempTableColumnVarName                = 'columns';
+      
+                          let tempTable                             = meta::relational::executionPlan::relationalCommands::generateTempTableForSQLQueries($databaseVarName, $schemaVarName, $tempTableVarName, $tempTableColumnVarName);
+                          let relationalDatabaseSQLCommands             = meta::relational::executionPlan::relationalCommands::createRelationalDatabaseSQLQueryCommands($tempTable);
+                          
                           let allocationNodeName                    = $outerAllocationNodeName->replace(prefixForWrapperAllocationNodeName(), 'tempVarForIn_');
 
                           let collectionValues                      = $origInFunction.parameters->at(1)->cast(@LiteralList).values->map(l | $l.value);
@@ -115,7 +125,7 @@ function meta::relational::postProcessor::generatePostProcessorResult(changedFun
                           let collectionValuesWithoutVarPlaceHolder = $collectionValues->filter(val | !$val->instanceOf(VarPlaceHolder));
                           let varPlaceHoldersInCollection           = $collectionValues->filter(val | $val->instanceOf(VarPlaceHolder))->cast(@VarPlaceHolder);
 
-                          let selectSqlQueryForTempTable            = generateTempTableSelectSQLQuery('default', $tempTableName, $tempTableColumnName, meta::relational::transform::fromPure::pureTypeToDataTypeMap()->get($collectionValueType)->toOne());
+                          let selectSqlQueryForTempTable            = generateTempTableSelectSQLQuery('default', getRelationalDatabaseCommandsProvider($connection.type).tempTablePath->toOne()->eval($tempTable) , $tempTableColumnVarName, meta::relational::transform::fromPure::pureTypeToDataTypeMap()->get($collectionValueType)->toOne());
                           let processedResultForTempTable           = $selectSqlQueryForTempTable->postProcessSQLQuery($store->toOne(), [], ^Mapping(), $runtime, $exeCtx, $extensions);
 
                           let allocationNode                        = if($collectionValuesWithoutVarPlaceHolder->isNotEmpty(),
@@ -134,16 +144,20 @@ function meta::relational::postProcessor::generatePostProcessorResult(changedFun
 
                           let createAndPopulateTempTableNode        = ^CreateAndPopulateTempTableExecutionNode(
                                                                           inputVarNames           = $varPlaceHoldersInCollection.name->concatenate($allocationNode.varName),
-                                                                          tempTableName           = $tempTableName,
+                                                                          databaseName            = $databaseVarName, 
+                                                                          schemaName              = $schemaVarName,
+                                                                          tempTableName           = $tempTableVarName,
+                                                                          relationalDatabaseCommands = meta::relational::executionPlan::relationalCommands::translateToRelationalDatabaseCommands($relationalDatabaseSQLCommands, $connection.type),
                                                                           tempTableColumnMetaData = ^TempTableColumnMetaData(
-                                                                                                        column = ^SQLResultColumn(label = $tempTableColumnName,
+                                                                                                        column = ^SQLResultColumn(label = $tempTableColumnVarName,
                                                                                                                                   dataType = meta::relational::transform::fromPure::pureTypeToDataTypeMap()->get($collectionValueType)->toOne())
                                                                                                      ),
                                                                           connection              = $connection,
                                                                           resultType              = ^VoidResultType(type=Void)
                                                                        );
 
-                           let executionNodeToBeAdded               = if($collectionValues->size() > $dbThreshold,
+
+                          let executionNodeToBeAdded               = if($collectionValues->size() > $dbThreshold,
                                                                               | $allocationNode->concatenate($createAndPopulateTempTableNode),
                                                                               | let conditionString            = $varPlaceHoldersInCollection->map(var | 'collectionSize(' + $var.name + ')?number')
                                                                                                                                        ->concatenate(if($collectionValuesWithoutVarPlaceHolder->isEmpty(), | [], |$collectionValuesWithoutVarPlaceHolder->size()->toString()))
@@ -173,4 +187,51 @@ function meta::relational::postProcessor::generatePostProcessorResult(changedFun
                               |$result,
                               |^$result(executionNodes += $processedResultForTempTable.executionNodes->concatenate($executionNodeToBeAdded), postExecutionNodes +=$processedResultForTempTable.postExecutionNodes, templateFunctions +=$processedResultForTempTable.templateFunctions));
             }, ^PostProcessorResult(query = $query));
+}
+
+function meta::relational::executionPlan::relationalCommands::createRelationalDatabaseSQLQueryCommands(tempTable: Table[1]): meta::relational::commands::RelationalDatabaseSQLQueryCommands[1]
+{
+   ^meta::relational::commands::RelationalDatabaseSQLQueryCommands(
+                                        createSchema      = ^meta::relational::commands::RelationalDatabaseSQLQueryCommand(execute = meta::relational::executionPlan::relationalCommands::getCreateSchemaSQLQuery($tempTable) , rollback = meta::relational::executionPlan::relationalCommands::getDropSchemaSQLQuery($tempTable)),
+                                        createTempTable   = ^meta::relational::commands::RelationalDatabaseSQLQueryCommand(execute = meta::relational::executionPlan::relationalCommands::getCreateTempTableSQLQuery($tempTable), rollback = meta::relational::executionPlan::relationalCommands::getDropTempTableSQLQuery($tempTable)),
+                                        loadTempTable     = ^meta::relational::commands::RelationalDatabaseSQLQueryCommand(execute = meta::relational::executionPlan::relationalCommands::getLoadTempTableSQLQuery($tempTable), rollback = meta::relational::executionPlan::relationalCommands::getTruncateTempTableSQLQuery($tempTable)));
+}
+
+function meta::relational::executionPlan::relationalCommands::generateTempTableForSQLQueries(databaseVarName: String[1], schemaVarName: String[1], tempTableVarName: String[1], columnVarName: String[1]): Table[1]
+{
+   ^Table(name = stringToPlaceHolder($tempTableVarName),
+          columns = ^Column(name = stringToPlaceHolder($columnVarName) , type = meta::relational::transform::fromPure::pureTypeToDataTypeMap()->get($columnVarName->type())->toOne()),
+          schema = ^Schema (name = stringToPlaceHolder($schemaVarName), database = ^Database(name= stringToPlaceHolder($databaseVarName))),
+          temporaryTable = true
+       );
+}
+
+function meta::relational::executionPlan::relationalCommands::getCreateTempTableSQLQuery(tempTable: Table[1]): meta::relational::commands::CreateTempTableSQLQuery[1]
+{
+   ^meta::relational::commands::CreateTempTableSQLQuery(tempTable = $tempTable);
+}
+
+function meta::relational::executionPlan::relationalCommands::getDropTempTableSQLQuery(tempTable: Table[1]): meta::relational::commands::DropTempTableSQLQuery[1]
+{
+   ^meta::relational::commands::DropTempTableSQLQuery(tempTable = $tempTable);
+}
+
+function meta::relational::executionPlan::relationalCommands::getLoadTempTableSQLQuery(tempTable: Table[1]): meta::relational::commands::LoadTempTableSQLQuery[1]
+{
+   ^meta::relational::commands::LoadTempTableSQLQuery(tempTable = $tempTable, csvFileLocationVarPlaceHolder = stringToPlaceHolder('csv_file_location'));
+}
+
+function meta::relational::executionPlan::relationalCommands::getTruncateTempTableSQLQuery(tempTable: Table[1]): meta::relational::commands::TruncateTempTableSQLQuery[1]
+{
+   ^meta::relational::commands::TruncateTempTableSQLQuery(tempTable = $tempTable);
+}
+
+function meta::relational::executionPlan::relationalCommands::getCreateSchemaSQLQuery(tempTable: Table[1]): meta::relational::commands::CreateSchemaSQLQuery[1]
+{
+   ^meta::relational::commands::CreateSchemaSQLQuery(tempTable = $tempTable, originalDatabaseVarPlaceHolder = stringToPlaceHolder('original_database'));
+}
+
+function meta::relational::executionPlan::relationalCommands::getDropSchemaSQLQuery(tempTable: Table[1]): meta::relational::commands::DropSchemaSQLQuery[1]
+{
+   ^meta::relational::commands::DropSchemaSQLQuery(tempTable = $tempTable);
 }

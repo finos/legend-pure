@@ -81,8 +81,43 @@ Class meta::relational::mapping::CreateAndPopulateTempTableExecutionNode extends
 {
    inputVarNames            : String[*];
    tempTableName            : String[1];
+   databaseName             : String[0..1];
+   schemaName               : String[0..1];
+   relationalDatabaseCommands: meta::relational::commands::RelationalDatabaseCommands[0..1];
    tempTableColumnMetaData  : TempTableColumnMetaData[*];
    connection               : DatabaseConnection[1];
+}
+
+Class meta::relational::commands::RelationalDatabaseCommands
+{
+   createSchema          : meta::relational::commands::RelationalDatabaseCommand[0..1];
+   createTempTable       : meta::relational::commands::RelationalDatabaseCommand[0..1];
+   loadTempTable         : meta::relational::commands::RelationalDatabaseCommand[0..1];
+}
+
+Class meta::relational::commands::RelationalDatabaseCommand
+{
+   execute: String[*];
+   rollback: String[*];
+}
+
+Class meta::relational::commands::RelationalDatabaseSQLQueryCommands
+{
+   createSchema          : meta::relational::commands::RelationalDatabaseSQLQueryCommand[0..1];
+   createTempTable       : meta::relational::commands::RelationalDatabaseSQLQueryCommand[0..1];
+   loadTempTable         : meta::relational::commands::RelationalDatabaseSQLQueryCommand[0..1];
+}
+
+Class meta::relational::commands::RelationalDatabaseSQLQueryCommand
+{
+   execute: meta::relational::metamodel::SQLQuery[*];
+   rollback: meta::relational::metamodel::SQLQuery[*];
+}
+
+Enum meta::relational::commands::TempTableIsolationStrategy
+{
+    ISOLATION_BY_USER_DB,
+    DEFAULT
 }
 
 Class meta::pure::executionPlan::RelationalBlockExecutionNode extends meta::pure::executionPlan::SequenceExecutionNode

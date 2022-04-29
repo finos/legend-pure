@@ -41,3 +41,35 @@ Class meta::relational::metamodel::DataRow
 {
    values : Any[*];
 }
+
+Class meta::relational::commands::CreateTempTableSQLQuery extends SQLQuery
+{
+   tempTable: Table[0..1];
+}
+
+Class meta::relational::commands::DropTempTableSQLQuery extends SQLQuery
+{
+   tempTable: Table[0..1];
+}
+
+Class meta::relational::commands::LoadTempTableSQLQuery extends SQLQuery
+{
+   tempTable: Table[0..1];
+   csvFileLocationVarPlaceHolder: String[0..1];
+}
+
+Class meta::relational::commands::TruncateTempTableSQLQuery extends SQLQuery
+{
+   tempTable: Table[0..1];
+}
+
+Class meta::relational::commands::CreateSchemaSQLQuery extends SQLQuery
+{
+   tempTable: Table[0..1];
+   originalDatabaseVarPlaceHolder: String[0..1];
+}
+
+Class meta::relational::commands::DropSchemaSQLQuery extends SQLQuery
+{
+   tempTable: Table[0..1];
+} 

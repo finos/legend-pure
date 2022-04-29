@@ -90,9 +90,26 @@ Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::CreateAndPopulate
 {
    inputVarNames               : String[*];
    tempTableName               : String[1];
+   databaseName                : String[0..1];
+   schemaName                  : String[0..1];
    tempTableColumnMetaData     : meta::protocols::pure::vX_X_X::metamodel::executionPlan::TempTableColumnMetaData[*];
    connection                  : meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::DatabaseConnection[1];
+   relationalDatabaseCommands  : meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalDatabaseCommands[0..1];
 }
+
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalDatabaseCommands 
+{
+   createSchema          : meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalDatabaseCommand[0..1];
+   createTempTable       : meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalDatabaseCommand[0..1];
+   loadTempTable         : meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalDatabaseCommand[0..1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::RelationalDatabaseCommand
+{
+   execute: String[*];
+   rollback: String[*];
+}
+
 Class meta::protocols::pure::vX_X_X::metamodel::executionPlan::SQLResultColumn
 {
    label : String[1];
