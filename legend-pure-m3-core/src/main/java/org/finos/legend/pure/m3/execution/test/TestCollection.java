@@ -15,10 +15,13 @@
 package org.finos.legend.pure.m3.execution.test;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.block.factory.Predicates;
 import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -27,6 +30,7 @@ import org.finos.legend.pure.m3.execution.ExecutionPlatformRegistry;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.coreinstance.primitive.StringCoreInstance;
 
 public class TestCollection
 {
@@ -57,6 +61,9 @@ public class TestCollection
     };
 
     private final CoreInstance pkg;
+    private String testParameterizationId;
+    private Object testFunctionParam;
+    private CoreInstance testFunctionParamCustomizer;
     private final Predicate<? super CoreInstance> testFilter;
     private MutableList<CoreInstance> beforeFunctions = Lists.mutable.with();
     private final MutableList<CoreInstance> testFunctions = Lists.mutable.with();
@@ -65,16 +72,22 @@ public class TestCollection
     private final MutableList<CoreInstance> alloyOnlyFunctions = Lists.mutable.with();
     private final MutableList<TestCollection> subCollections = Lists.mutable.with();
 
-    private TestCollection(CoreInstance testPackage, ProcessorSupport processorSupport, Predicate<? super CoreInstance> testFilter, boolean getBeforeAfterFromParents)
+    private TestCollection(CoreInstance testPackage, ProcessorSupport processorSupport, Function<CoreInstance, TestCollection> pureTestCollectionGenerator, Predicate<? super CoreInstance> testFilter, boolean getBeforeAfterFromParents)
     {
         this.pkg = testPackage;
         this.testFilter = testFilter;
-        findPackageTests(processorSupport);
+        findPackageTests(processorSupport, pureTestCollectionGenerator);
         if (getBeforeAfterFromParents)
         {
             findBeforeAfterForParents(testPackage, processorSupport);
         }
         pruneBeforeAfters(processorSupport);
+    }
+
+    private TestCollection(CoreInstance testPackage)
+    {
+        this.pkg = testPackage;
+        this.testFilter = DEFAULT_FILTER_PREDICATE;
     }
 
     /**
@@ -161,6 +174,13 @@ public class TestCollection
     {
         MutableList<CoreInstance> tests = Lists.mutable.with();
         collectAllTests(tests, includeAlloyOnly);
+        return tests;
+    }
+
+    public MutableList<Pair<CoreInstance, String>> getAllTestFunctionsWithParameterizations(boolean includeAlloyOnly)
+    {
+        MutableList<Pair<CoreInstance, String>> tests = Lists.mutable.with();
+        collectAllTestsWithParameterizations(tests, includeAlloyOnly);
         return tests;
     }
 
@@ -253,6 +273,36 @@ public class TestCollection
         return this.subCollections.asUnmodifiable();
     }
 
+    /**
+     * Get id identifying the parameterization, in case test function params are provided
+     *
+     * @return test-parameterization-id
+     */
+    public String getTestParameterizationId()
+    {
+        return this.testParameterizationId;
+    }
+
+    /**
+     * Get param to be passed to test functions while executing them
+     *
+     * @return test-function-param
+     */
+    public Object getTestFunctionParam()
+    {
+        return this.testFunctionParam;
+    }
+
+    /**
+     * Get test function param customizer
+     *
+     * @return test-function-param-customizer
+     */
+    public CoreInstance getTestFunctionParamCustomizer()
+    {
+        return this.testFunctionParamCustomizer;
+    }
+
     private void collectAllTests(MutableList<CoreInstance> tests, boolean includeAlloyOnly)
     {
         tests.addAll(this.testFunctions);
@@ -263,6 +313,19 @@ public class TestCollection
         for (TestCollection subCollection : this.subCollections)
         {
             subCollection.collectAllTests(tests, includeAlloyOnly);
+        }
+    }
+
+    private void collectAllTestsWithParameterizations(MutableList<Pair<CoreInstance, String>> tests, boolean includeAlloyOnly)
+    {
+        tests.addAll(this.testFunctions.collect(t -> Tuples.pair(t, this.testParameterizationId)));
+        if (includeAlloyOnly)
+        {
+            tests.addAll(this.alloyOnlyFunctions.collect(t -> Tuples.pair(t, this.testParameterizationId)));
+        }
+        for (TestCollection subCollection : this.subCollections)
+        {
+            subCollection.collectAllTestsWithParameterizations(tests, includeAlloyOnly);
         }
     }
 
@@ -344,7 +407,7 @@ public class TestCollection
                 || this.subCollections.anySatisfy(subcollectionContainTestInPackage);
     }
 
-    private void findPackageTests(ProcessorSupport processorSupport)
+    private void findPackageTests(ProcessorSupport processorSupport, Function<CoreInstance, TestCollection> pureTestCollectionGenerator)
     {
         for (CoreInstance child : Instance.getValueForMetaPropertyToManyResolved(this.pkg, M3Properties.children, processorSupport))
         {
@@ -372,17 +435,104 @@ public class TestCollection
                     {
                         this.testFunctions.add(child);
                     }
+                    else if (TestTools.hasTestCollectionStereotype(child, processorSupport))
+                    {
+                        this.subCollections.add(pureTestCollectionGenerator.apply(child));
+                    }
                 }
             }
             else if (Instance.instanceOf(child, M3Paths.Package, processorSupport))
             {
-                TestCollection subCollection = new TestCollection(child, processorSupport, this.testFilter, false);
+                TestCollection subCollection = new TestCollection(child, processorSupport, pureTestCollectionGenerator, this.testFilter, false);
                 // only add the sub-collection if it has some test content
                 if (subCollection.hasTestContent())
                 {
                     this.subCollections.add(subCollection);
                 }
             }
+        }
+    }
+
+    public static TestCollection collectTestsFromPure(CoreInstance pureTestCollectionFn, FunctionExecution functionExecution)
+    {
+        ProcessorSupport processorSupport = functionExecution.getProcessorSupport();
+        CoreInstance pureTestCollection = functionExecution.start(pureTestCollectionFn, Lists.mutable.empty());
+        pureTestCollection = Instance.getValueForMetaPropertyToOneResolved(pureTestCollection, M3Properties.values, processorSupport);
+        return collectTestsFromPureRecursive(pureTestCollection, processorSupport);
+    }
+
+    private static TestCollection collectTestsFromPureRecursive(CoreInstance pureTestCollection, ProcessorSupport processorSupport)
+    {
+        CoreInstance pkg = Instance.getValueForMetaPropertyToOneResolved(pureTestCollection, TestTools.TEST_COLLECTION_PKG, processorSupport);
+        TestCollection testCollection = new TestCollection(pkg);
+
+        CoreInstance testParameterizationId = Instance.getValueForMetaPropertyToOneResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_PARAMETERIZATION_ID, processorSupport);
+        testCollection.testParameterizationId = testParameterizationId instanceof StringCoreInstance ? ((StringCoreInstance) testParameterizationId).getValue() : null;
+
+        testCollection.testFunctionParam = Instance.getValueForMetaPropertyToOneResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTION_PARAM, processorSupport);
+        testCollection.testFunctionParamCustomizer = Instance.getValueForMetaPropertyToOneResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTION_PARAM_CUSTOMIZER, processorSupport);
+
+        for (CoreInstance testFunction: Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTIONS, processorSupport))
+        {
+            testCollection.testFunctions.add(testFunction);
+        }
+        for (CoreInstance beforeFunction: Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_BEFORE_FUNCTIONS, processorSupport))
+        {
+            testCollection.beforeFunctions.add(beforeFunction);
+        }
+        for (CoreInstance afterFunction: Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_AFTER_FUNCTIONS, processorSupport))
+        {
+            testCollection.afterFunctions.add(afterFunction);
+        }
+        for (CoreInstance subCollection: Instance.getValueForMetaPropertyToManyResolved(pureTestCollection, TestTools.TEST_COLLECTION_SUB_COLLECTIONS, processorSupport))
+        {
+            testCollection.subCollections.add(collectTestsFromPureRecursive(subCollection, processorSupport));
+        }
+        return testCollection;
+    }
+
+    public static TestCollection collectTestsFromPure(CoreInstance pureTestCollectionFn, Function<CoreInstance, Object> functionExecution)
+    {
+        return collectTestsFromPureRecursive(functionExecution.apply(pureTestCollectionFn));
+    }
+
+    private static TestCollection collectTestsFromPureRecursive(Object pureTestCollection)
+    {
+        CoreInstance pkg = (CoreInstance) getField(pureTestCollection, TestTools.TEST_COLLECTION_PKG);
+        TestCollection testCollection = new TestCollection(pkg);
+
+        testCollection.testParameterizationId = (String) getField(pureTestCollection, TestTools.TEST_COLLECTION_TEST_PARAMETERIZATION_ID);
+        testCollection.testFunctionParam = getField(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTION_PARAM);
+        testCollection.testFunctionParamCustomizer = (CoreInstance) getField(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTION_PARAM_CUSTOMIZER);
+
+        for (Object testFunction: (RichIterable) getField(pureTestCollection, TestTools.TEST_COLLECTION_TEST_FUNCTIONS))
+        {
+            testCollection.testFunctions.add((CoreInstance) testFunction);
+        }
+        for (Object beforeFunction: (RichIterable) getField(pureTestCollection, TestTools.TEST_COLLECTION_BEFORE_FUNCTIONS))
+        {
+            testCollection.beforeFunctions.add((CoreInstance) beforeFunction);
+        }
+        for (Object afterFunction: (RichIterable) getField(pureTestCollection, TestTools.TEST_COLLECTION_AFTER_FUNCTIONS))
+        {
+            testCollection.afterFunctions.add((CoreInstance) afterFunction);
+        }
+        for (Object subCollection: (RichIterable) getField(pureTestCollection, TestTools.TEST_COLLECTION_SUB_COLLECTIONS))
+        {
+            testCollection.subCollections.add(collectTestsFromPureRecursive(subCollection));
+        }
+        return testCollection;
+    }
+
+    private static Object getField(Object obj, String fieldName)
+    {
+        try
+        {
+            return obj.getClass().getMethod("_" + fieldName).invoke(obj);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
         }
     }
 
@@ -395,7 +545,7 @@ public class TestCollection
      * @param testFilter filter for tests
      * @return test collection
      */
-    public static TestCollection collectTests(CoreInstance pkg, ProcessorSupport processorSupport, Predicate<? super CoreInstance> testFilter)
+    public static TestCollection collectTests(CoreInstance pkg, ProcessorSupport processorSupport, Function<CoreInstance, TestCollection> pureTestCollectionGenerator, Predicate<? super CoreInstance> testFilter)
     {
         if (pkg == null)
         {
@@ -409,7 +559,21 @@ public class TestCollection
         {
             testFilter = DEFAULT_FILTER_PREDICATE;
         }
-        return new TestCollection(pkg, processorSupport, testFilter, true);
+        return new TestCollection(pkg, processorSupport, pureTestCollectionGenerator, testFilter, true);
+    }
+
+    /**
+     * Collect tests from the given package and all sub-packages.  If testFilter
+     * is provided, it is used to select which tests to include in the collection.
+     * If not provided, all tests within the relevant packages are included.
+     *
+     * @param pkg        test package
+     * @param testFilter filter for tests
+     * @return test collection
+     */
+    public static TestCollection collectTests(CoreInstance pkg, ProcessorSupport processorSupport, Predicate<? super CoreInstance> testFilter)
+    {
+        return collectTests(pkg, processorSupport, null, testFilter);
     }
 
     /**
@@ -447,6 +611,20 @@ public class TestCollection
     public static TestCollection collectTests(CoreInstance pkg, ProcessorSupport processorSupport)
     {
         return collectTests(pkg, processorSupport, DEFAULT_FILTER_PREDICATE);
+    }
+
+    /**
+     * Collect tests from the given package and all sub-packages.  If testFilter
+     * is provided, it is used to select which tests to include in the collection.
+     * If not provided, all tests within the relevant packages are included.
+     *
+     * @param pkgPath    test package path
+     * @param testFilter filter for tests
+     * @return test collection
+     */
+    public static TestCollection collectTests(String pkgPath, ProcessorSupport processorSupport, Function<CoreInstance, TestCollection> pureTestCollectionGenerator, Predicate<? super CoreInstance> testFilter)
+    {
+        return collectTests(processorSupport.package_getByUserPath(pkgPath), processorSupport, pureTestCollectionGenerator, testFilter);
     }
 
     /**

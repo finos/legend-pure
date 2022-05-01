@@ -20,12 +20,14 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 public class TestResult
 {
     private CoreInstance testFunction;
+    private String testParameterizationId;
     private String consoleOutput;
     private TestStatus status;
 
-    TestResult(CoreInstance testFunction, String consoleOutput, TestStatus status)
+    TestResult(CoreInstance testFunction, String testParameterizationId, String consoleOutput, TestStatus status)
     {
         this.testFunction = testFunction;
+        this.testParameterizationId = testParameterizationId;
         this.consoleOutput = consoleOutput;
         this.status = status;
     }
@@ -43,5 +45,10 @@ public class TestResult
     public TestStatus getStatus()
     {
         return this.status;
+    }
+
+    public String getTestParameterizationId()
+    {
+        return this.testParameterizationId;
     }
 }

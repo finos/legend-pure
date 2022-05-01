@@ -136,7 +136,8 @@ public class ExecuteTests
     private void writeTestResult(OutputStream outStream, TestResult result, PureSession session) throws IOException
     {
         outStream.write("{\"test\":[".getBytes());
-        outStream.write(("\"" + PackageableElement.getUserPathForPackageableElement(result.getTestFunction(), "\",\"") + "\"").getBytes());
+        String parameterizationSuffix = result.getTestParameterizationId() == null ? "" : "[" + result.getTestParameterizationId() + "]";
+        outStream.write(("\"" + PackageableElement.getUserPathForPackageableElement(result.getTestFunction(), "\",\"") + parameterizationSuffix + "\"").getBytes());
         outStream.write("],\"console\":\"".getBytes());
         outStream.write(JSONValue.escape(result.getConsoleOutput()).getBytes());
         outStream.write("\",\"status\":\"".getBytes());
