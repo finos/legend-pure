@@ -65,7 +65,7 @@ function meta::external::format::awspersistence::generation::generateAwsPersiste
 
 function meta::external::format::awspersistence::generation::generateAwsPersistenceBackend(config: AwsPersistenceConfig[1], p: Persistence[1]): String[1]
 {
-  $config->meta::external::format::awspersistence::generation::generateAwsPersistenceBackendRaw($p)->toCompactJSONString();
+  $config->meta::external::format::awspersistence::generation::generateAwsPersistenceBackendRaw($p)->toPrettyJSONString();
 }
 
 function meta::external::format::awspersistence::generation::generateAwsPersistenceBackendRaw(config: AwsPersistenceConfig[1], p: Persistence[1]): JSONElement[1]
