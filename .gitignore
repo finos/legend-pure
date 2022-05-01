@@ -11,3 +11,6 @@
 **/lib
 **/surefire-reports-aggregate
 **/dependency-reduced-pom.xml
+
+# Editor
+*~

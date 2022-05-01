@@ -35,6 +35,12 @@ Class meta::pure::alloy::connections::alloy::authentication::SnowflakePublicAuth
     publicUserName:String[1];
 }
 
+Class meta::pure::alloy::connections::alloy::authentication::OAuthAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
+{
+    secretArn: String[1];
+    discoveryUrl: String[1];
+}
+
 Class meta::pure::alloy::connections::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
 {
 }
