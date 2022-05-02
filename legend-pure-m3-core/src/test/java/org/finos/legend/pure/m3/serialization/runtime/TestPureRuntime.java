@@ -41,14 +41,8 @@ public class TestPureRuntime
         PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
 
-        try
-        {
-            runtime.loadSource.valueOf("/platform/pure/path.pure");
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("/platform/pure/path.pure is already loaded", e.getMessage());
-        }
+        RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> runtime.loadSource("/platform/pure/path.pure"));
+        Assert.assertEquals("/platform/pure/path.pure is already loaded", e.getMessage());
     }
 
     @Test
