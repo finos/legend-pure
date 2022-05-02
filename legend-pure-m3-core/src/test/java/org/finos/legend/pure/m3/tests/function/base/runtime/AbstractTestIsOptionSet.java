@@ -14,18 +14,25 @@
 
 package org.finos.legend.pure.m3.tests.function.base.runtime;
 
+import org.eclipse.collections.api.map.primitive.ObjectBooleanMap;
+import org.eclipse.collections.impl.factory.primitive.ObjectBooleanMaps;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.navigation.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.serialization.runtime.RuntimeOptions;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Map;
-import java.util.TreeMap;
-
 public abstract class AbstractTestIsOptionSet extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testOptionThatIsSetOn()
     {
@@ -35,7 +42,7 @@ public abstract class AbstractTestIsOptionSet extends AbstractPureTestWithCoreCo
                         "    meta::pure::runtime::isOptionSet('TestSetOn');" +
                         "}\n");
         CoreInstance result = this.execute("test():Boolean[1]");
-        Assert.assertEquals("true", ValueSpecification.getValue(result, this.processorSupport).getName());
+        Assert.assertEquals("true", ValueSpecification.getValue(result, processorSupport).getName());
     }
 
     @Test
@@ -47,7 +54,7 @@ public abstract class AbstractTestIsOptionSet extends AbstractPureTestWithCoreCo
                         "    meta::pure::runtime::isOptionSet('TestSetOff');" +
                         "}\n");
         CoreInstance result = this.execute("test():Boolean[1]");
-        Assert.assertEquals("false", ValueSpecification.getValue(result, this.processorSupport).getName());
+        Assert.assertEquals("false", ValueSpecification.getValue(result, processorSupport).getName());
     }
 
     @Test
@@ -59,22 +66,14 @@ public abstract class AbstractTestIsOptionSet extends AbstractPureTestWithCoreCo
                         "    meta::pure::runtime::isOptionSet('TestUnset');" +
                         "}\n");
         CoreInstance result = this.execute("test():Boolean[1]");
-        Assert.assertEquals("false", ValueSpecification.getValue(result, this.processorSupport).getName());
+        Assert.assertEquals("false", ValueSpecification.getValue(result, processorSupport).getName());
     }
 
     protected static RuntimeOptions getOptions()
     {
-        final Map<String, Boolean> testOptions = new TreeMap<>();
-        testOptions.put("TestSetOn", true);
-        testOptions.put("TestSetOff", false);
-        return new RuntimeOptions()
-        {
-            @Override
-            public boolean isOptionSet(String name)
-            {
-                return testOptions.containsKey(name) && testOptions.get(name);
-            }
-        };
+        ObjectBooleanMap<String> testOptions = ObjectBooleanMaps.mutable.<String>empty()
+                .withKeyValue("TestSetOn", true)
+                .withKeyValue("TestSetOff", false);
+        return name -> testOptions.getIfAbsent(name, false);
     }
-
 }
