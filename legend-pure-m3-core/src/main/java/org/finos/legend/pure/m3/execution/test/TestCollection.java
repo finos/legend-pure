@@ -435,7 +435,7 @@ public class TestCollection
                     {
                         this.testFunctions.add(child);
                     }
-                    else if (TestTools.hasTestCollectionStereotype(child, processorSupport))
+                    else if (TestTools.hasTestCollectionStereotype(child, processorSupport) && pureTestCollectionGenerator != null)
                     {
                         this.subCollections.add(pureTestCollectionGenerator.apply(child));
                     }
