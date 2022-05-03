@@ -62,13 +62,19 @@ Class meta::external::format::awspersistence::metamodel::AwsPersistenceTarget
   connection: meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection[1];
   // deduplicationStrategy: DeduplicationStrategy[1];
   ingestMode: meta::pure::persistence::metamodel::persister::ingestmode::IngestMode[1];
-  modelClass: meta::external::format::awspersistence::metamodel::ModelClass[1];
+}
+
+Class meta::external::format::awspersistence::metamodel::AwsPersistenceService
+{
+  service: Service[1];
+  auth: AuthenticationStrategy[0..1];
+  modelClass: meta::external::format::awspersistence::metamodel::ModelClass[1..*];
 }
 
 Class meta::external::format::awspersistence::metamodel::AwsPersistence
 {
    documentation: String[1];
-   service: Service[1];
+   service: meta::external::format::awspersistence::metamodel::AwsPersistenceService[1];
    trigger: Trigger[1];
    notifier: Notifier[1];
    persister: Persister[0..1];

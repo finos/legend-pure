@@ -35,7 +35,20 @@ Class meta::pure::alloy::connections::alloy::authentication::SnowflakePublicAuth
     publicUserName:String[1];
 }
 
+// NOTE: THIS ONE WILL GO AWAY
 Class meta::pure::alloy::connections::alloy::authentication::OAuthAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
+{
+    secretArn: String[1];
+    discoveryUrl: String[1];
+}
+
+Class meta::pure::alloy::connections::alloy::authentication::AwsPKAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
+{
+    secretArn: String[1];
+    user: String[1];
+}
+
+Class meta::pure::alloy::connections::alloy::authentication::AwsOAuthAuthenticationStrategy extends meta::pure::alloy::connections::alloy::authentication::AuthenticationStrategy
 {
     secretArn: String[1];
     discoveryUrl: String[1];

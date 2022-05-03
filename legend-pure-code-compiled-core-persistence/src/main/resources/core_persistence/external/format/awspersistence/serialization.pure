@@ -55,15 +55,36 @@ function  meta::external::format::awspersistence::serialization::serialize(confi
 
   let apt = $config->serializeShape($bp);
 
+  let mc = $config->getModelClass($bp);
+
+  let as = $config->annotatedService($p.service, $mc);
+
   ^meta::external::format::awspersistence::metamodel::AwsPersistence(
       documentation=$p.documentation,
       notifier=$p.notifier,
       trigger=$p.trigger,
-      service=$p.service,
+      service=$as,
       // persister=$p.persister,
       target=$apt
     );
 }
+
+function <<access.private>> meta::external::format::awspersistence::serialization::annotatedService(config: AwsPersistenceConfig[1], s: Service[1], mc: meta::external::format::awspersistence::metamodel::ModelClass[1..*]): meta::external::format::awspersistence::metamodel::AwsPersistenceService[1]
+{
+  let auth = if ($s.execution->instanceOf(PureSingleExecution) &&
+                 $s.execution->cast(@PureSingleExecution).runtime.connections->size() == 1 &&
+                 $s.execution->cast(@PureSingleExecution).runtime.connections->toOne()->instanceOf(RelationalDatabaseConnection), 
+    | $s.execution->cast(@PureSingleExecution).runtime.connections->toOne()->cast(@RelationalDatabaseConnection).authenticationStrategy,
+    | []
+    );
+
+  ^meta::external::format::awspersistence::metamodel::AwsPersistenceService(
+    service = $s,
+    modelClass = $mc,
+    auth = $auth
+  );
+}
+
 
 
 function <<access.private>> meta::external::format::awspersistence::serialization::serializeShape(config: AwsPersistenceConfig[1], bp: BatchPersister[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTarget[1..*]
@@ -79,14 +100,6 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
   assertNotEmpty($sink.connection, |'Expecting Connection in Sink, found none');
   let c = $sink.connection->toOne();
 
-  // FIXME: Should these be validated in a common place for all generators?
-  assertNotEmpty($ft.modelClass, |'Expecting a ModelClass in the BatchPersister but found none');
-  assertSize($ft.modelClass, 1, 'Expecting exactly one modelClass, found %s', [$ft.modelClass->size()]);
-  let modelClass = $ft.modelClass->toOne();
-  assert($modelClass.generalizations.general.rawType == Any, | 'AwsPersistence requires the class in targetShape to not be generalized (i.e., not extend another class)');
-  assertSize($modelClass.name, 1, 'Expecting exactly one modelClass name, found %s', [$modelClass.name->size()]);
-  assertSize($modelClass.package, 1, 'Expecting exactly one modelClass package, found %s', [$modelClass.package->size()]);
-
   let canHandle = 'NontemporalSnapshot, UnitemporalSnapshot';
   $bp.ingestMode->match([
     u:UnitemporalSnapshot[1]|assert($u.transactionMilestoning->instanceOf(BatchIdTransactionMilestoning), 'In FlatTarget %s, for UnitemporalSnapshot, only BatchIdTransactionMilestoning is supported', [$ft.targetName]),
@@ -101,7 +114,32 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
 
 function <<access.private>> meta::external::format::awspersistence::serialization::serializeAwsPersistenceTarget(config: AwsPersistenceConfig[1], ft: FlatTarget[1], c: Connection[1], im: IngestMode[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTarget[1]
 {
+  assertSize($ft.modelClass, 1, 'Expecting exactly one modelClass, found %s', [$ft.modelClass->size()]);
   let modelClass = $ft.modelClass->toOne();
+  
+  assert($ft.deduplicationStrategy->instanceOf(NoDeduplicationStrategy), 'AwsPersistence can currently only handle NoDeduplicationStrategy in FlatTarget <%s>', [$ft.targetName]);
+
+  ^meta::external::format::awspersistence::metamodel::AwsPersistenceTarget(
+      name = $ft.targetName,
+      connection = $config->getTargetConnection($c, $modelClass),
+      // deduplicationStrategy=$ft.deduplicationStrategy,
+      ingestMode = $im
+    );
+}
+
+function <<access.private>> meta::external::format::awspersistence::serialization::getModelClass(config: AwsPersistenceConfig[1], bp: BatchPersister[1]): meta::external::format::awspersistence::metamodel::ModelClass[1..*]
+{
+  assert($bp.targetShape->instanceOf(FlatTarget), | 'AwsPersistence can currently only handle flat target shapes');
+  let ft = $bp.targetShape->cast(@FlatTarget);
+
+  // FIXME: Should these be validated in a common place for all generators?
+  assertNotEmpty($ft.modelClass, |'Expecting a ModelClass in the BatchPersister but found none');
+  assertSize($ft.modelClass, 1, 'Expecting exactly one modelClass, found %s', [$ft.modelClass->size()]);
+  let modelClass = $ft.modelClass->toOne();
+  assert($modelClass.generalizations.general.rawType == Any, | 'AwsPersistence requires the class in targetShape to not be generalized (i.e., not extend another class)');
+  assertSize($modelClass.name, 1, 'Expecting exactly one modelClass name, found %s', [$modelClass.name->size()]);
+  assertSize($modelClass.package, 1, 'Expecting exactly one modelClass package, found %s', [$modelClass.package->size()]);
+
   let properties = $modelClass.properties;
   let nonprimitives = $properties->filter(p|! $p.genericType.rawType->toOne()->instanceOf(PrimitiveType));
   assertEmpty($nonprimitives, 'Found non-primitive types in FlatTarget <%s>, only primitive types can be persisted', [$ft.targetName]);
@@ -112,17 +150,9 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
     ^meta::external::format::awspersistence::metamodel::ModelClassProperty(name=$p.name->toOne(), type=$p.genericType.rawType->toOne());
   );
   
-  assert($ft.deduplicationStrategy->instanceOf(NoDeduplicationStrategy), 'AwsPersistence can currently only handle NoDeduplicationStrategy in FlatTarget <%s>', [$ft.targetName]);
-
   let mc = ^meta::external::format::awspersistence::metamodel::ModelClass(name=$ft.modelClass.name->toOne(), package=$ft.modelClass.package->toOne(), properties=$pts);
 
-  ^meta::external::format::awspersistence::metamodel::AwsPersistenceTarget(
-      name = $ft.targetName,
-      connection = $config->getTargetConnection($c, $modelClass),
-      // deduplicationStrategy=$ft.deduplicationStrategy,
-      ingestMode = $im,
-      modelClass = $mc
-    );
+  $mc;
 }
 
 function <<access.private>> meta::external::format::awspersistence::serialization::getTargetConnection(config: AwsPersistenceConfig[1], c: Connection[1], modelClass: Class<Any>[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection[1]
