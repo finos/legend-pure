@@ -1,15 +1,3 @@
-###Pure
-
-import meta::external::format::protobuf::generation::*;
-
-function <<access.private>> meta::protocols::pure::v1_18_0::invocation::generation::protobuf::transformProtobufConfig(input:ProtobufConfig[1])
-   :meta::protocols::pure::v1_18_0::metamodel::invocation::generation::protobuf::ProtobufConfig[1]
-{
-   ^meta::protocols::pure::v1_18_0::metamodel::invocation::generation::protobuf::ProtobufConfig(
-        package = $input.package,
-        class = $input.class
-   )
-}
 
 ###Pure
 

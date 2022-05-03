@@ -31,16 +31,3 @@ function meta::protocols::pure::v1_22_0::invocation::generation::avro::transform
       namespaceOverride=$input.namespaceOverride
    )
 }
-
-###Pure
-
-import meta::external::format::protobuf::generation::*;
-
-function meta::protocols::pure::v1_22_0::invocation::generation::protobuf::transformProtobufConfig(input:ProtobufConfig[1])
-   :meta::protocols::pure::v1_22_0::metamodel::invocation::generation::protobuf::ProtobufConfig[1]
-{
-   ^meta::protocols::pure::v1_22_0::metamodel::invocation::generation::protobuf::ProtobufConfig(
-        package = $input.package,
-        class = $input.class
-   )
-}
