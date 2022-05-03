@@ -45,30 +45,3 @@ function meta::protocols::pure::vX_X_X::invocation::generation::avro::transformA
       namespaceOverride=$input.namespaceOverride
    )
 }
-
-###Pure
-
-import meta::external::format::protobuf::generation::*;
-
-function meta::protocols::pure::vX_X_X::invocation::generation::protobuf::transformProtobufConfig(input:ProtobufConfig[1])
-   :meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::ProtobufConfig[1]
-{
-   ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::ProtobufConfig(
-        package = $input.package,
-        class = $input.class,
-        options = ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::Options
-                  (
-                      javaPackage = $input.javaPackage,
-                      javaOuterClassname = $input.javaOuterClassname,
-                      javaMultipleFiles = $input.javaMultipleFiles,
-                      optimizeFor = if($input.optimizeFor->isEmpty(),|[],|extractEnumValue(meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::OptimizeMode, $input.optimizeFor->toOne()->id())),
-                      customOptions = $input.customOptions->map(c |
-                                          ^meta::protocols::pure::vX_X_X::metamodel::invocation::generation::protobuf::ProtobufOption
-                                          (
-                                              name = $c.name,
-                                              value = $c.value
-                                          )
-                                       )
-                  )        
-   )
-}

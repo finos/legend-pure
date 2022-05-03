@@ -94,6 +94,8 @@ public class PureIDEServer extends Application<ServerConfiguration>
         environment.jersey().register(new FileManagement(pureSession));
         environment.jersey().register(new LifeCycle(pureSession));
 
+        environment.jersey().register(new Service(pureSession));
+
         enableCors(environment);
     }
 
@@ -118,15 +120,8 @@ public class PureIDEServer extends Application<ServerConfiguration>
 
             return Lists.mutable
                     .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
-                    .with(this.buildCore("", "legend",""))
-                    .with(this.buildCore("", "legend","persistence"))
-                    .with(this.buildCore("", "legend","relational"))
-                    .with(this.buildCore("", "legend","servicestore"))
-                    .with(this.buildCore("", "legend","external-shared"))
-                    .with(this.buildCore("", "legend","external-format-flatdata"))
-                    .with(this.buildCore("", "legend","external-format-json"))
-                    .with(this.buildCore("", "legend","external-format-xml"))
-                    .with(this.buildCore("", "legend","external-query-graphql"))
+                    .with(this.buildCore("", "legend", ""))
+                    .with(this.buildCore("", "legend", "external-shared"))
                     .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
         }
         catch (IOException e)
@@ -137,11 +132,16 @@ public class PureIDEServer extends Application<ServerConfiguration>
 
     protected MutableFSCodeStorage buildCore(String path, String project, String module) throws IOException
     {
-        String resources = path+(project.equals("")?"":project+"-")+"pure-code-compiled-core" + (module.equals("") ? "" : "-" + module) + "/src/main/resources";
+        return buildCore(path + (project.equals("") ? "" : project + "-") + "pure-code-compiled-core" + (module.equals("") ? "" : "-" + module), module);
+    }
+
+    protected MutableFSCodeStorage buildCore(String path, String module) throws IOException
+    {
+        String resources = path + "/src/main/resources";
         String moduleName = "core" + (module.equals("") ? "" : "_" + module);
         return new MutableFSCodeStorage(
                 GenericCodeRepository.build(Paths.get(resources + "/" + moduleName.replace("-", "_") + ".definition.json")),
-                Paths.get(resources + "/" + moduleName.replace("-","_"))
+                Paths.get(resources + "/" + moduleName.replace("-", "_"))
         );
     }
 
