@@ -31,5 +31,5 @@ function <<test.Test>> meta::relational::tests::runtime::functions::testCurrentU
 
    let result = execute($query, meta::relational::tests::simpleRelationalMapping, testRuntime(), meta::pure::router::extension::defaultRelationalExtensions()).values.rows;
    assertSize($result, 4);
-   assertEquals('Firm X', $result.legalName);
+   assertEquals('Firm X,Firm A,Firm B,Firm C', $result.values->makeString(','));
 }
