@@ -58,14 +58,10 @@ public class PureTestBuilderHelper extends TestSuite
 {
     public static MutableSet<CoreInstance> buildExclusionList(ProcessorSupport processorSupport, String... exclusions)
     {
-        CompiledExecutionSupport executionSupport = getClassLoaderExecutionSupport();
-        TestSuite suite = new TestSuite();
-        MutableSet<CoreInstance> exclusionSet = buildExclusionList(executionSupport.getProcessorSupport(), "meta::pure::router::systemMapping::tests::testResolveCore__Any_MANY_");
-        suite.addTest(buildSuite(TestCollection.collectTests("meta", executionSupport.getProcessorSupport(), fn -> generatePureTestCollection(fn, executionSupport), ci -> !exclusionSet.contains(ci) && satisfiesConditions(ci, executionSupport.getProcessorSupport())), executionSupport));
-        return suite;
+        return ArrayIterate.collect(exclusions, e -> Objects.requireNonNull(processorSupport.package_getByUserPath(e), e), Sets.mutable.ofInitialCapacity(exclusions.length));
     }
 
-    private static TestCollection generatePureTestCollection(CoreInstance fn, ExecutionSupport executionSupport)
+    public static TestCollection generatePureTestCollection(CoreInstance fn, ExecutionSupport executionSupport)
     {
         return TestCollection.collectTestsFromPure(fn, f ->
         {
@@ -78,11 +74,6 @@ public class PureTestBuilderHelper extends TestSuite
                 throw new RuntimeException(e);
             }
         });
-    }
-
-    private static MutableSet<CoreInstance> buildExclusionList(ProcessorSupport processorSupport, String... exclusions)
-    {
-        return ArrayIterate.collect(exclusions, e -> Objects.requireNonNull(processorSupport.package_getByUserPath(e), e), Sets.mutable.ofInitialCapacity(exclusions.length));
     }
 
     public static TestSuite buildSuite(TestCollection testCollection, ExecutionSupport executionSupport)
