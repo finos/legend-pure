@@ -11,3 +11,4 @@
 **/lib
 **/surefire-reports-aggregate
 **/dependency-reduced-pom.xml
+/.h2Start.sh.swp
