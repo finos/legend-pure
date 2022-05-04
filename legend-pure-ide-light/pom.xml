@@ -30,6 +30,10 @@
     <packaging>jar</packaging>
     <name>Legend Pure - IDE Light</name>
 
+    <properties>
+        <skip.yarn>false</skip.yarn>
+    </properties>
+
     <build>
         <resources>
             <resource>
@@ -51,6 +55,7 @@
                                 <argument>install</argument>
                             </arguments>
                             <workingDirectory>src/main/web</workingDirectory>
+                            <skip>${skip.yarn}</skip>
                         </configuration>
                         <goals>
                             <goal>exec</goal>
@@ -65,6 +70,7 @@
                                 <argument>build:ci</argument>
                             </arguments>
                             <workingDirectory>src/main/web</workingDirectory>
+                            <skip>${skip.yarn}</skip>
                         </configuration>
                         <goals>
                             <goal>exec</goal>
