@@ -61,12 +61,15 @@ function meta::protocols::pure::vX_X_X::transformation::toPureGraph::connection:
                                                             pair('test', 'TestDatabaseAuthenticationStrategy'),
                                                             pair('snowflakePublic', 'SnowflakePublicAuthenticationStrategy'),
                                                             pair('gcpApplicationDefaultCredentials', 'GCPApplicationDefaultCredentialsAuthenticationStrategy'),
+                                                            pair('awsOAuthAuthenticationStrategy', 'AwsOAuthAuthenticationStrategy'),
+                                                            pair('awsPKAuthenticationStrategy', 'AwsPKAuthenticationStrategy'),
 
                                                             pair('static', 'StaticDatasourceSpecification'),
                                                             pair('h2Embedded', 'EmbeddedH2DatasourceSpecification'),
                                                             pair('h2Local', 'LocalH2DatasourceSpecification('),
                                                             pair('snowflake', 'SnowflakeDatasourceSpecification'),
-                                                            pair('bigQuery', 'BigQueryDatasourceSpecification')
+                                                            pair('bigQuery', 'BigQueryDatasourceSpecification'),
+                                                            pair('finCloud', 'FinCloudDatasourceSpecification')
                                                           ]
                                             )
                 );
@@ -130,7 +133,19 @@ function meta::protocols::pure::vX_X_X::transformation::toPureGraph::connection:
       b:meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy[1] |
          ^meta::pure::alloy::connections::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy(
             // _type = 'gcpApplicationDefaultCredentials'
-         )
+         ),
+      a:meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AwsOAuthAuthenticationStrategy[1] |
+        ^meta::pure::alloy::connections::alloy::authentication::AwsOAuthAuthenticationStrategy(
+            // _type = 'awsOAuthAuthenticationStrategy',
+            secretArn = $a.secretArn,
+            discoveryUrl = $a.discoveryUrl
+        ),
+      a:meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AwsPKAuthenticationStrategy[1] |
+        ^meta::pure::alloy::connections::alloy::authentication::AwsPKAuthenticationStrategy(
+            // _type = 'awsPKAuthenticationStrategy',
+            secretArn = $a.secretArn,
+            user = $a.user
+        )
    ]);
 }
 
@@ -179,6 +194,11 @@ function meta::protocols::pure::vX_X_X::transformation::toPureGraph::connection:
             //  _type = 'bigQuery',
              projectId = $b.projectId,
              defaultDataset = $b.defaultDataset
+         ),
+      f:meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::FinCloudDatasourceSpecification[1] |
+         ^meta::pure::alloy::connections::alloy::specification::FinCloudDatasourceSpecification(
+            //  _type = 'finCloud',
+             apiUrl = $f.apiUrl
          )
    ]);
 }

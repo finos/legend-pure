@@ -16,6 +16,8 @@ import meta::external::persistence::aws::metamodel::*;
 
 import meta::pure::persistence::metamodel::*;
 import meta::pure::persistence::metamodel::trigger::*;
+import meta::pure::alloy::connections::alloy::authentication::*;
+import meta::pure::alloy::connections::alloy::specification::*;
 
 import meta::pure::runtime::*;
 
@@ -33,12 +35,12 @@ meta::external::persistence::aws::metamodel::AwsPersistenceContext extends Persi
  * connection
  **********/
 
- Class meta::external::persistence::aws::metamodel::connection::AwsS3Connection extends Connection
- {
-   partition: AwsPartition[1];
-   region: String[1];
-   bucket: String[1];
- }
+Class meta::external::persistence::aws::metamodel::connection::AwsS3Connection extends Connection
+{
+  partition: AwsPartition[1];
+  region: String[1];
+  bucket: String[1];
+}
 
 Enum
 {doc.doc = 'A grouping of regions as defined in AWS: https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket.html'}
@@ -52,4 +54,11 @@ meta::external::persistence::aws::metamodel::AwsPartition
 
    {doc.doc = 'AWS GovCloud (US) regions'}
    AWS_US_GOV
+}
+
+Class meta::external::persistence::aws::metamodel::connection::AwsFinCloudConnection extends Connection
+{
+  datasetId: String[1];
+  authenticationStrategy: AwsOAuthAuthenticationStrategy[1];
+  targetSpecification: FinCloudDatasourceSpecification[1];
 }

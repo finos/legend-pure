@@ -56,6 +56,18 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::a
     publicUserName : String[1];
 }
 
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AwsOAuthAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
+{
+    secretArn: String[1];
+    discoveryUrl: String[1];
+}
+
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AwsPKAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
+{
+    secretArn: String[1];
+    user: String[1];
+}
+
 Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::GCPApplicationDefaultCredentialsAuthenticationStrategy extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::authentication::AuthenticationStrategy
 {
 }
@@ -169,7 +181,10 @@ Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::l
    endpointURL:String[0..1];
 }
 
-
+Class meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::FinCloudDatasourceSpecification extends meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification
+{
+   apiUrl: String[1];
+}
 
 
 Class <<typemodifiers.abstract>> meta::protocols::pure::vX_X_X::metamodel::store::relational::connection::alloy::specification::DatasourceSpecification

@@ -86,4 +86,8 @@ Class {doc.doc ='Specification for the AWS redshift database'} meta::pure::legen
   {doc.doc ='Optional URL used for redshift service execution'}  endpointURL:String[0..1];
 }
 
-         
+Class {doc.doc ='Specification for FinCloud'} meta::pure::alloy::connections::alloy::specification::FinCloudDatasourceSpecification extends meta::pure::alloy::connections::alloy::specification::DatasourceSpecification
+{   
+  {doc.doc ='URL for the FinCloud API Service'} apiUrl: String[1];
+}
+
