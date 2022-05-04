@@ -187,11 +187,6 @@ Class meta::pure::functions::meta::tests::Special
    
 }
 
-function meta::pure::functions::meta::tests::special::callFactory():Special[1]
-{
-   meta::pure::functions::meta::tests::special::factory();
-}
-
 function meta::pure::functions::meta::tests::special::factory():Special[1]
 {
    ^Special();
@@ -299,20 +294,41 @@ function <<test.Test>> meta::pure::functions::meta::tests::testSubsumes():Boolea
 
 }
 
-function meta::pure::functions::meta::tests::special::recursiveFunc1():Special[1]
+function meta::pure::functions::meta::tests::special::recursiveFunc():Special[1]
 {
+   meta::pure::functions::meta::tests::special::recursiveFunc();
    meta::pure::functions::meta::tests::special::recursiveFunc2();
 }
 
 function meta::pure::functions::meta::tests::special::recursiveFunc2():Special[1]
 {
+   meta::pure::functions::meta::tests::special::recursiveFunc();
    ^Special();
+}
+
+function meta::pure::functions::meta::tests::special::miscNewFunctionCalls():Any[1]
+{
+   let a = ^Special();
+   if(true,|^Special(),|false);
+}
+
+Class meta::pure::functions::meta::tests::RecClass
+{
+  newClass : RecClass[0..1];
+}
+
+function meta::pure::functions::meta::tests::recClass::recClassCreation():RecClass[1]
+{
+   ^RecClass(newClass = ^RecClass());
 }
 
 function <<test.Test>> meta::pure::functions::meta::tests::testFindExpressionsForFunctionInFunctionDefinition():Boolean[1]
 {
-  let res = meta::pure::functions::meta::tests::special::callFactory__Special_1_->findExpressionsForFunctionInFunctionDefinition([new_Class_1__String_1__T_1_, new_Class_1__String_1__KeyExpression_MANY__T_1_], []);
-  let resRec = meta::pure::functions::meta::tests::special::recursiveFunc1__Special_1_->findExpressionsForFunctionInFunctionDefinition([new_Class_1__String_1__T_1_, new_Class_1__String_1__KeyExpression_MANY__T_1_], []);
-  assertEquals($res->size(),1);
-  assertEquals($resRec->size(),1);
+  let miscNewFunctionCallsRes = meta::pure::functions::meta::tests::special::miscNewFunctionCalls__Any_1_->findExpressionsForFunctionInFunctionDefinition([new_Class_1__String_1__T_1_, new_Class_1__String_1__KeyExpression_MANY__T_1_], f|true);
+  let recursiveFuncRes = meta::pure::functions::meta::tests::special::recursiveFunc__Special_1_->findExpressionsForFunctionInFunctionDefinition([new_Class_1__String_1__T_1_, new_Class_1__String_1__KeyExpression_MANY__T_1_], f|true);
+  let recClassCreationRes = meta::pure::functions::meta::tests::recClass::recClassCreation__RecClass_1_->findExpressionsForFunctionInFunctionDefinition([new_Class_1__String_1__T_1_, new_Class_1__String_1__KeyExpression_MANY__T_1_], f|true);
+  
+  assertEquals($miscNewFunctionCallsRes->size(),2);
+  assertEquals($recursiveFuncRes->size(),1);
+  assertEquals($recClassCreationRes->size(),2);
 }

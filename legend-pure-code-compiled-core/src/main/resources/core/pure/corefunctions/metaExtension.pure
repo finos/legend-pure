@@ -309,33 +309,33 @@ function meta::pure::functions::meta::reverseProperties(class:Class<Any>[1]):Pro
    $t->evaluateAndDeactivate()->filter(p|$p->genericType().rawType == Property)->cast(@Property<Nil,Any|*>);
 }
 
-function meta::pure::functions::meta::shouldRecurse(fd:FunctionDefinition<Any>[1], func:Function<{FunctionDefinition<Any>[1]->Boolean[1]}>[1]):Boolean[1]
-{
-   $func->eval($fd);
-}
-
 function meta::pure::functions::meta::findExpressionsForFunctionInValueSpecification(vs:ValueSpecification[1], funcs:Function<Any>[*]):FunctionExpression[*]
 {
-   findExpressionsForFunctionInValueSpecification($vs, $funcs, [], []);
+   findExpressionsForFunctionInValueSpecification($vs, $funcs, [], f|!$f->isWithinPackage(meta::pure));
 }
 
-function <<access.private>> meta::pure::functions::meta::findExpressionsForFunctionInValueSpecification(vs:ValueSpecification[1], funcs:Function<Any>[*], visitedFuncs:FunctionDefinition<Any>[*], skipPackages:Package[*]):FunctionExpression[*]
+function meta::pure::functions::meta::findExpressionsForFunctionInValueSpecification(vs:ValueSpecification[1], funcs:Function<Any>[*], shouldRecurse:Function<{FunctionDefinition<Any>[1]->Boolean[1]}>[1]):FunctionExpression[*]
+{
+   findExpressionsForFunctionInValueSpecification($vs, $funcs, [], $shouldRecurse);
+}
+
+function <<access.private>> meta::pure::functions::meta::findExpressionsForFunctionInValueSpecification(vs:ValueSpecification[1], funcs:Function<Any>[*], visitedFuncs:FunctionDefinition<Any>[*], shouldRecurse:Function<{FunctionDefinition<Any>[1]->Boolean[1]}>[1]):FunctionExpression[*]
 {
    $vs->match([fe:FunctionExpression[1] | 
-                                            let res = $fe.parametersValues->map(v | $v->findExpressionsForFunctionInValueSpecification($funcs, $visitedFuncs, $skipPackages));
+                                            let res = $fe.parametersValues->map(v | $v->findExpressionsForFunctionInValueSpecification($funcs, $visitedFuncs, $shouldRecurse));
                                             if ( !($fe.func->instanceOf(Property) || $fe.func->instanceOf(QualifiedProperty)) && ($funcs->isEmpty() || $fe.func->in($funcs)), 
                                             | [$fe]->concatenate($res), 
                                             | $fe.func->match([
-                                                                fd:ConcreteFunctionDefinition<Any>[1] |  
-                                                                  if(!($fd->in($visitedFuncs)) && ($skipPackages->isEmpty() || $skipPackages->map(sp| shouldRecurse($fd, {f|$f->isWithinPackage($sp)}))->containsAll(false)), 
-                                                                  |$fd->findExpressionsForFunctionInFunctionDefinition($funcs, $visitedFuncs, $skipPackages)->concatenate($res), 
-                                                                  |$res),
+                                                                fd:ConcreteFunctionDefinition<Any>[1] |
+                                                                  if(!($fd->in($visitedFuncs)) && $shouldRecurse->eval($fd), 
+                                                                  |$fd->findExpressionsForFunctionInFunctionDefinition($funcs, $visitedFuncs, $shouldRecurse)->concatenate($res), 
+                                                                  |$res);,
                                                                 a:Any[1] | $res
                                                             ]););,
                i:InstanceValue[1] | $i.values->map( v |
-                                                         $v->match([a: ValueSpecification[1] | $a->findExpressionsForFunctionInValueSpecification($funcs, $visitedFuncs, $skipPackages);,
-                                                         k : KeyExpression[1] | $k.expression->findExpressionsForFunctionInValueSpecification($funcs, $visitedFuncs, $skipPackages);,
-                                                         l : LambdaFunction<Any>[1] | $l.expressionSequence->map(e | $e->findExpressionsForFunctionInValueSpecification($funcs, $visitedFuncs, $skipPackages));,
+                                                         $v->match([a: ValueSpecification[1] | $a->findExpressionsForFunctionInValueSpecification($funcs, $visitedFuncs, $shouldRecurse);,
+                                                         k : KeyExpression[1] | $k.expression->findExpressionsForFunctionInValueSpecification($funcs, $visitedFuncs, $shouldRecurse);,
+                                                         l : LambdaFunction<Any>[1] | $l.expressionSequence->map(e | $e->findExpressionsForFunctionInValueSpecification($funcs, $visitedFuncs, $shouldRecurse));,
                                                          a:Any[1] | []]););,
                ve:VariableExpression[1] | []]
           );
@@ -344,17 +344,17 @@ function <<access.private>> meta::pure::functions::meta::findExpressionsForFunct
 
 function meta::pure::functions::meta::findExpressionsForFunctionInFunctionDefinition(func:FunctionDefinition<Any>[1], funcs:Function<Any>[*]):FunctionExpression[*]
 {
-   findExpressionsForFunctionInFunctionDefinition($func, $funcs, [meta::pure]);
+   findExpressionsForFunctionInFunctionDefinition($func, $funcs, f|!$f->isWithinPackage(meta::pure));
 }
 
-function meta::pure::functions::meta::findExpressionsForFunctionInFunctionDefinition(func:FunctionDefinition<Any>[1], funcs:Function<Any>[*], skipPackages:Package[*]):FunctionExpression[*]
+function meta::pure::functions::meta::findExpressionsForFunctionInFunctionDefinition(func:FunctionDefinition<Any>[1], funcs:Function<Any>[*], shouldRecurse:Function<{FunctionDefinition<Any>[1]->Boolean[1]}>[1]):FunctionExpression[*]
 {
-   findExpressionsForFunctionInFunctionDefinition($func, $funcs, [], $skipPackages);
+   findExpressionsForFunctionInFunctionDefinition($func, $funcs, [], $shouldRecurse);
 }
 
-function <<access.private>> meta::pure::functions::meta::findExpressionsForFunctionInFunctionDefinition(func:FunctionDefinition<Any>[1], funcs:Function<Any>[*], visitedFuncs:FunctionDefinition<Any>[*], skipPackages:Package[*]):FunctionExpression[*]
+function <<access.private>> meta::pure::functions::meta::findExpressionsForFunctionInFunctionDefinition(func:FunctionDefinition<Any>[1], funcs:Function<Any>[*], visitedFuncs:FunctionDefinition<Any>[*], shouldRecurse:Function<{FunctionDefinition<Any>[1]->Boolean[1]}>[1]):FunctionExpression[*]
 {
-   $func.expressionSequence->evaluateAndDeactivate()->map(vs | $vs->findExpressionsForFunctionInValueSpecification($funcs, $visitedFuncs->add($func->cast(@FunctionDefinition<Any>)), $skipPackages));
+   $func.expressionSequence->evaluateAndDeactivate()->map(vs | $vs->findExpressionsForFunctionInValueSpecification($funcs, $visitedFuncs->add($func->cast(@FunctionDefinition<Any>)), $shouldRecurse));
 }
 
 function meta::pure::functions::meta::findPropertiesInValueSpecification(vs:ValueSpecification[1]):AbstractProperty<Any>[*]
