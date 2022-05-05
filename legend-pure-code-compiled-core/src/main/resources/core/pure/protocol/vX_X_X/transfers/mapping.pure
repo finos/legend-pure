@@ -188,7 +188,7 @@ function <<access.public>> meta::protocols::pure::vX_X_X::transformation::fromPu
                                                source = $p.sourceSetImplementationId,
                                                target = $p.targetSetImplementationId,
                                                enumMappingId = $p.transformer->cast(@EnumerationMapping<Any>).name,
-                                               transform = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformLambda($p.transform, $extensions),
+                                               transform = meta::protocols::pure::vX_X_X::transformation::fromPureGraph::transformLambda($p.transform, true, $extensions),
                                                localMappingProperty = if ($p.localMappingProperty->isNotEmpty() && $p.localMappingProperty->toOne(),
                                                                           | ^meta::protocols::pure::vX_X_X::metamodel::mapping::LocalMappingPropertyInfo
                                                                             (
