@@ -48,6 +48,9 @@ meta::pure::persistence::metamodel::Persistence extends PackageableElement
    {doc.doc = 'The trigger that initiates persistence.'}
    trigger: Trigger[1];
 
+   {doc.doc = 'An optional source connection from which data will be read and passed to the service. THIS FEATURE IS UNDER FLUX'}
+   serviceInput: Connection[0..1];
+
    {doc.doc = 'The service that sources and optionally transforms data to persist.'}
    service: Service[1];
 

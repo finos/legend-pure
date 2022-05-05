@@ -59,6 +59,6 @@ meta::external::persistence::aws::metamodel::AwsPartition
 Class meta::external::persistence::aws::metamodel::connection::AwsFinCloudConnection extends Connection
 {
   datasetId: String[1];
-  authenticationStrategy: AwsOAuthAuthenticationStrategy[1];
+  authenticationStrategy: AuthenticationStrategy[1];
   targetSpecification: FinCloudDatasourceSpecification[1];
 }
