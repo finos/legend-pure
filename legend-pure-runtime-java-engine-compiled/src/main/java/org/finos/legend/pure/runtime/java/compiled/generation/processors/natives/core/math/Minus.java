@@ -30,15 +30,10 @@ public class Minus extends AbstractNativeFunctionGeneric
     @Override
     public String buildBody()
     {
-        return "new DefendedPureFunction1<Object, Object>()\n" +
+        return "new PureFunction1<Object, Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value(vars.get(0), es);\n" +
-                "            }\n" +
-                "            @Override\n" +
-                "            public Object value(Object input, final ExecutionSupport es)\n" +
+                "            public Object value(Object input, ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return input instanceof ListIterable \n" +
                 "                   ? CompiledSupport.minus((ListIterable) input) \n" +

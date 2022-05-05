@@ -25,7 +25,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public final class JavaMethodWithParamsSharedPureFunction implements SharedPureFunction<Object>
+public final class JavaMethodWithParamsSharedPureFunction<R> implements SharedPureFunction<R>
 {
     private final Method method;
     private final Class<?>[] paramClasses;
@@ -44,11 +44,12 @@ public final class JavaMethodWithParamsSharedPureFunction implements SharedPureF
     }
 
     @Override
-    public Object execute(ListIterable vars, ExecutionSupport es)
+    @SuppressWarnings("unchecked")
+    public R execute(ListIterable<?> vars, ExecutionSupport es)
     {
         try
         {
-            return this.method.invoke(null, vars.toArray());
+            return (R) this.method.invoke(null, vars.toArray());
         }
         catch (IllegalArgumentException e)
         {
@@ -65,7 +66,7 @@ public final class JavaMethodWithParamsSharedPureFunction implements SharedPureF
         }
         catch (IllegalAccessException e)
         {
-            throw new PureExecutionException("Failed to invoke java function.", e);
+            throw new PureExecutionException(this.sourceInformation, "Failed to invoke java function.", e);
         }
         catch (Exception e)
         {
@@ -79,7 +80,7 @@ public final class JavaMethodWithParamsSharedPureFunction implements SharedPureF
             {
                 vars.asLazy().reject(v -> v instanceof ExecutionSupport).appendString(builder, " with params [", ", ", "]");
             }
-            throw new RuntimeException(builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e);
+            throw new PureExecutionException(this.sourceInformation, builder.toString(), (e instanceof InvocationTargetException) ? e.getCause() : e);
         }
     }
 }

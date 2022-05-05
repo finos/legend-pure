@@ -44,11 +44,6 @@ public class Get extends AbstractNative
         return "new PureFunction2<PureMap, Object, Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value((PureMap) vars.get(0), vars.get(1),  es);\n" +
-                "            }\n" +
-                "            @Override\n" +
                 "            public Object value(PureMap map, Object key, ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return map.getMap().get(key);\n" +

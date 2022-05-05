@@ -15,12 +15,14 @@ import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.ImmutableSet;
+import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m4.serialization.Writer;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
@@ -101,47 +103,17 @@ public class DistributedMetadataSpecification
 
     public String writeSpecification(Path baseDirectory)
     {
-        return writeSpecification(baseDirectory, getSpecObjectWriter());
-    }
-
-    private String writeSpecification(Path baseDirectory, ObjectWriter writer)
-    {
-        return writeSpecification(FileWriters.fromDirectory(baseDirectory), writer);
+        return writeSpecification(baseDirectory, this);
     }
 
     public String writeSpecification(JarOutputStream jarOutputStream)
     {
-        return writeSpecification(jarOutputStream, getSpecObjectWriter());
-    }
-
-    private String writeSpecification(JarOutputStream jarOutputStream, ObjectWriter writer)
-    {
-        return writeSpecification(FileWriters.fromJarOutputStream(jarOutputStream), writer);
+        return writeSpecification(jarOutputStream, this);
     }
 
     public String writeSpecification(FileWriter fileWriter)
     {
-        return writeSpecification(fileWriter, getSpecObjectWriter());
-    }
-
-    private String writeSpecification(FileWriter fileWriter, ObjectWriter objectWriter)
-    {
-        byte[] bytes;
-        try
-        {
-            bytes = objectWriter.writeValueAsBytes(this);
-        }
-        catch (JsonProcessingException e)
-        {
-            throw new RuntimeException("Error writing definition for " + this, e);
-        }
-
-        String filePath = DistributedMetadataHelper.getMetadataSpecificationFilePath(getName());
-        try (Writer binaryWriter = fileWriter.getWriter(filePath))
-        {
-            binaryWriter.writeBytes(bytes);
-        }
-        return filePath;
+        return writeSpecification(fileWriter, this);
     }
 
     public static DistributedMetadataSpecification newSpecification(String name)
@@ -187,17 +159,19 @@ public class DistributedMetadataSpecification
             });
             throw new IllegalArgumentException(builder.toString());
         }
-        return new DistributedMetadataSpecification(name, (dependencies instanceof ImmutableSet) ? dependencies : Collections.unmodifiableSet(dependencies));
+        return new DistributedMetadataSpecification(DistributedMetadataHelper.validateMetadataName(name), (dependencies instanceof ImmutableSet) ? dependencies : Collections.unmodifiableSet(dependencies));
     }
+
+    // Writing specifications
 
     public static String writeSpecification(Path directory, DistributedMetadataSpecification metadata)
     {
-        return metadata.writeSpecification(directory);
+        return writeSpecification(FileWriters.fromDirectory(directory), metadata);
     }
 
     public static List<String> writeSpecifications(Path directory, DistributedMetadataSpecification... metadata)
     {
-        return writeSpecifications(directory, Arrays.asList(metadata));
+        return writeSpecifications(FileWriters.fromDirectory(directory), metadata);
     }
 
     public static List<String> writeSpecifications(Path directory, Iterable<? extends DistributedMetadataSpecification> metadata)
@@ -207,12 +181,12 @@ public class DistributedMetadataSpecification
 
     public static String writeSpecification(JarOutputStream jarOutputStream, DistributedMetadataSpecification metadata)
     {
-        return metadata.writeSpecification(jarOutputStream);
+        return writeSpecification(FileWriters.fromJarOutputStream(jarOutputStream), metadata);
     }
 
     public static List<String> writeSpecifications(JarOutputStream jarOutputStream, DistributedMetadataSpecification... metadata)
     {
-        return writeSpecifications(jarOutputStream, Arrays.asList(metadata));
+        return writeSpecifications(FileWriters.fromJarOutputStream(jarOutputStream), metadata);
     }
 
     public static List<String> writeSpecifications(JarOutputStream jarOutputStream, Iterable<? extends DistributedMetadataSpecification> metadata)
@@ -222,24 +196,42 @@ public class DistributedMetadataSpecification
 
     public static String writeSpecification(FileWriter fileWriter, DistributedMetadataSpecification metadata)
     {
-        return metadata.writeSpecification(fileWriter);
+        return writeSpecification(metadata, fileWriter, getSpecObjectWriter());
     }
 
     public static List<String> writeSpecifications(FileWriter fileWriter, DistributedMetadataSpecification... metadata)
     {
-        return writeSpecifications(fileWriter, Arrays.asList(metadata));
+        ObjectWriter objectWriter = getSpecObjectWriter();
+        return ArrayIterate.collect(metadata, m -> writeSpecification(m, fileWriter, objectWriter));
     }
 
     public static List<String> writeSpecifications(FileWriter fileWriter, Iterable<? extends DistributedMetadataSpecification> metadata)
     {
-        List<String> paths = Lists.mutable.empty();
         ObjectWriter objectWriter = getSpecObjectWriter();
-        for (DistributedMetadataSpecification m : metadata)
-        {
-            paths.add(m.writeSpecification(fileWriter, objectWriter));
-        }
-        return paths;
+        return Iterate.collect(metadata, m -> writeSpecification(m, fileWriter, objectWriter), Lists.mutable.empty());
     }
+
+    private static String writeSpecification(DistributedMetadataSpecification metadata, FileWriter fileWriter, ObjectWriter objectWriter)
+    {
+        byte[] bytes;
+        try
+        {
+            bytes = objectWriter.writeValueAsBytes(metadata);
+        }
+        catch (JsonProcessingException e)
+        {
+            throw new RuntimeException("Error writing definition for " + metadata, e);
+        }
+
+        String filePath = DistributedMetadataHelper.getMetadataSpecificationFilePath(metadata.getName());
+        try (Writer binaryWriter = fileWriter.getWriter(filePath))
+        {
+            binaryWriter.writeBytes(bytes);
+        }
+        return filePath;
+    }
+
+    // Reading specifications
 
     public static DistributedMetadataSpecification readSpecification(Path file) throws IOException
     {
@@ -260,6 +252,8 @@ public class DistributedMetadataSpecification
         ObjectReader objectReader = getSpecObjectReader();
         return objectReader.readValue(reader);
     }
+
+    // Loading specifications
 
     /**
      * Load the named metadata specifications, plus any dependencies. An exception will be thrown if any of the
@@ -318,7 +312,7 @@ public class DistributedMetadataSpecification
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error loading " + directoryName, e);
+            throw new UncheckedIOException("Error loading " + directoryName, e);
         }
 
         if (!urls.hasMoreElements())
@@ -420,7 +414,7 @@ public class DistributedMetadataSpecification
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error loading " + resourceName, e);
+            throw new UncheckedIOException("Error loading " + resourceName, e);
         }
 
         if (!urls.hasMoreElements())
@@ -437,7 +431,7 @@ public class DistributedMetadataSpecification
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error reading definition of metadata \"" + metadataName + "\" from " + url, e);
+            throw new UncheckedIOException("Error reading definition of metadata \"" + metadataName + "\" from " + url, e);
         }
 
         // Check for other possibly conflicting definitions
@@ -451,7 +445,7 @@ public class DistributedMetadataSpecification
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Error reading definition of metadata \"" + metadataName + "\" from " + otherUrl, e);
+                throw new UncheckedIOException("Error reading definition of metadata \"" + metadataName + "\" from " + otherUrl, e);
             }
             if (!metadata.equals(otherMetadata))
             {
@@ -461,6 +455,8 @@ public class DistributedMetadataSpecification
 
         return metadata;
     }
+
+    // Readers and writers
 
     private static ObjectReader getSpecObjectReader()
     {

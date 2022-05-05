@@ -14,10 +14,17 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function;
 
-
+import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 
-public interface PureFunction3 <T1, T2, T3, R> extends SharedPureFunction<R>
+public interface PureFunction3<T1, T2, T3, R> extends SharedPureFunction<R>
 {
+    @SuppressWarnings("unchecked")
+    @Override
+    default R execute(ListIterable<?> vars, ExecutionSupport es)
+    {
+        return value((T1) vars.get(0), (T2) vars.get(1), (T3) vars.get(2), es);
+    }
+
     R value(T1 argument1, T2 argument2, T3 argument3, ExecutionSupport es);
 }

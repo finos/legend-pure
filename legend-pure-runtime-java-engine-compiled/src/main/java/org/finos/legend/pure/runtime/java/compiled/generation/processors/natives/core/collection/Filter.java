@@ -44,18 +44,18 @@ public class Filter extends AbstractNative implements Native
         String list = transformedParams.get(0);
 
         boolean isLambdaFunction = Instance.instanceOf(parametersValues.get(1), M3Paths.InstanceValue, processorSupport) && ValueSpecification.instanceOf(parametersValues.get(1), M3Paths.LambdaFunction, processorSupport);
-        CoreInstance function = isLambdaFunction?Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.values, processorSupport):parametersValues.get(1);
+        CoreInstance function = isLambdaFunction ? Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.values, processorSupport) : parametersValues.get(1);
         CoreInstance functionType = processorSupport.function_getFunctionType(function);
         CoreInstance parameter = functionType.getValueForMetaPropertyToMany(M3Properties.parameters).getFirst();
         String paramTypeObject = TypeProcessor.typeToJavaObjectWithMul(parameter.getValueForMetaPropertyToOne(M3Properties.genericType), parameter.getValueForMetaPropertyToOne(M3Properties.multiplicity), processorSupport);
         if (isLambdaFunction)
         {
             String paramName = Instance.getValueForMetaPropertyToOneResolved(Instance.getValueForMetaPropertyToManyResolved(Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.genericType, M3Properties.typeArguments, M3Properties.rawType, processorSupport), M3Properties.parameters, processorSupport).get(0), M3Properties.name, processorSupport).getName();
-            return "CompiledSupport.toPureCollection(" + list + ").select(new DefendedPredicate<" + paramTypeObject + ">(){public boolean test(final " + paramTypeObject + " _" + paramName + "){return this.accept(_"+paramName+");}\npublic boolean accept(final " + paramTypeObject + " _" + paramName + "){" + FunctionProcessor.processFunctionDefinitionContent(topLevelElement, Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.values, processorSupport), true, processorContext, processorSupport) + "}})";
+            return "CompiledSupport.toPureCollection(" + list + ").select(new DefendedPredicate<" + paramTypeObject + ">(){public boolean accept(final " + paramTypeObject + " _" + paramName + "){" + FunctionProcessor.processFunctionDefinitionContent(topLevelElement, Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.values, processorSupport), true, processorContext, processorSupport) + "}})";
         }
         else
         {
-            return "CompiledSupport.toPureCollection(" + list + ").select(new DefendedPredicate<" + paramTypeObject + ">(){PureFunction1<" + paramTypeObject + ",Boolean> func=(PureFunction1<" + paramTypeObject + ",Boolean>)CoreGen.getSharedPureFunction(" + transformedParams.get(1) + ",es); public boolean accept(final " + paramTypeObject + " _var){return func.value(_var,es);}})";
+            return "CompiledSupport.toPureCollection(" + list + ").select(new DefendedPredicate<" + paramTypeObject + ">(){private final PureFunction1<" + paramTypeObject + ",Boolean> func=(PureFunction1<" + paramTypeObject + ",Boolean>)CoreGen.getSharedPureFunction(" + transformedParams.get(1) + ",es); public boolean accept(final " + paramTypeObject + " _var){return func.value(_var,es);}})";
         }
     }
 
@@ -65,15 +65,10 @@ public class Filter extends AbstractNative implements Native
         return "new PureFunction2<Object, Object, Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, ExecutionSupport es)\n" +
+                "            public Object value(Object p1, Object p2, final ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return value(vars.get(0), vars.get(1), es);\n" +
-                "            }\n" +
-                "            @Override\n" +
-                "            public Object value(Object p1, final Object p2, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                final " + FullJavaPaths.Function+ " func = p2 instanceof java.util.List?(" + FullJavaPaths.Function + ")((java.util.List)p2).get(0):(" + FullJavaPaths.Function + ")p2;" +
-                "                return CompiledSupport.toPureCollection(p1).select(new DefendedPredicate<Object>(){PureFunction1<Object,Boolean> funcC=(PureFunction1<Object,Boolean>)CoreGen.getSharedPureFunction(func, es); public boolean accept(final Object _var){return funcC.value(_var, es);}});"+
+                "                final " + FullJavaPaths.Function + " func = p2 instanceof java.util.List?(" + FullJavaPaths.Function + ")((java.util.List)p2).get(0):(" + FullJavaPaths.Function + ")p2;" +
+                "                return CompiledSupport.toPureCollection(p1).select(new DefendedPredicate<Object>(){PureFunction1<Object,Boolean> funcC=(PureFunction1<Object,Boolean>)CoreGen.getSharedPureFunction(func, es); public boolean accept(final Object _var){return funcC.value(_var, es);}});\n" +
                 "            }\n" +
                 "        }";
     }

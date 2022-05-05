@@ -14,8 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.dsl.mapping.compiled;
 
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -30,9 +29,10 @@ public class MappingExtensionCompiled extends BaseCompiledExtension
     public MappingExtensionCompiled()
     {
         super(
-                Lists.mutable.with(),
-                Lists.mutable.with(),
-                Lists.mutable.with((mapping, cg, processorContext) -> {
+                Lists.fixedSize.with(),
+                Lists.fixedSize.with(),
+                Lists.fixedSize.with((mapping, cg, processorContext) ->
+                {
                     if (Instance.instanceOf(mapping, M2MappingPaths.Mapping, cg.getProcessorSupport()))
                     {
                         for (CoreInstance classMapping : mapping.getValueForMetaPropertyToMany(M2MappingProperties.classMappings))
@@ -50,13 +50,12 @@ public class MappingExtensionCompiled extends BaseCompiledExtension
                             }
                             else
                             {
-                                MutableList<CompiledExtension> stores = CompiledExtensionLoader.extensions().select(c -> c.getExtraClassMappingProcessors().size() > 0);
-                                stores.flatCollect(CompiledExtension::getExtraClassMappingProcessors).forEach(ep -> ep.value(mapping, classMapping, processorContext, cg.getProcessorSupport()));
+                                CompiledExtensionLoader.extensions().flatCollect(CompiledExtension::getExtraClassMappingProcessors).forEach(ep -> ep.value(mapping, classMapping, processorContext, cg.getProcessorSupport()));
                             }
                         }
                     }
                 }),
-                Lists.mutable.with());
+                Lists.fixedSize.with());
     }
 
     public static CompiledExtension extension()

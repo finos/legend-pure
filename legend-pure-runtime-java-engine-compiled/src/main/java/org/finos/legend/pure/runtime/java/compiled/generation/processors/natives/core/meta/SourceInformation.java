@@ -22,8 +22,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Fu
 
 public class SourceInformation extends AbstractNative
 {
-
-    public SourceInformation() {
+    public SourceInformation()
+    {
         super("sourceInformation_Any_1__SourceInformation_$0_1$_");
     }
 
@@ -34,15 +34,10 @@ public class SourceInformation extends AbstractNative
     }
 
     @Override
-    public String buildBody() {
-
-        return "new DefendedPureFunction1<Object, Object>()\n" +
+    public String buildBody()
+    {
+        return "new PureFunction1<Object, Object>()\n" +
                 "        {\n" +
-                "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value(vars.get(0), es);\n" +
-                "            }\n" +
                 "            @Override\n" +
                 "            public Object value(Object any, ExecutionSupport es)\n" +
                 "            {\n" +

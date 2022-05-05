@@ -14,11 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.ProcessorContext;
@@ -28,31 +26,30 @@ public abstract class AbstractNative implements Native
 {
     private final ImmutableList<String> signatures;
 
+    protected AbstractNative(ListIterable<String> signatures)
+    {
+        this.signatures = signatures.toImmutable();
+    }
+
     protected AbstractNative(String signature)
     {
-        this.signatures = Lists.immutable.with(signature);
+        this(Lists.immutable.with(signature));
     }
 
     protected AbstractNative(String signature1, String signature2)
     {
-        this.signatures = Lists.immutable.with(signature1, signature2);
-    }
-
-    @Override
-    public ListIterable<String> transformParameterValues(ListIterable<? extends CoreInstance> parametersValues, CoreInstance topLevelElement, ProcessorSupport processorSupport, ProcessorContext processorContext) {
-        MutableList<String> transformedParams = FastList.newList(parametersValues.size());
-
-        for (CoreInstance parameterValue :  parametersValues)
-        {
-            transformedParams.add(ValueSpecificationProcessor.processValueSpecification(topLevelElement, parameterValue, processorContext));
-        }
-
-        return transformedParams;
+        this(Lists.immutable.with(signature1, signature2));
     }
 
     protected AbstractNative(String... signatures)
     {
-        this.signatures = Lists.immutable.with(signatures);
+        this(Lists.immutable.with(signatures));
+    }
+
+    @Override
+    public ListIterable<String> transformParameterValues(ListIterable<? extends CoreInstance> parametersValues, CoreInstance topLevelElement, ProcessorSupport processorSupport, ProcessorContext processorContext)
+    {
+        return parametersValues.collect(pv -> ValueSpecificationProcessor.processValueSpecification(topLevelElement, pv, processorContext));
     }
 
     @Override
@@ -67,9 +64,9 @@ public abstract class AbstractNative implements Native
         return "new SharedPureFunction<Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
+                "            public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "            {\n" +
-                "                throw new RuntimeException(\"Not Implemented for function:" + signatures.makeString() + "\");\n" +
+                "                throw new UnsupportedOperationException(\"Not Implemented for function: " + this.signatures.makeString() + "\");\n" +
                 "            }\n" +
                 "        }";
     }

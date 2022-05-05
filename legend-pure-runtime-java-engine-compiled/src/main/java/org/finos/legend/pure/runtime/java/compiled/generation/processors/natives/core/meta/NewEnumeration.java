@@ -22,23 +22,25 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 
 public class NewEnumeration extends AbstractNative
 {
-    public NewEnumeration() {
+    public NewEnumeration()
+    {
         super("newEnumeration_String_1__String_MANY__Enumeration_1_");
     }
 
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return "CoreGen.newEnumeration(" + transformedParams.get(0) + ","+ transformedParams.get(1)+",((CompiledExecutionSupport)es).getMetadataAccessor(), " + NativeFunctionProcessor.buildM4SourceInformation(functionExpression.getSourceInformation()) + ")";
+        return "CoreGen.newEnumeration(" + transformedParams.get(0) + "," + transformedParams.get(1) + ",((CompiledExecutionSupport)es).getMetadataAccessor(), " + NativeFunctionProcessor.buildM4SourceInformation(functionExpression.getSourceInformation()) + ")";
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
 
         return "new SharedPureFunction<Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
+                "            public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return CoreGen.newEnumeration((String) vars.get(0), (RichIterable) vars.get(1), ((CompiledExecutionSupport) es).getMetadataAccessor(), null);\n" +
                 "            }\n" +

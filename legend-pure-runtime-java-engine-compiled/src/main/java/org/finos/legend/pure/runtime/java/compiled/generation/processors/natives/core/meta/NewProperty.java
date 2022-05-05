@@ -24,36 +24,36 @@ import java.text.MessageFormat;
 
 public class NewProperty extends AbstractNative
 {
-
-    private String template = "new " + FullJavaPaths.Property_Impl + "<Object,Object>(\"NOID\")"+
+    private static final String TEMPLATE = "new " + FullJavaPaths.Property_Impl + "<Object,Object>(\"NOID\")" +
             "._classifierGenericType(new " + FullJavaPaths.GenericType_Impl + "(\"NOID\")._rawType((" + FullJavaPaths.Class + "<Object>)((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::meta::pure::metamodel::function::property::Property\"))" +
             "   ._multiplicityArguments(Lists.immutable.of({3}))" +
-            "   ._typeArguments(Lists.immutable.of({1},{2})))"+
-            "._name({0})"+
-            "._genericType({2})"+
-            "._multiplicity({3})"+
+            "   ._typeArguments(Lists.immutable.of({1},{2})))" +
+            "._name({0})" +
+            "._genericType({2})" +
+            "._multiplicity({3})" +
             "._owner((" + FullJavaPaths.Class + "<Object>)({1})._rawType())";
 
-    public NewProperty() {
+    public NewProperty()
+    {
         super("newProperty_String_1__GenericType_1__GenericType_1__Multiplicity_1__Property_1_");
     }
-
 
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return MessageFormat.format(template, transformedParams.get(0), transformedParams.get(1), transformedParams.get(2), transformedParams.get(3));
+        return MessageFormat.format(TEMPLATE, transformedParams.get(0), transformedParams.get(1), transformedParams.get(2), transformedParams.get(3));
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
 
-        String newProperty = MessageFormat.format(template, "(String) vars.get(0)", "(" + FullJavaPaths.GenericType + ") vars.get(1)", "(" + FullJavaPaths.GenericType + ") vars.get(2)", "(" + FullJavaPaths.Multiplicity +  ") vars.get(3)");
+        String newProperty = MessageFormat.format(TEMPLATE, "(String) vars.get(0)", "(" + FullJavaPaths.GenericType + ") vars.get(1)", "(" + FullJavaPaths.GenericType + ") vars.get(2)", "(" + FullJavaPaths.Multiplicity + ") vars.get(3)");
 
         return "new SharedPureFunction<Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
+                "            public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return " + newProperty + ";\n" +
                 "            }\n" +

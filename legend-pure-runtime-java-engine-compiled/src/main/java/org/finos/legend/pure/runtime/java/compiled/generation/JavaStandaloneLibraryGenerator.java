@@ -192,7 +192,7 @@ public class JavaStandaloneLibraryGenerator
         Generate generate = new Generate();
         if (modularMetadataIds)
         {
-            generate.generateJavaCodeForSources(sourcesToCompile, group -> getSourceCodeGenerator("$" + group + "$", writeJavaSourcesToDisk, pathToWriteTo));
+            generate.generateJavaCodeForSources(sourcesToCompile, group -> getSourceCodeGenerator(group, writeJavaSourcesToDisk, pathToWriteTo));
             if (this.addExternalAPI)
             {
                 generate.generateExternalizableAPI(getSourceCodeGenerator(null, writeJavaSourcesToDisk, pathToWriteTo), this.externalAPIPackage);
@@ -210,9 +210,9 @@ public class JavaStandaloneLibraryGenerator
         return generate;
     }
 
-    private JavaSourceCodeGenerator getSourceCodeGenerator(String idPrefix, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
+    private JavaSourceCodeGenerator getSourceCodeGenerator(String compileGroup, boolean writeJavaSourcesToDisk, Path pathToWriteTo)
     {
-        IdBuilder idBuilder = IdBuilder.newIdBuilder(idPrefix, this.runtime.getProcessorSupport());
+        IdBuilder idBuilder = DistributedBinaryGraphSerializer.newIdBuilder(compileGroup, this.runtime.getProcessorSupport());
         JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(this.runtime.getProcessorSupport(), idBuilder, this.runtime.getCodeStorage(), writeJavaSourcesToDisk, pathToWriteTo, false, this.extensions, "UserCode", this.externalAPIPackage);
         javaSourceCodeGenerator.collectClassesToSerialize();
         return javaSourceCodeGenerator;

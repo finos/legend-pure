@@ -44,24 +44,39 @@ public class NewDate extends AbstractNative
     @Override
     public String buildBody() {
 
-        return "new SharedPureFunction<Object>()\n" +
+        return "new SharedPureFunction<org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate>()\n" +
                 "{\n" +
                 "   @Override\n" +
-                "   public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
+                "   public org.finos.legend.pure.m4.coreinstance.primitive.date.PureDate execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "   {\n" +
-                "       if (vars.size() == 1) {" +
-                "           return CompiledSupport.newDate((int) vars.get(0), null);" +
-                "       } else if (vars.size() == 2) {" +
-                "           return CompiledSupport.newDate((int) vars.get(0), (int) vars.get(1), null);" +
-                "       } else if (vars.size() == 3) {" +
-                "           return CompiledSupport.newDate((int) vars.get(0), (int) vars.get(1), (int) vars.get(2), null);" +
-                "       } else if (vars.size() == 4) {" +
-                "           return CompiledSupport.newDate((int) vars.get(0), (int) vars.get(1), (int) vars.get(2), (int) vars.get(3), null);" +
-                "       } else if (vars.size() == 5) {" +
-                "           return CompiledSupport.newDate((int) vars.get(0), (int) vars.get(1), (int) vars.get(2), (int) vars.get(3), (int) vars.get(4), null);" +
-                "       }" +
-                "       return CompiledSupport.newDate((int) vars.get(0), (int) vars.get(1), (int) vars.get(2), (int) vars.get(3), (int) vars.get(4), (Number) vars.get(5), null);" +
+                "       switch (vars.size())\n" +
+                "       {\n" +
+                "           case 1:\n" +
+                "           {\n" +
+                "               return CompiledSupport.newDate((long) vars.get(0), null);\n" +
+                "           }\n" +
+                "           case 2:\n" +
+                "           {\n" +
+                "               return CompiledSupport.newDate((long) vars.get(0), (long) vars.get(1), null);\n" +
+                "           }\n" +
+                "           case 3:\n" +
+                "           {\n" +
+                "               return CompiledSupport.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), null);\n" +
+                "           }\n" +
+                "           case 4:\n" +
+                "           {\n" +
+                "               return CompiledSupport.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), null);\n" +
+                "           }\n" +
+                "           case 5:\n" +
+                "           {\n" +
+                "               return CompiledSupport.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), (long) vars.get(4), null);\n" +
+                "           }\n" +
+                "           default:\n" +
+                "           {\n" +
+                "               return CompiledSupport.newDate((long) vars.get(0), (long) vars.get(1), (long) vars.get(2), (long) vars.get(3), (long) vars.get(4), (Number) vars.get(5), null);\n" +
+                "           }\n" +
+                "       }\n" +
                 "   }\n" +
-                "\n}";
+                "}";
     }
 }

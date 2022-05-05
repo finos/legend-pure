@@ -43,14 +43,7 @@ public class Message
 
     public MessageCallBack newMessageCallBack()
     {
-        return new MessageCallBack()
-        {
-            @Override
-            public void message(String message)
-            {
-                Message.this.setMessage(message);
-            }
-        };
+        return this::setMessage;
     }
 
     public static MessageCallBack newMessageCallback(Message message)

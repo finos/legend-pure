@@ -1,6 +1,7 @@
 package org.finos.legend.pure.m4.serialization.binary;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
@@ -23,9 +24,10 @@ class WritableByteChannelWriter extends AbstractBinaryWriter
     }
 
     @Override
-    public synchronized void writeBytes(byte[] bytes)
+    public synchronized void writeBytes(byte[] bytes, int offset, int length)
     {
-        writeByteBuffer(ByteBuffer.wrap(bytes));
+        checkByteArray(bytes, offset, length);
+        writeByteBuffer(ByteBuffer.wrap(bytes, offset, length));
     }
 
     @Override
@@ -77,7 +79,7 @@ class WritableByteChannelWriter extends AbstractBinaryWriter
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -89,7 +91,7 @@ class WritableByteChannelWriter extends AbstractBinaryWriter
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 }

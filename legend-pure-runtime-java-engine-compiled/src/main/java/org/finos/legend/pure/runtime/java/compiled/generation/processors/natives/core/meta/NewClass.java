@@ -22,7 +22,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 
 public class NewClass extends AbstractNative
 {
-    public NewClass() {
+    public NewClass()
+    {
         super("newClass_String_1__Class_1_");
     }
 
@@ -33,12 +34,13 @@ public class NewClass extends AbstractNative
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
 
         return "new SharedPureFunction<Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
+                "            public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return CoreGen.newClass((String) vars.get(0), ((CompiledExecutionSupport) es).getMetadataAccessor(), null);\n" +
                 "            }\n" +

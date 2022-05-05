@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m4.serialization.binary;
 
-public class VoidMessageCallBack implements  MessageCallBack
+public class VoidMessageCallBack implements MessageCallBack
 {
     private static final VoidMessageCallBack instance = new VoidMessageCallBack();
 

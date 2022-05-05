@@ -24,8 +24,8 @@ public class CoreExtensionCompiled extends BaseCompiledExtension
     public CoreExtensionCompiled()
     {
         super(
-                Lists.mutable.empty(),
-                Lists.mutable.with(StringJavaSource.newStringJavaSource("org.finos.legend.pure.generated", "CoreGen",
+                Lists.fixedSize.empty(),
+                Lists.fixedSize.with(StringJavaSource.newStringJavaSource("org.finos.legend.pure.generated", "CoreGen",
                         "package org.finos.legend.pure.generated;\n" +
                                 "\n" +
                                 "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Bridge;\n" +
@@ -40,8 +40,8 @@ public class CoreExtensionCompiled extends BaseCompiledExtension
                                 "import org.eclipse.collections.api.block.function.Function0;\n" +
                                 "import org.eclipse.collections.api.block.function.Function2;\n" +
                                 "import org.eclipse.collections.api.block.function.Function3;\n" +
+                                "import org.eclipse.collections.api.factory.Lists;\n" +
                                 "import org.eclipse.collections.api.list.ListIterable;\n" +
-                                "import org.eclipse.collections.impl.factory.Lists;\n" +
                                 "import org.eclipse.collections.impl.map.mutable.UnifiedMap;\n" +
                                 "import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;\n" +
                                 "import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;\n" +
@@ -61,7 +61,7 @@ public class CoreExtensionCompiled extends BaseCompiledExtension
                                 "\n" +
                                 "public class CoreGen\n" +
                                 "{\n" +
-                                "    static Bridge bridge = new BridgeImpl();\n" +
+                                "    private static final Bridge bridge = new BridgeImpl();\n" +
                                 "\n" +
                                 "    public static Object alloyTest(ExecutionSupport es, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function alloyTest, org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function regular)\n" +
                                 "    {\n" +
@@ -271,50 +271,43 @@ public class CoreExtensionCompiled extends BaseCompiledExtension
                                 "\n" +
                                 "    private static class BridgeImpl implements Bridge\n" +
                                 "    {\n" +
-                                "        public Function0<List<Object>> listBuilder = () -> new Root_meta_pure_functions_collection_List_Impl<Object>(\"\");\n" +
-                                "        public Function2<Multiplicity, ExecutionSupport, Boolean> hasToOneUpperBound = (m, es) -> platform_pure_corefunctions_multiplicity.Root_meta_pure_functions_multiplicity_hasToOneUpperBound_Multiplicity_1__Boolean_1_(m, es);\n" +
-                                "        public Function2<Multiplicity, ExecutionSupport, Boolean> isToOne = (m, es) -> platform_pure_corefunctions_multiplicity.Root_meta_pure_functions_multiplicity_isToOne_Multiplicity_1__Boolean_1_(m, es);\n" +
-                                "        public Function3<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement, String, ExecutionSupport, String> elementToPath = (aClass, sep, es) -> platform_pure_corefunctions_meta.Root_meta_pure_functions_meta_elementToPath_PackageableElement_1__String_1__String_1_(aClass, \"_\", es);\n" +
-                                "        public Function0<LambdaCompiledExtended> lambdaBuilder = () -> new PureCompiledLambda();\n" +
-                                "\n" +
                                 "        @Override\n" +
-                                "        public Function0<List<Object>> listBuilder()\n" +
+                                "        public <T> List<T> buildList()\n" +
                                 "        {\n" +
-                                "            return listBuilder;\n" +
+                                "            return new Root_meta_pure_functions_collection_List_Impl<>(\"\");\n" +
                                 "        }\n" +
                                 "\n" +
                                 "        @Override\n" +
-                                "        public Function2<Multiplicity, ExecutionSupport, Boolean> hasToOneUpperBound()\n" +
+                                "        public boolean hasToOneUpperBound(Multiplicity multiplicity, ExecutionSupport executionSupport)\n" +
                                 "        {\n" +
-                                "            return hasToOneUpperBound;\n" +
+                                "            return platform_pure_corefunctions_multiplicity.Root_meta_pure_functions_multiplicity_hasToOneUpperBound_Multiplicity_1__Boolean_1_(multiplicity, executionSupport);\n" +
                                 "        }\n" +
                                 "\n" +
                                 "        @Override\n" +
-                                "        public Function2<Multiplicity, ExecutionSupport, Boolean> isToOne()\n" +
+                                "        public boolean isToOne(Multiplicity multiplicity, ExecutionSupport executionSupport)\n" +
                                 "        {\n" +
-                                "            return isToOne;\n" +
+                                "            return platform_pure_corefunctions_multiplicity.Root_meta_pure_functions_multiplicity_isToOne_Multiplicity_1__Boolean_1_(multiplicity, executionSupport);\n" +
                                 "        }\n" +
                                 "\n" +
                                 "        @Override\n" +
-                                "        public Function3<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement, String, ExecutionSupport, String> elementToPath()\n" +
+                                "        public String elementToPath(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement element, String separator, ExecutionSupport executionSupport)\n" +
                                 "        {\n" +
-                                "            return elementToPath;\n" +
+                                "            return platform_pure_corefunctions_meta.Root_meta_pure_functions_meta_elementToPath_PackageableElement_1__String_1__String_1_(element, separator, executionSupport);\n" +
                                 "        }\n" +
                                 "\n" +
                                 "        @Override\n" +
-                                "        public Function0<LambdaCompiledExtended> lambdaBuilder()\n" +
+                                "        public LambdaCompiledExtended buildLambda()\n" +
                                 "        {\n" +
-                                "            return lambdaBuilder;\n" +
+                                "            return new PureCompiledLambda();\n" +
                                 "        }\n" +
                                 "    }\n" +
                                 "}\n")),
-                Lists.mutable.empty(),
-                Lists.mutable.empty());
+                Lists.fixedSize.empty(),
+                Lists.fixedSize.empty());
     }
 
     public static CompiledExtension extension()
     {
         return new CoreExtensionCompiled();
     }
-
 }

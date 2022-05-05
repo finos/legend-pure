@@ -58,12 +58,18 @@ public class TestDistributedMetadataSpecification
         String[] invalidNames = {"", "$$%", "invalid name"};
         for (String name : invalidNames)
         {
-            IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> DistributedMetadataSpecification.newSpecification(name));
-            Assert.assertEquals(name, "Invalid metadata name: \"" + name + "\"", e.getMessage());
+            IllegalArgumentException e1 = Assert.assertThrows(IllegalArgumentException.class, () -> DistributedMetadataSpecification.newSpecification(name));
+            Assert.assertEquals(name, "Invalid metadata name: \"" + name + "\"", e1.getMessage());
+
+            IllegalArgumentException e2 = Assert.assertThrows(IllegalArgumentException.class, () -> DistributedMetadataSpecification.newSpecification(name, "some_dependency"));
+            Assert.assertEquals(name, "Invalid metadata name: \"" + name + "\"", e2.getMessage());
         }
 
-        IllegalArgumentException e = Assert.assertThrows(IllegalArgumentException.class, () -> DistributedMetadataSpecification.newSpecification(null));
-        Assert.assertEquals("Invalid metadata name: null", e.getMessage());
+        IllegalArgumentException e1 = Assert.assertThrows(IllegalArgumentException.class, () -> DistributedMetadataSpecification.newSpecification(null));
+        Assert.assertEquals("Invalid metadata name: null", e1.getMessage());
+
+        IllegalArgumentException e2 = Assert.assertThrows(IllegalArgumentException.class, () -> DistributedMetadataSpecification.newSpecification(null, "some_other_dependency"));
+        Assert.assertEquals("Invalid metadata name: null", e2.getMessage());
     }
 
     @Test

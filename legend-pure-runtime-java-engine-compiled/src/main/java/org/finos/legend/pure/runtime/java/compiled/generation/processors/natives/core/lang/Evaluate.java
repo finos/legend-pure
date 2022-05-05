@@ -27,7 +27,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Ty
 
 public class Evaluate extends AbstractNative
 {
-    public Evaluate() {
+    public Evaluate()
+    {
         super("evaluate_Function_1__List_MANY__Any_MANY_");
     }
 
@@ -41,19 +42,15 @@ public class Evaluate extends AbstractNative
         CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.multiplicity, processorSupport);
         String param = transformedParams.get(1);
 
-        return "(("+type+")(Object)(CompiledSupport.toPureCollection(CoreGen.evaluateToMany(es, "+ transformedParams.get(0) + ", " + (Multiplicity.isToOne(multiplicity, false) ? "CompiledSupport.toPureCollection(" + param + ")" : param) + "))))";
+        return "((" + type + ")(Object)(CompiledSupport.toPureCollection(CoreGen.evaluateToMany(es, " + transformedParams.get(0) + ", " + (Multiplicity.isToOne(multiplicity, false) ? "CompiledSupport.toPureCollection(" + param + ")" : param) + "))))";
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
 
         return "new PureFunction2<" + FullJavaPaths.Function + ", Object, Object>()\n" +
                 "        {\n" +
-                "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value((" +  FullJavaPaths.Function + ") vars.get(0), vars.get(1), es);\n" +
-                "            }\n" +
                 "            @Override\n" +
                 "            public Object value(" + FullJavaPaths.Function + " func, Object params, ExecutionSupport es)\n" +
                 "            {\n" +

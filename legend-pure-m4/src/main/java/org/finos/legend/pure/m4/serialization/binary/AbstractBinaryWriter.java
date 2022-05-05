@@ -28,7 +28,7 @@ public abstract class AbstractBinaryWriter extends AbstractBinaryReaderWriter im
     @Override
     public synchronized void writeBoolean(boolean b)
     {
-        writeByte(b ? TRUE_BYTE : FALSE_BYTE);
+        writeByte(booleanToByte(b));
     }
 
     @Override

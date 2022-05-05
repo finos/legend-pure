@@ -61,12 +61,7 @@ public class NewWithKeyExpr extends AbstractNative
         return "new PureFunction3<" + FullJavaPaths.Class + ", String, RichIterable<? extends " + FullJavaPaths.KeyExpression + ">, Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value((" + FullJavaPaths.Class + ")vars.get(0), (String)vars.get(1), (RichIterable<? extends " + FullJavaPaths.KeyExpression + ">)vars.get(2), es);\n" +
-                "            }\n" +
-                "            @Override\n" +
-                "            public Object value(" + FullJavaPaths.Class + " clazz, String name, RichIterable<? extends " + FullJavaPaths.KeyExpression + "> keyExpressions, final ExecutionSupport es)\n" +
+                "            public Object value(" + FullJavaPaths.Class + " clazz, String name, RichIterable<? extends " + FullJavaPaths.KeyExpression + "> keyExpressions, ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return CoreGen.newObject(clazz, name, keyExpressions, es);\n" +
                 "            }\n" +
