@@ -154,13 +154,15 @@ function meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpec
                                        );
                   ,
          i:InstanceValue[1]|
-                        if($i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::isHackedClass(),
+                        if($i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::isClassFunctionParameter(true),
                            |$i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformHackedClass(),
-                           |if($i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::isHackedUnit(),
-                               |$i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformHackedUnit(),
-                               |if($i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::isUnitType(),
-                                   |$i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformUnitInstance(),
-                                   |$i.values->meta::protocols::pure::vX_X_X::transformation ::fromPureGraph::valueSpecification::transformAny($inScope, $open, $i.multiplicity, 0 , [],$useAppliedFunction, $extensions))));,
+                           | if($i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::isClassFunctionParameter(false),
+                                |$i.genericType.typeArguments.rawType->toOne()->meta::protocols::pure::vX_X_X::transformation ::fromPureGraph::valueSpecification::transformAny($inScope, $open, $i.multiplicity, 0 , [],$useAppliedFunction, $extensions),
+                                |if($i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::isHackedUnit(),
+                                  |$i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformHackedUnit(),
+                                  |if($i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::isUnitType(),
+                                      |$i->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformUnitInstance(),
+                                      |$i.values->meta::protocols::pure::vX_X_X::transformation ::fromPureGraph::valueSpecification::transformAny($inScope, $open, $i.multiplicity, 0 , [],$useAppliedFunction, $extensions)))));,
          v:VariableExpression[1]|
             if ($inScope->contains($v.name),
                 |meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformVar($v,$isParameter),
@@ -188,10 +190,10 @@ function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromP
     $v.values->isEmpty() && $v.multiplicity == PureOne && $v->meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::isUnitType()
 }
 
-function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::isHackedClass(v:InstanceValue[1]):Boolean[1]
+function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::isClassFunctionParameter(v:InstanceValue[1], ishacked:Boolean[1]):Boolean[1]
 {
     let rawType = $v.genericType.rawType->toOne();
-    $v.values->isEmpty() && $v.multiplicity == PureOne && (($rawType->instanceOf(DataType) && !$rawType->instanceOf(Unit)) || $rawType->instanceOf(Class));
+    $v.values->isEmpty() && $v.multiplicity == PureOne && (($rawType->instanceOf(DataType) && !$rawType->instanceOf(Unit)) || $rawType->instanceOf(Class) && (($ishacked && $rawType.name != 'Class') || (!$ishacked && $rawType.name == 'Class')));
 }
 
 function <<access.private>> meta::protocols::pure::vX_X_X::transformation::fromPureGraph::valueSpecification::transformHackedClass(v:InstanceValue[1]):meta::protocols::pure::vX_X_X::metamodel::valueSpecification::raw::HackedClassValue[1]
