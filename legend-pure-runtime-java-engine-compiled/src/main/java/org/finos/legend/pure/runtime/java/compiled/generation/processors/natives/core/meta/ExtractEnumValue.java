@@ -57,15 +57,10 @@ public class ExtractEnumValue extends AbstractNative
         return "new PureFunction2<"  + FullJavaPaths.Enumeration + ", String, Object>()\n" +
                "        {\n" +
                "            @Override\n" +
-               "            public Object execute(ListIterable vars, ExecutionSupport es)\n" +
-               "            {\n" +
-               "                return value((" + FullJavaPaths.Enumeration + ")vars.get(0), (String)vars.get(1), es);\n" +
-               "            }\n" +
-               "            @Override\n" +
                "            public Object value("  + FullJavaPaths.Enumeration + " enumeration, String name, ExecutionSupport es)\n" +
                "            {\n" +
                "                return Pure.getEnumByName(enumeration, name);\n" +
                "            }\n" +
-               "        }\n";
+               "        }";
     }
 }

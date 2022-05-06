@@ -23,6 +23,7 @@ import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -77,7 +78,7 @@ public class FileWriters
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Error getting writer for " + path, e);
+                throw new UncheckedIOException("Error getting writer for " + path, e);
             }
         }
     }
@@ -101,21 +102,22 @@ public class FileWriters
                 private final ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
                 @Override
-                public synchronized void close()
-                {
-                    storeContent(path, this.stream);
-                }
-
-                @Override
-                protected void write(byte b)
+                public synchronized void writeByte(byte b)
                 {
                     this.stream.write(b);
                 }
 
                 @Override
-                protected void write(byte[] bytes, int offset, int length)
+                public synchronized void writeBytes(byte[] bytes, int offset, int length)
                 {
+                    checkByteArray(bytes, offset, length);
                     this.stream.write(bytes, offset, length);
+                }
+
+                @Override
+                public synchronized void close()
+                {
+                    storeContent(path, this.stream);
                 }
             };
         }
@@ -148,10 +150,37 @@ public class FileWriters
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Error getting writer for " + path, e);
+                throw new UncheckedIOException("Error getting writer for " + path, e);
             }
             return new AbstractSimpleBinaryWriter()
             {
+                @Override
+                public synchronized void writeByte(byte b)
+                {
+                    try
+                    {
+                        JarEntryFileWriter.this.stream.write(b);
+                    }
+                    catch (IOException e)
+                    {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+
+                @Override
+                public synchronized void writeBytes(byte[] bytes, int offset, int length)
+                {
+                    checkByteArray(bytes, offset, length);
+                    try
+                    {
+                        JarEntryFileWriter.this.stream.write(bytes, offset, length);
+                    }
+                    catch (IOException e)
+                    {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+
                 @Override
                 public synchronized void close()
                 {
@@ -161,33 +190,7 @@ public class FileWriters
                     }
                     catch (IOException e)
                     {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                @Override
-                protected void write(byte b)
-                {
-                    try
-                    {
-                        JarEntryFileWriter.this.stream.write(b);
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                @Override
-                protected void write(byte[] bytes, int offset, int length)
-                {
-                    try
-                    {
-                        JarEntryFileWriter.this.stream.write(bytes, offset, length);
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException(e);
+                        throw new UncheckedIOException(e);
                     }
                 }
             };

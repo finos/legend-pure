@@ -29,7 +29,7 @@ public abstract class TestSerializers
             WriterReader writerReader = newWriterReader();
             try (Writer writer = writerReader.getWriter())
             {
-                writer.writeByte((byte)expected);
+                writer.writeByte((byte) expected);
             }
             try (Reader reader = writerReader.getReader())
             {
@@ -52,6 +52,22 @@ public abstract class TestSerializers
         {
             byte[] actual = reader.readBytes(expected.length);
             Assert.assertArrayEquals(expected, actual);
+        }
+    }
+
+    @Test
+    public void testWriteReadBytesWithOffset() throws IOException
+    {
+        byte[] expected = {Byte.MIN_VALUE, Byte.MAX_VALUE, 0, -1, 55};
+        WriterReader writerReader = newWriterReader();
+        try (Writer writer = writerReader.getWriter())
+        {
+            writer.writeBytes(expected, 1, 3);
+        }
+        try (Reader reader = writerReader.getReader())
+        {
+            byte[] actual = reader.readBytes(3);
+            Assert.assertArrayEquals(new byte[]{Byte.MAX_VALUE, 0, -1}, actual);
         }
     }
 
@@ -112,7 +128,7 @@ public abstract class TestSerializers
     @Test
     public void testWriteReadBoolean() throws IOException
     {
-        for (boolean expected : new boolean[] {true, false})
+        for (boolean expected : new boolean[]{true, false})
         {
             WriterReader writerReader = newWriterReader();
             try (Writer writer = writerReader.getWriter())
@@ -130,7 +146,7 @@ public abstract class TestSerializers
     @Test
     public void testWriteSkipBoolean() throws IOException
     {
-        for (boolean expected : new boolean[] {true, false})
+        for (boolean expected : new boolean[]{true, false})
         {
             WriterReader writerReader = newWriterReader();
             try (Writer writer = writerReader.getWriter())
@@ -617,6 +633,7 @@ public abstract class TestSerializers
     protected interface WriterReader
     {
         Writer getWriter() throws IOException;
+
         Reader getReader() throws IOException;
     }
 }

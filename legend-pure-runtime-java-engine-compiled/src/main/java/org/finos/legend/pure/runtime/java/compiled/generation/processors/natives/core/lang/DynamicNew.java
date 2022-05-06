@@ -14,11 +14,9 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.lang;
 
-import org.eclipse.collections.api.block.procedure.Procedure;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -35,43 +33,36 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuesp
 
 public class DynamicNew extends AbstractNative
 {
-    public DynamicNew() {
+    public DynamicNew()
+    {
         super("dynamicNew_Class_1__KeyValue_MANY__Any_1_", "dynamicNew_Class_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Any_1_",
-                "dynamicNew_Class_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Any_1_","dynamicNew_Class_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Function_$0_1$__Any_1_",
-                "dynamicNew_GenericType_1__KeyValue_MANY__Any_1_","dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Any_1_",
-                "dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Any_1_","dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Function_$0_1$__Any_1_");
+                "dynamicNew_Class_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Any_1_", "dynamicNew_Class_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Function_$0_1$__Any_1_",
+                "dynamicNew_GenericType_1__KeyValue_MANY__Any_1_", "dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Any_1_",
+                "dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Any_1_", "dynamicNew_GenericType_1__KeyValue_MANY__Function_$0_1$__Function_$0_1$__Any_$0_1$__Function_$0_1$__Function_$0_1$__Any_1_");
     }
 
     // In dynamicNew function default values must be handled
     @Override
-    public ListIterable<String> transformParameterValues(ListIterable<? extends CoreInstance> parametersValues, CoreInstance topLevelElement, ProcessorSupport processorSupport, ProcessorContext processorContext) {
-
+    public ListIterable<String> transformParameterValues(ListIterable<? extends CoreInstance> parametersValues, CoreInstance topLevelElement, ProcessorSupport processorSupport, ProcessorContext processorContext)
+    {
         ListIterable<String> defaultValues = transformDefaultValues(parametersValues.get(0), processorSupport, processorContext);
 
-        MutableList<String> transformedParams = FastList.newList(parametersValues.size());
-
-        for (int index=0 ; index < parametersValues.size(); index++)
+        MutableList<String> transformedParams = Lists.mutable.ofInitialCapacity(parametersValues.size());
+        parametersValues.forEachWithIndex((parameterValue, index) ->
         {
-            CoreInstance parameterValue = parametersValues.get(index);
-            if (defaultValues.size() > 0 && index == 1) {
+            if (defaultValues.notEmpty() && index == 1)
+            {
                 ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(parameterValue, M3Properties.values, processorSupport);
                 String type = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(parameterValue, M3Properties.genericType, processorSupport), true, processorSupport);
 
-                MutableList<String> processedValues = FastList.newList(defaultValues);
-                values.forEach(new Procedure<CoreInstance>()
-                {
-                    @Override
-                    public void value(CoreInstance coreInstance)
-                    {
-                        processedValues.add(ValueSpecificationProcessor.processValueSpecification(topLevelElement, coreInstance, processorContext));
-                    }
-                });
-
+                MutableList<String> processedValues = values.collect(v -> ValueSpecificationProcessor.processValueSpecification(topLevelElement, v, processorContext), Lists.mutable.withAll(defaultValues));
                 transformedParams.add(processedValues.size() > 1 ? "Lists.mutable.<" + type + ">with(" + processedValues.makeString(",") + ")" : processedValues.makeString(","));
-            } else {
+            }
+            else
+            {
                 transformedParams.add(ValueSpecificationProcessor.processValueSpecification(topLevelElement, parameterValue, processorContext));
             }
-        }
+        });
 
         return transformedParams;
     }
@@ -82,23 +73,22 @@ public class DynamicNew extends AbstractNative
         ProcessorSupport processorSupport = processorContext.getSupport();
         ListIterable<? extends CoreInstance> parametersValues = Instance.getValueForMetaPropertyToManyResolved(functionExpression, M3Properties.parametersValues, processorSupport);
 
-        String newObject = "CoreGen.newObject(" + transformedParams.get(0) + ", " +
-                "CompiledSupport.toPureCollection(" + transformedParams.get(1) + ")";
+        String newObject = "CoreGen.newObject(" + transformedParams.get(0) + ", CompiledSupport.toPureCollection(" + transformedParams.get(1) + ")";
 
 
         String param3 = null;
-        CoreInstance param3Instance = null ;
+        CoreInstance param3Instance = null;
         String param4 = null;
         CoreInstance param4Instance = null;
         String param5 = null;
         String param6 = null;
 
-        if( parametersValues.size()> 2  )
+        if (parametersValues.size() > 2)
         {
             param3 = transformedParams.get(2);
             param3Instance = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(2), M3Properties.values, processorSupport);
             param4 = transformedParams.get(3);
-            param4Instance = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(3),M3Properties.values,processorSupport) ;
+            param4Instance = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(3), M3Properties.values, processorSupport);
             param5 = transformedParams.get(4);
         }
 
@@ -106,27 +96,27 @@ public class DynamicNew extends AbstractNative
                 param3 + "," +
                         param4 + "," +
                         param5 + "," +
-                        ( param3Instance==null? "null,":"new PureFunction2<Object,Object,Object>(){" +
+                        (param3Instance == null ? "null," : "new PureFunction2<Object,Object,Object>(){" +
                                 "                    public Object value(Object t1, Object t2, ExecutionSupport es){return " + IdBuilder.sourceToId(param3Instance.getSourceInformation()) + "." + FunctionProcessor.functionNameToJava(param3Instance) + "(t1,(" + FullJavaPaths.Property + "<? extends java.lang.Object,? extends java.lang.Object>)t2,es);}" +
-                                "                    public Object execute(ListIterable vars, ExecutionSupport es){throw new RuntimeException(\"Not Supported Yet!\");}" +
+                                "                    public Object execute(ListIterable<?> vars, ExecutionSupport es){throw new RuntimeException(\"Not Supported Yet!\");}" +
                                 "                    },") +
-                        ( param4Instance==null?"null": "new PureFunction2<Object,Object,Object>(){" +
-                                "                    public Object value(Object t1, Object t2, ExecutionSupport es){return " + IdBuilder.sourceToId(param4Instance.getSourceInformation()) + "." + FunctionProcessor.functionNameToJava(param4Instance) + "(t1,("  + FullJavaPaths.Property + "<? extends java.lang.Object,? extends java.lang.Object>)t2,es);}" +
-                                "                    public Object execute(ListIterable vars, ExecutionSupport es){throw new RuntimeException(\"Not Supported Yet!\");}" +
-                                "                    }") ;
+                        (param4Instance == null ? "null" : "new PureFunction2<Object,Object,Object>(){" +
+                                "                    public Object value(Object t1, Object t2, ExecutionSupport es){return " + IdBuilder.sourceToId(param4Instance.getSourceInformation()) + "." + FunctionProcessor.functionNameToJava(param4Instance) + "(t1,(" + FullJavaPaths.Property + "<? extends java.lang.Object,? extends java.lang.Object>)t2,es);}" +
+                                "                    public Object execute(ListIterable<?> vars, ExecutionSupport es){throw new RuntimeException(\"Not Supported Yet!\");}" +
+                                "                    }");
 
-        if( parametersValues.size() >= 6 )
+        if (parametersValues.size() >= 6)
         {
             param6 = transformedParams.get(5);
         }
 
-        String newOverrideInstance = parametersValues.size() < 3  ? "null" :
-                parametersValues.size() < 6 ? "new " + FullJavaPaths.GetterOverride_Impl + "(\"\")":
-                        (param3Instance == null && param4Instance == null) ?  "new " + FullJavaPaths.ConstraintsOverride_Impl + "(\"\")._constraintsManager(" + param6 + ")"
+        String newOverrideInstance = parametersValues.size() < 3 ? "null" :
+                parametersValues.size() < 6 ? "new " + FullJavaPaths.GetterOverride_Impl + "(\"\")" :
+                        (param3Instance == null && param4Instance == null) ? "new " + FullJavaPaths.ConstraintsOverride_Impl + "(\"\")._constraintsManager(" + param6 + ")"
                                 : "new " + FullJavaPaths.ConstraintsGetterOverride_Impl + "(\"\")._constraintsManager(" + param6 + ")";
 
-        String newObjectStatement =  newObject + "," + newOverrideInstance + ","+getterOverrides+",es)";
-        return "Pure.handleValidation(false,"+ newObjectStatement +","+ SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation())+",es)";
+        String newObjectStatement = newObject + "," + newOverrideInstance + "," + getterOverrides + ",es)";
+        return "Pure.handleValidation(false," + newObjectStatement + "," + SourceInfoProcessor.sourceInfoToString(functionExpression.getSourceInformation()) + ",es)";
     }
 
     private ListIterable<String> transformDefaultValues(CoreInstance instance, ProcessorSupport processorSupport, ProcessorContext processorContext)

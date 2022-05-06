@@ -32,23 +32,25 @@ class ByteCollectionBinaryWriter extends AbstractSimpleBinaryWriter
     }
 
     @Override
-    protected void write(byte b)
+    public synchronized void writeByte(byte b)
     {
         this.byteCollection.add(b);
     }
 
     @Override
-    protected void write(byte[] bytes, int offset, int length)
+    public synchronized void writeBytes(byte[] bytes, int offset, int length)
     {
+        checkByteArray(bytes, offset, length);
         if ((offset == 0) && (length == bytes.length))
         {
             this.byteCollection.addAll(bytes);
         }
         else
         {
-            byte[] copy = new byte[length];
-            System.arraycopy(bytes, offset, copy, 0, length);
-            this.byteCollection.addAll(copy);
+            for (int i = 0; i < length; i++)
+            {
+                this.byteCollection.add(bytes[offset + i]);
+            }
         }
     }
 }

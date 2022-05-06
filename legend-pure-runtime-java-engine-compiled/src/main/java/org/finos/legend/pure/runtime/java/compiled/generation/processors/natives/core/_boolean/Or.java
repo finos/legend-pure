@@ -38,14 +38,9 @@ public class Or extends AbstractNative
         return "new PureFunction2<Boolean, Boolean, Boolean>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Boolean execute(ListIterable vars, ExecutionSupport es)\n" +
+                "            public Boolean value(Boolean p1, Boolean p2, ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return value((Boolean) vars.get(0), (Boolean) vars.get(1), es);\n" +
-                "            }\n" +
-                "            @Override\n" +
-                "            public Boolean value(Boolean p1, final Boolean p2, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return (p1 || p2);\n"+
+                "                return p1 || p2;\n"+
                 "            }\n" +
                 "        }";
     }

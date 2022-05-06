@@ -25,7 +25,7 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 import java.lang.reflect.Method;
 
-public final class JavaMethodSharedPureFunction implements SharedPureFunction
+public final class JavaMethodSharedPureFunction<R> implements SharedPureFunction<R>
 {
     private final Method propertyMethod;
     private final SourceInformation sourceInformation;
@@ -37,15 +37,20 @@ public final class JavaMethodSharedPureFunction implements SharedPureFunction
     }
 
     @Override
-    public Object execute(ListIterable vars, ExecutionSupport es)
+    @SuppressWarnings("unchecked")
+    public R execute(ListIterable<?> vars, ExecutionSupport es)
     {
         try
         {
-            return this.propertyMethod.invoke(vars.get(0));
+            return (R) this.propertyMethod.invoke(vars.get(0));
         }
         catch (IllegalArgumentException e)
         {
-            throw new PureExecutionException(this.sourceInformation, "Error during dynamic function evaluation. The type "+ ((CompiledExecutionSupport)es).getProcessorSupport().getClassifier((CoreInstance)vars.get(0)).getName() +" is not compatible with the type "+CompiledSupport.getPureClassName(this.propertyMethod.getDeclaringClass()), e);
+            throw new PureExecutionException(this.sourceInformation, "Error during dynamic function evaluation. The type " + ((CompiledExecutionSupport) es).getProcessorSupport().getClassifier((CoreInstance) vars.get(0)).getName() + " is not compatible with the type " + CompiledSupport.getPureClassName(this.propertyMethod.getDeclaringClass()), e);
+        }
+        catch (RuntimeException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {

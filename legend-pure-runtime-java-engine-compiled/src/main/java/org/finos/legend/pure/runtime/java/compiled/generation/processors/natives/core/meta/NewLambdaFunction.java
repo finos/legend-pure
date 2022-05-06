@@ -24,7 +24,7 @@ import java.text.MessageFormat;
 
 public class NewLambdaFunction extends AbstractNative
 {
-    private String template = "new " + FullJavaPaths.LambdaFunction_Impl + "<Object>(\"NOID\")"+
+    private static final String TEMPLATE = "new " + FullJavaPaths.LambdaFunction_Impl + "<Object>(\"NOID\")" +
             "._classifierGenericType(new " + FullJavaPaths.GenericType_Impl + "(\"NOID\")._rawType((" + FullJavaPaths.Class + "<Object>)((CompiledExecutionSupport)es).getMetadataAccessor().getClass(\"Root::meta::pure::metamodel::function::LambdaFunction\"))" +
             "._typeArguments(Lists.immutable.of(new " + FullJavaPaths.GenericType_Impl + "(\"NOID\")._rawType({0}))))";
 
@@ -36,18 +36,19 @@ public class NewLambdaFunction extends AbstractNative
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        return MessageFormat.format(template, transformedParams.get(0));
+        return MessageFormat.format(TEMPLATE, transformedParams.get(0));
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
 
-        String newLambda = MessageFormat.format(template, "("+FullJavaPaths.FunctionType+")vars.get(0)");
+        String newLambda = MessageFormat.format(TEMPLATE, "(" + FullJavaPaths.FunctionType + ")vars.get(0)");
 
         return "new SharedPureFunction<Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
+                "            public Object execute(ListIterable<?> vars, final ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return " + newLambda + ";\n" +
                 "            }\n" +

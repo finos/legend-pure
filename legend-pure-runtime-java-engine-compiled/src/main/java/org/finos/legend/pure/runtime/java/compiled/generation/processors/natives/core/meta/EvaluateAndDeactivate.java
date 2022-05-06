@@ -21,7 +21,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 
 public class EvaluateAndDeactivate extends AbstractNative
 {
-    public EvaluateAndDeactivate() {
+    public EvaluateAndDeactivate()
+    {
         super("evaluateAndDeactivate_T_m__T_m_");
     }
 
@@ -32,11 +33,12 @@ public class EvaluateAndDeactivate extends AbstractNative
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
         return "new SharedPureFunction<Object>()\n" +
                 "{\n" +
                 "   @Override\n" +
-                "   public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
+                "   public Object execute(ListIterable<?> vars, ExecutionSupport es)\n" +
                 "   {\n" +
                 "       return vars.get(0);\n" +
                 "   }\n" +

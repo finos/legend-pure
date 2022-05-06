@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.natives.core.lang;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -31,14 +31,16 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.valuesp
 
 public class If extends AbstractNative
 {
-    public If() {
+    public If()
+    {
         super("if_Boolean_1__Function_1__Function_1__T_m_");
     }
 
     @Override
     public String build(CoreInstance topLevelElement, CoreInstance functionExpression, ListIterable<String> transformedParams, ProcessorContext processorContext)
     {
-        if (!transformedParams.isEmpty()) {
+        if (!transformedParams.isEmpty())
+        {
             throw new IllegalArgumentException("transformed parameters must be empty");
         }
 
@@ -60,7 +62,7 @@ public class If extends AbstractNative
 
     private static CoreInstance byPass(CoreInstance c, ProcessorSupport processorSupport)
     {
-        return Instance.instanceOf(c, M3Paths.RoutedValueSpecification, processorSupport)?byPass(c.getValueForMetaPropertyToOne(M3Properties.value), processorSupport):c;
+        return Instance.instanceOf(c, M3Paths.RoutedValueSpecification, processorSupport) ? byPass(c.getValueForMetaPropertyToOne(M3Properties.value), processorSupport) : c;
     }
 
     private static String processIfExpression(CoreInstance topLevelElement, ListIterable<? extends CoreInstance> parametersValues, int offset, String type, boolean returnToMany, boolean returnZeroToOne, ProcessorContext processorContext)
@@ -77,12 +79,12 @@ public class If extends AbstractNative
             CoreInstance functionType = processorSupport.function_getFunctionType(lambdaFunction);
             CoreInstance returnMultiplicity = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnMultiplicity, processorSupport);
             boolean isToZero = Multiplicity.isToZero(returnMultiplicity);
-            String value = FunctionProcessor.processFunctionDefinitionContent(topLevelElement, lambdaFunction , false, processorContext, processorContext.getSupport());
+            String value = FunctionProcessor.processFunctionDefinitionContent(topLevelElement, lambdaFunction, false, processorContext, processorContext.getSupport());
 
             boolean shouldCast = (returnZeroToOne || "null".equals(value) || ("java.lang.Number".equals(type) && !returnToMany)) && !"java.lang.Object".equals(type);
             //Handle bug with Nil[0] which creates a List so we have to unwrap the List
             value = (isToZero && returnZeroToOne) ? "CompiledSupport.makeOne(" + value + ")" : value;
-            String result = shouldCast ? "("+type+")" + value : value;
+            String result = shouldCast ? "(" + type + ")" + value : value;
             if (returnToMany)
             {
                 return "CompiledSupport.toPureCollection(" + result + ")";
@@ -114,19 +116,15 @@ public class If extends AbstractNative
     @Override
     public ListIterable<String> transformParameterValues(ListIterable<? extends CoreInstance> parametersValues, CoreInstance topLevelElement, ProcessorSupport processorSupport, ProcessorContext processorContext)
     {
-        return Lists.mutable.empty();
+        return Lists.immutable.empty();
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
 
         return "new PureFunction3<Boolean, " + FullJavaPaths.Function + ", " + FullJavaPaths.Function + ", Object>()\n" +
                 "        {\n" +
-                "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value((Boolean) vars.get(0), (" +  FullJavaPaths.Function + ") vars.get(1), (" + FullJavaPaths.Function + ") vars.get(2), es);\n" +
-                "            }\n" +
                 "            @Override\n" +
                 "            public Object value(Boolean condition, " + FullJavaPaths.Function + " truth, " + FullJavaPaths.Function + " falsy, ExecutionSupport es)\n" +
                 "            {\n" +

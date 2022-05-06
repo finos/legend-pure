@@ -47,15 +47,15 @@ public class Cast extends AbstractNative
         CoreInstance genericType = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.genericType, processorSupport);
         CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(0), M3Properties.multiplicity, processorSupport);
         String sourceObject = ValueSpecificationProcessor.processValueSpecification(topLevelElement, parametersValues.get(0), processorContext);
-        String castType = TypeProcessor.typeToJavaObjectWithMul(genericType, multiplicity, processorSupport);
         if ("null".equals(sourceObject) || !GenericType.isGenericTypeFullyConcrete(genericType, true, processorSupport))
         {
+            String castType = TypeProcessor.typeToJavaObjectWithMul(genericType, multiplicity, processorSupport);
             return "((" + castType + ")" + (Multiplicity.isToZeroOrOne(multiplicity) ? "" : "(Object)CompiledSupport.toPureCollection(") + sourceObject + ")" + (Multiplicity.isToZeroOrOne(multiplicity) ? "" : ")");
         }
         else
         {
             SourceInformation sourceInformation = functionExpression.getSourceInformation();
-            castType = TypeProcessor.typeToJavaObjectSingle(genericType, true, processorSupport);
+            String castType = TypeProcessor.typeToJavaObjectSingle(genericType, true, processorSupport);
             String interfaceString = TypeProcessor.pureTypeToJava(genericType, false, false, true, processorSupport);
             return "CompiledSupport.<" + castType + ">castWithExceptionHandling(" + (Multiplicity.isToZeroOrOne(multiplicity) ? "" : "CompiledSupport.toPureCollection(") + sourceObject + (Multiplicity.isToZeroOrOne(multiplicity) ? "," : "),") + interfaceString + ".class," +
                     NativeFunctionProcessor.buildM4LineColumnSourceInformation(sourceInformation) + ")";
@@ -67,11 +67,6 @@ public class Cast extends AbstractNative
     {
         return "new PureFunction2<Object, " + FullJavaPaths.GenericType + ", Object>()\n" +
                 "        {\n" +
-                "            @Override\n" +
-                "            public Object execute(ListIterable vars, ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value(vars.get(0), (" + FullJavaPaths.GenericType + ")vars.get(1), es);\n" +
-                "            }\n" +
                 "            @Override\n" +
                 "            public Object value(Object instances, " + FullJavaPaths.GenericType + " type, ExecutionSupport es)\n" +
                 "            {\n" +

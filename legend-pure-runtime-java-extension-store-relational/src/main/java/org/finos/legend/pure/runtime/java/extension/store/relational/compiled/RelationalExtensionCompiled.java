@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.store.relational.compiled;
 
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.extension.BaseCompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
@@ -37,25 +37,25 @@ public class RelationalExtensionCompiled extends BaseCompiledExtension
     public RelationalExtensionCompiled()
     {
         super(
-                Lists.mutable.with(new CreateTempTable(), new CreateTempTableWithFinally(), new DropTempTable(), new ExecuteInDb(), new FetchDbColumnsMetaData(),
+                Lists.fixedSize.with(new CreateTempTable(), new CreateTempTableWithFinally(), new DropTempTable(), new ExecuteInDb(), new FetchDbColumnsMetaData(),
                         new FetchDbImportedKeysMetaData(), new FetchDbPrimaryKeysMetaData(), new FetchDbSchemasMetaData(), new FetchDbTablesMetaData(), new LoadCsvToDbTable(),
                         new LoadValuesToDbTable(), new LoadValuesToDbTableNew(), new LogActivities()),
-                Lists.mutable.with(StringJavaSource.newStringJavaSource("org.finos.legend.pure.runtime.java.extension.store.relational.compiled", "RelationalGen",
+                Lists.fixedSize.with(StringJavaSource.newStringJavaSource("org.finos.legend.pure.runtime.java.extension.store.relational.compiled", "RelationalGen",
                         "package org.finos.legend.pure.runtime.java.extension.store.relational.compiled;\n" +
                                 "\n" +
+                                "import org.eclipse.collections.api.block.function.Function;\n" +
+                                "import org.eclipse.collections.api.list.ListIterable;\n" +
+                                "import org.eclipse.collections.api.map.ImmutableMap;\n" +
                                 "import org.finos.legend.pure.generated.Root_meta_relational_metamodel_SQLNull_Impl;\n" +
                                 "import org.finos.legend.pure.generated.Root_meta_relational_metamodel_execute_ResultSet_Impl;\n" +
                                 "import org.finos.legend.pure.generated.Root_meta_relational_metamodel_execute_Row_Impl;\n" +
                                 "import org.finos.legend.pure.generated.Root_meta_relational_runtime_DataSource_Impl;\n" +
-                                "import org.finos.legend.pure.runtime.java.extension.store.relational.RelationalNativeImplementation;\n" +
-                                "import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.SqlFunction;\n" +
-                                "import org.eclipse.collections.api.block.function.Function;\n" +
-                                "import org.eclipse.collections.api.list.ListIterable;\n" +
-                                "import org.eclipse.collections.api.map.ImmutableMap;\n" +
                                 "import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.execute.ResultSet;\n" +
                                 "import org.finos.legend.pure.m3.coreinstance.meta.relational.runtime.DatabaseConnection;\n" +
                                 "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
                                 "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
+                                "import org.finos.legend.pure.runtime.java.extension.store.relational.RelationalNativeImplementation;\n" +
+                                "import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.SqlFunction;\n" +
                                 "\n" +
                                 "import java.sql.DatabaseMetaData;\n" +
                                 "\n" +
@@ -81,13 +81,12 @@ public class RelationalExtensionCompiled extends BaseCompiledExtension
                                 "        return RelationalNativeImplementation.fetchDbMetaData(pureConnection, sqlFunction, extraValues, () -> new Root_meta_relational_metamodel_execute_ResultSet_Impl(\"OK\"), () -> new Root_meta_relational_metamodel_SQLNull_Impl(\"SQLNull\"), () -> new Root_meta_relational_metamodel_execute_Row_Impl(\"ID\"), () -> new Root_meta_relational_runtime_DataSource_Impl(\"ID\"), es);\n" +
                                 "    }\n" +
                                 "}\n")),
-                Lists.mutable.empty(),
-                Lists.mutable.empty());
+                Lists.fixedSize.empty(),
+                Lists.fixedSize.empty());
     }
 
     public static CompiledExtension extension()
     {
         return new RelationalExtensionCompiled();
     }
-
 }

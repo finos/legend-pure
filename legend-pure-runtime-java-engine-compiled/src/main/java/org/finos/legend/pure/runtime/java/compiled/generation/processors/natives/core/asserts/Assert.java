@@ -43,11 +43,6 @@ public class Assert extends AbstractNativeFunctionGeneric
         return "new PureFunction2<Boolean, " + FullJavaPaths.Function + ", Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value((Boolean) vars.get(0), (" + FullJavaPaths.Function + ") vars.get(1), es);\n" +
-                "            }\n" +
-                "            @Override\n" +
                 "            public Object value(Boolean condition, " + FullJavaPaths.Function + " func, ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return CompiledSupport.pureAssert(condition, CoreGen.getSharedPureFunction(func, es), null, es);\n" +

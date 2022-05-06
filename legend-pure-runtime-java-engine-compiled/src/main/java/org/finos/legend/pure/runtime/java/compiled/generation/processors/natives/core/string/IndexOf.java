@@ -37,15 +37,10 @@ public class IndexOf extends AbstractNative
     @Override
     public String buildBody()
     {
-        return "new PureFunction3<String, String, Number, Object>()\n" +
+        return "new PureFunction3<String, String, Number, Long>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value((String) vars.get(0), (String) vars.get(1), (Number) vars.get(2), es);\n" +
-                "            }\n" +
-                "            @Override\n" +
-                "            public Object value(String input, String str, Number from, final ExecutionSupport es)\n" +
+                "            public Long value(String input, String str, Number from, ExecutionSupport es)\n" +
                 "            {\n" +
                 "               return from == null ? Long.valueOf(input.indexOf(str)) : Long.valueOf(input.indexOf(str, from.intValue()));" +
                 "            }\n" +

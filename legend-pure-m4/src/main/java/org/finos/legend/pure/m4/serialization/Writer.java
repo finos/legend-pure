@@ -20,7 +20,12 @@ public interface Writer extends Closeable
 {
     void writeByte(byte b);
 
-    void writeBytes(byte[] bytes);
+    default void writeBytes(byte[] bytes)
+    {
+        writeBytes(bytes, 0, bytes.length);
+    }
+
+    void writeBytes(byte[] bytes, int offset, int len);
 
     void writeByteArray(byte[] bytes);
 

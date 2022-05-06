@@ -409,7 +409,7 @@ public class ValueSpecificationProcessor
         return "new " + type + typeParamsStr + "()\n" +
                 "{\n" +
                 openVarsInitializer +
-                "     public " + typesParams.get(typesParams.size() - 1) + " execute(ListIterable vars, ExecutionSupport es)\n" +
+                "     public " + typesParams.get(typesParams.size() - 1) + " execute(ListIterable<?> vars, ExecutionSupport es)\n" +
                 "     {\n" +
                 "         return value" + (params.isEmpty() ? "Of(" : "(") + params.zipWithIndex().collect(coreInstance -> {
             String ntype = TypeProcessor.typeToJavaObjectWithMul(coreInstance.getOne().getValueForMetaPropertyToOne(M3Properties.genericType), coreInstance.getOne().getValueForMetaPropertyToOne(M3Properties.multiplicity), processorContext.getSupport());

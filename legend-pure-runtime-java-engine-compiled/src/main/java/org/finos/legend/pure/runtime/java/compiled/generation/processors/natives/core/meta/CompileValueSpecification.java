@@ -25,7 +25,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.natives
 
 public class CompileValueSpecification extends AbstractNative
 {
-    public CompileValueSpecification() {
+    public CompileValueSpecification()
+    {
         super("compileValueSpecification_String_m__CompilationResult_m_");
     }
 
@@ -37,21 +38,15 @@ public class CompileValueSpecification extends AbstractNative
 
         CoreInstance multiplicity = Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(0), M3Properties.multiplicity, processorSupport);
 
-        return Multiplicity.isToOne(multiplicity) ?
-                "CoreGen.compileCodeBlock(" + transformedParams.get(0) + ", es)"
-                : "CoreGen.compileCodeBlocks(" + transformedParams.get(0) + ", es)";
+        return "CoreGen." + (Multiplicity.isToOne(multiplicity) ? "compileCodeBlock" : "compileCodeBlocks") + "(" + transformedParams.get(0) + ", es)";
     }
 
     @Override
-    public String buildBody() {
+    public String buildBody()
+    {
 
-        return "new DefendedPureFunction1<Object, Object>()\n" +
+        return "new PureFunction1<Object, Object>()\n" +
                 "        {\n" +
-                "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value(vars.get(0), es);\n" +
-                "            }\n" +
                 "            @Override\n" +
                 "            public Object value(Object input, ExecutionSupport es)\n" +
                 "            {\n" +
@@ -59,6 +54,4 @@ public class CompileValueSpecification extends AbstractNative
                 "            }\n" +
                 "        }";
     }
-
-
 }

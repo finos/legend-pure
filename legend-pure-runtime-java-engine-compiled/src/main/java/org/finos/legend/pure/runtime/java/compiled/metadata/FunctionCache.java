@@ -16,9 +16,10 @@ package org.finos.legend.pure.runtime.java.compiled.metadata;
 
 import org.eclipse.collections.api.block.function.Function0;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
-import org.eclipse.collections.impl.block.function.checked.CheckedFunction0;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
 import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.TypeProcessor;
@@ -30,42 +31,46 @@ import java.lang.reflect.Method;
  */
 public class FunctionCache
 {
-    private static final Function0<ConcurrentMutableMap<String, SharedPureFunction>> NEW_CONCURRENT_MAP = new Function0<ConcurrentMutableMap<String, SharedPureFunction>>()
-    {
-        @Override
-        public ConcurrentMutableMap<String, SharedPureFunction> value()
-        {
-            return ConcurrentHashMap.newMap();
-        }
-    };
-
     //MutableMap<Root_meta_pure_metamodel_type_Type, org.eclipse.collections.api.map.MutableMap<String, SharedPureFunction>
-    private final ConcurrentMutableMap<CoreInstance, ConcurrentMutableMap<String, SharedPureFunction>> classPropertyJavaFunction = ConcurrentHashMap.newMap();
+    private final ConcurrentMutableMap<CoreInstance, ConcurrentMutableMap<String, SharedPureFunction<?>>> classPropertyJavaFunction = ConcurrentHashMap.newMap();
 
     //MutableMap<Root_meta_pure_metamodel_function_Function, SharedPureFunction>
-    private final ConcurrentMutableMap<CoreInstance, SharedPureFunction> pureFunctionJavaFunction = ConcurrentHashMap.newMap();
+    private final ConcurrentMutableMap<CoreInstance, SharedPureFunction<?>> pureFunctionJavaFunction = ConcurrentHashMap.newMap();
 
-    public SharedPureFunction getIfAbsentPutFunctionForClassProperty(final CoreInstance srcType, final CoreInstance propertyFunction, final ClassLoader classLoader)
+    public SharedPureFunction<?> getIfAbsentPutFunctionForClassProperty(CoreInstance srcType, CoreInstance propertyFunction, ClassLoader classLoader)
     {
+        String propertyPureName = PrimitiveUtilities.getStringValue(propertyFunction.getValueForMetaPropertyToOne(M3Properties.name));
         if (srcType == null)
         {
-            throw new IllegalArgumentException("Null source type for property: " + propertyFunction);
+            throw new IllegalArgumentException("Null source type for property: " + propertyPureName);
         }
-        final String propertyJavaName = "_" + propertyFunction.getValueForMetaPropertyToOne(M3Properties.name).getName();
-        return this.classPropertyJavaFunction.getIfAbsentPut(srcType, NEW_CONCURRENT_MAP).getIfAbsentPut(propertyJavaName, new CheckedFunction0<SharedPureFunction>()
+        String propertyJavaName = "_" + propertyPureName;
+        return this.classPropertyJavaFunction.getIfAbsentPut(srcType, ConcurrentHashMap::new).getIfAbsentPut(propertyJavaName, () ->
         {
-            @Override
-            public SharedPureFunction safeValue() throws ClassNotFoundException, NoSuchMethodException
+            String javaClassName = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(srcType);
+            try
             {
-                String javaClassName = TypeProcessor.fullyQualifiedJavaInterfaceNameForType(srcType);
                 Class<?> srcClass = classLoader.loadClass(javaClassName);
                 Method propertyMethod = srcClass.getMethod(propertyJavaName);
-                return new JavaMethodSharedPureFunction(propertyMethod, propertyFunction.getSourceInformation());
+                return new JavaMethodSharedPureFunction<>(propertyMethod, propertyFunction.getSourceInformation());
+            }
+            catch (ClassNotFoundException e)
+            {
+                StringBuilder builder = new StringBuilder("Cannot find Java class ").append(javaClassName).append(" for Pure class ");
+                PackageableElement.writeUserPathForPackageableElement(builder, srcType);
+                throw new RuntimeException(builder.toString(), e);
+            }
+            catch (NoSuchMethodException e)
+            {
+                StringBuilder builder = new StringBuilder("Cannot find method ").append(propertyJavaName).append(" on Java class ").append(javaClassName)
+                        .append(" for property ").append(propertyPureName).append(" on Pure class ");
+                PackageableElement.writeUserPathForPackageableElement(builder, srcType);
+                throw new RuntimeException(builder.toString(), e);
             }
         });
     }
 
-    public SharedPureFunction getIfAbsentPutJavaFunctionForPureFunction(CoreInstance pureFunction, Function0<SharedPureFunction> sharedPureFunctionFunctionCreator)
+    public SharedPureFunction<?> getIfAbsentPutJavaFunctionForPureFunction(CoreInstance pureFunction, Function0<? extends SharedPureFunction<?>> sharedPureFunctionFunctionCreator)
     {
         return this.pureFunctionJavaFunction.getIfAbsentPut(pureFunction, sharedPureFunctionFunctionCreator);
     }
