@@ -238,7 +238,8 @@ export class EditorStore {
     this.conceptTreeState = new ConceptTreeState(this);
     this.client = new PureClient(
       new NetworkClient({
-        baseUrl: this.applicationStore.config.pureUrl,
+        // NOTE: ignore the URL specified in the config so we can use this client for both Pure and Engine
+        baseUrl: window.location.origin,
       }),
     );
 

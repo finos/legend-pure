@@ -43,7 +43,7 @@ public class Exists extends AbstractNativeFunctionGeneric
         CoreInstance param = functionType.getValueForMetaPropertyToMany(M3Properties.parameters).getFirst();
         String type = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.genericType, processorSupport), true, processorSupport);
 
-        return "null".equals(list) ? "false" : "CompiledSupport.exists(" + list + ", new DefendedPredicate<" + type + ">(){PureFunction1<" + type + ",Boolean> func = (PureFunction1<" + type + ",Boolean>)CoreGen.getSharedPureFunction(" + transformedParams.get(1) + ",es); public boolean accept(" + type + " param){return func.value(param, es);}})\n";
+        return "null".equals(list) ? "false" : "CompiledSupport.exists(" + list + ", new DefendedPredicate<" + type + ">(){private final PureFunction1<" + type + ",Boolean> func = (PureFunction1<" + type + ",Boolean>)CoreGen.getSharedPureFunction(" + transformedParams.get(1) + ",es); public boolean accept(" + type + " param){return func.value(param, es);}})\n";
     }
 
     @Override
@@ -52,22 +52,15 @@ public class Exists extends AbstractNativeFunctionGeneric
         return "new PureFunction2<Object, Object, Boolean>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Boolean execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value(vars.get(0), vars.get(1), es);\n" +
-                "            }\n" +
-                "            @Override\n" +
                 "            public Boolean value(Object t, final Object obj, final ExecutionSupport es)\n" +
                 "            {\n" +
                 "                org.eclipse.collections.api.block.predicate.Predicate predicate = obj instanceof org.eclipse.collections.api.block.predicate.Predicate\n" +
                 "                   ? (org.eclipse.collections.api.block.predicate.Predicate) obj\n" +
                 "                   : new DefendedPredicate<Object>(){\n" +
                 "                           PureFunction1<Object, Boolean> func = (PureFunction1<Object, Boolean>)CoreGen.getSharedPureFunction((org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function) obj, es);\n" +
+                "                           @Override\n" +
                 "                           public boolean accept(Object param){\n" +
                 "                               return func.value(param, es);\n" +
-                "                           }\n" +
-                "                           public boolean test(Object param){\n" +
-                "                               return this.accept(param);\n" +
                 "                           }\n" +
                 "                     };\n" +
                 "                return CompiledSupport.exists(t, predicate);\n" +

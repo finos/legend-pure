@@ -14,11 +14,10 @@
 
 package org.finos.legend.pure.m4.serialization.binary;
 
-import org.eclipse.collections.api.block.procedure.primitive.IntObjectProcedure;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.primitive.MutableIntList;
 import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
-import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;
+import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
 class IntermediateNode
@@ -28,7 +27,7 @@ class IntermediateNode
     private final String name;
     private final int compileState;
     private ListIterable<String> realKey;
-    private final MutableIntObjectMap<MutableIntList> keyValues = IntObjectHashMap.newMap();
+    private final MutableIntObjectMap<MutableIntList> keyValues = IntObjectMaps.mutable.empty();
     private final SourceInformation sourceInformation;
 
     public IntermediateNode(int id, int classifierId, String name, int compileState, SourceInformation sourceInformation)
@@ -48,24 +47,12 @@ class IntermediateNode
     @Override
     public String toString()
     {
-        final StringBuilder result = new StringBuilder(64);
-        result.append(this.id);
-        result.append(": ");
-        result.append(this.name);
-        result.append(" is a ");
-        result.append(this.classifierId);
-        result.append('\n');
-        this.keyValues.forEachKeyValue(new IntObjectProcedure<MutableIntList>()
+        StringBuilder result = new StringBuilder(64).append(this.id).append(": ").append(this.name).append(" is a ").append(this.classifierId).append('\n');
+        this.keyValues.forEachKeyValue((i, mutableIntList) ->
         {
-            @Override
-            public void value(int i, MutableIntList mutableIntList)
-            {
-                result.append("   ");
-                result.append(i);
-                result.append(" ");
-                mutableIntList.appendString(result, "[", ", ", "]");
-                result.append("\n");
-            }
+            result.append("   ").append(i).append(" ");
+            mutableIntList.appendString(result, "[", ", ", "]");
+            result.append("\n");
         });
         return result.toString();
     }

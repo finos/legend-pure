@@ -25,14 +25,14 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 import java.util.List;
 
-public class BaseCompiledExtension implements CompiledExtension
+public abstract class BaseCompiledExtension implements CompiledExtension
 {
-    private List<StringJavaSource> extraJavaSources;
-    private List<Native> extraNatives;
-    private List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> extraPackageableElementProcessors;
-    List<Procedure4<CoreInstance, CoreInstance, ProcessorContext, ProcessorSupport>> extraClassMappingProcessors;
+    private final List<StringJavaSource> extraJavaSources;
+    private final List<Native> extraNatives;
+    private final List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> extraPackageableElementProcessors;
+    private final List<Procedure4<CoreInstance, CoreInstance, ProcessorContext, ProcessorSupport>> extraClassMappingProcessors;
 
-    public BaseCompiledExtension(List<Native> extraNatives, List<StringJavaSource> extraJavaSources, List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> extraPackageableElementProcessors, List<Procedure4<CoreInstance, CoreInstance, ProcessorContext, ProcessorSupport>> extraClassMappingProcessors)
+    protected BaseCompiledExtension(List<Native> extraNatives, List<StringJavaSource> extraJavaSources, List<Procedure3<CoreInstance, JavaSourceCodeGenerator, ProcessorContext>> extraPackageableElementProcessors, List<Procedure4<CoreInstance, CoreInstance, ProcessorContext, ProcessorSupport>> extraClassMappingProcessors)
     {
         this.extraNatives = extraNatives;
         this.extraJavaSources = extraJavaSources;

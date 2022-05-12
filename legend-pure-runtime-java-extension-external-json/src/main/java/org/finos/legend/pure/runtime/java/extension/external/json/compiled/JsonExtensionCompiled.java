@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.runtime.java.extension.external.json.compiled;
 
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
 import org.finos.legend.pure.runtime.java.compiled.extension.BaseCompiledExtension;
 import org.finos.legend.pure.runtime.java.compiled.extension.CompiledExtension;
@@ -30,7 +30,7 @@ public class JsonExtensionCompiled extends BaseCompiledExtension
     public JsonExtensionCompiled()
     {
         super(
-                Lists.mutable.with(
+                Lists.fixedSize.with(
                         new EqualJsonStrings(),
                         new Escape(),
                         new FromJson(),
@@ -38,20 +38,20 @@ public class JsonExtensionCompiled extends BaseCompiledExtension
                         new ParseJSON(),
                         new ToJsonBeta()
                 ),
-                Lists.mutable.with(StringJavaSource.newStringJavaSource("org.finos.legend.pure.runtime.java.extension.external.json.compiled", "JsonGen",
+                Lists.fixedSize.with(StringJavaSource.newStringJavaSource("org.finos.legend.pure.runtime.java.extension.external.json.compiled", "JsonGen",
                         "package org.finos.legend.pure.runtime.java.extension.external.json.compiled;\n" +
                                 "\n" +
+                                "import org.eclipse.collections.api.RichIterable;\n" +
                                 "import org.finos.legend.pure.generated.Root_meta_json_JSONArray;\n" +
                                 "import org.finos.legend.pure.generated.Root_meta_json_JSONDeserializationConfig;\n" +
                                 "import org.finos.legend.pure.generated.Root_meta_json_JSONSerializationConfig;\n" +
-                                "import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;\n" +
-                                "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;\n" +
-                                "import org.finos.legend.pure.runtime.java.extension.external.json.compiled.natives.JsonParserHelper;\n" +
-                                "import org.eclipse.collections.api.RichIterable;\n" +
                                 "import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ConstraintsOverride;\n" +
                                 "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
                                 "import org.finos.legend.pure.m4.coreinstance.CoreInstance;\n" +
                                 "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
+                                "import org.finos.legend.pure.runtime.java.compiled.execution.CompiledExecutionSupport;\n" +
+                                "import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.CompiledSupport;\n" +
+                                "import org.finos.legend.pure.runtime.java.extension.external.json.compiled.natives.JsonParserHelper;\n" +
                                 "\n" +
                                 "import static org.finos.legend.pure.runtime.java.compiled.generation.processors.support.Pure.handleValidation;\n" +
                                 "\n" +
@@ -97,8 +97,8 @@ public class JsonExtensionCompiled extends BaseCompiledExtension
                                 "    }\n" +
                                 "\n" +
                                 "}\n")),
-                Lists.mutable.empty(),
-                Lists.mutable.empty());
+                Lists.fixedSize.empty(),
+                Lists.fixedSize.empty());
     }
 
     public static CompiledExtension extension()

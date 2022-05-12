@@ -22,7 +22,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.type.Fu
 
 public class EnumName extends AbstractNative
 {
-    public EnumName() {
+    public EnumName()
+    {
         super("enumName_Enumeration_1__String_1_");
     }
 
@@ -33,16 +34,12 @@ public class EnumName extends AbstractNative
     }
 
     @Override
-    public String buildBody() {
-        return "new DefendedPureFunction1<" + FullJavaPaths.Enumeration + ", Object>()\n" +
+    public String buildBody()
+    {
+        return "new PureFunction1<" + FullJavaPaths.Enumeration + ", String>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value((" + FullJavaPaths.Enumeration + ") vars.get(0), es);\n" +
-                "            }\n" +
-                "            @Override\n" +
-                "            public Object value(" + FullJavaPaths.Enumeration + " input, ExecutionSupport es)\n" +
+                "            public String value(" + FullJavaPaths.Enumeration + " input, ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return input._name();\n" +
                 "            }\n" +

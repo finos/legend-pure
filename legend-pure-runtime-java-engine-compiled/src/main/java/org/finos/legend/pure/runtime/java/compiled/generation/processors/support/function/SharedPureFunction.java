@@ -20,5 +20,5 @@ import org.finos.legend.pure.m3.execution.ExecutionSupport;
 
 public interface SharedPureFunction<R>
 {
-    R execute(ListIterable vars, ExecutionSupport es);
+    R execute(ListIterable<?> vars, ExecutionSupport es);
 }

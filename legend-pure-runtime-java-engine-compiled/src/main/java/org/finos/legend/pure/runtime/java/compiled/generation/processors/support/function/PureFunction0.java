@@ -15,8 +15,14 @@
 package org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function;
 
 import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
 
-public interface PureFunction0<R> extends SharedPureFunction<R>, Function<ExecutionSupport,R>
+public interface PureFunction0<R> extends SharedPureFunction<R>, Function<ExecutionSupport, R>
 {
+    @Override
+    default R execute(ListIterable<?> vars, ExecutionSupport es)
+    {
+        return valueOf(es);
+    }
 }

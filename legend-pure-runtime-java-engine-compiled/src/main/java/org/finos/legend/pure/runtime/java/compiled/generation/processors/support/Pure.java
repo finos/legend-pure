@@ -23,6 +23,8 @@ import org.eclipse.collections.api.block.HashingStrategy;
 import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.function.Function0;
 import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
@@ -30,8 +32,6 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.block.procedure.checked.CheckedProcedure;
 import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.map.strategy.mutable.UnifiedMapWithHashingStrategy;
@@ -208,16 +208,9 @@ public class Pure
         return host != null ? evaluate(es, alloyTest, bridge, clientVersion, serverVersion, serializationKind, host, port) : evaluate(es, regular, bridge);
     }
 
-    public static <E> E getEnumByName(Enumeration<E> enumeration, final String name)
+    public static <E> E getEnumByName(Enumeration<E> enumeration, String name)
     {
-        return enumeration._values().detect(new Predicate<E>()
-        {
-            @Override
-            public boolean accept(E e)
-            {
-                return name.equals(((Enum) e)._name());
-            }
-        });
+        return enumeration._values().detect(e -> name.equals(((Enum) e)._name()));
     }
 
     public static org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType safeGetGenericType(Object val, final MetadataAccessor ma, Function0<org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType> genericTypeBuilder, final ProcessorSupport processorSupport)
@@ -383,7 +376,7 @@ public class Pure
                         });
                     });
                     Multiplicity mult = func._classifierGenericType()._multiplicityArguments().getFirst();
-                    return bridge.hasToOneUpperBound().apply(mult, es) ? result.getFirst() : result;
+                    return bridge.hasToOneUpperBound(mult, es) ? result.getFirst() : result;
                 }
             };
         }
@@ -468,7 +461,7 @@ public class Pure
         }
         if (func instanceof ConcreteFunctionDefinition)
         {
-            JavaMethodWithParamsSharedPureFunction p = (JavaMethodWithParamsSharedPureFunction) getSharedPureFunction(func, bridge, es);
+            JavaMethodWithParamsSharedPureFunction<?> p = (JavaMethodWithParamsSharedPureFunction<?>) getSharedPureFunction(func, bridge, es);
             Class<?>[] paramClasses = p.getParametersTypes();
             int l = paramClasses.length;
             MutableList<Object> paramInstances = FastList.newList();
@@ -655,54 +648,33 @@ public class Pure
         });
     }
 
-    public static Tag tag(Profile profile, final String tag)
+    public static Tag tag(Profile profile, String tag)
     {
-        return profile._p_tags().detect(new Predicate<Tag>()
-        {
-            @Override
-            public boolean accept(Tag o)
-            {
-                return tag.equals(o._value());
-            }
-        });
+        return profile._p_tags().detect(t -> tag.equals(t._value()));
     }
 
-    public static Stereotype stereotype(Profile profile, final String stereotype)
+    public static Stereotype stereotype(Profile profile, String stereotype)
     {
-        return profile._p_stereotypes().detect(new Predicate<Stereotype>()
-        {
-            @Override
-            public boolean accept(Stereotype o)
-            {
-                return stereotype.equals(o._value());
-            }
-        });
+        return profile._p_stereotypes().detect(st -> stereotype.equals(st._value()));
     }
 
     public static PureMap getOpenVariables(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function<?> func, Bridge bridge)
     {
+        MutableMap<String, Object> map = Maps.mutable.empty();
         //In the case of LambdaFunction_Impl, we do not need to concern with OpenVariables
         if (func instanceof LambdaCompiledExtended)
         {
-            SharedPureFunction pureFunction = ((LambdaCompiledExtended) func).pureFunction();
-            MutableMap<String, Object> map = UnifiedMap.newMap();
+            SharedPureFunction<?> pureFunction = ((LambdaCompiledExtended) func).pureFunction();
             if (pureFunction instanceof PureLambdaFunction)
             {
                 MutableMap<String, Object> __vars = ((PureLambdaFunction<?>) pureFunction).getOpenVariables();
                 if (__vars != null)
                 {
-                    for (String key : __vars.keysView())
-                    {
-                        map.put(key, bridge.listBuilder().value()._valuesAddAll(CompiledSupport.toPureCollection(__vars.get(key))));
-                    }
+                    __vars.forEachKeyValue((key, value) -> map.put(key, bridge.buildList()._valuesAddAll(CompiledSupport.toPureCollection(value))));
                 }
             }
-            return new PureMap(map);
         }
-        else
-        {
-            return new PureMap(org.eclipse.collections.impl.factory.Maps.mutable.empty());
-        }
+        return new PureMap(map);
     }
 
     public static Object handleValidation(boolean goDeep, Object input, SourceInformation si, ExecutionSupport es)
@@ -738,7 +710,7 @@ public class Pure
     {
         try
         {
-            final Class<?> c = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.platformJavaPackage() + ".Root_" + bridge.elementToPath().value(aClass, "_", es) + "_Impl");
+            final Class<?> c = ((CompiledExecutionSupport) es).getClassLoader().loadClass(JavaPackageAndImportBuilder.platformJavaPackage() + ".Root_" + bridge.elementToPath(aClass, "_", es) + "_Impl");
             final Any result = (Any) c.getConstructor(String.class).newInstance(name);
             root_meta_pure_functions_lang_keyExpressions.forEach(new CheckedProcedure<KeyExpression>()
             {
@@ -944,7 +916,7 @@ public class Pure
     {
         org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType gt = vs._genericType();
         Multiplicity m = vs._multiplicity();
-        boolean isToOneOrZeroToOne = bridge.hasToOneUpperBound().apply(m, es);
+        boolean isToOneOrZeroToOne = bridge.hasToOneUpperBound(m, es);
 
         if (!isToOneOrZeroToOne)
         {
@@ -956,7 +928,7 @@ public class Pure
         }
         else
         {
-            return pureTypeToJavaClassForExecution(gt._rawType(), bridge.isToOne().apply(m, es), es);
+            return pureTypeToJavaClassForExecution(gt._rawType(), bridge.isToOne(m, es), es);
         }
     }
 

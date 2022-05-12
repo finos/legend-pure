@@ -149,12 +149,6 @@ public class Map extends AbstractNative implements Native
         return "new PureFunction2<Object, Object, Object>()\n" +
                "        {\n" +
                "            @Override\n" +
-               "            public Object execute(ListIterable vars, ExecutionSupport es)\n" +
-               "            {\n" +
-               "                Object function = vars.get(1);" +
-               "                return value((RichIterable)vars.getFirst(), function, es);\n" +
-               "            }\n" +
-               "            @Override\n" +
                "            public Object value(Object o, Object o2, final ExecutionSupport es)\n" +
                "            {\n" +
                "                " + FullJavaPaths.Function + " func = ("  + FullJavaPaths.Function + ")o2;\n" +

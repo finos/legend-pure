@@ -147,7 +147,9 @@ Class meta::pure::mapping::EnumerationMapping<T> extends meta::pure::mapping::Va
 
     toSourceValues(domainValue: Any[1])
     {
-        $this.enumValueMappings->filter( m | $m.enum == $domainValue )->toOne().sourceValues;
+        let enumValueMapping = $this.enumValueMappings->filter( m | $m.enum == $domainValue );
+        assertEquals(1, $enumValueMapping->size(), 'The system can\'t find source values in the enumMapping \''+$this.name+'\' for the enum \''+$this.enumeration->enumName()+ '.' +$domainValue->toString()+'\'');
+        $enumValueMapping->toOne().sourceValues;
     }:Any[*];
 
 }

@@ -45,17 +45,12 @@ public class Last extends AbstractNative
     @Override
     public String buildBody() {
 
-        return "new DefendedPureFunction1<Object, Object>()\n" +
+        return "new PureFunction1<Object, Object>()\n" +
                 "        {\n" +
-                "            @Override\n" +
-                "            public Object execute(ListIterable vars, final ExecutionSupport es)\n" +
-                "            {\n" +
-                "                return value(vars.get(0), es);\n" +
-                "            }\n" +
                 "            @Override\n" +
                 "            public Object value(Object input, ExecutionSupport es)\n" +
                 "            {\n" +
-                "                return input instanceof RichIterable ? CompiledSupport.last((RichIterable) input) : CompiledSupport.last(input);\n" +
+                "                return input instanceof RichIterable ? CompiledSupport.last((RichIterable<?>) input) : CompiledSupport.last(input);\n" +
                 "            }\n" +
                 "        }";
     }

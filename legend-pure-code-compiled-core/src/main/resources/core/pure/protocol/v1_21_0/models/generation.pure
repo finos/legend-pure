@@ -20,10 +20,6 @@ Class meta::protocols::pure::v1_21_0::metamodel::invocation::generation::json::J
     useConstraints:Boolean[0..1];
 }
 
-###Pure
-Class meta::protocols::pure::v1_21_0::metamodel::invocation::generation::protobuf::ProtobufConfig extends meta::protocols::pure::v1_21_0::metamodel::invocation::generation::GenerationConfiguration
-{
-}
 
 ###Pure
 Class meta::protocols::pure::v1_21_0::metamodel::invocation::generation::avro::AvroConfig extends meta::protocols::pure::v1_21_0::metamodel::invocation::generation::GenerationConfiguration

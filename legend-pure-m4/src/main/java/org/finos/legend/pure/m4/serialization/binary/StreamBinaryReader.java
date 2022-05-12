@@ -17,6 +17,7 @@ package org.finos.legend.pure.m4.serialization.binary;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.zip.InflaterInputStream;
 
 class StreamBinaryReader extends AbstractSimpleBinaryReader
@@ -31,6 +32,50 @@ class StreamBinaryReader extends AbstractSimpleBinaryReader
     }
 
     @Override
+    public synchronized byte readByte()
+    {
+        int b;
+        try
+        {
+            b = this.stream.read();
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
+        if (b == -1)
+        {
+            throw new UnexpectedEndException(1, 0);
+        }
+        return (byte) b;
+    }
+
+    @Override
+    public synchronized byte[] readBytes(byte[] bytes, int offset, int n)
+    {
+        checkByteArray(bytes, offset, n);
+        int totalRead = 0;
+        while (totalRead < n)
+        {
+            int read;
+            try
+            {
+                read = this.stream.read(bytes, offset + totalRead, n - totalRead);
+            }
+            catch (IOException e)
+            {
+                throw new UncheckedIOException(e);
+            }
+            if (read < 0)
+            {
+                throw new UnexpectedEndException(n, totalRead);
+            }
+            totalRead += read;
+        }
+        return bytes;
+    }
+
+    @Override
     public synchronized void close()
     {
         try
@@ -39,7 +84,7 @@ class StreamBinaryReader extends AbstractSimpleBinaryReader
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -51,83 +96,45 @@ class StreamBinaryReader extends AbstractSimpleBinaryReader
             return;
         }
 
-        try
+        // We know that ByteArrayInputStream and InflaterInputStream have safe skip methods
+        if ((this.stream instanceof ByteArrayInputStream) || (this.stream instanceof InflaterInputStream))
         {
-            // We know that ByteArrayInputStream and InflaterInputStream have safe skip methods
-            if ((this.stream instanceof ByteArrayInputStream) || (this.stream instanceof InflaterInputStream))
+            long skipped;
+            try
             {
-                long skipped = this.stream.skip(n);
-                if (skipped < n)
-                {
-                    throw new UnexpectedEndException(n, skipped);
-                }
-                return;
+                skipped = this.stream.skip(n);
             }
-
-            // Fall back to default skip method
-            int size = (int)Math.min(MAX_SKIP_BUFFER_SIZE, n);
-            byte[] buffer = (size <= 8) ? this.eightBytes : new byte[size];
-            long remaining = n;
-            int read;
-            while (remaining > 0L)
+            catch (IOException e)
             {
-                read = this.stream.read(buffer, 0, (int)Math.min(size, remaining));
-                if (read < 0)
-                {
-                    throw new UnexpectedEndException(n, n - remaining);
-                }
-                remaining -= read;
+                throw new UncheckedIOException(e);
             }
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    protected byte readOneByte()
-    {
-        try
-        {
-            int b = this.stream.read();
-            if (b == -1)
+            if (skipped < n)
             {
-                throw new UnexpectedEndException(1, 0);
+                throw new UnexpectedEndException(n, skipped);
             }
-            return (byte)b;
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    protected void readNBytes(int n, byte[] bytes, int offset)
-    {
-        if (n <= 0)
-        {
             return;
         }
 
-        try
+        // Fall back to default skip method
+        int size = (int) Math.min(MAX_SKIP_BUFFER_SIZE, n);
+        byte[] buffer = (size <= 8) ? this.eightBytes : new byte[size];
+        long remaining = n;
+        while (remaining > 0L)
         {
-            int totalRead = 0;
             int read;
-            while (totalRead < n)
+            try
             {
-                read = this.stream.read(bytes, offset + totalRead, n - totalRead);
-                if (read < 0)
-                {
-                    throw new UnexpectedEndException(n, totalRead);
-                }
-                totalRead += read;
+                read = this.stream.read(buffer, 0, (int) Math.min(size, remaining));
             }
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
+            catch (IOException e)
+            {
+                throw new UncheckedIOException(e);
+            }
+            if (read < 0)
+            {
+                throw new UnexpectedEndException(n, n - remaining);
+            }
+            remaining -= read;
         }
     }
 }

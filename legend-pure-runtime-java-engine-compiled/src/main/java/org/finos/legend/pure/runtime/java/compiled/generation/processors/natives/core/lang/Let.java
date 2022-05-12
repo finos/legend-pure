@@ -16,6 +16,7 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.native
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity;
@@ -56,7 +57,7 @@ public class Let extends AbstractNative implements Native
         else
         {
             String typeO = TypeProcessor.typeToJavaObjectSingle(Instance.getValueForMetaPropertyToOneResolved(parametersValues.get(1), M3Properties.genericType, processorSupport), true, processorContext.getSupport());
-            if (Instance.instanceOf(parametersValues.get(1), "meta::pure::metamodel::valuespecification::InstanceValue", processorContext.getSupport()))
+            if (Instance.instanceOf(parametersValues.get(1), M3Paths.InstanceValue, processorContext.getSupport()))
             {
                 return "final RichIterable<" + typeO + "> _" + varName + " = " + value;
             }
@@ -70,15 +71,15 @@ public class Let extends AbstractNative implements Native
     @Override
     public String buildBody()
     {
-        return "new DefendedPureFunction1<Object,Object>()\n" +
+        return "new PureFunction1<Object,Object>()\n" +
                 "        {\n" +
                 "            @Override\n" +
-                "            public Object execute(ListIterable vars, ExecutionSupport es)\n" +
+                "            public Object execute(ListIterable<?> vars, ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return value(vars.get(1), es);\n" +
                 "            }\n" +
                 "            @Override\n" +
-                "            public Object value(Object o, final ExecutionSupport es)\n" +
+                "            public Object value(Object o, ExecutionSupport es)\n" +
                 "            {\n" +
                 "                return o;\n" +
                 "            }\n" +

@@ -1,6 +1,7 @@
 package org.finos.legend.pure.m4.serialization.binary;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
@@ -26,7 +27,7 @@ class ReadableByteChannelReader extends AbstractBinaryReader
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -39,10 +40,10 @@ class ReadableByteChannelReader extends AbstractBinaryReader
     }
 
     @Override
-    public synchronized byte[] readBytes(int n)
+    public synchronized byte[] readBytes(byte[] bytes, int offset, int n)
     {
-        byte[] bytes = new byte[n];
-        fillBuffer(ByteBuffer.wrap(bytes, 0, n));
+        checkByteArray(bytes, offset, n);
+        fillBuffer(ByteBuffer.wrap(bytes, offset, n));
         return bytes;
     }
 
@@ -110,7 +111,7 @@ class ReadableByteChannelReader extends AbstractBinaryReader
             }
             catch (IOException e)
             {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
             return;
         }
@@ -129,7 +130,7 @@ class ReadableByteChannelReader extends AbstractBinaryReader
             }
             catch (IOException e)
             {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
             if (read < 0)
             {
@@ -142,16 +143,16 @@ class ReadableByteChannelReader extends AbstractBinaryReader
     private void fillBuffer(ByteBuffer buffer)
     {
         long start = buffer.position();
-        int read;
         while (buffer.hasRemaining())
         {
+            int read;
             try
             {
                 read = this.byteChannel.read(buffer);
             }
             catch (IOException e)
             {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
             if (read < 0)
             {

@@ -22,70 +22,37 @@ public abstract class AbstractSimpleBinaryReader extends AbstractBinaryReader
     protected final ByteBuffer eightByteBuffer = ByteBuffer.wrap(this.eightBytes);
 
     @Override
-    public synchronized byte readByte()
-    {
-        return readOneByte();
-    }
-
-    @Override
-    public synchronized byte[] readBytes(int n)
-    {
-        byte[] bytes = new byte[n];
-        readNBytes(n, bytes, 0);
-        return bytes;
-    }
-
-    @Override
     public synchronized short readShort()
     {
-        readNBytes(Short.BYTES, this.eightBytes, 0);
+        readBytes(this.eightBytes, 0, Short.BYTES);
         return this.eightByteBuffer.getShort(0);
     }
 
     @Override
     public synchronized int readInt()
     {
-        readNBytes(Integer.BYTES, this.eightBytes, 0);
+        readBytes(this.eightBytes, 0, Integer.BYTES);
         return this.eightByteBuffer.getInt(0);
     }
 
     @Override
     public synchronized long readLong()
     {
-        readNBytes(Long.BYTES, this.eightBytes, 0);
+        readBytes(this.eightBytes, 0, Long.BYTES);
         return this.eightByteBuffer.getLong(0);
     }
 
     @Override
     public synchronized float readFloat()
     {
-        readNBytes(Float.BYTES, this.eightBytes, 0);
+        readBytes(this.eightBytes, 0, Float.BYTES);
         return this.eightByteBuffer.getFloat(0);
     }
 
     @Override
     public synchronized double readDouble()
     {
-        readNBytes(Double.BYTES, this.eightBytes, 0);
+        readBytes(this.eightBytes, 0, Double.BYTES);
         return this.eightByteBuffer.getDouble(0);
     }
-
-    /**
-     * Read and return a single byte.  This must throw an
-     * exception if a byte cannot be read.
-     *
-     * @return byte
-     */
-    protected abstract byte readOneByte();
-
-    /**
-     * Read the given number of bytes into the given array
-     * starting at the given offset.  This must read exactly
-     * the requested number of bytes or throw an exception.
-     *
-     * @param n      number of bytes to read
-     * @param bytes  array to read bytes into
-     * @param offset array offset
-     */
-    protected abstract void readNBytes(int n, byte[] bytes, int offset);
 }

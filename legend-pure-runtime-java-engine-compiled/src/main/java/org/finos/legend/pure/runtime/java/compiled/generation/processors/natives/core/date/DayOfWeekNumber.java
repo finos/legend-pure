@@ -19,7 +19,8 @@ import org.finos.legend.pure.runtime.java.compiled.generation.processors.support
 
 public class DayOfWeekNumber extends AbstractNativeFunctionGeneric
 {
-    public DayOfWeekNumber() {
-        super(getMethod(CompiledSupport.class, "dayOfWeekNumber"), true, false, false,"dayOfWeekNumber_Date_1__Integer_1_");
+    public DayOfWeekNumber()
+    {
+        super(getMethod(CompiledSupport.class, "dayOfWeekNumber"), true, false, false, "dayOfWeekNumber_Date_1__Integer_1_");
     }
 }

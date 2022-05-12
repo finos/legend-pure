@@ -22,13 +22,17 @@
     <parent>
         <groupId>org.finos.legend.pure</groupId>
         <artifactId>legend-pure</artifactId>
-        <version>2.0.1-SNAPSHOT</version>
+        <version>2.1.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>legend-pure-ide-light</artifactId>
     <packaging>jar</packaging>
     <name>Legend Pure - IDE Light</name>
+
+    <properties>
+        <skip.yarn>false</skip.yarn>
+    </properties>
 
     <build>
         <resources>
@@ -51,6 +55,7 @@
                                 <argument>install</argument>
                             </arguments>
                             <workingDirectory>src/main/web</workingDirectory>
+                            <skip>${skip.yarn}</skip>
                         </configuration>
                         <goals>
                             <goal>exec</goal>
@@ -65,6 +70,7 @@
                                 <argument>build:ci</argument>
                             </arguments>
                             <workingDirectory>src/main/web</workingDirectory>
+                            <skip>${skip.yarn}</skip>
                         </configuration>
                         <goals>
                             <goal>exec</goal>
