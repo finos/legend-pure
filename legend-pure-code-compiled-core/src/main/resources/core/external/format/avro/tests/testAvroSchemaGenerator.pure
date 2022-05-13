@@ -19,6 +19,7 @@ import meta::json::*;
 
 Profile meta::external::format::avro::generation::tests::AvroProperty
 {
+   stereotypes: [s1];
    tags: [
      p1, p2, p3
    ];
@@ -27,7 +28,7 @@ Profile meta::external::format::avro::generation::tests::AvroProperty
 
 Class <<access.private>> meta::external::format::avro::generation::tests::A
 {
-   a: String[1];
+   <<AvroProperty.s1>>a: String[1];
 }
 
 Class <<access.private>> meta::external::format::avro::generation::tests::B
@@ -60,6 +61,19 @@ Class <<access.private>> meta::external::format::avro::generation::tests::E exte
 {
    e: Date[0..1];
 }
+
+
+Class <<access.private>> meta::external::format::avro::generation::tests::E2 extends EE
+{
+   e2: Date[0..1];
+}
+
+
+Class <<access.private>> meta::external::format::avro::generation::tests::EHolder 
+{
+   property1: EE[0..1];
+   property2: EE[0..1];
+} 
 
 Class <<access.private>> meta::external::format::avro::generation::tests::F
 {
@@ -285,9 +299,11 @@ function <<test.Test>> meta::external::format::avro::generation::tests::includeG
 function <<test.Test>> meta::external::format::avro::generation::tests::typeUnion(): Boolean[1]
 {
    let schema = classToAvroSchema(W, ^AvroConfig())->meta::external::format::avro::serialization::avroSchemaToJSON()->toCompactJSONString();
-   assertEquals('[{"type":"record","name":"X","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"x","type":"long"},{"name":"w","type":["double","long"]}]},'+
+    assertEquals('[{"type":"record","name":"W","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"w","type":["double","long"]}]},'+
+                '{"type":"record","name":"X","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"x","type":"long"},{"name":"w","type":["double","long"]}]},'+
                 '{"type":"record","name":"Y","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"y","type":{"type":"array","items":"double"}},{"name":"w","type":["double","long"]}]},'+
-                '{"type":"record","name":"Z","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"z","type":["null","boolean"],"default":null},{"name":"w","type":["double","long"]}]}]', $schema);
+                '{"type":"record","name":"Z","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"z","type":["null","boolean"],"default":null},{"name":"w","type":["double","long"]}]}'+
+                ']', $schema);
 }
 
 function <<test.Test>> meta::external::format::avro::generation::tests::ignoredProperties(): Boolean[1]
@@ -426,9 +442,11 @@ function <<test.Test, test.ExcludeAlloy>> {serverVersion.start='v1_11_0'} meta::
 function <<test.Test, test.ExcludeAlloy>> {serverVersion.start='v1_11_0'} meta::external::format::avro::generation::tests::transform_typeUnion(): Boolean[1]
 {
    let schema = transform(^AvroConfig(class=W->elementToPath()))->at(0).content;
-   assertEquals('[{"type":"record","name":"X","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"x","type":"long"},{"name":"w","type":["double","long"]}]},'+
+    assertEquals('[{"type":"record","name":"W","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"w","type":["double","long"]}]},'+
+                '{"type":"record","name":"X","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"x","type":"long"},{"name":"w","type":["double","long"]}]},'+
                 '{"type":"record","name":"Y","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"y","type":{"type":"array","items":"double"}},{"name":"w","type":["double","long"]}]},'+
-                '{"type":"record","name":"Z","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"z","type":["null","boolean"],"default":null},{"name":"w","type":["double","long"]}]}]', $schema);
+                '{"type":"record","name":"Z","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"z","type":["null","boolean"],"default":null},{"name":"w","type":["double","long"]}]}'+
+                ']', $schema);
 }
 
 function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::avro::generation::tests::transform_ignoredProperties(): Boolean[1]
@@ -477,5 +495,22 @@ function <<test.Test>> {serverVersion.start='v1_20_0'} meta::external::format::a
 {
    let schema = transform( ^AvroConfig(class=Dec->elementToPath()))->at(0).content;
    assertEquals('{"type":"record","name":"Dec","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"dec","type":["null","string"],"default":null}]}', $schema);
+}
+
+
+function <<test.Test>> meta::external::format::avro::generation::tests::transformTypeWithLogicalTypeInheritence(): Boolean[1]
+{
+   let schema = classToAvroSchema(EHolder, ^AvroConfig(generateLogicalTypes=true))->meta::external::format::avro::serialization::avroSchemaToJSON()->toCompactJSONString();
+    assertEquals('{"type":"record","name":"EHolder","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"property1","type":["null",{"type":"record","name":"EE","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"ee","type":"string"}]},{"type":"record","name":"E","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"e","type":["null",{"type":"long","logicalType":"timestamp-micros"}],"default":null},{"name":"ee","type":"string"}]},{"type":"record","name":"E2","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"e2","type":["null",{"type":"long","logicalType":"timestamp-micros"}],"default":null},{"name":"ee","type":"string"}]}],"default":null,"logicalType":"meta.external.format.avro.generation.tests.EE"},{"name":"property2","type":["null","meta.external.format.avro.generation.tests.EE","meta.external.format.avro.generation.tests.E","meta.external.format.avro.generation.tests.E2"],"default":null,"logicalType":"meta.external.format.avro.generation.tests.EE"}]}'
+                ,$schema);
+}
+
+
+
+function <<test.Test>> meta::external::format::avro::generation::tests::profileOnProperties(): Boolean[1]
+{  
+   
+   let schema = classToAvroSchema(A, ^AvroConfig(propertyProfile=meta::external::format::avro::generation::tests::AvroProperty))->meta::external::format::avro::serialization::avroSchemaToJSON()->toCompactJSONString();
+   assertEquals('{"type":"record","name":"A","namespace":"meta.external.format.avro.generation.tests","fields":[{"name":"a","type":"string","s1":true}]}', $schema);
 }
 
