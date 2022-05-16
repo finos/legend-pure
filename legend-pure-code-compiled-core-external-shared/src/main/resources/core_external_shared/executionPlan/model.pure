@@ -33,7 +33,8 @@ Class meta::external::shared::format::executionPlan::ExternalFormatSerializeExec
 
 Class meta::external::shared::format::executionPlan::ExternalFormatDeserializeExecutionNode extends ExecutionNode
 {
-   pathOffset : PathReference[0..1];
+   recordsToBeRead : Integer[0..1];
+   pathOffset      : PathReference[0..1];
 }
 
 Class meta::external::shared::format::executionPlan::UrlStreamExecutionNode extends ExecutionNode
@@ -54,6 +55,11 @@ Class <<typemodifiers.abstract>> meta::external::shared::format::executionPlan::
 {
 }
 
+Class <<typemodifiers.abstract>> meta::external::shared::format::executionPlan::ExternalFormatNodeGenerationPayload extends meta::pure::executionPlan::Payload
+{
+   recordsToBeRead: Integer[0..1];
+}
+
 Class <<typemodifiers.abstract>> meta::external::shared::format::executionPlan::ExternalSource
 {
 }
@@ -61,4 +67,9 @@ Class <<typemodifiers.abstract>> meta::external::shared::format::executionPlan::
 Class meta::external::shared::format::executionPlan::UrlStreamExternalSource extends ExternalSource
 {
    url : String[1];
+}
+
+Class meta::external::shared::format::executionPlan::ExecutionNodeExternalSource extends ExternalSource
+{
+   node : ExecutionNode[1];
 }

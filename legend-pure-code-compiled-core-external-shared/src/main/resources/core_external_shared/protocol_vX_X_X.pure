@@ -105,7 +105,8 @@ Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::execut
 
 Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::ExternalFormatDeserializeExecutionNode extends ExecutionNode
 {
-   pathOffset : meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::PathReference[0..1];
+   recordsToBeRead : Integer[0..1];
+   pathOffset      : meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::PathReference[0..1];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::external::shared::format::executionPlan::PathReference

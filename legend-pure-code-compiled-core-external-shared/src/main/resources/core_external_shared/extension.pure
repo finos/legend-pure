@@ -56,13 +56,18 @@ function meta::external::shared::format::routerExtensions(type:String[1], extern
                }
             ]
          },
-      executionPlan_generation_nodeFromConnectionWithChildren = 
-         {tree:RootGraphFetchTree<Any>[0..1], children:ExecutionNode[1], enableConstraints:Boolean[1], checked:Boolean[1] |
+      executionPlan_generation_nodeFromConnectionUsingPayload =
+         {tree:RootGraphFetchTree<Any>[0..1], payload: Payload[1], enableConstraints:Boolean[1], checked:Boolean[1] |
             [
                {x:ExternalFormatConnection[1] | 
+                  assert($payload->instanceOf(ExternalFormatNodeGenerationPayload), | 'Invalid payload found!! Expected instance of ExternalFormatNodeGenerationPayload. Please raise an issue with dev team.');
+                  
                   let binding         = $x.element->cast(@Binding);
                   let formatExtension = $externalFormatExtensions->getExtensionForContentType($binding.contentType);
-                  let deserializeNode = $formatExtension.generateDeserializeNode->eval($x, $children, $tree);
+                  let sourceNode      = getSourceNodeFromExternalSource($x.externalSource);
+
+                  assert($formatExtension.generateDeserializeNodeUsingPayload->isNotEmpty(), | 'External format - ' + $formatExtension.externalFormat + ' does not support deserialize node generation with ExternalFormatNodeGenerationPayload.');
+                  let deserializeNode = $formatExtension.generateDeserializeNodeUsingPayload->toOne()->eval($x, $sourceNode, $tree, $payload->cast(@ExternalFormatNodeGenerationPayload));
                   generateDataQualityNode($deserializeNode, $enableConstraints, $checked);
                }
             ]
@@ -156,6 +161,8 @@ Class meta::external::shared::format::ExternalFormatExtension
    
    generateSerializeNode   : Function<{Boolean[1], Binding[1], ExecutionNode[*] -> ExecutionNode[1]}>[1];  
    generateDeserializeNode : Function<{Connection[1], ExecutionNode[1], RootGraphFetchTree<Any>[0..1] -> ExecutionNode[1]}>[1];
+   generateDeserializeNodeUsingPayload : Function<{Connection[1], ExecutionNode[1], RootGraphFetchTree<Any>[0..1], ExternalFormatNodeGenerationPayload[1] -> ExecutionNode[1]}>[0..1];
+
    generatePathReference   : Function<{Path<Nil,Any|*>[1] -> PathReference[1]}>[0..1];
    printPlanNodeToString   : Function<{String[1], RouterExtension[*] -> Function<{Nil[1] -> String[1]}>[*]}>[1];
    
