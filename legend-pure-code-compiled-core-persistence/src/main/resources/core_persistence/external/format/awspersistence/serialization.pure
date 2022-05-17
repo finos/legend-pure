@@ -63,6 +63,7 @@ function  meta::external::format::awspersistence::serialization::serialize(confi
       documentation=$p.documentation,
       notifier=$p.notifier,
       trigger=$p.trigger,
+      serviceInput=$p.serviceInput,
       service=$as,
       // persister=$p.persister,
       target=$apt

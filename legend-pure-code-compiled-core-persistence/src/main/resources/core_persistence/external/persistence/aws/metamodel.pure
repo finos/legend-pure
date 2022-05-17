@@ -40,6 +40,7 @@ Class meta::external::persistence::aws::metamodel::connection::AwsS3Connection e
   partition: AwsPartition[1];
   region: String[1];
   bucket: String[1];
+  key: String[0..1];
 }
 
 Enum
@@ -60,5 +61,6 @@ Class meta::external::persistence::aws::metamodel::connection::AwsFinCloudConnec
 {
   datasetId: String[1];
   authenticationStrategy: AuthenticationStrategy[1];
-  targetSpecification: FinCloudDatasourceSpecification[1];
+  apiUrl: String[1];
+  queryInfo: String[0..1];
 }

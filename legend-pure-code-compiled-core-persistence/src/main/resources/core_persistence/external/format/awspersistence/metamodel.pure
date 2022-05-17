@@ -75,6 +75,7 @@ Class meta::external::format::awspersistence::metamodel::AwsPersistence
 {
    documentation: String[1];
    service: meta::external::format::awspersistence::metamodel::AwsPersistenceService[1];
+   serviceInput: Connection[0..1];
    trigger: Trigger[1];
    notifier: Notifier[1];
    persister: Persister[0..1];
