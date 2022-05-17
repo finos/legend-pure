@@ -15,11 +15,10 @@
 package org.finos.legend.pure.m3.tests.validation;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.compiler.visibility.AccessLevel;
 import org.finos.legend.pure.m3.compiler.visibility.Visibility;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
@@ -41,12 +40,14 @@ import org.junit.Test;
 public class TestVisibility extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getCodeStorage(), getCodeRepositories(), null);
+    public static void setUp()
+    {
+        setUpRuntime(getCodeStorage());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("testFile.pure");
         runtime.delete("testFile2.pure");
         runtime.delete("/system/testFile.pure");
@@ -58,12 +59,11 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         runtime.delete("/model_validation/testFile2.pure");
         runtime.delete("/datamart_datamt/testFile.pure");
         runtime.delete("/datamart_datamt/testFile2.pure");
-
-        try{
-            runtime.compile();
-        } catch (PureCompilationException e) {
-            setUp();
-        }
+        runtime.delete("/datamart_datamt/testFile3.pure");
+        runtime.delete("/datamart_dtm/testFile.pure");
+        runtime.delete("/datamart_dtm/testFile2.pure");
+        runtime.delete("/datamart_dtm/testFile3.pure");
+        runtime.compile();
     }
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
@@ -77,7 +77,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                 SVNCodeRepository.newModelValidationCodeRepository(),
                 SVNCodeRepository.newSystemCodeRepository(),
                 CodeRepository.newPlatformCodeRepository()
-                ).newWithAll(CodeRepositoryProviderHelper.findCodeRepositories());
+        ).newWithAll(CodeRepositoryProviderHelper.findCodeRepositories());
     }
 
     protected static MutableCodeStorage getCodeStorage()
@@ -92,7 +92,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "testFile.pure",
                 "Class pkg::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("pkg::A"));
+        Assert.assertNotNull(runtime.getCoreInstance("pkg::A"));
         compileTestSource(
                 "testFile2.pure",
                 "import pkg::*;\n" +
@@ -100,7 +100,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "    ^pkg::A();\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getFunction("meta::test::func():A[1]"));
+        Assert.assertNotNull(runtime.getFunction("meta::test::func():A[1]"));
     }
 
     @Test
@@ -110,22 +110,16 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "testFile.pure",
                 "Class pkg::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("pkg::A"));
-        try
-        {
-            compileTestSource(
-                    "/system/testFile2.pure",
-                    "import pkg::*;\n" +
-                            "function meta::test::func():A[1]\n" +
-                            "{\n" +
-                            "    ^A();\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "pkg::A is not visible in the file /system/testFile2.pure", "/system/testFile2.pure", 2, 29, 2, 29, 2, 29, e);
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("pkg::A"));
+
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/system/testFile2.pure",
+                "import pkg::*;\n" +
+                        "function meta::test::func():A[1]\n" +
+                        "{\n" +
+                        "    ^A();\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "pkg::A is not visible in the file /system/testFile2.pure", "/system/testFile2.pure", 2, 29, 2, 29, 2, 29, e);
     }
 
     @Test
@@ -136,22 +130,15 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "testFile.pure",
                 "Class pkg::ABC {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("pkg::ABC"));
-        try
-        {
-            compileTestSource(
-                    "/model_legacy/testFile2.pure",
-                    "import pkg::*;\n" +
-                            "function model_legacy::domain::func():ABC[1]\n" +
-                            "{\n" +
-                            "    ^ABC();\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "pkg::ABC is not visible in the file /model_legacy/testFile2.pure", "/model_legacy/testFile2.pure", 2, 39, 2, 39, 2, 41, e);
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("pkg::ABC"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/model_legacy/testFile2.pure",
+                "import pkg::*;\n" +
+                        "function model_legacy::domain::func():ABC[1]\n" +
+                        "{\n" +
+                        "    ^ABC();\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "pkg::ABC is not visible in the file /model_legacy/testFile2.pure", "/model_legacy/testFile2.pure", 2, 39, 2, 39, 2, 41, e);
     }
 
     @Test
@@ -162,22 +149,15 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "testFile.pure",
                 "Class pkg::Maxwell {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("pkg::Maxwell"));
-        try
-        {
-            compileTestSource(
-                    "/datamart_datamt/testFile2.pure",
-                    "import pkg::*;\n" +
-                            "function apps::datamt::func():Maxwell[1]\n" +
-                            "{\n" +
-                            "    ^Maxwell();\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "pkg::Maxwell is not visible in the file /datamart_datamt/testFile2.pure", "/datamart_datamt/testFile2.pure", 2, 31, 2, 31, 2, 37, e);
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("pkg::Maxwell"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/datamart_datamt/testFile2.pure",
+                "import pkg::*;\n" +
+                        "function apps::datamt::func():Maxwell[1]\n" +
+                        "{\n" +
+                        "    ^Maxwell();\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "pkg::Maxwell is not visible in the file /datamart_datamt/testFile2.pure", "/datamart_datamt/testFile2.pure", 2, 31, 2, 31, 2, 37, e);
     }
 
     // System repo visibility (visible everywhere)
@@ -189,7 +169,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/system/testFile.pure",
                 "Class meta::test::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("meta::test::A"));
+        Assert.assertNotNull(runtime.getCoreInstance("meta::test::A"));
         compileTestSource(
                 "testFile2.pure",
                 "import meta::test::*;\n" +
@@ -197,7 +177,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "    ^A();\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getFunction("meta::test::func():A[1]"));
+        Assert.assertNotNull(runtime.getFunction("meta::test::func():A[1]"));
     }
 
     @Test
@@ -207,7 +187,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/system/testFile.pure",
                 "Class meta::test::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("meta::test::A"));
+        Assert.assertNotNull(runtime.getCoreInstance("meta::test::A"));
         compileTestSource(
                 "/system/testFile2.pure",
                 "import meta::test::*;\n" +
@@ -215,7 +195,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "    ^A();\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getFunction("meta::test::func():A[1]"));
+        Assert.assertNotNull(runtime.getFunction("meta::test::func():A[1]"));
     }
 
     @Test
@@ -226,7 +206,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/system/testFile.pure",
                 "Class meta::test::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("meta::test::A"));
+        Assert.assertNotNull(runtime.getCoreInstance("meta::test::A"));
         compileTestSource(
                 "/model_legacy/testFile2.pure",
                 "import meta::test::*;\n" +
@@ -234,7 +214,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "    ^A();\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getFunction("model_legacy::domain::func():A[1]"));
+        Assert.assertNotNull(runtime.getFunction("model_legacy::domain::func():A[1]"));
     }
 
     @Test
@@ -245,7 +225,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/system/testFile.pure",
                 "Class meta::test::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("meta::test::A"));
+        Assert.assertNotNull(runtime.getCoreInstance("meta::test::A"));
         compileTestSource(
                 "/datamart_datamt/testFile2.pure",
                 "import meta::test::*;\n" +
@@ -253,7 +233,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "    ^A();\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getFunction("apps::datamt::func():A[1]"));
+        Assert.assertNotNull(runtime.getFunction("apps::datamt::func():A[1]"));
     }
 
     // Model repo visibility (visible in datamart repos)
@@ -265,7 +245,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/model_legacy/testFile.pure",
                 "Class model_legacy::domain::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("model_legacy::domain::A"));
+        Assert.assertNotNull(runtime.getCoreInstance("model_legacy::domain::A"));
         compileTestSource(
                 "testFile2.pure",
                 "import model_legacy::domain::*;\n" +
@@ -273,7 +253,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "    ^A();\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getFunction("meta::test::func():A[1]"));
+        Assert.assertNotNull(runtime.getFunction("meta::test::func():A[1]"));
     }
 
     @Test
@@ -285,22 +265,15 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/model_legacy/testFile.pure",
                 "Class model_legacy::domain::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("model_legacy::domain::A"));
-        try
-        {
-            compileTestSource(
-                    "/system/testFile2.pure",
-                    "import model_legacy::domain::*;\n" +
-                            "function meta::test::func():A[1]\n" +
-                            "{\n" +
-                            "    ^A();\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "model_legacy::domain::A is not visible in the file /system/testFile2.pure", "/system/testFile2.pure", 2, 29, 2, 29, 2, 29, e);
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("model_legacy::domain::A"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/system/testFile2.pure",
+                "import model_legacy::domain::*;\n" +
+                        "function meta::test::func():A[1]\n" +
+                        "{\n" +
+                        "    ^A();\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "model_legacy::domain::A is not visible in the file /system/testFile2.pure", "/system/testFile2.pure", 2, 29, 2, 29, 2, 29, e);
     }
 
     @Test
@@ -313,21 +286,14 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/model_candidate/testFile.pure",
                 "Class model_candidate::domain::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("model_candidate::domain::A"));
-        try
-        {
-            compileTestSource(
-                    "/model_legacy/testFile2.pure",
-                    "import model_candidate::domain::*;\n" +
-                            "Class model_legacy::domain::B extends A\n" +
-                            "{\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "model_candidate::domain::A is not visible in the file /model_legacy/testFile2.pure", "/model_legacy/testFile2.pure", 2, 39, 2, 39, 2, 39, e);
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("model_candidate::domain::A"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/model_legacy/testFile2.pure",
+                "import model_candidate::domain::*;\n" +
+                        "Class model_legacy::domain::B extends A\n" +
+                        "{\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "model_candidate::domain::A is not visible in the file /model_legacy/testFile2.pure", "/model_legacy/testFile2.pure", 2, 39, 2, 39, 2, 39, e);
     }
 
     @Test
@@ -340,14 +306,14 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/model/testFile.pure",
                 "Class model::domain::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("model::domain::A"));
+        Assert.assertNotNull(runtime.getCoreInstance("model::domain::A"));
         compileTestSource(
                 "/model_legacy/testFile2.pure",
                 "import model::domain::*;\n" +
                         "Class model_legacy::domain::B extends A\n" +
                         "{\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("model_legacy::domain::B"));
+        Assert.assertNotNull(runtime.getCoreInstance("model_legacy::domain::B"));
     }
 
     @Test
@@ -359,7 +325,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/model_legacy/testFile.pure",
                 "Class model_legacy::domain::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("model_legacy::domain::A"));
+        Assert.assertNotNull(runtime.getCoreInstance("model_legacy::domain::A"));
 
         compileTestSource(
                 "/datamart_datamt/testFile2.pure",
@@ -368,7 +334,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "    ^A();\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getFunction("apps::datamt::func():A[1]"));
+        Assert.assertNotNull(runtime.getFunction("apps::datamt::func():A[1]"));
     }
 
     // Datamart repo visibility (visible only to themselves)
@@ -380,7 +346,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/datamart_datamt/testFile.pure",
                 "Class datamarts::datamt::domain::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::A"));
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::A"));
         compileTestSource(
                 "testFile2.pure",
                 "import datamarts::datamt::domain::*;\n" +
@@ -388,7 +354,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "    ^A();\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getFunction("meta::test::func():A[1]"));
+        Assert.assertNotNull(runtime.getFunction("meta::test::func():A[1]"));
     }
 
     @Test
@@ -400,22 +366,15 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/datamart_datamt/testFile.pure",
                 "Class datamarts::datamt::domain::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::A"));
-        try
-        {
-            compileTestSource(
-                    "/system/testFile2.pure",
-                    "import datamarts::datamt::domain::*;\n" +
-                            "function meta::test::func():A[1]\n" +
-                            "{\n" +
-                            "    ^A();\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not visible in the file /system/testFile2.pure", "/system/testFile2.pure", 2, 29, 2, 29, 2, 29, e);
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::A"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/system/testFile2.pure",
+                "import datamarts::datamt::domain::*;\n" +
+                        "function meta::test::func():A[1]\n" +
+                        "{\n" +
+                        "    ^A();\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not visible in the file /system/testFile2.pure", "/system/testFile2.pure", 2, 29, 2, 29, 2, 29, e);
     }
 
     @Test
@@ -427,22 +386,15 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/datamart_datamt/testFile.pure",
                 "Class datamarts::datamt::domain::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::A"));
-        try
-        {
-            compileTestSource(
-                    "/model_legacy/testFile2.pure",
-                    "import datamarts::datamt::domain::*;\n" +
-                            "function model_legacy::domain::test::func():A[1]\n" +
-                            "{\n" +
-                            "    ^A();\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not visible in the file /model_legacy/testFile2.pure", "/model_legacy/testFile2.pure", 2, 45, 2, 45, 2, 45, e);
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::A"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/model_legacy/testFile2.pure",
+                "import datamarts::datamt::domain::*;\n" +
+                        "function model_legacy::domain::test::func():A[1]\n" +
+                        "{\n" +
+                        "    ^A();\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not visible in the file /model_legacy/testFile2.pure", "/model_legacy/testFile2.pure", 2, 45, 2, 45, 2, 45, e);
     }
 
     @Test
@@ -458,37 +410,23 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "  stereotypes: [st1];\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::A"));
-        try
-        {
-            compileTestSource(
-                    "/datamart_dtm/testFile2.pure",
-                    "import datamarts::datamt::domain::*;\n" +
-                            "Class datamarts::dtm::domain::B extends A\n" +
-                            "{\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not visible in the file /datamart_dtm/testFile2.pure", "/datamart_dtm/testFile2.pure", 2, 41, 2, 41, 2, 41, e);
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::A"));
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/datamart_dtm/testFile2.pure",
+                "import datamarts::datamt::domain::*;\n" +
+                        "Class datamarts::dtm::domain::B extends A\n" +
+                        "{\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not visible in the file /datamart_dtm/testFile2.pure", "/datamart_dtm/testFile2.pure", 2, 41, 2, 41, 2, 41, e1);
 
-        try
-        {
-            compileTestSource(
-                    "/datamart_dtm/testFile3.pure",
-                    "import datamarts::datamt::domain::*;\n" +
-                            "Class datamarts::dtm::domain::C\n" +
-                            "{\n" +
-                            "  <<TestProfile.st1>> prop1 : String[1];\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "datamarts::datamt::domain::TestProfile is not visible in the file /datamart_dtm/testFile3.pure", "/datamart_dtm/testFile3.pure", 4, 23, 4, 23, 4, 40, e);
-        }
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/datamart_dtm/testFile3.pure",
+                "import datamarts::datamt::domain::*;\n" +
+                        "Class datamarts::dtm::domain::C\n" +
+                        "{\n" +
+                        "  <<TestProfile.st1>> prop1 : String[1];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::TestProfile is not visible in the file /datamart_dtm/testFile3.pure", "/datamart_dtm/testFile3.pure", 4, 23, 4, 23, 4, 40, e2);
     }
 
     // Direct package references
@@ -502,21 +440,14 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/datamart_datamt/testFile.pure",
                 "Class datamarts::datamt::domain::A {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::A"));
-        try
-        {
-            compileTestSource(
-                    "/system/testFile.pure",
-                    "function meta::pure::testFn():Package[1]\n" +
-                            "{\n" +
-                            "  datamarts::datamt\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "datamarts::datamt is not visible in the file /system/testFile.pure", "/system/testFile.pure", 3, 14, 3, 14, 3, 19, e);
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::A"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/system/testFile.pure",
+                "function meta::pure::testFn():Package[1]\n" +
+                        "{\n" +
+                        "  datamarts::datamt\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt is not visible in the file /system/testFile.pure", "/system/testFile.pure", 3, 14, 3, 14, 3, 19, e);
     }
 
     // Associations
@@ -530,44 +461,29 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/system/testFile.pure",
                 "Class meta::pure::TestClass1 {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("meta::pure::TestClass1"));
+        Assert.assertNotNull(runtime.getCoreInstance("meta::pure::TestClass1"));
         compileTestSource(
                 "/datamart_datamt/testFile2.pure",
                 "Class datamarts::datamt::domain::TestClass2 {}\nClass datamarts::datamt::domain::TestClass3 {}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::TestClass2"));
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::TestClass2"));
 
-
-        try
-        {
-            compileTestSource(
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
                     "/system/testFile3.pure",
                     "Association meta::system::TestAssoc1\n" +
                             "{\n" +
                             "  toTestClass1:datamarts::datamt::domain::TestClass2[0..1];\n" +
                             "  toTestClass2:datamarts::datamt::domain::TestClass3[0..1];\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "datamarts::datamt::domain::TestClass2 is not visible in the file /system/testFile3.pure", "/system/testFile3.pure", 3, 43, 3, 43, 3, 52, e);
-        }
+                            "}"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::TestClass2 is not visible in the file /system/testFile3.pure", "/system/testFile3.pure", 3, 43, 3, 43, 3, 52, e1);
 
-        try
-        {
-            compileTestSource(
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
                     "/system/testFile4.pure",
                     "Association meta::system::TestAssoc1\n" +
                             "{\n" +
                             "  toTestClass1:meta::pure::TestClass1[0..1];\n" +
                             "  toTestClass2:datamarts::datamt::domain::TestClass2[0..1];\n" +
-                            "}");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Associations are not permitted between classes in different repositories, datamarts::datamt::domain::TestClass2 is in the \"datamart_datamt\" repository and meta::pure::TestClass1 is in the \"system\" repository. This can be solved by first creating a subclass located in the same repository and creating an Association to the subclass.", "/system/testFile4.pure", 4, 3, 4, 3, 4, 59, e);
-        }
+                            "}"));
+        assertPureException(PureCompilationException.class, "Associations are not permitted between classes in different repositories, datamarts::datamt::domain::TestClass2 is in the \"datamart_datamt\" repository and meta::pure::TestClass1 is in the \"system\" repository. This can be solved by first creating a subclass located in the same repository and creating an Association to the subclass.", "/system/testFile4.pure", 4, 3, 4, 3, 4, 59, e2);
 
         compileTestSource(
                 "/datamart_datamt/testFile3.pure",
@@ -576,23 +492,23 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                         "  toTestClass2:datamarts::datamt::domain::TestClass2[0..1];\n" +
                         "  toTestClass3:datamarts::datamt::domain::TestClass3[0..1];\n" +
                         "}");
-        CoreInstance testAssoc2 = this.runtime.getCoreInstance("datamarts::datamt::domain::TestAssoc2");
+        CoreInstance testAssoc2 = runtime.getCoreInstance("datamarts::datamt::domain::TestAssoc2");
         Assert.assertNotNull(testAssoc2);
 
-        ListIterable<? extends CoreInstance> testAssoc2Props = Instance.getValueForMetaPropertyToManyResolved(testAssoc2, M3Properties.properties, this.processorSupport);
+        ListIterable<? extends CoreInstance> testAssoc2Props = Instance.getValueForMetaPropertyToManyResolved(testAssoc2, M3Properties.properties, processorSupport);
         Assert.assertEquals(2, testAssoc2Props.size());
         CoreInstance toTestClass2 = testAssoc2.getValueInValueForMetaPropertyToMany(M3Properties.properties, "toTestClass2");
         Assert.assertNotNull(toTestClass2);
         CoreInstance toTestClass3 = testAssoc2.getValueInValueForMetaPropertyToMany(M3Properties.properties, "toTestClass3");
         Assert.assertNotNull(toTestClass3);
 
-        CoreInstance testClass2 = this.runtime.getCoreInstance("datamarts::datamt::domain::TestClass2");
-        ListIterable<? extends CoreInstance> testClass1PropsFromAssocs = Instance.getValueForMetaPropertyToManyResolved(testClass2, M3Properties.propertiesFromAssociations, this.processorSupport);
+        CoreInstance testClass2 = runtime.getCoreInstance("datamarts::datamt::domain::TestClass2");
+        ListIterable<? extends CoreInstance> testClass1PropsFromAssocs = Instance.getValueForMetaPropertyToManyResolved(testClass2, M3Properties.propertiesFromAssociations, processorSupport);
         Assert.assertEquals(1, testClass1PropsFromAssocs.size());
         Assert.assertSame(toTestClass3, testClass1PropsFromAssocs.getFirst());
 
-        CoreInstance testClass3 = this.runtime.getCoreInstance("datamarts::datamt::domain::TestClass3");
-        ListIterable<? extends CoreInstance> testClass2PropsFromAssocs = Instance.getValueForMetaPropertyToManyResolved(testClass3, M3Properties.propertiesFromAssociations, this.processorSupport);
+        CoreInstance testClass3 = runtime.getCoreInstance("datamarts::datamt::domain::TestClass3");
+        ListIterable<? extends CoreInstance> testClass2PropsFromAssocs = Instance.getValueForMetaPropertyToManyResolved(testClass3, M3Properties.propertiesFromAssociations, processorSupport);
         Assert.assertEquals(1, testClass2PropsFromAssocs.size());
         Assert.assertSame(toTestClass2, testClass2PropsFromAssocs.getFirst());
     }
@@ -610,7 +526,7 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
         compileTestSource(
                 "/model/testFile1.pure",
                 "Class model::producers::bu::A { name:String[1];}");
-        Assert.assertNotNull(this.runtime.getCoreInstance("model::producers::bu::A"));
+        Assert.assertNotNull(runtime.getCoreInstance("model::producers::bu::A"));
         compileTestSource(
                 "/model_validation/testFile2.pure",
                 "import model::producers::bu::*;\n" +
@@ -618,34 +534,27 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "    ^A(name='a');\n" +
                         "}");
-        Assert.assertNotNull(this.runtime.getFunction("model::producers::bu::validationFunc():A[1]"));
+        Assert.assertNotNull(runtime.getFunction("model::producers::bu::validationFunc():A[1]"));
     }
 
     @Test
     public void testDatamartsVisibilityOfModelInModelValidationRepo()
     {
-        try
-        {
-            assertRepoExists("model_validation");
-            assertRepoExists("datamart_datamt");
-            compileTestSource(
-                    "/datamart_datamt/testFile1.pure",
-                    "Class datamarts::datamt::domain::Test { name:String[1];}");
-            Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::Test"));
-            compileTestSource(
-                    "/model_validation/testFile2.pure",
-                    "import datamarts::datamt::domain::*;\n" +
-                            "function model::producers::bu::validationFunc():Test[1]\n" +
-                            "{\n" +
-                            "    ^Test(name='lala');\n" +
-                            "}");
-            Assert.assertNotNull(this.runtime.getFunction("model::producers::bu::validationFunc():Test[1]"));
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "datamarts::datamt::domain::Test is not visible in the file /model_validation/testFile2.pure", "/model_validation/testFile2.pure", 2, 49, 2, 49, 2, 52, e);
-        }
+        assertRepoExists("model_validation");
+        assertRepoExists("datamart_datamt");
+        compileTestSource(
+                "/datamart_datamt/testFile1.pure",
+                "Class datamarts::datamt::domain::Test { name:String[1];}");
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::Test"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/model_validation/testFile2.pure",
+                "import datamarts::datamt::domain::*;\n" +
+                        "function model::producers::bu::validationFunc():Test[1]\n" +
+                        "{\n" +
+                        "    ^Test(name='lala');\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::Test is not visible in the file /model_validation/testFile2.pure", "/model_validation/testFile2.pure", 2, 49, 2, 49, 2, 52, e);
+        Assert.assertNull(runtime.getFunction("model::producers::bu::validationFunc():Test[1]"));
     }
 
     @Test
@@ -692,72 +601,72 @@ public class TestVisibility extends AbstractPureTestWithCoreCompiled
                 "    $s\n" +
                 "}");
 
-        Function privateFunc = (Function)this.runtime.getFunction("pkg1::privateFunc(String[1], String[1]):String[1]");
+        Function<?> privateFunc = (Function<?>) runtime.getFunction("pkg1::privateFunc(String[1], String[1]):String[1]");
         Assert.assertNotNull(privateFunc);
-        Assert.assertSame(AccessLevel.PRIVATE, AccessLevel.getAccessLevel(privateFunc, this.context, this.processorSupport));
+        Assert.assertSame(AccessLevel.PRIVATE, AccessLevel.getAccessLevel(privateFunc, context, processorSupport));
 
-        Function protectedFunc = (Function)this.runtime.getFunction("pkg1::protectedFunc(String[1], String[1]):String[1]");
+        Function<?> protectedFunc = (Function<?>) runtime.getFunction("pkg1::protectedFunc(String[1], String[1]):String[1]");
         Assert.assertNotNull(protectedFunc);
-        Assert.assertSame(AccessLevel.PROTECTED, AccessLevel.getAccessLevel(protectedFunc, this.context, this.processorSupport));
+        Assert.assertSame(AccessLevel.PROTECTED, AccessLevel.getAccessLevel(protectedFunc, context, processorSupport));
 
-        Function publicFunc1 = (Function)this.runtime.getFunction("pkg1::publicFunc1(String[1]):String[1]");
+        Function<?> publicFunc1 = (Function<?>) runtime.getFunction("pkg1::publicFunc1(String[1]):String[1]");
         Assert.assertNotNull(publicFunc1);
-        Assert.assertSame(AccessLevel.PUBLIC, AccessLevel.getAccessLevel(publicFunc1, this.context, this.processorSupport));
+        Assert.assertSame(AccessLevel.PUBLIC, AccessLevel.getAccessLevel(publicFunc1, context, processorSupport));
 
-        Function publicFunc2 = (Function)this.runtime.getFunction("pkg1::sub::publicFunc2(String[1]):String[1]");
+        Function<?> publicFunc2 = (Function<?>) runtime.getFunction("pkg1::sub::publicFunc2(String[1]):String[1]");
         Assert.assertNotNull(publicFunc2);
-        Assert.assertSame(AccessLevel.PUBLIC, AccessLevel.getAccessLevel(publicFunc2, this.context, this.processorSupport));
+        Assert.assertSame(AccessLevel.PUBLIC, AccessLevel.getAccessLevel(publicFunc2, context, processorSupport));
 
-        Function publicFunc3 = (Function)this.runtime.getFunction("pkg2::publicFunc3(String[1]):String[1]");
+        Function<?> publicFunc3 = (Function<?>) runtime.getFunction("pkg2::publicFunc3(String[1]):String[1]");
         Assert.assertNotNull(publicFunc3);
-        Assert.assertSame(AccessLevel.PUBLIC, AccessLevel.getAccessLevel(publicFunc3, this.context, this.processorSupport));
+        Assert.assertSame(AccessLevel.PUBLIC, AccessLevel.getAccessLevel(publicFunc3, context, processorSupport));
 
-        Function extFunc1 = (Function)this.runtime.getFunction("pkg1::extFunc1(String[1]):String[1]");
+        Function<?> extFunc1 = (Function<?>) runtime.getFunction("pkg1::extFunc1(String[1]):String[1]");
         Assert.assertNotNull(extFunc1);
-        Assert.assertSame(AccessLevel.EXTERNALIZABLE, AccessLevel.getAccessLevel(extFunc1, this.context, this.processorSupport));
+        Assert.assertSame(AccessLevel.EXTERNALIZABLE, AccessLevel.getAccessLevel(extFunc1, context, processorSupport));
 
-        Function extFunc2 = (Function)this.runtime.getFunction("pkg1::sub::extFunc2(String[1]):String[1]");
+        Function<?> extFunc2 = (Function<?>) runtime.getFunction("pkg1::sub::extFunc2(String[1]):String[1]");
         Assert.assertNotNull(extFunc2);
-        Assert.assertSame(AccessLevel.EXTERNALIZABLE, AccessLevel.getAccessLevel(extFunc2, this.context, this.processorSupport));
+        Assert.assertSame(AccessLevel.EXTERNALIZABLE, AccessLevel.getAccessLevel(extFunc2, context, processorSupport));
 
-        Function extFunc3 = (Function)this.runtime.getFunction("pkg2::extFunc3(String[1]):String[1]");
+        Function<?> extFunc3 = (Function<?>) runtime.getFunction("pkg2::extFunc3(String[1]):String[1]");
         Assert.assertNotNull(extFunc3);
-        Assert.assertSame(AccessLevel.EXTERNALIZABLE, AccessLevel.getAccessLevel(extFunc3, this.context, this.processorSupport));
+        Assert.assertSame(AccessLevel.EXTERNALIZABLE, AccessLevel.getAccessLevel(extFunc3, context, processorSupport));
 
-        CoreInstance pkg1 = this.runtime.getCoreInstance("pkg1");
+        CoreInstance pkg1 = runtime.getCoreInstance("pkg1");
         Assert.assertNotNull(pkg1);
 
-        CoreInstance pkg1Sub = this.runtime.getCoreInstance("pkg1::sub");
+        CoreInstance pkg1Sub = runtime.getCoreInstance("pkg1::sub");
         Assert.assertNotNull(pkg1Sub);
 
-        CoreInstance pkg2 = this.runtime.getCoreInstance("pkg2");
+        CoreInstance pkg2 = runtime.getCoreInstance("pkg2");
         Assert.assertNotNull(pkg2);
 
-        Assert.assertTrue(Visibility.isVisibleInPackage(privateFunc, pkg1, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(protectedFunc, pkg1, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc1, pkg1, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc2, pkg1, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc3, pkg1, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc1, pkg1, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc2, pkg1, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc3, pkg1, this.context, this.processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(privateFunc, pkg1, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(protectedFunc, pkg1, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc1, pkg1, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc2, pkg1, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc3, pkg1, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc1, pkg1, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc2, pkg1, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc3, pkg1, context, processorSupport));
 
-        Assert.assertFalse(Visibility.isVisibleInPackage(privateFunc, pkg1Sub, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(protectedFunc, pkg1Sub, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc1, pkg1Sub, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc2, pkg1Sub, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc3, pkg1Sub, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc1, pkg1Sub, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc2, pkg1Sub, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc3, pkg1Sub, this.context, this.processorSupport));
+        Assert.assertFalse(Visibility.isVisibleInPackage(privateFunc, pkg1Sub, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(protectedFunc, pkg1Sub, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc1, pkg1Sub, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc2, pkg1Sub, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc3, pkg1Sub, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc1, pkg1Sub, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc2, pkg1Sub, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc3, pkg1Sub, context, processorSupport));
 
-        Assert.assertFalse(Visibility.isVisibleInPackage(privateFunc, pkg2, this.context, this.processorSupport));
-        Assert.assertFalse(Visibility.isVisibleInPackage(protectedFunc, pkg2, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc1, pkg2, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc2, pkg2, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc3, pkg2, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc1, pkg2, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc2, pkg2, this.context, this.processorSupport));
-        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc3, pkg2, this.context, this.processorSupport));
+        Assert.assertFalse(Visibility.isVisibleInPackage(privateFunc, pkg2, context, processorSupport));
+        Assert.assertFalse(Visibility.isVisibleInPackage(protectedFunc, pkg2, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc1, pkg2, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc2, pkg2, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(publicFunc3, pkg2, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc1, pkg2, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc2, pkg2, context, processorSupport));
+        Assert.assertTrue(Visibility.isVisibleInPackage(extFunc3, pkg2, context, processorSupport));
     }
 }

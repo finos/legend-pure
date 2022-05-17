@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.asserts;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -23,13 +25,25 @@ import org.junit.Test;
 public class TestAssertNotEmpty extends PureExpressionTest
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getExtra());
     }
+
     @Test
     public void testFailure()
     {
-        assertExpressionRaisesPureException("Expected non-empty collection", 3, 9, "assertNotEmpty([1, 2, 3]->filter(x | $x == 5))",
+        assertExpressionRaisesPureException("Expected non-empty collection", 3, 9, "assertNotEmpty([1, 2, 3]->filter(x | $x == 5))");
+    }
+
+    protected static FunctionExecution getFunctionExecution()
+    {
+        return new FunctionExecutionInterpreted();
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair("testAssertNotEmpty.pure",
                 "function meta::pure::functions::asserts::assertNotEmpty(collection:Any[*]):Boolean[1]\n" +
                         "{\n" +
                         "    assertNotEmpty($collection, 'Expected non-empty collection');\n" +
@@ -76,12 +90,7 @@ public class TestAssertNotEmpty extends PureExpressionTest
                         "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
                         "{\n" +
                         "    assert($condition, | format($formatString, $formatArgs));\n" +
-                        "}");
-    }
-
-    protected static FunctionExecution getFunctionExecution()
-    {
-        return new FunctionExecutionInterpreted();
+                        "}"
+        );
     }
 }
-

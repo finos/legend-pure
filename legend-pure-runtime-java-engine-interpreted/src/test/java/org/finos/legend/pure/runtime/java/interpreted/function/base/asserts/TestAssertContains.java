@@ -14,52 +14,59 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.asserts;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestAssertContains extends PureExpressionTest
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getExtra());
     }
 
     @Test
     public void testFailure()
     {
-        assertExpressionRaisesPureException("[1, 2, 5, 2, 'a', true, %2014-02-01, 'c'] does not contain false", 3, 9, "assertContains([1, 2, 5, 2, 'a', true, %2014-02-01, 'c'], false)",
-                "function meta::pure::functions::asserts::assertContains(collection:Any[*], value:Any[1]):Boolean[1]\n" +
-                "{\n" +
-                "    assertContains($collection, $value, | format('%s does not contain %r', [$collection->map(v | $v->toRepresentation())->joinStrings('[', ', ', ']'), $value]));\n" +
-                "}\n" +
-                "\n" +
-                "function meta::pure::functions::asserts::assertContains(collection:Any[*], value:Any[1], message:String[1]):Boolean[1]\n" +
-                "{\n" +
-                "    assert($collection->contains($value), $message);\n" +
-                "}\n" +
-                "\n" +
-                "function meta::pure::functions::asserts::assertContains(collection:Any[*], value:Any[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
-                "{\n" +
-                "    assert($collection->contains($value), $formatString, $formatArgs);\n" +
-                "}\n" +
-                "\n" +
-                "function meta::pure::functions::asserts::assertContains(collection:Any[*], value:Any[1], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
-                "{\n" +
-                "    assert($collection->contains($value), $message);\n" +
-                "}\n" +
-                "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
-                "{\n" +
-                "    assert($condition, | format($formatString, $formatArgs));\n" +
-                "}"
-        );
+        assertExpressionRaisesPureException("[1, 2, 5, 2, 'a', true, %2014-02-01, 'c'] does not contain false", 3, 9, "assertContains([1, 2, 5, 2, 'a', true, %2014-02-01, 'c'], false)");
     }
 
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair(
+                "testAssertContains.pure",
+                "function meta::pure::functions::asserts::assertContains(collection:Any[*], value:Any[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assertContains($collection, $value, | format('%s does not contain %r', [$collection->map(v | $v->toRepresentation())->joinStrings('[', ', ', ']'), $value]));\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertContains(collection:Any[*], value:Any[1], message:String[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert($collection->contains($value), $message);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertContains(collection:Any[*], value:Any[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert($collection->contains($value), $formatString, $formatArgs);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertContains(collection:Any[*], value:Any[1], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert($collection->contains($value), $message);\n" +
+                        "}\n" +
+                        "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert($condition, | format($formatString, $formatArgs));\n" +
+                        "}\n");
     }
 }

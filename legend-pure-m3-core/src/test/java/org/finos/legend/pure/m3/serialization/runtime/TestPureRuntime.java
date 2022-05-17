@@ -14,11 +14,12 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.eclipse.collections.impl.test.Verify;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.IncrementalCompiler.IncrementalCompilerTransaction;
@@ -26,7 +27,6 @@ import org.finos.legend.pure.m3.serialization.runtime.cache.CompressedMemoryPure
 import org.finos.legend.pure.m3.serialization.runtime.cache.PureGraphCache;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
-import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.transaction.framework.ThreadLocalTransactionContext;
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,14 +41,8 @@ public class TestPureRuntime
         PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
 
-        try
-        {
-            runtime.loadSource.valueOf("/platform/pure/path.pure");
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("/platform/pure/path.pure is already loaded", e.getMessage());
-        }
+        RuntimeException e = Assert.assertThrows(RuntimeException.class, () -> runtime.loadSource("/platform/pure/path.pure"));
+        Assert.assertEquals("/platform/pure/path.pure is already loaded", e.getMessage());
     }
 
     @Test
@@ -80,7 +74,7 @@ public class TestPureRuntime
     }
 
     @Test
-    public void testThreadLocalState() throws Exception
+    public void testThreadLocalState()
     {
         PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
@@ -105,7 +99,7 @@ public class TestPureRuntime
             t.start();
             t.join();
         }
-        catch (InterruptedException e)
+        catch (InterruptedException ignore)
         {
         }
 
@@ -123,20 +117,19 @@ public class TestPureRuntime
             t.start();
             t.join();
         }
-        catch (InterruptedException e)
+        catch (InterruptedException ignore)
         {
         }
 
-        Assert.assertNotNull("Another thread can access core instances that have been committed",
-                otherThreadFunctionAccessor.getFunctionInstance());
+        Assert.assertNotNull("Another thread can access core instances that have been committed", otherThreadFunctionAccessor.getFunctionInstance());
     }
 
     @Test
     public void testCompiles()
     {
-        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
+        PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository(), GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME)))).build();
         runtime.loadAndCompileCore();
-        runtime.createInMemoryAndCompile(AbstractPureTestWithCoreCompiledPlatform.extra);
+        runtime.createInMemoryAndCompile(AbstractPureTestWithCoreCompiledPlatform.EXTRA);
 
         Assert.assertTrue(runtime.compiles("1 + 2"));
         Assert.assertTrue(runtime.compiles("split('the quick brown fox', ' ')"));
@@ -151,22 +144,14 @@ public class TestPureRuntime
         PureRuntime runtime = new PureRuntimeBuilder(new PureCodeStorage(Paths.get("..", "pure-code", "local"), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))).build();
         runtime.loadAndCompileCore();
 
-        try
-        {
-            runtime.createInMemoryAndCompile(
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> runtime.createInMemoryAndCompile(
                     Tuples.pair("/platform/testFile.pure", "function meta::pure::testFn():String[1] {'the quick brown fox'}"),
                     Tuples.pair("testBad.pure", "function sandbox::testFn2():Integer[1] { 1 + '7'}")
-            );
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            PureException pe = PureException.findPureException(e);
-            Assert.assertNotNull(pe);
-            Verify.assertInstanceOf(PureCompilationException.class, pe);
-            Assert.assertNotNull(pe.getSourceInformation());
-            Assert.assertEquals("testBad.pure", pe.getSourceInformation().getSourceId());
-        }
+            ));
+
+        Assert.assertNotNull(e.getSourceInformation());
+        Assert.assertEquals("testBad.pure", e.getSourceInformation().getSourceId());
+
         Source testFile = runtime.getSourceById("/platform/testFile.pure");
         Assert.assertNotNull(testFile);
         Assert.assertTrue(testFile.isCompiled());
@@ -176,7 +161,7 @@ public class TestPureRuntime
         Assert.assertFalse(testBad.isCompiled());
     }
 
-    private class FunctionAccessor implements Runnable
+    private static class FunctionAccessor implements Runnable
     {
         private final PureRuntime runtime;
         private CoreInstance functionInstance;
@@ -196,6 +181,5 @@ public class TestPureRuntime
         {
             return this.functionInstance;
         }
-
     }
 }

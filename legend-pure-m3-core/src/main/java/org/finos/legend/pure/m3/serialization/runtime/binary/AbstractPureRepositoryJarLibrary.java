@@ -317,7 +317,7 @@ public abstract class AbstractPureRepositoryJarLibrary implements PureRepository
                 String old = instanceDefinitions.put(instancePath, filePath);
                 if (old != null)
                 {
-                    throw new IllegalArgumentException("Multiple definition files for " + instancePath);
+                    throw new IllegalArgumentException("Multiple definition files for " + instancePath + ": " + old + " and " + filePath);
                 }
             });
             metadata.getExternalReferenceIndex().forEachKeyValue((filePath, instancePaths) ->

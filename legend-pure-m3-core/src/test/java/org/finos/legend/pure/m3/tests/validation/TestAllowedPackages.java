@@ -14,33 +14,44 @@
 
 package org.finos.legend.pure.m3.tests.validation;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.SVNCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.regex.Pattern;
-
 public class TestAllowedPackages extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getCodeStorage(), getCodeRepositories(), getExtra());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
+                GenericCodeRepository.build("model_validation", "(model::producers)(::.*)?", PlatformCodeRepository.NAME),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("/platform/testSource1.pure");
         runtime.delete("/platform/testSource2.pure");
+        runtime.delete("/test/testSource1.pure");
+        runtime.delete("/test/testSource2.pure");
+        runtime.delete("/model_validation/testFile2.pure");
+        runtime.compile();
     }
 
     @Test
@@ -53,18 +64,12 @@ public class TestAllowedPackages extends AbstractPureTestWithCoreCompiledPlatfor
                         "}\n");
 
         // This should not compile
-        try
-        {
-            compileTestSource("/platform/testSource2.pure",
-                    "Class model::test::MyTestClass\n" +
-                            "{\n" +
-                            "}\n");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Package model::test is not allowed in platform; only packages matching ((meta)|(system)|(apps::pure))(::.*)? are allowed", "/platform/testSource2.pure", 1, 1, 1, 20, 3, 1, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/platform/testSource2.pure",
+                "Class model::test::MyTestClass\n" +
+                        "{\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Package model::test is not allowed in platform; only packages matching ((meta)|(system)|(apps::pure))(::.*)? are allowed", "/platform/testSource2.pure", 1, 1, 1, 20, 3, 1, e);
     }
 
     @Test
@@ -77,40 +82,23 @@ public class TestAllowedPackages extends AbstractPureTestWithCoreCompiledPlatfor
                         "}\n");
 
         // This should not compile
-        try
-        {
-            compileTestSource("/test/testSource2.pure",
-                    "Class meta::pure::MyTestClass\n" +
-                            "{\n" +
-                            "}\n");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Package meta::pure is not allowed in test; only packages matching test(::*)? are allowed", "/test/testSource2.pure", 1, 1, 1, 19, 3, 1, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/test/testSource2.pure",
+                "Class meta::pure::MyTestClass\n" +
+                        "{\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Package meta::pure is not allowed in test; only packages matching test(::.*)? are allowed", "/test/testSource2.pure", 1, 1, 1, 19, 3, 1, e);
     }
+
     @Test
     public void testPackagePatternOfModelInModelValidationRepo()
     {
-        try
-        {
-            compileTestSource(
-                    "/model_validation/testFile2.pure",
-                            "function model::somepk::producers::bu::validationFunc():Boolean[1]\n" +
-                            "{\n" +
-                            "    true;\n" +
-                            "}\n");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Package model::somepk::producers::bu is not allowed in model_validation; only packages matching (model::producers)(::.*)? are allowed", "/model_validation/testFile2.pure", 1, 1, 1, 40, 4, 1, e);
-        }
-    }
-
-    protected static MutableCodeStorage getCodeStorage()
-    {
-        return new PureCodeStorage(getCodeStorageRoot(), new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository(), new TestCodeRepository("test", Pattern.compile("test(::*)?")), SVNCodeRepository.newModelValidationCodeRepository()));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/model_validation/testFile2.pure",
+                "function model::somepk::producers::bu::validationFunc():Boolean[1]\n" +
+                        "{\n" +
+                        "    true;\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Package model::somepk::producers::bu is not allowed in model_validation; only packages matching (model::producers)(::.*)? are allowed", "/model_validation/testFile2.pure", 1, 1, 1, 40, 4, 1, e);
     }
 }

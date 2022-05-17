@@ -14,7 +14,13 @@
 
 package org.finos.legend.pure.m3.tests.elements.namespace;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
@@ -25,131 +31,108 @@ import org.junit.Test;
 public class TestSameElementInSameNamespace extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getExtra());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
     }
 
     @After
-    public void clearRuntime() {
-        runtime.delete("fromString.pure");
+    public void clearRuntime()
+    {
         runtime.delete("/test/testSource.pure");
         runtime.delete("/test/testSource1.pure");
         runtime.delete("/test/testSource2.pure");
+        runtime.compile();
     }
 
     @Test
     public void testClass()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "Class model::test::Person\n" +
-                    "{\n" +
-                    "   lastName:String[1];\n" +
-                    "}\n" +
-                    "Class model::test::Person\n" +
-                    "{\n" +
-                    "   otherName:String[1];\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            assertPureException(PureParserException.class, "The element 'Person' already exists in the package 'model::test'", "fromString.pure", 5, 20, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "/test/testSource.pure",
+                "Class test::model::Person\n" +
+                        "{\n" +
+                        "   lastName:String[1];\n" +
+                        "}\n" +
+                        "Class test::model::Person\n" +
+                        "{\n" +
+                        "   otherName:String[1];\n" +
+                        "}\n"));
+        assertPureException(PureParserException.class, "The element 'Person' already exists in the package 'test::model'", "/test/testSource.pure", 5, 20, e);
     }
 
 
     @Test
     public void testFunction()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "function go():Nil[0]{[];}\n" +
-                    "function go():Nil[0]{[];}\n");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            assertPureException(PureCompilationException.class, "The function 'go__Nil_0_' is defined more than once in the package '::' at: fromString.pure (line:1 column:10), fromString.pure (line:2 column:10)", "fromString.pure", 2, 10, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/test/testSource.pure",
+                "function test::go():Nil[0]{[];}\n" +
+                        "function test::go():Nil[0]{[];}\n"));
+        assertPureException(PureCompilationException.class, "The function 'go__Nil_0_' is defined more than once in the package 'test' at: /test/testSource.pure (line:1 column:16), /test/testSource.pure (line:2 column:16)", "/test/testSource.pure", 2, 16, e);
     }
 
     @Test
     public void testDuplicateFunctionsInDifferentSections()
     {
-        try
-        {
-            compileTestSource("/test/testSource.pure",
-                    "###Pure\n" +
-                            "function go():Nil[0]\n" +
-                            "{\n" +
-                            "   [];\n" +
-                            "}\n" +
-                            "###Pure\n" +
-                            "function go():Nil[0]\n" +
-                            "{\n" +
-                            "   [];\n" +
-                            "}");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (RuntimeException e)
-        {
-            assertPureException(PureCompilationException.class, "The function 'go__Nil_0_' is defined more than once in the package '::' at: /test/testSource.pure (line:2 column:10), /test/testSource.pure (line:7 column:10)", e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/test/testSource.pure",
+                "###Pure\n" +
+                        "function test::go():Nil[0]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}\n" +
+                        "###Pure\n" +
+                        "function test::go():Nil[0]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "The function 'go__Nil_0_' is defined more than once in the package 'test' at: /test/testSource.pure (line:2 column:16), /test/testSource.pure (line:7 column:16)", e);
     }
 
     @Test
     public void testDuplicateFunctionsInDifferentFiles()
     {
         compileTestSource("/test/testSource1.pure",
-                "function go():Nil[0]\n" +
+                "function test::go():Nil[0]\n" +
                         "{\n" +
                         "   [];\n" +
                         "}\n");
-        try
-        {
-            compileTestSource("/test/testSource2.pure",
-                            "function go():Nil[0]\n" +
-                            "{\n" +
-                            "   [];\n" +
-                            "}");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (RuntimeException e)
-        {
-            assertPureException(PureCompilationException.class, "The function 'go__Nil_0_' is defined more than once in the package '::' at: /test/testSource1.pure (line:1 column:10), /test/testSource2.pure (line:1 column:10)", "/test/testSource2.pure", 1, 10, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/test/testSource2.pure",
+                "function test::go():Nil[0]\n" +
+                        "{\n" +
+                        "   [];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "The function 'go__Nil_0_' is defined more than once in the package 'test' at: /test/testSource1.pure (line:1 column:16), /test/testSource2.pure (line:1 column:16)", "/test/testSource2.pure", 1, 16, e);
     }
 
     @Test
     public void testAssociation()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "Class Firm {}" +
-                    "Class Person {}\n" +
-                    "Association arg::myAsso {firm:Firm[1]; employees:Person[*];}\n" +
-                    "Association arg::myAsso {firm:Firm[1]; employees:Person[*];}\n");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            assertPureException(PureParserException.class, "The element 'myAsso' already exists in the package 'arg'", "fromString.pure", 3, 18, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "/test/testSource.pure",
+                "Class test::Firm {}" +
+                        "Class test::Person {}\n" +
+                        "Association test::arg::myAsso {firm:Firm[1]; employees:Person[*];}\n" +
+                        "Association test::arg::myAsso {firm:Firm[1]; employees:Person[*];}\n"));
+        assertPureException(PureParserException.class, "The element 'myAsso' already exists in the package 'test::arg'", "/test/testSource.pure", 3, 24, e);
     }
 
     @Test
     public void testEnum()
     {
-        try
-        {
-            compileTestSource("fromString.pure", "Enum myEnum {CUSIP, SEDOL}\n" +
-                    "Enum myEnum {CUSIP, SEDOL}");
-            Assert.fail();
-        }
-        catch (RuntimeException e)
-        {
-            assertPureException(PureParserException.class, "The element 'myEnum' already exists in the package '::'", "fromString.pure", 2, 6, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "/test/testSource.pure",
+                "Enum test::myEnum {CUSIP, SEDOL}\n" +
+                        "Enum test::myEnum {CUSIP, SEDOL}\n"));
+        assertPureException(PureParserException.class, "The element 'myEnum' already exists in the package 'test'", "/test/testSource.pure", 2, 12, e);
     }
 }

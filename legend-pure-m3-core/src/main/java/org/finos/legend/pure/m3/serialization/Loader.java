@@ -14,10 +14,10 @@
 
 package org.finos.legend.pure.m3.serialization;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.multimap.list.ListMultimap;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.validation.ValidationType;
@@ -33,8 +33,8 @@ import org.finos.legend.pure.m3.serialization.grammar.top.TopParser;
 import org.finos.legend.pure.m3.serialization.runtime.IncrementalCompiler;
 import org.finos.legend.pure.m3.statelistener.M3M4StateListener;
 import org.finos.legend.pure.m3.statelistener.M3StateListener;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
 
@@ -75,13 +75,11 @@ public class Loader
             Validator.validateM3(newInstances, validationType, library, new InlineDSLLibrary(), new PureCodeStorage(null), repository, context, processorSupport);
             stateListener.finishedValidation();
         }
-        catch (PureException exception)
+        catch (PureException e)
         {
-            String space = "      ";
-            throw new RuntimeException(exception+" in\n"+space+code.replace("\n","\n"+space), exception);
+            throw new LoaderException(e, code);
         }
     }
-
 
 
     private static void processExcludes(ModelRepository repository, ProcessorSupport processorSupport, M3StateListener listener) throws PureCompilationException
@@ -89,5 +87,25 @@ public class Loader
         listener.startProcessingIncludes();
         SetIterable<CoreInstance> excludes = IncrementalCompiler.rebuildExclusionSet(repository, processorSupport);
         listener.finishedProcessingIncludes(excludes);
+    }
+
+    public static class LoaderException extends RuntimeException
+    {
+        private LoaderException(PureException e, String code)
+        {
+            super(generateMessage(e, code), e);
+        }
+
+        @Override
+        public PureException getCause()
+        {
+            return (PureException) super.getCause();
+        }
+
+        private static String generateMessage(PureException e, String code)
+        {
+            String space = "      ";
+            return e + " in\n" + space + code.replace("\n","\n" + space);
+        }
     }
 }

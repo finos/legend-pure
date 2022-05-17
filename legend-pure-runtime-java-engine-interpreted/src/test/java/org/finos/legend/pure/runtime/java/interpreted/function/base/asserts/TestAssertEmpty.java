@@ -14,24 +14,37 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.asserts;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestAssertEmpty extends PureExpressionTest
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getExtra());
     }
 
     @Test
     public void testFailure()
     {
-        assertExpressionRaisesPureException("[1, 2] is not empty", 3, 9, "assertEmpty([1, 2])",
+        assertExpressionRaisesPureException("[1, 2] is not empty", 3, 9, "assertEmpty([1, 2])");
+    }
+
+    protected static FunctionExecution getFunctionExecution()
+    {
+        return new FunctionExecutionInterpreted();
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair(
+                "testAssertEmpty.pure",
                 "function meta::pure::functions::asserts::assertEmpty(collection:Any[*]):Boolean[1]\n" +
                         "{\n" +
                         "    assertEmpty($collection, '%s is not empty', [^List<Any>(values=$collection)]);\n" +
@@ -54,12 +67,7 @@ public class TestAssertEmpty extends PureExpressionTest
                         "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
                         "{\n" +
                         "    assert($condition, | format($formatString, $formatArgs));\n" +
-                        "}"
+                        "}\n"
         );
-    }
-
-    protected static FunctionExecution getFunctionExecution()
-    {
-        return new FunctionExecutionInterpreted();
     }
 }

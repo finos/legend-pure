@@ -27,7 +27,6 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -51,8 +50,9 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     protected PureRepositoryJarLibrary library;
 
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getExtra());
+    public static void setUp()
+    {
+        setUpRuntime();
     }
 
     @Before
@@ -313,7 +313,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
     {
         MapIterable<String, byte[]> bytesByFile = library.readFiles(files);
 
-        MutableMap<String, byte[]> expected = UnifiedMap.newMap(files.length);
+        MutableMap<String, byte[]> expected = Maps.mutable.ofInitialCapacity(files.length);
         ByteArrayOutputStream expectedStream = new ByteArrayOutputStream();
         Writer writer = BinaryWriters.newBinaryWriter(expectedStream);
         for (String binPath : files)
@@ -363,7 +363,7 @@ public abstract class AbstractPureRepositoryJarLibraryTest extends AbstractPureT
         MutableMap<String, byte[]> expected = Maps.mutable.empty();
         ByteArrayOutputStream expectedStream = new ByteArrayOutputStream();
         Writer writer = BinaryWriters.newBinaryWriter(expectedStream);
-        for (Source source : runtime.getSourceRegistry().getSources().select(s->!s.isInMemory()))
+        for (Source source : runtime.getSourceRegistry().getSources().select(s -> !s.isInMemory()))
         {
             String purePath = source.getId();
             String repo = getRepo(purePath);

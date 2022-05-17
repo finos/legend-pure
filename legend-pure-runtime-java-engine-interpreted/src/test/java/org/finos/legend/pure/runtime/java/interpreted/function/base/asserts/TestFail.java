@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.asserts;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -23,22 +25,15 @@ import org.junit.Test;
 public class TestFail extends PureExpressionTest
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getExtra());
     }
 
     @Test
     public void testFail()
     {
-        assertExpressionRaisesPureException("Assert failed", 3, 9, "fail()",
-                "function meta::pure::functions::asserts::fail():Boolean[1]\n" +
-                "{\n" +
-                "    assert(false);\n" +
-                "}\n" +
-                        "function meta::pure::functions::asserts::assert(condition:Boolean[1]):Boolean[1]\n" +
-                        "{\n" +
-                        "    assert($condition, 'Assert failed');\n" +
-                        "}");
+        assertExpressionRaisesPureException("Assert failed", 3, 9, "fail()");
     }
 
     @Test
@@ -50,5 +45,19 @@ public class TestFail extends PureExpressionTest
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair("testFail.pure",
+                "function meta::pure::functions::asserts::fail():Boolean[1]\n" +
+                        "{\n" +
+                        "    assert(false);\n" +
+                        "}\n" +
+                        "function meta::pure::functions::asserts::assert(condition:Boolean[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert($condition, 'Assert failed');\n" +
+                        "}"
+        );
     }
 }

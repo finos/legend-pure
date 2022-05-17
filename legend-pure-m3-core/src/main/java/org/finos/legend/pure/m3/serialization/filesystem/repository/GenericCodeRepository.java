@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -40,10 +41,15 @@ public class GenericCodeRepository extends CodeRepository
 {
     private final ImmutableSet<String> dependencies;
 
+    private GenericCodeRepository(String name, Pattern pattern, Iterable<String> dependencies)
+    {
+        super(name, pattern);
+        this.dependencies = Sets.immutable.withAll(dependencies);
+    }
+
     public GenericCodeRepository(String name, String pattern, Iterable<String> dependencies)
     {
-        super(name, Pattern.compile(pattern));
-        this.dependencies = Sets.immutable.withAll(dependencies);
+        this(name, Pattern.compile(pattern), dependencies);
     }
 
     public GenericCodeRepository(String name, String pattern, String... dependencies)
@@ -54,12 +60,32 @@ public class GenericCodeRepository extends CodeRepository
     @Override
     public boolean isVisible(CodeRepository other)
     {
-        return this == other || this.dependencies.contains(other.getName());
+        return (this == other) || ((other != null) && this.dependencies.contains(other.getName()));
     }
 
     public SetIterable<String> getDependencies()
     {
         return this.dependencies;
+    }
+
+    public static GenericCodeRepository build(String name, Pattern pattern, Iterable<String> dependencies)
+    {
+        return new GenericCodeRepository(name, pattern, dependencies);
+    }
+
+    public static GenericCodeRepository build(String name, Pattern pattern, String... dependencies)
+    {
+        return build(name, pattern, Sets.immutable.with(dependencies));
+    }
+
+    public static GenericCodeRepository build(String name, String pattern, Iterable<String> dependencies)
+    {
+        return build(name, Pattern.compile(pattern), dependencies);
+    }
+
+    public static GenericCodeRepository build(String name, String pattern, String... dependencies)
+    {
+        return build(name, Pattern.compile(pattern), dependencies);
     }
 
     public static GenericCodeRepository build(String resourcePath)
@@ -74,13 +100,13 @@ public class GenericCodeRepository extends CodeRepository
         {
             throw new RuntimeException("The resource \"" + resourcePath + "\" can't be found!");
         }
-        try (InputStream inputStream = url.openStream())
+        try (Reader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8)))
         {
-            return build(inputStream);
+            return build(reader);
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error loading code repository definition from resource \"" + resourcePath + "\" (" + url + ")", e);
+            throw new UncheckedIOException("Error loading code repository definition from resource \"" + resourcePath + "\" (" + url + ")", e);
         }
     }
 
@@ -97,7 +123,7 @@ public class GenericCodeRepository extends CodeRepository
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error loading code repository specification from " + specFile, e);
+            throw new UncheckedIOException("Error loading code repository specification from " + specFile, e);
         }
     }
 
@@ -109,14 +135,14 @@ public class GenericCodeRepository extends CodeRepository
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
     public static GenericCodeRepository build(Reader reader)
     {
         JSONObject spec = loadResource(Objects.requireNonNull(reader));
-        return new GenericCodeRepository(getName(spec), getPattern(spec), getDependencies(spec));
+        return build(getName(spec), getPattern(spec), getDependencies(spec));
     }
 
     private static JSONObject loadResource(Reader reader)
@@ -125,7 +151,11 @@ public class GenericCodeRepository extends CodeRepository
         {
             return (JSONObject) new JSONParser().parse(reader);
         }
-        catch (IOException | ParseException e)
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
+        catch (ParseException e)
         {
             throw new RuntimeException(e);
         }

@@ -14,9 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.incremental.profile;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.incremental.profile.TestPureRuntimeStereotype;
@@ -30,8 +29,9 @@ import org.junit.Test;
 public class TestPureRuntimeStereotypeCompiled extends TestPureRuntimeStereotype
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getCodeStorage(), getCodeRepositories());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getCodeStorage());
     }
 
     @Override
@@ -42,7 +42,7 @@ public class TestPureRuntimeStereotypeCompiled extends TestPureRuntimeStereotype
         super.testPureRuntimeProfileWithEnumWithReferenceToEnum();
     }
 
-     protected static FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }
@@ -50,11 +50,6 @@ public class TestPureRuntimeStereotypeCompiled extends TestPureRuntimeStereotype
     @Override
     protected ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getAdditionalVerifiers()
     {
-        return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
-    }
-
-    public static Pair<String, String> getExtra()
-    {
-        return null;
+        return Lists.fixedSize.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
 }

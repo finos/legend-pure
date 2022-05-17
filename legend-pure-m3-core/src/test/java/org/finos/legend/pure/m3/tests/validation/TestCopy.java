@@ -24,12 +24,14 @@ import org.junit.Test;
 public class TestCopy extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getExtra());
+    public static void setUp()
+    {
+        setUpRuntime();
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("testModel.pure");
         runtime.delete("testFunc.pure");
     }
@@ -42,21 +44,14 @@ public class TestCopy extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    prop:String[1];\n" +
                         "}");
-        try
-        {
-            compileTestSource(
-                    "testFunc.pure",
-                    "function testFunc():A[1]\n" +
-                            "{\n" +
-                            "    let a = ^A(prop='the quick brown fox');\n" +
-                            "    ^$a(prop=1);" +
-                            "}");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Type Error: Integer not a subtype of String", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testFunc.pure",
+                "function testFunc():A[1]\n" +
+                        "{\n" +
+                        "    let a = ^A(prop='the quick brown fox');\n" +
+                        "    ^$a(prop=1);" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Type Error: Integer not a subtype of String", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
     }
 
     @Test
@@ -75,21 +70,14 @@ public class TestCopy extends AbstractPureTestWithCoreCompiledPlatform
                         "Class C\n" +
                         "{\n" +
                         "}");
-        try
-        {
-            compileTestSource(
-                    "testFunc.pure",
-                    "function testFunc():A[1]\n" +
-                            "{\n" +
-                            "    let a = ^A(prop=^B());\n" +
-                            "    ^$a(prop=^C());\n" +
-                            "}");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Type Error: C not a subtype of B", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testFunc.pure",
+                "function testFunc():A[1]\n" +
+                        "{\n" +
+                        "    let a = ^A(prop=^B());\n" +
+                        "    ^$a(prop=^C());\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Type Error: C not a subtype of B", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
     }
 
     @Test
@@ -104,21 +92,14 @@ public class TestCopy extends AbstractPureTestWithCoreCompiledPlatform
                         "Class B\n" +
                         "{\n" +
                         "}");
-        try
-        {
-            compileTestSource(
-                    "testFunc.pure",
-                    "function testFunc():A[1]\n" +
-                            "{\n" +
-                            "    let a = ^A(prop=^B());\n" +
-                            "    ^$a(prop='the quick brown fox');\n" +
-                            "}");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Type Error: String not a subtype of B", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testFunc.pure",
+                "function testFunc():A[1]\n" +
+                        "{\n" +
+                        "    let a = ^A(prop=^B());\n" +
+                        "    ^$a(prop='the quick brown fox');\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Type Error: String not a subtype of B", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
     }
 
     @Test
@@ -133,21 +114,14 @@ public class TestCopy extends AbstractPureTestWithCoreCompiledPlatform
                         "Class B\n" +
                         "{\n" +
                         "}");
-        try
-        {
-            compileTestSource(
-                    "testFunc.pure",
-                    "function testFunc():A[1]\n" +
-                            "{\n" +
-                            "    let a = ^A(prop='the quick brown fox');\n" +
-                            "    ^$a(prop=^B());\n" +
-                            "}");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Type Error: B not a subtype of String", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testFunc.pure",
+                "function testFunc():A[1]\n" +
+                        "{\n" +
+                        "    let a = ^A(prop='the quick brown fox');\n" +
+                        "    ^$a(prop=^B());\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Type Error: B not a subtype of String", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
     }
 
     @Test
@@ -158,21 +132,14 @@ public class TestCopy extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    prop:String[1];\n" +
                         "}\n");
-        try
-        {
-            compileTestSource(
-                    "testFunc.pure",
-                    "function testFunc():A[1]\n" +
-                            "{\n" +
-                            "    let a = ^A(prop='one string');\n" +
-                            "    ^$a(prop=['one string', 'two string', 'red string', 'blue string']);\n" +
-                            "}");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Multiplicity Error: [4] is not compatible with [1]", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testFunc.pure",
+                "function testFunc():A[1]\n" +
+                        "{\n" +
+                        "    let a = ^A(prop='one string');\n" +
+                        "    ^$a(prop=['one string', 'two string', 'red string', 'blue string']);\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Multiplicity Error: [4] is not compatible with [1]", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
     }
 
     @Test
@@ -188,21 +155,14 @@ public class TestCopy extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    ['one string', 'two string', 'red string', 'blue string'];\n" +
                         "}");
-        try
-        {
-            compileTestSource(
-                    "testFunc.pure",
-                    "function testFunc():A[1]\n" +
-                            "{\n" +
-                            "    let a = ^A(prop='one string');\n" +
-                            "    ^$a(prop=someStrings());\n" +
-                            "}");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Multiplicity Error: [*] is not compatible with [1]", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testFunc.pure",
+                "function testFunc():A[1]\n" +
+                        "{\n" +
+                        "    let a = ^A(prop='one string');\n" +
+                        "    ^$a(prop=someStrings());\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Multiplicity Error: [*] is not compatible with [1]", "testFunc.pure", 4, 13, 4, 13, 4, 13, e);
     }
 
     @Test
@@ -223,20 +183,13 @@ public class TestCopy extends AbstractPureTestWithCoreCompiledPlatform
                         "{\n" +
                         "    ['one string', 'two string', 'red string', 'blue string'];\n" +
                         "}");
-        try
-        {
-            compileTestSource(
-                    "testFunc.pure",
-                    "function testFunc():A[1]\n" +
-                            "{\n" +
-                            "    let a = ^A(toB=^B(prop='one string'));\n" +
-                            "    ^$a(toB.prop=someStrings());\n" +
-                            "}");
-            Assert.fail("Expected compilation exception");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Multiplicity Error: [*] is not compatible with [1]", "testFunc.pure", 4, 17, 4, 17, 4, 17, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testFunc.pure",
+                "function testFunc():A[1]\n" +
+                        "{\n" +
+                        "    let a = ^A(toB=^B(prop='one string'));\n" +
+                        "    ^$a(toB.prop=someStrings());\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "Multiplicity Error: [*] is not compatible with [1]", "testFunc.pure", 4, 17, 4, 17, 4, 17, e);
     }
 }

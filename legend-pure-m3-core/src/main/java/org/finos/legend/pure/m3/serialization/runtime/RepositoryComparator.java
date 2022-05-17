@@ -15,127 +15,50 @@
 package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.list.ImmutableList;
-import org.eclipse.collections.api.map.ImmutableMap;
-import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.set.ImmutableSet;
-import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
-import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.AppCodeRepository;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
+import org.eclipse.collections.api.map.primitive.ObjectIntMap;
+import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.ContractsCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.DatamartCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.ModelCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.ModelValidationCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.ScratchCodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.SystemCodeRepository;
 
 import java.util.Comparator;
 
 public class RepositoryComparator implements Comparator<String>
 {
-    private static final ImmutableList<Class<? extends CodeRepository>> REPO_CLASS_SORT_ORDER = Lists.immutable.with(PlatformCodeRepository.class, SystemCodeRepository.class, ModelCodeRepository.class, ModelValidationCodeRepository.class, DatamartCodeRepository.class, AppCodeRepository.class, ContractsCodeRepository.class, ScratchCodeRepository.class);
-    private final ImmutableMap<String, CodeRepository> repositories;
-    private final MutableMap<CodeRepository, SetIterable<CodeRepository>> dependencies = Maps.mutable.empty();
-    private final MutableMap<ModelCodeRepository, SetIterable<ModelCodeRepository>> modelRepoReverseDependencies = Maps.mutable.empty();
+    private final ObjectIntMap<String> index;
 
     public RepositoryComparator(RichIterable<? extends CodeRepository> repositories)
     {
-        this.repositories = repositories.toMap(CodeRepository::getName, Functions.<CodeRepository>getPassThru()).toImmutable();
+        this.index = buildIndex(repositories);
     }
 
     @Override
     public int compare(String repo1Name, String repo2Name)
     {
-        if (null == repo1Name)
-        {
-            return null == repo2Name ? 0 : 1;
-        }
-        if (null == repo2Name)
-        {
-            return -1;
-        }
-        if (repo1Name.equals(repo2Name))
-        {
-            return 0;
-        }
-        CodeRepository repo1 = this.getRepositoryByName(repo1Name);
-        CodeRepository repo2 = this.getRepositoryByName(repo2Name);
-        if (this.dependsOn(repo2, repo1))
-        {
-            return -1;
-        }
-        if (this.dependsOn(repo1, repo2))
-        {
-            return 1;
-        }
-        Class<? extends CodeRepository> repoClass1 = repo1.getClass();
-        Class<? extends CodeRepository> repoClass2 = repo2.getClass();
-        if (repoClass1 == repoClass2)
-        {
-            if (repo1 instanceof ModelCodeRepository)
-            {
-                // HACK: This isn't really a valid comparison, but it's good enough for now:
-                SetIterable<ModelCodeRepository> repo1ReverseVisibility = this.getModelRepoReverseVisibility((ModelCodeRepository)repo1);
-                SetIterable<ModelCodeRepository> repo2ReverseVisibility = this.getModelRepoReverseVisibility((ModelCodeRepository)repo2);
-                int repo1ReverseVisibilityCount = repo1ReverseVisibility.size();
-                int repo2ReverseVisibilityCount = repo2ReverseVisibility.size();
-                if (repo1ReverseVisibilityCount != repo2ReverseVisibilityCount)
-                {
-                    return Integer.compare(repo2ReverseVisibilityCount, repo1ReverseVisibilityCount);
-                }
-            }
-            return repo1Name.compareTo(repo2Name);
-        }
-        return Integer.compare(REPO_CLASS_SORT_ORDER.indexOf(repoClass1), REPO_CLASS_SORT_ORDER.indexOf(repoClass2));
+        return Integer.compare(getRepoIndex(repo1Name), getRepoIndex(repo2Name));
     }
 
-    private CodeRepository getRepositoryByName(String repoName)
+    private int getRepoIndex(String repoName)
     {
-        CodeRepository repository = this.repositories.get(repoName);
-        if (null == repository)
+        // null is last
+        if (repoName == null)
+        {
+            return this.index.size();
+        }
+
+        int index = this.index.getIfAbsent(repoName, -1);
+        if (index == -1)
         {
             throw new IllegalArgumentException("Unknown repository: " + repoName);
         }
-        return repository;
+        return index;
     }
 
-    private boolean dependsOn(CodeRepository repo1, CodeRepository repo2)
+    private static ObjectIntMap<String> buildIndex(Iterable<? extends CodeRepository> repositories)
     {
-        return this.getDependencies(repo1).contains(repo2);
-    }
-
-    private SetIterable<CodeRepository> getDependencies(CodeRepository repo)
-    {
-        return this.dependencies.getIfAbsentPutWithKey(repo, (CodeRepository c)-> PureCodeStorage.getRepositoryDependencies(this.repositories.valuesView(), c));
-    }
-
-    private SetIterable<ModelCodeRepository> getModelRepoReverseVisibility(ModelCodeRepository modelRepo)
-    {
-        return this.modelRepoReverseDependencies.getIfAbsentPutWithKey(modelRepo,  this::computeModelRepoReverseVisibility);
-    }
-
-    private ImmutableSet<ModelCodeRepository> computeModelRepoReverseVisibility(ModelCodeRepository modelRepo)
-    {
-        MutableSet<ModelCodeRepository> reverseVisibility = Sets.mutable.empty();
-        String modelName = modelRepo.getModelName();
-        for (CodeRepository otherRepo : this.repositories.valuesView())
-        {
-            if (otherRepo != modelRepo && otherRepo instanceof ModelCodeRepository)
-            {
-                ModelCodeRepository otherModelRepo = (ModelCodeRepository)otherRepo;
-                if (otherModelRepo.getVisibleModels().contains(modelName))
-                {
-                    reverseVisibility.add(otherModelRepo);
-                }
-            }
-        }
-        return reverseVisibility.toImmutable();
+        MutableList<? extends CodeRepository> orderedRepositories = CodeRepository.toSortedRepositoryList(repositories);
+        MutableObjectIntMap<String> index = ObjectIntMaps.mutable.ofInitialCapacity(orderedRepositories.size());
+        orderedRepositories.forEachWithIndex((r, i) -> index.put(r.getName(), i));
+        return index;
     }
 }

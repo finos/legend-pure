@@ -17,4 +17,19 @@ package org.finos.legend.pure.m3.serialization.runtime;
 public interface RuntimeOptions
 {
     boolean isOptionSet(String name);
+
+    static RuntimeOptions noOptionsSet()
+    {
+        return name -> false;
+    }
+
+    static RuntimeOptions systemPropertyOptions()
+    {
+        return systemPropertyOptions(null);
+    }
+
+    static RuntimeOptions systemPropertyOptions(String prefix)
+    {
+        return (prefix == null) ? Boolean::getBoolean : name -> Boolean.getBoolean(prefix + name);
+    }
 }

@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m2.relational.incremental;
 
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.finos.legend.pure.m2.relational.AbstractPureRelationalTestWithCoreCompiled;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
@@ -23,7 +23,6 @@ import org.junit.Test;
 
 public class TestPureRuntimeOtherwiseEmbeddedMapping extends AbstractPureRelationalTestWithCoreCompiled
 {
-
     private static final String INITIAL_DATA = "import other::*;\n" +
             "Class other::Person\n" +
             "{\n" +
@@ -164,7 +163,7 @@ public class TestPureRuntimeOtherwiseEmbeddedMapping extends AbstractPureRelatio
 
 
     @Test
-    public void testCreateAndDeleteOtherwiseEmbeddedMappingSameFile() throws Exception
+    public void testCreateAndDeleteOtherwiseEmbeddedMappingSameFile()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
                         Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
@@ -174,26 +173,26 @@ public class TestPureRuntimeOtherwiseEmbeddedMapping extends AbstractPureRelatio
                         .compile()
                         .updateSource("source4.pure", INITIAL_MAPPING)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
-    public void testChangeOtherwiseTargetMapping() throws Exception
+    public void testChangeOtherwiseTargetMapping()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
                 Maps.mutable.with("source1.pure", INITIAL_DATA, "source3.pure", STORE, "source4.pure", INITIAL_MAPPING))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("source4.pure", MAPPING1)
-                        .compileWithExpectedCompileFailure("Invalid Otherwise mapping found for'firm' property, targetId firm2 does not exists.", "source4.pure", 14, 9)
+                        .compileWithExpectedCompileFailure("Invalid Otherwise mapping found for 'firm' property, targetId firm2 does not exists.", "source4.pure", 14, 9)
                         .updateSource("source4.pure", INITIAL_MAPPING)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
 
     @Test
-    public void testDeleteAndRecreateStore() throws Exception
+    public void testDeleteAndRecreateStore()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
                         Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure",STORE, "source3.pure", INITIAL_MAPPING))
@@ -203,12 +202,12 @@ public class TestPureRuntimeOtherwiseEmbeddedMapping extends AbstractPureRelatio
                         .compileWithExpectedCompileFailure(null, null, 0, 0)
                         .updateSource("source2.pure", STORE)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
 
     @Test
-    public void testChangeOtherwisePropertyMappingFromJoinToOther() throws Exception
+    public void testChangeOtherwisePropertyMappingFromJoinToOther()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
                 Maps.mutable.with("source1.pure", INITIAL_DATA, "source2.pure",STORE, "source3.pure", INITIAL_MAPPING))
@@ -218,6 +217,6 @@ public class TestPureRuntimeOtherwiseEmbeddedMapping extends AbstractPureRelatio
                         .compileWithExpectedParserFailure("expected: '@' found: 'employeeFirmDenormTable'", "source3.pure", 17, 35)
                         .updateSource("source3.pure", INITIAL_MAPPING)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 }

@@ -15,48 +15,42 @@
 package org.finos.legend.pure.m2.relational;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.procedure.Procedure;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.eclipse.collections.impl.test.Verify;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.EnumerationMappingParser;
 import org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.MappingParser;
 import org.finos.legend.pure.m2.relational.serialization.grammar.v1.RelationalParser;
-import org.finos.legend.pure.m3.navigation.M3Properties;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.Printer;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.compiler.validation.ValidationType;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.Database;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.BusinessSnapshotMilestoning;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Milestoning;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.Printer;
 import org.finos.legend.pure.m3.serialization.Loader;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
 import org.finos.legend.pure.m3.statelistener.VoidM3M4StateListener;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompiled
 {
-
-    RelationalGraphWalker graphWalker;
+    private RelationalGraphWalker graphWalker;
 
     @Before
     public void setUpRelational()
     {
-        this.graphWalker = new RelationalGraphWalker(this.runtime, this.processorSupport);
+        this.graphWalker = new RelationalGraphWalker(runtime, processorSupport);
     }
 
     @Test
@@ -91,8 +85,8 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "    let ft = myDatabase.schema('default').table('firmTable');\n" +
                 "    assert('firmTable' == $ft.name, |'');\n" +
                 "    assert(['id', 'name'] == $ft.columns->cast(@meta::relational::metamodel::Column)->map(c | $c.name), |'');\n" +
-                "}\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+                "}\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
         CoreInstance db = this.graphWalker.getDbInstance("pack::myDatabase");
         Assert.assertNotNull(db);
         CoreInstance defaultSchema = this.graphWalker.getDefaultSchema(db);
@@ -118,7 +112,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
     @Test
     public void testTableWithBusinessSnapshotMilestoning()
     {
-        this.runtime.createInMemorySource("test.pure", "###Relational\n" +
+        runtime.createInMemorySource("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
                 "   Table ProductTable\n" +
                 "   (\n" +
@@ -130,13 +124,13 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "       snapshotDate Date\n" +
                 "   )\n" +
                 ")\n");
-        this.runtime.compile();
+        runtime.compile();
 
-        Database productDatabase = (Database)this.runtime.getCoreInstance("pack::ProductDatabase");
+        Database productDatabase = (Database) runtime.getCoreInstance("pack::ProductDatabase");
         RichIterable<? extends Milestoning> milestonings = productDatabase._schemas().getFirst()._tables().getFirst()._milestoning().selectInstancesOf(BusinessSnapshotMilestoning.class);
         Assert.assertEquals(1, milestonings.size());
         Assert.assertTrue(milestonings.getFirst() instanceof BusinessSnapshotMilestoning);
-        BusinessSnapshotMilestoning businessSnapshotMilestoning = (BusinessSnapshotMilestoning)milestonings.getFirst();
+        BusinessSnapshotMilestoning businessSnapshotMilestoning = (BusinessSnapshotMilestoning) milestonings.getFirst();
         Assert.assertEquals("snapshotDate", businessSnapshotMilestoning._snapshotDate()._name());
         Assert.assertNull(businessSnapshotMilestoning._infinityDate());
     }
@@ -144,9 +138,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
     @Test
     public void testSnapshotDateColumnType()
     {
-        this.exception.expect(PureCompilationException.class);
-        this.exception.expectMessage("Column set as BUS_SNAPSHOT_DATE can only be of type : [Date]");
-        this.runtime.createInMemorySource("test.pure", "###Relational\n" +
+        runtime.createInMemorySource("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
                 "   Table ProductTable\n" +
                 "   (\n" +
@@ -158,13 +150,14 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "       snapshotDate Timestamp\n" +
                 "   )\n" +
                 ")\n");
-        this.runtime.compile();
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:test.pure line:9 column:8), \"Column set as BUS_SNAPSHOT_DATE can only be of type : [Date]\"", e.getMessage());
     }
 
     @Test
     public void testTableWithMilestoningInformationWithIsThruInclusive()
     {
-        this.runtime.createInMemorySource("database.pure", "###Relational\n" +
+        runtime.createInMemorySource("database.pure", "###Relational\n" +
                 "\n" +
                 "Database pack::ProductDatabase\n" +
                 "(\n" +
@@ -221,7 +214,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   ) \n" +
                 "   \n" +
                 ")\n");
-        this.runtime.compile();
+        runtime.compile();
 
         CoreInstance db = this.graphWalker.getDbInstance("pack::ProductDatabase");
         Assert.assertNotNull(db);
@@ -304,7 +297,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
     @Test
     public void testOutIsInclusiveSyntax()
     {
-        this.runtime.createInMemorySource("database.pure", "###Relational\n" +
+        runtime.createInMemorySource("database.pure", "###Relational\n" +
                 "\n" +
                 "Database pack::ProductDatabase\n" +
                 "(\n" +
@@ -319,16 +312,11 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   ) \n" +
                 "   \n" +
                 ")\n");
-        try
-        {
-            this.runtime.compile();
-        }
-        catch (PureParserException e)
-        {
-            this.assertPureException(PureParserException.class, "expected: ')' found: 'OUT_IS_INCLUSIVE'", 7, 68, e);
-        }
+        runtime.compile(); // parser can auto-correct this syntax error
+//        PureParserException e1 = Assert.assertThrows(PureParserException.class, runtime::compile);
+//        assertPureException(PureParserException.class, "expected: ')' found: 'OUT_IS_INCLUSIVE'", 7, 68, e1);
 
-        this.runtime.modify("database.pure", "###Relational\n" +
+        runtime.modify("database.pure", "###Relational\n" +
                 "\n" +
                 "Database pack::ProductDatabase\n" +
                 "(\n" +
@@ -343,16 +331,10 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   ) \n" +
                 "   \n" +
                 ")\n");
-        try
-        {
-            this.runtime.compile();
-        }
-        catch (PureParserException e)
-        {
-            this.assertPureException(PureParserException.class, "expected: one of {'OUT_IS_INCLUSIVE', 'INFINITY_DATE'} found: ','", 7, 68, e);
-        }
+        PureParserException e2 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        assertPureException(PureParserException.class, "expected: one of {'OUT_IS_INCLUSIVE', 'INFINITY_DATE'} found: ','", 7, 68, e2);
 
-        this.runtime.modify("database.pure", "###Relational\n" +
+        runtime.modify("database.pure", "###Relational\n" +
                 "\n" +
                 "Database pack::ProductDatabase\n" +
                 "(\n" +
@@ -367,16 +349,10 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   ) \n" +
                 "   \n" +
                 ")\n");
-        try
-        {
-            this.runtime.compile();
-        }
-        catch (PureParserException e)
-        {
-            this.assertPureException(PureParserException.class, "expected: 'INFINITY_DATE' found: '<EOF>'", 7, 92, e);
-        }
+        PureParserException e3 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        assertPureException(PureParserException.class, "expected: 'INFINITY_DATE' found: '<EOF>'", 7, 92, e3);
 
-        this.runtime.modify("database.pure", "###Relational\n" +
+        runtime.modify("database.pure", "###Relational\n" +
                 "\n" +
                 "Database pack::ProductDatabase\n" +
                 "(\n" +
@@ -391,16 +367,10 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   ) \n" +
                 "   \n" +
                 ")\n");
-        try
-        {
-            this.runtime.compile();
-        }
-        catch (PureParserException e)
-        {
-            this.assertPureException(PureParserException.class, "expected: 'PROCESSING_OUT' found: 'OUT_IS_INCLUSIVE'", 7, 47, e);
-        }
+        PureParserException e4 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        assertPureException(PureParserException.class, "expected: 'PROCESSING_OUT' found: 'OUT_IS_INCLUSIVE'", 7, 47, e4);
 
-        this.runtime.modify("database.pure", "###Relational\n" +
+        runtime.modify("database.pure", "###Relational\n" +
                 "\n" +
                 "Database pack::ProductDatabase\n" +
                 "(\n" +
@@ -415,20 +385,14 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   ) \n" +
                 "   \n" +
                 ")\n");
-        try
-        {
-            this.runtime.compile();
-        }
-        catch (PureParserException e)
-        {
-            this.assertPureException(PureParserException.class, "expected: one of {'OUT_IS_INCLUSIVE', 'INFINITY_DATE'} found: 'Out_Is_Inclusive'", 7, 69, e);
-        }
+        PureParserException e5 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        assertPureException(PureParserException.class, "expected: one of {'OUT_IS_INCLUSIVE', 'INFINITY_DATE'} found: 'Out_Is_Inclusive'", 7, 69, e5);
     }
 
     @Test
     public void testThruIsInclusiveSyntax()
     {
-        this.runtime.createInMemorySource("database.pure", "###Relational\n" +
+        runtime.createInMemorySource("database.pure", "###Relational\n" +
                 "\n" +
                 "Database pack::ProductDatabase\n" +
                 "(\n" +
@@ -443,16 +407,11 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   ) \n" +
                 "   \n" +
                 ")\n");
-        try
-        {
-            this.runtime.compile();
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureParserException.class, "expected: ')' found: 'THRU_IS_INCLUSIVE'", 7, 58, e);
-        }
+        runtime.compile(); // parser can auto-correct this syntax error
+//        PureParserException e1 = Assert.assertThrows(PureParserException.class, runtime::compile);
+//        assertPureException(PureParserException.class, "expected: ')' found: 'THRU_IS_INCLUSIVE'", 7, 58, e1);
 
-        this.runtime.modify("database.pure", "###Relational\n" +
+        runtime.modify("database.pure", "###Relational\n" +
                 "\n" +
                 "Database pack::ProductDatabase\n" +
                 "(\n" +
@@ -467,16 +426,10 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   ) \n" +
                 "   \n" +
                 ")\n");
-        try
-        {
-            this.runtime.compile();
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureParserException.class, "expected: one of {'THRU_IS_INCLUSIVE', 'INFINITY_DATE'} found: ','", 7, 58, e);
-        }
+        PureParserException e2 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        assertPureException(PureParserException.class, "expected: one of {'THRU_IS_INCLUSIVE', 'INFINITY_DATE'} found: ','", 7, 58, e2);
 
-        this.runtime.modify("database.pure", "###Relational\n" +
+        runtime.modify("database.pure", "###Relational\n" +
                 "\n" +
                 "Database pack::ProductDatabase\n" +
                 "(\n" +
@@ -491,16 +444,10 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   ) \n" +
                 "   \n" +
                 ")\n");
-        try
-        {
-            this.runtime.compile();
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureParserException.class, "expected: 'INFINITY_DATE' found: '<EOF>'", 7, 83, e);
-        }
+        PureParserException e3 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        assertPureException(PureParserException.class, "expected: 'INFINITY_DATE' found: '<EOF>'", 7, 83, e3);
 
-        this.runtime.modify("database.pure", "###Relational\n" +
+        runtime.modify("database.pure", "###Relational\n" +
                 "\n" +
                 "Database pack::ProductDatabase\n" +
                 "(\n" +
@@ -515,16 +462,10 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   ) \n" +
                 "   \n" +
                 ")\n");
-        try
-        {
-            this.runtime.compile();
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureParserException.class, "expected: 'BUS_THRU' found: 'THRU_IS_INCLUSIVE'", 7, 42, e);
-        }
+        PureParserException e4 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        assertPureException(PureParserException.class, "expected: 'BUS_THRU' found: 'THRU_IS_INCLUSIVE'", 7, 42, e4);
 
-        this.runtime.modify("database.pure", "###Relational\n" +
+        runtime.modify("database.pure", "###Relational\n" +
                 "\n" +
                 "Database pack::ProductDatabase\n" +
                 "(\n" +
@@ -539,23 +480,14 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   ) \n" +
                 "   \n" +
                 ")\n");
-        try
-        {
-            this.runtime.compile();
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureParserException.class, "expected: one of {'THRU_IS_INCLUSIVE', 'INFINITY_DATE'} found: 'Thru_Is_Inclusive'", 7, 59, e);
-        }
+        PureParserException e5 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        assertPureException(PureParserException.class, "expected: one of {'THRU_IS_INCLUSIVE', 'INFINITY_DATE'} found: 'Thru_Is_Inclusive'", 7, 59, e5);
     }
 
     @Test
     public void testBusinessSnapshotMilestoningSyntax()
     {
-        this.exception.expect(PureParserException.class);
-
-        this.exception.expectMessage("expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE', 'processing'} found: 'INFINITY_DATE'");
-        this.runtime.createInMemorySource("test.pure", "###Relational\n" +
+        runtime.createInMemorySource("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
                 "   Table ProductTable\n" +
                 "   (\n" +
@@ -567,25 +499,26 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "       snapshotDate Date\n" +
                 "   )\n" +
                 ")\n");
-        this.runtime.compile();
+        PureParserException e1 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE', 'processing'} found: 'INFINITY_DATE'", e1.getMessage());
 
-        this.exception.expectMessage("expected: ')' found: ','");
-        this.runtime.modify("test.pure", "###Relational\n" +
+        runtime.modify("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
                 "   Table ProductTable\n" +
                 "   (\n" +
                 "       milestoning( \n" +
-                "          business(BUS_SNAPSHOT_DATE = snapshotDate, INFINITY_DATE=%9999-12-31)\n" +
+                "          business(BUS_SNAPSHOT_DATE = snapshotDate, INFINITY_DATE=%9999-12-31, )\n" +
                 "       )" +
                 "       id INT PRIMARY KEY,\n" +
                 "       name VARCHAR(200),\n" +
                 "       snapshotDate Date\n" +
                 "   )\n" +
                 ")\n");
-        this.runtime.compile();
+        runtime.compile(); // parser can auto-correct this syntax error
+//        PureParserException e2 = Assert.assertThrows(PureParserException.class, runtime::compile);
+//        Assert.assertEquals("expected: ')' found: ','", e2.getMessage());
 
-        this.exception.expectMessage("expected: \")\" found: \",\"");
-        this.runtime.modify("test.pure", "###Relational\n" +
+        runtime.modify("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
                 "   Table ProductTable\n" +
                 "   (\n" +
@@ -597,10 +530,11 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "       snapshotDate Date\n" +
                 "   )\n" +
                 ")\n");
-        this.runtime.compile();
+        runtime.compile(); // parser can auto-correct this syntax error
+//        PureParserException e3 = Assert.assertThrows(PureParserException.class, runtime::compile);
+//        Assert.assertEquals("expected: \")\" found: \",\"", e3.getMessage());
 
-        this.exception.expectMessage("expected: \"BUS_FROM\" or \"BUS_SNAPSHOT_DATE\" found: \",\"");
-        this.runtime.modify("test.pure", "###Relational\n" +
+        runtime.modify("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
                 "   Table ProductTable\n" +
                 "   (\n" +
@@ -612,10 +546,10 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "       snapshotDate Date\n" +
                 "   )\n" +
                 ")\n");
-        this.runtime.compile();
+        PureParserException e4 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE', 'processing'} found: ','", e4.getMessage());
 
-        this.exception.expectMessage("expected: \"BUS_FROM\" or \"BUS_SNAPSHOT_DATE\" found: \"bus_snapshot_date\"");
-        this.runtime.modify("test.pure", "###Relational\n" +
+        runtime.modify("test.pure", "###Relational\n" +
                 "Database pack::ProductDatabase (\n" +
                 "   Table ProductTable\n" +
                 "   (\n" +
@@ -627,11 +561,9 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "       snapshotDate Date\n" +
                 "   )\n" +
                 ")\n");
-        this.runtime.compile();
+        PureParserException e5 = Assert.assertThrows(PureParserException.class, runtime::compile);
+        Assert.assertEquals("Parser error at (resource:test.pure line:6 column:20), expected: one of {'BUS_FROM', 'BUS_SNAPSHOT_DATE', 'processing'} found: 'bus_snapshot_date'", e5.getMessage());
     }
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     @Test
     public void testJoin()
@@ -652,8 +584,8 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "Join Employee_Firm\n" +
                 "(\n" +
                 "    employeeTable.firmId = firmTable.id\n" +
-                "))\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+                "))\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
         CoreInstance db = this.graphWalker.getDbInstance("myDB");
         Assert.assertNotNull(db);
         CoreInstance defaultSchema = this.graphWalker.getDefaultSchema(db);
@@ -713,231 +645,188 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
 
         Assert.assertEquals("firmId", this.graphWalker.getName(operationLeftColumn));
         Assert.assertEquals("id", this.graphWalker.getName(operationRightColumn));
-
     }
 
 
     @Test
     public void testJoinTableError()
     {
-        try
-        {
-            compileTestSource("testStore.pure",
-                    "###Relational\n" +
-                    "Database db\n" +
-                    "(\n" +
-                    "Table employeeTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT\n" +
-                    ")\n" +
-                    "Table firmTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200)\n" +
-                    ")" +
-                    "\n" +
-                    "Join Employee_Firm\n" +
-                    "(\n" +
-                    "    employeeTable.firmId = firmTableErr.id\n" +
-                    ")\n" +
-                    ")\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The table 'firmTableErr' can't be found in the schema 'default' in the database 'db'", "testStore.pure", 17, 28, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testStore.pure",
+                "###Relational\n" +
+                        "Database db\n" +
+                        "(\n" +
+                        "Table employeeTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT\n" +
+                        ")\n" +
+                        "Table firmTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200)\n" +
+                        ")" +
+                        "\n" +
+                        "Join Employee_Firm\n" +
+                        "(\n" +
+                        "    employeeTable.firmId = firmTableErr.id\n" +
+                        ")\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "The table 'firmTableErr' can't be found in the schema 'default' in the database 'db'", "testStore.pure", 17, 28, e);
     }
 
     @Test
     public void testJoinColumnError()
     {
-        try
-        {
-            compileTestSource("testStore.pure",
-                    "###Relational\n" +
-                    "Database db(Table employeeTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT\n" +
-                    ")\n" +
-                    "Table firmTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200)\n" +
-                    ")\n" +
-                    "\n" +
-                    "Join Employee_Firm\n" +
-                    "(\n" +
-                    "    employeeTable.firmId = firmTable.idErr\n" +
-                    "))\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The column 'idErr' can't be found in the table 'firmTable'", "testStore.pure", 16, 38, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testStore.pure",
+                "###Relational\n" +
+                        "Database db(Table employeeTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT\n" +
+                        ")\n" +
+                        "Table firmTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200)\n" +
+                        ")\n" +
+                        "\n" +
+                        "Join Employee_Firm\n" +
+                        "(\n" +
+                        "    employeeTable.firmId = firmTable.idErr\n" +
+                        "))\n"));
+        assertPureException(PureCompilationException.class, "The column 'idErr' can't be found in the table 'firmTable'", "testStore.pure", 16, 38, e);
     }
 
     @Test
     public void testSelfJoinError()
     {
-        try
-        {
-            compileTestSource("testStoreWithError.pure",
-                    "###Relational\n" +
-                            "Database TestDB\n" +
-                            "(\n" +
-                            "  Schema TestSchema\n" +
-                            "  (\n" +
-                            "    Table TestTable\n" +
-                            "    (\n" +
-                            "      id1 INT PRIMARY KEY,\n" +
-                            "      id2 INT,\n" +
-                            "      name VARCHAR(128)\n" +
-                            "    )\n" +
-                            "  )\n" +
-                            "\n" +
-                            "  Schema TestSchema2\n" +
-                            "  (\n" +
-                            "    Table TestTable\n" +
-                            "    (\n" +
-                            "      id1 INT PRIMARY KEY,\n" +
-                            "      id2 INT,\n" +
-                            "      name VARCHAR(128)\n" +
-                            "    )\n" +
-                            "  )\n" +
-                            "\n" +
-                            "  Join TestJoin\n" +
-                            "  (\n" +
-                            "    TestSchema.TestTable.id1 = {target}.id1 and\n" +
-                            "    TestSchema2.TestTable.id2 = {target}.id2" +
-                            "  )\n" +
-                            ")\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "A self join can only contain 1 table, found 2", "testStoreWithError.pure", 24, 8, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testStoreWithError.pure",
+                "###Relational\n" +
+                        "Database TestDB\n" +
+                        "(\n" +
+                        "  Schema TestSchema\n" +
+                        "  (\n" +
+                        "    Table TestTable\n" +
+                        "    (\n" +
+                        "      id1 INT PRIMARY KEY,\n" +
+                        "      id2 INT,\n" +
+                        "      name VARCHAR(128)\n" +
+                        "    )\n" +
+                        "  )\n" +
+                        "\n" +
+                        "  Schema TestSchema2\n" +
+                        "  (\n" +
+                        "    Table TestTable\n" +
+                        "    (\n" +
+                        "      id1 INT PRIMARY KEY,\n" +
+                        "      id2 INT,\n" +
+                        "      name VARCHAR(128)\n" +
+                        "    )\n" +
+                        "  )\n" +
+                        "\n" +
+                        "  Join TestJoin\n" +
+                        "  (\n" +
+                        "    TestSchema.TestTable.id1 = {target}.id1 and\n" +
+                        "    TestSchema2.TestTable.id2 = {target}.id2" +
+                        "  )\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "A self join can only contain 1 table, found 2", "testStoreWithError.pure", 24, 8, e);
     }
 
     @Test
     public void testDuplicateTablesCauseError()
     {
-        try
-        {
-            compileTestSource("testStore1.pure",
-                    "###Relational\n" +
-                    "Database db\n" +
-                    "(\n" +
-                    "   Table employeeTable\n" +
-                    "   (\n" +
-                    "       id INT PRIMARY KEY\n" +
-                    "   )\n" +
-                    "   Table employeeTable\n" +
-                    "   (\n" +
-                    "       id INT PRIMARY KEY\n" +
-                    "   )\n" +
-                    ")\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "More than one Table found with the name 'employeeTable': Table names must be unique within a database", "testStore1.pure", 8, 10, e);
-        }
+        PureCompilationException e1 = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testStore1.pure",
+                "###Relational\n" +
+                        "Database db\n" +
+                        "(\n" +
+                        "   Table employeeTable\n" +
+                        "   (\n" +
+                        "       id INT PRIMARY KEY\n" +
+                        "   )\n" +
+                        "   Table employeeTable\n" +
+                        "   (\n" +
+                        "       id INT PRIMARY KEY\n" +
+                        "   )\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "More than one Table found with the name 'employeeTable': Table names must be unique within a database", "testStore1.pure", 8, 10, e1);
 
-        try
-        {
-            compileTestSource("testStore2.pure",
-                    "###Relational\n" +
-                            "Database db\n" +
-                            "(\n" +
-                            "   Schema hr\n" +
-                            "   (\n" +
-                            "      Table employeeTable\n" +
-                            "      (\n" +
-                            "          id INT PRIMARY KEY\n" +
-                            "      )\n" +
-                            "      Table employeeTable\n" +
-                            "      (\n" +
-                            "          id INT PRIMARY KEY\n" +
-                            "      )\n" +
-                            "   )\n" +
-                            ")\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "More than one Table found with the name 'employeeTable': Table names must be unique within a schema", "testStore2.pure", 10, 13, e);
-        }
+        PureCompilationException e2 = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testStore2.pure",
+                "###Relational\n" +
+                        "Database db\n" +
+                        "(\n" +
+                        "   Schema hr\n" +
+                        "   (\n" +
+                        "      Table employeeTable\n" +
+                        "      (\n" +
+                        "          id INT PRIMARY KEY\n" +
+                        "      )\n" +
+                        "      Table employeeTable\n" +
+                        "      (\n" +
+                        "          id INT PRIMARY KEY\n" +
+                        "      )\n" +
+                        "   )\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "More than one Table found with the name 'employeeTable': Table names must be unique within a schema", "testStore2.pure", 10, 13, e2);
     }
 
     @Test
     public void testDuplicateJoinsCauseError()
     {
-        try
-        {
-            compileTestSource("testStore.pure",
-                    "###Relational\n" +
-                    "Database db\n" +
-                    "(\n" +
-                    "Table employeeTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT\n" +
-                    ")\n" +
-                    "Table firmTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200)\n" +
-                    ")\n" +
-                    "\n" +
-                    "Join Employee_Firm\n" +
-                    "(\n" +
-                    "    employeeTable.firmId = firmTable.id\n" +
-                    ")\n" +
-                    "Join Employee_Firm\n" +
-                    "(\n" +
-                    "    employeeTable.firmId = firmTable.id\n" +
-                    ")\n" +
-                    ")\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "More than one Join found with the name 'Employee_Firm': Join names must be unique within a database", "testStore.pure", 20, 6, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testStore.pure",
+                "###Relational\n" +
+                        "Database db\n" +
+                        "(\n" +
+                        "Table employeeTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT\n" +
+                        ")\n" +
+                        "Table firmTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200)\n" +
+                        ")\n" +
+                        "\n" +
+                        "Join Employee_Firm\n" +
+                        "(\n" +
+                        "    employeeTable.firmId = firmTable.id\n" +
+                        ")\n" +
+                        "Join Employee_Firm\n" +
+                        "(\n" +
+                        "    employeeTable.firmId = firmTable.id\n" +
+                        ")\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "More than one Join found with the name 'Employee_Firm': Join names must be unique within a database", "testStore.pure", 20, 6, e);
     }
 
     @Test
     public void testDuplicateFiltersCauseError()
     {
-        try
-        {
-            compileTestSource("testStore.pure",
-                    "###Relational\n" +
-                    "Database db\n" +
-                    "(\n" +
-                    "Table employeeTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT\n" +
-                    ")\n" +
-                    "Filter myFilter(employeeTable.firmId = 2)\n" +
-                    "Filter myFilter(employeeTable.firmId = 3)\n" +
-                    ")\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "More than one Filter found with the name 'myFilter': Filter names must be unique within a database", "testStore.pure", 11, 8, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testStore.pure",
+                "###Relational\n" +
+                        "Database db\n" +
+                        "(\n" +
+                        "Table employeeTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT\n" +
+                        ")\n" +
+                        "Filter myFilter(employeeTable.firmId = 2)\n" +
+                        "Filter myFilter(employeeTable.firmId = 3)\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "More than one Filter found with the name 'myFilter': Filter names must be unique within a database", "testStore.pure", 11, 8, e);
     }
 
     @Test
@@ -982,23 +871,19 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                    other : other" +
                 "                )" +
                 "            }\n" +
-                ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
-        CoreInstance mapping = this.runtime.getCoreInstance("mappingPackage::myMapping");
-        CoreInstance personClassMappingImplementation = Instance.getValueForMetaPropertyToManyResolved(mapping, "classMappings", this.processorSupport).getFirst();
-        ListIterable<? extends CoreInstance> personClassMappingImplementationPropertyMappings = Instance.getValueForMetaPropertyToManyResolved(personClassMappingImplementation, "propertyMappings", this.processorSupport);
+                ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
+        CoreInstance mapping = runtime.getCoreInstance("mappingPackage::myMapping");
+        CoreInstance personClassMappingImplementation = Instance.getValueForMetaPropertyToManyResolved(mapping, "classMappings", processorSupport).getFirst();
+        ListIterable<? extends CoreInstance> personClassMappingImplementationPropertyMappings = Instance.getValueForMetaPropertyToManyResolved(personClassMappingImplementation, "propertyMappings", processorSupport);
         final StringBuilder sb = new StringBuilder("[\n");
-        personClassMappingImplementationPropertyMappings.forEach(new Procedure<CoreInstance>()
+        personClassMappingImplementationPropertyMappings.forEach(each ->
         {
-            @Override
-            public void value(CoreInstance each)
-            {
-                CoreInstance relationalOperationElement = Instance.getValueForMetaPropertyToOneResolved(each, "relationalOperationElement", TestSimpleGrammar.this.processorSupport);
-                Printer.print(sb, relationalOperationElement, 3);
-                sb.append("\n");
-            }
+            CoreInstance relationalOperationElement = Instance.getValueForMetaPropertyToOneResolved(each, "relationalOperationElement", TestSimpleGrammar.processorSupport);
+            Printer.print(sb, relationalOperationElement, 3);
+            sb.append("\n");
         });
-        final String mappingGraphDump = sb.append("]").toString();
+        String mappingGraphDump = sb.append("]").toString();
         Assert.assertEquals("[\n" +
                 "Anonymous_StripedId instance TableAliasColumn\n" +
                 "    alias(Property):\n" +
@@ -2147,8 +2032,8 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                legalName: [db]firmTable.name,\n" +
                 "                employees: [db]@Employee_Firm\n" +
                 "           }\n" +
-                ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+                ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
         CoreInstance db = this.graphWalker.getDbInstance("mapping::pack::db");
         Assert.assertNotNull(db);
         ListIterable<? extends CoreInstance> schemas = this.graphWalker.getSchemas(db);
@@ -2211,247 +2096,223 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
     @Test
     public void testMappingErrorClass()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "###Pure\n" +
-                    "Class Person\n" +
-                    "{\n" +
-                    "    name:String[1];\n" +
-                    "    firm:Firm[1];\n" +
-                    "}\n" +
-                    "Class Firm\n" +
-                    "{\n" +
-                    "    legalName:String[1];\n" +
-                    "    employees:Person[1];\n" +
-                    "}\n" +
-                    "###Relational\n" +
-                    "Database db (Table employeeTable\n" +
-                    "(\n" +
-                    "    id INT,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT\n" +
-                    ")\n" +
-                    "Table firmTable\n" +
-                    "(\n" +
-                    "    id INT,\n" +
-                    "    name VARCHAR(200)\n" +
-                    ")\n" +
-                    "\n" +
-                    "Join Employee_Firm\n" +
-                    "(\n" +
-                    "    employeeTable.firmId = firmTable.id\n" +
-                    "))\n" +
-                    "###Mapping\n" +
-                    "Mapping myMapping\n" +
-                    "(\n" +
-                    "    PersonErr: Relational\n" +
-                    "            {\n" +
-                    "                name : employeeTable.name,\n" +
-                    "                firm : @Employee_Firm\n" +
-                    "            }\n" +
-                    "    Firm : Relational\n" +
-                    "           {\n" +
-                    "                legalName: firmTable.name,\n" +
-                    "                employees: @Employee_Firm\n" +
-                    "           }\n" +
-                    ")\n" +
-                    "###Pure\n" +
-                    "function test():Nil[0]\n" +
-                    "{\n" +
-                    "    print(myMapping);\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "PersonErr has not been defined!", "testSource.pure", 32, 5, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "###Pure\n" +
+                        "Class Person\n" +
+                        "{\n" +
+                        "    name:String[1];\n" +
+                        "    firm:Firm[1];\n" +
+                        "}\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "    legalName:String[1];\n" +
+                        "    employees:Person[1];\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database db (Table employeeTable\n" +
+                        "(\n" +
+                        "    id INT,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT\n" +
+                        ")\n" +
+                        "Table firmTable\n" +
+                        "(\n" +
+                        "    id INT,\n" +
+                        "    name VARCHAR(200)\n" +
+                        ")\n" +
+                        "\n" +
+                        "Join Employee_Firm\n" +
+                        "(\n" +
+                        "    employeeTable.firmId = firmTable.id\n" +
+                        "))\n" +
+                        "###Mapping\n" +
+                        "Mapping myMapping\n" +
+                        "(\n" +
+                        "    PersonErr: Relational\n" +
+                        "            {\n" +
+                        "                name : employeeTable.name,\n" +
+                        "                firm : @Employee_Firm\n" +
+                        "            }\n" +
+                        "    Firm : Relational\n" +
+                        "           {\n" +
+                        "                legalName: firmTable.name,\n" +
+                        "                employees: @Employee_Firm\n" +
+                        "           }\n" +
+                        ")\n" +
+                        "###Pure\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "    print(myMapping);\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "PersonErr has not been defined!", "testSource.pure", 32, 5, e);
     }
 
 
     @Test
     public void testMappingErrorProperty()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "###Pure\n" +
-                    "Class Person\n" +
-                    "{\n" +
-                    "    name:String[1];\n" +
-                    "    firm:Firm[1];\n" +
-                    "}\n" +
-                    "Class Firm\n" +
-                    "{\n" +
-                    "    legalName:String[1];\n" +
-                    "    employees:Person[1];\n" +
-                    "}\n" +
-                    "###Relational\n" +
-                    "Database db(Table employeeTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT\n" +
-                    ")\n" +
-                    "Table firmTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200)\n" +
-                    ")\n" +
-                    "\n" +
-                    "Join Employee_Firm\n" +
-                    "(\n" +
-                    "    employeeTable.firmId = firmTable.id\n" +
-                    "))\n" +
-                    "###Mapping\n" +
-                    "Mapping myMapping\n" +
-                    "(\n" +
-                    "    Person: Relational\n" +
-                    "            {\n" +
-                    "                name : [db]employeeTable.name,\n" +
-                    "                firmErr : [db]@Employee_Firm\n" +
-                    "            }\n" +
-                    "    Firm : Relational\n" +
-                    "           {\n" +
-                    "                legalName: [db]firmTable.name,\n" +
-                    "                employees: [db]@Employee_Firm\n" +
-                    "           }\n" +
-                    ")\n" +
-                    "###Pure\n" +
-                    "function test():Nil[0]\n" +
-                    "{\n" +
-                    "    print(myMapping);\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The property 'firmErr' is unknown in the Element 'Person'", "testSource.pure", 35, 17, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "###Pure\n" +
+                        "Class Person\n" +
+                        "{\n" +
+                        "    name:String[1];\n" +
+                        "    firm:Firm[1];\n" +
+                        "}\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "    legalName:String[1];\n" +
+                        "    employees:Person[1];\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database db(Table employeeTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT\n" +
+                        ")\n" +
+                        "Table firmTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200)\n" +
+                        ")\n" +
+                        "\n" +
+                        "Join Employee_Firm\n" +
+                        "(\n" +
+                        "    employeeTable.firmId = firmTable.id\n" +
+                        "))\n" +
+                        "###Mapping\n" +
+                        "Mapping myMapping\n" +
+                        "(\n" +
+                        "    Person: Relational\n" +
+                        "            {\n" +
+                        "                name : [db]employeeTable.name,\n" +
+                        "                firmErr : [db]@Employee_Firm\n" +
+                        "            }\n" +
+                        "    Firm : Relational\n" +
+                        "           {\n" +
+                        "                legalName: [db]firmTable.name,\n" +
+                        "                employees: [db]@Employee_Firm\n" +
+                        "           }\n" +
+                        ")\n" +
+                        "###Pure\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "    print(myMapping);\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "The property 'firmErr' is unknown in the Element 'Person'", "testSource.pure", 35, 17, e);
     }
 
     @Test
     public void testMappingErrorColumn()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "###Pure\n" +
-                    "Class Person\n" +
-                    "{\n" +
-                    "    name:String[1];\n" +
-                    "    firm:Firm[1];\n" +
-                    "}\n" +
-                    "Class Firm\n" +
-                    "{\n" +
-                    "    legalName:String[1];\n" +
-                    "    employees:Person[1];\n" +
-                    "}\n" +
-                    "###Relational\n" +
-                    "Database db (Table employeeTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT\n" +
-                    ")\n" +
-                    "Table firmTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200)\n" +
-                    ")\n" +
-                    "\n" +
-                    "Join Employee_Firm\n" +
-                    "(\n" +
-                    "    employeeTable.firmId = firmTable.id\n" +
-                    "))\n" +
-                    "###Mapping\n" +
-                    "Mapping myMapping\n" +
-                    "(\n" +
-                    "    Person: Relational\n" +
-                    "            {\n" +
-                    "                name : [db]employeeTable.nameErr,\n" +
-                    "                firm : [db]@Employee_Firm\n" +
-                    "            }\n" +
-                    "    Firm : Relational\n" +
-                    "           {\n" +
-                    "                legalName: [db]firmTable.name,\n" +
-                    "                employees: [db]@Employee_Firm\n" +
-                    "           }\n" +
-                    ")\n" +
-                    "###Pure\n" +
-                    "function test():Nil[0]\n" +
-                    "{\n" +
-                    "    print(myMapping);\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The column 'nameErr' can't be found in the table 'employeeTable'", "testSource.pure", 34, 42, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "###Pure\n" +
+                        "Class Person\n" +
+                        "{\n" +
+                        "    name:String[1];\n" +
+                        "    firm:Firm[1];\n" +
+                        "}\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "    legalName:String[1];\n" +
+                        "    employees:Person[1];\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database db (Table employeeTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT\n" +
+                        ")\n" +
+                        "Table firmTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200)\n" +
+                        ")\n" +
+                        "\n" +
+                        "Join Employee_Firm\n" +
+                        "(\n" +
+                        "    employeeTable.firmId = firmTable.id\n" +
+                        "))\n" +
+                        "###Mapping\n" +
+                        "Mapping myMapping\n" +
+                        "(\n" +
+                        "    Person: Relational\n" +
+                        "            {\n" +
+                        "                name : [db]employeeTable.nameErr,\n" +
+                        "                firm : [db]@Employee_Firm\n" +
+                        "            }\n" +
+                        "    Firm : Relational\n" +
+                        "           {\n" +
+                        "                legalName: [db]firmTable.name,\n" +
+                        "                employees: [db]@Employee_Firm\n" +
+                        "           }\n" +
+                        ")\n" +
+                        "###Pure\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "    print(myMapping);\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "The column 'nameErr' can't be found in the table 'employeeTable'", "testSource.pure", 34, 42, e);
     }
 
 
     @Test
     public void testMappingErrorJoin()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "###Pure\n" +
-                    "Class Person\n" +
-                    "{\n" +
-                    "    name:String[1];\n" +
-                    "    firm:Firm[1];\n" +
-                    "}\n" +
-                    "Class Firm\n" +
-                    "{\n" +
-                    "    legalName:String[1];\n" +
-                    "    employees:Person[1];\n" +
-                    "}\n" +
-                    "###Relational\n" +
-                    "Database db(Table employeeTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT\n" +
-                    ")\n" +
-                    "Table firmTable\n" +
-                    "(\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200)\n" +
-                    ")\n" +
-                    "\n" +
-                    "Join Employee_Firm\n" +
-                    "(\n" +
-                    "    employeeTable.firmId = firmTable.id\n" +
-                    "))\n" +
-                    "###Mapping\n" +
-                    "Mapping myMapping\n" +
-                    "(\n" +
-                    "    Person: Relational\n" +
-                    "            {\n" +
-                    "                name : [db]employeeTable.name,\n" +
-                    "                firm : [db]@Employee_Firm\n" +
-                    "            }\n" +
-                    "    Firm : Relational\n" +
-                    "           {\n" +
-                    "                legalName: [db]firmTable.name,\n" +
-                    "                employees: [db]@Employee_FirmErr\n" +
-                    "           }\n" +
-                    ")\n" +
-                    "###Pure\n" +
-                    "function test():Nil[0]\n" +
-                    "{\n" +
-                    "    print(myMapping);\n" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The join 'Employee_FirmErr' has not been found in the database 'db'", "testSource.pure", 40, 33, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "###Pure\n" +
+                        "Class Person\n" +
+                        "{\n" +
+                        "    name:String[1];\n" +
+                        "    firm:Firm[1];\n" +
+                        "}\n" +
+                        "Class Firm\n" +
+                        "{\n" +
+                        "    legalName:String[1];\n" +
+                        "    employees:Person[1];\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database db(Table employeeTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT\n" +
+                        ")\n" +
+                        "Table firmTable\n" +
+                        "(\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200)\n" +
+                        ")\n" +
+                        "\n" +
+                        "Join Employee_Firm\n" +
+                        "(\n" +
+                        "    employeeTable.firmId = firmTable.id\n" +
+                        "))\n" +
+                        "###Mapping\n" +
+                        "Mapping myMapping\n" +
+                        "(\n" +
+                        "    Person: Relational\n" +
+                        "            {\n" +
+                        "                name : [db]employeeTable.name,\n" +
+                        "                firm : [db]@Employee_Firm\n" +
+                        "            }\n" +
+                        "    Firm : Relational\n" +
+                        "           {\n" +
+                        "                legalName: [db]firmTable.name,\n" +
+                        "                employees: [db]@Employee_FirmErr\n" +
+                        "           }\n" +
+                        ")\n" +
+                        "###Pure\n" +
+                        "function test():Nil[0]\n" +
+                        "{\n" +
+                        "    print(myMapping);\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "The join 'Employee_FirmErr' has not been found in the database 'db'", "testSource.pure", 40, 33, e);
     }
 
 
@@ -2472,8 +2333,8 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "    (\n" +
                 "        {target}.id = employeeTable.manager_id" +
                 "    )" +
-                ")", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+                ")", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
         CoreInstance db = this.graphWalker.getDbInstance("mapping::pack::db");
         Assert.assertNotNull(db);
         CoreInstance defaultSchema = this.graphWalker.getDefaultSchema(db);
@@ -2550,9 +2411,9 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   assert(2 == $groupBy.columns->size(), |'');\n" +
                 "}\n" +
                 "\n" +
-                "", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
-        CoreInstance mapping = this.runtime.getCoreInstance("mapping::testMapping");
+                "", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
+        CoreInstance mapping = runtime.getCoreInstance("mapping::testMapping");
         CoreInstance classMapping = this.graphWalker.getMany(mapping, "classMappings").getFirst();
         CoreInstance groupBy = this.graphWalker.getOne(classMapping, "groupBy");
         Assert.assertEquals("Anonymous_StripedId instance GroupByMapping\n" +
@@ -2702,9 +2563,9 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "   assert($distinct->toOne(), |'');\n" +
                 "}\n" +
                 "\n" +
-                "", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
-        CoreInstance mapping = this.runtime.getCoreInstance("mapping::testMapping");
+                "", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
+        CoreInstance mapping = runtime.getCoreInstance("mapping::testMapping");
         CoreInstance classMapping = this.graphWalker.getMany(mapping, "classMappings").getFirst();
         CoreInstance distinct = this.graphWalker.getOne(classMapping, "distinct");
         Assert.assertEquals("true instance Boolean", Printer.print(distinct, 1));
@@ -2713,97 +2574,84 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
     @Test
     public void duplicatePropertyMappingCausesError()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "import other::*;\n" +
-                            "\n" +
-                            "Class other::Person\n" +
-                            "{\n" +
-                            "    name:String[1];\n" +
-                            "    firm:Firm[1];\n" +
-                            "}\n" +
-                            "Class other::Firm\n" +
-                            "{\n" +
-                            "    legalName:String[1];\n" +
-                            "    employees:Person[1];\n" +
-                            "}\n" +
-                            "###Relational\n" +
-                            "Database mapping::db(\n" +
-                            "   Table employeeFirmDenormTable\n" +
-                            "   (\n" +
-                            "    id INT PRIMARY KEY,\n" +
-                            "    name VARCHAR(200),\n" +
-                            "    firmId INT,\n" +
-                            "    legalName VARCHAR(200)\n" +
-                            "   )\n" +
-                            "   Join firmJoin(employeeFirmDenormTable.firmId = {target}.firmId)\n" +
-                            ")\n" +
-                            "###Mapping\n" +
-                            "import other::*;\n" +
-                            "import mapping::*;\n" +
-                            "Mapping mappingPackage::myMapping\n" +
-                            "(\n" +
-                            "    Person: Relational\n" +
-                            "    {\n" +
-                            "        name : [db]employeeFirmDenormTable.name,\n" +
-                            "        firm: [db]@firmJoin,\n" +
-                            "        firm: [db]@firmJoin\n" +
-                            "    }\n" +
-                            ")\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Duplicate mappings found for the property 'firm(targetId:other_Firm)' in the mapping for class Person, the property should have one mapping.", "testSource.pure", 33, 9, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "import other::*;\n" +
+                        "\n" +
+                        "Class other::Person\n" +
+                        "{\n" +
+                        "    name:String[1];\n" +
+                        "    firm:Firm[1];\n" +
+                        "}\n" +
+                        "Class other::Firm\n" +
+                        "{\n" +
+                        "    legalName:String[1];\n" +
+                        "    employees:Person[1];\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database mapping::db(\n" +
+                        "   Table employeeFirmDenormTable\n" +
+                        "   (\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT,\n" +
+                        "    legalName VARCHAR(200)\n" +
+                        "   )\n" +
+                        "   Join firmJoin(employeeFirmDenormTable.firmId = {target}.firmId)\n" +
+                        ")\n" +
+                        "###Mapping\n" +
+                        "import other::*;\n" +
+                        "import mapping::*;\n" +
+                        "Mapping mappingPackage::myMapping\n" +
+                        "(\n" +
+                        "    Person: Relational\n" +
+                        "    {\n" +
+                        "        name : [db]employeeFirmDenormTable.name,\n" +
+                        "        firm: [db]@firmJoin,\n" +
+                        "        firm: [db]@firmJoin\n" +
+                        "    }\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "Duplicate mappings found for the property 'firm' (targetId: other_Firm) in the mapping for class Person, the property should have one mapping.", "testSource.pure", 33, 9, e);
     }
-
 
     @Test
     public void testValidateEnumPropertiesHaveEnumMappings()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "Class Employee\n" +
-                            "{\n" +
-                            "    name: String[1];\n" +
-                            "    type: EmployeeType[0..1];\n" +
-                            "}\n" +
-                            "\n" +
-                            "Enum EmployeeType\n" +
-                            "{\n" +
-                            "    CONTRACT,\n" +
-                            "    FULL_TIME\n" +
-                            "}\n" +
-                            "###Relational\n" +
-                            "\n" +
-                            "Database myDB\n" +
-                            "(\n" +
-                            "    Table employeeTable\n" +
-                            "    (\n" +
-                            "        type VARCHAR(20)\n" +
-                            "    )\n" +
-                            ")\n" +
-                            "###Mapping\n" +
-                            "\n" +
-                            "Mapping employeeTestMapping\n" +
-                            "(\n" +
-                            "   Employee: Relational\n" +
-                            "   {\n" +
-                            "        scope([myDB]default.employeeTable)\n" +
-                            "        (\n" +
-                            "            type : type\n" +
-                            "        )\n" +
-                            "   }\n" +
-                            ")\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Missing an EnumerationMapping for the enum property 'type'. Enum properties require an EnumerationMapping in order to transform the store values into the Enum.", "testSource.pure", 29, 13, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "Class Employee\n" +
+                        "{\n" +
+                        "    name: String[1];\n" +
+                        "    type: EmployeeType[0..1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "Enum EmployeeType\n" +
+                        "{\n" +
+                        "    CONTRACT,\n" +
+                        "    FULL_TIME\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "\n" +
+                        "Database myDB\n" +
+                        "(\n" +
+                        "    Table employeeTable\n" +
+                        "    (\n" +
+                        "        type VARCHAR(20)\n" +
+                        "    )\n" +
+                        ")\n" +
+                        "###Mapping\n" +
+                        "\n" +
+                        "Mapping employeeTestMapping\n" +
+                        "(\n" +
+                        "   Employee: Relational\n" +
+                        "   {\n" +
+                        "        scope([myDB]default.employeeTable)\n" +
+                        "        (\n" +
+                        "            type : type\n" +
+                        "        )\n" +
+                        "   }\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "Missing an EnumerationMapping for the enum property 'type'. Enum properties require an EnumerationMapping in order to transform the store values into the Enum.", "testSource.pure", 29, 13, e);
     }
 
     @Test
@@ -2855,203 +2703,177 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "    include mappingPackage::subMapping1\n" +
                 "    include subMapping2\n" +
                 ")\n";
-        Loader.parseM3(
-                pureCode, this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+        Loader.parseM3(pureCode, repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
         CoreInstance mapping = this.graphWalker.getMapping("mappingPackage::myMapping");
         Assert.assertNotNull(mapping);
         ListIterable<? extends CoreInstance> includes = this.graphWalker.getMany(mapping, M3Properties.includes);
         Assert.assertEquals(2, includes.size());
-        MutableList<String> includedMappingPaths = includes.collect(new Function<CoreInstance, String>()
-        {
-            @Override
-            public String valueOf(CoreInstance include)
-            {
-                return PackageableElement.getUserPathForPackageableElement(graphWalker.getOne(include, M3Properties.included));
-            }
-        }, FastList.<String>newList(2));
+        MutableList<String> includedMappingPaths = includes.collect(include -> PackageableElement.getUserPathForPackageableElement(this.graphWalker.getOne(include, M3Properties.included)), Lists.mutable.ofInitialCapacity(2));
         Verify.assertListsEqual(Lists.fixedSize.with("mappingPackage::subMapping1", "mappingPackage::subMapping2"), includedMappingPaths);
     }
 
     @Test
     public void testInvalidMappingInclude()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "import other::*;\n" +
-                    "\n" +
-                    "Class other::Person\n" +
-                    "{\n" +
-                    "    name:String[1];\n" +
-                    "    firm:Firm[1];\n" +
-                    "}\n" +
-                    "Class other::Firm\n" +
-                    "{\n" +
-                    "    legalName:String[1];\n" +
-                    "    employees:Person[1];\n" +
-                    "}\n" +
-                    "###Relational\n" +
-                    "Database mapping::db(\n" +
-                    "   Table employeeFirmDenormTable\n" +
-                    "   (\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT,\n" +
-                    "    legalName VARCHAR(200)\n" +
-                    "   )\n" +
-                    "   Join firmJoin(employeeFirmDenormTable.firmId = {target}.firmId)\n" +
-                    ")\n" +
-                    "###Mapping\n" +
-                    "import other::*;\n" +
-                    "import mapping::*;\n" +
-                    "Mapping mappingPackage::subMapping1\n" +
-                    "(\n" +
-                    "    Person: Relational\n" +
-                    "    {\n" +
-                    "        name : [db]employeeFirmDenormTable.name\n" +
-                    "    }\n" +
-                    ")\n" +
-                    "Mapping mappingPackage::myMapping\n" +
-                    "(\n" +
-                    "    include mappingPackage::subMapping1\n" +
-                    "    include subMapping112\n" +
-                    ")\n");
-            Assert.fail("Failed to throw compilation exception for invalid mapping include");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "subMapping112 has not been defined!", "testSource.pure", 37, 13, 37, 13, 37, 25, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "import other::*;\n" +
+                        "\n" +
+                        "Class other::Person\n" +
+                        "{\n" +
+                        "    name:String[1];\n" +
+                        "    firm:Firm[1];\n" +
+                        "}\n" +
+                        "Class other::Firm\n" +
+                        "{\n" +
+                        "    legalName:String[1];\n" +
+                        "    employees:Person[1];\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database mapping::db(\n" +
+                        "   Table employeeFirmDenormTable\n" +
+                        "   (\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT,\n" +
+                        "    legalName VARCHAR(200)\n" +
+                        "   )\n" +
+                        "   Join firmJoin(employeeFirmDenormTable.firmId = {target}.firmId)\n" +
+                        ")\n" +
+                        "###Mapping\n" +
+                        "import other::*;\n" +
+                        "import mapping::*;\n" +
+                        "Mapping mappingPackage::subMapping1\n" +
+                        "(\n" +
+                        "    Person: Relational\n" +
+                        "    {\n" +
+                        "        name : [db]employeeFirmDenormTable.name\n" +
+                        "    }\n" +
+                        ")\n" +
+                        "Mapping mappingPackage::myMapping\n" +
+                        "(\n" +
+                        "    include mappingPackage::subMapping1\n" +
+                        "    include subMapping112\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "subMapping112 has not been defined!", "testSource.pure", 37, 13, 37, 13, 37, 25, e);
     }
 
     @Test
     public void testDuplicateMappingInclude()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "import other::*;\n" +
-                    "\n" +
-                    "Class other::Person\n" +
-                    "{\n" +
-                    "    name:String[1];\n" +
-                    "    firm:Firm[1];\n" +
-                    "}\n" +
-                    "Class other::Firm\n" +
-                    "{\n" +
-                    "    legalName:String[1];\n" +
-                    "    employees:Person[1];\n" +
-                    "}\n" +
-                    "###Relational\n" +
-                    "Database mapping::db(\n" +
-                    "   Table employeeFirmDenormTable\n" +
-                    "   (\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT,\n" +
-                    "    legalName VARCHAR(200)\n" +
-                    "   )\n" +
-                    "   Join firmJoin(employeeFirmDenormTable.firmId = {target}.firmId)\n" +
-                    ")\n" +
-                    "###Mapping\n" +
-                    "import other::*;\n" +
-                    "import mapping::*;\n" +
-                    "Mapping mappingPackage::subMapping1\n" +
-                    "(\n" +
-                    "    Person: Relational\n" +
-                    "    {\n" +
-                    "        name : [db]employeeFirmDenormTable.name\n" +
-                    "    }\n" +
-                    ")\n" +
-                    "Mapping mappingPackage::subMapping2\n" +
-                    "(\n" +
-                    "    Person: Relational\n" +
-                    "    {\n" +
-                    "        name : [db]employeeFirmDenormTable.name\n" +
-                    "    }\n" +
-                    ")\n" +
-                    "Mapping mappingPackage::myMapping\n" +
-                    "(\n" +
-                    "    include mappingPackage::subMapping1\n" +
-                    "    include mappingPackage::subMapping2\n" +
-                    ")\n");
-            Assert.fail("Failed to throw compilation exception for invalid mapping include");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Duplicate mapping found with id: 'other_Person' in mapping mappingPackage::myMapping", "testSource.pure", 36, 5, 36, 5, 39, 5, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "import other::*;\n" +
+                        "\n" +
+                        "Class other::Person\n" +
+                        "{\n" +
+                        "    name:String[1];\n" +
+                        "    firm:Firm[1];\n" +
+                        "}\n" +
+                        "Class other::Firm\n" +
+                        "{\n" +
+                        "    legalName:String[1];\n" +
+                        "    employees:Person[1];\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database mapping::db(\n" +
+                        "   Table employeeFirmDenormTable\n" +
+                        "   (\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT,\n" +
+                        "    legalName VARCHAR(200)\n" +
+                        "   )\n" +
+                        "   Join firmJoin(employeeFirmDenormTable.firmId = {target}.firmId)\n" +
+                        ")\n" +
+                        "###Mapping\n" +
+                        "import other::*;\n" +
+                        "import mapping::*;\n" +
+                        "Mapping mappingPackage::subMapping1\n" +
+                        "(\n" +
+                        "    Person: Relational\n" +
+                        "    {\n" +
+                        "        name : [db]employeeFirmDenormTable.name\n" +
+                        "    }\n" +
+                        ")\n" +
+                        "Mapping mappingPackage::subMapping2\n" +
+                        "(\n" +
+                        "    Person: Relational\n" +
+                        "    {\n" +
+                        "        name : [db]employeeFirmDenormTable.name\n" +
+                        "    }\n" +
+                        ")\n" +
+                        "Mapping mappingPackage::myMapping\n" +
+                        "(\n" +
+                        "    include mappingPackage::subMapping1\n" +
+                        "    include mappingPackage::subMapping2\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "Duplicate mapping found with id: 'other_Person' in mapping mappingPackage::myMapping", "testSource.pure", 36, 5, 36, 5, 39, 5, e);
     }
 
     @Test
     public void testNestedDuplicateMappingInclude()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "import other::*;\n" +
-                    "\n" +
-                    "Class other::Person\n" +
-                    "{\n" +
-                    "    name:String[1];\n" +
-                    "    firm:Firm[1];\n" +
-                    "}\n" +
-                    "Class other::Firm\n" +
-                    "{\n" +
-                    "    legalName:String[1];\n" +
-                    "    employees:Person[1];\n" +
-                    "}\n" +
-                    "###Relational\n" +
-                    "Database mapping::db(\n" +
-                    "   Table employeeFirmDenormTable\n" +
-                    "   (\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT,\n" +
-                    "    legalName VARCHAR(200)\n" +
-                    "   )\n" +
-                    "   Join firmJoin(employeeFirmDenormTable.firmId = {target}.firmId)\n" +
-                    ")\n" +
-                    "###Mapping\n" +
-                    "import other::*;\n" +
-                    "import mapping::*;\n" +
-                    "Mapping mappingPackage::subMapping1\n" +
-                    "(\n" +
-                    "    Person: Relational\n" +
-                    "    {\n" +
-                    "        name : [db]employeeFirmDenormTable.name\n" +
-                    "    }\n" +
-                    ")\n" +
-                    "Mapping mappingPackage::subMapping2\n" +
-                    "(\n" +
-                    "    include mappingPackage::subMapping1\n" +
-                    ")\n" +
-                    "Mapping mappingPackage::subMapping3\n" +
-                    "(\n" +
-                    "    include mappingPackage::subMapping2\n" +
-                    ")\n" +
-                    "Mapping mappingPackage::myMapping\n" +
-                    "(\n" +
-                    "    include mappingPackage::subMapping3\n" +
-                    "    Person: Relational\n" +
-                    "    {\n" +
-                    "        name : [db]employeeFirmDenormTable.name\n" +
-                    "    }\n" +
-                    ")\n");
-            Assert.fail("Failed to throw compilation exception for invalid mapping include");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Duplicate mapping found with id: 'other_Person' in mapping mappingPackage::myMapping", "testSource.pure", 45, 5, 45, 5, 48, 5, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "import other::*;\n" +
+                        "\n" +
+                        "Class other::Person\n" +
+                        "{\n" +
+                        "    name:String[1];\n" +
+                        "    firm:Firm[1];\n" +
+                        "}\n" +
+                        "Class other::Firm\n" +
+                        "{\n" +
+                        "    legalName:String[1];\n" +
+                        "    employees:Person[1];\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database mapping::db(\n" +
+                        "   Table employeeFirmDenormTable\n" +
+                        "   (\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT,\n" +
+                        "    legalName VARCHAR(200)\n" +
+                        "   )\n" +
+                        "   Join firmJoin(employeeFirmDenormTable.firmId = {target}.firmId)\n" +
+                        ")\n" +
+                        "###Mapping\n" +
+                        "import other::*;\n" +
+                        "import mapping::*;\n" +
+                        "Mapping mappingPackage::subMapping1\n" +
+                        "(\n" +
+                        "    Person: Relational\n" +
+                        "    {\n" +
+                        "        name : [db]employeeFirmDenormTable.name\n" +
+                        "    }\n" +
+                        ")\n" +
+                        "Mapping mappingPackage::subMapping2\n" +
+                        "(\n" +
+                        "    include mappingPackage::subMapping1\n" +
+                        ")\n" +
+                        "Mapping mappingPackage::subMapping3\n" +
+                        "(\n" +
+                        "    include mappingPackage::subMapping2\n" +
+                        ")\n" +
+                        "Mapping mappingPackage::myMapping\n" +
+                        "(\n" +
+                        "    include mappingPackage::subMapping3\n" +
+                        "    Person: Relational\n" +
+                        "    {\n" +
+                        "        name : [db]employeeFirmDenormTable.name\n" +
+                        "    }\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "Duplicate mapping found with id: 'other_Person' in mapping mappingPackage::myMapping", "testSource.pure", 45, 5, 45, 5, 48, 5, e);
     }
 
 
     @Test
     public void testValidDuplicateEnumMapping()
     {
-        final String pureCode =
+        String pureCode =
                 "Enum TradeType\n" +
                         "{\n" +
                         "    BUY,\n" +
@@ -3071,15 +2893,14 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                         "       SELL: ['DEBIT']\n" +
                         "   }\n" +
                         ")\n";
-        Loader.parseM3(
-                pureCode, this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser(), new EnumerationMappingParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+        Loader.parseM3(pureCode, repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser(), new EnumerationMappingParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
     }
 
     @Test
     public void testReferredEnumMappingFromIncludes()
     {
-        final String pureCode =
+        String pureCode =
                 "Enum TradeType\n" +
                         "{\n" +
                         "    BUY,\n" +
@@ -3144,106 +2965,93 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                         "    }\n" +
                         ")\n" +
                         "\n";
-        Loader.parseM3(
-                pureCode, this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser(), new EnumerationMappingParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
-        this.runtime.compile();
+        Loader.parseM3(pureCode, repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser(), new EnumerationMappingParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
+        runtime.compile();
     }
 
     @Test
     public void testInValidDuplicateEnumMapping()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "Enum TradeType\n" +
-                            "{\n" +
-                            "    BUY,\n" +
-                            "    SELL\n" +
-                            "}\n" +
-                            "###Mapping\n" +
-                            "Mapping tradeMapping1\n" +
-                            "(\n" +
-                            "   TradeType: EnumerationMapping \n" +
-                            "   {\n" +
-                            "       BUY:  ['BUY', 'B'],\n" +
-                            "       SELL: ['SELL', 'S']\n" +
-                            "   }\n" +
-                            ")\n" +
-                            "Mapping tradeMapping2\n" +
-                            "(\n" +
-                            "   include tradeMapping1\n" +
-                            "   TradeType: EnumerationMapping \n" +
-                            "   {\n" +
-                            "       BUY:  ['CREDIT'],\n" +
-                            "       SELL: ['DEBIT']\n" +
-                            "   }\n" +
-                            ")\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "Duplicate mapping found with id: 'default' in mapping tradeMapping2", "testSource.pure", 18, 4, 18, 4, 18, 12, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testSource.pure",
+                "Enum TradeType\n" +
+                        "{\n" +
+                        "    BUY,\n" +
+                        "    SELL\n" +
+                        "}\n" +
+                        "###Mapping\n" +
+                        "Mapping tradeMapping1\n" +
+                        "(\n" +
+                        "   TradeType: EnumerationMapping \n" +
+                        "   {\n" +
+                        "       BUY:  ['BUY', 'B'],\n" +
+                        "       SELL: ['SELL', 'S']\n" +
+                        "   }\n" +
+                        ")\n" +
+                        "Mapping tradeMapping2\n" +
+                        "(\n" +
+                        "   include tradeMapping1\n" +
+                        "   TradeType: EnumerationMapping \n" +
+                        "   {\n" +
+                        "       BUY:  ['CREDIT'],\n" +
+                        "       SELL: ['DEBIT']\n" +
+                        "   }\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "Duplicate mapping found with id: 'default' in mapping tradeMapping2", "testSource.pure", 18, 4, 18, 4, 18, 12, e);
     }
 
     @Test
     public void wrongClassMappingFilterIdentifierCausesError()
     {
-        try
-        {
-            compileTestSource("testSource.pure",
-                    "import other::*;\n" +
-                            "\n" +
-                            "Class other::Person\n" +
-                            "{\n" +
-                            "    firstName:String[1];\n" +
-                            "    firm:Firm[1];\n" +
-                            "}\n" +
-                            "Class other::Firm\n" +
-                            "{\n" +
-                            "    legalName:String[1];\n" +
-                            "    employees:Person[1];\n" +
-                            "}\n" +
-                            "###Relational\n" +
-                            "Database mapping::db(\n" +
-                            "   Table personTable\n" +
-                            "   (\n" +
-                            "    id INT PRIMARY KEY,\n" +
-                            "    firstName VARCHAR(200),\n" +
-                            "    firmId INT,\n" +
-                            "    legalName VARCHAR(200)\n" +
-                            "   )\n" +
-                            "   Table firmTable\n" +
-                            "   (\n" +
-                            "    id INT PRIMARY KEY,\n" +
-                            "    legalName VARCHAR(200)\n" +
-                            "   )\n" +
-                            "   View personFirmView\n"+
-                            "   (\n" +
-                            "    id : personTable.id,\n" +
-                            "    firstName : personTable.firstName,\n" +
-                            "    firmId : personTable.firmId\n" +
-                            "   )\n" +
-                            "   Filter GoldmanSachsFilter(firmTable.legalName = 'GoldmanSachs')\n" +
-                            "   Join Firm_Person(firmTable.id = personTable.firmId)\n" +
-                            ")\n" +
-                            "###Mapping\n" +
-                            "import other::*;\n" +
-                            "import mapping::*;\n" +
-                            "Mapping mappingPackage::myMapping\n" +
-                            "(\n" +
-                            "    Person: Relational\n" +
-                            "    {\n" +
-                            "        ~filter [mapping::db](Hello)@Firm_Person | [mapping::db] GoldmanSachsFilter \n" +
-                            "        firstName : [db]personTable.firstName\n" +
-                            "    }\n" +
-                            ")\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureParserException.class, "The joinType is not recognized. Valid join types are: [INNER, OUTER]", "testSource.pure", 43, 31, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "testSource.pure",
+                "import other::*;\n" +
+                        "\n" +
+                        "Class other::Person\n" +
+                        "{\n" +
+                        "    firstName:String[1];\n" +
+                        "    firm:Firm[1];\n" +
+                        "}\n" +
+                        "Class other::Firm\n" +
+                        "{\n" +
+                        "    legalName:String[1];\n" +
+                        "    employees:Person[1];\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database mapping::db(\n" +
+                        "   Table personTable\n" +
+                        "   (\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    firstName VARCHAR(200),\n" +
+                        "    firmId INT,\n" +
+                        "    legalName VARCHAR(200)\n" +
+                        "   )\n" +
+                        "   Table firmTable\n" +
+                        "   (\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    legalName VARCHAR(200)\n" +
+                        "   )\n" +
+                        "   View personFirmView\n" +
+                        "   (\n" +
+                        "    id : personTable.id,\n" +
+                        "    firstName : personTable.firstName,\n" +
+                        "    firmId : personTable.firmId\n" +
+                        "   )\n" +
+                        "   Filter GoldmanSachsFilter(firmTable.legalName = 'GoldmanSachs')\n" +
+                        "   Join Firm_Person(firmTable.id = personTable.firmId)\n" +
+                        ")\n" +
+                        "###Mapping\n" +
+                        "import other::*;\n" +
+                        "import mapping::*;\n" +
+                        "Mapping mappingPackage::myMapping\n" +
+                        "(\n" +
+                        "    Person: Relational\n" +
+                        "    {\n" +
+                        "        ~filter [mapping::db](Hello)@Firm_Person | [mapping::db] GoldmanSachsFilter \n" +
+                        "        firstName : [db]personTable.firstName\n" +
+                        "    }\n" +
+                        ")\n"));
+        assertPureException(PureParserException.class, "The joinType is not recognized. Valid join types are: [INNER, OUTER]", "testSource.pure", 43, 31, e);
     }
 
     @Test
@@ -3276,7 +3084,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                         "    id INT PRIMARY KEY,\n" +
                         "    legalName VARCHAR(200)\n" +
                         "   )\n" +
-                        "   View personFirmView\n"+
+                        "   View personFirmView\n" +
                         "   (\n" +
                         "    id : personTable.id,\n" +
                         "    firstName : personTable.firstName,\n" +
@@ -3310,13 +3118,13 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "testColumn2 varchar(200) NOT NULL " +
                 ") \n" +
                 ") \n");
-        CoreInstance coreInstanceForDb = this.runtime.getCoreInstance("test::TestDb");
-        CoreInstance table = Instance.getValueForMetaPropertyToOneResolved(coreInstanceForDb, M2RelationalProperties.schemas, M2RelationalProperties.tables, this.processorSupport);
-        ListIterable<? extends CoreInstance> columns = Instance.getValueForMetaPropertyToManyResolved(table, M2RelationalProperties.columns, this.processorSupport);
+        CoreInstance coreInstanceForDb = runtime.getCoreInstance("test::TestDb");
+        CoreInstance table = Instance.getValueForMetaPropertyToOneResolved(coreInstanceForDb, M2RelationalProperties.schemas, M2RelationalProperties.tables, processorSupport);
+        ListIterable<? extends CoreInstance> columns = Instance.getValueForMetaPropertyToManyResolved(table, M2RelationalProperties.columns, processorSupport);
         CoreInstance testColumn1 = columns.get(0);
         CoreInstance testColumn2 = columns.get(1);
-        Assert.assertTrue((PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(testColumn1, M2RelationalProperties.nullable, this.processorSupport))));
-        Assert.assertFalse((PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(testColumn2, M2RelationalProperties.nullable, this.processorSupport))));
+        Assert.assertTrue((PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(testColumn1, M2RelationalProperties.nullable, processorSupport))));
+        Assert.assertFalse((PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(testColumn2, M2RelationalProperties.nullable, processorSupport))));
     }
 
     @Test
@@ -3331,90 +3139,78 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "testColumn2 varchar(200) PRIMARY KEY " +
                 ") \n" +
                 ") \n");
-        CoreInstance coreInstanceForDb = this.runtime.getCoreInstance("test::TestDb");
-        CoreInstance table = Instance.getValueForMetaPropertyToOneResolved(coreInstanceForDb, M2RelationalProperties.schemas, M2RelationalProperties.tables, this.processorSupport);
-        ListIterable<? extends CoreInstance> columns = Instance.getValueForMetaPropertyToManyResolved(table, M2RelationalProperties.columns, this.processorSupport);
+        CoreInstance coreInstanceForDb = runtime.getCoreInstance("test::TestDb");
+        CoreInstance table = Instance.getValueForMetaPropertyToOneResolved(coreInstanceForDb, M2RelationalProperties.schemas, M2RelationalProperties.tables, processorSupport);
+        ListIterable<? extends CoreInstance> columns = Instance.getValueForMetaPropertyToManyResolved(table, M2RelationalProperties.columns, processorSupport);
         CoreInstance testColumn1 = columns.get(0);
         CoreInstance testColumn2 = columns.get(1);
-        Assert.assertTrue((PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(testColumn1, M2RelationalProperties.nullable, this.processorSupport))));
-        Assert.assertFalse((PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(testColumn2, M2RelationalProperties.nullable, this.processorSupport))));
+        Assert.assertTrue((PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(testColumn1, M2RelationalProperties.nullable, processorSupport))));
+        Assert.assertFalse((PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(testColumn2, M2RelationalProperties.nullable, processorSupport))));
     }
 
     @Test
     public void testNotNullWithPrimaryKeyIsNotAllowed()
     {
-        try
-        {
-            compileTestSource("testFile.pure",
-                    "###Relational \n " +
-                            "Database test::TestDb \n" +
-                            "( \n" +
-                            "Table testTable \n" +
-                            "( \n" +
-                            "testColumn1 varchar(200), \n" +
-                            "testColumn2 varchar(200) PRIMARY KEY NOT NULL\n" +
-                            ") \n" +
-                            ") \n");
-            Assert.fail("Expected parser error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureParserException.class, "expected: one of {')', ','} found: 'NOT NULL'", "testFile.pure", 7, 38, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "testFile.pure",
+                "###Relational \n " +
+                        "Database test::TestDb \n" +
+                        "( \n" +
+                        "Table testTable \n" +
+                        "( \n" +
+                        "testColumn1 varchar(200), \n" +
+                        "testColumn2 varchar(200) PRIMARY KEY NOT NULL\n" +
+                        ") \n" +
+                        ") \n"));
+        assertPureException(PureParserException.class, "expected: one of {')', ','} found: 'NOT NULL'", "testFile.pure", 7, 38, e);
     }
 
     @Test
     public void testMappingAssociationDirectlyIsNotAllowed()
     {
-        try
-        {
-            compileTestSource("testFile.pure", "import other::*;\n" +
-                    "\n" +
-                    "Class other::Person\n" +
-                    "{\n" +
-                    "    name:String[1];\n" +
-                    "}\n" +
-                    "Class other::Firm\n" +
-                    "{\n" +
-                    "    legalName:String[1];\n" +
-                    "}\n" +
-                    "Association other::Firm_Person\n" +
-                    "{\n" +
-                    "    firm:Firm[1];\n" +
-                    "    employees:Person[1];\n" +
-                    "}\n" +
-                    "###Relational\n" +
-                    "Database mapping::db(\n" +
-                    "   Table employeeFirmDenormTable\n" +
-                    "   (\n" +
-                    "    id INT PRIMARY KEY,\n" +
-                    "    name VARCHAR(200),\n" +
-                    "    firmId INT,\n" +
-                    "    legalName VARCHAR(200)\n" +
-                    "   )\n" +
-                    "   Join firmJoin(employeeFirmDenormTable.firmId = {target}.firmId)\n" +
-                    ")\n" +
-                    "###Mapping\n" +
-                    "import other::*;\n" +
-                    "import mapping::*;\n" +
-                    "Mapping mappingPackage::subMapping1\n" +
-                    "(\n" +
-                    "    Person: Relational\n" +
-                    "    {\n" +
-                    "        name : [db]employeeFirmDenormTable.name\n" +
-                    "    }\n" +
-                    "    Firm_Person: Relational\n" +
-                    "    {\n" +
-                    "        employees : [db]@firmJoin\n" +
-                    "    }\n" +
-                    ")\n");
-            Assert.fail("Expected validation error");
-        }
-        catch (RuntimeException e)
-        {
-            assertPureException(PureCompilationException.class, "Trying to map an unsupported type in Relational: Type Error: 'Association' not a subtype of 'Class<Any>'", e);
-        }
-
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "testFile.pure",
+                "import other::*;\n" +
+                        "\n" +
+                        "Class other::Person\n" +
+                        "{\n" +
+                        "    name:String[1];\n" +
+                        "}\n" +
+                        "Class other::Firm\n" +
+                        "{\n" +
+                        "    legalName:String[1];\n" +
+                        "}\n" +
+                        "Association other::Firm_Person\n" +
+                        "{\n" +
+                        "    firm:Firm[1];\n" +
+                        "    employees:Person[1];\n" +
+                        "}\n" +
+                        "###Relational\n" +
+                        "Database mapping::db(\n" +
+                        "   Table employeeFirmDenormTable\n" +
+                        "   (\n" +
+                        "    id INT PRIMARY KEY,\n" +
+                        "    name VARCHAR(200),\n" +
+                        "    firmId INT,\n" +
+                        "    legalName VARCHAR(200)\n" +
+                        "   )\n" +
+                        "   Join firmJoin(employeeFirmDenormTable.firmId = {target}.firmId)\n" +
+                        ")\n" +
+                        "###Mapping\n" +
+                        "import other::*;\n" +
+                        "import mapping::*;\n" +
+                        "Mapping mappingPackage::subMapping1\n" +
+                        "(\n" +
+                        "    Person: Relational\n" +
+                        "    {\n" +
+                        "        name : [db]employeeFirmDenormTable.name\n" +
+                        "    }\n" +
+                        "    Firm_Person: Relational\n" +
+                        "    {\n" +
+                        "        employees : [db]@firmJoin\n" +
+                        "    }\n" +
+                        ")\n"));
+        assertPureException(PureCompilationException.class, "Trying to map an unsupported type in Relational: Type Error: 'Association' not a subtype of 'Class<Any>'", e);
     }
 
 
@@ -3469,9 +3265,9 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "           firm[per1,fir1] : [db]@firmJoin\n" +
                 "        )\n" +
                 "    }\n" +
-                ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
+                ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
 
-        this.runtime.compile();
+        runtime.compile();
 
         CoreInstance mapping = this.graphWalker.getMapping("mappingPackage::subMapping1");
         Assert.assertNotNull(mapping);
@@ -3552,9 +3348,9 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "           firm[per1,fir1] : [db]@firmJoin\n" +
                 "        )\n" +
                 "    }\n" +
-                ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
+                ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
 
-        this.runtime.compile();
+        runtime.compile();
 
         CoreInstance mapping3 = this.graphWalker.getMapping("mappingPackage::subMapping3");
         Assert.assertNotNull(mapping3);
@@ -3626,9 +3422,9 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "           firm : [db]@firmJoin\n" +
                 "        )\n" +
                 "    }\n" +
-                ")\n", this.repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, this.context);
+                ")\n", repository, new ParserLibrary(Lists.immutable.with(new M3AntlrParser(), new MappingParser(), new RelationalParser())), ValidationType.DEEP, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER, context);
 
-        this.runtime.compile();
+        runtime.compile();
 
         CoreInstance mapping = this.graphWalker.getMapping("mappingPackage::subMapping1");
         Assert.assertNotNull(mapping);

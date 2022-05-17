@@ -14,11 +14,17 @@
 
 package org.finos.legend.pure.m2.relational.incremental;
 
-import org.finos.legend.pure.m2.relational.AbstractPureRelationalTestWithCoreCompiled;
+import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Maps;
+import org.finos.legend.pure.m2.relational.AbstractPureRelationalTestWithCoreCompiled;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
+import org.junit.Before;
 import org.junit.Test;
 
 public class TestView extends AbstractPureRelationalTestWithCoreCompiled
@@ -55,27 +61,39 @@ public class TestView extends AbstractPureRelationalTestWithCoreCompiled
             "   }\n" +
             ")";
 
+    @Before
+    @Override
+    public void _setUp()
+    {
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return org.eclipse.collections.api.factory.Lists.immutable.with(CodeRepository.newPlatformCodeRepository(), GenericCodeRepository.build("test", "((test)|(meta))(::.*)?", PlatformCodeRepository.NAME));
+    }
+
     @Test
     public void testGroupByIncrementalSyntaticStoreChange()
     {
         String viewDynaColName = "orderPnl";
-        String groupByStore = GroupByStoreTemplate.format(GroupByStoreTemplate, viewDynaColName);
-        String groupByMapping = GroupByMappingTemplate.format(GroupByMappingTemplate, viewDynaColName);
+        String groupByStore = String.format(GroupByStoreTemplate, viewDynaColName);
+        String groupByMapping = String.format(GroupByMappingTemplate, viewDynaColName);
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
                 Maps.mutable.with("store.pure", groupByStore, "model.pure", GroupByModel, "mapping.pure", groupByMapping))
                         .compile(),
                 new RuntimeTestScriptBuilder()
                         .updateSource("store.pure", groupByStore + " ")
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
     public void testGroupByIncrementalModelChange()
     {
         String viewDynaColName = "orderPnl";
-        String groupByStore = GroupByStoreTemplate.format(GroupByStoreTemplate, viewDynaColName);
-        String groupByMapping = GroupByMappingTemplate.format(GroupByMappingTemplate, viewDynaColName);
+        String groupByStore = String.format(GroupByStoreTemplate, viewDynaColName);
+        String groupByMapping = String.format(GroupByMappingTemplate, viewDynaColName);
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
                 Maps.mutable.with("store.pure", groupByStore, "model.pure", GroupByModel, "mapping.pure", groupByMapping))
                         .compile(),
@@ -84,18 +102,18 @@ public class TestView extends AbstractPureRelationalTestWithCoreCompiled
                         .compile()
                         .updateSource("model.pure", GroupByModel)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
     public void testGroupByIncrementalStoreAndMappingChange()
     {
         String viewDynaColName = "orderPnl";
-        String groupByStore = GroupByStoreTemplate.format(GroupByStoreTemplate, viewDynaColName);
-        String groupByMapping = GroupByMappingTemplate.format(GroupByMappingTemplate, viewDynaColName);
+        String groupByStore = String.format(GroupByStoreTemplate, viewDynaColName);
+        String groupByMapping = String.format(GroupByMappingTemplate, viewDynaColName);
         String viewDynaColNameUpdated = "orderPnlUpdated";
-        String groupByStoreUpdated = GroupByStoreTemplate.format(GroupByStoreTemplate, viewDynaColNameUpdated);
-        String groupByMappingUpdated = GroupByMappingTemplate.format(GroupByMappingTemplate, viewDynaColNameUpdated);
+        String groupByStoreUpdated = String.format(GroupByStoreTemplate, viewDynaColNameUpdated);
+        String groupByMappingUpdated = String.format(GroupByMappingTemplate, viewDynaColNameUpdated);
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySources(
                 Maps.mutable.with("store.pure", groupByStore, "model.pure", GroupByModel, "mapping.pure", groupByMapping))
                         .compile(),
@@ -104,7 +122,7 @@ public class TestView extends AbstractPureRelationalTestWithCoreCompiled
                         .compile()
                         .updateSource("store.pure", groupByStore).updateSource("mapping.pure", groupByMapping)
                         .compile()
-                , this.runtime, this.functionExecution, Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of());
+                , runtime, functionExecution, Lists.fixedSize.empty());
     }
 
     @Test
@@ -142,6 +160,6 @@ public class TestView extends AbstractPureRelationalTestWithCoreCompiled
                         .deleteSource(includedDB1Source)
                         .createInMemorySource(includedDB1Source, includedDB1)
                         .compile(),
-                this.runtime, this.functionExecution, Lists.immutable.<RuntimeVerifier.FunctionExecutionStateVerifier>empty());
+                runtime, functionExecution, Lists.immutable.empty());
     }
 }

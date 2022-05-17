@@ -25,36 +25,10 @@ import org.junit.Test;
 public class TestAssertNotEquals extends PureExpressionTest
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), extra);
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getExtra());
     }
-
-    public static Pair<String, String> extra = Tuples.pair("/system/extra.pure","function meta::pure::functions::asserts::assertNotEquals(notExpected:Any[*], actual:Any[*]):Boolean[1]\n" +
-            "{\n" +
-            "    if(eq($notExpected->size(), 1) && eq($actual->size(), 1),\n" +
-            "       | assertNotEquals($notExpected, $actual, '%r should not equal %r', [$notExpected->toOne(), $actual->toOne()]),\n" +
-            "       | assertNotEquals($notExpected, $actual, | $notExpected->map(e | $e->toRepresentation())->joinStrings('[', ', ', ']') + ' should not equal ' + $actual->map(a | $a->toRepresentation())->joinStrings('[', ', ', ']')))\n" +
-            "}\n" +
-            "\n" +
-            "function meta::pure::functions::asserts::assertNotEquals(notExpected:Any[*], actual:Any[*], message:String[1]):Boolean[1]\n" +
-            "{\n" +
-            "    assert(!equal($notExpected, $actual), $message);\n" +
-            "}\n" +
-            "\n" +
-            "function meta::pure::functions::asserts::assertNotEquals(notExpected:Any[*], actual:Any[*], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
-            "{\n" +
-            "    assert(!equal($notExpected, $actual), $formatString, $formatArgs);\n" +
-            "}\n" +
-            "\n" +
-            "function meta::pure::functions::asserts::assertNotEquals(notExpected:Any[*], actual:Any[*], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
-            "{\n" +
-            "    assert(!equal($notExpected, $actual), $message);\n" +
-            "}\n" +
-            "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
-            "{\n" +
-            "    assert($condition, | format($formatString, $formatArgs));\n" +
-            "}");
-    ;
 
     @Test
     public void testFailure()
@@ -73,5 +47,36 @@ public class TestAssertNotEquals extends PureExpressionTest
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair("testAssertNotEquals.pure",
+                "function meta::pure::functions::asserts::assertNotEquals(notExpected:Any[*], actual:Any[*]):Boolean[1]\n" +
+                        "{\n" +
+                        "    if(eq($notExpected->size(), 1) && eq($actual->size(), 1),\n" +
+                        "       | assertNotEquals($notExpected, $actual, '%r should not equal %r', [$notExpected->toOne(), $actual->toOne()]),\n" +
+                        "       | assertNotEquals($notExpected, $actual, | $notExpected->map(e | $e->toRepresentation())->joinStrings('[', ', ', ']') + ' should not equal ' + $actual->map(a | $a->toRepresentation())->joinStrings('[', ', ', ']')))\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertNotEquals(notExpected:Any[*], actual:Any[*], message:String[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert(!equal($notExpected, $actual), $message);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertNotEquals(notExpected:Any[*], actual:Any[*], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert(!equal($notExpected, $actual), $formatString, $formatArgs);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertNotEquals(notExpected:Any[*], actual:Any[*], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert(!equal($notExpected, $actual), $message);\n" +
+                        "}\n" +
+                        "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert($condition, | format($formatString, $formatArgs));\n" +
+                        "}"
+        );
     }
 }
