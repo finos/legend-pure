@@ -16,12 +16,11 @@ package org.finos.legend.pure.m3.serialization.grammar.v1;
 
 import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 
@@ -30,8 +29,9 @@ import java.util.UUID;
 public abstract class AbstractPrimitiveParsingTest extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getExtra());
+    public static void setUp()
+    {
+        setUpRuntime();
     }
 
     protected abstract String getPrimitiveTypeName();
@@ -52,31 +52,25 @@ public abstract class AbstractPrimitiveParsingTest extends AbstractPureTestWithC
 
     protected void assertFailsToParse(String expectedInfo, String string)
     {
-        try
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> parsePrimitiveValue(string));
+
+        assertPureException(PureParserException.class, expectedInfo, null, 3, null, 3, null, 3, null, e);
+        SourceInformation sourceInfo = e.getSourceInformation();
+        int start = 5;
+        if (sourceInfo.getStartColumn() < start)
         {
-            parsePrimitiveValue(string);
-            Assert.fail("Expected exception parsing: \"" + string + "\"");
+            Assert.fail("Expected start column to be at least " + start + ", got: " + sourceInfo.getStartColumn() + ", string: \"" + string + "\"");
         }
-        catch (Exception e)
+        if (sourceInfo.getColumn() < start)
         {
-            assertPureException(PureParserException.class, expectedInfo, null, 3, null, 3, null, 3, null, e);
-            SourceInformation sourceInfo = PureException.findPureException(e).getSourceInformation();
-            int start = 5;
-            int end = string.length() + 5;
-            if (sourceInfo.getStartColumn() < start)
-            {
-                Assert.fail("Expected start column to be at least " + start + ", got: " + sourceInfo.getStartColumn());
-            }
-            if (sourceInfo.getColumn() < start)
-            {
-                Assert.fail("Expected column to be at least " + start + ", got: " + sourceInfo.getStartColumn());
-            }
-            //TODO re-enable
-//            if (sourceInfo.getEndColumn() > end)
-//            {
-//                Assert.fail("Expected end column to be at most " + end + ", got: " + sourceInfo.getEndColumn());
-//            }
+            Assert.fail("Expected column to be at least " + start + ", got: " + sourceInfo.getStartColumn() + ", string: \"" + string + "\"");
         }
+        // TODO re-enable
+//        int end = string.length() + 5;
+//        if (sourceInfo.getEndColumn() > end)
+//        {
+//            Assert.fail("Expected end column to be at most " + end + ", got: " + sourceInfo.getEndColumn() + ", string: \"" + string + "\"");
+//        }
     }
 
     private CoreInstance parsePrimitiveValue(String string)
@@ -89,10 +83,10 @@ public abstract class AbstractPrimitiveParsingTest extends AbstractPureTestWithC
                 "    " + string + "\n" +
                 "}\n";
         compileTestSource(testFunctionString);
-        CoreInstance function = this.runtime.getFunction(functionSignature);
+        CoreInstance function = runtime.getFunction(functionSignature);
         Assert.assertNotNull(function);
-        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(function, M3Properties.expressionSequence, this.processorSupport);
+        ListIterable<? extends CoreInstance> expressions = Instance.getValueForMetaPropertyToManyResolved(function, M3Properties.expressionSequence, processorSupport);
         Assert.assertEquals(1, expressions.size());
-        return Instance.getValueForMetaPropertyToOneResolved(expressions.getFirst(), M3Properties.values, this.processorSupport);
+        return Instance.getValueForMetaPropertyToOneResolved(expressions.getFirst(), M3Properties.values, processorSupport);
     }
 }

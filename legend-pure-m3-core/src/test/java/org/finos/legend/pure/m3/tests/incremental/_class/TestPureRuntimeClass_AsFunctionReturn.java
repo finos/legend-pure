@@ -14,14 +14,20 @@
 
 package org.finos.legend.pure.m3.tests.incremental._class;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.ImmutableMap;
-import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation._class._Class;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
@@ -32,25 +38,28 @@ import org.junit.Test;
 public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getExtra());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("other.pure");
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
         runtime.delete("sourceId2.pure");
         runtime.delete("/test/testFileB.pure");
         runtime.delete("/test/testFileA.pure");
-
-        try
-        {
-          runtime.compile();
-        } catch (PureCompilationException e) {
-            setUp();
-        }
+        runtime.compile();
     }
 
     @Test
@@ -66,7 +75,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 14)
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -95,7 +104,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                                         "{\n" +
                                         "}\n")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -110,7 +119,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 78)
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -128,7 +137,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", null, 1, 14)
                         .updateSource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -143,7 +152,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", "other.pure", 1, 14)
                         .createInMemorySource("sourceId.pure", "Class A{} Class B{a:A[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -161,7 +170,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", "other.pure", 1, 14)
                         .updateSource("sourceId.pure", "Class A{} Class B{a:A[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -175,7 +184,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 11)
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -204,7 +213,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                                         "{\n" +
                                         "}\n")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -233,7 +242,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                                         "{\n" +
                                         "}\n")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -262,7 +271,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                                         "{\n" +
                                         "}\n")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -278,7 +287,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 11)
                         .updateSource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -293,22 +302,22 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", "other.pure", 1, 14)
                         .createInMemorySource("sourceId.pure", "Class A{} Class C{a:A[1];} Class B extends C{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
         Assert.assertEquals("B instance Class\n" +
-                            "    classifierGenericType(Property):\n" +
-                            "        Anonymous_StripedId instance GenericType\n" +
-                            "            [... >0]\n" +
-                            "    generalizations(Property):\n" +
-                            "        Anonymous_StripedId instance Generalization\n" +
-                            "            [... >0]\n" +
-                            "    name(Property):\n" +
-                            "        B instance String\n" +
-                            "    package(Property):\n" +
-                            "        Root instance Package\n" +
-                            "    referenceUsages(Property):\n" +
-                            "        Anonymous_StripedId instance ReferenceUsage\n" +
-                            "            [... >0]", this.runtime.getCoreInstance("B").printWithoutDebug("",0));
+                "    classifierGenericType(Property):\n" +
+                "        Anonymous_StripedId instance GenericType\n" +
+                "            [... >0]\n" +
+                "    generalizations(Property):\n" +
+                "        Anonymous_StripedId instance Generalization\n" +
+                "            [... >0]\n" +
+                "    name(Property):\n" +
+                "        B instance String\n" +
+                "    package(Property):\n" +
+                "        Root instance Package\n" +
+                "    referenceUsages(Property):\n" +
+                "        Anonymous_StripedId instance ReferenceUsage\n" +
+                "            [... >0]", runtime.getCoreInstance("B").printWithoutDebug("", 0));
     }
 
     @Test
@@ -325,48 +334,41 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("Can't find the property 'a' in the class B", "userId.pure", 1, 37)
                         .updateSource("sourceId.pure", "Class A{} Class C{a:A[1];} Class B extends C{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeClassAsQualifiedPropertyReturn() throws Exception
+    public void testPureRuntimeClassAsQualifiedPropertyReturn()
     {
         ImmutableMap<String, String> sources = Maps.immutable.with(
                 "sourceId.pure", "Class A{}",
                 "sourceId2.pure", "Class B{prop(){^A()}:A[1];}"
         );
-        this.runtime.createInMemorySource("sourceId.pure", sources.get("sourceId.pure"));
-        this.runtime.createInMemorySource("sourceId2.pure", sources.get("sourceId2.pure"));
-        this.runtime.compile();
+        runtime.createInMemorySource("sourceId.pure", sources.get("sourceId.pure"));
+        runtime.createInMemorySource("sourceId2.pure", sources.get("sourceId2.pure"));
+        runtime.compile();
 
-        int size = this.repository.serialize().length;
-        CoreInstance classA = this.processorSupport.package_getByUserPath("A");
-        CoreInstance classB = this.processorSupport.package_getByUserPath("B");
-        CoreInstance prop = _Class.getQualifiedPropertiesByName(classB, this.processorSupport).get("prop()");
-        Assert.assertSame(classA, Instance.getValueForMetaPropertyToOneResolved(prop, M3Properties.genericType, M3Properties.rawType, this.processorSupport));
+        int size = repository.serialize().length;
+        CoreInstance classA = processorSupport.package_getByUserPath("A");
+        CoreInstance classB = processorSupport.package_getByUserPath("B");
+        CoreInstance prop = _Class.getQualifiedPropertiesByName(classB, processorSupport).get("prop()");
+        Assert.assertSame(classA, Instance.getValueForMetaPropertyToOneResolved(prop, M3Properties.genericType, M3Properties.rawType, processorSupport));
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
-            try
-            {
-                this.runtime.compile();
-                Assert.fail("Expected a compile exception");
-            }
-            catch (Exception e)
-            {
-                assertPureException(PureCompilationException.class, "A has not been defined!", "sourceId2.pure", e);
-            }
+            runtime.delete("sourceId.pure");
+            PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+            assertPureException(PureCompilationException.class, "A has not been defined!", "sourceId2.pure", e);
 
-            this.runtime.createInMemorySource("sourceId.pure", sources.get("sourceId.pure"));
-            this.runtime.compile();
+            runtime.createInMemorySource("sourceId.pure", sources.get("sourceId.pure"));
+            runtime.compile();
 
-            classA = this.processorSupport.package_getByUserPath("A");
-            classB = this.processorSupport.package_getByUserPath("B");
-            prop = _Class.getQualifiedPropertiesByName(classB, this.processorSupport).get("prop()");
-            Assert.assertSame(classA, Instance.getValueForMetaPropertyToOneResolved(prop, M3Properties.genericType, M3Properties.rawType, this.processorSupport));
+            classA = processorSupport.package_getByUserPath("A");
+            classB = processorSupport.package_getByUserPath("B");
+            prop = _Class.getQualifiedPropertiesByName(classB, processorSupport).get("prop()");
+            Assert.assertSame(classA, Instance.getValueForMetaPropertyToOneResolved(prop, M3Properties.genericType, M3Properties.rawType, processorSupport));
 
-            Assert.assertEquals(size, this.repository.serialize().length);
+            Assert.assertEquals(size, repository.serialize().length);
         }
     }
 
@@ -382,7 +384,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", "other.pure", 1, 14)
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
@@ -399,7 +401,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", "other.pure", 1, 14)
                         .updateSource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -416,7 +418,7 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .compileWithExpectedCompileFailure("A has not been defined!", null, 1, 14)
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
@@ -436,7 +438,6 @@ public class TestPureRuntimeClass_AsFunctionReturn extends AbstractPureTestWithC
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", "Class A{}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
-
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 }

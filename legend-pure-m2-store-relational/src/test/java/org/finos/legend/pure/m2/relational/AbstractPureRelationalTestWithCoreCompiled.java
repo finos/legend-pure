@@ -15,6 +15,7 @@
 package org.finos.legend.pure.m2.relational;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
 import org.junit.Before;
 
 public class AbstractPureRelationalTestWithCoreCompiled extends AbstractPureTestWithCoreCompiled
@@ -23,5 +24,11 @@ public class AbstractPureRelationalTestWithCoreCompiled extends AbstractPureTest
     public void _setUp()
     {
         setUpRuntime();
+    }
+
+    @After
+    public void _tearDown()
+    {
+        tearDownRuntime();
     }
 }

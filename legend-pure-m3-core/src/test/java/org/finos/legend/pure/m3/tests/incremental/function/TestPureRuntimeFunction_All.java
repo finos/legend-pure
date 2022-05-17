@@ -14,10 +14,15 @@
 
 package org.finos.legend.pure.m3.tests.incremental.function;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,27 +30,30 @@ import org.junit.Test;
 public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getExtra());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
         runtime.delete("/test/model.pure");
         runtime.delete("/test/function.pure");
-
-        try
-        {
-            runtime.compile();
-        } catch (PureCompilationException e) {
-            setUp();
-        }
+        runtime.compile();
     }
 
     @Test
-    public void testPureRuntimeFunctionAllClass() throws Exception
+    public void testPureRuntimeFunctionAllClass()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{version : Integer[1];}")
                         .createInMemorySource("userId.pure", "function go():Nil[0]{print(A.all(),1);}")
@@ -55,11 +63,11 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 28)
                         .createInMemorySource("sourceId.pure", "Class A{version : Integer[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeFunctionAllFunctionsIncludingLambda() throws Exception
+    public void testPureRuntimeFunctionAllFunctionsIncludingLambda()
     {
         String source = "Profile PR1\n" +
                 "{\n" +
@@ -81,12 +89,12 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", source)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
     @Test
-    public void testPureRuntimeFunctionAllFunctionsIncludingLambdaInNew() throws Exception
+    public void testPureRuntimeFunctionAllFunctionsIncludingLambdaInNew()
     {
         String source = "Class U{}" +
                 "Class T{val:U[*];}\n" +
@@ -101,12 +109,12 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                         .deleteSource("sourceId.pure")
                         .createInMemorySource("sourceId.pure", source)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
 
     }
 
     @Test
-    public void testPureRuntimeFunctionLambda() throws Exception
+    public void testPureRuntimeFunctionLambda()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{version : Integer[1];}")
                         .createInMemorySource("userId.pure", "function go():Nil[0]{A.all()->filter(c|$c.version == 2);[];}")
@@ -116,12 +124,12 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 22)
                         .createInMemorySource("sourceId.pure", "Class A{version : Integer[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
     @Test
-    public void testPureRuntimeFunctionLambdaWithinIf() throws Exception
+    public void testPureRuntimeFunctionLambdaWithinIf()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{version : Integer[1];}")
                         .createInMemorySource("userId.pure", "function go():Nil[0]{if(true, |if(false,|A.all()->filter(c|$c.version == 2);[];,|[]),|[])}")
@@ -131,11 +139,11 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 42)
                         .createInMemorySource("sourceId.pure", "Class A{version : Integer[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeFunctionLambdaWithinIf2() throws Exception
+    public void testPureRuntimeFunctionLambdaWithinIf2()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A{version : Integer[1];}")
                         .createInMemorySource("userId.pure", "function go():Nil[0]{if(true, |if(false,| let v = 5+A.all()->filter(c|$c.version == 2)->toOne().version+2;[];,|[]),|[])}")
@@ -145,11 +153,11 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                         .compileWithExpectedCompileFailure("A has not been defined!", "userId.pure", 1, 53)
                         .createInMemorySource("sourceId.pure", "Class A{version : Integer[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeFunctionWithTypeParameter() throws Exception
+    public void testPureRuntimeFunctionWithTypeParameter()
     {
         RuntimeVerifier.verifyOperationIsStable(
                 new RuntimeTestScriptBuilder()
@@ -184,6 +192,6 @@ public class TestPureRuntimeFunction_All extends AbstractPureTestWithCoreCompile
                                         "  prop : String[1];\n" +
                                         "}\n")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 }

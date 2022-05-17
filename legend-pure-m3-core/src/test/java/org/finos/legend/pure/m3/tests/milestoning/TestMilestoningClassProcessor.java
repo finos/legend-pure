@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.tests.milestoning;
 
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
@@ -31,7 +31,7 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getExtra());
+        setUpRuntime();
     }
 
     @After
@@ -41,6 +41,8 @@ public class TestMilestoningClassProcessor extends AbstractTestMilestoning
         runtime.delete("sourceId2.pure");
         runtime.delete("domain.pure");
         runtime.delete("singleInheritance.pure");
+
+        runtime.compile();
     }
 
     @Test

@@ -14,23 +14,36 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.asserts;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestAssertNotContains extends PureExpressionTest
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getExtra());
     }
+
     @Test
     public void testFailure()
     {
-        assertExpressionRaisesPureException("[1, 2, 5, 2, 'a', true, %2014-02-01, 'c'] should not contain true", 3, 9, "assertNotContains([1, 2, 5, 2, 'a', true, %2014-02-01, 'c'], true)",
+        assertExpressionRaisesPureException("[1, 2, 5, 2, 'a', true, %2014-02-01, 'c'] should not contain true", 3, 9, "assertNotContains([1, 2, 5, 2, 'a', true, %2014-02-01, 'c'], true)");
+    }
+
+    protected static FunctionExecution getFunctionExecution()
+    {
+        return new FunctionExecutionInterpreted();
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair("testAssertNotContains.pure",
                 "function meta::pure::functions::asserts::assertNotContains(collection:Any[*], value:Any[1]):Boolean[1]\n" +
                         "{\n" +
                         "    assertNotContains($collection, $value, | format('%s should not contain %r', [$collection->map(v | $v->toRepresentation())->joinStrings('[', ', ', ']'), $value]));\n" +
@@ -53,11 +66,7 @@ public class TestAssertNotContains extends PureExpressionTest
                         "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
                         "{\n" +
                         "    assert($condition, | format($formatString, $formatArgs));\n" +
-                        "}");
-    }
-
-    protected static FunctionExecution getFunctionExecution()
-    {
-        return new FunctionExecutionInterpreted();
+                        "}"
+        );
     }
 }

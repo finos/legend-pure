@@ -14,13 +14,19 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
-import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
-import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
@@ -28,16 +34,25 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestAdditionalValidators extends AbstractPureTestWithCoreCompiledPlatform
+public class TestAdditionalValidators extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getExtra());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("/test/testClass.pure");
+        runtime.compile();
     }
 
     @Test
@@ -52,23 +67,16 @@ public class TestAdditionalValidators extends AbstractPureTestWithCoreCompiledPl
         compileTestSource(sourceId, sourceCode);
 
         // Delete file
-        this.runtime.delete(sourceId);
-        this.runtime.compile();
+        runtime.delete(sourceId);
+        runtime.compile();
 
         // Add validator and compile again (this should fail)
-        this.runtime.getIncrementalCompiler().addValidator(new TestValidator());
-        try
-        {
-            compileTestSource(sourceId, sourceCode);
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, TestValidator.ERROR_MESSAGE, sourceId, 1, 1, 1, 13, 3, 1, e);
-        }
+        runtime.getIncrementalCompiler().addValidator(new TestValidator());
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(sourceId, sourceCode));
+        assertPureException(PureCompilationException.class, TestValidator.ERROR_MESSAGE, sourceId, 1, 1, 1, 13, 3, 1, e);
     }
 
-    private static class TestValidator implements MatchRunner
+    private static class TestValidator implements MatchRunner<Class<?>>
     {
         private static final String FORBIDDEN_NAME = "ForbiddenName";
         private static final String ERROR_MESSAGE = "The name " + FORBIDDEN_NAME + " is forbidden for classes";
@@ -80,7 +88,7 @@ public class TestAdditionalValidators extends AbstractPureTestWithCoreCompiledPl
         }
 
         @Override
-        public void run(CoreInstance instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+        public void run(Class<?> instance, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context)
         {
             if (FORBIDDEN_NAME.equals(instance.getName()))
             {

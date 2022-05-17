@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m3.tests.incremental;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
@@ -32,15 +32,18 @@ import org.junit.Test;
 public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getCodeStorage(), getCodeRepositories(), getExtra());
+    public static void setUp()
+    {
+        setUpRuntime(getCodeStorage(), getExtra());
     }
 
     @After
-    public void clearRuntime() {
+    public void clearRuntime()
+    {
         runtime.delete("/model/sourceId.pure");
         runtime.delete("/datamart_other/file1.pure");
         runtime.delete("/datamart_other/file2.pure");
+        runtime.compile();
     }
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
@@ -71,7 +74,7 @@ public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWith
                         .updateSource("/datamart_other/file1.pure", "function datamarts::dmt::doStuff1():Nil[0]{print(domain::A.all(),1);}")
                         .updateSource("/model/sourceId.pure", "Class domain::A{version : Integer[*];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
@@ -91,7 +94,6 @@ public class TestMultipleRepoIncrementalCompilation extends AbstractPureTestWith
                         //Put it back
                         .updateSource("/model/sourceId.pure", "Class domain::A{cats : Integer[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
-
 }

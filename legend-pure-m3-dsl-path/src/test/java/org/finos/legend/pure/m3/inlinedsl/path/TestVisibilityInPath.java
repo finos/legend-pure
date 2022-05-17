@@ -15,8 +15,8 @@
 package org.finos.legend.pure.m3.inlinedsl.path;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
@@ -33,15 +33,17 @@ import org.junit.Test;
 public class TestVisibilityInPath extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getCodeStorage(), getCodeRepositories(), null);
+    public static void setUp()
+    {
+        setUpRuntime(getCodeStorage(), null);
     }
 
     @After
     public void cleanRuntime()
     {
-        runtime.delete("file.pure");
-        runtime.delete("function.pure");
+        runtime.delete("/datamart_datamt/testFile1.pure");
+        runtime.delete("/datamart_dtm/testFile3.pure");
+        runtime.compile();
     }
 
     protected static RichIterable<? extends CodeRepository> getCodeRepositories()
@@ -75,21 +77,14 @@ public class TestVisibilityInPath extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "  name : String[1];\n" +
                         "}\n");
-        Assert.assertNotNull(this.runtime.getCoreInstance("datamarts::datamt::domain::A"));
-        try
-        {
-            compileTestSource(
-                    "/datamart_dtm/testFile3.pure",
-                    "import meta::pure::metamodel::path::*;\n" +
-                            "function datamarts::dtm::domain::testFn1():Path<Nil,String|1>[1]\n" +
-                            "{\n" +
-                            "  #/datamarts::datamt::domain::A/name#\n" +
-                            "}\n");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not visible in the file /datamart_dtm/testFile3.pure", "/datamart_dtm/testFile3.pure", 4, 32, 4, 32, 4, 32, e);
-        }
+        Assert.assertNotNull(runtime.getCoreInstance("datamarts::datamt::domain::A"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "/datamart_dtm/testFile3.pure",
+                "import meta::pure::metamodel::path::*;\n" +
+                        "function datamarts::dtm::domain::testFn1():Path<Nil,String|1>[1]\n" +
+                        "{\n" +
+                        "  #/datamarts::datamt::domain::A/name#\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "datamarts::datamt::domain::A is not visible in the file /datamart_dtm/testFile3.pure", "/datamart_dtm/testFile3.pure", 4, 32, 4, 32, 4, 32, e);
     }
 }

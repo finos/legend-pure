@@ -14,17 +14,19 @@
 
 package org.finos.legend.pure.m3;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 
 public class AbstractPureTestWithCoreCompiledPlatform extends AbstractPureTestWithCoreCompiled
 {
-    public static Pair<String, String> extra = Tuples.pair("/system/extra.pure",
-            "Profile meta::pure::profiles::test\n" +
-                    "{\n" +
-                    "    stereotypes : [Test, BeforePackage, AfterPackage, ToFix, ExcludeAlloy, ExcludeLazy, AlloyOnly, ExcludeAlloyTextMode];\n" +
-                    "    tags: [excludePlatform, sensitiveToStereotype];\n" +
-                    "}" +
+    public static final Pair<String, String> EXTRA = Tuples.pair("/system/extra.pure",
                     "Profile meta::pure::profiles::typemodifiers\n" +
                     "{\n" +
                     "    stereotypes: [abstract];\n" +
@@ -81,6 +83,26 @@ public class AbstractPureTestWithCoreCompiledPlatform extends AbstractPureTestWi
 
     public static Pair<String, String> getExtra()
     {
-        return extra;
+        return EXTRA;
+    }
+
+    public static void setUpRuntime()
+    {
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getFactoryRegistryOverride(), getOptions(), getExtra());
+    }
+
+    public static void setUpRuntime(Pair<String, String> extra)
+    {
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getFactoryRegistryOverride(), getOptions(), extra);
+    }
+
+    protected static MutableCodeStorage getCodeStorage()
+    {
+        return PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories());
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(), GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME));
     }
 }

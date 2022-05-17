@@ -14,17 +14,34 @@
 
 package org.finos.legend.pure.m3.tests.function.base.meta;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void clearRuntime()
+    {
+        runtime.delete("fromString.pure");
+        runtime.delete("enumDefinition.pure");
+        runtime.delete("enumReference.pure");
+        runtime.delete("/test/model.pure");
+        runtime.delete("/test/test.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testEnumeration()
     {
-        compileTestSource("fromString.pure","Enum BooleanEnum\n" +
+        compileTestSource("fromString.pure", "Enum BooleanEnum\n" +
                 "{\n" +
                 "   TRUE, FALSE\n" +
                 "}\n" +
@@ -34,14 +51,14 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
                 "    print(BooleanEnum.FALSE->id(), 1);\n" +
                 "}\n");
         this.execute("testPrint():Nil[0]");
-        Assert.assertEquals("'TRUE'", this.functionExecution.getConsole().getLine(0));
-        Assert.assertEquals("'FALSE'", this.functionExecution.getConsole().getLine(1));
+        Assert.assertEquals("'TRUE'", functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("'FALSE'", functionExecution.getConsole().getLine(1));
     }
 
     @Test
     public void testEnumerationAsFuncParam()
     {
-        compileTestSource("fromString.pure","Enum BooleanEnum\n" +
+        compileTestSource("fromString.pure", "Enum BooleanEnum\n" +
                 "{\n" +
                 "   TRUE, FALSE\n" +
                 "}\n" +
@@ -54,13 +71,13 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
                 "   print($b->id(), 1);\n" +
                 "}\n");
         this.execute("testPrint():Nil[0]");
-        Assert.assertEquals("'TRUE'", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("'TRUE'", functionExecution.getConsole().getLine(0));
     }
 
     @Test
     public void testEnumerationVariable()
     {
-        compileTestSource("fromString.pure","Enum BooleanEnum\n" +
+        compileTestSource("fromString.pure", "Enum BooleanEnum\n" +
                 "{\n" +
                 "   TRUE, FALSE\n" +
                 "}\n" +
@@ -70,13 +87,13 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
                 "    print($a->genericType().rawType->at(0)->id()+'.'+$a->id(), 1);\n" +
                 "}");
         this.execute("testPrint():Nil[0]");
-        Assert.assertEquals("'BooleanEnum.TRUE'", this.functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("'BooleanEnum.TRUE'", functionExecution.getConsole().getLine(0));
     }
 
     @Test
     public void testEnumerationUsedAsAPropertyType()
     {
-        compileTestSource("fromString.pure","Enum BooleanEnum\n" +
+        compileTestSource("fromString.pure", "Enum BooleanEnum\n" +
                 "{\n" +
                 "   TRUE, FALSE\n" +
                 "}\n" +
@@ -94,8 +111,8 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
                 "    print($test.prop2->at(0)->id(), 1);\n" +
                 "}\n");
         this.execute("testPrint():Nil[0]");
-        Assert.assertEquals("'TRUE'", this.functionExecution.getConsole().getLine(0));
-        Assert.assertEquals("'FALSE'", this.functionExecution.getConsole().getLine(1));
+        Assert.assertEquals("'TRUE'", functionExecution.getConsole().getLine(0));
+        Assert.assertEquals("'FALSE'", functionExecution.getConsole().getLine(1));
     }
 
     @Test
@@ -117,15 +134,17 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
     public void testInvalidEnumReferenceInQualifiedProperty()
     {
         compileTestSource("enumDefinition.pure", "Enum test::TestEnum {VAL1, VAL2}");
-        try
-        {
-            compileTestSource("enumReference.pure", "Class test::TestClass { test() { test::TestEnum.VAL3 }:test::TestEnum[1]; }");
-            Assert.fail("Expected compilation error");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureCompilationException.class, "The enum value 'VAL3' can't be found in the enumeration test::TestEnum", "enumReference.pure", 1, 49, 1, 49, 1, 52, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "enumReference.pure",
+            "Class test::TestClass\n" +
+                    "{\n" +
+                    "    test()\n" +
+                    "    {\n" +
+                    "        test::TestEnum.VAL3\n" +
+                    "    }:test::TestEnum[1];\n" +
+                    "}\n"));
+        System.out.println(e.getSourceInformation());
+        assertPureException(PureCompilationException.class, "The enum value 'VAL3' can't be found in the enumeration test::TestEnum", "enumReference.pure", 5, 24, 5, 24, 5, 27, e);
     }
 
     @Test
@@ -168,7 +187,7 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
                 "function test::testFn():Any[*]\n" +
                         "{\n" +
                         " let  testEnum =  newEnumeration('test::testEnum',['value1','value2']);" +
-                        "assert($testEnum->instanceOf(Enumeration), |'');"+
+                        "assert($testEnum->instanceOf(Enumeration), |'');" +
                         "assert($testEnum->subTypeOf(Enum), |'');" +
                         "$testEnum->enumValues()->map(e|assert($e->instanceOf(Enum), |'')); " +
                         "$testEnum->enumValues()->map(e|$e->id())->print(1);\n" +
@@ -177,6 +196,12 @@ public abstract class AbstractTestEnumeration extends AbstractPureTestWithCoreCo
         Assert.assertEquals("[\n" +
                 "   'value1'\n" +
                 "   'value2'\n" +
-                "]", this.functionExecution.getConsole().getLine(0));
+                "]", functionExecution.getConsole().getLine(0));
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
     }
 }
