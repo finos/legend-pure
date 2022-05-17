@@ -47,6 +47,7 @@ function meta::pure::executionPlan::engine::java::registerMathsLibrary(conventio
          fc1(times_Decimal_MANY__Decimal_1_,                           {ctx,collection | maybeReduce($ctx, $collection, bigDecimalOne(), $library->j_methodReference('decimalMultiply', reduceFT(javaBigDecimal())))}),
              
          fc2(divide_Number_1__Number_1__Float_1_,                      {ctx,num1,num2  | $library->j_invoke('divide', [$num1, $num2], javaDouble())}),
+         fc3(divide_Decimal_1__Decimal_1__Integer_1__Decimal_1_,       {ctx,num1,num2,num3 | $num1->j_invoke('divide', [$num2, $num3->j_box()->j_invoke('intValue', []), javaRoundingMode()->j_field('HALF_UP')], javaBigDecimal())}),         
          fc2(rem_Number_1__Number_1__Number_1_,                        {ctx,num1,num2  | $library->j_invoke('rem', [$num1, $num2], javaNumber())}),
          fc1(average_Number_MANY__Float_1_,                            {ctx,collection | $library->j_invoke('average', $collection, javaDouble())}),
          fc( average_Integer_MANY__Float_1_,                           fcAlias(          average_Number_MANY__Float_1_)),
@@ -97,7 +98,8 @@ function meta::pure::executionPlan::engine::java::registerMathsLibrary(conventio
          fc (min_Float_$1_MANY$__Float_1_,                             fcAlias(          min_Float_MANY__Float_$0_1$_)),
 
          fc1(cos_Number_1__Float_1_,                                   {ctx,num        | javaMath()->j_invoke('cos', $num->j_box()->j_invoke('doubleValue', []), javaDouble())}),
-         fc1(sin_Number_1__Float_1_,                                   {ctx,num        | javaMath()->j_invoke('sin', $num->j_box()->j_invoke('doubleValue', []), javaDouble())})
+         fc1(sin_Number_1__Float_1_,                                   {ctx,num        | javaMath()->j_invoke('sin', $num->j_box()->j_invoke('doubleValue', []), javaDouble())}),
+         fc2(pow_Number_1__Number_1__Number_1_,                        {ctx,num1,num2  | javaStrictMath()->j_invoke('pow', [$num1->j_box()->j_invoke('doubleValue', []), $num2->j_box()->j_invoke('doubleValue', [])], javaDouble())})         
       ]);
 
    $conventions->registerLibrary($lib);
