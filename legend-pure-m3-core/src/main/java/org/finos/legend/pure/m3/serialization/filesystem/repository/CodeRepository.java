@@ -111,10 +111,10 @@ public abstract class CodeRepository
     }
 
     /**
-     * Produce a list of repositories sorted by visibility. In the resulting list, is one repository is visible to
+     * Produce a list of repositories sorted by visibility. In the resulting list, if one repository is visible to
      * another, then the visible repository will be earlier in the list. E.g., if repository A is visible to B, then A
      * will appear before B in the list. Two repositories which are not visible to each other may appear in any order.
-     * An exception will be thrown if a visibility loop is detected. The result will be a new list, and othe original
+     * An exception will be thrown if a visibility loop is detected. The result will be a new list, and the original
      * will not be modified.
      *
      * @param repositories repositories to sort
@@ -135,10 +135,10 @@ public abstract class CodeRepository
     }
 
     /**
-     * Produce a list of repositories sorted by visibility. In the resulting list, is one repository is visible to
+     * Produce a list of repositories sorted by visibility. In the resulting list, if one repository is visible to
      * another, then the visible repository will be earlier in the list. E.g., if repository A is visible to B, then A
      * will appear before B in the list. Two repositories which are not visible to each other may appear in any order.
-     * An exception will be thrown if a visibility loop is detected. The result will be a new list, and othe original
+     * An exception will be thrown if a visibility loop is detected. The result will be a new list, and the original
      * will not be modified.
      *
      * @param repositories repositories to sort
