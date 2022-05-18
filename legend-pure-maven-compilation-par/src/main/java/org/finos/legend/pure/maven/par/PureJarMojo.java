@@ -16,21 +16,20 @@ package org.finos.legend.pure.maven.par;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.utility.ArrayIterate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
+import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.configuration.PureRepositoriesExternal;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
-import org.finos.legend.pure.m4.exception.PureException;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.util.Arrays;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Set;
 
 @Mojo(name = "build-pure-jar")
@@ -46,76 +45,101 @@ public class PureJarMojo extends AbstractMojo
     private File sourceDirectory;
 
     @Parameter
-    private String[] repositories;
+    private Set<String> repositories;
 
     @Parameter
-    private String[] excludedRepositories;
+    private Set<String> excludedRepositories;
 
     @Parameter
-    private String[] extraRepositories;
+    private Set<String> extraRepositories;
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException
+    public void execute() throws MojoExecutionException
     {
-        getLog().info("Generating Pure PAR file(s)");
-        getLog().info("  Requested repositories: " + Arrays.toString(this.repositories));
-        getLog().info("  Excluded repositories: " + Arrays.toString(this.excludedRepositories));
-        getLog().info("  Extra repositories: " + Arrays.toString(this.extraRepositories));
-        RichIterable<CodeRepository> resolvedRepositories = resolveRepositories(this.repositories, this.excludedRepositories, this.extraRepositories);
-        getLog().info("  Repositories with resolved dependencies: "+resolvedRepositories);
-        getLog().info("  Pure platform version: " + this.purePlatformVersion);
-        getLog().info("  Pure source directory: " + this.sourceDirectory);
-        getLog().info("  Output directory: " + this.outputDirectory);
-
-        if (resolvedRepositories.isEmpty())
-        {
-            getLog().info("   -> No repositories to serialize: nothing to do");
-            return;
-        }
-
-        getLog().info("  Starting compilation and generation of Pure PAR file(s)");
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
         try
         {
+            getLog().info("Generating Pure PAR file(s)");
+            getLog().info("  Requested repositories: " + this.repositories);
+            getLog().info("  Excluded repositories: " + this.excludedRepositories);
+            getLog().info("  Extra repositories: " + this.extraRepositories);
+            ListIterable<CodeRepository> resolvedRepositories = resolveRepositories();
+            getLog().info("  Repositories with resolved dependencies: " + resolvedRepositories);
+            getLog().info("  Pure platform version: " + this.purePlatformVersion);
+            getLog().info("  Pure source directory: " + this.sourceDirectory);
+            getLog().info("  Output directory: " + this.outputDirectory);
+
+            if (resolvedRepositories.isEmpty())
+            {
+                getLog().info("   -> No repositories to serialize: nothing to do");
+                return;
+            }
+
+            getLog().info("  Starting compilation and generation of Pure PAR file(s)");
             PureJarSerializer.writePureRepositoryJars(this.outputDirectory.toPath(), (this.sourceDirectory == null) ? null : this.sourceDirectory.toPath(), this.purePlatformVersion, resolvedRepositories, getLog());
-        }
-        catch (PureException e)
-        {
-            getLog().error(String.format("  -> Pure PAR generation failed (%.3fs)", (System.currentTimeMillis() - start) / 1000.0), e);
-            throw new MojoFailureException(e.getInfo(), e);
         }
         catch (Exception e)
         {
-            getLog().error(String.format("  -> Pure PAR generation failed (%.3fs)", (System.currentTimeMillis() - start) / 1000.0), e);
+            getLog().error(String.format("  -> Pure PAR generation failed (%.9fs)", durationSinceInSeconds(start)), e);
             throw new MojoExecutionException("Error serializing Pure PAR", e);
         }
-        getLog().info(String.format("  -> Finished Pure PAR generation in %.3fs", (System.currentTimeMillis() - start) / 1000.0));
+        getLog().info(String.format("  -> Finished Pure PAR generation in %.9fs", durationSinceInSeconds(start)));
     }
 
-    private RichIterable<CodeRepository> resolveRepositories(String[] repositories, String[] excludedRepositories, String[] extraRepositories)
+    private ListIterable<CodeRepository> resolveRepositories()
     {
         PureRepositoriesExternal.refresh();
 
-        getLog().info("  Repositories found: " + PureRepositoriesExternal.repositories());
-
-        if (extraRepositories != null)
+        if ((this.extraRepositories != null) && !this.extraRepositories.isEmpty())
         {
-            RichIterable<CodeRepository> resolvedRepositories = ArrayIterate.collect(extraRepositories, r -> {
-                try
-                {
-                    return GenericCodeRepository.build(new FileInputStream(r));
-                }
-                catch (FileNotFoundException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            });
-            PureRepositoriesExternal.addRepositories(resolvedRepositories);
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            PureRepositoriesExternal.addRepositories(Iterate.collect(this.extraRepositories, r -> getExtraRepository(classLoader, r), Lists.mutable.withInitialCapacity(this.extraRepositories.size())));
         }
 
-        RichIterable<CodeRepository> selectedRepos = repositories == null?PureRepositoriesExternal.repositories():ArrayIterate.collect(repositories, PureRepositoriesExternal::getRepository);
-        Set<String> excludedRepositoriesSet = Sets.mutable.of(excludedRepositories == null?new String[0]:excludedRepositories);
-        return selectedRepos.select(r -> !excludedRepositoriesSet.contains(r.getName()));
+        MutableList<CodeRepository> selectedRepos = (this.repositories == null) ?
+                PureRepositoriesExternal.repositories().toList() :
+                Iterate.collect(this.repositories, PureRepositoriesExternal::getRepository, Lists.mutable.withInitialCapacity(this.repositories.size()));
+        if ((this.excludedRepositories != null) && !this.excludedRepositories.isEmpty())
+        {
+            selectedRepos.removeIf(r -> this.excludedRepositories.contains(r.getName()));
+        }
+        return selectedRepos;
     }
 
+    private GenericCodeRepository getExtraRepository(ClassLoader classLoader, String extraRepository)
+    {
+        // First check if this is a resource
+        URL url = classLoader.getResource(extraRepository);
+        if (url != null)
+        {
+            try (InputStream stream = url.openStream())
+            {
+                return GenericCodeRepository.build(stream);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Error loading extra repository \"" + extraRepository + "\" from resource " + url, e);
+            }
+        }
+
+        // If it's not a resource, assume it is a file path
+        try
+        {
+            return GenericCodeRepository.build(Paths.get(extraRepository));
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Error loading extra repository \"" + extraRepository + "\"", e);
+        }
+    }
+
+    private double durationSinceInSeconds(long startNanos)
+    {
+        return durationInSeconds(startNanos, System.nanoTime());
+    }
+
+    private double durationInSeconds(long startNanos, long endNanos)
+    {
+        return (endNanos - startNanos) / 1_000_000_000.0;
+    }
 }
