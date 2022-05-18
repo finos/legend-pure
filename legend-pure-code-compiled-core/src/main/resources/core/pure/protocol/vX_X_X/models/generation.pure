@@ -46,4 +46,5 @@ Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::avro::Av
    timestampLogicalType: String[0..1];
    propertyProfile: Profile[*];
    namespaceOverride: Map<String, String>[0..1];
+   generateLogicalTypes:Boolean[0..1];
 }

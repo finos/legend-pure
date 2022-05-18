@@ -102,6 +102,8 @@ Class meta::external::format::avro::metamodel::AvroSchemaField extends AvroPrope
     <<equality.Key>> default: JSONElement[0..1];
     <<equality.Key>> order: Order[0..1];
     <<equality.Key>> aliases: String[*];
+    <<equality.Key>> logicalType: LogicalType[0..1];
+
 }
 
 Enum meta::external::format::avro::metamodel::Order
