@@ -94,5 +94,6 @@ function <<access.private>> meta::external::format::avro::serialization::fieldTo
       let default = ^JSONKeyValue(key=^JSONString(value='default'), value=$field.default->toOne());
       $nameAndType->concatenate($default););
    let withProps = if($field.props->isEmpty(), |$withDefault, |$withDefault->concatenate($field.props));
-   newJSONObject($withProps);
+   let object =newJSONObject($withProps);
+  if($field.logicalType->isEmpty(), |$object, |addLogicalType($object, $field.logicalType->toOne().name));
 }
