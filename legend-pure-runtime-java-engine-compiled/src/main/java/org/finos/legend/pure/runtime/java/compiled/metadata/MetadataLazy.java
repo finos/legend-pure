@@ -119,23 +119,24 @@ public class MetadataLazy implements Metadata
         }
 
         ConcurrentMutableMap<String, CoreInstance> cache = getClassifierInstanceCache(enumerationName);
-        if (cache.isEmpty())
-        {
-            loadAllClassifierInstances(enumerationName);
-        }
         CoreInstance result = cache.get(enumName);
         if (result == null)
         {
-            StringBuilder builder = new StringBuilder("Cannot find enum '").append(enumName).append("' in enumeration '").append(enumerationName).append("' unknown enum value");
-            if (cache.isEmpty())
-            {
-                builder.append(" (no known values)");
+            //might not have loaded yet, so request full load and try again:
+            loadAllClassifierInstances(enumerationName);
+            result = cache.get(enumName);
+            if (result == null) {
+                StringBuilder builder = new StringBuilder("Cannot find enum '").append(enumName).append("' in enumeration '").append(enumerationName).append("' unknown enum value");
+                if (cache.isEmpty())
+                {
+                    builder.append(" (no known values)");
+                }
+                else
+                {
+                    cache.keysView().appendString(builder, " (known values: '", "', '", "')");
+                }
+                throw new RuntimeException(builder.toString());
             }
-            else
-            {
-                cache.keysView().appendString(builder, " (known values: '", "', '", "')");
-            }
-            throw new RuntimeException(builder.toString());
         }
         return result;
     }
