@@ -173,7 +173,7 @@ public class PureCompiledJarMojo extends AbstractMojo
         if ((this.extraRepositories != null) && !this.extraRepositories.isEmpty())
         {
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            PureRepositoriesExternal.addRepositories(Iterate.collect(this.extraRepositories, r -> GenericCodeRepository.build(classLoader, r), Lists.mutable.withInitialCapacity(excludedRepositories.size())));
+            PureRepositoriesExternal.addRepositories(Iterate.collect(this.extraRepositories, r -> GenericCodeRepository.build(classLoader, r), Lists.mutable.withInitialCapacity(this.extraRepositories.size())));
         }
 
         MutableList<CodeRepository> selectedRepos = (this.repositories == null) ?
