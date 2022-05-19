@@ -17,6 +17,7 @@ function <<test.Test>> meta::pure::functions::lang::tests::orElse::testOrElse():
 {
    assertEquals('A', ['A']->orElse('B'));
    assertEquals('B', []->cast(@String)->orElse('B'));
+   assertEquals(1, []->cast(@Integer)->orElse(1));
 }
 
 

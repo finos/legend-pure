@@ -1829,15 +1829,25 @@ function meta::external::language::java::factory::j_instanceof(expression:Code[1
 function meta::external::language::java::factory::j_conditional(test:Code[1], then:Code[1], else:Code[1]):Code[1]
 {
    // TODO common interface inference
-   let thenType = if($then->instanceOf(Null) && $then.type == javaVoid(), |$else.type, |$then.type);
-   let elseType = if($else->instanceOf(Null) && $else.type == javaVoid(), |$then.type, |$else.type);
+   let thenBoxed = if($then.type->isPrimitiveNumber() && $else.type->isBoxedNumberType(), | $then->j_box(), | []);
+   let elseBoxed = if($else.type->isPrimitiveNumber() && $then.type->isBoxedNumberType(), | $else->j_box(), | []);
+
+   let thenType = if($thenBoxed->isEmpty(), 
+                    | if($then->instanceOf(Null) && $then.type == javaVoid(), |$else.type, |$then.type),
+                    | $thenBoxed->toOne().type
+                  );
+
+   let elseType = if($elseBoxed->isEmpty(), 
+                    | if($else->instanceOf(Null) && $else.type == javaVoid(), |$then.type, |$else.type),
+                    | $elseBoxed->toOne().type
+                  );
+
    assert($thenType == $elseType, 'Type not inferred: then: '+$thenType->typeToString()+' else: '+$elseType->typeToString());
    
    if($test->instanceOf(InfixExpression),
-      | optimizeEqualityComparison($test->cast(@InfixExpression), $then, $else, $thenType),
-      | ^Conditional(test=$test, then=$then, else=$else, type=$thenType)
-   );
-   
+      | optimizeEqualityComparison($test->cast(@InfixExpression), $thenBoxed->orElse($then), $elseBoxed->orElse($else), $thenType),
+      | ^Conditional(test=$test, then=$thenBoxed->orElse($then), else=$elseBoxed->orElse($else), type=$thenType)
+   );   
 }
 
 function meta::external::language::java::factory::optimizeEqualityComparison(expr:InfixExpression[1], then:Code[1], else:Code[1], type:meta::external::language::java::metamodel::Type[1]): Code[1]
