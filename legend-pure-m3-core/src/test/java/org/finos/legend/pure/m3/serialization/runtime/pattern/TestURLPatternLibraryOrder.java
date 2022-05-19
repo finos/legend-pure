@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.pattern;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -24,18 +24,18 @@ public class TestURLPatternLibraryOrder
     @Test
     public void testOrder()
     {
-        MutableList<PurePattern> patterns = FastList.newListWith(
-                new PurePattern(null, "/pure/diagram/{diagramPath}", null, null, FastList.<String>newList()),
-                new PurePattern(null, "/pure/diagram/colors", null, null, FastList.<String>newList()),
-                new PurePattern(null, "/gggg/ppppppppp/current/account/{accountId}/{user}", null, null, FastList.<String>newList()),
-                new PurePattern(null, "/gggg/ppppppppp/current/{user}", null, null, FastList.<String>newList()));
+        MutableList<PurePattern> patterns = Lists.mutable.with(
+                new PurePattern(null, "/pure/diagram/{diagramPath}", null, null, Lists.fixedSize.empty()),
+                new PurePattern(null, "/pure/diagram/colors", null, null, Lists.fixedSize.empty()),
+                new PurePattern(null, "/gggg/ppppppppp/current/account/{accountId}/{user}", null, null, Lists.fixedSize.empty()),
+                new PurePattern(null, "/gggg/ppppppppp/current/{user}", null, null, Lists.fixedSize.empty()));
 
         MutableList<PurePattern> res = patterns.sortThis(URLPatternLibrary.URLPatternComparator);
 
-        Assert.assertEquals(FastList.newListWith("/pure/diagram/colors",
+        Assert.assertEquals(Lists.mutable.with("/pure/diagram/colors",
                 "/gggg/ppppppppp/current/account/{accountId}/{user}",
                 "/gggg/ppppppppp/current/{user}",
                 "/pure/diagram/{diagramPath}"),
-                res.collect(PurePattern.GET_SRC_PATTERN));
+                res.collect(PurePattern::getSrcPattern));
     }
 }

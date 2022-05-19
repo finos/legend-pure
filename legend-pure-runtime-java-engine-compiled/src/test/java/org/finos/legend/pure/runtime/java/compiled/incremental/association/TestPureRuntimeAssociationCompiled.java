@@ -14,37 +14,24 @@
 
 package org.finos.legend.pure.runtime.java.compiled.incremental.association;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.RuntimeVerifier;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.tests.incremental.association.TestPureRuntimeAssociation;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.CompiledClassloaderStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.CompiledMetadataStateVerifier;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestPureRuntimeAssociationCompiled extends TestPureRuntimeAssociation
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getExtra());
-    }
-
-    @After
-    public void cleanRuntime() {
-        runtime.delete("userId.pure");
-        runtime.delete("sourceId.pure");
-
-        try
-        {
-            runtime.compile();
-        } catch (PureCompilationException e) {
-            setUp();
-        }
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
     }
 
     protected static FunctionExecution getFunctionExecution()
@@ -55,7 +42,7 @@ public class TestPureRuntimeAssociationCompiled extends TestPureRuntimeAssociati
     @Override
     protected ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getAdditionalVerifiers()
     {
-        return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
+        return Lists.fixedSize.of(new CompiledMetadataStateVerifier(), new CompiledClassloaderStateVerifier());
     }
 
     public static Pair<String, String> getExtra()

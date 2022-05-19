@@ -16,18 +16,17 @@ package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.multimap.list.ListMultimap;
+import org.eclipse.collections.api.set.ImmutableSet;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.block.factory.Functions;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.eclipse.collections.impl.test.Verify;
+import org.eclipse.collections.impl.utility.Iterate;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -37,7 +36,6 @@ import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
-import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSLLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.binary.BinaryModelRepositorySerializer;
@@ -60,6 +58,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPlatform
 {
@@ -74,7 +73,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getExtra());
+        setUpRuntime();
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         CodeStorage codeStorage = runtime.getCodeStorage();
         RichIterable<String> repoNames = codeStorage.getAllRepoNames();
@@ -91,7 +90,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Error writing cache for " + repoName, e);
+                throw new UncheckedIOException("Error writing cache for " + repoName, e);
             }
             jars.add(PureRepositoryJars.get(outStream));
         }
@@ -117,7 +116,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Error writing cache for " + repoName, e);
+                throw new UncheckedIOException("Error writing cache for " + repoName, e);
             }
             jars.add(PureRepositoryJars.get(outStream));
         }
@@ -171,7 +170,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     {
         assertInitialState();
         this.loader.loadAll();
-        assertAllOfRuntimeLoaded();
+        assertAllOfRuntimeLoaded(Sets.immutable.with("platform", "system"));
     }
 
     @Test
@@ -183,8 +182,8 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         String m3SourceId = "/platform/pure/m3.pure";
         this.loader.loadFile(m3SourceId);
 
-        Verify.assertSetsEqual(Sets.mutable.with(m3SourceId).union(alreadyLoaded), this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty()));
-        Verify.assertSetsEqual(Sets.mutable.with(m3SourceId).union(alreadyLoaded), this.runtime2.getSourceRegistry().getSourceIds().toSet());
+        assertSetsEqual(Sets.mutable.with(m3SourceId).withAll(alreadyLoaded), this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty()));
+        assertSetsEqual(Sets.mutable.with(m3SourceId).withAll(alreadyLoaded), this.runtime2.getSourceRegistry().getSourceIds().toSet());
         assertSourcesEqual(m3SourceId);
 
         for (CoreInstance instance : GraphNodeIterable.fromModelRepository(this.repository2))
@@ -206,7 +205,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
             Assert.assertNotNull(path, this.runtime2.getCoreInstance(path));
         }
 
-        Verify.assertSetsEqual(repository.getTopLevels().collect(CoreInstance.GET_NAME).toSet(), this.repository2.getTopLevels().collect(CoreInstance.GET_NAME).toSet());
+        assertSetsEqual(repository.getTopLevels().collect(CoreInstance::getName, Sets.mutable.empty()), this.repository2.getTopLevels().collect(CoreInstance::getName, Sets.mutable.empty()));
     }
 
     @Test
@@ -226,7 +225,7 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         Verify.assertContains(m3SourceId, loadedFiles);
         assertSourcesEqual(m3SourceId);
 
-        Verify.assertSetsEqual(repository.getTopLevels().collect(CoreInstance.GET_NAME).toSet(), this.repository2.getTopLevels().collect(CoreInstance.GET_NAME).toSet());
+        assertSetsEqual(repository.getTopLevels().collect(CoreInstance::getName, Sets.mutable.empty()), this.repository2.getTopLevels().collect(CoreInstance::getName, Sets.mutable.empty()));
     }
 
     @Test
@@ -234,15 +233,16 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
     {
         assertInitialState();
         this.loader.loadRepository("platform");
-        assertAllOfRuntimeLoaded();
+        assertAllOfRuntimeLoaded(Sets.immutable.with("platform"));
     }
 
     @Test
     public void testLoadRepositories()
     {
         assertInitialState();
-        this.loader.loadRepositories(Lists.immutable.with("platform"));
-        assertAllOfRuntimeLoaded();
+        ImmutableSet<String> repos = Sets.immutable.with("platform", "system");
+        this.loader.loadRepositories(repos);
+        assertAllOfRuntimeLoaded(repos);
     }
 
     private void assertInitialState()
@@ -251,21 +251,22 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         Assert.assertTrue(this.repository2.getTopLevels().isEmpty());
     }
 
-    private void assertAllOfRuntimeLoaded()
+    private void assertAllOfRuntimeLoaded(SetIterable<String> repos)
     {
+        Predicate<CoreInstance> isInRelevantRepo = i -> isInSomeRepo(i, repos);
+
         // Compare top level elements
-        Verify.assertSetsEqual(repository.getTopLevels().collect(CoreInstance::getName).toSet(), this.repository2.getTopLevels().collect(CoreInstance::getName).toSet());
+        assertSetsEqual(repository.getTopLevels().collectIf(isInRelevantRepo, CoreInstance::getName, Sets.mutable.empty()), this.repository2.getTopLevels().collect(CoreInstance::getName, Sets.mutable.empty()));
 
         // Compare packaged elements by path
-        //Set<String> fromExtra = Sets.mutable.with("meta::pure::functions::io", "meta::pure::functions::hash", "meta::pure::functions::date");
-        Verify.assertSetsEqual(getAllPackagedElementPaths(repository), getAllPackagedElementPaths(this.repository2));
+        assertSetsEqual(getAllRelevantPackagedElementPaths(repository, isInRelevantRepo), getAllPackagedElementPaths(this.repository2));
 
         // Compare functionsByName
         MutableMap<String, SetIterable<String>> functionsByNameBefore = Maps.mutable.empty();
         for (String functionName : context.getAllFunctionNames())
         {
             SetIterable<CoreInstance> functions = context.getFunctionsForName(functionName);
-            SetIterable<String> res = functions.collectIf(s -> !"/system/extra.pure".equals(s.getSourceInformation().getSourceId()), PackageableElement::getUserPathForPackageableElement, UnifiedSet.newSet(functions.size()));
+            SetIterable<String> res = functions.collectIf(isInRelevantRepo, PackageableElement::getUserPathForPackageableElement, Sets.mutable.ofInitialCapacity(functions.size()));
             if (!res.isEmpty())
             {
                 functionsByNameBefore.put(functionName, res);
@@ -275,23 +276,27 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         for (String functionName : this.context2.getAllFunctionNames())
         {
             SetIterable<CoreInstance> functions = this.context2.getFunctionsForName(functionName);
-            Verify.assertAllSatisfy(functions, (Predicate<CoreInstance>) function -> Instance.instanceOf(function, M3Paths.Function, this.processorSupport2));
-            functionsByNameAfter.put(functionName, functions.collect(PackageableElement::getUserPathForPackageableElement, UnifiedSet.newSet(functions.size())));
+            Verify.assertAllSatisfy(functions, function -> Instance.instanceOf(function, M3Paths.Function, this.processorSupport2));
+            functionsByNameAfter.put(functionName, functions.collect(PackageableElement::getUserPathForPackageableElement, Sets.mutable.ofInitialCapacity(functions.size())));
         }
         Verify.assertMapsEqual(functionsByNameBefore, functionsByNameAfter);
 
         // Compare sources
         SourceRegistry sourceRegistry1 = runtime.getSourceRegistry();
         SourceRegistry sourceRegistry2 = this.runtime2.getSourceRegistry();
-        Verify.assertSetsEqual(sourceRegistry1.getSources().select(s -> !s.isInMemory()).collect(Source::getId).toSet(), sourceRegistry2.getSourceIds().toSet());
-        Verify.assertSetsEqual(sourceRegistry1.getSources().select(s -> !s.isInMemory()).collect(Source::getId).toSet(), this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty()));
-        for (String sourceId : sourceRegistry1.getSources().select(s -> !s.isInMemory()).collect(Source::getId))
-        {
-            assertSourcesEqual(sourceId);
-        }
+        MutableSet<String> relevantSourceIds1 = sourceRegistry1.getSourceIds().select(id -> repos.contains(PureCodeStorage.getSourceRepoName(id)), Sets.mutable.empty());
+        assertSetsEqual(relevantSourceIds1, sourceRegistry2.getSourceIds().toSet());
+        assertSetsEqual(relevantSourceIds1, this.loader.getLoadedFiles().collect(PureRepositoryJarTools::binaryPathToPurePath, Sets.mutable.empty()));
+        relevantSourceIds1.forEach(this::assertSourcesEqual);
 
         // Compare pattern library
         assertURLPatternLibrariesEqual(runtime.getURLPatternLibrary(), this.runtime2.getURLPatternLibrary());
+    }
+
+    private boolean isInSomeRepo(CoreInstance instance, SetIterable<String> repos)
+    {
+        SourceInformation sourceInfo = instance.getSourceInformation();
+        return (sourceInfo != null) && repos.contains(PureCodeStorage.getSourceRepoName(sourceInfo.getSourceId()));
     }
 
     private void assertSourcesEqual(String sourceId)
@@ -311,40 +316,62 @@ public abstract class TestGraphLoader extends AbstractPureTestWithCoreCompiledPl
         ListIterable<PurePattern> patterns1 = library1.getPatterns();
         ListIterable<PurePattern> patterns2 = library2.getPatterns();
 
-        Verify.assertSetsEqual(patterns1.collect(PurePattern::getSrcPattern, Sets.mutable.empty()), patterns2.collect(PurePattern::getSrcPattern, Sets.mutable.empty()));
-        Verify.assertSetsEqual(patterns1.collect(PurePattern.GET_REAL_PATTERN, Sets.mutable.empty()), patterns2.collect(PurePattern.GET_REAL_PATTERN, Sets.mutable.empty()));
-        Verify.assertSetsEqual(patterns1.collect(Functions.chain(PurePattern::getFunction, PackageableElement::getUserPathForPackageableElement), Sets.mutable.empty()), patterns2.collect(Functions.chain(PurePattern::getFunction, PackageableElement::getUserPathForPackageableElement), Sets.mutable.empty()));
+        assertSetsEqual(patterns1.collect(PurePattern::getSrcPattern, Sets.mutable.empty()), patterns2.collect(PurePattern::getSrcPattern, Sets.mutable.empty()));
+        assertSetsEqual(patterns1.collect(PurePattern::getRealPattern, Sets.mutable.empty()), patterns2.collect(PurePattern::getRealPattern, Sets.mutable.empty()));
+        assertSetsEqual(patterns1.collect(p -> PackageableElement.getUserPathForPackageableElement(p.getFunction()), Sets.mutable.empty()), patterns2.collect(p -> PackageableElement.getUserPathForPackageableElement(p.getFunction()), Sets.mutable.empty()));
     }
 
     private MutableMap<String, ListIterable<String>> getElementsByParser(Source source)
     {
         MutableMap<String, ListIterable<String>> result = Maps.mutable.empty();
-        ListMultimap<Parser, CoreInstance> elementsByParser = source.getElementsByParser();
-        for (Parser parser : elementsByParser.keysView())
-        {
-            result.put(parser.getName(), elementsByParser.get(parser).collect(PackageableElement::getUserPathForPackageableElement));
-        }
+        source.getElementsByParser().forEachKeyMultiValues((parser, elements) -> result.put(parser.getName(), Iterate.collect(elements, PackageableElement::getUserPathForPackageableElement, Lists.mutable.empty())));
         return result;
     }
 
     private MutableSet<String> getAllPackagedElementPaths(ModelRepository repository)
     {
         MutableSet<String> paths = Sets.mutable.empty();
-        for (CoreInstance pkg : PackageTreeIterable.newRootPackageTreeIterable(repository))
+        PackageTreeIterable.newRootPackageTreeIterable(repository).forEach(pkg ->
         {
-            if (pkg.getSourceInformation() != null && !"/system/extra.pure".equals(pkg.getSourceInformation().getSourceId()))
+            if (pkg.getSourceInformation() != null)
             {
                 paths.add(PackageableElement.getUserPathForPackageableElement(pkg));
             }
-            for (CoreInstance instance : pkg.getValueForMetaPropertyToMany(M3Properties.children))
-            {
-                if (instance.getSourceInformation() != null && !"/system/extra.pure".equals(instance.getSourceInformation().getSourceId()))
-                {
-                    paths.add(PackageableElement.getUserPathForPackageableElement(instance));
-                }
-
-            }
-        }
+            pkg.getValueForMetaPropertyToMany(M3Properties.children).collectIf(c -> c.getSourceInformation() != null, PackageableElement::getUserPathForPackageableElement, paths);
+        });
         return paths;
+    }
+
+    private MutableSet<String> getAllRelevantPackagedElementPaths(ModelRepository repository, Predicate<CoreInstance> isRelevant)
+    {
+        MutableSet<String> paths = Sets.mutable.empty();
+        PackageTreeIterable.newRootPackageTreeIterable(repository).forEach(pkg ->
+        {
+            if (isRelevant.accept(pkg))
+            {
+                paths.add(PackageableElement.getUserPathForPackageableElement(pkg));
+            }
+            pkg.getValueForMetaPropertyToMany(M3Properties.children).collectIf(isRelevant, PackageableElement::getUserPathForPackageableElement, paths);
+        });
+        return paths;
+    }
+
+    private <T> void assertSetsEqual(SetIterable<T> expected, SetIterable<T> actual)
+    {
+        if (!expected.equals(actual))
+        {
+            MutableList<T> missing = expected.reject(actual::contains, Lists.mutable.empty());
+            MutableList<T> extra = actual.reject(expected::contains, Lists.mutable.empty());
+            StringBuilder builder = new StringBuilder("Sets not equal");
+            if (missing.notEmpty())
+            {
+                missing.appendString(builder, "\n\tmissing: ", ", ", "");
+            }
+            if (extra.notEmpty())
+            {
+                extra.appendString(builder, "\n\textra: ", ", ", "");
+            }
+            Assert.fail(builder.toString());
+        }
     }
 }

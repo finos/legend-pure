@@ -14,14 +14,13 @@
 
 package org.finos.legend.pure.m2.ds.mapping.test;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.SetImplementation;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ReferenceUsage;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.predicate.Predicate;
-import org.eclipse.collections.impl.factory.Lists;
 import org.junit.Assert;
 
 public class AbstractPureMappingTestWithCoreCompiled extends AbstractPureTestWithCoreCompiled
@@ -29,21 +28,13 @@ public class AbstractPureMappingTestWithCoreCompiled extends AbstractPureTestWit
     protected void assertSetSourceInformation(String source, String classPath)
     {
         String className = Lists.immutable.of(classPath.split("::")).getLast();
-        PackageableElement packageableElement = (PackageableElement)this.runtime.getCoreInstance(classPath);
-        RichIterable<? extends ReferenceUsage> typeViewReferenceUsages = packageableElement._referenceUsages().select(new Predicate<ReferenceUsage>()
-        {
-            @Override
-            public boolean accept(ReferenceUsage usage)
-            {
-                return usage._owner() instanceof SetImplementation;
-            }
-        });
-        String[] lines = source.split("\n");
-        for (ReferenceUsage referenceUsage : typeViewReferenceUsages)
+        PackageableElement packageableElement = (PackageableElement) runtime.getCoreInstance(classPath);
+        RichIterable<? extends ReferenceUsage> typeViewReferenceUsages = packageableElement._referenceUsages().select(usage -> usage._owner() instanceof SetImplementation);
+        String[] lines = source.split("\\R");
+        typeViewReferenceUsages.forEach(referenceUsage ->
         {
             SourceInformation sourceInformation = referenceUsage._ownerCoreInstance().getSourceInformation();
-            Assert.assertEquals(className, lines[sourceInformation.getLine()-1].substring(sourceInformation.getColumn() -1, sourceInformation.getColumn() + className.length() - 1));
-        }
-
+            Assert.assertEquals(className, lines[sourceInformation.getLine() - 1].substring(sourceInformation.getColumn() - 1, sourceInformation.getColumn() + className.length() - 1));
+        });
     }
 }

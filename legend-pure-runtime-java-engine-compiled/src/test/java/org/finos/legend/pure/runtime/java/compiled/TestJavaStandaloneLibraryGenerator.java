@@ -52,7 +52,7 @@ public class TestJavaStandaloneLibraryGenerator extends AbstractPureTestWithCore
         MutableCodeStorage codeStorage = new PureCodeStorage(null,
                 new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()),
                 new EmptyCodeStorage(new GenericCodeRepository("test", "test::.*", PlatformCodeRepository.NAME), new GenericCodeRepository("other", "other::.*", "test")));
-        setUpRuntime(codeStorage, codeStorage.getAllRepositories(), null);
+        setUpRuntime(codeStorage);
         runtime.createInMemorySource(
                 "/test/standalone/tests.pure",
                 "import test::standalone::*;\n" +

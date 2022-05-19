@@ -24,7 +24,7 @@ public class TestCast extends AbstractTestCast
     @BeforeClass
     public static void setUp()
     {
-        setUpRuntime(getFunctionExecution());
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getExtra());
     }
 
     protected static FunctionExecution getFunctionExecution()

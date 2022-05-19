@@ -15,14 +15,19 @@
 package org.finos.legend.pure.m3.tests.function.base.lang;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.junit.After;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCoreCompiled
 {
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+    }
+
     @Test
     public void testCopyWithReverseZeroToOneProperty()
     {
@@ -57,13 +62,13 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
         try
         {
             this.execute("test():Any[*]");
-            assertEquals("'1'", this.functionExecution.getConsole().getLine(0));
-            assertEquals("'1'", this.functionExecution.getConsole().getLine(1));
-            assertEquals("'Veyron'", this.functionExecution.getConsole().getLine(2));
+            Assert.assertEquals("'1'", functionExecution.getConsole().getLine(0));
+            Assert.assertEquals("'1'", functionExecution.getConsole().getLine(1));
+            Assert.assertEquals("'Veyron'", functionExecution.getConsole().getLine(2));
         }
         catch (Exception e)
         {
-            fail("Failed to set the reverse properties for a zero-to-one association.");
+            Assert.fail("Assert.failed to set the reverse properties for a zero-to-one association.");
         }
     }
 
@@ -88,12 +93,12 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
         try
         {
             this.execute("test():Any[*]");
-            assertEquals("1", this.functionExecution.getConsole().getLine(0).substring(0,1));
+            Assert.assertEquals("1", functionExecution.getConsole().getLine(0).substring(0,1));
         }
         catch (Exception e)
         {
             //e.printStackTrace();
-            fail("Failed to increment the Integer property on Copy.");
+            Assert.fail("Assert.failed to increment the Integer property on Copy.");
         }
     }
 
@@ -131,13 +136,13 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
         try
         {
             this.execute("test():Any[*]");
-            assertEquals("'1'", this.functionExecution.getConsole().getLine(0));
-            assertEquals("'1'", this.functionExecution.getConsole().getLine(1));
-            assertEquals("'Veyron'", this.functionExecution.getConsole().getLine(2));
+            Assert.assertEquals("'1'", functionExecution.getConsole().getLine(0));
+            Assert.assertEquals("'1'", functionExecution.getConsole().getLine(1));
+            Assert.assertEquals("'Veyron'", functionExecution.getConsole().getLine(2));
         }
         catch (Exception e)
         {
-            fail("Failed to set the reverse properties for a zero-to-many association.");
+            Assert.fail("Assert.failed to set the reverse properties for a zero-to-many association.");
         }
     }
 
@@ -175,13 +180,13 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
         try
         {
             this.execute("test():Any[*]");
-            assertEquals("'1'", this.functionExecution.getConsole().getLine(0));
-            assertEquals("'1'", this.functionExecution.getConsole().getLine(1));
-            assertEquals("'Veyron'", this.functionExecution.getConsole().getLine(2));
+            Assert.assertEquals("'1'", functionExecution.getConsole().getLine(0));
+            Assert.assertEquals("'1'", functionExecution.getConsole().getLine(1));
+            Assert.assertEquals("'Veyron'", functionExecution.getConsole().getLine(2));
         }
         catch (Exception e)
         {
-            fail("Failed to set the reverse properties for a one-to-one association.");
+            Assert.fail("Assert.failed to set the reverse properties for a one-to-one association.");
         }
     }
 
@@ -219,13 +224,13 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
         try
         {
             this.execute("test():Any[*]");
-            assertEquals("'1'", this.functionExecution.getConsole().getLine(0));
-            assertEquals("'1'", this.functionExecution.getConsole().getLine(1));
-            assertEquals("'Veyron'", this.functionExecution.getConsole().getLine(2));
+            Assert.assertEquals("'1'", functionExecution.getConsole().getLine(0));
+            Assert.assertEquals("'1'", functionExecution.getConsole().getLine(1));
+            Assert.assertEquals("'Veyron'", functionExecution.getConsole().getLine(2));
         }
         catch (Exception e)
         {
-            fail("Failed to set the reverse properties for a one-to-many association.");
+            Assert.fail("Assert.failed to set the reverse properties for a one-to-many association.");
         }
     }
 
@@ -267,14 +272,14 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
         try
         {
             this.execute("test():Any[*]");
-            assertEquals("'3'", this.functionExecution.getConsole().getLine(0));
-            assertEquals("'Audi'", this.functionExecution.getConsole().getLine(1));
-            assertEquals("'Bugatti'", this.functionExecution.getConsole().getLine(2));
-            assertEquals("'Veyron'", this.functionExecution.getConsole().getLine(3));
+            Assert.assertEquals("'3'", functionExecution.getConsole().getLine(0));
+            Assert.assertEquals("'Audi'", functionExecution.getConsole().getLine(1));
+            Assert.assertEquals("'Bugatti'", functionExecution.getConsole().getLine(2));
+            Assert.assertEquals("'Veyron'", functionExecution.getConsole().getLine(3));
         }
         catch (Exception e)
         {
-            fail("Failed to set the reverse property of a child for a one-to-many association.");
+            Assert.fail("Assert.failed to set the reverse property of a child for a one-to-many association.");
         }
     }
 
@@ -313,11 +318,11 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
         try
         {
             this.execute("test():Any[*]");
-            assertEquals("'1'", this.functionExecution.getConsole().getLine(0));
+            Assert.assertEquals("'1'", functionExecution.getConsole().getLine(0));
         }
         catch (Exception e)
         {
-            fail("Failed to set the reverse property of a child for a many-to-many association.");
+            Assert.fail("Assert.failed to set the reverse property of a child for a many-to-many association.");
         }
     }
 
@@ -357,11 +362,11 @@ public abstract class AbstractTestCopyAtRuntime extends AbstractPureTestWithCore
         try
         {
             this.execute("test():Any[*]");
-            assertEquals("false", this.functionExecution.getConsole().getLine(0));
+            Assert.assertEquals("false", functionExecution.getConsole().getLine(0));
         }
         catch (Exception e)
         {
-            fail("Failed to set the reverse property of a child for a many-to-many association.");
+            Assert.fail("Assert.failed to set the reverse property of a child for a many-to-many association.");
         }
     }
 

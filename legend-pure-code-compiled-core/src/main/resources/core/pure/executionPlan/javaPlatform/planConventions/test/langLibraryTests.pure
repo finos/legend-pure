@@ -181,17 +181,10 @@ function <<meta::pure::profiles::test.Test, meta::pure::profiles::test.AlloyOnly
 meta::pure::executionPlan::engine::java::tests::testLet() : Boolean[1]
 {
    let expectedForLambda = 
-      'java.util.Arrays.asList("a", "aa", "aaa").stream().map((String s) -> {\n'+
-      '    long l = (long) s.length();\n'+
-      '    return java.util.Arrays.asList(s, org.finos.legend.engine.plan.dependencies.util.Library.pureToString(l)).stream().collect(java.util.stream.Collectors.joining(""));\n'+
-      '}).filter((String x) -> x != null).collect(java.util.stream.Collectors.toList())';
+      'java.util.Arrays.asList("a", "aa", "aaa").stream().map((String s) -> { long l = (long) s.length(); return java.util.Arrays.asList(s, org.finos.legend.engine.plan.dependencies.util.Library.pureToString(l)).stream().collect(java.util.stream.Collectors.joining("")); }).filter((String x) -> x != null).collect(java.util.stream.Collectors.toList())';
 
    let expectedForLambdaWithLastLineAsLet = 
-      'java.util.Arrays.asList("a", "aa", "aaa").stream().map((String s) -> {\n'+
-      '    long l = (long) s.length();\n'+
-      '    String x = java.util.Arrays.asList(s, org.finos.legend.engine.plan.dependencies.util.Library.pureToString(l)).stream().collect(java.util.stream.Collectors.joining(""));\n'+
-      '    return x;\n'+
-      '}).filter((String x) -> x != null).collect(java.util.stream.Collectors.toList())';
+      'java.util.Arrays.asList("a", "aa", "aaa").stream().map((String s) -> { long l = (long) s.length(); String x = java.util.Arrays.asList(s, org.finos.legend.engine.plan.dependencies.util.Library.pureToString(l)).stream().collect(java.util.stream.Collectors.joining("")); return x; }).filter((String x) -> x != null).collect(java.util.stream.Collectors.toList())';
 
    javaExpressionTests(engineConventions([]))
       ->addTest('let as expression', {|let x = 1;}, '1L', javaLong())
@@ -206,7 +199,7 @@ meta::pure::executionPlan::engine::java::tests::testLet() : Boolean[1]
          ->assert('%s.contains("aa2")')
          ->assert('%s.contains("aaa3")')
          ->assert('%s.size() == 3')
-      ->addTest('let in functions', {|['a', 'aa', 'aaa']->oddLengths()}, '_pure.functions.Functions__meta_java_generation_tests_functions_lang.oddLengths_String_MANY__String_MANY_(java.util.Arrays.asList("a", "aa", "aaa"))', javaList(javaString()))
+      ->addTest('let in functions', {|['a', 'aa', 'aaa']->oddLengths()}, '_pure.functions.Functions__meta_pure_executionPlan_engine_java_tests.oddLengths_String_MANY__String_MANY_(java.util.Arrays.asList("a", "aa", "aaa"))', javaList(javaString()))
          ->assert('%s.contains("a1")')
          ->assert('%s.contains("aaa3")')
          ->assert('%s.size() == 2')         

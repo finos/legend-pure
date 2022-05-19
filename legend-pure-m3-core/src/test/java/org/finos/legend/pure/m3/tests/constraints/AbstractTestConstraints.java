@@ -14,21 +14,42 @@
 
 package org.finos.legend.pure.m3.tests.constraints;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
-
 public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCompiled
 {
+    private static final String EMPLOYEE_SOURCE_NAME = "employee.pure";
+    private static final String EMPLOYEE_SOURCE_CODE = "Class Employee\n" +
+            "{\n" +
+            "   lastName:String[1];\n" +
+            "}\n";
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("fromString.pure");
+        runtime.delete("/test/repro.pure");
+        runtime.modify(EMPLOYEE_SOURCE_NAME, EMPLOYEE_SOURCE_CODE);
+        runtime.compile();
+    }
+
     @Test
     public void testFunction()
     {
-       compileTestSource("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]" +
+        compileTestSource("fromString.pure", "function myFunction(s:String[1], k:Integer[1]):String[1]" +
                 "[" +
                 "   $s->startsWith('A')," +
                 "   $return->startsWith('A')," +
@@ -41,141 +62,107 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "{\n" +
                 "   myFunction('A test', 4)" +
                 "}\n");
-        this.execute("testNew():Any[*]");
+        execute("testNew():Any[*]");
     }
 
     @Test
     public void testFunctionError()
     {
-        try
-        {
-           compileTestSource("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]" +
-                    "[" +
-                    "   $s->startsWith('A')," +
-                    "   $return->startsWith('A')," +
-                    "   $k > 2" +
-                    "]" +
-                    "{" +
-                    "   $s+$k->toString();" +
-                    "}\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   myFunction('A test', 2)" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint (PRE):[2] violated. (Function:myFunction_String_1__Integer_1__String_1_)", 4, 4, e);
-        }
+        compileTestSource("fromString.pure", "function myFunction(s:String[1], k:Integer[1]):String[1]" +
+                "[" +
+                "   $s->startsWith('A')," +
+                "   $return->startsWith('A')," +
+                "   $k > 2" +
+                "]" +
+                "{" +
+                "   $s+$k->toString();" +
+                "}\n" +
+                "function testNew():Any[*]\n" +
+                "{\n" +
+                "   myFunction('A test', 2)" +
+                "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint (PRE):[2] violated. (Function:myFunction_String_1__Integer_1__String_1_)", 4, 4, e);
     }
 
     @Test
     public void testFunctionErrorOnReturnPreConstrainId()
     {
-        try
-        {
-           compileTestSource("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]" +
-                    "[" +
-                    "   pre1:$s->startsWith('A')," +
-                    "   pre2:$k > 2" +
-                    "]" +
-                    "{" +
-                    "   'B';" +
-                    "}\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   myFunction(' test', 3)" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint (PRE):[pre1] violated. (Function:myFunction_String_1__Integer_1__String_1_)", 4, 4, e);
-        }
+        compileTestSource("fromString.pure", "function myFunction(s:String[1], k:Integer[1]):String[1]" +
+                "[" +
+                "   pre1:$s->startsWith('A')," +
+                "   pre2:$k > 2" +
+                "]" +
+                "{" +
+                "   'B';" +
+                "}\n" +
+                "function testNew():Any[*]\n" +
+                "{\n" +
+                "   myFunction(' test', 3)" +
+                "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint (PRE):[pre1] violated. (Function:myFunction_String_1__Integer_1__String_1_)", 4, 4, e);
     }
 
     @Test
     public void testFunctionErrorOnReturn()
     {
-        try
-        {
-           compileTestSource("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]" +
-                    "[" +
-                    "   $s->startsWith('A')," +
-                    "   $return->startsWith('A')," + //this is a postconstraint
-                    "   $k > 2" +
-                    "]" +
-                    "{" +
-                    "   'B';" +
-                    "}\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   myFunction('A test', 3)" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint (POST):[1] violated. (Function:myFunction_String_1__Integer_1__String_1_)", 4, 4, e);
-        }
+        compileTestSource("fromString.pure", "function myFunction(s:String[1], k:Integer[1]):String[1]" +
+                "[" +
+                "   $s->startsWith('A')," +
+                "   $return->startsWith('A')," + //this is a postconstraint
+                "   $k > 2" +
+                "]" +
+                "{" +
+                "   'B';" +
+                "}\n" +
+                "function testNew():Any[*]\n" +
+                "{\n" +
+                "   myFunction('A test', 3)" +
+                "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint (POST):[1] violated. (Function:myFunction_String_1__Integer_1__String_1_)", 4, 4, e);
     }
 
 
     @Test
     public void testNewError()
     {
-        try
-        {
-            runtime.modify("employee.pure", "Class Employee" +
-                    "[" +
-                    "   $this.lastName->startsWith('A')" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[1];" +
-                    "}\n");
-            runtime.compile();
-           compileTestSource("fromString.pure",
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   let t = ^Employee(lastName = 'CDE')" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 3, 12, e);
-        }
+        runtime.modify("employee.pure", "Class Employee" +
+                "[" +
+                "   $this.lastName->startsWith('A')" +
+                "]" +
+                "{" +
+                "   lastName:String[1];" +
+                "}\n");
+        runtime.compile();
+        compileTestSource("fromString.pure",
+                "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let t = ^Employee(lastName = 'CDE')" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 3, 12, e);
     }
 
     @Test
     public void testNewErrorDuplicateConstraints()
     {
-        try
-        {
-           compileTestSource("fromString.pure", "Class EmployeeWithError\n" +
-                           "[\n" +
-                           "  one: $this.lastName->startsWith('A'),\n" +
-                           "  one: $this.lastName->endsWith('A')\n" +
-                           "]\n" +
-                           "{\n" +
-                           "   lastName:String[1];\n" +
-                           "}\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   let t = ^EmployeeWithError(lastName = 'CDE')" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureCompilationException.class, "Constraints for EmployeeWithError must be unique, [one] is duplicated", 4, 3, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class EmployeeWithError\n" +
+                        "[\n" +
+                        "  one: $this.lastName->startsWith('A'),\n" +
+                        "  one: $this.lastName->endsWith('A')\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   lastName:String[1];\n" +
+                        "}\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let t = ^EmployeeWithError(lastName = 'CDE')" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Constraints for EmployeeWithError must be unique, [one] is duplicated", 4, 3, e);
     }
 
     @Test
@@ -189,12 +176,12 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "   lastName:String[1];" +
                 "}\n");
         runtime.compile();
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "function testNew():Any[*]\n" +
-                "{\n" +
-                "   let t = ^Employee(lastName = 'ABC')" +
-                "}\n");
-        this.execute("testNew():Any[*]");
+                        "{\n" +
+                        "   let t = ^Employee(lastName = 'ABC')" +
+                        "}\n");
+        execute("testNew():Any[*]");
     }
 
     @Test
@@ -212,12 +199,12 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "    if($b,|$b,|print($message, 1);true;)\n" +
                 "}");
         runtime.compile();
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "function testNew():Any[*]\n" +
-                "{\n" +
-                "   let t = ^Employee(lastName = 'CDE')" +
-                "}\n");
-        this.execute("testNew():Any[*]");
+                        "{\n" +
+                        "   let t = ^Employee(lastName = 'CDE')" +
+                        "}\n");
+        execute("testNew():Any[*]");
     }
 
     @Test
@@ -230,19 +217,19 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "]" +
                 "{" +
                 "   lastName:String[1];" +
-                "}\n"+
+                "}\n" +
                 "function meta::pure::functions::constraints::warn(b:Boolean[1], message:String[1]):Boolean[1]\n" +
                 "{\n" +
                 "    if($b,|$b,|print($message, 1);true;)\n" +
                 "}");
         runtime.compile();
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "function testNew():Any[*]\n" +
-                "{\n" +
-                "   let t = ^Employee(lastName = 'CDE')" +
-                "}" +
-                "\n");
-        this.execute("testNew():Any[*]");
+                        "{\n" +
+                        "   let t = ^Employee(lastName = 'CDE')" +
+                        "}" +
+                        "\n");
+        execute("testNew():Any[*]");
     }
 
     @Test
@@ -253,34 +240,28 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "  id:Integer[1];\n" +
                 "}\n");
         runtime.compile();
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "Class Firm\n" +
-                "[\n" +
-                "   $this.employees->filter(e | ($e.id < $this.minId) || ($e.id > $this.maxId))->isEmpty()\n" +
-                "]\n" +
-                "{\n" +
-                "  minId:Integer[1];\n" +
-                "  maxId:Integer[1];\n" +
-                "  employees:Employee[*];\n" +
-                "}\n" +
-                "function testNewSuccess():Any[*]\n" +
-                "{\n" +
-                "   let f1 = ^Firm(minId=1, maxId=10);\n" +
-                "   let f2 = ^Firm(minId=1, maxId=10, employees=[^Employee(id=1), ^Employee(id=9)]);\n" +
-                "}\n" +
-                "function testNewFailure():Any[*]\n" +
-                "{\n" +
-                "   ^Firm(minId=1, maxId=10, employees=[^Employee(id=1), ^Employee(id=19)]);\n" +
-                "}");
-        this.execute("testNewSuccess():Any[*]");
-        try
-        {
-            this.execute("testNewFailure():Any[*]");
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Firm", 17, 4, e);
-        }
+                        "[\n" +
+                        "   $this.employees->filter(e | ($e.id < $this.minId) || ($e.id > $this.maxId))->isEmpty()\n" +
+                        "]\n" +
+                        "{\n" +
+                        "  minId:Integer[1];\n" +
+                        "  maxId:Integer[1];\n" +
+                        "  employees:Employee[*];\n" +
+                        "}\n" +
+                        "function testNewSuccess():Any[*]\n" +
+                        "{\n" +
+                        "   let f1 = ^Firm(minId=1, maxId=10);\n" +
+                        "   let f2 = ^Firm(minId=1, maxId=10, employees=[^Employee(id=1), ^Employee(id=9)]);\n" +
+                        "}\n" +
+                        "function testNewFailure():Any[*]\n" +
+                        "{\n" +
+                        "   ^Firm(minId=1, maxId=10, employees=[^Employee(id=1), ^Employee(id=19)]);\n" +
+                        "}");
+        execute("testNewSuccess():Any[*]");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNewFailure():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Firm", 17, 4, e);
     }
 
     @Test
@@ -291,153 +272,119 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "  id:Integer[1];\n" +
                 "}\n");
         runtime.compile();
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "Class Firm\n" +
-                "[\n" +
-                "   $this.employees->removeDuplicates(e | $e.id, [])->size() == $this.employees->size()\n" +
-                "]\n" +
-                "{\n" +
-                "  employees:Employee[*];\n" +
-                "}\n" +
-                "function testNewSuccess():Any[*]\n" +
-                "{\n" +
-                "   let f1 = ^Firm();\n" +
-                "   let f2 = ^Firm(employees=[^Employee(id=1), ^Employee(id=9)]);\n" +
-                "}\n" +
-                "function testNewFailure():Any[*]\n" +
-                "{\n" +
-                "   ^Firm(employees=[^Employee(id=1), ^Employee(id=2), ^Employee(id=1)]);\n" +
-                "}");
-        this.execute("testNewSuccess():Any[*]");
-        try
-        {
-            this.execute("testNewFailure():Any[*]");
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Firm", 15, 4, e);
-        }
+                        "[\n" +
+                        "   $this.employees->removeDuplicates(e | $e.id, [])->size() == $this.employees->size()\n" +
+                        "]\n" +
+                        "{\n" +
+                        "  employees:Employee[*];\n" +
+                        "}\n" +
+                        "function testNewSuccess():Any[*]\n" +
+                        "{\n" +
+                        "   let f1 = ^Firm();\n" +
+                        "   let f2 = ^Firm(employees=[^Employee(id=1), ^Employee(id=9)]);\n" +
+                        "}\n" +
+                        "function testNewFailure():Any[*]\n" +
+                        "{\n" +
+                        "   ^Firm(employees=[^Employee(id=1), ^Employee(id=2), ^Employee(id=1)]);\n" +
+                        "}");
+        execute("testNewSuccess():Any[*]");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNewFailure():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Firm", 15, 4, e);
     }
 
     @Test
     public void testCopyError()
     {
-        try
-        {
-            runtime.modify("employee.pure", "Class Employee" +
-                    "[" +
-                    "   $this.lastName->startsWith('A')" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[1];" +
-                    "}\n");
-            runtime.compile();
-           compileTestSource("fromString.pure",
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   let t = ^Employee(lastName = 'ABC');\n" +
-                    "   ^$t(lastName = 'KK');" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            //e.printStackTrace();
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 4, 4, e);
-        }
+        runtime.modify("employee.pure", "Class Employee" +
+                "[" +
+                "   $this.lastName->startsWith('A')" +
+                "]" +
+                "{" +
+                "   lastName:String[1];" +
+                "}\n");
+        runtime.compile();
+        compileTestSource("fromString.pure",
+                "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let t = ^Employee(lastName = 'ABC');\n" +
+                        "   ^$t(lastName = 'KK');" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 4, 4, e);
     }
 
 
     @Test
     public void testInheritanceFailingSubClass()
     {
-        try
-        {
-            runtime.modify("employee.pure", "Class Employee" +
-                    "[" +
-                    "   $this.lastName->startsWith('A')" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[1];" +
-                    "}\n");
-            runtime.compile();
-           compileTestSource("fromString.pure",
-                    "Class Manager extends Employee\n" +
-                    "{\n" +
-                    "  manages:Employee[*];\n" +
-                    "}\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   let t = ^Manager(lastName = 'BC')" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail("This should fail constraint validation");
-        } catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 7, 12, e);
-        }
+        runtime.modify("employee.pure", "Class Employee" +
+                "[" +
+                "   $this.lastName->startsWith('A')" +
+                "]" +
+                "{" +
+                "   lastName:String[1];" +
+                "}\n");
+        runtime.compile();
+        compileTestSource("fromString.pure",
+                "Class Manager extends Employee\n" +
+                        "{\n" +
+                        "  manages:Employee[*];\n" +
+                        "}\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let t = ^Manager(lastName = 'BC')" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 7, 12, e);
     }
 
     @Test
     public void testInheritanceFailingSubClassConstraint()
     {
-        try
-        {
-            runtime.modify("employee.pure", "Class Employee" +
-                    "[" +
-                    "   $this.lastName->startsWith('A')" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[1];" +
-                    "}\n");
-            runtime.compile();
-           compileTestSource("fromString.pure",
-                    "Class Manager extends Employee\n" +
-                    "[" +
-                    "   $this.manages->size() > 1" +
-                    "]" +
-                    "{\n" +
-                    "  manages:Employee[*];\n" +
-                    "}\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   let t = ^Manager(lastName = 'BC')" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail("This should fail constraint validation");
-        } catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 7, 12, e);
-        }
+        runtime.modify("employee.pure", "Class Employee" +
+                "[" +
+                "   $this.lastName->startsWith('A')" +
+                "]" +
+                "{" +
+                "   lastName:String[1];" +
+                "}\n");
+        runtime.compile();
+        compileTestSource("fromString.pure",
+                "Class Manager extends Employee\n" +
+                        "[" +
+                        "   $this.manages->size() > 1" +
+                        "]" +
+                        "{\n" +
+                        "  manages:Employee[*];\n" +
+                        "}\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let t = ^Manager(lastName = 'BC')" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 7, 12, e);
     }
 
     @Test
     public void testBooleanWithMoreThanOneOperand()
     {
-        try
-        {
-            runtime.modify("employee.pure", "Class Employee" +
-                    "[" +
-                    "    $this.lastName->toOne()->length() < 10" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[0..1];" +
-                    "}\n");
-            runtime.compile();
-           compileTestSource("fromString.pure",
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   let t = ^Employee(lastName = '1234567891011121213454545')" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail("This should fail constraint validation");
-        }
-        catch (Exception e)
-        {
-            //e.printStackTrace();
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 3, 12, e);
-        }
+        runtime.modify("employee.pure", "Class Employee" +
+                "[" +
+                "    $this.lastName->toOne()->length() < 10" +
+                "]" +
+                "{" +
+                "   lastName:String[0..1];" +
+                "}\n");
+        runtime.compile();
+        compileTestSource("fromString.pure",
+                "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let t = ^Employee(lastName = '1234567891011121213454545')" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[0] violated in the Class Employee", 3, 12, e);
     }
 
     @Test
@@ -451,184 +398,145 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "   lastName:String[0..1];" +
                 "}\n");
         runtime.compile();
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "function testNew():Any[*]\n" +
-                "{\n" +
-                "   let t = ^Employee(lastName = '123456789')" +
-                "}\n");
-        this.execute("testNew():Any[*]");
-
+                        "{\n" +
+                        "   let t = ^Employee(lastName = '123456789')" +
+                        "}\n");
+        execute("testNew():Any[*]");
     }
 
     @Test
     public void tesIdInConstraintWrong()
     {
-        try
-        {
-            runtime.modify("employee.pure", "Class Employee" +
-                    "[" +
-                    "   rule1 : $this.lastName->toOne()->length() < 10" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[0..1];" +
-                    "}\n");
-            runtime.compile();
-           compileTestSource("fromString.pure",
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   let t = ^Employee(lastName = '1234567893536536536')" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            //e.printStackTrace();
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 3, 12, e);
-        }
-
+        runtime.modify("employee.pure", "Class Employee" +
+                "[" +
+                "   rule1 : $this.lastName->toOne()->length() < 10" +
+                "]" +
+                "{" +
+                "   lastName:String[0..1];" +
+                "}\n");
+        runtime.compile();
+        compileTestSource("fromString.pure",
+                "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let t = ^Employee(lastName = '1234567893536536536')" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 3, 12, e);
     }
 
     @Test
     public void testIdInConstraintInWrong()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Employee" +
-                    "[" +
-                    "  : $this.lastName->toOne()->length() < 10" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[0..1];" +
-                    "}\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   let t = ^Employee(lastName = '123456789')" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail("This should fail parsing");
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureParserException.class, "expected: a valid identifier text; found: ':'", 1, 18, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class Employee" +
+                        "[" +
+                        "  : $this.lastName->toOne()->length() < 10" +
+                        "]" +
+                        "{" +
+                        "   lastName:String[0..1];" +
+                        "}\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let t = ^Employee(lastName = '123456789')" +
+                        "}\n"));
+        assertPureException(PureParserException.class, "expected: a valid identifier text; found: ':'", 1, 18, e);
     }
-
 
     @Test
     public void testConstraintWithDynamicNewNoOverrides()
     {
-        try
-        {
-           compileTestSource("fromString.pure", "Class EmployeeWithError" +
-                           "[" +
-                           "   rule1 : $this.lastName->toOne()->length() < 10" +
-                           "]" +
-                           "{" +
-                           "   lastName:String[0..1];" +
-                           "}\n" +
-                    "function testNew():Any[*] {\n" +
-                    "  let r = dynamicNew(EmployeeWithError,\n" +
-                    "                   [\n" +
-                    "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
-                    "                   ])->cast(@EmployeeWithError);\n" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class EmployeeWithError", 3, 11, e);
-        }
-
+        compileTestSource("fromString.pure", "Class EmployeeWithError" +
+                "[" +
+                "   rule1 : $this.lastName->toOne()->length() < 10" +
+                "]" +
+                "{" +
+                "   lastName:String[0..1];" +
+                "}\n" +
+                "function testNew():Any[*] {\n" +
+                "  let r = dynamicNew(EmployeeWithError,\n" +
+                "                   [\n" +
+                "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
+                "                   ])->cast(@EmployeeWithError);\n" +
+                "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class EmployeeWithError", 3, 11, e);
     }
 
     @Test
     public void testConstraintWithDynamicNew()
     {
-        try
-        {
-            runtime.modify("employee.pure", "Class Employee" +
-                    "[" +
-                    "   rule1 : $this.lastName->toOne()->length() < 10" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[0..1];" +
-                    "}\n");
-            runtime.compile();
-           compileTestSource("fromString.pure",
-                    "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
-                    "{\n" +
-                    "  [];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function getterOverrideToOne(o:Any[1], property:Property<Nil,Any|0..1>[1]):Any[0..1]\n" +
-                    "{\n" +
-                    "  [];\n" +
-                    "}\n" +
-                    "function testNew():Any[*] {\n" +
-                    "  let r = dynamicNew(Employee,\n" +
-                    "                   [\n" +
-                    "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
-                    "                   ],\n" +
-                    "                   getterOverrideToOne_Any_1__Property_1__Any_$0_1$_,\n" +
-                    "                   getterOverrideToMany_Any_1__Property_1__Any_MANY_,\n" +
-                    "                   '2'\n" +
-                    "                  )->cast(@Employee);\n" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 11, 11, e);
-        }
-
+        runtime.modify("employee.pure", "Class Employee" +
+                "[" +
+                "   rule1 : $this.lastName->toOne()->length() < 10" +
+                "]" +
+                "{" +
+                "   lastName:String[0..1];" +
+                "}\n");
+        runtime.compile();
+        compileTestSource("fromString.pure",
+                "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
+                        "{\n" +
+                        "  [];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function getterOverrideToOne(o:Any[1], property:Property<Nil,Any|0..1>[1]):Any[0..1]\n" +
+                        "{\n" +
+                        "  [];\n" +
+                        "}\n" +
+                        "function testNew():Any[*] {\n" +
+                        "  let r = dynamicNew(Employee,\n" +
+                        "                   [\n" +
+                        "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
+                        "                   ],\n" +
+                        "                   getterOverrideToOne_Any_1__Property_1__Any_$0_1$_,\n" +
+                        "                   getterOverrideToMany_Any_1__Property_1__Any_MANY_,\n" +
+                        "                   '2'\n" +
+                        "                  )->cast(@Employee);\n" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 11, 11, e);
     }
+
     @Test
     public void testConstraintWithGenericTypeDynamicNew()
     {
-        try
-        {
-            runtime.modify("employee.pure", "Class Employee" +
-                    "[" +
-                    "   rule1 : $this.lastName->toOne()->length() < 10" +
-                    "]" +
-                    "{" +
-                    "   lastName:String[0..1];" +
-                    "}\n");
-            runtime.compile();
-           compileTestSource("fromString.pure",
-                    "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
-                    "{\n" +
-                    "  [];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function getterOverrideToOne(o:Any[1], property:Property<Nil,Any|0..1>[1]):Any[0..1]\n" +
-                    "{\n" +
-                    "  [];\n" +
-                    "}\n" +
-                    "function testNew():Any[*] {\n" +
-                    "  let r = dynamicNew(^GenericType(rawType=Employee),\n" +
-                    "                   [\n" +
-                    "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
-                    "                   ],\n" +
-                    "                   getterOverrideToOne_Any_1__Property_1__Any_$0_1$_,\n" +
-                    "                   getterOverrideToMany_Any_1__Property_1__Any_MANY_,\n" +
-                    "                   '2'\n" +
-                    "                  )->cast(@Employee);\n" +
-                    "}\n");
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 11, 11, e);
-        }
-
+        runtime.modify("employee.pure", "Class Employee" +
+                "[" +
+                "   rule1 : $this.lastName->toOne()->length() < 10" +
+                "]" +
+                "{" +
+                "   lastName:String[0..1];" +
+                "}\n");
+        runtime.compile();
+        compileTestSource("fromString.pure",
+                "function getterOverrideToMany(o:Any[1], property:Property<Nil,Any|*>[1]):Any[*]\n" +
+                        "{\n" +
+                        "  [];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function getterOverrideToOne(o:Any[1], property:Property<Nil,Any|0..1>[1]):Any[0..1]\n" +
+                        "{\n" +
+                        "  [];\n" +
+                        "}\n" +
+                        "function testNew():Any[*] {\n" +
+                        "  let r = dynamicNew(^GenericType(rawType=Employee),\n" +
+                        "                   [\n" +
+                        "                      ^KeyValue(key='lastName',value='1234567891000')\n" +
+                        "                   ],\n" +
+                        "                   getterOverrideToOne_Any_1__Property_1__Any_$0_1$_,\n" +
+                        "                   getterOverrideToMany_Any_1__Property_1__Any_MANY_,\n" +
+                        "                   '2'\n" +
+                        "                  )->cast(@Employee);\n" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[rule1] violated in the Class Employee", 11, 11, e);
     }
+
     @Test
-    public void testPureRuntimeClassConstraintFunctionEvaluate() throws Exception
+    public void testPureRuntimeClassConstraintFunctionEvaluate()
     {
         runtime.modify("employee.pure", "Class Employee" +
                 "[" +
@@ -637,21 +545,21 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "{" +
                 "   lastName:String[1];" +
                 "}\n");
-       compileTestSource("fromString.pure",
+        runtime.compile();
+        compileTestSource("fromString.pure",
                 "function testNew():Any[*]\n" +
-                "{\n" +
-                "   let t = ^Employee(lastName = 'AAAAAA');" +
-                "   assert(Employee.constraints->at(0).functionDefinition->evaluate(^List<Any>(values=$t))->toOne()->cast(@Boolean), |'');" +
-                "   $t;" +
-                "}\n");
-        this.execute("testNew():Any[*]");
-
+                        "{\n" +
+                        "   let t = ^Employee(lastName = 'AAAAAA');" +
+                        "   assert(Employee.constraints->at(0).functionDefinition->evaluate(^List<Any>(values=$t))->toOne()->cast(@Boolean), |'');" +
+                        "   $t;" +
+                        "}\n");
+        execute("testNew():Any[*]");
     }
 
     @Test
     public void testExtendedConstraintGrammar()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -673,40 +581,35 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintGrammarAllowedOnlyForClasses()
     {
-        try
-        {
-           compileTestSource("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $s->startsWith('A')\n" +
-                    "   )\n" +
-                    "]" +
-                    "{" +
-                    "   $s+$k->toString();" +
-                    "}\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   myFunction('A test', 4)" +
-                    "}\n");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureParserException.class, "Complex constraint specifications are supported only for class definitions", 3, 4, e);
-            runtime.modify("fromString.pure","function myFunction(s:String[1], k:Integer[1]):String[1]\n" +
-                    "{" +
-                    "   $s+$k->toString();" +
-                    "}\n");
-            runtime.compile();
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "fromString.pure",
+                "function myFunction(s:String[1], k:Integer[1]):String[1]\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $s->startsWith('A')\n" +
+                        "   )\n" +
+                        "]" +
+                        "{" +
+                        "   $s+$k->toString();" +
+                        "}\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   myFunction('A test', 4)" +
+                        "}\n"));
+        assertPureException(PureParserException.class, "Complex constraint specifications are supported only for class definitions", 3, 4, e);
+        runtime.modify("fromString.pure", "function myFunction(s:String[1], k:Integer[1]):String[1]\n" +
+                "{" +
+                "   $s+$k->toString();" +
+                "}\n");
+        runtime.compile();
     }
 
     @Test
     public void testExtendedConstraintGrammarOptionalOwner()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -726,7 +629,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintGrammarOptionalLevelAndMessage()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -746,175 +649,145 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
     @Test
     public void testExtendedConstraintGrammarFunctionRequired()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureParserException.class, "expected: '~function' found: ')'", 6, 4, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class Position\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "   )\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   contractId: String[1];\n" +
+                        "   positionType: String[1];\n" +
+                        "   startDate: Date[1];\n" +
+                        "   endDate: Date[1];\n" +
+                        "}"));
+        assertPureException(PureParserException.class, "expected: '~function' found: ')'", 6, 4, e);
     }
 
     @Test
     public void testExtendedConstraintGrammarLevelIsWarnOrError()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "      ~enforcementLevel : Something\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureParserException.class, "expected: ENFORCEMENT_LEVEL found: 'Something'", 7, 27, e);
-        }
+        PureParserException e = Assert.assertThrows(PureParserException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class Position\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $this.contractId->startsWith('A')\n" +
+                        "      ~enforcementLevel : Something\n" +
+                        "   )\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   contractId: String[1];\n" +
+                        "   positionType: String[1];\n" +
+                        "   startDate: Date[1];\n" +
+                        "   endDate: Date[1];\n" +
+                        "}"));
+        assertPureException(PureParserException.class, "expected: ENFORCEMENT_LEVEL found: 'Something'", 7, 27, e);
     }
 
     @Test
     public void testExtendedConstraintGrammarFunctionIsBoolean()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.contractId->startsWith('A')->toString()\n" +
-                    "      ~enforcementLevel : Warn\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureCompilationException.class, "A constraint must be of type Boolean and multiplicity one", 6, 62, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class Position\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $this.contractId->startsWith('A')->toString()\n" +
+                        "      ~enforcementLevel : Warn\n" +
+                        "   )\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   contractId: String[1];\n" +
+                        "   positionType: String[1];\n" +
+                        "   startDate: Date[1];\n" +
+                        "   endDate: Date[1];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "A constraint must be of type Boolean and multiplicity one", 6, 62, e);
     }
 
     @Test
     public void testExtendedConstraintGrammarFunctionIsOneBoolean()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.contractId->startsWith('A')->toOneMany()\n" +
-                    "      ~enforcementLevel : Warn\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureCompilationException.class, "A constraint must be of type Boolean and multiplicity one", 6, 62, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class Position\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $this.contractId->startsWith('A')->toOneMany()\n" +
+                        "      ~enforcementLevel : Warn\n" +
+                        "   )\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   contractId: String[1];\n" +
+                        "   positionType: String[1];\n" +
+                        "   startDate: Date[1];\n" +
+                        "   endDate: Date[1];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "A constraint must be of type Boolean and multiplicity one", 6, 62, e);
     }
 
     @Test
     public void testExtendedConstraintGrammarMessageIsString()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "      ~enforcementLevel : Warn\n" +
-                    "      ~message          : 'Contract ID: ' == $this.contractId\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureCompilationException.class, "A constraint message must be of type String and multiplicity one", 8, 43, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class Position\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $this.contractId->startsWith('A')\n" +
+                        "      ~enforcementLevel : Warn\n" +
+                        "      ~message          : 'Contract ID: ' == $this.contractId\n" +
+                        "   )\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   contractId: String[1];\n" +
+                        "   positionType: String[1];\n" +
+                        "   startDate: Date[1];\n" +
+                        "   endDate: Date[1];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "A constraint message must be of type String and multiplicity one", 8, 43, e);
     }
 
     @Test
     public void testExtendedConstraintGrammarMessageIsOneString()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "      ~enforcementLevel : Warn\n" +
-                    "      ~message          : [('Contract ID: ' + $this.contractId), ('Contract ID: ' + $this.contractId)]\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureCompilationException.class, "A constraint message must be of type String and multiplicity one", 8, 27, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class Position\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $this.contractId->startsWith('A')\n" +
+                        "      ~enforcementLevel : Warn\n" +
+                        "      ~message          : [('Contract ID: ' + $this.contractId), ('Contract ID: ' + $this.contractId)]\n" +
+                        "   )\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   contractId: String[1];\n" +
+                        "   positionType: String[1];\n" +
+                        "   startDate: Date[1];\n" +
+                        "   endDate: Date[1];\n" +
+                        "}"));
+        assertPureException(PureCompilationException.class, "A constraint message must be of type String and multiplicity one", 8, 27, e);
     }
 
     @Test
     public void testExtendedConstraintGrammarMultipleConstraints()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -936,16 +809,14 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
                 "{\n" +
                 "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                "}\n" +
-                "");
+                "}\n");
     }
-
 
 
     @Test
     public void testExtendedConstraintGrammarMultipleConstraintTypes()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -963,14 +834,13 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
                 "{\n" +
                 "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                "}\n" +
-                "");
+                "}\n");
     }
 
     @Test
     public void testExtendedConstraintGrammarMultipleConstraintTypesAlternating()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -993,84 +863,71 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
                 "{\n" +
                 "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                "}\n" +
-                "");
+                "}\n");
     }
 
     @Test
     public void testExtendedConstraintGrammarNameConflict()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "   ),\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.endDate > $this.startDate\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}" +
-                    "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
-                    "{\n" +
-                    "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                    "}\n" +
-                    "");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureCompilationException.class, "Constraints for Position must be unique, [c1] is duplicated", 8, 4, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class Position\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $this.contractId->startsWith('A')\n" +
+                        "   ),\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $this.endDate > $this.startDate\n" +
+                        "   )\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   contractId: String[1];\n" +
+                        "   positionType: String[1];\n" +
+                        "   startDate: Date[1];\n" +
+                        "   endDate: Date[1];\n" +
+                        "}" +
+                        "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Constraints for Position must be unique, [c1] is duplicated", 8, 4, e);
     }
 
     @Test
     public void testExtendedConstraintGrammarNameConflictInDifferentType()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "   ),\n" +
-                    "   c1 : $this.endDate > $this.startDate\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}" +
-                    "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
-                    "{\n" +
-                    "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                    "}\n" +
-                    "");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureCompilationException.class, "Constraints for Position must be unique, [c1] is duplicated", 8, 4, e);
-        }
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileTestSource(
+                "fromString.pure",
+                "Class Position\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $this.contractId->startsWith('A')\n" +
+                        "   ),\n" +
+                        "   c1 : $this.endDate > $this.startDate\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   contractId: String[1];\n" +
+                        "   positionType: String[1];\n" +
+                        "   startDate: Date[1];\n" +
+                        "   endDate: Date[1];\n" +
+                        "}" +
+                        "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
+                        "}\n"));
+        assertPureException(PureCompilationException.class, "Constraints for Position must be unique, [c1] is duplicated", 8, 4, e);
     }
 
     @Test
     public void testExtendedConstraintExecutionPassesWithOwner()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1098,107 +955,91 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
                 "{\n" +
                 "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                "}\n" +
-                ""
-        );
-
-        this.execute("testNew():Any[*]");
+                "}\n");
+        execute("testNew():Any[*]");
     }
 
     @Test
     public void testExtendedConstraintExecutionFailsWithOwnerGlobal()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Global\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "      ~message          : 'Contract ID: ' + $this.contractId\n" +
-                    "   ),\n" +
-                    "   c3\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.endDate > $this.startDate\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
-                    "{\n" +
-                    "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                    "}\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   ^Position(contractId='1', positionType='2', startDate=%2010-01-01, endDate=%2011-01-01)\n" +
-                    "}"
-            );
+        compileTestSource(
+                "fromString.pure",
+                "Class Position\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Global\n" +
+                        "      ~function         : $this.contractId->startsWith('A')\n" +
+                        "      ~message          : 'Contract ID: ' + $this.contractId\n" +
+                        "   ),\n" +
+                        "   c3\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $this.endDate > $this.startDate\n" +
+                        "   )\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   contractId: String[1];\n" +
+                        "   positionType: String[1];\n" +
+                        "   startDate: Date[1];\n" +
+                        "   endDate: Date[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
+                        "}\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   ^Position(contractId='1', positionType='2', startDate=%2010-01-01, endDate=%2011-01-01)\n" +
+                        "}\n");
 
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 28, 4, e);
-        }
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 28, 4, e);
     }
 
     @Test
     public void testExtendedConstraintExecutionFailsWithNoOwner()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "      ~message          : 'Contract ID: ' + $this.contractId\n" +
-                    "   ),\n" +
-                    "   c3\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.endDate > $this.startDate\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   ^Position(contractId='1', positionType='2', startDate=%2010-01-01, endDate=%2011-01-01)\n" +
-                    "}" +
-                    "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
-                    "{\n" +
-                    "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                    "}\n" +
-                    ""
-            );
-
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 23, 4, e);
-        }
+        compileTestSource(
+                "fromString.pure",
+                "Class Position\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~function         : $this.contractId->startsWith('A')\n" +
+                        "      ~message          : 'Contract ID: ' + $this.contractId\n" +
+                        "   ),\n" +
+                        "   c3\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $this.endDate > $this.startDate\n" +
+                        "   )\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   contractId: String[1];\n" +
+                        "   positionType: String[1];\n" +
+                        "   startDate: Date[1];\n" +
+                        "   endDate: Date[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   ^Position(contractId='1', positionType='2', startDate=%2010-01-01, endDate=%2011-01-01)\n" +
+                        "}" +
+                        "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
+                        "}\n"
+        );
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 23, 4, e);
     }
 
     @Test
     public void testExtendedConstraintExecutionPassesWithGlobalOwner()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1228,14 +1069,13 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "   ^Position(contractId='A1', positionType='2', startDate=%2010-01-01, endDate=%2011-01-01)\n" +
                 "}"
         );
-
-        this.execute("testNew():Any[*]");
+        execute("testNew():Any[*]");
     }
 
     @Test
     public void testExtendedConstraintExecutionCopyPassesWithOwner()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1264,110 +1104,91 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
                 "{\n" +
                 "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                "}\n" +
-                ""
+                "}\n"
         );
-
-        this.execute("testNew():Any[*]");
+        execute("testNew():Any[*]");
     }
 
     @Test
     public void testExtendedConstraintExecutionCopyFailsWithOwnerGlobal()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Global\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "      ~message          : 'Contract ID: ' + $this.contractId\n" +
-                    "   ),\n" +
-                    "   c3\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.endDate > $this.startDate\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   let a = ^Position(contractId='A1', positionType='2', startDate=%2010-01-01, endDate=%2011-01-01);\n" +
-                    "   ^$a(contractId='1');\n" +
-                    "}" +
-                    "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
-                    "{\n" +
-                    "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                    "}\n" +
-                    ""
-            );
-
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 25, 4, e);
-        }
+        compileTestSource(
+                "fromString.pure",
+                "Class Position\n" +
+                        "[\n" +
+                        "   c1\n" +
+                        "   (\n" +
+                        "      ~owner            : Global\n" +
+                        "      ~function         : $this.contractId->startsWith('A')\n" +
+                        "      ~message          : 'Contract ID: ' + $this.contractId\n" +
+                        "   ),\n" +
+                        "   c3\n" +
+                        "   (\n" +
+                        "      ~owner            : Finance\n" +
+                        "      ~function         : $this.endDate > $this.startDate\n" +
+                        "   )\n" +
+                        "]\n" +
+                        "{\n" +
+                        "   contractId: String[1];\n" +
+                        "   positionType: String[1];\n" +
+                        "   startDate: Date[1];\n" +
+                        "   endDate: Date[1];\n" +
+                        "}\n" +
+                        "\n" +
+                        "function testNew():Any[*]\n" +
+                        "{\n" +
+                        "   let a = ^Position(contractId='A1', positionType='2', startDate=%2010-01-01, endDate=%2011-01-01);\n" +
+                        "   ^$a(contractId='1');\n" +
+                        "}" +
+                        "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
+                        "{\n" +
+                        "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
+                        "}\n");
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 25, 4, e);
     }
 
     @Test
     public void testExtendedConstraintExecutionCopyFailsWithNoOwner()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "      ~message          : 'Contract ID: ' + $this.contractId\n" +
-                    "   ),\n" +
-                    "   c3\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.endDate > $this.startDate\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   let a = ^Position(contractId='A1', positionType='2', startDate=%2010-01-01, endDate=%2011-01-01);\n" +
-                    "   ^$a(contractId='1');\n" +
-                    "}" +
-                    "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
-                    "{\n" +
-                    "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                    "}\n" +
-                    ""
-            );
-
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 24, 4, e);
-        }
+        compileTestSource("fromString.pure", "Class Position\n" +
+                "[\n" +
+                "   c1\n" +
+                "   (\n" +
+                "      ~function         : $this.contractId->startsWith('A')\n" +
+                "      ~message          : 'Contract ID: ' + $this.contractId\n" +
+                "   ),\n" +
+                "   c3\n" +
+                "   (\n" +
+                "      ~owner            : Finance\n" +
+                "      ~function         : $this.endDate > $this.startDate\n" +
+                "   )\n" +
+                "]\n" +
+                "{\n" +
+                "   contractId: String[1];\n" +
+                "   positionType: String[1];\n" +
+                "   startDate: Date[1];\n" +
+                "   endDate: Date[1];\n" +
+                "}\n" +
+                "\n" +
+                "function testNew():Any[*]\n" +
+                "{\n" +
+                "   let a = ^Position(contractId='A1', positionType='2', startDate=%2010-01-01, endDate=%2011-01-01);\n" +
+                "   ^$a(contractId='1');\n" +
+                "}" +
+                "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
+                "{\n" +
+                "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
+                "}\n"
+        );
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 24, 4, e);
     }
 
     @Test
     public void testExtendedConstraintExecutionDynamicNewPassesWithOwner()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1400,168 +1221,141 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
                 "{\n" +
                 "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                "}\n" +
-                ""
+                "}\n"
         );
-
-        this.execute("testNew():Any[*]");
+        execute("testNew():Any[*]");
     }
 
     @Test
     public void testExtendedConstraintExecutionDynamicNewFailsWithOwnerGlobal()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Global\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "      ~message          : 'Contract ID: ' + $this.contractId\n" +
-                    "   ),\n" +
-                    "   c3\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.endDate > $this.startDate\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
-                    "{\n" +
-                    "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                    "}\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   Position->dynamicNew([\n" +
-                    "       ^KeyValue(key='contractId', value='1'), \n" +
-                    "       ^KeyValue(key='positionType', value='2'),\n" +
-                    "       ^KeyValue(key='startDate', value=%2010-01-01),\n" +
-                    "       ^KeyValue(key='endDate', value=%2011-01-01)\n" +
-                    "    ])\n" +
-                    "}"
-            );
-
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 28, 14, e);
-        }
+        compileTestSource("fromString.pure", "Class Position\n" +
+                "[\n" +
+                "   c1\n" +
+                "   (\n" +
+                "      ~owner            : Global\n" +
+                "      ~function         : $this.contractId->startsWith('A')\n" +
+                "      ~message          : 'Contract ID: ' + $this.contractId\n" +
+                "   ),\n" +
+                "   c3\n" +
+                "   (\n" +
+                "      ~owner            : Finance\n" +
+                "      ~function         : $this.endDate > $this.startDate\n" +
+                "   )\n" +
+                "]\n" +
+                "{\n" +
+                "   contractId: String[1];\n" +
+                "   positionType: String[1];\n" +
+                "   startDate: Date[1];\n" +
+                "   endDate: Date[1];\n" +
+                "}\n" +
+                "\n" +
+                "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
+                "{\n" +
+                "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
+                "}\n" +
+                "function testNew():Any[*]\n" +
+                "{\n" +
+                "   Position->dynamicNew([\n" +
+                "       ^KeyValue(key='contractId', value='1'), \n" +
+                "       ^KeyValue(key='positionType', value='2'),\n" +
+                "       ^KeyValue(key='startDate', value=%2010-01-01),\n" +
+                "       ^KeyValue(key='endDate', value=%2011-01-01)\n" +
+                "    ])\n" +
+                "}"
+        );
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 28, 14, e);
     }
 
     @Test
     public void testExtendedConstraintExecutionDynamicNewFailsWithNoOwner()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "      ~message          : 'Contract ID: ' + $this.contractId\n" +
-                    "   ),\n" +
-                    "   c3\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.endDate > $this.startDate\n" +
-                    "   )\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   Position->dynamicNew([\n" +
-                    "       ^KeyValue(key='contractId', value='1'), \n" +
-                    "       ^KeyValue(key='positionType', value='2'),\n" +
-                    "       ^KeyValue(key='startDate', value=%2010-01-01),\n" +
-                    "       ^KeyValue(key='endDate', value=%2011-01-01)\n" +
-                    "    ])\n" +
-                    "}" +
-                    "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
-                    "{\n" +
-                    "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                    "}\n" +
-                    ""
-            );
-
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 23, 14, e);
-        }
+        compileTestSource("fromString.pure", "Class Position\n" +
+                "[\n" +
+                "   c1\n" +
+                "   (\n" +
+                "      ~function         : $this.contractId->startsWith('A')\n" +
+                "      ~message          : 'Contract ID: ' + $this.contractId\n" +
+                "   ),\n" +
+                "   c3\n" +
+                "   (\n" +
+                "      ~owner            : Finance\n" +
+                "      ~function         : $this.endDate > $this.startDate\n" +
+                "   )\n" +
+                "]\n" +
+                "{\n" +
+                "   contractId: String[1];\n" +
+                "   positionType: String[1];\n" +
+                "   startDate: Date[1];\n" +
+                "   endDate: Date[1];\n" +
+                "}\n" +
+                "\n" +
+                "function testNew():Any[*]\n" +
+                "{\n" +
+                "   Position->dynamicNew([\n" +
+                "       ^KeyValue(key='contractId', value='1'), \n" +
+                "       ^KeyValue(key='positionType', value='2'),\n" +
+                "       ^KeyValue(key='startDate', value=%2010-01-01),\n" +
+                "       ^KeyValue(key='endDate', value=%2011-01-01)\n" +
+                "    ])\n" +
+                "}" +
+                "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
+                "{\n" +
+                "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
+                "}\n"
+        );
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[c1] violated in the Class Position, Message: Contract ID: 1", 23, 14, e);
     }
 
     @Test
     public void testExtendedConstraintExecutionDynamicNewFailsOtherConstraint()
     {
-        try
-        {
-           compileTestSource("fromString.pure","Class Position\n" +
-                    "[\n" +
-                    "   c1\n" +
-                    "   (\n" +
-                    "      ~owner            : Finance\n" +
-                    "      ~function         : $this.contractId->startsWith('A')\n" +
-                    "      ~message          : 'Contract ID: ' + $this.contractId\n" +
-                    "   ),\n" +
-                    "   c3 : $this.endDate > $this.startDate\n" +
-                    "]\n" +
-                    "{\n" +
-                    "   contractId: String[1];\n" +
-                    "   positionType: String[1];\n" +
-                    "   startDate: Date[1];\n" +
-                    "   endDate: Date[1];\n" +
-                    "}\n" +
-                    "\n" +
-                    "function meta::pure::functions::collection::isNotEmpty(p:Any[*]):Boolean[1]\n" +
-                    "{\n" +
-                    "    !isEmpty($p)\n" +
-                    "}" +
-                    "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
-                    "{\n" +
-                    "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                    "}\n" +
-                    "function testNew():Any[*]\n" +
-                    "{\n" +
-                    "   Position->dynamicNew([\n" +
-                    "       ^KeyValue(key='contractId', value='1'), \n" +
-                    "       ^KeyValue(key='positionType', value='2'),\n" +
-                    "       ^KeyValue(key='startDate', value=%2010-01-01),\n" +
-                    "       ^KeyValue(key='endDate', value=%2010-01-01)\n" +
-                    "    ])\n" +
-                    "}"
-            );
+        compileTestSource("fromString.pure", "Class Position\n" +
+                "[\n" +
+                "   c1\n" +
+                "   (\n" +
+                "      ~owner            : Finance\n" +
+                "      ~function         : $this.contractId->startsWith('A')\n" +
+                "      ~message          : 'Contract ID: ' + $this.contractId\n" +
+                "   ),\n" +
+                "   c3 : $this.endDate > $this.startDate\n" +
+                "]\n" +
+                "{\n" +
+                "   contractId: String[1];\n" +
+                "   positionType: String[1];\n" +
+                "   startDate: Date[1];\n" +
+                "   endDate: Date[1];\n" +
+                "}\n" +
+                "\n" +
+                "function meta::pure::functions::collection::isNotEmpty(p:Any[*]):Boolean[1]\n" +
+                "{\n" +
+                "    !isEmpty($p)\n" +
+                "}" +
+                "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
+                "{\n" +
+                "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
+                "}\n" +
+                "function testNew():Any[*]\n" +
+                "{\n" +
+                "   Position->dynamicNew([\n" +
+                "       ^KeyValue(key='contractId', value='1'), \n" +
+                "       ^KeyValue(key='positionType', value='2'),\n" +
+                "       ^KeyValue(key='startDate', value=%2010-01-01),\n" +
+                "       ^KeyValue(key='endDate', value=%2010-01-01)\n" +
+                "    ])\n" +
+                "}"
+        );
 
-            this.execute("testNew():Any[*]");
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            //e.printStackTrace();
-            this.assertOriginatingPureException(PureExecutionException.class, "Constraint :[c3] violated in the Class Position", 27, 14, e);
-        }
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[c3] violated in the Class Position", 27, 14, e);
     }
 
     @Test
     public void testExtendedConstraintExecutionCanEvaluateConstraint()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1596,14 +1390,13 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "    ])))->toOne()->cast(@Boolean), |'');\n" +
                 "}"
         );
-
-        this.execute("testNew():Any[*]");
+        execute("testNew():Any[*]");
     }
 
     @Test
     public void testExtendedConstraintExecutionCanEvaluateConstraintMessage()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1641,14 +1434,13 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "    ])))->toOne()->cast(@String) == 'Contract ID: 1', |'');\n" +
                 "}"
         );
-
-        this.execute("testNew():Any[*]");
+        execute("testNew():Any[*]");
     }
 
     @Test
     public void testExtendedConstraintExecutionCanGetOwnerExtIdEnforcement()
     {
-       compileTestSource("fromString.pure","Class Position\n" +
+        compileTestSource("fromString.pure", "Class Position\n" +
                 "[\n" +
                 "   c1\n" +
                 "   (\n" +
@@ -1679,11 +1471,9 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                 "function meta::pure::functions::lang::greaterThan(left:Date[0..1], right:Date[0..1]):Boolean[1]\n" +
                 "{\n" +
                 "   !$left->isEmpty() && !$right->isEmpty() && (compare($right->toOne(), $left->toOne()) < 0);\n" +
-                "}\n" +
-                ""
+                "}\n"
         );
-
-        this.execute("testNew():Any[*]");
+        execute("testNew():Any[*]");
     }
 
     @Test
@@ -1737,13 +1527,19 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                         "   ^SuperPeople(superPeople=[^SuperPerson(person=^Person(name='John')), ^SuperPerson(person=^Person(name='John'))], title='Dr.')\n" +
                         "}\n");
         execute("testSucceed():Any[*]");
-        try
-        {
-            execute("testFail():Any[*]");
-            Assert.fail("Expected constraint failure");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureExecutionException.class, "Constraint :[superPeopleHaveNoDuplicates] violated in the Class SuperPeople, Message: test", "/test/repro.pure", 45, 4, 45, 4, 45, 128, e);        }
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("testFail():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[superPeopleHaveNoDuplicates] violated in the Class SuperPeople, Message: test", "/test/repro.pure", 45, 4, 45, 4, 45, 128, e);
+    }
+
+    protected static MutableCodeStorage getCodeStorage()
+    {
+        CodeRepository platform = CodeRepository.newPlatformCodeRepository();
+        CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, platform);
+        return new PureCodeStorage(null, new ClassLoaderCodeStorage(platform, test));
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair(EMPLOYEE_SOURCE_NAME, EMPLOYEE_SOURCE_CODE);
     }
 }

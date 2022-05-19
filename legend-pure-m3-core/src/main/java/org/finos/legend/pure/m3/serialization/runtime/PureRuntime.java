@@ -16,9 +16,7 @@ package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.api.LazyIterable;
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.function.Function2;
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MapIterable;
@@ -27,21 +25,18 @@ import org.eclipse.collections.api.map.primitive.MutableIntObjectMap;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.api.partition.PartitionIterable;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.factory.Multimaps;
+import org.eclipse.collections.impl.factory.primitive.IntObjectMaps;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;
 import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.SourceMutation;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionDescriptor;
 import org.finos.legend.pure.m3.navigation.function.InvalidFunctionDescriptorException;
-import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.PureRuntimeEventHandler;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeStorage;
@@ -51,19 +46,19 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeSto
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.vcs.UpdateReport;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
-import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.serialization.runtime.IncrementalCompiler.IncrementalCompilerTransaction;
 import org.finos.legend.pure.m3.serialization.runtime.cache.PureGraphCache;
 import org.finos.legend.pure.m3.serialization.runtime.pattern.URLPatternLibrary;
 import org.finos.legend.pure.m3.statelistener.VoidM3M4StateListener;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.exception.PureException;
 import org.finos.legend.pure.m4.serialization.binary.BinaryRepositorySerializer;
 import org.finos.legend.pure.m4.serialization.grammar.M4Parser;
+import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
 import org.finos.legend.pure.m4.transaction.framework.ThreadLocalTransactionContext;
 
 import java.io.File;
@@ -73,15 +68,6 @@ public class PureRuntime
 {
     private static final String M3_PURE = "/platform/pure/m3.pure";
     private static final String LANG_PURE = "/platform/pure/corefunctions/lang.pure";
-
-    private static final Predicate<Source> SHOULD_COMPILE = new Predicate<Source>()
-    {
-        @Override
-        public boolean accept(Source source)
-        {
-            return !source.isCompiled() && (source.isInMemory() || CodeStorageTools.isPureFilePath(source.getId()));
-        }
-    };
 
     private final URLPatternLibrary patternLibrary = new URLPatternLibrary();
 
@@ -97,7 +83,7 @@ public class PureRuntime
     private boolean initialized = false;
     private boolean initializationError = true;
     private boolean initializing = false;
-    private RuntimeOptions options;
+    private final RuntimeOptions options;
 
     private final MutableList<PureRuntimeEventHandler> eventHandlers = Lists.mutable.empty();
 
@@ -216,10 +202,10 @@ public class PureRuntime
             {
                 message.setMessage("Loading "+sourcePaths.size()+" sources...");
             }
-            MutableList<Source> sources = sourcePaths.collect(this.getOrLoadSource);
+            MutableList<Source> sources = sourcePaths.collect(this::getOrLoadSource);
 
             ////START READ and Serialize m3.pure
-            Source m3Source = this.getOrLoadSource.valueOf(M3_PURE);
+            Source m3Source = getOrLoadSource(M3_PURE);
             ModelRepository m3Repository = new ModelRepository();
             ListIterable<CoreInstance> results = new M4Parser().parse(m3Source.getContent(), m3Source.getId(), m3Repository, VoidM3M4StateListener.VOID_M3_M4_STATE_LISTENER);
             ListIterable<CoreInstance> newInstances = this.serializeAndDeserializeCoreInstances(message, m3Repository, results);
@@ -229,7 +215,7 @@ public class PureRuntime
             this.getIncrementalCompiler().preCompileM3(newInstances);
             ////END READ and Serialize m3.pure
 
-            this.compile(sources.reject(Predicates.attributeEqual(Source.SOURCE_ID, M3_PURE)));
+            this.compile(sources.reject(s -> M3_PURE.equals(s.getId())));
 
             this.getIncrementalCompiler().finishedCompilingCore(sources);
             return sources;
@@ -242,21 +228,10 @@ public class PureRuntime
 
     private ListIterable<CoreInstance> serializeAndDeserializeCoreInstances(Message message, ModelRepository m3Repository, ListIterable<CoreInstance> results)
     {
-        final MutableIntObjectMap<String> classifierPaths = new IntObjectHashMap<>();
-        for (CoreInstance instance : results)
-        {
-            classifierPaths.put(instance.getSyntheticId(), PackageableElement.getUserPathForPackageableElement(instance));
-        }
-
-        final IntObjectMap<CoreInstance> instancesById = BinaryRepositorySerializer.build(m3Repository.serialize(), this.getModelRepository(), Message.newMessageCallback(message), classifierPaths);
-        return results.collect(new Function<CoreInstance, CoreInstance>()
-        {
-            @Override
-            public CoreInstance valueOf(CoreInstance object)
-            {
-                return instancesById.get(object.getSyntheticId());
-            }
-        });
+        MutableIntObjectMap<String> classifierPaths = IntObjectMaps.mutable.empty();
+        results.forEach(instance -> classifierPaths.put(instance.getSyntheticId(), PackageableElement.getUserPathForPackageableElement(instance)));
+        IntObjectMap<CoreInstance> instancesById = BinaryRepositorySerializer.build(m3Repository.serialize(), this.getModelRepository(), Message.newMessageCallback(message), classifierPaths);
+        return results.collect(object -> instancesById.get(object.getSyntheticId()));
     }
 
     public RichIterable<Source> loadAndCompileSystem()
@@ -274,7 +249,7 @@ public class PureRuntime
             {
                 message.setMessage("Loading "+sourcePaths.size()+" sources...");
             }
-            MutableList<Source> sources = sourcePaths.collect(this.getOrLoadSource).reject(Source.IS_COMPILED).toList();
+            MutableList<Source> sources = sourcePaths.collect(this::getOrLoadSource).reject(Source.IS_COMPILED).toList();
             compile(sources);
             return sources;
         }
@@ -296,7 +271,7 @@ public class PureRuntime
         MutableCodeStorage codeStorage = getCodeStorage();
         for (String path : paths)
         {
-            codeStorage.getFileOrFiles(path).collect(this.loadSource, sources);
+            codeStorage.getFileOrFiles(path).collect(this::loadSource, sources);
         }
         compile(sources);
         this.pureRuntimeStatus.finishedLoadingAndCompilingSystemFiles();
@@ -314,7 +289,7 @@ public class PureRuntime
 
     public SourceMutation createInMemoryAndCompile(Iterable<? extends Pair<String, String>> inMemory)
     {
-        MutableList<Source> sources = FastList.newList();
+        MutableList<Source> sources = Lists.mutable.empty();
         for (Pair<String, String> idSourcePair : inMemory)
         {
             String id = idSourcePair.getOne();
@@ -328,7 +303,12 @@ public class PureRuntime
      */
     public SourceMutation compile()
     {
-        return compile(this.sourceRegistry.getSources().select(SHOULD_COMPILE).toList());
+        return compile(this.sourceRegistry.getSources().select(this::shouldCompile, Lists.mutable.empty()));
+    }
+
+    private boolean shouldCompile(Source source)
+    {
+        return !source.isCompiled() && (source.isInMemory() || CodeStorageTools.isPureFilePath(source.getId()));
     }
 
     private SourceMutation compile(RichIterable<? extends Source> sources)
@@ -345,8 +325,7 @@ public class PureRuntime
                 StringBuilder message = new StringBuilder("Error performing source mutation");
                 if (e.getMessage() != null)
                 {
-                    message.append(": ");
-                    message.append(e.getMessage());
+                    message.append(": ").append(e.getMessage());
                 }
                 throw new PureCompilationException(message.toString(), e);
             }
@@ -447,7 +426,7 @@ public class PureRuntime
         this.getCodeStorage().createFile(path);
         if (CodeStorageTools.isPureFilePath(path))
         {
-            this.loadSource.valueOf(path);
+            loadSource(path);
         }
     }
 
@@ -868,28 +847,11 @@ public class PureRuntime
         return this.cache;
     }
 
-    final Function<String, Source> loadSource = new Function<String, Source>()
+    private Source getOrLoadSource(String path)
     {
-        @Override
-        public Source valueOf(String path)
-        {
-            if (getSourceById(path) != null)
-            {
-                throw new RuntimeException(path + " is already loaded");
-            }
-            return loadSourceFromStorage(path);
-        }
-    };
-
-    private final Function<String, Source> getOrLoadSource = new Function<String, Source>()
-    {
-        @Override
-        public Source valueOf(String path)
-        {
-            Source source = getSourceById(path);
-            return (source == null) ? loadSourceFromStorage(path) : source;
-        }
-    };
+        Source source = getSourceById(path);
+        return (source == null) ? loadSourceFromStorage(path) : source;
+    }
 
     public void loadSourceIfLoadable(String path)
     {
@@ -897,6 +859,15 @@ public class PureRuntime
         {
             loadSourceFromStorage(path);
         }
+    }
+
+    Source loadSource(String path)
+    {
+        if (getSourceById(path) != null)
+        {
+            throw new RuntimeException(path + " is already loaded");
+        }
+        return loadSourceFromStorage(path);
     }
 
     private Source loadSourceFromStorage(String path)
@@ -947,6 +918,6 @@ public class PureRuntime
 
     public RuntimeOptions getOptions()
     {
-        return options;
+        return this.options;
     }
 }

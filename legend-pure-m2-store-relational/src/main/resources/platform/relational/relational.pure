@@ -194,6 +194,7 @@ Class meta::relational::metamodel::join::JoinTreeNode extends RelationalTreeNode
    joinName : String[1];
    join : Join[1];
    joinType : JoinType[0..1];
+   lateral : Boolean[0..1];
 }
 
 Enum meta::relational::metamodel::join::JoinType
@@ -309,6 +310,17 @@ Class meta::relational::metamodel::relation::TdsSelectSqlQuery extends SelectSQL
 
 Class meta::relational::metamodel::relation::TableTds extends RelationalTds
 {
+}
+
+Class meta::relational::metamodel::relation::SemiStructuredArrayFlatten extends Relation
+{
+   navigation : RelationalOperationElement[1];
+}
+
+Class meta::relational::metamodel::relation::SemiStructuredArrayFlattenOutput extends RelationalOperationElement
+{
+   tableAliasColumn : TableAliasColumn[1];
+   returnType       : Type[0..1];
 }
 
 Class

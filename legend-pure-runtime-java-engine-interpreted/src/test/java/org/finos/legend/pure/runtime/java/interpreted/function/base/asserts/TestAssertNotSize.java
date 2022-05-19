@@ -14,6 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.asserts;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
@@ -23,58 +25,67 @@ import org.junit.Test;
 public class TestAssertNotSize extends PureExpressionTest
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getExtra());
     }
+
     @Test
     public void testFailure()
     {
-        assertExpressionRaisesPureException("size should not equal: 2", 3, 9, "assertNotSize([1, 2], 2)", "function meta::pure::functions::asserts::assertNotSize(collection:Any[*], size:Integer[1]):Boolean[1]\n" +
-                "{\n" +
-                "    assertNotSize($collection, $size, | format('size should not equal: %s', [$size]));\n" +
-                "}\n" +
-                "\n" +
-                "function meta::pure::functions::asserts::assertNotSize(collection:Any[*], size:Integer[1], message:String[1]):Boolean[1]\n" +
-                "{\n" +
-                "    assertNotEq($size, $collection->size(), $message);\n" +
-                "}\n" +
-                "\n" +
-                "function meta::pure::functions::asserts::assertNotSize(collection:Any[*], size:Integer[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
-                "{\n" +
-                "    assertNotEq($size, $collection->size(), $formatString, $formatArgs);\n" +
-                "}\n" +
-                "\n" +
-                "function meta::pure::functions::asserts::assertNotSize(collection:Any[*], size:Integer[1], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
-                "{\n" +
-                "    assertNotEq($size, $collection->size(), $message);\n" +
-                "}" +
-                "function meta::pure::functions::asserts::assertNotEq(notExpected:Any[1], actual:Any[1]):Boolean[1]\n" +
-                "{\n" +
-                "    assertNotEq($notExpected, $actual, '%r should not equal %r', [$notExpected, $actual]);\n" +
-                "}\n" +
-                "\n" +
-                "function meta::pure::functions::asserts::assertNotEq(notExpected:Any[1], actual:Any[1], message:String[1]):Boolean[1]\n" +
-                "{\n" +
-                "    assert(!eq($notExpected, $actual), $message);\n" +
-                "}\n" +
-                "\n" +
-                "function meta::pure::functions::asserts::assertNotEq(notExpected:Any[1], actual:Any[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
-                "{\n" +
-                "    assert(!eq($notExpected, $actual), $formatString, $formatArgs);\n" +
-                "}\n" +
-                "\n" +
-                "function meta::pure::functions::asserts::assertNotEq(notExpected:Any[1], actual:Any[1], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
-                "{\n" +
-                "    assert(!eq($notExpected, $actual), $message);\n" +
-                "}"+
-                "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
-                "{\n" +
-                "    assert($condition, | format($formatString, $formatArgs));\n" +
-                "}");
+        assertExpressionRaisesPureException("size should not equal: 2", 3, 9, "assertNotSize([1, 2], 2)");
     }
 
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair("testAssertNotEquals.pure",
+                "function meta::pure::functions::asserts::assertNotSize(collection:Any[*], size:Integer[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assertNotSize($collection, $size, | format('size should not equal: %s', [$size]));\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertNotSize(collection:Any[*], size:Integer[1], message:String[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assertNotEq($size, $collection->size(), $message);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertNotSize(collection:Any[*], size:Integer[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assertNotEq($size, $collection->size(), $formatString, $formatArgs);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertNotSize(collection:Any[*], size:Integer[1], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assertNotEq($size, $collection->size(), $message);\n" +
+                        "}" +
+                        "function meta::pure::functions::asserts::assertNotEq(notExpected:Any[1], actual:Any[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assertNotEq($notExpected, $actual, '%r should not equal %r', [$notExpected, $actual]);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertNotEq(notExpected:Any[1], actual:Any[1], message:String[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert(!eq($notExpected, $actual), $message);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertNotEq(notExpected:Any[1], actual:Any[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert(!eq($notExpected, $actual), $formatString, $formatArgs);\n" +
+                        "}\n" +
+                        "\n" +
+                        "function meta::pure::functions::asserts::assertNotEq(notExpected:Any[1], actual:Any[1], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert(!eq($notExpected, $actual), $message);\n" +
+                        "}" +
+                        "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
+                        "{\n" +
+                        "    assert($condition, | format($formatString, $formatArgs));\n" +
+                        "}"
+        );
     }
 }

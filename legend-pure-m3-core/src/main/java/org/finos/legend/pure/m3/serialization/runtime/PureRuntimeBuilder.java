@@ -14,15 +14,15 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.runtime.cache.PureGraphCache;
 import org.finos.legend.pure.m3.serialization.runtime.cache.VoidPureGraphCache;
 
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.Function;
 
 /**
  * Builds a pure runtime
@@ -39,21 +39,11 @@ public class PureRuntimeBuilder
     private boolean isTransactionalByDefault = true;
     private boolean useFastCompiler = true;
     private ExecutedTestTracker executedTestTracker;
-    private RuntimeOptions options;
+    private RuntimeOptions options = RuntimeOptions.systemPropertyOptions("pure.options.");
 
     public PureRuntimeBuilder(MutableCodeStorage codeStorage)
     {
         this.codeStorage = codeStorage;
-
-        this.options = new RuntimeOptions()
-        {
-            @Override
-            public boolean isOptionSet(String name)
-            {
-                String propertyName = "pure.option." + name;
-                return System.getProperty(propertyName) != null && Boolean.getBoolean(propertyName);
-            }
-        };
     }
 
     public PureRuntimeBuilder withCache(PureGraphCache cache)
@@ -119,15 +109,8 @@ public class PureRuntimeBuilder
 
     public PureRuntime build()
     {
-        PureRuntime runtime = new PureRuntime(this.codeStorage, this.cache, this.pureRuntimeStatus, this.message, this.factoryRegistryOverride,
-                                              this.incrementalCompilerForkJoinPool, this.isTransactionalByDefault, this.useFastCompiler, this.executedTestTracker, this.options);
-
-        for (Function<PureRuntime, CompilerEventHandler> compilerEventHandlerFunction : this.compilerEventHandlerFactoryFunctions)
-        {
-            CompilerEventHandler compilerEventHandler = compilerEventHandlerFunction.valueOf(runtime);
-            runtime.getIncrementalCompiler().addCompilerEventHandler(compilerEventHandler);
-        }
-
+        PureRuntime runtime = new PureRuntime(this.codeStorage, this.cache, this.pureRuntimeStatus, this.message, this.factoryRegistryOverride, this.incrementalCompilerForkJoinPool, this.isTransactionalByDefault, this.useFastCompiler, this.executedTestTracker, this.options);
+        this.compilerEventHandlerFactoryFunctions.forEach(factory -> runtime.getIncrementalCompiler().addCompilerEventHandler(factory.apply(runtime)));
         return runtime;
     }
 
@@ -145,14 +128,21 @@ public class PureRuntimeBuilder
 
     public PureRuntime buildAndTryToInitializeFromCache()
     {
+        return buildAndTryToInitializeFromCache(this.message);
+    }
+
+    public PureRuntime buildAndTryToInitializeFromCache(Message message)
+    {
         PureRuntime runtime = this.build();
         try
         {
-            runtime.initializeFromCache(this.message, false);
+            runtime.initializeFromCache(message, false);
         }
-        catch (Exception e)
+        catch (Exception ignore)
         {
-            // Ignore exceptions so that even if initialization fails, the PureRuntime will still be created
+            // Ignore exceptions so that even if initialization fails, the PureRuntime will still be returned to the
+            // caller. Information about the state of initialization from the cache (including any stack trace) can be
+            // accessed from the cache itself.
         }
         return runtime;
     }

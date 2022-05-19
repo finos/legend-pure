@@ -26,6 +26,7 @@ function meta::external::language::java::factory::javaRuntimeException():       
 function meta::external::language::java::factory::javaUnsupportedOperationException(): meta::external::language::java::metamodel::Class[1] { javaClass('java.lang.UnsupportedOperationException'); }
 function meta::external::language::java::factory::javaCharSequence():                  meta::external::language::java::metamodel::Class[1] { javaClass('java.lang.CharSequence'); }
 function meta::external::language::java::factory::javaMath():                          meta::external::language::java::metamodel::Class[1] { javaClass('java.lang.Math'); }
+function meta::external::language::java::factory::javaStrictMath():                    meta::external::language::java::metamodel::Class[1] { javaClass('java.lang.StrictMath'); }
 function meta::external::language::java::factory::javaSystem():                        meta::external::language::java::metamodel::Class[1] { javaClass('java.lang.System'); }
 function meta::external::language::java::factory::javaStringBuilder():                 meta::external::language::java::metamodel::Class[1] { javaClass('java.lang.StringBuilder'); }
 function meta::external::language::java::factory::javaAppendable():                    meta::external::language::java::metamodel::Class[1] { javaClass('java.lang.Appendable'); }
@@ -36,7 +37,7 @@ function meta::external::language::java::factory::javaReflectMethod():         m
 function meta::external::language::java::factory::javaInvocationTargetException():         meta::external::language::java::metamodel::Class[1] { javaClass('java.lang.reflect.InvocationTargetException'); }
 
 function meta::external::language::java::factory::javaMathContext():           meta::external::language::java::metamodel::Class[1] { javaClass('java.math.MathContext'); }
-function meta::external::language::java::factory::javaRoundingMode():          meta::external::language::java::metamodel::Class[1] { javaClass('java.math.RoundingMode'); }
+function meta::external::language::java::factory::javaRoundingMode():          meta::external::language::java::metamodel::Class[1] { javaEnum([], 'java.math.RoundingMode'); }
 
 function meta::external::language::java::factory::javaIOException():           meta::external::language::java::metamodel::Class[1] { javaClass('java.io.IOException'); }
 function meta::external::language::java::factory::javaBufferedInputStream():   meta::external::language::java::metamodel::Class[1] { javaClass('java.io.BufferedInputStream'); }

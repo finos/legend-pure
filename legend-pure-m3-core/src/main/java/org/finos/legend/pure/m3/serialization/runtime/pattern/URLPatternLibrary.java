@@ -14,20 +14,13 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.pattern;
 
-import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.MutableMap;
+import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.Instance;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.extension.TaggedValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.ConcreteFunctionDefinition;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
@@ -35,11 +28,17 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionTy
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Type;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpressionAccessor;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.profile.Profile;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
+import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.m4.transaction.framework.Transaction;
 import org.finos.legend.pure.m4.transaction.framework.TransactionManager;
 
@@ -53,26 +52,9 @@ import java.util.regex.PatternSyntaxException;
 
 public class URLPatternLibrary
 {
-    static final Comparator<PurePattern> URLPatternComparator = new Comparator<PurePattern>()
-    {
-        @Override
-        public int compare(PurePattern o1, PurePattern o2)
-        {
-            String str1 = o1.getSrcPattern();
-            String str2 = o2.getSrcPattern();
-            return (str2.length() + (str2.contains("{") ? 0 : 10000)) - (str1.length() + (str1.contains("{") ? 0 : 10000));
-        }
-    };
+    static final Comparator<PurePattern> URLPatternComparator = URLPatternLibrary::comparePatterns;
 
     private static final Pattern PATTERN_PARSING_PATTERN = Pattern.compile("([^{]+)|\\{([a-zA-Z_0-9]+)(:(([^}]+)))?\\}");
-    private static final Function<VariableExpression, String> GET_PARAM_NAME = new Function<VariableExpression, String>()
-    {
-        @Override
-        public String valueOf(VariableExpression instance)
-        {
-            return instance._name();
-        }
-    };
 
     private State mainState = new State();
     private final URLPatternLibraryTransactionManager transactionManager = new URLPatternLibraryTransactionManager();
@@ -98,35 +80,35 @@ public class URLPatternLibrary
         }
 
         CoreInstance stringType = processorSupport.package_getByUserPath(M3Paths.String);
-        FunctionType functionType = (FunctionType)processorSupport.function_getFunctionType(instance);
+        FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(instance);
 
-        for (TaggedValue taggedValue : ((ConcreteFunctionDefinition)instance)._taggedValues())
+        for (TaggedValue taggedValue : ((ConcreteFunctionDefinition<?>) instance)._taggedValues())
         {
             if (urlTag == ImportStub.withImportStubByPass(taggedValue._tagCoreInstance(), processorSupport))
             {
                 // validate the function return
                 GenericType returnGenericType = functionType._returnType();
-                Type returnType = (Type)ImportStub.withImportStubByPass(returnGenericType._rawTypeCoreInstance(), processorSupport);
+                Type returnType = (Type) ImportStub.withImportStubByPass(returnGenericType._rawTypeCoreInstance(), processorSupport);
                 if (!org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(returnType, processorSupport.package_getByUserPath(M3Paths.ServiceResult), processorSupport) && returnType != stringType)
                 {
                     throw new PureCompilationException(returnGenericType.getSourceInformation(), "Return type issue. A service function has to return a 'String' or a subtype of 'ServiceResult'.");
                 }
-                Multiplicity returnMultiplicity = ((FunctionType)processorSupport.function_getFunctionType(instance))._returnMultiplicity();
+                Multiplicity returnMultiplicity = ((FunctionType) processorSupport.function_getFunctionType(instance))._returnMultiplicity();
                 if (!org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.isToOne(returnMultiplicity, true))
                 {
                     throw new PureCompilationException(returnGenericType.getSourceInformation(), "Return multiplicity issue. A service function has to return one ([1]) element.");
                 }
 
-                register((ConcreteFunctionDefinition)instance, functionType, taggedValue, processorSupport, taggedValue._value());
+                register((ConcreteFunctionDefinition<?>) instance, functionType, taggedValue, processorSupport, taggedValue._value());
             }
         }
     }
 
-    public void register(ConcreteFunctionDefinition function, FunctionType functionType, CoreInstance taggedValue, ProcessorSupport processorSupport, String pattern)
+    public void register(ConcreteFunctionDefinition<?> function, FunctionType functionType, CoreInstance taggedValue, ProcessorSupport processorSupport, String pattern)
     {
         Matcher matcher = PATTERN_PARSING_PATTERN.matcher(pattern);
         StringBuilder builder = new StringBuilder(pattern.length() + 8);
-        MutableList<String> urlArguments = FastList.newList();
+        MutableList<String> urlArguments = Lists.mutable.empty();
         String first = null;
 
         while (matcher.find())
@@ -144,8 +126,7 @@ public class URLPatternLibrary
             {
                 String group2 = matcher.group(2);
                 urlArguments.add(group2);
-                builder.append("(?<");
-                builder.append(group2);
+                builder.append("(?<").append(group2);
 
                 String group4 = matcher.group(4);
                 if (group4 == null)
@@ -162,14 +143,16 @@ public class URLPatternLibrary
                     {
                         throw new PureCompilationException(new SourceInformation(function.getSourceInformation().getSourceId(), taggedValue.getSourceInformation().getLine(), taggedValue.getSourceInformation().getColumn() + 1 + matcher.start(4) + e.getIndex(), -1, -1), "Error in the user provided regexp: " + group4, e);
                     }
-                    builder.append('>');
-                    builder.append(group4);
-                    builder.append(")");
+                    builder.append('>').append(group4).append(")");
                 }
             }
         }
+        if (first == null)
+        {
+            throw new PureCompilationException(taggedValue.getSourceInformation(), "Error in the user provided regexp: " + pattern);
+        }
 
-        RichIterable<CoreInstance> supportedTypes = PrimitiveUtilities.getPrimitiveTypes(processorSupport);
+        SetIterable<CoreInstance> supportedTypes = PrimitiveUtilities.getPrimitiveTypes(processorSupport).toSet();
 
         //Validate Arguments
         for (VariableExpression var : functionType._parameters())
@@ -208,7 +191,7 @@ public class URLPatternLibrary
         }
 
         // Validate
-        ListIterable<String> params = ((FunctionType)processorSupport.function_getFunctionType(function))._parameters().toList().collect(GET_PARAM_NAME);
+        ListIterable<String> params = ((FunctionType) processorSupport.function_getFunctionType(function))._parameters().collect(VariableExpressionAccessor::_name, Lists.mutable.empty());
         if (!params.containsAll(urlArguments))
         {
             throw new PureCompilationException(function.getSourceInformation(), "URL pattern names mismatch. Found " + urlArguments + " in the pattern where the function has " + params);
@@ -226,7 +209,7 @@ public class URLPatternLibrary
         return getState().tryExecution(url, processorSupport, params);
     }
 
-    public void deregister(ConcreteFunctionDefinition functionDefinition)
+    public void deregister(ConcreteFunctionDefinition<?> functionDefinition)
     {
         String functionId = getFunctionId(functionDefinition);
         getState().deregister(functionId);
@@ -254,13 +237,12 @@ public class URLPatternLibrary
         return (transaction == null) ? this.mainState : transaction.state;
     }
 
-    private String getFunctionId(ConcreteFunctionDefinition functionDefinition)
+    private String getFunctionId(ConcreteFunctionDefinition<?> functionDefinition)
     {
-        StringBuilder builder = new StringBuilder();
-        PackageableElement.writeUserPathForPackageableElement(builder, functionDefinition._package());
-        builder.append(PackageableElement.DEFAULT_PATH_SEPARATOR);
-        builder.append(functionDefinition.getName());
-        return builder.toString();
+        return PackageableElement.writeUserPathForPackageableElement(new StringBuilder(), functionDefinition._package())
+                .append(PackageableElement.DEFAULT_PATH_SEPARATOR)
+                .append(functionDefinition.getName())
+                .toString();
     }
 
     public class URLPatternLibraryTransaction extends Transaction
@@ -406,5 +388,12 @@ public class URLPatternLibrary
                 lock.unlock();
             }
         }
+    }
+
+    static int comparePatterns(PurePattern pattern1, PurePattern pattern2)
+    {
+        String str1 = pattern1.getSrcPattern();
+        String str2 = pattern2.getSrcPattern();
+        return (str2.length() + (str2.contains("{") ? 0 : 10000)) - (str1.length() + (str1.contains("{") ? 0 : 10000));
     }
 }
