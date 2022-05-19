@@ -217,9 +217,9 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
         }
 
         @Override
-        public void executedTest(CoreInstance function, String console, TestStatus status)
+        public void executedTest(CoreInstance function, String testParameterizationId, String console, TestStatus status)
         {
-            this.groups.add(new CallBackGroup(function, console, status));
+            this.groups.add(new CallBackGroup(function, testParameterizationId, console, status));
         }
 
         MutableList<CallBackGroup> getGroups()
@@ -236,12 +236,14 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
     private static class CallBackGroup
     {
         private final CoreInstance function;
+        private final String testParameterizationId;
         private final String message;
         private final TestStatus status;
 
-        private CallBackGroup(CoreInstance function, String message, TestStatus status)
+        private CallBackGroup(CoreInstance function, String testParameterizationId, String message, TestStatus status)
         {
             this.function = function;
+            this.testParameterizationId = testParameterizationId;
             this.message = message;
             this.status = status;
         }
@@ -259,6 +261,11 @@ public class TestTestRunner extends AbstractPureTestWithCoreCompiled
         TestStatus getStatus()
         {
             return this.status;
+        }
+
+        String getTestParameterizationId()
+        {
+            return this.testParameterizationId;
         }
     }
 }

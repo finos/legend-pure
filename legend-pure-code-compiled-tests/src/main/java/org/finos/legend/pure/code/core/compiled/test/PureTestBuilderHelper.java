@@ -61,6 +61,21 @@ public class PureTestBuilderHelper extends TestSuite
         return ArrayIterate.collect(exclusions, e -> Objects.requireNonNull(processorSupport.package_getByUserPath(e), e), Sets.mutable.ofInitialCapacity(exclusions.length));
     }
 
+    public static TestCollection generatePureTestCollection(CoreInstance fn, ExecutionSupport executionSupport)
+    {
+        return TestCollection.collectTestsFromPure(fn, f ->
+        {
+            try
+            {
+                return executeFn(f, executionSupport);
+            }
+            catch (Throwable e)
+            {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
     public static TestSuite buildSuite(TestCollection testCollection, ExecutionSupport executionSupport)
     {
         MutableList<TestSuite> subSuites = Lists.mutable.empty();
@@ -72,27 +87,31 @@ public class PureTestBuilderHelper extends TestSuite
                 testCollection.getBeforeFunctions(),
                 testCollection.getAfterFunctions(),
                 testCollection.getPureAndAlloyOnlyFunctions(),
+                testCollection.getTestFunctionParam(),
+                testCollection.getTestFunctionParamCustomizer(),
+                testCollection.getTestParameterizationId(),
                 subSuites,
                 executionSupport
         );
     }
 
     private static TestSuite buildSuite(String packageName, RichIterable<CoreInstance> beforeFunctions, RichIterable<CoreInstance> afterFunctions,
-                                        RichIterable<CoreInstance> testFunctions, org.eclipse.collections.api.list.ListIterable<TestSuite> subSuites, ExecutionSupport executionSupport)
+                                        RichIterable<CoreInstance> testFunctions, Object param, CoreInstance paramCustomizer, String parameterizationId,
+                                        org.eclipse.collections.api.list.ListIterable<TestSuite> subSuites, ExecutionSupport executionSupport)
     {
         TestSuite suite = new TestSuite();
-        suite.setName(packageName);
-        beforeFunctions.collect(fn -> new PureTestCase(fn, executionSupport)).each(suite::addTest);
+        suite.setName(packageName + (parameterizationId == null ? "" : "[" + parameterizationId + "]"));
+        beforeFunctions.collect(fn -> new PureTestCase(fn, param, paramCustomizer, parameterizationId, executionSupport)).each(suite::addTest);
         for (Test subSuite : subSuites.toSortedList(Comparator.comparing(TestSuite::getName)))
         {
             suite.addTest(subSuite);
         }
         for (CoreInstance testFunc : testFunctions.toSortedList(Comparator.comparing(CoreInstance::getName)))
         {
-            Test theTest = new PureTestCase(testFunc, executionSupport);
+            Test theTest = new PureTestCase(testFunc, param, paramCustomizer, parameterizationId, executionSupport);
             suite.addTest(theTest);
         }
-        afterFunctions.collect(fn -> new PureTestCase(fn, executionSupport)).each(suite::addTest);
+        afterFunctions.collect(fn -> new PureTestCase(fn, param, paramCustomizer, parameterizationId, executionSupport)).each(suite::addTest);
         return suite;
     }
 
@@ -100,36 +119,59 @@ public class PureTestBuilderHelper extends TestSuite
     public static class PureTestCase extends TestCase
     {
         CoreInstance coreInstance;
+        Object param;
+        CoreInstance paramCustomizer;
         ExecutionSupport executionSupport;
 
         public PureTestCase()
         {
         }
 
-        PureTestCase(CoreInstance coreInstance, ExecutionSupport executionSupport)
+        PureTestCase(CoreInstance coreInstance, Object param, CoreInstance paramCustomizer, String parameterizationId, ExecutionSupport executionSupport)
         {
-            super(coreInstance.getValueForMetaPropertyToOne("functionName").getName());
+            super(coreInstance.getValueForMetaPropertyToOne("functionName").getName() + (parameterizationId == null ? "" : "[" + parameterizationId + "]"));
             this.coreInstance = coreInstance;
+            this.param = param;
+            this.paramCustomizer = paramCustomizer;
             this.executionSupport = executionSupport;
         }
 
         @Override
         protected void runTest() throws Throwable
         {
-            Class<?> _class = Class.forName("org.finos.legend.pure.generated." + IdBuilder.sourceToId(coreInstance.getSourceInformation()));
-            Method method = _class.getMethod(FunctionProcessor.functionNameToJava(coreInstance), ExecutionSupport.class);
-            // NOTE: mock out the global tracer for test
-            // See https://github.com/opentracing/opentracing-java/issues/170
-            // See https://github.com/opentracing/opentracing-java/issues/364
-            GlobalTracer.registerIfAbsent(NoopTracerFactory.create());
-            try
+            Object customizedParam = this.param;
+            if (this.param != null && this.paramCustomizer != null)
             {
-                method.invoke(null, this.executionSupport);
+                customizedParam = executeFn(this.paramCustomizer, this.coreInstance, this.param, this.executionSupport);
             }
-            catch (InvocationTargetException e)
+            if (customizedParam != null)
             {
-                throw e.getCause();
+                executeFn(this.coreInstance, customizedParam, this.executionSupport);
             }
+            else
+            {
+                executeFn(this.coreInstance, this.executionSupport);
+            }
+        }
+    }
+
+    public static Object executeFn(CoreInstance coreInstance, Object... params) throws Throwable
+    {
+        Class<?> _class = Class.forName("org.finos.legend.pure.generated." + IdBuilder.sourceToId(coreInstance.getSourceInformation()));
+        String methodName = FunctionProcessor.functionNameToJava(coreInstance);
+        Method method = params.length == 1 ? _class.getMethod(methodName, ExecutionSupport.class)
+                : ArrayIterate.detect(_class.getMethods(), m -> methodName.equals(m.getName()));
+        // NOTE: mock out the global tracer for test
+        // See https://github.com/opentracing/opentracing-java/issues/170
+        // See https://github.com/opentracing/opentracing-java/issues/364
+        GlobalTracer.registerIfAbsent(NoopTracerFactory.create());
+        try
+        {
+            return method.invoke(null, params);
+        }
+        catch (InvocationTargetException e)
+        {
+            throw e.getCause();
         }
     }
 

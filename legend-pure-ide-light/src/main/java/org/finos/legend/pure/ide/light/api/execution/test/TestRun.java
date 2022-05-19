@@ -22,11 +22,13 @@ import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
+import org.eclipse.collections.api.tuple.Pair;
 import org.eclipse.collections.impl.block.factory.Predicates;
 import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.eclipse.collections.impl.utility.StringIterate;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.ide.light.session.SimpleFunction;
+import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.execution.test.TestCollection;
 import org.finos.legend.pure.m3.execution.test.TestRunner;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -78,16 +80,16 @@ public class TestRun implements SimpleFunction
 
         TestNode root = new TestNode(runtime.getCoreInstance("::"));
 
-        MutableList<CoreInstance> tests = runner.getTestCollection().getAllTestFunctions(false);
-        tests.sortThisBy(PackageableElement::getUserPathForPackageableElement);
+        MutableList<Pair<CoreInstance, String>> tests = runner.getTestCollection().getAllTestFunctionsWithParameterizations(false);
+        tests.sortThisBy(t -> PackageableElement.getUserPathForPackageableElement(t.getOne()));
 
-        for (CoreInstance test : tests)
+        for (Pair<CoreInstance, String> test : tests)
         {
-            ListIterable<CoreInstance> nodePath = PackageableElement.getUserObjectPathForPackageableElement(test);
+            ListIterable<CoreInstance> nodePath = PackageableElement.getUserObjectPathForPackageableElement(test.getOne());
             TestNode node = root;
             for (CoreInstance element : ListHelper.tail(nodePath))
             {
-                node = node.getOrCreateChild(element);
+                node = node.getOrCreateChild(element, element == nodePath.getLast() ? test.getTwo() : null);
             }
         }
 
@@ -174,6 +176,7 @@ public class TestRun implements SimpleFunction
     private TestCollection getTestCollection(PureSession session, String path, String[] filterPaths, Predicate<? super CoreInstance> filterPredicate)
     {
         PureRuntime runtime = session.getPureRuntime();
+        FunctionExecution functionExecution = session.getFunctionExecution();
         CoreInstance coreInstance = runtime.getCoreInstance(path);
         ProcessorSupport processorSupport = runtime.getProcessorSupport();
 
@@ -205,6 +208,6 @@ public class TestRun implements SimpleFunction
         Predicate<? super CoreInstance> predicate = (filterPredicate == null) ? funcExecPredicate : Predicates.and(funcExecPredicate, filterPredicate);
         Predicate<? super CoreInstance> alloyTextModeExclusionPredicate = TestCollection.getFilterPredicateForAlloyTextModeExclusion(processorSupport);
         predicate = Predicates.and(predicate, singleTestFilter, pathFilter, alloyTextModeExclusionPredicate);
-        return TestCollection.collectTests(pkg, processorSupport, predicate);
+        return TestCollection.collectTests(pkg, processorSupport, fn -> TestCollection.collectTestsFromPure(fn, functionExecution), predicate);
     }
 }

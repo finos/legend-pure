@@ -37,12 +37,12 @@ public class CallBack implements TestCallBack
     }
 
     @Override
-    public void executedTest(CoreInstance test, String consoleOutput, TestStatus status)
+    public void executedTest(CoreInstance test, String testParameterizationId, String consoleOutput, TestStatus status)
     {
         synchronized (this.containers)
         {
             this.tests.remove(test);
-            this.containers.add(new TestResult(test, consoleOutput, status));
+            this.containers.add(new TestResult(test, testParameterizationId, consoleOutput, status));
         }
     }
 

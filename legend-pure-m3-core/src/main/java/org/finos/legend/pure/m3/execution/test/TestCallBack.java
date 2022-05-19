@@ -20,5 +20,5 @@ public interface TestCallBack
 {
     void foundTests(Iterable<? extends CoreInstance> tests);
 
-    void executedTest(CoreInstance function, String consoleOutput, TestStatus status);
+    void executedTest(CoreInstance function, String testParameterizationId, String consoleOutput, TestStatus status);
 }
