@@ -42,6 +42,7 @@ function meta::protocols::pure::vX_X_X::invocation::generation::avro::transformA
       includeGeneratedMilestoning=$input.includeGeneratedMilestoning,
       timestampLogicalType=$input.timestampLogicalType,
       propertyProfile=$input.propertyProfile,
-      namespaceOverride=$input.namespaceOverride
+      namespaceOverride=$input.namespaceOverride,
+      generateLogicalTypes = $input.generateLogicalTypes
    )
 }

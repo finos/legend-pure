@@ -17,28 +17,15 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.AbstractTestDynamicNew;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
-import org.junit.After;
 import org.junit.BeforeClass;
 
 public class TestDynamicNew extends AbstractTestDynamicNew
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
-    }
-
-    @After
-    public void clearRuntime()
+    public static void setUp()
     {
-        runtime.delete("testSource.pure");
-        runtime.delete("/test/testModel.pure");
-        try {
-            runtime.compile();
-        } catch (PureCompilationException e) {
-            setUp();
-        }
+        setUpRuntime(getFunctionExecution(), getCodeStorage());
     }
 
     protected static FunctionExecution getFunctionExecution()

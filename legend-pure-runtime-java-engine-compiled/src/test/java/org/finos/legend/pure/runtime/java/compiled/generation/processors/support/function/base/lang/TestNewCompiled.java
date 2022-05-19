@@ -17,29 +17,16 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors.suppor
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.lang.AbstractTestNewAtRuntime;
-import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
-import org.junit.After;
+import org.junit.Assert;
 import org.junit.BeforeClass;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public class TestNewCompiled extends AbstractTestNewAtRuntime
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
-    }
-    @After
-    public void cleanRuntime() {
-        runtime.delete("fromString.pure");
-        runtime.delete("/test/testModel.pure");
-        try{
-            runtime.compile();
-        } catch (PureCompilationException e) {
-            setUp();
-        }
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getCodeStorage());
     }
 
     public static FunctionExecution getFunctionExecution()
@@ -56,7 +43,7 @@ public class TestNewCompiled extends AbstractTestNewAtRuntime
     @Override
     public void testNewWithInheritenceAndOverriddenAssociationEndWithReverseOneToOneProperty()
     {
-        compileTestSource("fromString.pure","function test(): Any[*]\n" +
+        compileTestSource("fromString.pure", "function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::FastCar(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   print($car.owner.car->size()->toString(), 1);\n" +
@@ -89,20 +76,20 @@ public class TestNewCompiled extends AbstractTestNewAtRuntime
                 "}");
         try
         {
-            this.execute("test():Any[*]");
-            String result = this.functionExecution.getConsole().getLine(0);
-            assertEquals("'0'", result);
+            execute("test():Any[*]");
+            String result = functionExecution.getConsole().getLine(0);
+            Assert.assertEquals("'0'", result);
         }
         catch (Exception e)
         {
-            fail("Failed to set the reverse properties for a one-to-one association.");
+            Assert.fail("Failed to set the reverse properties for a one-to-one association.");
         }
     }
 
     @Override
     public void testNewWithInheritenceAndOverriddenAssociationEndWithReverseOneToManyProperty()
     {
-        compileTestSource("fromString.pure","function test(): Any[*]\n" +
+        compileTestSource("fromString.pure", "function test(): Any[*]\n" +
                 "{\n" +
                 "   let car = ^test::FastCar(name='Bugatti', owner= ^test::Owner(firstName='John', lastName='Roe'));\n" +
                 "   print($car.owner.cars->size()->toString(), 1);\n" +
@@ -135,13 +122,13 @@ public class TestNewCompiled extends AbstractTestNewAtRuntime
                 "}");
         try
         {
-            this.execute("test():Any[*]");
-            String result = this.functionExecution.getConsole().getLine(0);
-            assertEquals("'0'", result);
+            execute("test():Any[*]");
+            String result = functionExecution.getConsole().getLine(0);
+            Assert.assertEquals("'0'", result);
         }
         catch (Exception e)
         {
-            fail("Failed to set the reverse properties for a one-to-one association.");
+            Assert.fail("Failed to set the reverse properties for a one-to-one association.");
         }
     }
 }

@@ -24,31 +24,33 @@ import org.junit.Test;
 public class TestReflectiveFunctions extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getCodeStorage(), getCodeRepositories());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution());
     }
 
     @After
     public void cleanRuntime()
     {
         runtime.delete("fromString.pure");
+        runtime.compile();
     }
 
     @Test
     public void testFilterSimple()
     {
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
-                "{\n" +
-                "   assert('test' == ['a','b','test']->filter(x|$x == 'test'), |'')\n" +
-                "}");
+                        "{\n" +
+                        "   assert('test' == ['a','b','test']->filter(x|$x == 'test'), |'')\n" +
+                        "}");
         this.compileAndExecute("test():Boolean[1]");
     }
 
     @Test
     public void testFilterReflectiveEval()
     {
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert('test' == filter_T_MANY__Function_1__T_MANY_->eval(['a','b','test'], x:String[1]|$x == 'test'), |'')\n" +
@@ -59,7 +61,7 @@ public class TestReflectiveFunctions extends AbstractPureTestWithCoreCompiled
     @Test
     public void testFilterReflectiveEvaluate()
     {
-       compileTestSource("fromString.pure",
+        compileTestSource("fromString.pure",
                 "function test():Boolean[1]\n" +
                         "{\n" +
                         "   assert('test' == filter_T_MANY__Function_1__T_MANY_->evaluate([list(['a','b','test']), list(x:String[1]|$x == 'test')]), |'')\n" +
@@ -68,8 +70,7 @@ public class TestReflectiveFunctions extends AbstractPureTestWithCoreCompiled
 
     }
 
-
-     protected static FunctionExecution getFunctionExecution()
+    protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
     }

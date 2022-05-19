@@ -120,13 +120,15 @@ function meta::pure::executionPlan::engine::java::tests::runTests(tests:JavaExpr
    let allAssertions = $tests->map(
       {test|
          let java = $test.lambda->cast(@FunctionDefinition<{->Any[*]}>)->evaluateAndDeactivate().expressionSequence->toOne()->cast(@ValueSpecification)->generateJava($test.conventions, $debug);
-         assertEquals($test.codeAssertion->codeToString(), $java->codeToString(), |$test.name+' code is incorrect\nexpected: '+$test.codeAssertion->codeToString()+'\nactual  : '+$java->codeToString()+'\n');   
+         let expectedCode = $test.codeAssertion->codeToString();
+         let actualCode = $java->codeToString()->split('\n')->map(x | $x->trim())->joinStrings(' ')->replace(' .', '.');
+         assertEquals($expectedCode, $actualCode, |$test.name+' code is incorrect\nexpected: '+$expectedCode+'\nactual  : '+$actualCode+'\n');   
          assertEquals($test.codeAssertion.type, $java.type, |$test.name+' expected type of \''+$test.codeAssertion.type->typeToString()+'\' but got \''+$java.type->typeToString()+'\'');   
          assert($test.assertionPatterns->isNotEmpty(), 'You must make some assertions');
         
          let assertions = $test.assertionPatterns->map(
             {a |
-               let assert = $a->format($java->codeToString());
+               let assert = $a->format($actualCode);
                let pass = j_string('PASS '+$test.name+': '+$assert+'\n');
                let fail = j_string('FAIL '+$test.name+': '+$assert+'\n');
 

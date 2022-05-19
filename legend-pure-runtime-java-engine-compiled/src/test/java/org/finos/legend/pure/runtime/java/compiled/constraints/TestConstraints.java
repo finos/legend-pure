@@ -14,8 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.compiled.constraints;
 
-import org.finos.legend.pure.generated.CoreJavaModelFactoryRegistry;
 import org.eclipse.collections.impl.tuple.Tuples;
+import org.finos.legend.pure.generated.CoreJavaModelFactoryRegistry;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.exception.PureExecutionException;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
@@ -29,13 +29,9 @@ import org.junit.Test;
 public class TestConstraints extends AbstractTestConstraints
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getFactoryRegistryOverride());
-        runtime.createInMemorySource("employee.pure", "Class Employee" +
-                "{" +
-                "   lastName:String[1];" +
-                "}\n");
-        runtime.compile();
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getFactoryRegistryOverride(), getOptions(), getExtra());
     }
 
     @After
@@ -43,8 +39,7 @@ public class TestConstraints extends AbstractTestConstraints
     {
         runtime.delete("/test/source1.pure");
         runtime.delete("/test/source2.pure");
-        runtime.delete("fromString.pure");
-        runtime.compile();
+        super.cleanRuntime();
     }
 
     @Test
@@ -77,15 +72,8 @@ public class TestConstraints extends AbstractTestConstraints
                 "}\n";
         // The two sources must be compiled together to test the issue
         runtime.createInMemoryAndCompile(Tuples.pair(source1Name, source1Code), Tuples.pair(source2Name, source2Code));
-        try
-        {
-            this.execute("test::testNew():Any[*]");
-            Assert.fail("This should fail constraint validation");
-        }
-        catch (Exception e)
-        {
-            assertPureException(PureExecutionException.class, "Constraint :[nameNotEmpty] violated in the Class SuperClass", "/test/source2.pure", 7, 3, e);
-        }
+        PureExecutionException e = Assert.assertThrows(PureExecutionException.class, () -> execute("test::testNew():Any[*]"));
+        assertPureException(PureExecutionException.class, "Constraint :[nameNotEmpty] violated in the Class SuperClass", "/test/source2.pure", 7, 3, e);
     }
 
     protected static FunctionExecution getFunctionExecution()

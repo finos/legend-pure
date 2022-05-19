@@ -15,9 +15,9 @@
 package org.finos.legend.pure.m3;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.compiler.Context;
@@ -42,10 +42,14 @@ import org.finos.legend.pure.m4.exception.PureException;
 import org.junit.AfterClass;
 import org.junit.Assert;
 
-import java.io.InputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Scanner;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -56,69 +60,107 @@ public abstract class AbstractPureTestWithCoreCompiled
     protected static Context context;
     protected static ProcessorSupport processorSupport;
     protected static FunctionExecution functionExecution;
+
+    @Deprecated
     protected static RichIterable<? extends CodeRepository> codeRepositories;
 
     public CodeRepository getRepositoryByName(String name)
     {
-        return codeRepositories.select(c -> c.getName().equals(name)).getFirst();
+        return runtime.getCodeStorage().getRepository(name);
     }
 
-    public static final void setUpRuntime()
+    public static void setUpRuntime()
     {
-        setUpRuntime(getFunctionExecution(), getCodeStorage(), getFactoryRegistryOverride(), getOptions(), getExtra(), getCodeRepositories());
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getFactoryRegistryOverride(), getOptions(), getExtra());
     }
 
-    public static final void setUpRuntime(FunctionExecution execution)
+    public static void setUpRuntime(FunctionExecution execution)
     {
-        setUpRuntime(execution, getCodeStorage(), getFactoryRegistryOverride(), getOptions(), getExtra(), getCodeRepositories());
+        setUpRuntime(execution, getCodeStorage(), getFactoryRegistryOverride(), getOptions(), getExtra());
     }
 
-    public static final void setUpRuntime(Pair<String, String> extra)
+    public static void setUpRuntime(MutableCodeStorage codeStorage)
     {
-        setUpRuntime(getFunctionExecution(), getCodeStorage(), getFactoryRegistryOverride(), getOptions(), extra, getCodeRepositories());
+        setUpRuntime(getFunctionExecution(), codeStorage, getFactoryRegistryOverride(), getOptions(), getExtra());
     }
 
-    public static final void setUpRuntime(FunctionExecution execution, CoreInstanceFactoryRegistry registry)
+    public static void setUpRuntime(Pair<String, String> extra)
     {
-        setUpRuntime(execution, getCodeStorage(), registry, getOptions(), getExtra(), getCodeRepositories());
+        setUpRuntime(getFunctionExecution(), getCodeStorage(), getFactoryRegistryOverride(), getOptions(), extra);
     }
 
-    public static final void setUpRuntime(FunctionExecution execution, Pair<String, String> extra)
+    public static void setUpRuntime(FunctionExecution execution, CoreInstanceFactoryRegistry registry)
     {
-        setUpRuntime(execution, getCodeStorage(), getFactoryRegistryOverride(), getOptions(), extra, getCodeRepositories());
+        setUpRuntime(execution, getCodeStorage(), registry, getOptions(), getExtra());
     }
 
-    public static final void setUpRuntime(FunctionExecution execution, RuntimeOptions options)
+    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage)
     {
-        setUpRuntime(execution, getCodeStorage(), getFactoryRegistryOverride(), options, getExtra(), getCodeRepositories());
+        setUpRuntime(execution, codeStorage, getFactoryRegistryOverride(), getOptions(), getExtra());
     }
 
-    public static final void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, RichIterable<? extends CodeRepository> repositories)
+    public static void setUpRuntime(FunctionExecution execution, Pair<String, String> extra)
+    {
+        setUpRuntime(execution, getCodeStorage(), getFactoryRegistryOverride(), getOptions(), extra);
+    }
+
+    public static void setUpRuntime(FunctionExecution execution, RuntimeOptions options)
+    {
+        setUpRuntime(execution, getCodeStorage(), getFactoryRegistryOverride(), options, getExtra());
+    }
+
+    public static void setUpRuntime(MutableCodeStorage codeStorage, Pair<String, String> extra)
+    {
+        setUpRuntime(getFunctionExecution(), codeStorage, getFactoryRegistryOverride(), getOptions(), extra);
+    }
+
+    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, Pair<String, String> extra)
+    {
+        setUpRuntime(execution, codeStorage, getFactoryRegistryOverride(), getOptions(), extra);
+    }
+
+    public static void setUpRuntime(FunctionExecution execution, CoreInstanceFactoryRegistry registry, Pair<String, String> extra)
+    {
+        setUpRuntime(execution, getCodeStorage(), registry, getOptions(), extra);
+    }
+
+    @Deprecated
+    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, RichIterable<? extends CodeRepository> repositories)
     {
         setUpRuntime(execution, codeStorage, getFactoryRegistryOverride(), getOptions(), getExtra(), repositories);
     }
 
-    public static final void setUpRuntime(MutableCodeStorage codeStorage, RichIterable<? extends CodeRepository> repositories, Pair<String, String> extra)
+    @Deprecated
+    public static void setUpRuntime(MutableCodeStorage codeStorage, RichIterable<? extends CodeRepository> repositories, Pair<String, String> extra)
     {
         setUpRuntime(getFunctionExecution(), codeStorage, getFactoryRegistryOverride(), getOptions(), extra, repositories);
     }
 
-
-//    @Before
-    public static final void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, RuntimeOptions options, Pair<String, String> extra, RichIterable<? extends CodeRepository> repositories)
+    @Deprecated
+    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, RuntimeOptions options, Pair<String, String> extra, RichIterable<? extends CodeRepository> repositories)
     {
-        codeRepositories = repositories;
+        if ((repositories != null) && !repositories.toSet().equals(codeStorage.getAllRepositories().toSet()))
+        {
+            throw new IllegalArgumentException("Conflict between specified repositories (" + repositories.collect(CodeRepository::getName) + ") and those from code storage (" + codeStorage.getAllRepoNames() + ")");
+        }
+        setUpRuntime(execution, codeStorage, registry, options, extra);
+    }
+
+    public static void setUpRuntime(FunctionExecution execution, MutableCodeStorage codeStorage, CoreInstanceFactoryRegistry registry, RuntimeOptions options, Pair<String, String> extra)
+    {
+        codeRepositories = codeStorage.getAllRepositories();
         functionExecution = execution;
         runtime = new PureRuntimeBuilder(codeStorage)
                 .withRuntimeStatus(getPureRuntimeStatus())
-                .withFactoryRegistryOverride(registry).setTransactionalByDefault(isTransactionalByDefault())
+                .withFactoryRegistryOverride(registry)
+                .setTransactionalByDefault(isTransactionalByDefault())
                 .withOptions(options)
                 .build();
         functionExecution.init(runtime, new Message(""));
         runtime.loadAndCompileCore();
         if (extra != null)
         {
-            runtime.createInMemoryAndCompile(extra);
+            runtime.createInMemoryAndCompile(Lists.immutable.with(extra));
         }
         repository = runtime.getModelRepository();
         context = runtime.getContext();
@@ -134,13 +176,16 @@ public abstract class AbstractPureTestWithCoreCompiled
         return null;
     }
 
-
     @AfterClass
-    public static final void tearDownRuntime()
+    public static void tearDownRuntime()
     {
         if (runtime != null)
         {
             runtime.reset();
+        }
+        if (repository != null)
+        {
+            repository.clear();
         }
         runtime = null;
         repository = null;
@@ -178,7 +223,7 @@ public abstract class AbstractPureTestWithCoreCompiled
 
     protected static MutableCodeStorage getCodeStorage()
     {
-        return PureCodeStorage.createCodeStorage(getCodeStorageRoot(), Lists.immutable.with(CodeRepository.newPlatformCodeRepository()));
+        return PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories());
     }
 
     protected static Path getCodeStorageRoot()
@@ -198,14 +243,20 @@ public abstract class AbstractPureTestWithCoreCompiled
 
     protected static RuntimeOptions getOptions()
     {
-        return new RuntimeOptions()
-        {
-            @Override
-            public boolean isOptionSet(String name)
-            {
-                return false;
-            }
-        };
+        return RuntimeOptions.noOptionsSet();
+    }
+
+    /**
+     * Compile test source from a named resource. If pureSourceName is not specified, resourceName will be used as
+     * the Pure source name.
+     *
+     * @param resourceName   resource which holds the code
+     * @param pureSourceName Pure source name to compile with (default to resourceName)
+     */
+    protected void compileTestSourceFromResource(String resourceName, String pureSourceName)
+    {
+        String code = readTextResource(resourceName);
+        compileTestSource((pureSourceName == null) ? resourceName : pureSourceName, code);
     }
 
     /**
@@ -215,17 +266,36 @@ public abstract class AbstractPureTestWithCoreCompiled
      */
     protected void compileTestSourceFromResource(String resourceName)
     {
-        InputStream inStream = getClass().getResourceAsStream(resourceName);
-        if (inStream == null)
+        compileTestSourceFromResource(resourceName, null);
+    }
+
+    protected static String readTextResource(String resourceName)
+    {
+        return readTextResource(resourceName, Thread.currentThread().getContextClassLoader());
+    }
+
+    protected static String readTextResource(String resourceName, ClassLoader classLoader)
+    {
+        URL url = classLoader.getResource(resourceName);
+        if (url == null)
         {
-            inStream = getClass().getClassLoader().getResourceAsStream(resourceName);
-            if (inStream == null)
-            {
-                throw new RuntimeException("Could not find resource: " + resourceName);
-            }
+            throw new RuntimeException("Could not find resource: " + resourceName);
         }
-        Scanner srcScanner = new Scanner(inStream, "UTF-8").useDelimiter("\\A");
-        compileTestSource(resourceName, srcScanner.next());
+        try (Reader reader = new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))
+        {
+            StringBuilder builder = new StringBuilder();
+            char[] buffer = new char[8192];
+            int read;
+            while ((read = reader.read(buffer)) != -1)
+            {
+                builder.append(buffer, 0, read);
+            }
+            return builder.toString();
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException("Error reading resource from " + url, e);
+        }
     }
 
     /**
@@ -241,8 +311,9 @@ public abstract class AbstractPureTestWithCoreCompiled
 
     protected SourceMutation compileTestSourceM3(String sourceId, String source)
     {
-        return this.compileTestSource(sourceId, source);
+        return compileTestSource(sourceId, source);
     }
+
     /**
      * Compile the given source with a randomly generated
      * source id.
@@ -258,21 +329,22 @@ public abstract class AbstractPureTestWithCoreCompiled
     {
         compileTestSourceM3("testSource_" + UUID.randomUUID().toString().replace('-', '_') + CodeStorage.PURE_FILE_EXTENSION, source);
     }
+
     protected CoreInstance compileAndExecute(String functionIdOrDescriptor, CoreInstance... parameters)
     {
-        this.runtime.compile();
+        runtime.compile();
         return this.execute(functionIdOrDescriptor, parameters);
     }
 
     protected CoreInstance execute(String functionIdOrDescriptor, CoreInstance... parameters)
     {
-        CoreInstance function = this.runtime.getFunction(functionIdOrDescriptor);
+        CoreInstance function = runtime.getFunction(functionIdOrDescriptor);
         if (function == null)
         {
             throw new RuntimeException("The function '" + functionIdOrDescriptor + "' can't be found");
         }
-        this.functionExecution.getConsole().clear();
-        return this.functionExecution.start(function, ArrayAdapter.adapt(parameters));
+        functionExecution.getConsole().clear();
+        return functionExecution.start(function, ArrayAdapter.adapt(parameters));
     }
 
     // assertOriginatingPureException variants
@@ -523,12 +595,11 @@ public abstract class AbstractPureTestWithCoreCompiled
 
     protected ListIterable<RuntimeVerifier.FunctionExecutionStateVerifier> getAdditionalVerifiers()
     {
-        return Lists.fixedSize.<RuntimeVerifier.FunctionExecutionStateVerifier>of();
+        return Lists.fixedSize.empty();
     }
 
     protected void assertRepoExists(String repositoryName)
     {
-        Assert.assertNotNull("This test relies on the " + repositoryName + " repository", codeRepositories.select(c->c.getName().equals(repositoryName)).getFirst());
+        Assert.assertNotNull("This test relies on the " + repositoryName + " repository", getRepositoryByName(repositoryName));
     }
-
 }

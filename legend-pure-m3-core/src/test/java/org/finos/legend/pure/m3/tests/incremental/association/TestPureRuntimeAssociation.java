@@ -14,9 +14,15 @@
 
 package org.finos.legend.pure.m3.tests.incremental.association;
 
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.RuntimeTestScriptBuilder;
 import org.finos.legend.pure.m3.RuntimeVerifier;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 import org.junit.After;
 import org.junit.Assert;
@@ -26,25 +32,28 @@ import org.junit.Test;
 public class TestPureRuntimeAssociation extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getExtra());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()), getFactoryRegistryOverride(), getOptions(), getExtra());
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("system", "((meta)|(system)|(apps::pure))(::.*)?", PlatformCodeRepository.NAME),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("userId.pure");
         runtime.delete("sourceId.pure");
-
-        try
-        {
-            runtime.compile();
-        } catch (PureCompilationException e) {
-            setUp();
-        }
+        runtime.compile();
     }
 
     @Test
-    public void testPureRuntimeAssociation() throws Exception
+    public void testPureRuntimeAssociation()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Association a {a:A[0..1];b:B[0..1];}")
                         .createInMemorySource("userId.pure", "Class A{}" +
@@ -56,12 +65,12 @@ public class TestPureRuntimeAssociation extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("The property 'b' can't be found in the type 'A' or in its hierarchy.", "userId.pure", 1, 54)
                         .createInMemorySource("sourceId.pure", "Association a {a:A[0..1];b:B[0..1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, getAdditionalVerifiers());
     }
 
 
     @Test
-    public void testPureRuntimeAssociationError() throws Exception
+    public void testPureRuntimeAssociationError()
     {
 /*
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Association a {a:A[0..1];b:B[0..1];}")
@@ -77,22 +86,22 @@ public class TestPureRuntimeAssociation extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("The property 'a' can't be found in the type 'B' or in its hierarchy.", "userId.pure", 1, 74)
                         .updateSource("sourceId.pure", "Association a {a:A[0..1];b:B[0..1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, getAdditionalVerifiers());
 */
 
-        this.runtime.createInMemorySource("sourceId.pure", "Association a {a:A[0..1];b:B[0..1];}");
-        this.runtime.createInMemorySource("userId.pure", "Class A{}" +
-                                               "Class B{}" +
-                                               "function test():Nil[0]{ let k = ^A(b=^B()); let j = ^B(a=^A()); [];}");
-        this.runtime.compile();
-        int size = this.runtime.getModelRepository().serialize().length;
+        runtime.createInMemorySource("sourceId.pure", "Association a {a:A[0..1];b:B[0..1];}");
+        runtime.createInMemorySource("userId.pure", "Class A{}" +
+                "Class B{}" +
+                "function test():Nil[0]{ let k = ^A(b=^B()); let j = ^B(a=^A()); [];}");
+        runtime.compile();
+        int size = runtime.getModelRepository().serialize().length;
 
         for (int i = 0; i < 10; i++)
         {
-            this.runtime.delete("sourceId.pure");
+            runtime.delete("sourceId.pure");
             try
             {
-                this.runtime.compile();
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
@@ -102,32 +111,32 @@ public class TestPureRuntimeAssociation extends AbstractPureTestWithCoreCompiled
 
             try
             {
-                this.runtime.createInMemorySource("sourceId.pure", "Association a {xx:A[0..1];yy:B[0..1];}");
-                this.runtime.compile();
+                runtime.createInMemorySource("sourceId.pure", "Association a {xx:A[0..1];yy:B[0..1];}");
+                runtime.compile();
                 Assert.fail();
             }
             catch (Exception e)
             {
                 Assert.assertTrue("Compilation error at (resource:userId.pure line:1 column:54), \"The property 'b' can't be found in the type 'A' or in its hierarchy.\"".equals(e.getMessage()) ||
-                                  "Compilation error at (resource:userId.pure line:1 column:74), \"The property 'a' can't be found in the type 'B' or in its hierarchy.\"".equals(e.getMessage()));
+                        "Compilation error at (resource:userId.pure line:1 column:74), \"The property 'a' can't be found in the type 'B' or in its hierarchy.\"".equals(e.getMessage()));
             }
         }
 
-        this.runtime.modify("sourceId.pure", "Association a {a:A[0..1];b:B[0..1];}");
-        this.runtime.compile();
-        Assert.assertEquals("Graph size mismatch", size, this.repository.serialize().length);
+        runtime.modify("sourceId.pure", "Association a {a:A[0..1];b:B[0..1];}");
+        runtime.compile();
+        Assert.assertEquals("Graph size mismatch", size, repository.serialize().length);
     }
 
 
     @Test
-    public void testPureRuntimeAssociationAggregation() throws Exception
+    public void testPureRuntimeAssociationAggregation()
     {
-        this.runtime.createInMemorySource("sourceId.pure", "Class A{} Class B{} Association a {(composite) a:A[0..1];b:B[0..1];}");
-        this.runtime.compile();
+        runtime.createInMemorySource("sourceId.pure", "Class A{} Class B{} Association a {(composite) a:A[0..1];b:B[0..1];}");
+        runtime.compile();
     }
 
     @Test
-    public void testPureRuntimeAssociationWithQualifiedPropertyAssociationRebuild() throws Exception
+    public void testPureRuntimeAssociationWithQualifiedPropertyAssociationRebuild()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Association a {a:A[0..1]; b:B[*]; bSubset(){$this.b->filter(b|$b.name=='')->first()}:B[0..1];}")
                         .createInMemorySource("userId.pure", "Class A{}" +
@@ -139,11 +148,11 @@ public class TestPureRuntimeAssociation extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: bSubset(_:A[1])", "userId.pure", 1, 88)
                         .createInMemorySource("sourceId.pure", "Association a {a:A[0..1]; b:B[*]; bSubset(){$this.b->filter(b|$b.name=='')->first()}:B[0..1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeAssociationWithQualifiedPropertyAssociationForceProcessUnbindCycle() throws Exception
+    public void testPureRuntimeAssociationWithQualifiedPropertyAssociationForceProcessUnbindCycle()
     {
         String sourceId = "Association a {a:A[0..1]; b:B[*]; bSubset(){$this.b->filter(b|$b.name=='')->first()}:B[0..1];}";
         String userId = "Class B{name : String[0..1];} Class A{}";
@@ -156,7 +165,7 @@ public class TestPureRuntimeAssociation extends AbstractPureTestWithCoreCompiled
                         .compileWithExpectedCompileFailure("A has not been defined!", "sourceId.pure", 1, 18)
                         .createInMemorySource("userId.pure", userId)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, getAdditionalVerifiers());
     }
 
     @Test
@@ -182,6 +191,6 @@ public class TestPureRuntimeAssociation extends AbstractPureTestWithCoreCompiled
                         .createInMemorySource(classSourceId, classSource)
                         .createInMemorySource(assocSourceId, assocSource)
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, getAdditionalVerifiers());
     }
 }

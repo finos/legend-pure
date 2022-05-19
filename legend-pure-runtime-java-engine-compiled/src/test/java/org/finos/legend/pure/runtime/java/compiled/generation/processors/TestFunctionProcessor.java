@@ -12,76 +12,76 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.pure.runtime.java.compiled.processors;
+package org.finos.legend.pure.runtime.java.compiled.generation.processors;
 
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
-import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestFunctionProcessor extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), getCodeStorage(), getCodeRepositories());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution());
     }
 
     @Test
     public void testProcessFunctionDefinitionContent()
     {
-        this.compileTestSource("function pkg::f1():Boolean[1]\n" +
+        compileTestSource("function pkg::f1():Boolean[1]\n" +
                 "{\n" +
                 "   true;\n" +
                 "   true;\n" +
                 "}\n");
 
-        this.compileTestSource("function pkg::f2():Boolean[1]\n" +
+        compileTestSource("function pkg::f2():Boolean[1]\n" +
                 "{\n" +
                 "   1;\n" +
                 "   true;\n" +
                 "}\n");
 
-        this.compileTestSource("function pkg::f3():Boolean[1]\n" +
+        compileTestSource("function pkg::f3():Boolean[1]\n" +
                 "{\n" +
                 "   [];\n" +
                 "   true;\n" +
                 "}\n");
 
-        this.compileTestSource("function pkg::f4():String[1]\n" +
+        compileTestSource("function pkg::f4():String[1]\n" +
                 "{\n" +
                 "   [true, false];\n" +
                 "   'string';\n" +
                 "}\n");
 
-        this.compileTestSource("function pkg::f5():String[1]\n" +
+        compileTestSource("function pkg::f5():String[1]\n" +
                 "{\n" +
                 "   let a = 99;\n" +
                 "   $a;\n" +
                 "   'string';\n" +
                 "}\n");
 
-        this.compileTestSource("function pkg::f6():String[1]\n" +
+        compileTestSource("function pkg::f6():String[1]\n" +
                 "{\n" +
                 "   print('print', 1);\n" +
                 "   'string';\n" +
                 "}\n");
 
-        this.compileTestSource("function pkg::f7():Boolean[1]\n" +
+        compileTestSource("function pkg::f7():Boolean[1]\n" +
                 "{\n" +
                 "   1==1;\n" +
                 "   2==2;\n" +
                 "}\n");
 
-        this.compileTestSource("function pkg::f8():Boolean[1]\n" +
+        compileTestSource("function pkg::f8():Boolean[1]\n" +
                 "{\n" +
                 "   if(true, |true;true;, |1==2;3==4;);\n" +
                 "   if(false, |true;true;, |1==2;3==4;);\n" +
                 "   false;\n" +
                 "}\n");
 
-        this.compileTestSource("Class pkg::C{}\n" +
+        compileTestSource("Class pkg::C{}\n" +
                 "function pkg::f9():Boolean[1]\n" +
                 "{\n" +
                 "   ^pkg::C();\n" +

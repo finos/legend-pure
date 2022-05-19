@@ -44,6 +44,10 @@ Class meta::external::format::avro::generation::AvroConfig extends GenerationCon
    {doc.doc = 'Override namespace in generated schema.'}
    namespaceOverride: Map<String, String>[0..1];
    namespaceOverride(){if($this.namespaceOverride->isEmpty(), |^Map<String,String>(), |$this.namespaceOverride->toOne();)}:Map<String,String>[1];
+
+   {doc.doc = 'Generate Logical Type property for all Pure Classes'}
+   generateLogicalTypes: Boolean[0..1];
+   generateLogicalTypes(){if($this.generateLogicalTypes->isEmpty(), |false, |$this.generateLogicalTypes->toOne();)}:Boolean[1];
 }
 
 
@@ -55,7 +59,9 @@ function  meta::external::format::avro::generation::defaultConfig():AvroConfig[1
 {
    ^AvroConfig(includeNamespace=true,includeSuperTypes=true,includeAssociations=true,
                includeGeneratedMilestoning=false,timestampLogicalType='timestamp-micros',propertyProfile=[],
-               namespaceOverride=^Map<String,String>());
+               namespaceOverride=^Map<String,String>(),
+               generateLogicalTypes = false
+               );
 }
 
 function <<access.private, Generation.Configuration>>  meta::external::format::avro::generation::describeConfiguration():GenerationParameter[*]

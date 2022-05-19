@@ -14,11 +14,16 @@
 
 package org.finos.legend.pure.runtime.java.compiled.modeling.function;
 
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.PlatformCodeRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.runtime.java.compiled.execution.FunctionExecutionCompiledBuilder;
 import org.junit.After;
@@ -29,8 +34,9 @@ import org.junit.Test;
 public class TestLambdaAsInstanceValue extends AbstractPureTestWithCoreCompiled
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), PureCodeStorage.createCodeStorage(getCodeStorageRoot(), getCodeRepositories()));
     }
 
     @After
@@ -38,11 +44,7 @@ public class TestLambdaAsInstanceValue extends AbstractPureTestWithCoreCompiled
     {
         runtime.delete("/test/testSource1.pure");
         runtime.delete("/test/testSource2.pure");
-//        try {
-//            runtime.compile();
-//        } catch(PureCompilationException e) {
-//            setUp();
-//        }
+        runtime.compile();
     }
 
     @Test
@@ -102,13 +104,19 @@ public class TestLambdaAsInstanceValue extends AbstractPureTestWithCoreCompiled
                         "{\n" +
                         "  testGetFunctionName(" + lambda + ")" +
                         "}");
-        CoreInstance test = this.runtime.getFunction("test::testFn():Any[1]");
-        CoreInstance result = this.functionExecution.start(test, Lists.immutable.<CoreInstance>empty());
+        CoreInstance test = runtime.getFunction("test::testFn():Any[1]");
+        CoreInstance result = functionExecution.start(test, Lists.immutable.empty());
         Assert.assertEquals("LAMBDA", PrimitiveUtilities.getStringValue(result.getValueForMetaPropertyToOne(M3Properties.values)));
     }
 
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionCompiledBuilder().build();
+    }
+
+    protected static RichIterable<? extends CodeRepository> getCodeRepositories()
+    {
+        return org.eclipse.collections.api.factory.Lists.immutable.with(CodeRepository.newPlatformCodeRepository(),
+                GenericCodeRepository.build("test", "test(::.*)?", PlatformCodeRepository.NAME, "system"));
     }
 }

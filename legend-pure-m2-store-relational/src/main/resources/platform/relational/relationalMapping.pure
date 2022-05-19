@@ -185,6 +185,10 @@ Class meta::relational::mapping::SemiStructuredRelationalPropertyMapping extends
 {
 }
 
-Class meta::relational::mapping::SemiStructuredEmbeddedRelationalInstanceSetImplementation extends SemiStructuredRelationalPropertyMapping, EmbeddedRelationalInstanceSetImplementation
+Class <<doc.deprecated>> meta::relational::mapping::SemiStructuredEmbeddedRelationalInstanceSetImplementation extends SemiStructuredRelationalPropertyMapping, EmbeddedRelationalInstanceSetImplementation
+{
+}
+
+Class meta::relational::mapping::SemiStructuredRelationalInstanceSetImplementation extends RootRelationalInstanceSetImplementation
 {
 }

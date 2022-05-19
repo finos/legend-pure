@@ -26,34 +26,30 @@ import org.junit.Test;
 public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCompiledPlatform
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getExtra());
+    public static void setUp()
+    {
+        setUpRuntime();
     }
 
     @After
-    public void cleanRuntime() {
+    public void cleanRuntime()
+    {
         runtime.delete("sourceId.pure");
         runtime.delete("userId.pure");
         runtime.delete("/test/testModel.pure");
+        runtime.compile();
     }
 
     @Test
-    public void testPureRuntimeClassConstraintError() throws Exception
+    public void testPureRuntimeClassConstraintError()
     {
-        try
-        {
-            this.runtime.createInMemorySource("sourceId.pure", "Class test::A[$this.nam == 'ee']{name:String[1];}");
-            this.runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:sourceId.pure line:1 column:21), \"Can't find the property 'nam' in the class test::A\"", e.getMessage());
-        }
+        runtime.createInMemorySource("sourceId.pure", "Class test::A[$this.nam == 'ee']{name:String[1];}");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:1 column:21), \"Can't find the property 'nam' in the class test::A\"", e.getMessage());
     }
 
     @Test
-    public void testPureRuntimeClassConstraintOne() throws Exception
+    public void testPureRuntimeClassConstraintOne()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A[$this.b.name == 'ee']{b:B[1];name:String[1];}")
                         .createInMemorySource("userId.pure", "Class B{name:String[1];}")
@@ -63,30 +59,23 @@ public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCo
                         .compileWithExpectedCompileFailure("B has not been defined!", "sourceId.pure", 1, 33)
                         .createInMemorySource("userId.pure", "Class B{name:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeClassConstraintErrorTwo() throws Exception
+    public void testPureRuntimeClassConstraintErrorTwo()
     {
-        try
-        {
-            this.runtime.createInMemorySource("sourceId.pure", "Class test::A[$this.name == a()]{name:String[1];}");
-            this.runtime.createInMemorySource("userId.pure", "function a():String[1]{'ee'}");
-            this.runtime.compile();
-            this.runtime.delete("userId.pure");
-            this.runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            Assert.assertEquals("Compilation error at (resource:sourceId.pure line:1 column:29), \"The system can't find a match for the function: a()\"", e.getMessage());
-        }
+        runtime.createInMemorySource("sourceId.pure", "Class test::A[$this.name == a()]{name:String[1];}");
+        runtime.createInMemorySource("userId.pure", "function a():String[1]{'ee'}");
+        runtime.compile();
+        runtime.delete("userId.pure");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        Assert.assertEquals("Compilation error at (resource:sourceId.pure line:1 column:29), \"The system can't find a match for the function: a()\"", e.getMessage());
     }
 
 
     @Test
-    public void testPureRuntimeClassConstraintTwo() throws Exception
+    public void testPureRuntimeClassConstraintTwo()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A[$this.name == a()]{name:String[1];}")
                         .createInMemorySource("userId.pure", "function a():String[1]{'ee';}")
@@ -96,98 +85,69 @@ public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCo
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: a()", "sourceId.pure", 1, 23)
                         .createInMemorySource("userId.pure", "function a():String[1]{'ee';}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
 
     @Test
-    public void testPureRuntimeClassConstraintTypeErrorType() throws Exception
+    public void testPureRuntimeClassConstraintTypeErrorType()
     {
-        try
-        {
-            this.runtime.createInMemorySource("/test/testModel.pure",
-                    "Class A\n" +
-                            "[22]\n" +
-                            "{\n" +
-                            "  name:String[1];\n" +
-                            "}");
-            this.runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureCompilationException.class, "A constraint must be of type Boolean and multiplicity one", "/test/testModel.pure", 2, 2, 2, 2, 2, 3, e);
-        }
+        runtime.createInMemorySource("/test/testModel.pure",
+                "Class A\n" +
+                        "[22]\n" +
+                        "{\n" +
+                        "  name:String[1];\n" +
+                        "}");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "A constraint must be of type Boolean and multiplicity one", "/test/testModel.pure", 2, 2, 2, 2, 2, 3, e);
     }
 
     @Test
-    public void testPureRuntimeClassConstraintTypeErrorMultiplicity() throws Exception
+    public void testPureRuntimeClassConstraintTypeErrorMultiplicity()
     {
-        try
-        {
-            this.runtime.createInMemorySource("/test/testModel.pure",
-                    "Class A\n" +
-                            "[ [true,true] ]\n" +
-                            "{\n" +
-                            "   name:String[1];\n" +
-                            "}");
-            this.runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureCompilationException.class, "A constraint must be of type Boolean and multiplicity one", "/test/testModel.pure", 2, 3, 2, 3, 2, 13, e);
-        }
+        runtime.createInMemorySource("/test/testModel.pure",
+                "Class A\n" +
+                        "[ [true,true] ]\n" +
+                        "{\n" +
+                        "   name:String[1];\n" +
+                        "}");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "A constraint must be of type Boolean and multiplicity one", "/test/testModel.pure", 2, 3, 2, 3, 2, 13, e);
     }
 
 
     @Test
-    public void testPureRuntimeClassConstraintFunction() throws Exception
+    public void testPureRuntimeClassConstraintFunction()
     {
-        try
-        {
-            this.runtime.createInMemorySource("/test/testModel.pure",
-                    "Class A\n" +
-                            "[ $this.name ==  t() ]\n" +
-                            "{\n" +
-                            "   name:String[1];\n" +
-                            "}");
-            this.runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureCompilationException.class, "The system can't find a match for the function: t()", "/test/testModel.pure", 2, 18, 2, 18, 2, 18, e);
-        }
+        runtime.createInMemorySource("/test/testModel.pure",
+                "Class A\n" +
+                        "[ $this.name ==  t() ]\n" +
+                        "{\n" +
+                        "   name:String[1];\n" +
+                        "}");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "The system can't find a match for the function: t()", "/test/testModel.pure", 2, 18, 2, 18, 2, 18, e);
     }
 
     @Test
-    public void testPureRuntimeClassConstraintFunctionUnbind() throws Exception
+    public void testPureRuntimeClassConstraintFunctionUnbind()
     {
-        try
-        {
-            this.runtime.createInMemorySource("sourceId.pure",
-                    "Class A\n" +
-                            "[ $this.name ==  t() ]\n" +
-                            "{\n" +
-                            "   name:String[1];\n" +
-                            "}");
-            this.runtime.createInMemorySource("userId.pure", "function t():String[1]{'test'}");
-            this.runtime.compile();
-            this.runtime.delete("userId.pure");
-            this.runtime.compile();
-            Assert.fail();
-        }
-        catch (Exception e)
-        {
-            this.assertPureException(PureCompilationException.class, "The system can't find a match for the function: t()", "sourceId.pure", 2, 18, 2, 18, 2, 18, e);
-        }
+        runtime.createInMemorySource("sourceId.pure",
+                "Class A\n" +
+                        "[ $this.name ==  t() ]\n" +
+                        "{\n" +
+                        "   name:String[1];\n" +
+                        "}");
+        runtime.createInMemorySource("userId.pure", "function t():String[1]{'test'}");
+        runtime.compile();
+        runtime.delete("userId.pure");
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, runtime::compile);
+        assertPureException(PureCompilationException.class, "The system can't find a match for the function: t()", "sourceId.pure", 2, 18, 2, 18, 2, 18, e);
     }
 
 
-
     @Test
-    public void testPureRuntimeClassConstraintUnbind() throws Exception
+    public void testPureRuntimeClassConstraintUnbind()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A [$this.name ==  t()] {name:String[1];}")
                         .createInMemorySource("userId.pure", "function t():String[1]{'test'}")
@@ -197,11 +157,11 @@ public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCo
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: t()", "sourceId.pure", 1, 25)
                         .createInMemorySource("userId.pure", "function t():String[1]{'test'}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeClassConstraintUsageContext1() throws Exception
+    public void testPureRuntimeClassConstraintUsageContext1()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A [ c1(~function : $this.name ==  t())] {name:String[1];}")
                         .createInMemorySource("userId.pure", "function t():String[1]{'test'}")
@@ -211,11 +171,11 @@ public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCo
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: t()", "sourceId.pure", 1, 41)
                         .createInMemorySource("userId.pure", "function t():String[1]{'test'}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeClassConstraintUsageContext2() throws Exception
+    public void testPureRuntimeClassConstraintUsageContext2()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A [ c1(~function : !$this.name->isEmpty() ~message : $this.name + t())] {name:String[1];}")
                         .createInMemorySource("userId.pure", "function t():String[1]{'test'}")
@@ -225,11 +185,11 @@ public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCo
                         .compileWithExpectedCompileFailure("The system can't find a match for the function: t()", "sourceId.pure", 1, 73)
                         .createInMemorySource("userId.pure", "function t():String[1]{'test'}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeClassConstraintAddAndRemoveMessage() throws Exception
+    public void testPureRuntimeClassConstraintAddAndRemoveMessage()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A [ c1(~function : !$this.name->isEmpty())] {name:String[1];}")
                         .createInMemorySource("userId.pure", "function t():String[1]{'test'}")
@@ -239,11 +199,11 @@ public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCo
                         .compile()
                         .updateSource("sourceId.pure", "Class A [ c1(~function : !$this.name->isEmpty())] {name:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeClassConstraintAddAndRemoveConstraint() throws Exception
+    public void testPureRuntimeClassConstraintAddAndRemoveConstraint()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A [ c1(~function : !$this.name->isEmpty())] {name:String[1];}")
                         .createInMemorySource("userId.pure", "function t():String[1]{'test'}")
@@ -253,11 +213,11 @@ public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCo
                         .compile()
                         .updateSource("sourceId.pure", "Class A [ c1(~function : !$this.name->isEmpty())] {name:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 
     @Test
-    public void testPureRuntimeClassConstraintAddAndRemoveOthers() throws Exception
+    public void testPureRuntimeClassConstraintAddAndRemoveOthers()
     {
         RuntimeVerifier.verifyOperationIsStable(new RuntimeTestScriptBuilder().createInMemorySource("sourceId.pure", "Class A [ c1(~function : !$this.name->isEmpty())] {name:String[1];}")
                         .createInMemorySource("userId.pure", "function t():String[1]{'test'}")
@@ -267,6 +227,6 @@ public class TestPureRuntimeClass_Constraints extends AbstractPureTestWithCoreCo
                         .compile()
                         .updateSource("sourceId.pure", "Class A [ c1(~function : !$this.name->isEmpty())] {name:String[1];}")
                         .compile(),
-                this.runtime, this.functionExecution, this.getAdditionalVerifiers());
+                runtime, functionExecution, this.getAdditionalVerifiers());
     }
 }

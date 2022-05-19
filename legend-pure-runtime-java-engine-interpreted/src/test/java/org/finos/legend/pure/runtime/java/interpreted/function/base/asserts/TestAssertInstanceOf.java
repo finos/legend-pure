@@ -14,24 +14,36 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.function.base.asserts;
 
+import org.eclipse.collections.api.tuple.Pair;
+import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.PureExpressionTest;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
-import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestAssertInstanceOf extends PureExpressionTest
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution());
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getExtra());
     }
 
     @Test
     public void testFailure()
     {
-        assertExpressionRaisesPureException("expected 3 to be an instance of Boolean, actual: Integer", 3, 9, "assertInstanceOf(3, Boolean)",
+        assertExpressionRaisesPureException("expected 3 to be an instance of Boolean, actual: Integer", 3, 9, "assertInstanceOf(3, Boolean)");
+    }
+
+    protected static FunctionExecution getFunctionExecution()
+    {
+        return new FunctionExecutionInterpreted();
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair("testAssertInstancesOf.pure",
                 "function meta::pure::functions::asserts::assertInstanceOf(instance:Any[1], type:Type[1]):Boolean[1]\n" +
                         "{\n" +
                         "    assertInstanceOf($instance, $type, | format('expected %r to be an instance of %s, actual: %s', [$instance, $type->elementToPath(), $instance->type()->toOne()->elementToPath()]));\n" +
@@ -54,12 +66,6 @@ public class TestAssertInstanceOf extends PureExpressionTest
                         "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
                         "{\n" +
                         "    assert($condition, | format($formatString, $formatArgs));\n" +
-                        "}"
-        );
-    }
-
-    protected static FunctionExecution getFunctionExecution()
-    {
-        return new FunctionExecutionInterpreted();
+                        "}");
     }
 }

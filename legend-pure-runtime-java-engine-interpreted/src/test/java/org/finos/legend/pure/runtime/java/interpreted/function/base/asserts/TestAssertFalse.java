@@ -25,37 +25,10 @@ import org.junit.Test;
 public class TestAssertFalse extends PureExpressionTest
 {
     @BeforeClass
-    public static void setUp() {
-        setUpRuntime(getFunctionExecution(), extra);
+    public static void setUp()
+    {
+        setUpRuntime(getFunctionExecution(), getExtra());
     }
-
-    public static Pair<String, String> extra = Tuples.pair("/system/extra.pure","function meta::pure::functions::asserts::assertFalse(condition:Boolean[1]):Boolean[1]\n" +
-        "{\n" +
-        "    assert(!$condition);\n" +
-        "}\n" +
-        "\n" +
-        "function meta::pure::functions::asserts::assertFalse(condition:Boolean[1], message:String[1]):Boolean[1]\n" +
-        "{\n" +
-        "    assert(!$condition, $message);\n" +
-        "}\n" +
-        "\n" +
-        "function meta::pure::functions::asserts::assertFalse(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
-        "{\n" +
-        "    assert(!$condition, $formatString, $formatArgs);\n" +
-        "}\n" +
-        "\n" +
-        "function meta::pure::functions::asserts::assertFalse(condition:Boolean[1], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
-        "{\n" +
-        "    assert(!$condition, $message);\n" +
-        "}\n" +
-        "function meta::pure::functions::asserts::assert(condition:Boolean[1]):Boolean[1]\n" +
-        "{\n" +
-        "    assert($condition, 'Assert failed');\n" +
-        "}"+
-        "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
-        "{\n" +
-        "    assert($condition, | format($formatString, $formatArgs));\n" +
-        "}");
 
     @Test
     public void testFailWithoutMessage()
@@ -88,5 +61,36 @@ public class TestAssertFalse extends PureExpressionTest
     protected static FunctionExecution getFunctionExecution()
     {
         return new FunctionExecutionInterpreted();
+    }
+
+    public static Pair<String, String> getExtra()
+    {
+        return Tuples.pair("testAssertFalse.pure", "function meta::pure::functions::asserts::assertFalse(condition:Boolean[1]):Boolean[1]\n" +
+                "{\n" +
+                "    assert(!$condition);\n" +
+                "}\n" +
+                "\n" +
+                "function meta::pure::functions::asserts::assertFalse(condition:Boolean[1], message:String[1]):Boolean[1]\n" +
+                "{\n" +
+                "    assert(!$condition, $message);\n" +
+                "}\n" +
+                "\n" +
+                "function meta::pure::functions::asserts::assertFalse(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
+                "{\n" +
+                "    assert(!$condition, $formatString, $formatArgs);\n" +
+                "}\n" +
+                "\n" +
+                "function meta::pure::functions::asserts::assertFalse(condition:Boolean[1], message:Function<{->String[1]}>[1]):Boolean[1]\n" +
+                "{\n" +
+                "    assert(!$condition, $message);\n" +
+                "}\n" +
+                "function meta::pure::functions::asserts::assert(condition:Boolean[1]):Boolean[1]\n" +
+                "{\n" +
+                "    assert($condition, 'Assert failed');\n" +
+                "}" +
+                "function meta::pure::functions::asserts::assert(condition:Boolean[1], formatString:String[1], formatArgs:Any[*]):Boolean[1]\n" +
+                "{\n" +
+                "    assert($condition, | format($formatString, $formatArgs));\n" +
+                "}");
     }
 }

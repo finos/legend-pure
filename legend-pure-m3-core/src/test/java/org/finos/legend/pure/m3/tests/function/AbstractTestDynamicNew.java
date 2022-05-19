@@ -14,15 +14,20 @@
 
 package org.finos.legend.pure.m3.tests.function;
 
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
+import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.TestCodeRepositoryWithDependencies;
+import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
+import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.junit.After;
 import org.junit.Test;
 
 public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCompiled
 {
-    private static String DECLARATION = "Enum myEnum{A,B}"
+    private static final String DECLARATION = "Enum myEnum{A,B}"
             + "Class A \n"
             + "[ testConstraint: $this.a == 'rrr']\n"
             + "{ \n"
@@ -66,10 +71,17 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
             + "   ^D(name = $o->cast(@A).a + $o->getHiddenPayload()->cast(@String)->toOne());   \n"
             + "} ";
 
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("testSource.pure");
+        runtime.delete("/test/testModel.pure");
+        runtime.compile();
+    }
+
     @Test
     public void testSimpleClassDynamicNew()
     {
-
         compileTestSource("testSource.pure",
                 DECLARATION
                         + "function test():Any[1] \n{"
@@ -85,7 +97,6 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
                         + " assert(['rrr2','eee2'] == $r.ds.name, |'');\n"
                         + "}\n"
         );
-
     }
 
     @Test
@@ -100,11 +111,10 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
                         + "   ^KeyValue(key='c',value=['zzz','kkk']), \n"
                         + "   ^KeyValue(key='enum',value=myEnum.A), \n"
                         + "   ^KeyValue(key='enums',value=[myEnum.A, myEnum.B])],\n"
-                        + "  getterOverrideToOne_Any_1__Property_1__Any_$0_1$_,getterOverrideToMany_Any_1__Property_1__Any_MANY_,\'2\')->cast(@A) ;\n"
+                        + "  getterOverrideToOne_Any_1__Property_1__Any_$0_1$_,getterOverrideToMany_Any_1__Property_1__Any_MANY_,'2')->cast(@A) ;\n"
                         + "   assert('2' == $r->getHiddenPayload(), |'');\n"
                         + "   assert(['rrr2','eee2'] == $r.ds.name, |'');\n"
                         + "}\n");
-
     }
 
 
@@ -130,7 +140,6 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
                         + "   assert('rrr2' == $r.d.name, |'');\n"
                         + "   assertSameElements(['rrr2','eee2'], $r.ds.name);\n"
                         + "}\n");
-
     }
 
     @Test
@@ -150,7 +159,6 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
                         + "   assert([] == $r->getHiddenPayload(), |'');\n"
                         + "   assert('eee' == $r.a, |'');\n"
                         + "}\n");
-
     }
 
     @Test
@@ -167,8 +175,8 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
                         + "         ^KeyValue(key='enums',value=[myEnum.A, myEnum.B])]);\n"
                         + " print($r, 1);\n"
                         + "}\n");
-        CoreInstance func = this.runtime.getFunction("test():Any[*]");
-        this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        CoreInstance func = runtime.getFunction("test():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
@@ -194,8 +202,8 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
                         + " assert($g.f == $f, |'');\n"
                         + " assert($g.f.g == [], |'');\n"
                         + "}\n");
-        CoreInstance func = this.runtime.getFunction("test():Any[*]");
-        this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        CoreInstance func = runtime.getFunction("test():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
@@ -223,8 +231,8 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
                         + "    assert($i.h == $h, |'');\n"
                         + "    assert($i.h.i == $i, |'');\n"
                         + "}\n");
-        CoreInstance func = this.runtime.getFunction("test():Any[*]");
-        this.functionExecution.start(func, FastList.<CoreInstance>newList());
+        CoreInstance func = runtime.getFunction("test():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
@@ -253,8 +261,8 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
                         "  assert('A' == $a.name, |'');\n" +
                         "  assert($a.toB->isEmpty(), |'');\n" +
                         "}\n");
-        CoreInstance func = this.runtime.getFunction("test::testFn():Any[*]");
-        this.functionExecution.start(func, Lists.immutable.<CoreInstance>empty());
+        CoreInstance func = runtime.getFunction("test::testFn():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
     }
 
     @Test
@@ -283,7 +291,14 @@ public abstract class AbstractTestDynamicNew extends AbstractPureTestWithCoreCom
                         "  assert('A' == $a.name, |'');\n" +
                         "  assert($a.toB->isEmpty(), |'');\n" +
                         "}\n");
-        CoreInstance func = this.runtime.getFunction("test::testFn():Any[*]");
-        this.functionExecution.start(func, Lists.immutable.<CoreInstance>empty());
+        CoreInstance func = runtime.getFunction("test::testFn():Any[*]");
+        functionExecution.start(func, Lists.immutable.empty());
+    }
+
+    protected static MutableCodeStorage getCodeStorage()
+    {
+        CodeRepository platform = CodeRepository.newPlatformCodeRepository();
+        CodeRepository test = new TestCodeRepositoryWithDependencies("test", null, platform);
+        return new PureCodeStorage(null, new ClassLoaderCodeStorage(platform, test));
     }
 }
