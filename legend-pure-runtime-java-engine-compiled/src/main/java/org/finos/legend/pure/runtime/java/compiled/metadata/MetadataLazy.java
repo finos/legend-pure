@@ -119,14 +119,10 @@ public class MetadataLazy implements Metadata
         }
 
         ConcurrentMutableMap<String, CoreInstance> cache = getClassifierInstanceCache(enumerationName);
-        if (cache.isEmpty())
-        {
-            loadAllClassifierInstances(enumerationName);
-        }
         CoreInstance result = cache.get(enumName);
         if (result == null)
         {
-            //might have only been partially loaded so try again:
+            //might not have loaded yet, so request full load and try again:
             loadAllClassifierInstances(enumerationName);
             result = cache.get(enumName);
             if (result == null) {
