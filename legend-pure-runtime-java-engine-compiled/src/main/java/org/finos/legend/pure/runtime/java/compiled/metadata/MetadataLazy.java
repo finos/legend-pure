@@ -125,7 +125,8 @@ public class MetadataLazy implements Metadata
             //might not have loaded yet, so request full load and try again:
             loadAllClassifierInstances(enumerationName);
             result = cache.get(enumName);
-            if (result == null) {
+            if (result == null)
+            {
                 StringBuilder builder = new StringBuilder("Cannot find enum '").append(enumName).append("' in enumeration '").append(enumerationName).append("' unknown enum value");
                 if (cache.isEmpty())
                 {
