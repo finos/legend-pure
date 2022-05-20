@@ -293,3 +293,54 @@ function <<test.Test>> meta::pure::functions::meta::tests::testSubsumes():Boolea
   assert($twoMany->multiplicitySubsumes($fiveTen));
 
 }
+
+function meta::pure::functions::meta::tests::special::recursiveFunc():Special[1]
+{
+   meta::pure::functions::meta::tests::special::recursiveFunc();
+   meta::pure::functions::meta::tests::special::recursiveFunc2();
+}
+
+function meta::pure::functions::meta::tests::special::recursiveFunc2():Special[1]
+{
+   meta::pure::functions::meta::tests::special::recursiveFunc();
+   ^Special();
+}
+
+function meta::pure::functions::meta::tests::special::specialParam(special:Special[1]):Any[1]
+{
+  true;
+}
+
+Class meta::pure::functions::meta::tests::QualifiedNewProperty
+{
+  newClass()
+  {
+    $this.newClass();
+    ^Special();
+  } : Special[1];
+}
+
+function meta::pure::functions::meta::tests::special::miscNewFunctionCalls():Any[1]
+{
+  //New call in let statement
+   let a = ^Special();
+
+   //New call inside if
+   if(true, |^Special(), |false);
+   
+   //New call in qualified property
+   let qualifiedNewProperty = ^QualifiedNewProperty();
+   $qualifiedNewProperty.newClass();
+
+   //New call in parameter
+   meta::pure::functions::meta::tests::special::specialParam(^Special());
+}
+
+function <<test.Test>> meta::pure::functions::meta::tests::testFindExpressionsForFunctionInFunctionDefinition():Boolean[1]
+{
+  let miscNewFunctionCallsRes = meta::pure::functions::meta::tests::special::miscNewFunctionCalls__Any_1_->findExpressionsForFunctionInFunctionDefinition([new_Class_1__String_1__T_1_, new_Class_1__String_1__KeyExpression_MANY__T_1_], f|true);
+  let recursiveFuncRes = meta::pure::functions::meta::tests::special::recursiveFunc__Special_1_->findExpressionsForFunctionInFunctionDefinition([new_Class_1__String_1__T_1_, new_Class_1__String_1__KeyExpression_MANY__T_1_], f|true);
+ 
+  assertEquals($miscNewFunctionCallsRes->size(), 4);
+  assertEquals($recursiveFuncRes->size(), 1);
+}
