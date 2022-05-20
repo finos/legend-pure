@@ -176,7 +176,7 @@ function <<access.private>> meta::pure::mapping::modelToModel::planExecutionPure
 function meta::pure::mapping::modelToModel::planExecution(sq:meta::pure::mapping::StoreQuery[1], ext:RoutedValueSpecification[0..1], m:Mapping[0..1], runtime:Runtime[0..1], exeCtx:ExecutionContext[1], extension:RouterExtension[*], debug:DebugContext[1]):ExecutionNode[1]
 {
    let fe = $sq.fe->evaluateAndDeactivate()->cast(@FunctionExpression);
-   if ($fe->meta::pure::router::isUnionOnGraphFetch() || $fe.func->in(graphFetchFunctions()) || $fe->meta::pure::router::isMergeOnGraphFetch() ,
+   if ($fe->meta::pure::router::isUnionOnGraphFetch(true) || $fe.func->in(graphFetchFunctions()) || $fe->meta::pure::router::isMergeOnGraphFetch() ,
        | planInMemoryGraphFetchExecution($sq, $ext, $m->toOne(), $runtime->toOne(), $exeCtx, $extension, $debug),
        | planExecutionPure($sq, $ext, $m, $runtime, $exeCtx, $extension, $debug)
    );
@@ -258,7 +258,7 @@ Class meta::pure::mapping::modelToModel::graphFetch::executionPlan::InMemoryCros
 function meta::pure::mapping::modelToModel::graphFetch::executionPlan::planInMemoryGraphFetchExecution(sq: StoreQuery[1], ext: RoutedValueSpecification[0..1], mapping: Mapping[1], runtime: Runtime[1], exeCtx: ExecutionContext[1], extensions: RouterExtension[*], debug: DebugContext[1]): ExecutionNode[1]
 {
    let fe = $sq.fe->evaluateAndDeactivate();
-   if ($fe->meta::pure::router::isUnionOnGraphFetch(),
+   if ($fe->meta::pure::router::isUnionOnGraphFetch(true),
        | planRouterUnionGraphFetchExecution($sq, $ext, $mapping->toOne(), $runtime->toOne(), $exeCtx, $extensions, $debug),
        | assert($fe.func->in(graphFetchFunctions()), | 'Non graphFetch function encountered');
 
