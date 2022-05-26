@@ -33,8 +33,7 @@ public class TestTelemetry extends AbstractPureTestWithCoreCompiledPlatform
                 "\n" +
                 "function {telemetry.metricGroup = 'Testing telemetry tag'} pkg::func():String[1]\n" +
                 "{\n" +
-                "    let x = 'test';\n" +
-                "    $x;\n" +
+                "   'testString'\n" +
                 "}\n" );
 
         Assert.assertNotNull(runtime.getFunction("pkg::func():String[1]"));
