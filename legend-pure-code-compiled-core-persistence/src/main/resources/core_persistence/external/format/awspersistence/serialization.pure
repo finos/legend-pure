@@ -164,6 +164,7 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
     s3:AwsS3Connection[1]|
       assert(false,'AwsPersistence cannot currently handle S3 targets');
       [];,
+/*      
     rdb:RelationalDatabaseConnection[1]|
       if ($rdb.type == DatabaseType.Snowflake, 
         | $config->getSnowflakeConnection($rdb, $modelClass),
@@ -172,18 +173,27 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
           | assert(false,'AwsPersistence can currently only handle RelationalDB targets of type Snowflake or Redshift');
             [];)
       )
+      */
+    rdb:RelationalDatabaseConnection[1]|
+      if ($rdb.type == DatabaseType.Snowflake || $rdb.type == DatabaseType.Redshift,
+        | $config->getDbConnection($rdb, $modelClass),
+        | assert(false,'AwsPersistence can currently only handle RelationalDB targets of type Snowflake or Redshift');
+          [];
+        )
   ]);
 
   assertNotEmpty($trc, |'Unexpectedly found no target connection');
   $trc->toOne();
 }
 
+/*
 function <<access.private>> meta::external::format::awspersistence::serialization::getRedshiftConnection(config: AwsPersistenceConfig[1], rdb: RelationalDatabaseConnection[1], modelClass: Class<Any>[1]): meta::external::format::awspersistence::metamodel::RelationalConnection[1]
 {
-  $config->getSnowflakeConnection($rdb, $modelClass);
+  $config->getDbConnection($rdb, $modelClass);
 }
+*/
 
-function <<access.private>> meta::external::format::awspersistence::serialization::getSnowflakeConnection(config: AwsPersistenceConfig[1], rdb: RelationalDatabaseConnection[1], modelClass: Class<Any>[1]): meta::external::format::awspersistence::metamodel::RelationalConnection[1]
+function <<access.private>> meta::external::format::awspersistence::serialization::getDbConnection(config: AwsPersistenceConfig[1], rdb: RelationalDatabaseConnection[1], modelClass: Class<Any>[1]): meta::external::format::awspersistence::metamodel::RelationalConnection[1]
 {
   assertInstanceOf($rdb.element, meta::relational::metamodel::Database, 'Expected engine to present element with type Database, instead found type %s', [ $rdb.element->type() ]);
   let db = $rdb.element->cast(@Database);
