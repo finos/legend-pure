@@ -146,6 +146,37 @@ function <<access.private>> meta::relational::functions::typeInference::getDynaF
    newMap([
 
       pair(
+         'udfDouble',
+         list([
+            pair(
+               {params: RelationalOperationElement[*] | true},
+               {params: RelationalOperationElement[*] | ^meta::relational::metamodel::datatype::Double()}
+            )
+         ])
+      ),
+
+      pair(
+         'udfOther',
+         list([
+            pair(
+               {params: RelationalOperationElement[*] | true},
+               {params: RelationalOperationElement[*] | ^meta::relational::metamodel::datatype::Other()}
+            )
+         ])
+      ),
+
+/*
+      pair(
+         'udfString',
+         list([
+            pair(
+               {params: RelationalOperationElement[*] | true},
+               {params: RelationalOperationElement[*] | ^meta::relational::metamodel::datatype::Varchar()}
+            )
+         ])
+      ),
+*/
+      pair(
          'abs',
          list([
             pair(
