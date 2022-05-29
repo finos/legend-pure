@@ -1685,6 +1685,8 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::getDy
       forDynafunction('toUpper',               [ choice($allTypes,                 $allStates,            ^ToSql(format='upper(%s)'))]),
       forDynafunction('trim',                  [ choice($notASybaseAse,            $allStates,            ^ToSql(format='trim(%s)')),
                                                  choice($sybaseAse,                $allStates,            ^ToSql(format='rtrim(ltrim(%s))')) ]),
+      forDynafunction('udf',                   [ choice(DatabaseType.Redshift,     $allStates,            ^ToSql(format='%s', transform={p:String[*] | $p->emitUDFInvocation()})),
+                                                 choice(DatabaseType.Snowflake,    $allStates,            ^ToSql(format='%s', transform={p:String[*] | $p->emitUDFInvocation()}))]),
       forDynafunction('weekOfYear',            [ choice($aSybase,                  $allStates,            ^ToSql(format='datepart(WEEK,%s)')),
                                                  choice(DatabaseType.DB2,          $allStates,            ^ToSql(format='week_iso(%s)')),
                                                  choice(DatabaseType.H2,           $allStates,            ^ToSql(format='week(%s)')),
@@ -1863,6 +1865,14 @@ function <<access.private>> meta::relational::functions::sqlQueryToString::trans
       if($unit == 'WEEKS', | $number * 7, | $number)->abs()->toString(),
       if($unit == 'WEEKS', | 'DAYS', | $unit)
    ]);
+}
+
+function <<access.private>> meta::relational::functions::sqlQueryToString::emitUDFInvocation(p: String[*]):String[*]
+{
+  assertNotEmpty($p, | 'At least the UDF name must be provided when emitting a user-defined function invocation');
+  let udf = $p->head()->toOne()->replace('\'', '');
+  let args = $p->tail();
+  $args->joinStrings($udf + '(', ', ', ')');
 }
 
 function meta::relational::functions::sqlQueryToString::processColumnName(name:String[1], dbConfig:DbConfig[1]):String[1]
