@@ -72,17 +72,19 @@ function  meta::external::format::awspersistence::serialization::serialize(confi
 
 function <<access.private>> meta::external::format::awspersistence::serialization::annotatedService(config: AwsPersistenceConfig[1], s: Service[1], mc: meta::external::format::awspersistence::metamodel::ModelClass[1..*]): meta::external::format::awspersistence::metamodel::AwsPersistenceService[1]
 {
+  /*
   let auth = if ($s.execution->instanceOf(PureSingleExecution) &&
                  $s.execution->cast(@PureSingleExecution).runtime.connections->size() == 1 &&
                  $s.execution->cast(@PureSingleExecution).runtime.connections->toOne()->instanceOf(RelationalDatabaseConnection), 
     | $s.execution->cast(@PureSingleExecution).runtime.connections->toOne()->cast(@RelationalDatabaseConnection).authenticationStrategy,
     | []
     );
+    */
 
   ^meta::external::format::awspersistence::metamodel::AwsPersistenceService(
+    // auth = $auth,
     service = $s,
-    modelClass = $mc,
-    auth = $auth
+    modelClass = $mc
   );
 }
 
@@ -165,13 +167,20 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
     rdb:RelationalDatabaseConnection[1]|
       if ($rdb.type == DatabaseType.Snowflake, 
         | $config->getSnowflakeConnection($rdb, $modelClass),
-        | assert(false,'AwsPersistence can currently only handle RelationalDB targets of type Snowflake');
-          [];
+        | if ($rdb.type == DatabaseType.Redshift,
+          | $config->getRedshiftConnection($rdb, $modelClass),
+          | assert(false,'AwsPersistence can currently only handle RelationalDB targets of type Snowflake or Redshift');
+            [];)
       )
   ]);
 
   assertNotEmpty($trc, |'Unexpectedly found no target connection');
   $trc->toOne();
+}
+
+function <<access.private>> meta::external::format::awspersistence::serialization::getRedshiftConnection(config: AwsPersistenceConfig[1], rdb: RelationalDatabaseConnection[1], modelClass: Class<Any>[1]): meta::external::format::awspersistence::metamodel::RelationalConnection[1]
+{
+  $config->getSnowflakeConnection($rdb, $modelClass);
 }
 
 function <<access.private>> meta::external::format::awspersistence::serialization::getSnowflakeConnection(config: AwsPersistenceConfig[1], rdb: RelationalDatabaseConnection[1], modelClass: Class<Any>[1]): meta::external::format::awspersistence::metamodel::RelationalConnection[1]

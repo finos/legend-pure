@@ -67,7 +67,7 @@ Class meta::external::format::awspersistence::metamodel::AwsPersistenceTarget
 Class meta::external::format::awspersistence::metamodel::AwsPersistenceService
 {
   service: Service[1];
-  auth: AuthenticationStrategy[0..1];
+  // auth: AuthenticationStrategy[0..1]; // We no longer need to lift the auth out, since the service's auth mechanism will be used via Vault.INSTANCE in the cnas runtime too 
   modelClass: meta::external::format::awspersistence::metamodel::ModelClass[1..*];
 }
 
