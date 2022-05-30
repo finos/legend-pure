@@ -164,7 +164,8 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
               [];
             ),
         x:Any[1]|
-          []
+          assert(false,'Expected only a Relational connectoin in a Relational sink');
+          [];
       ]);,
     sink:ObjectStorageSink[1]|
       // We have a connection and a binding for sure
@@ -189,7 +190,8 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
         queryInfo = $c.queryInfo
       );,
     x:Any[1]|
-      []
+      assert(false,'Can only handle Relational, Object Storage, or Financial Cloud sinks');
+      [];
   ]);
 
   assertNotEmpty($aptc, |'Unexpectedly found no target connection');
@@ -226,7 +228,10 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
     | $tables->toOne(), // The schema containing this table is the schema we will use
     | $config->getTableForModelClass($tables, $modelClass, $storeName);
   );
-  $config->validateRelationalTargetWithModel($t, $modelClass, $storeName);
+
+  // This needs revisiting. We need to validate the model class against the store types through the mapping. Doing so is hard
+  // $config->validateRelationalTargetWithModel($t, $modelClass, $storeName);
+
   let targetRelType = $t.columns->cast(@Column)->map(c|^meta::external::format::awspersistence::metamodel::RelationalProperty(name=$c.name, sqlType=$c.type->meta::relational::metamodel::datatype::dataTypeToSqlText()));
 
   ^meta::external::format::awspersistence::metamodel::RelationalConnection(
@@ -254,6 +259,12 @@ Class <<access.private>> meta::external::format::awspersistence::serialization::
 }
 
 
+// This needs revisiting. We need to validate the model class against the store types through the mapping. Doing so is hard
+// For example, element X in the model could map to a combination of relational columns (Y and Z) in the store, through a relational operations
+// What we need to validate is that the type of X matches the type of relop(X, Y). Sometimes, relop is Identity. The names can be
+// different as that is what the mapping handles. This function needs to be redone taking the above into account.
+
+/****
 function <<access.private>> meta::external::format::awspersistence::serialization::validateRelationalTargetWithModel(config: AwsPersistenceConfig[1], table: Table[1], modelClass: Class<Any>[1], storeName: String[1]): Any[*]
 {
   // Better have the same number of elements
@@ -285,4 +296,4 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
     '\n'
   ));
 }
-
+***/
