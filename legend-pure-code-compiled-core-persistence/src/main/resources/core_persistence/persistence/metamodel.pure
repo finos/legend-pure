@@ -185,6 +185,13 @@ meta::pure::persistence::metamodel::persister::sink::ObjectStorageSink extends S
    binding: Binding[1];
 }
 
+Class
+{doc.doc = 'Runtime properties for financial cloud sink.'}
+meta::pure::persistence::metamodel::persister::sink::FinancialCloudSink extends Sink
+{
+   connection: Connection[1];
+}
+
 /**********
  * target shape
  **********/

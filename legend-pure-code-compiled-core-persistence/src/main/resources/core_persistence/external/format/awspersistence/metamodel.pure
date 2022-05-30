@@ -50,10 +50,21 @@ Class meta::external::format::awspersistence::metamodel::RelationalConnection ex
 
 Class meta::external::format::awspersistence::metamodel::S3Connection extends meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection
 {
-// S3 info goes here
+  partition: meta::external::persistence::aws::metamodel::AwsPartition[1];
+  region: String[1];
+  bucket: String[1];
+  key: String[1];
+  contentType: String[0..1]; // From the Binding
 }
 
-
+// FIXME: This is just duplicating meta::external::persistence::aws::metamodel::connection::AwsFinCloudConnection without the store
+Class meta::external::format::awspersistence::metamodel::FinCloudConnection extends meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection
+{
+  datasetId: String[1];
+  authenticationStrategy: AuthenticationStrategy[1];
+  apiUrl: String[1];
+  queryInfo: String[0..1];
+}
 
 
 Class meta::external::format::awspersistence::metamodel::AwsPersistenceTarget

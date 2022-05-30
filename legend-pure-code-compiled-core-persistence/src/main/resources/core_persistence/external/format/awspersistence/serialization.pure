@@ -95,14 +95,6 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
   assert($bp.targetShape->instanceOf(FlatTarget), | 'AwsPersistence can currently only handle flat target shapes');
   let ft = $bp.targetShape->cast(@FlatTarget);
 
-  assertInstanceOf($bp.sink, RelationalSink, |'Can only handle RelationalSink for now in a Persister');
-
-  let sink = $bp.sink->cast(@RelationalSink);
-
-  // FIXME, giving Persister a name will help with debug
-  assertNotEmpty($sink.connection, |'Expecting Connection in Sink, found none');
-  let c = $sink.connection->toOne();
-
   let canHandle = 'NontemporalSnapshot, UnitemporalSnapshot';
   $bp.ingestMode->match([
     u:UnitemporalSnapshot[1]|assert($u.transactionMilestoning->instanceOf(BatchIdTransactionMilestoning), 'In FlatTarget %s, for UnitemporalSnapshot, only BatchIdTransactionMilestoning is supported', [$ft.targetName]),
@@ -110,12 +102,12 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
     a:Any[*]|assert(false, 'AwsPersistence can currently only handle %s milestoning in FlatTarget <%s>', [$canHandle, $ft.targetName])
   ]);
 
-  let apt = $config->serializeAwsPersistenceTarget($ft, $c, $bp.ingestMode);
+  let apt = $config->serializeAwsPersistenceTarget($ft, $bp.sink, $bp.ingestMode);
   $apt->toOneMany();
 }
 
 
-function <<access.private>> meta::external::format::awspersistence::serialization::serializeAwsPersistenceTarget(config: AwsPersistenceConfig[1], ft: FlatTarget[1], c: Connection[1], im: IngestMode[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTarget[1]
+function <<access.private>> meta::external::format::awspersistence::serialization::serializeAwsPersistenceTarget(config: AwsPersistenceConfig[1], ft: FlatTarget[1], ts: Sink[1], im: IngestMode[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTarget[1]
 {
   assertSize($ft.modelClass, 1, 'Expecting exactly one modelClass, found %s', [$ft.modelClass->size()]);
   let modelClass = $ft.modelClass->toOne();
@@ -124,7 +116,7 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
 
   ^meta::external::format::awspersistence::metamodel::AwsPersistenceTarget(
       name = $ft.targetName,
-      connection = $config->getTargetConnection($c, $modelClass),
+      connection = $config->getTargetConnection($ts, $modelClass),
       // deduplicationStrategy=$ft.deduplicationStrategy,
       ingestMode = $im
     );
@@ -158,32 +150,50 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
   $mc;
 }
 
-function <<access.private>> meta::external::format::awspersistence::serialization::getTargetConnection(config: AwsPersistenceConfig[1], c: Connection[1], modelClass: Class<Any>[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection[1]
+function <<access.private>> meta::external::format::awspersistence::serialization::getTargetConnection(config: AwsPersistenceConfig[1], ts: Sink[1], modelClass: Class<Any>[1]): meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection[1]
 {
-  let trc = $c->match([
-    s3:AwsS3Connection[1]|
-      assert(false,'AwsPersistence cannot currently handle S3 targets');
-      [];,
-/*      
-    rdb:RelationalDatabaseConnection[1]|
-      if ($rdb.type == DatabaseType.Snowflake, 
-        | $config->getSnowflakeConnection($rdb, $modelClass),
-        | if ($rdb.type == DatabaseType.Redshift,
-          | $config->getRedshiftConnection($rdb, $modelClass),
-          | assert(false,'AwsPersistence can currently only handle RelationalDB targets of type Snowflake or Redshift');
-            [];)
-      )
-      */
-    rdb:RelationalDatabaseConnection[1]|
-      if ($rdb.type == DatabaseType.Snowflake || $rdb.type == DatabaseType.Redshift,
-        | $config->getDbConnection($rdb, $modelClass),
-        | assert(false,'AwsPersistence can currently only handle RelationalDB targets of type Snowflake or Redshift');
-          [];
-        )
+  let aptc = $ts->match([
+    sink:RelationalSink[1]|
+      assertNotEmpty($sink.connection, |'Expecting Connection in Relational Sink, found none');
+      let c = $sink.connection->toOne();
+      $c->match([
+        rdb:RelationalDatabaseConnection[1]|
+          if ($rdb.type == DatabaseType.Snowflake || $rdb.type == DatabaseType.Redshift,
+            | $config->getDbConnection($rdb, $modelClass),
+            | assert(false,'AwsPersistence can currently only handle RelationalDB targets of type Snowflake or Redshift');
+              [];
+            ),
+        x:Any[1]|
+          []
+      ]);,
+    sink:ObjectStorageSink[1]|
+      // We have a connection and a binding for sure
+      assertInstanceOf($sink.connection, meta::external::persistence::aws::metamodel::connection::AwsS3Connection, |'Expected only S3 connection in an object storage sink');
+      let s3 = $sink.connection->cast(@meta::external::persistence::aws::metamodel::connection::AwsS3Connection);
+      let ct = $sink.binding.contentType;
+      ^meta::external::format::awspersistence::metamodel::S3Connection(
+        partition = $s3.partition,
+        region = $s3.region,
+        bucket = $s3.bucket,
+        key = $s3.key,
+        contentType = $sink.binding.contentType
+      );,
+    sink:FinancialCloudSink[1]|
+      // We have a connection for sure
+      assertInstanceOf($sink.connection, meta::external::persistence::aws::metamodel::connection::AwsFinCloudConnection, |'Expected only FinCloud connection in a FinCloud sink');
+      let c = $sink.connection->cast(@meta::external::persistence::aws::metamodel::connection::AwsFinCloudConnection);
+      ^meta::external::format::awspersistence::metamodel::FinCloudConnection(
+        datasetId = $c.datasetId,
+        authenticationStrategy = $c.authenticationStrategy,
+        apiUrl = $c.apiUrl,
+        queryInfo = $c.queryInfo
+      );,
+    x:Any[1]|
+      []
   ]);
 
-  assertNotEmpty($trc, |'Unexpectedly found no target connection');
-  $trc->toOne();
+  assertNotEmpty($aptc, |'Unexpectedly found no target connection');
+  $aptc->toOne();
 }
 
 /*
