@@ -15,14 +15,13 @@
 package org.finos.legend.pure.m3.serialization.filesystem.repository;
 
 import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.list.mutable.ListAdapter;
 
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 public abstract class CodeRepository
@@ -114,8 +113,8 @@ public abstract class CodeRepository
      * Produce a list of repositories sorted by visibility. In the resulting list, if one repository is visible to
      * another, then the visible repository will be earlier in the list. E.g., if repository A is visible to B, then A
      * will appear before B in the list. Two repositories which are not visible to each other may appear in any order.
-     * An exception will be thrown if a visibility loop is detected. The result will be a new list, and the original
-     * will not be modified.
+     * However, the order of the result will not depend on the order of the input. An exception will be thrown if a
+     * visibility loop is detected. The result will be a new list, and the original will not be modified.
      *
      * @param repositories repositories to sort
      * @param <T>          repository type
@@ -138,8 +137,8 @@ public abstract class CodeRepository
      * Produce a list of repositories sorted by visibility. In the resulting list, if one repository is visible to
      * another, then the visible repository will be earlier in the list. E.g., if repository A is visible to B, then A
      * will appear before B in the list. Two repositories which are not visible to each other may appear in any order.
-     * An exception will be thrown if a visibility loop is detected. The result will be a new list, and the original
-     * will not be modified.
+     * However, the order of the result will not depend on the order of the input. An exception will be thrown if a
+     * visibility loop is detected. The result will be a new list, and the original will not be modified.
      *
      * @param repositories repositories to sort
      * @param <T>          repository type
@@ -153,9 +152,7 @@ public abstract class CodeRepository
         }
 
         MutableList<T> result = Lists.mutable.ofInitialCapacity(repositories.size());
-
-        // We use a LinkedHashMap so that iteration order will be deterministic, which in turn ensures a deterministic result.
-        Map<T, MutableList<T>> remaining = new LinkedHashMap<>(repositories.size());
+        MutableMap<T, MutableList<T>> remaining = Maps.mutable.empty();
         repositories.forEach(r ->
         {
             MutableList<T> visible = repositories.select(r2 -> (r2 != r) && r.isVisible(r2), Lists.mutable.empty());
@@ -169,30 +166,33 @@ public abstract class CodeRepository
                 remaining.put(r, visible);
             }
         });
+        // none of these is visible to another - sort by name to maintain stability of result irrespective of input order
+        result.sortThisBy(CodeRepository::getName);
 
-        while (!remaining.isEmpty())
+        while (remaining.notEmpty())
         {
-            int beforeSize = remaining.size();
-            Iterator<Map.Entry<T, MutableList<T>>> iterator = remaining.entrySet().iterator();
-            while (iterator.hasNext())
+            MutableList<T> next = Lists.mutable.empty();
+            remaining.forEachKeyValue((repo, visible) ->
             {
-                Map.Entry<T, MutableList<T>> entry = iterator.next();
-                MutableList<T> visible = entry.getValue();
                 visible.removeIf(r -> !remaining.containsKey(r));
                 if (visible.isEmpty())
                 {
-                    result.add(entry.getKey());
-                    iterator.remove();
+                    next.add(repo);
                 }
-            }
-            if (remaining.size() == beforeSize)
+            });
+            if (next.isEmpty())
             {
                 // could not make progress - there must be a visibility loop
                 StringBuilder builder = new StringBuilder("Could not consistently order the following repositories:");
-                remaining.forEach((r, vis) -> vis.asLazy().collect(CodeRepository::getName).appendString(builder.append(" ").append(r.getName()), " (visible: ", ", ", "),"));
+                remaining.keysView().toSortedListBy(CodeRepository::getName)
+                        .forEach(r -> remaining.get(r).collect(CodeRepository::getName).sortThis().appendString(builder.append(" ").append(r.getName()), " (visible: ", ", ", "),"));
                 builder.deleteCharAt(builder.length() - 1);
                 throw new RuntimeException(builder.toString());
             }
+            // none of these is visible to another - sort by name to maintain stability of result irrespective of input order
+            next.sortThisBy(CodeRepository::getName);
+            next.forEach(remaining::remove);
+            result.addAll(next);
         }
 
         return result;
