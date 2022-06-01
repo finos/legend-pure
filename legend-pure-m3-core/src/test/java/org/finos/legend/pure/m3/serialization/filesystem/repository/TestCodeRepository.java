@@ -10,6 +10,22 @@ import org.junit.Test;
 public class TestCodeRepository
 {
     @Test
+    public void testIsValidRepositoryName()
+    {
+        String[] validNames = {"platform", "core", "system", "core_relational", "a_b_c_d_e_f_g"};
+        for (String name : validNames)
+        {
+            Assert.assertTrue(name, CodeRepository.isValidRepositoryName(name));
+        }
+
+        String[] invalidNames = {null, "", "platform1", "Platform", "__", "aBc", "core-relational"};
+        for (String name : invalidNames)
+        {
+            Assert.assertFalse(name, CodeRepository.isValidRepositoryName(name));
+        }
+    }
+
+    @Test
     public void testToSortedRepositoriesList_Empty()
     {
         assertSort(Lists.fixedSize.empty());
