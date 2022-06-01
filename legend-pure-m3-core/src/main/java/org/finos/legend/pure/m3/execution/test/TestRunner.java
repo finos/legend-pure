@@ -26,10 +26,13 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.factory.Lists;
 import org.eclipse.collections.impl.set.mutable.UnifiedSet;
 import org.finos.legend.pure.m3.exception.PureAssertFailException;
+import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.execution.Console;
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.ValueSpecificationBootstrap;
 import org.finos.legend.pure.m3.serialization.runtime.PureRuntime;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureException;
@@ -141,7 +144,7 @@ public class TestRunner implements Runnable
             }
             try
             {
-                this.functionExecution.start(before, Lists.mutable.<CoreInstance>with());
+                executeTestFunc(before, testCollection.getTestFunctionParam(), testCollection.getTestFunctionParamCustomizer());
             }
             catch (Throwable t)
             {
@@ -173,22 +176,22 @@ public class TestRunner implements Runnable
             console.setPrintStream(ps);
             try
             {
-                this.functionExecution.start(test, Lists.mutable.<CoreInstance>with());
-                this.testCallBack.executedTest(test, stream.toString(), TestStatus.SUCCESS);
-                this.passedTests.add(PackageableElement.getUserPathForPackageableElement(test));
+                executeTestFunc(test, testCollection.getTestFunctionParam(), testCollection.getTestFunctionParamCustomizer());
+                this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), TestStatus.SUCCESS);
+                this.passedTests.add(PackageableElement.getUserPathForPackageableElement(test) + (testCollection.getTestParameterizationId() == null ? "" : "[" + testCollection.getTestParameterizationId() + "]"));
             }
             catch (Throwable t)
             {
                 PureException exception = PureException.findPureException(t);
                 if ((exception != null) && (exception instanceof PureAssertFailException))
                 {
-                    this.testCallBack.executedTest(test, stream.toString(), new AssertFailTestStatus((PureAssertFailException)exception));
+                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), new AssertFailTestStatus((PureAssertFailException)exception));
                 }
                 else
                 {
-                    this.testCallBack.executedTest(test, stream.toString(), new ErrorTestStatus(t));
+                    this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(), stream.toString(), new ErrorTestStatus(t));
                 }
-                this.failedTests.add(PackageableElement.getUserPathForPackageableElement(test));
+                this.failedTests.add(PackageableElement.getUserPathForPackageableElement(test) + (testCollection.getTestParameterizationId() == null ? "" : "[" + testCollection.getTestParameterizationId() + "]"));
             }
             stream.flush();
         }
@@ -202,13 +205,37 @@ public class TestRunner implements Runnable
             }
             try
             {
-                this.functionExecution.start(after, Lists.mutable.<CoreInstance>with());
+                executeTestFunc(after, testCollection.getTestFunctionParam(), testCollection.getTestFunctionParamCustomizer());
             }
             catch (Throwable t)
             {
                 // TODO what should we do with this
             }
         }
+    }
+
+    private void executeTestFunc(CoreInstance testFunc, Object testFunctionParam, CoreInstance testFunctionParamCustomizer)
+    {
+        ListIterable<? extends CoreInstance> args = Lists.mutable.empty();
+        if (testFunctionParam != null)
+        {
+            ProcessorSupport processorSupport = this.functionExecution.getProcessorSupport();
+            if (testFunctionParamCustomizer != null)
+            {
+                CoreInstance customizedParam = this.functionExecution.start(testFunctionParamCustomizer,
+                        Lists.mutable.with(
+                                ValueSpecificationBootstrap.wrapValueSpecification(testFunc, false, processorSupport),
+                                ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) testFunctionParam, false, processorSupport)
+                        ));
+                customizedParam = Instance.getValueForMetaPropertyToOneResolved(customizedParam, M3Properties.values, processorSupport);
+                args = Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification(customizedParam, false, processorSupport));
+            }
+            else
+            {
+                args = Lists.mutable.with(ValueSpecificationBootstrap.wrapValueSpecification((CoreInstance) testFunctionParam, false, processorSupport));
+            }
+        }
+        this.functionExecution.start(testFunc, args);
     }
 
     private void failTestsFromCollectionWithErrorStatus(TestCollection testCollection, Console console, ErrorTestStatus status) throws IOException
@@ -230,7 +257,7 @@ public class TestRunner implements Runnable
             {
                 return;
             }
-            this.testCallBack.executedTest(test, "", status);
+            this.testCallBack.executedTest(test, testCollection.getTestParameterizationId(),"", status);
         }
     }
 

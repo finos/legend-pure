@@ -1,4 +1,4 @@
-# Copyright 2020 FINOS
+# Copyright 2022 Goldman Sachs
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: legend-build
+name: Build CI
 
 env:
   CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
@@ -24,6 +24,7 @@ on: [push, pull_request]
 
 jobs:
   build:
+    name: Build
     if: "!contains(github.event.head_commit.message, '[maven-release-plugin]')"
     runs-on: ubuntu-latest
     steps:
@@ -74,11 +75,23 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -DargLine="-Xmx2000m"
       - name: Build + Test
         if: (github.repository != 'finos/legend-pure') || (github.ref != 'refs/heads/master')
-        run: mvn -B -e install javadoc:javadoc -DargLine="-Xmx2000m"
+        run: mvn -B -e install javadoc:javadoc -DargLine="-Xmx2000m" -Dmaven.test.failure.ignore=true
         env:
           MAVEN_OPTS: -Xmx4000m
       - name: Build + Test + Sonar + Maven Deploy
         if: (github.repository == 'finos/legend-pure') && (github.ref == 'refs/heads/master')
-        run: mvn -B -e deploy javadoc:javadoc -Psonar -DargLine="-Xmx2000m"
+        run: mvn -B -e deploy javadoc:javadoc -Psonar -DargLine="-Xmx2000m" -Dmaven.test.failure.ignore=true
         env:
           MAVEN_OPTS: -Xmx4000m
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: legend-pure-test-reports/surefire-reports-aggregate/*.xml
+      - name: Upload CI Event
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: event-file
+          path: ${{ github.event_path }}

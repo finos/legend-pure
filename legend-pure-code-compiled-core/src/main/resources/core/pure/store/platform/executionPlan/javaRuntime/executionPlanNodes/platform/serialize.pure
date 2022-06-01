@@ -37,7 +37,7 @@ Class meta::pure::executionPlan::engine::java::serialize::SerializeData
 
 function meta::pure::executionPlan::engine::java::serialize::prepareForSerialize(p:PureExpressionPlatformExecutionNode[1], path:String[1], context:GenerationContext[1], debug:DebugContext[1]): GenerationContext[1]
 {
-   print(if($debug.debug,|$debug.space+'prepareForSerialize\n', |''));
+   print(if($debug.debug,|$debug.space+'('+$path+') prepareForSerialize\n', |''));
    
    let fe        = $p.expression->cast(@FunctionExpression);
    let tree      = $fe.parametersValues->at(1)->cast(@InstanceValue).values->cast(@RootGraphFetchTree<Any>)->toOne();

@@ -16,9 +16,10 @@ package org.finos.legend.pure.runtime.java.compiled.generation.processors;
 
 import org.eclipse.collections.api.factory.Maps;
 import org.eclipse.collections.api.map.ConcurrentMutableMap;
-import org.eclipse.collections.api.map.MapIterable;
+import org.eclipse.collections.api.map.ImmutableMap;
 import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap;
+import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.relationship.Association;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -33,20 +34,22 @@ import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class IdBuilder
 {
     private final String defaultIdPrefix;
     private final ProcessorSupport processorSupport;
-    private final MapIterable<CoreInstance, Function<? super CoreInstance, String>> idBuilders;
+    private final ImmutableMap<CoreInstance, Function<? super CoreInstance, String>> idBuilders;
     private final ConcurrentMutableMap<CoreInstance, Function<? super CoreInstance, String>> cache;
 
-    private IdBuilder(String defaultIdPrefix, ProcessorSupport processorSupport)
+    private IdBuilder(String defaultIdPrefix, ProcessorSupport processorSupport, ImmutableMap<CoreInstance, Function<? super CoreInstance, String>> idBuilders)
     {
         this.defaultIdPrefix = defaultIdPrefix;
         this.processorSupport = processorSupport;
-        this.idBuilders = registerIdBuilderFunctions(processorSupport);
+        this.idBuilders = idBuilders;
         this.cache = ConcurrentHashMap.newMap(this.idBuilders.size());
         this.idBuilders.forEachKeyValue(this.cache::put);
     }
@@ -93,26 +96,13 @@ public class IdBuilder
         return (this.defaultIdPrefix == null) ? Integer.toString(syntheticId) : (this.defaultIdPrefix + syntheticId);
     }
 
-    // Primitive values
-
-    private static String buildIdForPrimitiveValue(CoreInstance instance)
-    {
-        return instance.getName();
-    }
-
-    // Enum value
-
-    private static String buildIdForEnumValue(CoreInstance instance)
-    {
-        return instance.getName();
-    }
-
     // QualifiedProperty
 
     private static String buildIdForQualifiedProperty(CoreInstance property)
     {
         return PackageableElement.writeUserPathForPackageableElement(new StringBuilder(), property.getValueForMetaPropertyToOne(M3Properties.owner))
-                .append('.').append(property.getName()).toString();
+                .append('.').append(property.getName())
+                .toString();
     }
 
     // Property
@@ -162,9 +152,9 @@ public class IdBuilder
 
     private static String buildIdForAnnotation(CoreInstance annotation)
     {
-        StringBuilder builder = new StringBuilder();
-        PackageableElement.writeUserPathForPackageableElement(builder, annotation.getValueForMetaPropertyToOne(M3Properties.profile));
-        return builder.append('.').append(annotation.getName()).toString();
+        return PackageableElement.writeUserPathForPackageableElement(new StringBuilder(), annotation.getValueForMetaPropertyToOne(M3Properties.profile))
+                .append('.').append(annotation.getName())
+                .toString();
     }
 
     // PackageableElement
@@ -180,22 +170,194 @@ public class IdBuilder
         return id;
     }
 
-    // Factory methods
+    // Builder
+
+    /**
+     * Function to build ids for instances of the given classifier.
+     */
+    public interface IdBuilderFunction extends Function<CoreInstance, String>
+    {
+        String getClassifierPath();
+    }
+
+    public static class Builder
+    {
+        private final MutableMap<CoreInstance, Function<? super CoreInstance, String>> idBuilders = Maps.mutable.empty();
+        private final ProcessorSupport processorSupport;
+        private String defaultIdPrefix;
+
+        public Builder(ProcessorSupport processorSupport)
+        {
+            this.processorSupport = Objects.requireNonNull(processorSupport, "processorSupport may not be null");
+            addStandardIdBuilders();
+        }
+
+        /**
+         * Set the optional default id prefix. If non-null, the default id function will use this as the prefix for
+         * all ids it generates.
+         *
+         * @param prefix default id prefix
+         */
+        public void setDefaultIdPrefix(String prefix)
+        {
+            this.defaultIdPrefix = prefix;
+        }
+
+        /**
+         * Set the optional default id prefix. If non-null, the default id function will use this as the prefix for
+         * all ids it generates.
+         *
+         * @param prefix default id prefix
+         */
+        public Builder withDefaultIdPrefix(String prefix)
+        {
+            setDefaultIdPrefix(prefix);
+            return this;
+        }
+
+        /**
+         * Add a function to build ids for the given classifier. An exception will be thrown if there is already a
+         * function registered for the classifier.
+         *
+         * @param classifierPath full path of the classifer
+         * @param function       id builder function
+         */
+        public void addIdBuilder(String classifierPath, Function<? super CoreInstance, String> function)
+        {
+            CoreInstance type = this.processorSupport.package_getByUserPath(Objects.requireNonNull(classifierPath, "classifier path may not be null"));
+            Function<? super CoreInstance, String> old = this.idBuilders.put(type, Objects.requireNonNull(function, "function may not be null"));
+            if (old != null)
+            {
+                throw new RuntimeException("An id builder function is already registered for classifier: " + classifierPath);
+            }
+        }
+
+        /**
+         * Add a function to build ids for the given classifier. An exception will be thrown if there is already a
+         * function registered for the classifier.
+         *
+         * @param classifierPath full path of the classifer
+         * @param function       id builder function
+         */
+        public Builder withIdBuilder(String classifierPath, Function<? super CoreInstance, String> function)
+        {
+            addIdBuilder(classifierPath, function);
+            return this;
+        }
+
+        /**
+         * Add functions to build ids for the corresponding classifiers. An exception will be thrown if there is already
+         * a function registered for any of the given classifiers. In case of an exception, some of the functions may
+         * be registered.
+         *
+         * @param idBuilderFunctions id builder functions by classifier path
+         */
+        public Builder withIdBuilders(Map<String, ? extends Function<? super CoreInstance, String>> idBuilderFunctions)
+        {
+            idBuilderFunctions.forEach(this::addIdBuilder);
+            return this;
+        }
+
+        /**
+         * Add an id builder function. An exception will be thrown if there is already a function registered for the
+         * classifier.
+         *
+         * @param idBuilderFunction id builder function
+         */
+        public void addIdBuilder(IdBuilderFunction idBuilderFunction)
+        {
+            addIdBuilder(idBuilderFunction.getClassifierPath(), idBuilderFunction);
+        }
+
+        /**
+         * Add an id builder function. An exception will be thrown if there is already a function registered for the
+         * classifier.
+         *
+         * @param idBuilderFunction id builder function
+         */
+        public Builder withIdBuilder(IdBuilderFunction idBuilderFunction)
+        {
+            addIdBuilder(idBuilderFunction.getClassifierPath(), idBuilderFunction);
+            return this;
+        }
+
+        /**
+         * Add functions to build ids for the corresponding classifiers. An exception will be thrown if there is already
+         * a function registered for any of the given classifiers. In case of an exception, some of the functions may
+         * be registered.
+         *
+         * @param idBuilderFunctions id builder functions by classifier path
+         */
+        public Builder withIdBuilders(IdBuilderFunction... idBuilderFunctions)
+        {
+            ArrayIterate.forEach(idBuilderFunctions, this::addIdBuilder);
+            return this;
+        }
+
+        /**
+         * Add functions to build ids for the corresponding classifiers. An exception will be thrown if there is already
+         * a function registered for any of the given classifiers. In case of an exception, some of the functions may
+         * be registered.
+         *
+         * @param idBuilderFunctions id builder functions by classifier path
+         */
+        public Builder withIdBuilders(Iterable<? extends IdBuilderFunction> idBuilderFunctions)
+        {
+            idBuilderFunctions.forEach(this::addIdBuilder);
+            return this;
+        }
+
+        /**
+         * Build the {@linkplain IdBuilder}.
+         *
+         * @return {@linkplain IdBuilder}
+         */
+        public IdBuilder build()
+        {
+            return new IdBuilder(this.defaultIdPrefix, this.processorSupport, this.idBuilders.toImmutable());
+        }
+
+        private void addStandardIdBuilders()
+        {
+            PrimitiveUtilities.getPrimitiveTypes(this.processorSupport).forEach(t -> this.idBuilders.put(t, CoreInstance::getName));
+            addIdBuilder(M3Paths.Annotation, IdBuilder::buildIdForAnnotation);
+            addIdBuilder(M3Paths.Enum, CoreInstance::getName);
+            addIdBuilder(M3Paths.LambdaFunction, IdBuilder::buildIdForLambdaFunction);
+            addIdBuilder(M3Paths.PackageableElement, IdBuilder::buildIdForPackageableElement);
+            addIdBuilder(M3Paths.Property, IdBuilder::buildIdForProperty);
+            addIdBuilder(M3Paths.QualifiedProperty, IdBuilder::buildIdForQualifiedProperty);
+        }
+    }
+
+    public static Builder builder(ProcessorSupport processorSupport)
+    {
+        return new Builder(processorSupport);
+    }
 
     public static IdBuilder newIdBuilder(String defaultIdPrefix, ProcessorSupport processorSupport)
     {
-        return new IdBuilder(defaultIdPrefix, processorSupport);
+        return builder(processorSupport).withDefaultIdPrefix(defaultIdPrefix).build();
+    }
+
+    public static IdBuilder newIdBuilder(String defaultIdPrefix, ProcessorSupport processorSupport, IdBuilderFunction... idBuilderFunctions)
+    {
+        return builder(processorSupport).withDefaultIdPrefix(defaultIdPrefix).withIdBuilders(idBuilderFunctions).build();
     }
 
     public static IdBuilder newIdBuilder(ProcessorSupport processorSupport)
     {
-        return newIdBuilder(null, processorSupport);
+        return builder(processorSupport).build();
+    }
+
+    public static IdBuilder newIdBuilder(ProcessorSupport processorSupport, IdBuilderFunction... idBuilderFunctions)
+    {
+        return builder(processorSupport).withIdBuilders(idBuilderFunctions).build();
     }
 
     @Deprecated
     public static String buildId(CoreInstance coreInstance, ProcessorSupport processorSupport)
     {
-        return newIdBuilder(null, processorSupport).buildId(coreInstance);
+        return builder(processorSupport).build().buildId(coreInstance);
     }
 
     public static String sourceToId(SourceInformation sourceInformation)
@@ -208,33 +370,5 @@ public class IdBuilder
 
         int endIndex = CodeStorageTools.hasPureFileExtension(sourceId) ? (sourceId.length() - CodeStorage.PURE_FILE_EXTENSION.length()) : sourceId.length();
         return sourceId.substring(1, endIndex).replace('/', '_');
-    }
-
-    private static MapIterable<CoreInstance, Function<? super CoreInstance, String>> registerIdBuilderFunctions(ProcessorSupport processorSupport)
-    {
-        MutableMap<CoreInstance, Function<? super CoreInstance, String>> map = Maps.mutable.empty();
-        registerStandardIdBuilderFunctions(map, processorSupport);
-        return map;
-    }
-
-    private static void registerStandardIdBuilderFunctions(MutableMap<CoreInstance, Function<? super CoreInstance, String>> map, ProcessorSupport processorSupport)
-    {
-        PrimitiveUtilities.getPrimitiveTypes(processorSupport).forEach(t -> map.put(t, IdBuilder::buildIdForPrimitiveValue));
-        registerIdBuilderFunction(map, M3Paths.Annotation, IdBuilder::buildIdForAnnotation, processorSupport);
-        registerIdBuilderFunction(map, M3Paths.Enum, IdBuilder::buildIdForEnumValue, processorSupport);
-        registerIdBuilderFunction(map, M3Paths.LambdaFunction, IdBuilder::buildIdForLambdaFunction, processorSupport);
-        registerIdBuilderFunction(map, M3Paths.PackageableElement, IdBuilder::buildIdForPackageableElement, processorSupport);
-        registerIdBuilderFunction(map, M3Paths.Property, IdBuilder::buildIdForProperty, processorSupport);
-        registerIdBuilderFunction(map, M3Paths.QualifiedProperty, IdBuilder::buildIdForQualifiedProperty, processorSupport);
-    }
-
-    private static void registerIdBuilderFunction(MutableMap<CoreInstance, Function<? super CoreInstance, String>> map, String classifierPath, Function<? super CoreInstance, String> function, ProcessorSupport processorSupport)
-    {
-        CoreInstance type = processorSupport.package_getByUserPath(classifierPath);
-        Function<? super CoreInstance, String> old = map.put(type, function);
-        if (old != null)
-        {
-            throw new RuntimeException("An id builder function is already registered for classifier: " + classifierPath);
-        }
     }
 }

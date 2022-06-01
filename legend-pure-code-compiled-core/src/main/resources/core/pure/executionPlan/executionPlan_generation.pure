@@ -221,11 +221,14 @@ function meta::pure::executionPlan::plan(cluster:ClusteredValueSpecification[1],
                                                        values = $i.values->toOne()
                                                     );
                                  ,
-                                 s:SimpleFunctionExpression[1] |
-                                    ^meta::pure::executionPlan::PureExpressionPlatformExecutionNode(
-                                       expression = $s,
-                                       resultType = ^ResultType(type=$s.genericType.rawType->toOne())
-                                    );
+                                 s:SimpleFunctionExpression[1] | let funcParams = $s->findVariableExpressionsInValueSpecification()->map(ve | $ve.name);
+                                                                 let varInput = $inScopeVars->keyValues().second.values->cast(@PlanVarPlaceHolder)->filter(x | $x.name->in($funcParams))->map(v | ^meta::pure::executionPlan::VariableInput(name = $v.name->toOne(), type = $v.type->toOne(), multiplicity = $v.multiplicity->toOne()));  
+                                                                 ^meta::pure::executionPlan::PureExpressionPlatformExecutionNode
+                                                                 (
+                                                                    expression = $s,
+                                                                    requiredVariableInputs = $varInput,
+                                                                    resultType = ^ResultType(type=$s.genericType.rawType->toOne())
+                                                                 );
                               ]
                            );
             ^meta::pure::executionPlan::AllocationExecutionNode

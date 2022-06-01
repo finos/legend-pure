@@ -299,7 +299,10 @@ Class meta::external::language::java::metamodel::annotations::json::JsonInclude 
    value : meta::external::language::java::metamodel::annotations::json::EnumValue[1];
 }
 
-
+Class meta::external::language::java::metamodel::annotations::json::JsonTypeName extends meta::external::language::java::metamodel::Annotation
+{
+   value : String[1];
+}
 Class 
 {
   meta::external::language::java::metamodel::annotations::AnnotationJavaInfo.javaClass = 'javax.annotation.Generated'

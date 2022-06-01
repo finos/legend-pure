@@ -124,6 +124,8 @@ function meta::pure::router::byPassValueSpecificationWrapper(v:ValueSpecificatio
 {
    $v->match([ e: RoutedValueSpecification[1]|byPassValueSpecificationWrapper($e.value),
                c: ClusteredValueSpecification[1]|byPassValueSpecificationWrapper($c.val),
+               e: ExtendedRoutedValueSpecification[1]|byPassValueSpecificationWrapper($e.value),
+               n: NonExecutableValueSpecification[1]|byPassValueSpecificationWrapper($n.values->toOne()->cast(@ValueSpecification)),
                v: ValueSpecification[1] | $v]);                               
 }
 
@@ -137,8 +139,18 @@ function meta::pure::router::isSerializeOnGraphFetch(vs:ValueSpecification[1]):B
 
 function meta::pure::router::isUnionOnGraphFetch(vs:ValueSpecification[1]):Boolean[1]
 {
+   isUnionOnGraphFetch($vs, false);
+}
+
+function meta::pure::router::isUnionOnGraphFetch(vs:ValueSpecification[1], recurse:Boolean[1]):Boolean[1]
+{
    let unionFunctions = [concatenate_T_MANY__T_MANY__T_MANY_, union_T_MANY__T_MANY__T_MANY_];
-   $vs->instanceOf(FunctionExpression) && $unionFunctions->contains($vs->cast(@FunctionExpression).func) && $vs->cast(@FunctionExpression).parametersValues->map(v|$v->byPassValueSpecificationWrapper())->forAll(v|$v->instanceOf(FunctionExpression) && $v->cast(@FunctionExpression).func->in(meta::pure::graphFetch::execution::graphFetchFunctions()));
+   
+   $vs->instanceOf(FunctionExpression) 
+   && $unionFunctions->contains($vs->cast(@FunctionExpression).func) 
+   && $vs->cast(@FunctionExpression).parametersValues->map(v|$v->byPassValueSpecificationWrapper())
+                                                    ->forAll(v| $v->instanceOf(FunctionExpression) 
+                                                             && ($v->cast(@FunctionExpression).func->in(meta::pure::graphFetch::execution::graphFetchFunctions()) || ($recurse && $v->isUnionOnGraphFetch($recurse))));
 }
 
 function meta::pure::router::isMergeOnGraphFetch(vs:ValueSpecification[1]):Boolean[1]

@@ -24,7 +24,7 @@
     <name>Legend Pure</name>
     <groupId>org.finos.legend.pure</groupId>
     <artifactId>legend-pure</artifactId>
-    <version>2.1.2-SNAPSHOT</version>
+    <version>2.2.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -356,6 +356,7 @@
                     <trimStackTrace>false</trimStackTrace>
                     <useSystemClassLoader>true</useSystemClassLoader>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
+                    <trimStackTrace>false</trimStackTrace>
                     <reportsDirectory>${project.parent.basedir}/legend-pure-test-reports/surefire-reports-aggregate
                     </reportsDirectory>
                 </configuration>

@@ -25,6 +25,7 @@ public class TestTools
     public static final String TEST_PROFILE = "meta::pure::profiles::test";
 
     public static final String TEST_STEREOTYPE = "Test";
+    public static final String TEST_COLLECTION_STEREOTYPE = "TestCollection";
     public static final String EXCLUDEALLOY_STEREOTYPE = "ExcludeAlloy";
     public static final String EXCLUDE_ALLOY_TEXT_MODE_STEREOTYPE = "ExcludeAlloyTextMode";
     public static final String BEFORE_PACKAGE_STEREOTYPE = "BeforePackage";
@@ -33,6 +34,15 @@ public class TestTools
     public  static  final String ALLOY_ONLY_STEROTYPE = "AlloyOnly";
 
     public static final String PLATFORM_EXCLUSION_TAG = "excludePlatform";
+
+    public static final String TEST_COLLECTION_PKG = "pkg";
+    public static final String TEST_COLLECTION_TEST_PARAMETERIZATION_ID = "testParameterizationId";
+    public static final String TEST_COLLECTION_TEST_FUNCTION_PARAM = "testFunctionParam";
+    public static final String TEST_COLLECTION_TEST_FUNCTION_PARAM_CUSTOMIZER = "testFunctionParamCustomizer";
+    public static final String TEST_COLLECTION_TEST_FUNCTIONS = "testFunctions";
+    public static final String TEST_COLLECTION_BEFORE_FUNCTIONS = "beforeFunctions";
+    public static final String TEST_COLLECTION_AFTER_FUNCTIONS = "afterFunctions";
+    public static final String TEST_COLLECTION_SUB_COLLECTIONS = "subCollections";
 
     public static boolean hasToFixStereotype(CoreInstance node, ProcessorSupport processorSupport)
     {
@@ -47,6 +57,11 @@ public class TestTools
     public static boolean hasTestStereotype(CoreInstance node, ProcessorSupport processorSupport)
     {
         return hasTestStereotypeWithValue(node, TEST_STEREOTYPE, processorSupport);
+    }
+
+    public static boolean hasTestCollectionStereotype(CoreInstance node, ProcessorSupport processorSupport)
+    {
+        return hasTestStereotypeWithValue(node, TEST_COLLECTION_STEREOTYPE, processorSupport);
     }
 
     public static boolean hasExcludeAlloyStereotype(CoreInstance node, ProcessorSupport processorSupport)
