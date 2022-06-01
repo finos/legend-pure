@@ -14,17 +14,16 @@
 
 package org.finos.legend.pure.m3.inlinedsl.path.walker;
 
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.ReferenceUsage;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.Path;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class PathWalk implements MatchRunner<Path>
+public class PathWalk implements MatchRunner<Path<?, ?>>
 {
     @Override
     public String getClassName()
@@ -33,11 +32,8 @@ public class PathWalk implements MatchRunner<Path>
     }
 
     @Override
-    public void run(Path path, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(Path<?, ?> path, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
-        for (ReferenceUsage referenceUsage : path._referenceUsages())
-        {
-            matcher.fullMatch(referenceUsage._ownerCoreInstance(), state);
-        }
+        path._referenceUsages().forEach(refUsage -> matcher.fullMatch(refUsage._ownerCoreInstance(), state));
     }
 }

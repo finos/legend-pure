@@ -14,21 +14,19 @@
 
 package org.finos.legend.pure.m3.inlinedsl.path.parser;
 
-import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationLexer;
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.atn.PredictionMode;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationLexer;
+import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrDescriptiveErrorListener;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureAntlrErrorStrategy;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.atn.PredictionMode;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-
-import static org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.ParsingUtils.isAntlrRecognitionExceptionUsingFastParser;
 
 public class NavigationParser
 {
@@ -49,15 +47,11 @@ public class NavigationParser
         }
         catch (Exception e)
         {
-            if (isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
+            if (ParsingUtils.isAntlrRecognitionExceptionUsingFastParser(useFastParser, e))
             {
-                //System.err.println("Error using fast Antlr Parser: " + ExceptionUtils.getStackTrace(e));
                 return this.parseDefinition(false, code, sourceName, false, offsetLine, offsetColumn, repository, context, importId);
             }
-            else
-            {
-                throw e;
-            }
+            throw e;
         }
     }
 

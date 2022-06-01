@@ -15,29 +15,23 @@
 package org.finos.legend.pure.m3.inlinedsl.path;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.list.ImmutableList;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
+import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
+import org.finos.legend.pure.m3.coreinstance.PathCoreInstanceFactoryRegistry;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.inlinedsl.path.parser.NavigationParser;
 import org.finos.legend.pure.m3.inlinedsl.path.processor.PathProcessor;
 import org.finos.legend.pure.m3.inlinedsl.path.unloader.PathUnbind;
 import org.finos.legend.pure.m3.inlinedsl.path.validation.PathValidator;
 import org.finos.legend.pure.m3.inlinedsl.path.walker.PathWalk;
-import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m3.coreinstance.PathCoreInstanceFactoryRegistry;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.inlinedsl.InlineDSL;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class NavigationPath implements InlineDSL
 {
-    private final ImmutableList<MatchRunner> processors = Lists.immutable.<MatchRunner>with(new PathProcessor());
-    private final ImmutableList<MatchRunner> unbind = Lists.immutable.<MatchRunner>with(new PathUnbind());
-    private final ImmutableList<MatchRunner> walk = Lists.immutable.<MatchRunner>with(new PathWalk());
-    private final ImmutableList<MatchRunner> validators = Lists.immutable.<MatchRunner>with(new PathValidator());
-
     @Override
     public String getName()
     {
@@ -59,25 +53,25 @@ public class NavigationPath implements InlineDSL
     @Override
     public RichIterable<MatchRunner> getValidators()
     {
-        return this.validators;
+        return Lists.immutable.with(new PathValidator());
     }
 
     @Override
     public RichIterable<MatchRunner> getProcessors()
     {
-        return this.processors;
+        return Lists.immutable.with(new PathProcessor());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadWalkers()
     {
-        return this.walk;
+        return Lists.immutable.with(new PathWalk());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadUnbinders()
     {
-        return this.unbind;
+        return Lists.immutable.with(new PathUnbind());
     }
 
     @Override

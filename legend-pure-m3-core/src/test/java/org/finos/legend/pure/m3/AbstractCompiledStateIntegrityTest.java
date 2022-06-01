@@ -178,16 +178,14 @@ public abstract class AbstractCompiledStateIntegrityTest
     @Test
     public void testPackageableElementsHaveSourceInfo()
     {
-        CoreInstance functionTypeClass = runtime.getCoreInstance(M3Paths.FunctionType);
         CoreInstance importGroupClass = runtime.getCoreInstance(M3Paths.ImportGroup);
         CoreInstance packageClass = runtime.getCoreInstance(M3Paths.Package);
         CoreInstance packageableElementClass = runtime.getCoreInstance(M3Paths.PackageableElement);
-        Assert.assertNotNull(functionTypeClass);
         Assert.assertNotNull(importGroupClass);
         Assert.assertNotNull(packageClass);
         Assert.assertNotNull(packageableElementClass);
 
-        ImmutableSet<CoreInstance> exceptionClasses = Sets.immutable.with(importGroupClass, packageClass, functionTypeClass);
+        ImmutableSet<CoreInstance> exceptionClasses = Sets.immutable.with(importGroupClass, packageClass);
 
         MutableList<CoreInstance> noSourceInfo = selectNodes(instance -> (instance.getSourceInformation() == null) &&
                 !exceptionClasses.contains(instance.getClassifier()) &&
@@ -197,11 +195,8 @@ public abstract class AbstractCompiledStateIntegrityTest
             StringBuilder message = new StringBuilder("The following packageable elements have no source information:");
             noSourceInfo.forEach(instance ->
             {
-                message.append("\n\t");
-                PackageableElement.writeUserPathForPackageableElement(message, instance);
-                message.append(" (");
-                PackageableElement.writeUserPathForPackageableElement(message, instance.getClassifier());
-                message.append(')');
+                PackageableElement.writeUserPathForPackageableElement(message.append("\n\t"), instance);
+                PackageableElement.writeUserPathForPackageableElement(message.append(" ("), instance.getClassifier()).append(')');
             });
             Assert.fail(message.toString());
         }

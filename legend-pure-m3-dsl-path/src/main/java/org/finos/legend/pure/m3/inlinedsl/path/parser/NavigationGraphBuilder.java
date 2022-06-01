@@ -14,19 +14,12 @@
 
 package org.finos.legend.pure.m3.inlinedsl.path.parser;
 
+import org.antlr.v4.runtime.Token;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.AtomicContext;
-import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.CollectionContext;
-import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.DefinitionContext;
-import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.EnumStubContext;
-import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.GenericTypeContext;
-import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.ParameterContext;
-import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.PropertyWithParametersContext;
-import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.ScalarContext;
-import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParserBaseVisitor;
-import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.eclipse.collections.impl.utility.ListIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.EnumStubInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.ImportGroup;
@@ -37,21 +30,28 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.Propert
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.Path;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PropertyPathElement;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.ClassInstance;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Class;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericTypeInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValueInstance;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.AtomicContext;
+import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.CollectionContext;
+import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.DefinitionContext;
+import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.EnumStubContext;
+import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.GenericTypeContext;
+import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.ParameterContext;
+import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.PropertyWithParametersContext;
+import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParser.ScalarContext;
+import org.finos.legend.pure.m3.inlinedsl.path.serialization.grammar.NavigationParserBaseVisitor;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.grammar.m3parser.antlr.M3AntlrParser;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.AntlrSourceInformation;
 import org.finos.legend.pure.m4.serialization.grammar.antlr.PureParserException;
-import org.antlr.v4.runtime.Token;
-import org.apache.commons.lang3.StringEscapeUtils;
-
 
 public class NavigationGraphBuilder extends NavigationParserBaseVisitor<CoreInstance>
 {
@@ -73,103 +73,63 @@ public class NavigationGraphBuilder extends NavigationParserBaseVisitor<CoreInst
     @Override
     public CoreInstance visitDefinition(DefinitionContext ctx)
     {
-        GenericType owner;
-        MutableList<PathElement> props = FastList.newList();
-
         Token firstChar = ctx.SEPARATOR().getSymbol();
-        owner = visitGenericTypeBlock(ctx.genericType());
+        Token end = ctx.EOF().getSymbol();
+
+        GenericType owner = visitGenericTypeBlock(ctx.genericType());
 
         String name = ctx.name() != null ? ctx.name().VALID_STRING().getText() : "";
 
-        if (ctx.propertyWithParameters() != null)
-        {
-            for (PropertyWithParametersContext propertyWithParametersContext : ctx.propertyWithParameters())
-            {
-                visitPropertyWithParametersBlock(propertyWithParametersContext, props, firstChar);
-            }
-        }
-
-        Token end = ctx.EOF().getSymbol();
+        MutableList<PathElement> props = (ctx.propertyWithParameters() == null) ? Lists.fixedSize.empty() : ListIterate.collect(ctx.propertyWithParameters(), this::visitPropertyWithParametersBlock);
         if (props.isEmpty())
         {
             throw new PureParserException(this.sourceInformation.getPureSourceInformation(firstChar, firstChar, end), "A path must contain at least one navigation");
         }
-        ClassInstance ppeType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.Path);
-        Path propertyPath = (Path)this.repository.newAnonymousCoreInstance(this.sourceInformation.getPureSourceInformation(firstChar, firstChar, end), ppeType, true);
-        GenericType classifierGT = GenericTypeInstance.createPersistent(this.repository);
-        classifierGT._rawTypeCoreInstance(ppeType);
-        propertyPath._classifierGenericType(classifierGT);
-        propertyPath._start(owner);
-        propertyPath._name(name);
-        propertyPath._path(props);
-        return propertyPath;
+        Class<?> ppeType = (Class<?>) this.processorSupport.package_getByUserPath(M3Paths.Path);
+        return ((Path<?, ?>) this.repository.newAnonymousCoreInstance(this.sourceInformation.getPureSourceInformation(firstChar, firstChar, end), ppeType, true))
+                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawTypeCoreInstance(ppeType))
+                ._start(owner)
+                ._name(name)
+                ._path(props);
     }
 
-    private void visitPropertyWithParametersBlock(PropertyWithParametersContext ctx, MutableList<PathElement> props, Token firstChar)
+    private PathElement visitPropertyWithParametersBlock(PropertyWithParametersContext ctx)
     {
-        MutableList<ValueSpecification> parameters = FastList.newList();
         Token property = ctx.VALID_STRING().getSymbol();
 
-        ClassInstance ppeType = (ClassInstance)this.processorSupport.package_getByUserPath(M3Paths.PropertyPathElement);
-        PropertyPathElement propertyPathElement = (PropertyPathElement)this.repository.newAnonymousCoreInstance(this.sourceInformation.getPureSourceInformation(property), ppeType, true);
-        GenericType classifierGT = GenericTypeInstance.createPersistent(this.repository);
-        classifierGT._rawTypeCoreInstance(ppeType);
-        propertyPathElement._classifierGenericType(classifierGT);
-
+        Class<?> ppeType = (Class<?>) this.processorSupport.package_getByUserPath(M3Paths.PropertyPathElement);
         PropertyStub propStub = PropertyStubInstance.createPersistent(this.repository, this.sourceInformation.getPureSourceInformation(property), null, property.getText());
-        propertyPathElement._propertyCoreInstance(propStub);
+        PropertyPathElement propertyPathElement = ((PropertyPathElement) this.repository.newAnonymousCoreInstance(this.sourceInformation.getPureSourceInformation(property), ppeType, true))
+                ._classifierGenericType(GenericTypeInstance.createPersistent(this.repository)._rawTypeCoreInstance(ppeType))
+                ._propertyCoreInstance(propStub);
 
         if (ctx.parameter() != null)
         {
-            for (ParameterContext parameterContext : ctx.parameter())
+            MutableList<ValueSpecification> parameters = ListIterate.collect(ctx.parameter(), this::visitParameterBlock);
+            if (parameters.notEmpty())
             {
-                parameters.add(visitParameterBlock(parameterContext));
+                propertyPathElement._parameters(parameters);
             }
         }
-        if (!parameters.isEmpty())
-        {
-            propertyPathElement._parameters(parameters);
-        }
 
-        props.add(propertyPathElement);
+        return propertyPathElement;
     }
 
     private ValueSpecification visitParameterBlock(ParameterContext ctx)
     {
-        ListIterable<CoreInstance> rawValue;
-        if (ctx.scalar() != null)
-        {
-            MutableList<CoreInstance> elements = FastList.newList();
-            CoreInstance result = visitScalar(ctx.scalar());
-            elements.add(result);
-            rawValue = elements;
-        }
-        else
-        {
-            rawValue = visitCollectionBlock(ctx.collection());
-        }
-        InstanceValueInstance instanceVal = InstanceValueInstance.createPersistent(this.repository, null, null);
-        instanceVal._values(rawValue);
-        return instanceVal;
+        ListIterable<CoreInstance> rawValue = (ctx.scalar() != null) ? Lists.mutable.with(visitScalar(ctx.scalar())) : visitCollectionBlock(ctx.collection());
+        return InstanceValueInstance.createPersistent(this.repository, null, null)._values(rawValue);
     }
 
     private ListIterable<CoreInstance> visitCollectionBlock(CollectionContext ctx)
     {
-        MutableList<CoreInstance> elements = FastList.newList();
-        if (ctx.scalar() != null)
-        {
-            for (ScalarContext scalarContext : ctx.scalar())
-            {
-                elements.add(visitScalar(scalarContext));
-            }
-        }
-        return elements;
+        return (ctx.scalar() == null) ? Lists.immutable.empty() : ListIterate.collect(ctx.scalar(), this::visitScalar);
     }
 
     @Override
     public CoreInstance visitScalar(ScalarContext ctx)
     {
-        return ctx.atomic() != null ? visitAtomic(ctx.atomic()) : visitEnumStub(ctx.enumStub());
+        return (ctx.atomic() == null) ? visitEnumStub(ctx.enumStub()) : visitAtomic(ctx.atomic());
     }
 
     @Override
@@ -216,7 +176,6 @@ public class NavigationGraphBuilder extends NavigationParserBaseVisitor<CoreInst
 
     private GenericType visitGenericTypeBlock(GenericTypeContext ctx)
     {
-        return (GenericType)new M3AntlrParser(null).parseType(ctx.getText(), this.sourceInformation.getSourceName(), ctx.getStart().getLine() + this.sourceInformation.getOffsetLine(), ctx.getStart().getCharPositionInLine() + 1 + this.sourceInformation.getOffsetColumn(), importId, repository, context);
+        return (GenericType) new M3AntlrParser(null).parseType(ctx.getText(), this.sourceInformation.getSourceName(), ctx.getStart().getLine() + this.sourceInformation.getOffsetLine(), ctx.getStart().getCharPositionInLine() + 1 + this.sourceInformation.getOffsetColumn(), this.importId, this.repository, this.context);
     }
-
 }
