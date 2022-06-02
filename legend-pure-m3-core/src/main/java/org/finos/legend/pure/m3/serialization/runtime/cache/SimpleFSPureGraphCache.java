@@ -21,15 +21,19 @@ import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.BinarySourceSerializer;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.serialization.Reader;
+import org.finos.legend.pure.m4.serialization.Writer;
+import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 import org.finos.legend.pure.m4.serialization.binary.BinaryRepositorySerializer;
+import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.EnumSet;
 
 public class SimpleFSPureGraphCache extends AbstractFSDirectoryPureGraphCache
 {
@@ -55,18 +59,18 @@ public class SimpleFSPureGraphCache extends AbstractFSDirectoryPureGraphCache
             message.setMessage("Loading Graph Cache File...");
         }
         IntObjectMap<CoreInstance> instancesById;
-        try (InputStream inStream = newInputStream(getGraphCachePath()))
+        try (Reader reader = newReader(getGraphCachePath()))
         {
-            instancesById = BinaryRepositorySerializer.build(inStream, modelRepository, Message.newMessageCallback(message));
+            instancesById = BinaryRepositorySerializer.build(reader, modelRepository, Message.newMessageCallback(message));
         }
 
         if (message != null)
         {
             message.setMessage("Loading Sources Cache File...");
         }
-        try (InputStream inStream = newInputStream(getSourcesCachePath()))
+        try (Reader reader = newReader(getSourcesCachePath()))
         {
-            BinarySourceSerializer.build(inStream, sources, instancesById, library, context);
+            BinarySourceSerializer.build(reader, sources, instancesById, library, context);
         }
 
         if (message != null)
@@ -82,13 +86,13 @@ public class SimpleFSPureGraphCache extends AbstractFSDirectoryPureGraphCache
     {
         try
         {
-            try (OutputStream stream = newOutputStream(getGraphCachePath()))
+            try (Writer writer = newWriter(getGraphCachePath()))
             {
-                this.pureRuntime.getModelRepository().serialize(stream);
+                this.pureRuntime.getModelRepository().serialize(writer);
             }
-            try (OutputStream stream = newOutputStream(getSourcesCachePath()))
+            try (Writer writer = newWriter(getSourcesCachePath()))
             {
-                this.pureRuntime.getSourceRegistry().serialize(stream);
+                this.pureRuntime.getSourceRegistry().serialize(writer);
             }
         }
         catch (IOException e)
@@ -130,5 +134,15 @@ public class SimpleFSPureGraphCache extends AbstractFSDirectoryPureGraphCache
     protected Path getSourcesCachePath()
     {
         return getCacheLocation().resolve(SOURCES_CACHE_FILENAME);
+    }
+
+    protected Reader newReader(Path cacheFile) throws IOException
+    {
+        return BinaryReaders.newBinaryReader(Files.newByteChannel(cacheFile));
+    }
+
+    protected Writer newWriter(Path cacheFile) throws IOException
+    {
+        return BinaryWriters.newBinaryWriter(Files.newByteChannel(cacheFile, EnumSet.of(StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE)));
     }
 }

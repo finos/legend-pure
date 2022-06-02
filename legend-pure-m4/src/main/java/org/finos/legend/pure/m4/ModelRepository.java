@@ -44,7 +44,9 @@ import org.finos.legend.pure.m4.coreinstance.primitive.strictTime.StrictTimeFunc
 import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstance;
 import org.finos.legend.pure.m4.coreinstance.simple.SimpleCoreInstanceFactory;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
+import org.finos.legend.pure.m4.serialization.Writer;
 import org.finos.legend.pure.m4.serialization.binary.BinaryRepositorySerializer;
+import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 import org.finos.legend.pure.m4.serialization.grammar.NameSpace;
 import org.finos.legend.pure.m4.statelistener.M4StateListener;
 import org.finos.legend.pure.m4.transaction.ModelRepositoryTransaction;
@@ -829,13 +831,18 @@ public class ModelRepository
     public byte[] serialize()
     {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        serialize(stream);
+        serialize(BinaryWriters.newBinaryWriter(stream));
         return stream.toByteArray();
     }
 
     public void serialize(OutputStream stream)
     {
-        new BinaryRepositorySerializer(stream).serialize(this);
+        serialize(BinaryWriters.newBinaryWriter(stream));
+    }
+
+    public void serialize(Writer writer)
+    {
+        new BinaryRepositorySerializer(writer).serialize(this);
     }
 
     public ModelRepositoryTransaction newTransaction(boolean committable)

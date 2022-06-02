@@ -16,7 +16,6 @@ package org.finos.legend.pure.m4.serialization;
 
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.serialization.binary.BinaryRepositorySerializer;
-import org.finos.legend.pure.m4.serialization.binary.VoidMessageCallBack;
 import org.finos.legend.pure.m4.serialization.grammar.M4Parser;
 import org.finos.legend.pure.m4.statelistener.M4StateListener;
 import org.finos.legend.pure.m4.statelistener.VoidM4StateListener;
@@ -100,10 +99,10 @@ public class TestSerialization
                              "}\n", repository, new VoidM4StateListener());
 
         repository.validate(listener);
-        byte res[] = repository.serialize();
+        byte[] res = repository.serialize();
 
         ModelRepository newRepository = new ModelRepository();
-        BinaryRepositorySerializer.build(res, newRepository, VoidMessageCallBack.instance());
+        BinaryRepositorySerializer.build(res, newRepository);
         newRepository.validate(listener);
 
         Assert.assertEquals(6, newRepository.getTopLevels().size());

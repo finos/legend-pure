@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.zip.InflaterInputStream;
+import java.util.zip.ZipInputStream;
 
 class StreamBinaryReader extends AbstractSimpleBinaryReader
 {
@@ -80,7 +81,14 @@ class StreamBinaryReader extends AbstractSimpleBinaryReader
     {
         try
         {
-            this.stream.close();
+            if (this.stream instanceof ZipInputStream)
+            {
+                ((ZipInputStream) this.stream).closeEntry();
+            }
+            else
+            {
+                this.stream.close();
+            }
         }
         catch (IOException e)
         {
@@ -96,8 +104,7 @@ class StreamBinaryReader extends AbstractSimpleBinaryReader
             return;
         }
 
-        // We know that ByteArrayInputStream and InflaterInputStream have safe skip methods
-        if ((this.stream instanceof ByteArrayInputStream) || (this.stream instanceof InflaterInputStream))
+        if (streamSkipIsSafe())
         {
             long skipped;
             try
@@ -136,5 +143,11 @@ class StreamBinaryReader extends AbstractSimpleBinaryReader
             }
             remaining -= read;
         }
+    }
+
+    private boolean streamSkipIsSafe()
+    {
+        // We know that these types of streams have safe skip methods
+        return (this.stream instanceof ByteArrayInputStream) || (this.stream instanceof InflaterInputStream);
     }
 }

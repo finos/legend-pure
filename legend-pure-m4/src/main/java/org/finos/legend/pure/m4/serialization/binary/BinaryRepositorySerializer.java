@@ -36,7 +36,6 @@ import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.m4.serialization.Reader;
 import org.finos.legend.pure.m4.serialization.Writer;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -46,9 +45,14 @@ public class BinaryRepositorySerializer
 {
     private final Writer writer;
 
+    public BinaryRepositorySerializer(Writer writer)
+    {
+        this.writer = writer;
+    }
+
     public BinaryRepositorySerializer(OutputStream stream)
     {
-        this.writer = BinaryWriters.newBinaryWriter(stream);
+        this(BinaryWriters.newBinaryWriter(stream));
     }
 
     // Serialize
@@ -193,6 +197,25 @@ public class BinaryRepositorySerializer
     }
 
     // Build
+
+    public static IntObjectMap<CoreInstance> build(byte[] data, ModelRepository repository)
+    {
+        return build(data, repository, null);
+    }
+
+    public static IntObjectMap<CoreInstance> build(byte[] data, ModelRepository repository, MessageCallBack message)
+    {
+        return build(data, repository, message, null);
+    }
+
+    public static IntObjectMap<CoreInstance> build(byte[] data, ModelRepository repository, MessageCallBack message, IntObjectMap<String> classifierIdToPath)
+    {
+        try (Reader reader = BinaryReaders.newBinaryReader(data))
+        {
+            return build(reader, repository, message, classifierIdToPath);
+        }
+    }
+
     public static IntObjectMap<CoreInstance> build(InputStream stream, ModelRepository repository, MessageCallBack message)
     {
         return build(stream, repository, message, null);
@@ -200,8 +223,24 @@ public class BinaryRepositorySerializer
 
     public static IntObjectMap<CoreInstance> build(InputStream stream, ModelRepository repository, MessageCallBack message, IntObjectMap<String> classifierIdToPath)
     {
-        Reader reader = BinaryReaders.newBinaryReader(stream);
+        try (Reader reader = BinaryReaders.newBinaryReader(stream))
+        {
+            return build(reader, repository, message, classifierIdToPath);
+        }
+    }
 
+    public static IntObjectMap<CoreInstance> build(Reader reader, ModelRepository repository)
+    {
+        return build(reader, repository, null, null);
+    }
+
+    public static IntObjectMap<CoreInstance> build(Reader reader, ModelRepository repository, MessageCallBack message)
+    {
+        return build(reader, repository, message, null);
+    }
+
+    public static IntObjectMap<CoreInstance> build(Reader reader, ModelRepository repository, MessageCallBack message, IntObjectMap<String> classifierIdToPath)
+    {
         // Read id counters
         int idCounter = reader.readInt();
         int anonymousIdCounter = reader.readInt();
@@ -213,7 +252,10 @@ public class BinaryRepositorySerializer
         // Read top level ids
         MutableIntSet topLevelIds = IntSets.mutable.empty();
         int topLevelCount = reader.readInt();
-        message.message("Reading '" + topLevelCount + "' top level ids");
+        if (message != null)
+        {
+            message.message("Reading '" + topLevelCount + "' top level ids");
+        }
         for (int i = 0; i < topLevelCount; i++)
         {
             topLevelIds.add(reader.readInt());
@@ -221,18 +263,23 @@ public class BinaryRepositorySerializer
 
         // Build intermediate nodes
         int nodeCount = reader.readInt();
-        message.message("Loading from cache - Building '" + nodeCount + "' intermediate nodes");
-        MutableIntObjectMap<IntermediateNode> nodes = IntObjectMaps.mutable.empty();
+        if (message != null)
+        {
+            message.message("Loading from cache - Building '" + nodeCount + "' intermediate nodes");
+        }
+        MutableIntObjectMap<IntermediateNode> nodes = IntObjectMaps.mutable.ofInitialCapacity(nodeCount);
         for (int i = 0; i < nodeCount; i++)
         {
             IntermediateNode intermediateNode = readNode(reader, filesById);
             nodes.put(intermediateNode.getId(), intermediateNode);
         }
 
-
         // First pass
-        message.message("Loading from cache - First pass node instantiation (" + nodes.size() + " nodes)");
-        MutableIntObjectMap<CoreInstance> map = IntObjectMaps.mutable.empty();
+        if (message != null)
+        {
+            message.message("Loading from cache - First pass node instantiation (" + nodes.size() + " nodes)");
+        }
+        MutableIntObjectMap<CoreInstance> map = IntObjectMaps.mutable.ofInitialCapacity(nodeCount + topLevelCount);
         topLevelIds.forEach(id ->
         {
             IntermediateNode node = nodes.get(id);
@@ -306,7 +353,10 @@ public class BinaryRepositorySerializer
         });
 
         // Second pass
-        message.message("Loading from cache<BR>Second pass node instantiation<BR>(" + nodes.size() + " nodes)");
+        if (message != null)
+        {
+            message.message("Loading from cache<BR>Second pass node instantiation<BR>(" + nodes.size() + " nodes)");
+        }
         nodes.forEach(node ->
         {
             CoreInstance nodeInstance = map.get(node.getId());
@@ -336,16 +386,6 @@ public class BinaryRepositorySerializer
             String classifierPath = classifierIdToPath.get(node.getClassifierId());
             return repository.newCoreInstanceMultiPass(node.getName(), classifierPath, null, node.getSourceInformation(), node.getCompileState());
         }
-    }
-
-    public static IntObjectMap<CoreInstance> build(byte[] data, ModelRepository repository, MessageCallBack message)
-    {
-        return build(new ByteArrayInputStream(data), repository, message);
-    }
-
-    public static IntObjectMap<CoreInstance> build(byte[] data, ModelRepository repository, MessageCallBack message, IntObjectMap<String> classifierIdToPath)
-    {
-        return build(new ByteArrayInputStream(data), repository, message, classifierIdToPath);
     }
 
     private static IntermediateNode readNode(Reader reader, String[] fileById)

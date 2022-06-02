@@ -17,14 +17,13 @@ package org.finos.legend.pure.m3.serialization.runtime.cache;
 import org.finos.legend.pure.m3.tools.FileTools;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-abstract class AbstractFSZipPureGraphCache extends AbstractFSPureGraphCache
+abstract class AbstractFSZipPureGraphCache extends AbstractPureGraphCache implements FSPureGraphCache
 {
     private final Path cachePath;
     private final int compressionLevel;
@@ -39,7 +38,7 @@ abstract class AbstractFSZipPureGraphCache extends AbstractFSPureGraphCache
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Could not create cache directory: " + this.cachePath.getParent(), e);
+            throw new UncheckedIOException("Could not create cache directory: " + this.cachePath.getParent(), e);
         }
     }
 
@@ -54,7 +53,7 @@ abstract class AbstractFSZipPureGraphCache extends AbstractFSPureGraphCache
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Error deleting caches", e);
+                throw new UncheckedIOException("Error deleting caches", e);
             }
         }
     }
@@ -97,14 +96,12 @@ abstract class AbstractFSZipPureGraphCache extends AbstractFSPureGraphCache
 
     protected ZipInputStream newZipInputStream() throws IOException
     {
-        InputStream inputStream = newInputStream(getCacheLocation());
-        return new ZipInputStream(inputStream);
+        return new ZipInputStream(Files.newInputStream(getCacheLocation()));
     }
 
     protected ZipOutputStream newZipOutputStream() throws IOException
     {
-        OutputStream outputStream = newOutputStream(getCacheLocation());
-        ZipOutputStream stream = new ZipOutputStream(outputStream);
+        ZipOutputStream stream = new ZipOutputStream(Files.newOutputStream(getCacheLocation()));
         stream.setLevel(this.compressionLevel);
         return stream;
     }

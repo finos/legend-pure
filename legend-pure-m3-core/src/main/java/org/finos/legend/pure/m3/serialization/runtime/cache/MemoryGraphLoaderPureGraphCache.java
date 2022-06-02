@@ -15,10 +15,9 @@
 package org.finos.legend.pure.m3.serialization.runtime.cache;
 
 import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.serialization.filesystem.PureCodeStorage;
@@ -36,6 +35,7 @@ import org.finos.legend.pure.m4.ModelRepository;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.concurrent.ForkJoinPool;
 
 public class MemoryGraphLoaderPureGraphCache extends AbstractPureGraphCache
@@ -66,13 +66,13 @@ public class MemoryGraphLoaderPureGraphCache extends AbstractPureGraphCache
     {
         long newSize = 0;
         MutableList<PureRepositoryJar> newJars = Lists.mutable.empty();
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         CodeStorage codeStorage = this.pureRuntime.getCodeStorage();
         RichIterable<String> repoNames = codeStorage.getAllRepoNames();
         if (codeStorage.isFile(PureCodeStorage.WELCOME_FILE_PATH))
         {
-            repoNames = LazyIterate.concatenate(repoNames, Lists.immutable.with((String)null));
+            repoNames = repoNames.toList().with(null);
         }
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         for (String repoName : repoNames)
         {
             outStream.reset();
@@ -82,7 +82,7 @@ public class MemoryGraphLoaderPureGraphCache extends AbstractPureGraphCache
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Error writing cache for " + repoName, e);
+                throw new UncheckedIOException("Error writing cache for " + repoName, e);
             }
             newJars.add(PureRepositoryJars.get(outStream));
             newSize += outStream.size();

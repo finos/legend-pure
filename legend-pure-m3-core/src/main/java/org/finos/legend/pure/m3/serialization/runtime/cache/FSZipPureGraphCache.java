@@ -21,11 +21,14 @@ import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.BinarySourceSerializer;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.serialization.Writer;
 import org.finos.legend.pure.m4.serialization.binary.BinaryRepositorySerializer;
+import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -87,9 +90,9 @@ public class FSZipPureGraphCache extends AbstractFSZipPureGraphCache
         {
             // build graph
             ZipEntry graphEntry = stream.getNextEntry();
-            if (!GRAPH_CACHE_FILENAME.equals(graphEntry.getName()))
+            if ((graphEntry == null) || !GRAPH_CACHE_FILENAME.equals(graphEntry.getName()))
             {
-                throw new RuntimeException("Invalid cache archive: expected " + GRAPH_CACHE_FILENAME + ", got " + graphEntry.getName());
+                throw new RuntimeException("Invalid cache archive: expected " + GRAPH_CACHE_FILENAME + ", got " + ((graphEntry == null) ? "nothing" : graphEntry.getName()));
             }
             if (message != null)
             {
@@ -99,9 +102,9 @@ public class FSZipPureGraphCache extends AbstractFSZipPureGraphCache
 
             // build sources
             ZipEntry sourcesEntry = stream.getNextEntry();
-            if (!SOURCES_CACHE_FILENAME.equals(sourcesEntry.getName()))
+            if ((sourcesEntry == null) || !SOURCES_CACHE_FILENAME.equals(sourcesEntry.getName()))
             {
-                throw new RuntimeException("Invalid cache archive: expected " + SOURCES_CACHE_FILENAME + ", got " + graphEntry.getName());
+                throw new RuntimeException("Invalid cache archive: expected " + SOURCES_CACHE_FILENAME + ", got " + ((sourcesEntry == null) ? "nothing" : sourcesEntry.getName()));
             }
             if (message != null)
             {
@@ -121,16 +124,20 @@ public class FSZipPureGraphCache extends AbstractFSZipPureGraphCache
         try (ZipOutputStream stream = newZipOutputStream())
         {
             stream.putNextEntry(new ZipEntry(GRAPH_CACHE_FILENAME));
-            this.pureRuntime.getModelRepository().serialize(stream);
-            stream.closeEntry();
+            try (Writer writer = BinaryWriters.newBinaryWriter(stream))
+            {
+                this.pureRuntime.getModelRepository().serialize(writer);
+            }
 
             stream.putNextEntry(new ZipEntry(SOURCES_CACHE_FILENAME));
-            this.pureRuntime.getSourceRegistry().serialize(stream);
-            stream.closeEntry();
+            try (Writer writer = BinaryWriters.newBinaryWriter(stream))
+            {
+                this.pureRuntime.getSourceRegistry().serialize(writer);
+            }
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Error writing caches", e);
+            throw new UncheckedIOException("Error writing caches", e);
         }
     }
 }

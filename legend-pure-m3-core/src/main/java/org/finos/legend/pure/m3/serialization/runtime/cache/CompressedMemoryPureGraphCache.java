@@ -14,10 +14,14 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.cache;
 
+import org.finos.legend.pure.m4.serialization.Reader;
+import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
+
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -28,14 +32,28 @@ public class CompressedMemoryPureGraphCache extends MemoryPureGraphCache
     }
 
     @Override
-    protected OutputStream newOutputStream(ByteArrayOutputStream stream) throws IOException
+    protected OutputStream newOutputStream(ByteArrayOutputStream stream)
     {
-        return new GZIPOutputStream(stream);
+        try
+        {
+            return new GZIPOutputStream(stream);
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
-    protected InputStream newInputStream(byte[] bytes) throws IOException
+    protected Reader newReader(byte[] bytes)
     {
-        return new GZIPInputStream(super.newInputStream(bytes));
+        try
+        {
+            return BinaryReaders.newBinaryReader(new GZIPInputStream(new ByteArrayInputStream(bytes)));
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
     }
 }
