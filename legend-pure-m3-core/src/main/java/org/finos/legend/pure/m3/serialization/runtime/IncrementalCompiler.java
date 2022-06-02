@@ -316,13 +316,17 @@ public abstract class IncrementalCompiler implements SourceEventHandler
 
     void removeInstance(CoreInstance instance)
     {
-        Package pkg = instance instanceof PackageableElement ? ((PackageableElement)instance)._package() : null;
-        if (pkg != null)
+        if (instance instanceof PackageableElement)
         {
-            pkg._childrenRemove((PackageableElement)instance);
-            if (pkg._children().isEmpty() && (pkg.getSourceInformation() == null))
+            PackageableElement element = (PackageableElement) instance;
+            Package pkg = element._package();
+            if (pkg != null)
             {
-                removeInstance(pkg);
+                pkg._childrenRemove(element);
+                if (pkg._children().isEmpty() && (pkg.getSourceInformation() == null))
+                {
+                    removeInstance(pkg);
+                }
             }
         }
         this.toProcess.remove(instance);
