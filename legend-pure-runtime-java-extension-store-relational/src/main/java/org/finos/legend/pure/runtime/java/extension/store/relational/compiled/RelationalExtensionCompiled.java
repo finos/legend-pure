@@ -40,47 +40,7 @@ public class RelationalExtensionCompiled extends BaseCompiledExtension
                 Lists.fixedSize.with(new CreateTempTable(), new CreateTempTableWithFinally(), new DropTempTable(), new ExecuteInDb(), new FetchDbColumnsMetaData(),
                         new FetchDbImportedKeysMetaData(), new FetchDbPrimaryKeysMetaData(), new FetchDbSchemasMetaData(), new FetchDbTablesMetaData(), new LoadCsvToDbTable(),
                         new LoadValuesToDbTable(), new LoadValuesToDbTableNew(), new LogActivities()),
-                Lists.fixedSize.with(StringJavaSource.newStringJavaSource("org.finos.legend.pure.runtime.java.extension.store.relational.compiled", "RelationalGen",
-                        "package org.finos.legend.pure.runtime.java.extension.store.relational.compiled;\n" +
-                                "\n" +
-                                "import org.eclipse.collections.api.block.function.Function;\n" +
-                                "import org.eclipse.collections.api.list.ListIterable;\n" +
-                                "import org.eclipse.collections.api.map.ImmutableMap;\n" +
-                                "import org.finos.legend.pure.generated.Root_meta_relational_metamodel_SQLNull_Impl;\n" +
-                                "import org.finos.legend.pure.generated.Root_meta_relational_metamodel_execute_ResultSet_Impl;\n" +
-                                "import org.finos.legend.pure.generated.Root_meta_relational_metamodel_execute_Row_Impl;\n" +
-                                "import org.finos.legend.pure.generated.Root_meta_relational_runtime_DataSource_Impl;\n" +
-                                "import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.execute.ResultSet;\n" +
-                                "import org.finos.legend.pure.m3.coreinstance.meta.relational.runtime.DatabaseConnection;\n" +
-                                "import org.finos.legend.pure.m3.execution.ExecutionSupport;\n" +
-                                "import org.finos.legend.pure.m4.coreinstance.SourceInformation;\n" +
-                                "import org.finos.legend.pure.runtime.java.extension.store.relational.RelationalNativeImplementation;\n" +
-                                "import org.finos.legend.pure.runtime.java.extension.store.relational.compiled.natives.SqlFunction;\n" +
-                                "\n" +
-                                "import java.sql.DatabaseMetaData;\n" +
-                                "\n" +
-                                "public class RelationalGen\n" +
-                                "{\n" +
-                                "    public static ResultSet executeInDb(String sql, DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, SourceInformation si, ExecutionSupport es)\n" +
-                                "    {\n" +
-                                "        return RelationalNativeImplementation.executeInDb(sql, pureConnection, queryTimeoutInSeconds, fetchSize, si, () -> new Root_meta_relational_metamodel_execute_ResultSet_Impl(\"OK\"), () -> new Root_meta_relational_metamodel_SQLNull_Impl(\"SQLNull\"), () -> new Root_meta_relational_metamodel_execute_Row_Impl(\"ID\"), () -> new Root_meta_relational_runtime_DataSource_Impl(\"ID\"), es);\n" +
-                                "    }\n" +
-                                "\n" +
-                                "    public static ResultSet dropTempTable(String tableName, String sql, DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, SourceInformation si, ExecutionSupport es)\n" +
-                                "    {\n" +
-                                "        return RelationalNativeImplementation.dropTempTable(tableName, sql, pureConnection, queryTimeoutInSeconds, fetchSize, si, () -> new Root_meta_relational_metamodel_execute_ResultSet_Impl(\"OK\"), () -> new Root_meta_relational_metamodel_SQLNull_Impl(\"SQLNull\"), () -> new Root_meta_relational_metamodel_execute_Row_Impl(\"ID\"), () -> new Root_meta_relational_runtime_DataSource_Impl(\"ID\"), es);\n" +
-                                "    }\n" +
-                                "\n" +
-                                "    public static ResultSet createTempTable(final String tableName, String sql, final DatabaseConnection pureConnection, long queryTimeoutInSeconds, long fetchSize, final SourceInformation si, final boolean relyOnFinallyForCleanup, final ExecutionSupport es)\n" +
-                                "    {\n" +
-                                "        return RelationalNativeImplementation.createTempTable(tableName, sql, pureConnection, queryTimeoutInSeconds, fetchSize, si, relyOnFinallyForCleanup, () -> new Root_meta_relational_metamodel_execute_ResultSet_Impl(\"OK\"), () -> new Root_meta_relational_metamodel_SQLNull_Impl(\"SQLNull\"), () -> new Root_meta_relational_metamodel_execute_Row_Impl(\"ID\"), () -> new Root_meta_relational_runtime_DataSource_Impl(\"ID\"), es);\n" +
-                                "    }\n" +
-                                "\n" +
-                                "    public static ResultSet fetchDbMetaData(DatabaseConnection pureConnection, SqlFunction<DatabaseMetaData, java.sql.ResultSet> sqlFunction, ImmutableMap<String, ? extends Function<ListIterable<Object>, String>> extraValues, ExecutionSupport es)\n" +
-                                "    {\n" +
-                                "        return RelationalNativeImplementation.fetchDbMetaData(pureConnection, sqlFunction, extraValues, () -> new Root_meta_relational_metamodel_execute_ResultSet_Impl(\"OK\"), () -> new Root_meta_relational_metamodel_SQLNull_Impl(\"SQLNull\"), () -> new Root_meta_relational_metamodel_execute_Row_Impl(\"ID\"), () -> new Root_meta_relational_runtime_DataSource_Impl(\"ID\"), es);\n" +
-                                "    }\n" +
-                                "}\n")),
+                Lists.fixedSize.with(),
                 Lists.fixedSize.empty(),
                 Lists.fixedSize.empty());
     }

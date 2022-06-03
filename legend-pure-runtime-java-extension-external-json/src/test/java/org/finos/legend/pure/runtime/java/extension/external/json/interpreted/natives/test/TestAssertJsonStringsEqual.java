@@ -16,7 +16,6 @@ package org.finos.legend.pure.runtime.java.extension.external.json.interpreted.n
 
 import org.finos.legend.pure.m3.execution.FunctionExecution;
 import org.finos.legend.pure.m3.tests.function.base.asserts.AbstractTestAssertJsonStringsEqual;
-import org.finos.legend.pure.runtime.java.extension.external.json.interpreted.JsonExtensionInterpreted;
 import org.finos.legend.pure.runtime.java.interpreted.FunctionExecutionInterpreted;
 import org.junit.BeforeClass;
 

@@ -64,6 +64,9 @@ public class PureCompiledJarMojo extends AbstractMojo
     @Parameter(readonly = true, defaultValue = "${project.build.outputDirectory}")
     private File classesDirectory;
 
+    @Parameter(defaultValue = "false")
+    private boolean skip;
+
     @Parameter
     private Set<String> repositories;
 
@@ -85,6 +88,9 @@ public class PureCompiledJarMojo extends AbstractMojo
     @Parameter(defaultValue = "false")
     private boolean generateSources;
 
+    @Parameter(defaultValue = "false")
+    private boolean preventJavaCompilation;
+
     @Override
     public void execute() throws MojoExecutionException
     {
@@ -92,60 +98,78 @@ public class PureCompiledJarMojo extends AbstractMojo
         try
         {
             getLog().info("Generating Java Compiled JAR");
-            getLog().info("  Requested repositories: " + this.repositories);
-            getLog().info("  Excluded repositories: " + this.excludedRepositories);
-            getLog().info("  Extra repositories: " + this.extraRepositories);
-            getLog().info("  Generation type: " + this.generationType);
-
-            Thread.currentThread().setContextClassLoader(this.buildClassLoader(this.project));
-
-            PureRepositoriesExternal.refresh();
-
-            ListIterable<CodeRepository> resolvedRepositories = resolveRepositories();
-            getLog().info(resolvedRepositories.asLazy().collect(CodeRepository::getName).makeString("  Resolved repositories: ", ", ", ""));
-
-            Path distributedMetadataDirectory;
-            if (!this.generateMetadata)
+            if (!skip)
             {
-                distributedMetadataDirectory = null;
-                getLog().info("  Classes output directory: " + this.classesDirectory);
-                getLog().info("  No metadata output");
-            }
-            else if (this.useSingleDir)
-            {
-                distributedMetadataDirectory = this.classesDirectory.toPath();
-                getLog().info("  All in output directory: " + this.classesDirectory);
+                getLog().info("  Requested repositories: " + this.repositories);
+                getLog().info("  Excluded repositories: " + this.excludedRepositories);
+                getLog().info("  Extra repositories: " + this.extraRepositories);
+                getLog().info("  Generation type: " + this.generationType);
+
+                Thread.currentThread().setContextClassLoader(this.buildClassLoader(this.project));
+
+                PureRepositoriesExternal.refresh();
+
+                ListIterable<CodeRepository> resolvedRepositories = resolveRepositories();
+                getLog().info(resolvedRepositories.asLazy().collect(CodeRepository::getName).makeString("  Resolved repositories: ", ", ", ""));
+
+                Path distributedMetadataDirectory;
+                if (!this.generateMetadata)
+                {
+                    distributedMetadataDirectory = null;
+                    getLog().info("  Classes output directory: " + this.classesDirectory);
+                    getLog().info("  No metadata output");
+                }
+                else if (this.useSingleDir)
+                {
+                    distributedMetadataDirectory = this.classesDirectory.toPath();
+                    getLog().info("  All in output directory: " + this.classesDirectory);
+                }
+                else
+                {
+                    distributedMetadataDirectory = this.targetDirectory.toPath().resolve("metadata-distributed");
+                    getLog().info("  Classes output directory: " + this.classesDirectory);
+                    getLog().info("  Distributed metadata output directory: " + distributedMetadataDirectory);
+                }
+
+                Path codegenDirectory;
+                if (this.generateSources)
+                {
+                    codegenDirectory = this.targetDirectory.toPath().resolve("generated-sources");
+                    getLog().info("  Codegen output directory: " + codegenDirectory);
+                }
+                else
+                {
+                    codegenDirectory = null;
+                }
+
+
+                // Generate metadata and Java sources
+                long startGenerating = System.nanoTime();
+                getLog().info(String.format("  Start generating Java classes"));
+                Generate generate = generate(startGenerating, resolvedRepositories, distributedMetadataDirectory, codegenDirectory);
+                getLog().info(String.format("  Finished generating Java classes (%.9fs)", durationSinceInSeconds(startGenerating)));
+
+                // Compile Java sources
+                if (!this.preventJavaCompilation)
+                {
+                    long startCompilation = System.nanoTime();
+                    getLog().info(String.format("  Start compiling Java classes"));
+                    PureJavaCompiler compiler = compileJavaSources(startCompilation, generate);
+                    writeJavaClassFiles(startCompilation, compiler);
+                    getLog().info(String.format("  Finished compiling Java classes (%.9fs)", durationSinceInSeconds(startCompilation)));
+                }
+                else
+                {
+                    getLog().info(String.format("  Java classes compilation: skipped"));
+                }
+
+                // Write class files
+                getLog().info(String.format("  Finished building Pure compiled mode jar"));
             }
             else
             {
-                distributedMetadataDirectory = this.targetDirectory.toPath().resolve("metadata-distributed");
-                getLog().info("  Classes output directory: " + this.classesDirectory);
-                getLog().info("  Distributed metadata output directory: " + distributedMetadataDirectory);
+                getLog().info(String.format("  Skipped"));
             }
-
-            Path codegenDirectory;
-            if (this.generateSources)
-            {
-                codegenDirectory = this.targetDirectory.toPath().resolve("generated");
-                getLog().info("  Codegen output directory: " + codegenDirectory);
-            }
-            else
-            {
-                codegenDirectory = null;
-            }
-
-            long start = System.nanoTime();
-
-            // Generate metadata and Java sources
-            Generate generate = generate(start, resolvedRepositories, distributedMetadataDirectory, codegenDirectory);
-
-            // Compile Java sources
-            PureJavaCompiler compiler = compileJavaSources(start, generate);
-
-            // Write class files
-            writeJavaClassFiles(start, compiler);
-
-            getLog().info(String.format("  Finished building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
         }
         catch (Exception e)
         {

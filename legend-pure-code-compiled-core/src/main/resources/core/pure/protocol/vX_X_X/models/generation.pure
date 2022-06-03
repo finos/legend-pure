@@ -18,6 +18,7 @@ Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::Generati
 {
    class:String[0..1];
    package: String[0..1];
+   scopeElements : String[*];
 }
 
 Class meta::protocols::pure::vX_X_X::metamodel::invocation::generation::GenerationOutput

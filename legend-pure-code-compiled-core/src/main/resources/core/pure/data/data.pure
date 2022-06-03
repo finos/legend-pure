@@ -46,3 +46,9 @@ Class meta::external::shared::format::metamodel::data::ExternalFormatData extend
   contentType : String[1];
   data        : String[1];
 }
+
+Class meta::external::shared::format::metamodel::data::SchemaData
+{
+  location : String[1];
+  content  : String[1];
+}

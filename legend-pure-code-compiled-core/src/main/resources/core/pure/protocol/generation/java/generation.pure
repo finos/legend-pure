@@ -53,7 +53,10 @@ function meta::protocols::generation::java::conventions(purePackage:String[1], j
       {t,c|
         let x = $t->cast(@PackageableElement);
         let packageStr = $x.package->toOne()->elementToPath('.');
-        let package = $c.basePackageName + if ($packageStr->length() == $basePackageStr->length(), |'', |'.'+$x.package->toOne()->elementToPath('.')->substring($basePackageStr->length()+1));
+        let package = $c.basePackageName + if ($packageStr->startsWith($basePackageStr),
+                                                  | if ($packageStr->length() == $basePackageStr->length(), |'', |'.' + $packageStr->substring($basePackageStr->length()+1)),
+                                                  | '.' + $packageStr;
+                                           );
         pair(
           $package->sanitizeIdentifier(),
           $x.name->toOne()->sanitizeIdentifier()->toUpperFirstCharacter()->toOne()
