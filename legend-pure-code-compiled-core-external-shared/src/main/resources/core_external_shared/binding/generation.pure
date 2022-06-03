@@ -19,6 +19,7 @@ Class meta::external::shared::format::binding::GenerationConfiguration
   validTargetOperationName: $this.targetBinding->matches('[A-Za-z0-9_]+(::[A-Za-z0-9_]+)+')   
 ]
 {
+  format : String[1];
   {doc.doc='Full name of the Binding to be generated'}
   targetBinding : String[1];
 }
@@ -40,4 +41,8 @@ Class meta::external::shared::format::binding::fromPure::ModelToSchemaConfigurat
   targetSchemaSet : String[1];
   {doc.doc='The model elements from which the schema will be generated'}
   sourceModel     : PackageableElement[*];
+  resolveSourceModel()
+  {
+      $this.sourceModel->filter(p | $p->instanceOf(Package))->map(p | $p->cast(@Package)->getAllPackageElements(true)) ->concatenate($this.sourceModel->filter(p | !$p->instanceOf(Package)));  
+  }: PackageableElement[*];
 }

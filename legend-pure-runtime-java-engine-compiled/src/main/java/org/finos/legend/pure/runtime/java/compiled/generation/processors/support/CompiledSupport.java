@@ -2005,7 +2005,7 @@ public class CompiledSupport
     public static Object matchFailure(Object obj, SourceInformation sourceInformation)
     {
         throw new PureExecutionException(sourceInformation,
-                "Match failure: " + ((obj instanceof RichIterable) ? ((RichIterable<?>)obj).collect(o -> o == null ? null : getErrorMessageForMatchFunctionBasedOnObjectType(o)).makeString("[", ", ", "]") : getErrorMessageForMatchFunctionBasedOnObjectType(obj)));
+                "Match failure: " + (obj == null ? null : ((obj instanceof RichIterable) ? ((RichIterable<?>)obj).collect(o -> o == null ? null : getErrorMessageForMatchFunctionBasedOnObjectType(o)).makeString("[", ", ", "]") : getErrorMessageForMatchFunctionBasedOnObjectType(obj))));
     }
 
     private static String getErrorMessageForMatchFunctionBasedOnObjectType(Object obj)

@@ -72,7 +72,7 @@ public class JavaClassLoaderSourceCodeGenerator
         }
         System.out.format("Finished Pure initialization (%.6fs)%n", (System.nanoTime() - start) / 1_000_000_000.0);
 
-        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(runtime.getProcessorSupport(), runtime.getCodeStorage(), true, filePath, false, extensions, name, JavaPackageAndImportBuilder.externalizablePackage());
+        JavaSourceCodeGenerator javaSourceCodeGenerator = new JavaSourceCodeGenerator(runtime.getProcessorSupport(), runtime.getCodeStorage(), true, filePath, false, extensions, name, JavaPackageAndImportBuilder.externalizablePackage(), true);
         javaSourceCodeGenerator.generateCode();
         javaSourceCodeGenerator.generatePureCoreHelperClasses(new ProcessorContext(runtime.getProcessorSupport(), false));
     }
