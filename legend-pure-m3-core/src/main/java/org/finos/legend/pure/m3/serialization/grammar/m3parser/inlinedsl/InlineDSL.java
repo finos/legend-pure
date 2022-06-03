@@ -25,32 +25,9 @@ import org.finos.legend.pure.m4.ModelRepository;
 
 public interface InlineDSL extends CoreInstanceFactoriesRegistry
 {
-    Function<InlineDSL, RichIterable<MatchRunner>> GET_PROCESSORS = new Function<InlineDSL, RichIterable<MatchRunner>>()
-    {
-        @Override
-        public RichIterable<MatchRunner> valueOf(InlineDSL inlineDSL)
-        {
-            return inlineDSL.getProcessors();
-        }
-    };
-
-    Function<InlineDSL, RichIterable<MatchRunner>> GET_UNLOAD_WALKERS = new Function<InlineDSL, RichIterable<MatchRunner>>()
-    {
-        @Override
-        public RichIterable<MatchRunner> valueOf(InlineDSL inlineDSL)
-        {
-            return inlineDSL.getUnLoadWalkers();
-        }
-    };
-
-    Function<InlineDSL, RichIterable<MatchRunner>> GET_UNLOAD_UNBINDERS = new Function<InlineDSL, RichIterable<MatchRunner>>()
-    {
-        @Override
-        public RichIterable<MatchRunner> valueOf(InlineDSL inlineDSL)
-        {
-            return inlineDSL.getUnLoadUnbinders();
-        }
-    };
+    Function<InlineDSL, RichIterable<MatchRunner>> GET_PROCESSORS = InlineDSL::getProcessors;
+    Function<InlineDSL, RichIterable<MatchRunner>> GET_UNLOAD_WALKERS = InlineDSL::getUnLoadWalkers;
+    Function<InlineDSL, RichIterable<MatchRunner>> GET_UNLOAD_UNBINDERS = InlineDSL::getUnLoadUnbinders;
 
     String getName();
     boolean match(String code);

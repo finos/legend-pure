@@ -15,7 +15,7 @@
 package org.finos.legend.pure.m3.inlinedsl.graph.antlr;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.impl.factory.Lists;
+import org.eclipse.collections.api.factory.Lists;
 import org.finos.legend.pure.m3.inlinedsl.graph.processor.RootGraphFetchTreeProcessor;
 import org.finos.legend.pure.m3.inlinedsl.graph.unbinder.RootGraphFetchTreeUnbind;
 import org.finos.legend.pure.m3.inlinedsl.graph.validator.RootGraphFetchTreeValidator;
@@ -52,25 +52,25 @@ public class GraphDSL implements InlineDSL
     @Override
     public RichIterable<MatchRunner> getProcessors()
     {
-        return Lists.immutable.<MatchRunner>with(new RootGraphFetchTreeProcessor());
+        return Lists.immutable.with(new RootGraphFetchTreeProcessor());
     }
 
     @Override
     public RichIterable<MatchRunner> getValidators()
     {
-        return Lists.immutable.<MatchRunner>with(new RootGraphFetchTreeValidator());
+        return Lists.immutable.with(new RootGraphFetchTreeValidator());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadWalkers()
     {
-        return Lists.immutable.<MatchRunner>with(new RootGraphFetchTreeUnloaderWalk());
+        return Lists.immutable.with(new RootGraphFetchTreeUnloaderWalk());
     }
 
     @Override
     public RichIterable<MatchRunner> getUnLoadUnbinders()
     {
-        return Lists.immutable.<MatchRunner>with(new RootGraphFetchTreeUnbind());
+        return Lists.immutable.with(new RootGraphFetchTreeUnbind());
     }
 
     @Override

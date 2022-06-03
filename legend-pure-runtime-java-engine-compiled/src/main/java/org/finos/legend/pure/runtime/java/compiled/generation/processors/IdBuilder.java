@@ -148,6 +148,14 @@ public class IdBuilder
         return ModelRepository.isAnonymousInstanceName(name) ? null : name;
     }
 
+    // Path
+
+    private static String buildIdForPath(CoreInstance path)
+    {
+        SourceInformation sourceInfo = path.getSourceInformation();
+        return sourceInfo.getMessage();
+    }
+
     // Annotation
 
     private static String buildIdForAnnotation(CoreInstance annotation)
@@ -324,6 +332,7 @@ public class IdBuilder
             addIdBuilder(M3Paths.Enum, CoreInstance::getName);
             addIdBuilder(M3Paths.LambdaFunction, IdBuilder::buildIdForLambdaFunction);
             addIdBuilder(M3Paths.PackageableElement, IdBuilder::buildIdForPackageableElement);
+            addIdBuilder(M3Paths.Path, IdBuilder::buildIdForPath);
             addIdBuilder(M3Paths.Property, IdBuilder::buildIdForProperty);
             addIdBuilder(M3Paths.QualifiedProperty, IdBuilder::buildIdForQualifiedProperty);
         }

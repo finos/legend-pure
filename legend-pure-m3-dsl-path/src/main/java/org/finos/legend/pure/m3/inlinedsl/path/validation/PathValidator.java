@@ -15,17 +15,12 @@
 package org.finos.legend.pure.m3.inlinedsl.path.validation;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
-import org.finos.legend.pure.m3.navigation.type.Type;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.compiler.validation.ValidatorState;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.Path;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PropertyPathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.Any;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
@@ -33,15 +28,19 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.G
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.navigation.type.Type;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class PathValidator implements MatchRunner<Path>
+public class PathValidator implements MatchRunner<Path<?, ?>>
 {
     @Override
     public String getClassName()
@@ -50,59 +49,39 @@ public class PathValidator implements MatchRunner<Path>
     }
 
     @Override
-    public void run(Path pathInstance, MatcherState state, Matcher matcher, ModelRepository modelRepository, final Context context) throws PureCompilationException
+    public void run(Path<?, ?> pathInstance, MatcherState state, Matcher matcher, ModelRepository modelRepository, final Context context) throws PureCompilationException
     {
-        ValidatorState validatorState = (ValidatorState)state;
+        ValidatorState validatorState = (ValidatorState) state;
         GenericType genericType = pathInstance._start();
-        final ProcessorSupport processorSupport = validatorState.getProcessorSupport();
+        ProcessorSupport processorSupport = validatorState.getProcessorSupport();
         Validator.validate(genericType, validatorState, matcher, processorSupport);
 
-        Function<CoreInstance, CoreInstance> extractGenericTypeFunction = new Function<CoreInstance, CoreInstance>()
-        {
-            @Override
-            public CoreInstance valueOf(CoreInstance instance)
-            {
-                GenericType classifierGenericType = instance instanceof Any ? ((Any)instance)._classifierGenericType() : null;
-                return classifierGenericType == null ? Type.wrapGenericType(processorSupport.getClassifier(instance), processorSupport) : classifierGenericType;
-            }
-        };
-
-
-        for (PathElement pathElement : (RichIterable<PathElement>) pathInstance._path())
+        pathInstance._path().forEach(pathElement ->
         {
             if (pathElement instanceof PropertyPathElement)
             {
-                AbstractProperty property = (AbstractProperty)ImportStub.withImportStubByPass(((PropertyPathElement)pathElement)._propertyCoreInstance(), processorSupport);
+                AbstractProperty<?> property = (AbstractProperty<?>) ImportStub.withImportStubByPass(((PropertyPathElement) pathElement)._propertyCoreInstance(), processorSupport);
 
-                RichIterable<? extends VariableExpression> valueSpecifications = ((FunctionType)processorSupport.function_getFunctionType(property))._parameters();
+                RichIterable<? extends VariableExpression> valueSpecifications = ((FunctionType) processorSupport.function_getFunctionType(property))._parameters();
                 ListIterable<? extends VariableExpression> parameterSpecifications = valueSpecifications.toList().subList(1, valueSpecifications.size());
-
-                ListIterable<? extends ValueSpecification> parameters = ((PropertyPathElement)pathElement)._parameters().toList();
+                ListIterable<? extends ValueSpecification> parameters = ListHelper.wrapListIterable(((PropertyPathElement) pathElement)._parameters());
 
                 if (parameterSpecifications.size() != parameters.size())
                 {
                     throw new PureCompilationException(pathInstance.getSourceInformation(), "Error finding match for function '" + property._functionName() + "'. Incorrect number of parameters, function expects " + parameterSpecifications.size() + " parameters");
                 }
 
-                int i = 0;
-                for (VariableExpression valueSpecification : parameterSpecifications)
+                parameterSpecifications.forEachWithIndex((valueSpecification, i) ->
                 {
                     ValueSpecification parameter = parameters.get(i);
                     if (parameter instanceof InstanceValue)
                     {
-                        ListIterable<? extends CoreInstance> values = ImportStub.withImportStubByPasses(((InstanceValue)parameter)._valuesCoreInstance().toList(), processorSupport);
+                        ListIterable<? extends CoreInstance> values = ImportStub.withImportStubByPasses(ListHelper.wrapListIterable(((InstanceValue) parameter)._valuesCoreInstance()), processorSupport);
 
                         GenericType genericTypeSpecified = valueSpecification._genericType();
-                        CoreInstance type;
-
-                        if (values.size() == 1)
-                        {
-                            type = extractGenericTypeFunction.valueOf(values.getFirst());
-                        }
-                        else
-                        {
-                            type = org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(values.collect(extractGenericTypeFunction), true, false, processorSupport);
-                        }
+                        CoreInstance type = (values.size() == 1) ?
+                                extractGenericType(values.getFirst(), processorSupport) :
+                                org.finos.legend.pure.m3.navigation.generictype.GenericType.findBestCommonGenericType(values.collect(v -> extractGenericType(v, processorSupport)), true, false, processorSupport);
 
                         if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.subTypeOf(type, genericTypeSpecified, processorSupport))
                         {
@@ -111,10 +90,14 @@ public class PathValidator implements MatchRunner<Path>
                                     + ", Found:" + org.finos.legend.pure.m3.navigation.generictype.GenericType.print(type, processorSupport));
                         }
                     }
-                    i++;
-                }
+                });
             }
-        }
+        });
     }
 
+    private static CoreInstance extractGenericType(CoreInstance instance, ProcessorSupport processorSupport)
+    {
+        GenericType classifierGenericType = instance instanceof Any ? ((Any) instance)._classifierGenericType() : null;
+        return classifierGenericType == null ? Type.wrapGenericType(processorSupport.getClassifier(instance), processorSupport) : classifierGenericType;
+    }
 }

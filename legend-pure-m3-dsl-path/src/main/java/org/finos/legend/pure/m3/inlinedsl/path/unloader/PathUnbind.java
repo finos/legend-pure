@@ -14,28 +14,25 @@
 
 package org.finos.legend.pure.m3.inlinedsl.path.unloader;
 
-import org.eclipse.collections.api.RichIterable;
-import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.ReferenceUsage;
 import org.finos.legend.pure.m3.compiler.unload.unbind.Shared;
 import org.finos.legend.pure.m3.compiler.unload.unbind.UnbindState;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.Path;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.path.PropertyPathElement;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.GenericType;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
+import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.tools.matcher.MatchRunner;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
 import org.finos.legend.pure.m3.tools.matcher.MatcherState;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
-public class PathUnbind implements MatchRunner<Path>
+public class PathUnbind implements MatchRunner<Path<?, ?>>
 {
     @Override
     public String getClassName()
@@ -44,16 +41,17 @@ public class PathUnbind implements MatchRunner<Path>
     }
 
     @Override
-    public void run(Path modelElement, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
+    public void run(Path<?, ?> modelElement, MatcherState state, Matcher matcher, ModelRepository modelRepository, Context context) throws PureCompilationException
     {
         ProcessorSupport processorSupport = state.getProcessorSupport();
         GenericType start = modelElement._start();
-        Shared.cleanUpGenericType(start, (UnbindState)state, processorSupport);
-        for (PathElement pathElement : (RichIterable<PathElement>) modelElement._path())
+        Shared.cleanUpGenericType(start, (UnbindState) state, processorSupport);
+        modelElement._path().forEach(pathElement ->
         {
             if (pathElement instanceof PropertyPathElement)
             {
-                PropertyStub property = (PropertyStub)((PropertyPathElement)pathElement)._propertyCoreInstance();
+                PropertyPathElement propertyPathElement = (PropertyPathElement) pathElement;
+                PropertyStub property = (PropertyStub) propertyPathElement._propertyCoreInstance();
                 CoreInstance resolved = property._resolvedPropertyCoreInstance();
                 if (resolved != null)
                 {
@@ -62,26 +60,17 @@ public class PathUnbind implements MatchRunner<Path>
                 Shared.cleanPropertyStub(property, processorSupport);
                 property._ownerRemove();
 
-                RichIterable<? extends ValueSpecification> parameters = ((PropertyPathElement)pathElement)._parameters();
-                for (ValueSpecification parameter : parameters)
+                propertyPathElement._parameters().forEach(parameter ->
                 {
-
                     if (parameter instanceof InstanceValue)
                     {
-                        RichIterable<? extends CoreInstance> values = ((InstanceValue)parameter)._valuesCoreInstance();
-                        for (CoreInstance value : values)
-                        {
-                            Shared.cleanEnumStub(value, processorSupport);
-                        }
-
+                        ((InstanceValue) parameter)._valuesCoreInstance().forEach(value -> Shared.cleanEnumStub(value, processorSupport));
                         parameter._multiplicityRemove();
                         parameter._genericTypeRemove();
                     }
-
-                }
+                });
             }
-
-        }
+        });
         modelElement._classifierGenericTypeRemove();
     }
 }
