@@ -94,9 +94,9 @@ public abstract class CodeRepository
         return "<" + getClass().getSimpleName() + " \"" + this.name + "\">";
     }
 
-    protected boolean isValidRepositoryName(String name)
+    protected static boolean isValidRepositoryName(String name)
     {
-        return VALID_REPO_NAME_PATTERN.matcher(name).matches();
+        return (name != null) && VALID_REPO_NAME_PATTERN.matcher(name).matches();
     }
 
     public static CodeRepository newPlatformCodeRepository()
@@ -166,8 +166,8 @@ public abstract class CodeRepository
                 remaining.put(r, visible);
             }
         });
-        // none of these is visible to another - sort by name to maintain stability of result irrespective of input order
-        result.sortThisBy(CodeRepository::getName);
+        // none of these is visible to another - sort to maintain stability of result irrespective of input order
+        result.sortThis(CodeRepository::compareReposSameVisibilityLevel);
 
         while (remaining.notEmpty())
         {
@@ -189,12 +189,39 @@ public abstract class CodeRepository
                 builder.deleteCharAt(builder.length() - 1);
                 throw new RuntimeException(builder.toString());
             }
-            // none of these is visible to another - sort by name to maintain stability of result irrespective of input order
-            next.sortThisBy(CodeRepository::getName);
+            // none of these is visible to another - sort to maintain stability of result irrespective of input order
+            next.sortThis(CodeRepository::compareReposSameVisibilityLevel);
             next.forEach(remaining::remove);
             result.addAll(next);
         }
 
         return result;
+    }
+
+    private static int compareReposSameVisibilityLevel(CodeRepository repo1, CodeRepository repo2)
+    {
+        if (repo1 == repo2)
+        {
+            return 0;
+        }
+
+        int nameCmp = repo1.getName().compareTo(repo2.getName());
+        if (nameCmp != 0)
+        {
+            return nameCmp;
+        }
+
+        Class<?> class1 = repo1.getClass();
+        Class<?> class2 = repo2.getClass();
+        if (class1 != class2)
+        {
+            return class1.getName().compareTo(class2.getName());
+        }
+
+        Pattern pattern1 = repo1.getAllowedPackagesPattern();
+        Pattern pattern2 = repo2.getAllowedPackagesPattern();
+        return (pattern1 == null) ?
+                ((pattern2 == null) ? 0 : 1) :
+                ((pattern2 == null) ? -1 : pattern1.pattern().compareTo(pattern2.pattern()));
     }
 }
