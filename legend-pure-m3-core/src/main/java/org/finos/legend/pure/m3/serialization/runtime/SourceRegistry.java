@@ -24,6 +24,7 @@ import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.CodeSto
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.MutableCodeStorage;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.navigation.NavigationHandler;
+import org.finos.legend.pure.m4.serialization.Writer;
 
 import java.io.OutputStream;
 import java.util.regex.Pattern;
@@ -172,6 +173,11 @@ public class SourceRegistry
     public void serialize(OutputStream stream)
     {
         BinarySourceSerializer.serialize(stream, this);
+    }
+
+    public void serialize(Writer writer)
+    {
+        BinarySourceSerializer.serialize(writer, this);
     }
 
     public RichIterable<SourceEventHandler> getSourceEventHandlers()

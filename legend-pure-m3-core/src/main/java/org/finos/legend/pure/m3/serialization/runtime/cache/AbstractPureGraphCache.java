@@ -35,10 +35,10 @@ abstract class AbstractPureGraphCache implements PureGraphCache
             clearCaches();
             updateCacheState();
         }
-        catch (RuntimeException|Error e)
+        catch (Throwable t)
         {
-            updateCacheState(e);
-            throw e;
+            updateCacheState(t);
+            throw t;
         }
     }
 
@@ -58,7 +58,7 @@ abstract class AbstractPureGraphCache implements PureGraphCache
             writeCaches();
             updateCacheState();
         }
-        catch (RuntimeException|Error e)
+        catch (RuntimeException | Error e)
         {
             try
             {

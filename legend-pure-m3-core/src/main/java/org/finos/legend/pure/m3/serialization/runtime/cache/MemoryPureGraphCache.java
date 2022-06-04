@@ -21,14 +21,16 @@ import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
 import org.finos.legend.pure.m3.serialization.runtime.BinarySourceSerializer;
 import org.finos.legend.pure.m3.serialization.runtime.Message;
 import org.finos.legend.pure.m3.serialization.runtime.SourceRegistry;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+import org.finos.legend.pure.m4.serialization.Reader;
+import org.finos.legend.pure.m4.serialization.Writer;
+import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 import org.finos.legend.pure.m4.serialization.binary.BinaryRepositorySerializer;
+import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 
 public class MemoryPureGraphCache extends AbstractPureGraphCache
@@ -49,17 +51,17 @@ public class MemoryPureGraphCache extends AbstractPureGraphCache
             message.setMessage("Loading Graph Cache ...");
         }
         IntObjectMap<CoreInstance> instancesById;
-        try (InputStream stream = newInputStream(this.graph))
+        try (Reader reader = newReader(this.graph))
         {
-            instancesById = BinaryRepositorySerializer.build(stream, modelRepository, Message.newMessageCallback(message));
+            instancesById = BinaryRepositorySerializer.build(reader, modelRepository, Message.newMessageCallback(message));
         }
         if (message != null)
         {
             message.setMessage("Loading Sources Cache ...");
         }
-        try (InputStream stream = newInputStream(this.sources))
+        try (Reader reader = newReader(this.sources))
         {
-            BinarySourceSerializer.build(stream, sources, instancesById, library, context);
+            BinarySourceSerializer.build(reader, sources, instancesById, library, context);
         }
         return true;
     }
@@ -74,25 +76,18 @@ public class MemoryPureGraphCache extends AbstractPureGraphCache
     @Override
     protected void writeCaches()
     {
-        try
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (Writer writer = BinaryWriters.newBinaryWriter(newOutputStream(bytes)))
         {
-            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-            try (OutputStream stream = newOutputStream(bytes))
-            {
-                this.pureRuntime.getModelRepository().serialize(stream);
-            }
-            this.graph = bytes.toByteArray();
-            bytes.reset();
-            try (OutputStream stream = newOutputStream(bytes))
-            {
-                this.pureRuntime.getSourceRegistry().serialize(stream);
-            }
-            this.sources = bytes.toByteArray();
+            this.pureRuntime.getModelRepository().serialize(writer);
         }
-        catch (IOException e)
+        this.graph = bytes.toByteArray();
+        bytes.reset();
+        try (Writer writer = BinaryWriters.newBinaryWriter(newOutputStream(bytes)))
         {
-            throw new RuntimeException(e);
+            this.pureRuntime.getSourceRegistry().serialize(writer);
         }
+        this.sources = bytes.toByteArray();
     }
 
     @Override
@@ -107,13 +102,13 @@ public class MemoryPureGraphCache extends AbstractPureGraphCache
         return (this.graph == null) ? -1L : this.graph.length;
     }
 
-    protected OutputStream newOutputStream(ByteArrayOutputStream stream) throws IOException
+    protected OutputStream newOutputStream(ByteArrayOutputStream stream)
     {
         return stream;
     }
 
-    protected InputStream newInputStream(byte[] bytes) throws IOException
+    protected Reader newReader(byte[] bytes)
     {
-        return new ByteArrayInputStream(bytes);
+        return BinaryReaders.newBinaryReader(bytes);
     }
 }

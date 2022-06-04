@@ -14,6 +14,7 @@
 
 package org.finos.legend.pure.m3.serialization.runtime;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
@@ -26,7 +27,6 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.eclipse.collections.impl.factory.primitive.ObjectIntMaps;
-import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
@@ -36,7 +36,6 @@ import org.finos.legend.pure.m4.serialization.Writer;
 import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
 import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -52,41 +51,46 @@ public class BinarySourceSerializer
     {
         try (Writer writer = BinaryWriters.newBinaryWriter(stream))
         {
-            MutableObjectIntMap<String> parserIds = ObjectIntMaps.mutable.empty();
-            ListIterable<String> parserNames = getParserNames(sourceRegistry).toSortedList();
-            writer.writeInt(parserNames.size());
-            for (String parserName : parserNames)
-            {
-                writer.writeString(parserName);
-                parserIds.put(parserName, parserIds.size());
-            }
-            MutableList<Source> sortedSources = sourceRegistry.getSources().toSortedListBy(Source::getId);
-            writer.writeInt(sortedSources.size());
-            for (Source source : sortedSources)
-            {
-                try
-                {
-                    serializeSource(writer, source, parserIds);
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException("Error serializing source: " + source.getId(), e);
-                }
-            }
+            serialize(writer, sourceRegistry);
         }
+    }
+
+    public static void serialize(Writer writer, SourceRegistry sourceRegistry)
+    {
+        MutableObjectIntMap<String> parserIds = ObjectIntMaps.mutable.empty();
+        ListIterable<String> parserNames = getParserNames(sourceRegistry).toSortedList();
+        writer.writeInt(parserNames.size());
+        parserNames.forEach(parserName ->
+        {
+            writer.writeString(parserName);
+            parserIds.put(parserName, parserIds.size());
+        });
+        MutableList<Source> sortedSources = sourceRegistry.getSources().toSortedListBy(Source::getId);
+        writer.writeInt(sortedSources.size());
+        sortedSources.forEach(source ->
+        {
+            try
+            {
+                serializeSource(writer, source, parserIds);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Error serializing source: " + source.getId(), e);
+            }
+        });
     }
 
     private static SetIterable<String> getParserNames(SourceRegistry sourceRegistry)
     {
         MutableSet<String> parserNames = Sets.mutable.empty();
-        for (Source source : sourceRegistry.getSources())
+        sourceRegistry.getSources().forEach(source ->
         {
             ListMultimap<Parser, CoreInstance> elementsByParser = source.getElementsByParser();
             if (elementsByParser != null)
             {
-                elementsByParser.keysView().collect(Parser::getName, parserNames);
+                elementsByParser.forEachKey(p -> parserNames.add(p.getName()));
             }
-        }
+        });
         return parserNames;
     }
 
@@ -110,7 +114,7 @@ public class BinarySourceSerializer
         {
             MutableList<Parser> parsers = elementsByParser.keysView().toSortedListBy(Parser::getName);
             writer.writeInt(parsers.size());
-            for (Parser parser : parsers)
+            parsers.forEach(parser ->
             {
                 writer.writeInt(parserIds.getOrThrow(parser.getName()));
                 ListIterable<CoreInstance> instances = elementsByParser.get(parser);
@@ -119,7 +123,7 @@ public class BinarySourceSerializer
                 {
                     writer.writeInt(instance.getSyntheticId());
                 }
-            }
+            });
         }
     }
 
@@ -129,27 +133,32 @@ public class BinarySourceSerializer
     {
         try (Reader reader = BinaryReaders.newBinaryReader(stream))
         {
-            String[] parserNames = reader.readStringArray();
-            int sourceCount = reader.readInt();
-            for (int i = 0; i < sourceCount; i++)
-            {
-                Source source;
-                try
-                {
-                    source = buildSource(reader, instances, parserNames, library, context);
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException("Error building source " + (i + 1) + " of " + sourceCount, e);
-                }
-                registry.registerSource(source);
-            }
+            build(reader, registry, instances, library, context);
         }
     }
 
     public static void build(byte[] serialized, SourceRegistry registry, IntObjectMap<CoreInstance> instances, ParserLibrary library, Context context)
     {
-        build(new ByteArrayInputStream(serialized), registry, instances, library, context);
+        build(BinaryReaders.newBinaryReader(serialized), registry, instances, library, context);
+    }
+
+    public static void build(Reader reader, SourceRegistry registry, IntObjectMap<CoreInstance> instances, ParserLibrary library, Context context)
+    {
+        String[] parserNames = reader.readStringArray();
+        int sourceCount = reader.readInt();
+        for (int i = 0; i < sourceCount; i++)
+        {
+            Source source;
+            try
+            {
+                source = buildSource(reader, instances, parserNames, library, context);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Error building source " + (i + 1) + " of " + sourceCount, e);
+            }
+            registry.registerSource(source);
+        }
     }
 
     private static Source buildSource(Reader reader, IntObjectMap<CoreInstance> instancesById, String[] parserNames, ParserLibrary library, Context context)
@@ -211,7 +220,7 @@ public class BinarySourceSerializer
         {
             return null;
         }
-        MutableList<CoreInstance> instances = FastList.newList(count);
+        MutableList<CoreInstance> instances = Lists.mutable.ofInitialCapacity(count);
         for (int i = 0; i < count; i++)
         {
             instances.add(readCoreInstanceById(reader, instancesById));

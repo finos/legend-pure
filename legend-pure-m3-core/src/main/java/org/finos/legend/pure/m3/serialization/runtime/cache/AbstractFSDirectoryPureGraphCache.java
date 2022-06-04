@@ -17,10 +17,11 @@ package org.finos.legend.pure.m3.serialization.runtime.cache;
 import org.finos.legend.pure.m3.tools.FileTools;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-abstract class AbstractFSDirectoryPureGraphCache extends AbstractFSPureGraphCache
+abstract class AbstractFSDirectoryPureGraphCache extends AbstractPureGraphCache implements FSPureGraphCache
 {
     private final Path cacheDirectory;
 
@@ -33,7 +34,7 @@ abstract class AbstractFSDirectoryPureGraphCache extends AbstractFSPureGraphCach
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Could not create cache directory: " + this.cacheDirectory, e);
+            throw new UncheckedIOException("Could not create cache directory: " + this.cacheDirectory, e);
         }
     }
 
@@ -48,7 +49,7 @@ abstract class AbstractFSDirectoryPureGraphCache extends AbstractFSPureGraphCach
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Error deleting caches", e);
+                throw new UncheckedIOException("Error deleting caches", e);
             }
         }
     }

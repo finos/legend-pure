@@ -14,14 +14,17 @@
 
 package org.finos.legend.pure.m3.serialization.runtime.cache;
 
+import org.finos.legend.pure.m3.serialization.runtime.Message;
+import org.finos.legend.pure.m4.serialization.Reader;
+import org.finos.legend.pure.m4.serialization.Writer;
+import org.finos.legend.pure.m4.serialization.binary.BinaryReaders;
+import org.finos.legend.pure.m4.serialization.binary.BinaryWriters;
+
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import org.finos.legend.pure.m3.serialization.runtime.Message;
 
 public class CompressedFSPureGraphCache extends SimpleFSPureGraphCache
 {
@@ -36,14 +39,14 @@ public class CompressedFSPureGraphCache extends SimpleFSPureGraphCache
     }
 
     @Override
-    protected OutputStream newOutputStream(Path cacheFile) throws IOException
+    protected Writer newWriter(Path cacheFile) throws IOException
     {
-        return new GZIPOutputStream(super.newOutputStream(cacheFile));
+        return BinaryWriters.newBinaryWriter(new GZIPOutputStream(Files.newOutputStream(cacheFile)));
     }
 
     @Override
-    protected InputStream newInputStream(Path cacheFile) throws IOException
+    protected Reader newReader(Path cacheFile) throws IOException
     {
-        return new GZIPInputStream(super.newInputStream(cacheFile));
+        return BinaryReaders.newBinaryReader(new GZIPInputStream(Files.newInputStream(cacheFile)));
     }
 }
