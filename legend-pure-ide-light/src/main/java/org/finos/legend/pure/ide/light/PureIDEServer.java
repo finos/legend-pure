@@ -45,13 +45,8 @@ import java.nio.file.Paths;
 import java.util.EnumSet;
 import java.util.Optional;
 
-public class PureIDEServer extends Application<ServerConfiguration>
+public abstract class PureIDEServer extends Application<ServerConfiguration>
 {
-    public static void main(String[] args) throws Exception
-    {
-        new PureIDEServer().run(args);
-    }
-
     @Override
     public void initialize(Bootstrap<ServerConfiguration> bootstrap)
     {
@@ -110,39 +105,5 @@ public class PureIDEServer extends Application<ServerConfiguration>
         corsFilter.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "*");
     }
 
-    protected MutableList<RepositoryCodeStorage> buildRepositories(SourceLocationConfiguration sourceLocationConfiguration)
-    {
-        try
-        {
-            String ideFilesLocation = Optional.ofNullable(sourceLocationConfiguration)
-                    .flatMap(s -> Optional.ofNullable(s.ideFilesLocation))
-                    .orElse("legend-pure-ide-light/src/main/resources/pure_ide");
-
-            return Lists.mutable
-                    .<RepositoryCodeStorage>with(new ClassLoaderCodeStorage(CodeRepository.newPlatformCodeRepository()))
-                    .with(this.buildCore("", "legend", ""))
-                    .with(this.buildCore("", "legend", "external-shared"))
-                    .with(new MutableFSCodeStorage(new PureIDECodeRepository(), Paths.get(ideFilesLocation)));
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected MutableFSCodeStorage buildCore(String path, String project, String module) throws IOException
-    {
-        return buildCore(path + (project.equals("") ? "" : project + "-") + "pure-code-compiled-core" + (module.equals("") ? "" : "-" + module), module);
-    }
-
-    protected MutableFSCodeStorage buildCore(String path, String module) throws IOException
-    {
-        String resources = path + "/src/main/resources";
-        String moduleName = "core" + (module.equals("") ? "" : "_" + module);
-        return new MutableFSCodeStorage(
-                GenericCodeRepository.build(Paths.get(resources + "/" + moduleName.replace("-", "_") + ".definition.json")),
-                Paths.get(resources + "/" + moduleName.replace("-", "_"))
-        );
-    }
-
+    protected abstract MutableList<RepositoryCodeStorage> buildRepositories(SourceLocationConfiguration sourceLocationConfiguration);
 }
