@@ -60,8 +60,6 @@
 
         <module>legend-pure-code-compiled-platform-par</module>
         <module>legend-pure-code-compiled-platform-java</module>
-        <module>legend-pure-code-compiled-core</module>
-        <module>legend-pure-code-compiled-core-external-shared</module>
         <module>legend-pure-code-compiled-tests</module>
 
         <module>legend-pure-maven-compilation-par</module>
