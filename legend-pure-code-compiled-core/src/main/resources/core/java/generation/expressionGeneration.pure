@@ -37,11 +37,11 @@ function meta::external::language::java::transform::generateJavaMethodBody(vses:
 
 function <<access.private>> meta::external::language::java::transform::statementsForBlock(vses:ValueSpecification[*], conventions: Conventions[1], debug: DebugContext[1]):Code[*]
 {
-   $vses->toIndexed()
-      ->map(z| print(if($debug.debug,|$debug.space+'statementsForBlock - processing expression '+$z.first->toString()+'\n',|''));
-               let x = $z.second;
-               $x->generateJavaInternal($conventions, $debug);)
-      ->match([
+   let generated = $vses->toIndexed()
+      			->map(z| print(if($debug.debug,|$debug.space+'statementsForBlock - processing expression '+$z.first->toString()+'\n',|''));
+               			let x = $z.second;
+               			$x->generateJavaInternal($conventions, $debug););
+   $generated->match([
          {c0: Code[0] | []},
          {cs: Code[*] | 
             let toLast = $cs->init();
