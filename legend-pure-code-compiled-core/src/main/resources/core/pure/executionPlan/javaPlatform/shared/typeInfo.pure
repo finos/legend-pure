@@ -212,6 +212,7 @@ function meta::pure::executionPlan::engine::java::typeInfo::classDependenciesVia
    let cd = $info
       ->classPropertiesRecursiveWithsubTypes($class, [])
       ->map(p| $p.genericType.rawType)
+      ->removeDuplicates(elementsEquals())
       ->cast(@Class<Any>);
 
    let subTypes = $cd->map(c | $c->getSpecializations())->filter(s |  $info.typeInfos->exists(ti | $ti.type == $s->cast(@Type)));
@@ -243,7 +244,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::typeInfo::c
          let forThisClass        = $info->allProperties($class)->filter(p| $p.genericType.rawType->toOne()->instanceOf(Class));
          let forThisWithSubtypes = $forThisClass->concatenate($class->getSpecializations()->filter(s |  $info.typeInfos->exists(ti | $ti.type == $s->cast(@Type)))->map(g | $info->allProperties($g)->filter(p| $p.genericType.rawType->toOne()->instanceOf(Class))));
          
-         let forChildren         = $forThisWithSubtypes.genericType.rawType->cast(@Class<Any>)->map(c| $info->classPropertiesRecursiveWithsubTypes($c, $visitedClasses->concatenate($class)));
+         let forChildren         = $forThisWithSubtypes.genericType.rawType->removeDuplicates(elementsEquals())->cast(@Class<Any>)->map(c| $info->classPropertiesRecursiveWithsubTypes($c, $visitedClasses->concatenate($class)));
          $forThisWithSubtypes->concatenate($forChildren);
       }
    );
