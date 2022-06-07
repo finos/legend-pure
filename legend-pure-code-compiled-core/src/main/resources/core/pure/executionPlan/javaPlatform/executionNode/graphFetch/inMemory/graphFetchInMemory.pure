@@ -223,7 +223,7 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
 
    let conventions     = $context.conventions;
    let graphFetchTree  = $node.graphFetchTree->cast(@RoutedPropertyGraphFetchTree);
-
+  
    let isMilestonedProp = $graphFetchTree.property->instanceOf(QualifiedProperty) && $graphFetchTree.property->hasGeneratedMilestoningPropertyStereotype();
    let property         = if ($isMilestonedProp,
                               | let cl = $graphFetchTree.property->functionType().parameters->evaluateAndDeactivate()->at(0).genericType.rawType->toOne()->cast(@meta::pure::metamodel::type::Class<Any>);
@@ -294,7 +294,12 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
       let pmtType       = $propMappingTransformers->at($pmIndex).type->cast(@meta::external::language::java::metamodel::FunctionType);
       let targetSet     = $graphFetchTree.sets->filter(x | $x.id == $pm.targetSetImplementationId)->toOne()->cast(@InstanceSetImplementation);
       let targetSrc     = j_parameter($conventions->className($targetSet->sourceClass($extensions)), 'targetSrc');
-
+      let propertyConcreteType = $pmtType.returnType->at(0)->match([p:ParameterizedType[1]|$p.typeArguments->at(0),
+                                                                    t:meta::external::language::java::metamodel::Type[1]|$t   ]);
+      let propertyType     = j_parameter($propertyConcreteType, 'propertyType');
+      let classType = ^meta::external::language::java::metamodel::Class(simpleName = 'Class', package = ^meta::external::language::java::metamodel::Package(name = 'lang', parent = ^meta::external::language::java::metamodel::Package(name = 'java')));
+      let interParam     = j_parameter($classType, 'interParam');
+     
       $graphObjects
          ->j_streamOf()
          ->js_filter(j_lambda($graphObject, $graphObject->j_ne(j_null())))
@@ -303,13 +308,15 @@ function <<access.private>> meta::pure::executionPlan::engine::java::graphFetch:
             j_lambda(
                $graphObject,
                $pmTransformer
-                  ->j_invoke('apply', $graphObject->j_invoke($conventions->getterName(inMemorySource()), [], javaObject())->j_cast($pmtType.parameterTypes->at(0)), $pmtType.returnType)
-                  ->j_streamOf()
-                  ->map(x | if($targetSet->hasExplodeProperty(),
+                  ->j_invoke('apply', $graphObject->j_invoke($conventions->getterName(inMemorySource()), [], javaObject())
+                   ->j_cast($pmtType.parameterTypes->at(0)), $pmtType.returnType)
+              ->j_streamOf()
+               ->js_filter(j_lambda($propertyType,  j_streamOf( $propertyType->j_invoke('getClass',[],$classType)->j_invoke('getInterfaces',[],$classType)) ->j_invoke('anyMatch', j_lambda($interParam,  $interParam->j_invoke('equals',[$targetSrc.type-> j_field('class'  ,$targetSrc.type )] )),javaBoolean())))
+                 ->map(x | if($targetSet->hasExplodeProperty(),
                                | $x->js_flatMap(j_lambda($targetSrc, $tsTransformer->j_invoke('apply', [$targetSrc] , $currentGraphImpl->javaStream()))),
                                | $x->js_map(j_lambda($targetSrc, $tsTransformer->j_invoke('apply', [$targetSrc] , $currentGraphImpl)))
-                            )
-                  )
+                              )
+                        )
                   ->js_map(
                      j_lambda(
                         $targetGraphObject,
