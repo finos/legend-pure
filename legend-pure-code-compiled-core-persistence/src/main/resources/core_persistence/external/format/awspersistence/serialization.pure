@@ -183,7 +183,7 @@ function <<access.private>> meta::external::format::awspersistence::serializatio
       // We have a connection for sure
       assertInstanceOf($sink.connection, meta::external::persistence::aws::metamodel::connection::AwsFinCloudConnection, |'Expected only FinCloud connection in a FinCloud sink');
       let c = $sink.connection->cast(@meta::external::persistence::aws::metamodel::connection::AwsFinCloudConnection);
-      ^meta::external::format::awspersistence::metamodel::FinCloudConnection(
+      ^meta::external::format::awspersistence::metamodel::AwsFinCloudConnection(
         datasetId = $c.datasetId,
         authenticationStrategy = $c.authenticationStrategy,
         apiUrl = $c.apiUrl,

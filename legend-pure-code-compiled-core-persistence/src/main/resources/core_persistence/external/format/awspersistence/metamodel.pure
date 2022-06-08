@@ -58,7 +58,7 @@ Class meta::external::format::awspersistence::metamodel::S3Connection extends me
 }
 
 // FIXME: This is just duplicating meta::external::persistence::aws::metamodel::connection::AwsFinCloudConnection without the store
-Class meta::external::format::awspersistence::metamodel::FinCloudConnection extends meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection
+Class meta::external::format::awspersistence::metamodel::AwsFinCloudConnection extends meta::external::format::awspersistence::metamodel::AwsPersistenceTargetConnection
 {
   datasetId: String[1];
   authenticationStrategy: AuthenticationStrategy[1];
