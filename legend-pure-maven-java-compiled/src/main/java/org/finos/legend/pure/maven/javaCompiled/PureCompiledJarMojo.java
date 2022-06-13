@@ -94,86 +94,91 @@ public class PureCompiledJarMojo extends AbstractMojo
     @Override
     public void execute() throws MojoExecutionException
     {
-        ClassLoader savedClassLoader  = Thread.currentThread().getContextClassLoader();
+        if (this.skip)
+        {
+            getLog().info("Skipping Java Compiled JAR generation");
+            return;
+        }
+
+        long start = System.nanoTime();
+        getLog().info("Generating Java Compiled JAR");
+        getLog().info("  Requested repositories: " + this.repositories);
+        getLog().info("  Excluded repositories: " + this.excludedRepositories);
+        getLog().info("  Extra repositories: " + this.extraRepositories);
+        getLog().info("  Generation type: " + this.generationType);
+
+        ClassLoader savedClassLoader = Thread.currentThread().getContextClassLoader();
         try
         {
-            getLog().info("Generating Java Compiled JAR");
-            if (!skip)
+            Thread.currentThread().setContextClassLoader(buildClassLoader(this.project, savedClassLoader));
+
+            PureRepositoriesExternal.refresh();
+
+            ListIterable<CodeRepository> resolvedRepositories = resolveRepositories();
+            getLog().info(resolvedRepositories.asLazy().collect(CodeRepository::getName).makeString("  Resolved repositories: ", ", ", ""));
+
+            Path distributedMetadataDirectory;
+            if (!this.generateMetadata)
             {
-                getLog().info("  Requested repositories: " + this.repositories);
-                getLog().info("  Excluded repositories: " + this.excludedRepositories);
-                getLog().info("  Extra repositories: " + this.extraRepositories);
-                getLog().info("  Generation type: " + this.generationType);
-
-                Thread.currentThread().setContextClassLoader(this.buildClassLoader(this.project));
-
-                PureRepositoriesExternal.refresh();
-
-                ListIterable<CodeRepository> resolvedRepositories = resolveRepositories();
-                getLog().info(resolvedRepositories.asLazy().collect(CodeRepository::getName).makeString("  Resolved repositories: ", ", ", ""));
-
-                Path distributedMetadataDirectory;
-                if (!this.generateMetadata)
-                {
-                    distributedMetadataDirectory = null;
-                    getLog().info("  Classes output directory: " + this.classesDirectory);
-                    getLog().info("  No metadata output");
-                }
-                else if (this.useSingleDir)
-                {
-                    distributedMetadataDirectory = this.classesDirectory.toPath();
-                    getLog().info("  All in output directory: " + this.classesDirectory);
-                }
-                else
-                {
-                    distributedMetadataDirectory = this.targetDirectory.toPath().resolve("metadata-distributed");
-                    getLog().info("  Classes output directory: " + this.classesDirectory);
-                    getLog().info("  Distributed metadata output directory: " + distributedMetadataDirectory);
-                }
-
-                Path codegenDirectory;
-                if (this.generateSources)
-                {
-                    codegenDirectory = this.targetDirectory.toPath().resolve("generated-sources");
-                    getLog().info("  Codegen output directory: " + codegenDirectory);
-                }
-                else
-                {
-                    codegenDirectory = null;
-                }
-
-
-                // Generate metadata and Java sources
-                long startGenerating = System.nanoTime();
-                getLog().info(String.format("  Start generating Java classes"));
-                Generate generate = generate(startGenerating, resolvedRepositories, distributedMetadataDirectory, codegenDirectory);
-                getLog().info(String.format("  Finished generating Java classes (%.9fs)", durationSinceInSeconds(startGenerating)));
-
-                // Compile Java sources
-                if (!this.preventJavaCompilation)
-                {
-                    long startCompilation = System.nanoTime();
-                    getLog().info(String.format("  Start compiling Java classes"));
-                    PureJavaCompiler compiler = compileJavaSources(startCompilation, generate);
-                    writeJavaClassFiles(startCompilation, compiler);
-                    getLog().info(String.format("  Finished compiling Java classes (%.9fs)", durationSinceInSeconds(startCompilation)));
-                }
-                else
-                {
-                    getLog().info(String.format("  Java classes compilation: skipped"));
-                }
-
-                // Write class files
-                getLog().info(String.format("  Finished building Pure compiled mode jar"));
+                distributedMetadataDirectory = null;
+                getLog().info("  Classes output directory: " + this.classesDirectory);
+                getLog().info("  No metadata output");
+            }
+            else if (this.useSingleDir)
+            {
+                distributedMetadataDirectory = this.classesDirectory.toPath();
+                getLog().info("  All in output directory: " + this.classesDirectory);
             }
             else
             {
-                getLog().info(String.format("  Skipped"));
+                distributedMetadataDirectory = this.targetDirectory.toPath().resolve("metadata-distributed");
+                getLog().info("  Classes output directory: " + this.classesDirectory);
+                getLog().info("  Distributed metadata output directory: " + distributedMetadataDirectory);
             }
+
+            Path codegenDirectory;
+            if (this.generateSources)
+            {
+                codegenDirectory = this.targetDirectory.toPath().resolve("generated-sources");
+                getLog().info("  Codegen output directory: " + codegenDirectory);
+            }
+            else
+            {
+                codegenDirectory = null;
+            }
+
+            // Generate metadata and Java sources
+            long startGenerating = System.nanoTime();
+            getLog().info("  Start generating Java classes");
+            Generate generate = generate(startGenerating, resolvedRepositories, distributedMetadataDirectory, codegenDirectory);
+            getLog().info(String.format("  Finished generating Java classes (%.9fs)", durationSinceInSeconds(startGenerating)));
+
+            // Compile Java sources
+            if (!this.preventJavaCompilation)
+            {
+                long startCompilation = System.nanoTime();
+                getLog().info("  Start compiling Java classes");
+                PureJavaCompiler compiler = compileJavaSources(startCompilation, generate);
+                writeJavaClassFiles(startCompilation, compiler);
+                getLog().info(String.format("  Finished compiling Java classes (%.9fs)", durationSinceInSeconds(startCompilation)));
+            }
+            else
+            {
+                getLog().info("  Java classes compilation: skipped");
+            }
+
+            // Write class files
+            getLog().info(String.format("  Finished building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
+        }
+        catch (MojoExecutionException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
-            throw new MojoExecutionException("error", e);
+            getLog().error(String.format("    Error (%.9fs)", durationSinceInSeconds(start)), e);
+            getLog().error(String.format("    FAILURE building Pure compiled mode jar (%.9fs)", durationSinceInSeconds(start)));
+            throw new MojoExecutionException("Error building Pure compiled mode jar", e);
         }
         finally
         {
@@ -409,7 +414,7 @@ public class PureCompiledJarMojo extends AbstractMojo
         monolithic, modular
     }
 
-    private ClassLoader buildClassLoader(MavenProject project) throws DependencyResolutionRequiredException
+    private ClassLoader buildClassLoader(MavenProject project, ClassLoader parent) throws DependencyResolutionRequiredException
     {
         // Add the project output to the plugin classloader
         URL[] urlsForClassLoader = ListIterate.collect(project.getCompileClasspathElements(), mavenCompilePath ->
@@ -424,6 +429,6 @@ public class PureCompiledJarMojo extends AbstractMojo
             }
         }).toArray(new URL[0]);
         getLog().info("    Project classLoader URLs " + Arrays.toString(urlsForClassLoader));
-        return new URLClassLoader(urlsForClassLoader, Thread.currentThread().getContextClassLoader());
+        return new URLClassLoader(urlsForClassLoader, parent);
     }
 }
