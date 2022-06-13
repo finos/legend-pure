@@ -49,7 +49,7 @@ public class MilestoningPropertyProcessor
 
         addSynthesizedQualifiedProperties(propertyOwner, generatedQualifiedProperties, context);
         addSynthesizedSimpleProperties(propertyOwner, generatedEdgePointProperties, context);
-        moveProcessedoriginalMilestonedProperties(propertyOwner, generatedMilestonedProperties.collect(GeneratedMilestonedProperties::getSourceMilestonedProperty), context, processorSupport);
+        moveProcessedOriginalMilestonedProperties(propertyOwner, generatedMilestonedProperties.collect(GeneratedMilestonedProperties::getSourceMilestonedProperty), context);
     }
 
     public static GeneratedMilestonedProperties processAssociationProperty(Association propertyOwner, Class<?> sourceType, Property<?, ?> property, Context context, ProcessorSupport processorSupport, ModelRepository modelRepository) throws PureCompilationException
@@ -84,7 +84,7 @@ public class MilestoningPropertyProcessor
     }
 
 
-    public static void moveProcessedoriginalMilestonedProperties(PropertyOwner propertyOwner, ListIterable<? extends Property<?, ?>> propertiesToMove, Context context, ProcessorSupport processorSupport)
+    public static void moveProcessedOriginalMilestonedProperties(PropertyOwner propertyOwner, Iterable<? extends Property<?, ?>> propertiesToMove, Context context)
     {
         PropertyOwnerStrategy propertyOwnerStrategy = PropertyOwnerStrategy.getPropertyOwnerStrategy(propertyOwner);
         propertiesToMove.forEach(propertyToMove ->

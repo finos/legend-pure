@@ -15,25 +15,17 @@
 package org.finos.legend.pure.m3.compiler.postprocessing.processor;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.predicate.Predicate;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.SetIterable;
-import org.eclipse.collections.impl.block.factory.Predicates;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Sets;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.eclipse.collections.impl.utility.LazyIterate;
-import org.finos.legend.pure.m3.navigation.M3Paths;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.GeneratedMilestonedProperties;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningPropertyProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.projection.ProjectionUtil;
-import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
-import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
@@ -47,13 +39,16 @@ import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.generics.G
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.FunctionExpression;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.VariableExpression;
+import org.finos.legend.pure.m3.navigation.M3Paths;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.navigation.importstub.ImportStub;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m3.tools.matcher.Matcher;
-import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
+import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
-
-import java.util.Objects;
 
 public class AssociationProcessor extends Processor<Association>
 {
@@ -66,14 +61,9 @@ public class AssociationProcessor extends Processor<Association>
     @Override
     public void process(Association association, ProcessorState state, Matcher matcher, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
-        RichIterable<? extends AbstractProperty> properties = association._properties();
-        RichIterable<? extends AbstractProperty> originalMilestonedProperties = association._originalMilestonedProperties();
-        RichIterable<? extends AbstractProperty> qualifiedProperties = association._qualifiedProperties();
-
-        for (AbstractProperty property : LazyIterate.concatenate((Iterable<AbstractProperty>)properties, (Iterable<AbstractProperty>)qualifiedProperties).concatenate((Iterable<AbstractProperty>)originalMilestonedProperties))
-        {
-            PostProcessor.processElement(matcher, property, state, processorSupport);
-        }
+        association._properties().forEach(p -> PostProcessor.processElement(matcher, p, state, processorSupport));
+        association._originalMilestonedProperties().forEach(p -> PostProcessor.processElement(matcher, p, state, processorSupport));
+        association._qualifiedProperties().forEach(p -> PostProcessor.processElement(matcher, p, state, processorSupport));
     }
 
     @Override
@@ -81,7 +71,7 @@ public class AssociationProcessor extends Processor<Association>
     {
         if (association instanceof AssociationProjection)
         {
-            addReferenceUsageForToOneProperty(association, ((AssociationProjection)association)._projectedAssociationCoreInstance(), M3Properties.projectedAssociation, repository, processorSupport);
+            addReferenceUsageForToOneProperty(association, ((AssociationProjection) association)._projectedAssociationCoreInstance(), M3Properties.projectedAssociation, repository, processorSupport);
         }
     }
 
@@ -89,101 +79,96 @@ public class AssociationProcessor extends Processor<Association>
     {
         if (association instanceof AssociationProjection)
         {
-            preProcessAssociationProjection((AssociationProjection)association, modelRepository, context, processorSupport);
+            preProcessAssociationProjection((AssociationProjection) association, modelRepository, processorSupport);
         }
-        // TODO what if the generic type on the properties has concrete type arguments?
-        // Process properties
-        ListIterable<? extends Property<?, ?>> properties = association._properties().toList();
 
+        // Process properties
+        ListIterable<? extends Property<?, ?>> properties = ListHelper.wrapListIterable(association._properties());
         if (properties.size() != 2)
         {
             throw new PureCompilationException(association.getSourceInformation(), "Expected 2 properties for association '" + PackageableElement.getUserPathForPackageableElement(association) + "', found " + properties.size());
         }
 
-        // Get left and right properties
-        Property leftProperty = properties.get(0);
-        Property rightProperty = properties.get(1);
-
-        // Get left and right types
-        GenericType leftType;
-        Type leftRawType;
-        GenericType rightType;
-        Type rightRawType;
         if (association instanceof AssociationProjection)
         {
-            ListIterable<? extends ClassProjection> projections = (ListIterable<? extends ClassProjection>)ImportStub.withImportStubByPasses(((AssociationProjection)association)._projectionsCoreInstance().toList(), processorSupport);
+            ListIterable<? extends CoreInstance> projections = ImportStub.withImportStubByPasses(ListHelper.wrapListIterable(((AssociationProjection) association)._projectionsCoreInstance()), processorSupport);
             if (projections.size() != 2)
             {
                 throw new PureCompilationException(association.getSourceInformation(), "Expected exactly two class projections, found " + projections.size());
             }
         }
 
-        leftType = ((FunctionType)processorSupport.function_getFunctionType(rightProperty))._returnType();
-        leftRawType = (Type)ImportStub.withImportStubByPass(leftType._rawTypeCoreInstance(), processorSupport);
+        // Get left and right properties
+        Property<?, ?> leftProperty = properties.get(0);
+        Property<?, ?> rightProperty = properties.get(1);
 
-        rightType = ((FunctionType)processorSupport.function_getFunctionType(leftProperty))._returnType();
-        rightRawType = (Type)ImportStub.withImportStubByPass(rightType._rawTypeCoreInstance(), processorSupport);
+        // Get left and right types
+        GenericType leftType = ((FunctionType) processorSupport.function_getFunctionType(rightProperty))._returnType();
+        Type leftRawType = (Type) ImportStub.withImportStubByPass(leftType._rawTypeCoreInstance(), processorSupport);
 
-        validateAssociationPropertiesRawTypes(association, context, leftRawType, rightRawType);
+        GenericType rightType = ((FunctionType) processorSupport.function_getFunctionType(leftProperty))._returnType();
+        Type rightRawType = (Type) ImportStub.withImportStubByPass(rightType._rawTypeCoreInstance(), processorSupport);
 
-        return processAssociationProperties(association, context, processorSupport, modelRepository, leftProperty, rightProperty, leftType, (Class)leftRawType, rightType, (Class)rightRawType);
+        validateAssociationPropertiesRawTypes(association, leftRawType, rightRawType);
+
+        return processAssociationProperties(association, context, processorSupport, modelRepository, leftProperty, rightProperty, leftType, (Class<?>) leftRawType, rightType, (Class<?>) rightRawType);
     }
 
-    private static void preProcessAssociationProjection(AssociationProjection associationProjection, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport)
+    private static void preProcessAssociationProjection(AssociationProjection associationProjection, ModelRepository modelRepository, ProcessorSupport processorSupport)
     {
-        Association projectedAssociation = (Association)ImportStub.withImportStubByPass(associationProjection._projectedAssociationCoreInstance(), processorSupport);
+        Association projectedAssociation = (Association) ImportStub.withImportStubByPass(associationProjection._projectedAssociationCoreInstance(), processorSupport);
 
-        ListIterable<? extends CoreInstance> projections = ImportStub.withImportStubByPasses(associationProjection._projectionsCoreInstance().toList(), processorSupport);
+        ListIterable<? extends CoreInstance> projections = ImportStub.withImportStubByPasses(ListHelper.wrapListIterable(associationProjection._projectionsCoreInstance()), processorSupport);
+        projections.forEach(p -> checkForValidProjectionType(associationProjection, p));
 
-        ListIterable<? extends Property<?, ?>> projectedProperties = projectedAssociation._properties().toList();
+        ListIterable<? extends Property<?, ?>> projectedProperties = ListHelper.wrapListIterable(projectedAssociation._properties());
 
-        Property leftProperty = projectedProperties.getFirst();
-        Property rightProperty = projectedProperties.getLast();
+        Property<?, ?> leftProperty = projectedProperties.getFirst();
+        Property<?, ?> rightProperty = projectedProperties.getLast();
 
-        Class projectedPropertyLeftRawType = (Class)ImportStub.withImportStubByPass(((FunctionType)processorSupport.function_getFunctionType(rightProperty))._returnType()._rawTypeCoreInstance(), processorSupport);
-        Class projectedPropertyRightRawType = (Class)ImportStub.withImportStubByPass(((FunctionType)processorSupport.function_getFunctionType(leftProperty))._returnType()._rawTypeCoreInstance(), processorSupport);
+        Class<?> projectedPropertyLeftRawType = (Class<?>) ImportStub.withImportStubByPass(((FunctionType) processorSupport.function_getFunctionType(rightProperty))._returnType()._rawTypeCoreInstance(), processorSupport);
+        Class<?> projectedPropertyRightRawType = (Class<?>) ImportStub.withImportStubByPass(((FunctionType) processorSupport.function_getFunctionType(leftProperty))._returnType()._rawTypeCoreInstance(), processorSupport);
 
-        checkForValidProjectionType(associationProjection, projections.getFirst(), context);
-        checkForValidProjectionType(associationProjection, projections.getLast(), context);
+        ClassProjection<?> firstProjection = (ClassProjection<?>) projections.getFirst();
+        ClassProjection<?> lastProjection = (ClassProjection<?>) projections.getLast();
 
-        Class leftProjectedRawType = (Class)ImportStub.withImportStubByPass(((ClassProjection)projections.getFirst())._projectionSpecification()._type()._rawTypeCoreInstance(), processorSupport);
+        Class<?> leftProjectedRawType = (Class<?>) ImportStub.withImportStubByPass(firstProjection._projectionSpecification()._type()._rawTypeCoreInstance(), processorSupport);
+        Class<?> rightProjectedRawType = (Class<?>) ImportStub.withImportStubByPass(lastProjection._projectionSpecification()._type()._rawTypeCoreInstance(), processorSupport);
 
-        Class rightProjectedRawType = (Class)ImportStub.withImportStubByPass(((ClassProjection)projections.getLast())._projectionSpecification()._type()._rawTypeCoreInstance(), processorSupport);
+        MutableList<Property<?, ?>> projectedPropertiesCopy = Lists.mutable.ofInitialCapacity(2);
 
-        MutableList<Property<?, ?>> projectedPropertiesCopy = FastList.newList(2);
-
-        ClassProjection leftProjection = findProjectionTypeMatch(leftProjectedRawType, rightProjectedRawType, projectedPropertyLeftRawType, (ClassProjection)projections.getFirst(), (ClassProjection)projections.getLast(), context, processorSupport);
+        ClassProjection<?> leftProjection = findProjectionTypeMatch(leftProjectedRawType, rightProjectedRawType, projectedPropertyLeftRawType, firstProjection, lastProjection, processorSupport);
         if (leftProjection == null)
         {
-            throwInvalidProjectionException(associationProjection, projectedPropertyLeftRawType, rightProperty);
+            throwInvalidProjectionException(associationProjection, rightProperty);
         }
-        Property leftPropertyCopy = (Property)ProjectionUtil.createPropertyCopy(leftProperty, associationProjection, modelRepository, processorSupport);
+        Property<?, ?> leftPropertyCopy = (Property<?, ?>) ProjectionUtil.createPropertyCopy(leftProperty, associationProjection, modelRepository, processorSupport);
         leftPropertyCopy._owner(null);
-        GenericType leftProjectionGTCopy = (GenericType)org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(leftProjection, processorSupport);
+        GenericType leftProjectionGTCopy = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(leftProjection, processorSupport);
         projectedPropertiesCopy.add(leftPropertyCopy);
 
-        ClassProjection rightProjection = findProjectionTypeMatch(leftProjectedRawType, rightProjectedRawType, projectedPropertyRightRawType, (ClassProjection)projections.getFirst(), (ClassProjection)projections.getLast(), context, processorSupport);
+        ClassProjection<?> rightProjection = findProjectionTypeMatch(leftProjectedRawType, rightProjectedRawType, projectedPropertyRightRawType, (ClassProjection<?>) projections.getFirst(), (ClassProjection<?>) projections.getLast(), processorSupport);
         if (rightProjection == null)
         {
-            throwInvalidProjectionException(associationProjection, projectedPropertyRightRawType, leftProperty);
+            throwInvalidProjectionException(associationProjection, leftProperty);
         }
 
-        Property rightPropertyCopy = (Property)ProjectionUtil.createPropertyCopy(rightProperty, associationProjection, modelRepository, processorSupport);
+        Property<?, ?> rightPropertyCopy = (Property<?, ?>) ProjectionUtil.createPropertyCopy(rightProperty, associationProjection, modelRepository, processorSupport);
         rightPropertyCopy._owner(null);
-        GenericType rightProjectionGTCopy = (GenericType)org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(rightProjection, processorSupport);
+        GenericType rightProjectionGTCopy = (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(rightProjection, processorSupport);
         projectedPropertiesCopy.add(rightPropertyCopy);
 
-        replacePropertyGenericType(leftPropertyCopy, rightProjectionGTCopy, context);
-        replacePropertyReturnType(leftPropertyCopy, rightProjectionGTCopy, context);
+        replacePropertyGenericType(leftPropertyCopy, rightProjectionGTCopy);
+        replacePropertyReturnType(leftPropertyCopy, rightProjectionGTCopy);
 
-        replacePropertyGenericType(rightPropertyCopy, leftProjectionGTCopy, context);
-        replacePropertyReturnType(rightPropertyCopy, leftProjectionGTCopy, context);
+        replacePropertyGenericType(rightPropertyCopy, leftProjectionGTCopy);
+        replacePropertyReturnType(rightPropertyCopy, leftProjectionGTCopy);
 
 
-        associationProjection._propertiesCoreInstance(Lists.immutable.<Property<?,?>>ofAll(associationProjection._properties()).newWithAll(projectedPropertiesCopy));
+        associationProjection._propertiesCoreInstance(Lists.immutable.<Property<?, ?>>ofAll(associationProjection._properties()).newWithAll(projectedPropertiesCopy));
     }
 
-    private static void checkForValidProjectionType(AssociationProjection associationProjection, CoreInstance firstProjection, Context context)
+    private static void checkForValidProjectionType(AssociationProjection associationProjection, CoreInstance firstProjection)
     {
         if (!(firstProjection instanceof ClassProjection))
         {
@@ -191,18 +176,27 @@ public class AssociationProcessor extends Processor<Association>
         }
     }
 
-    private static ClassProjection findProjectionTypeMatch(Class projectedRawType1, Class projectedRawType2, Class projectedPropertyRawType1, ClassProjection projectionType1, ClassProjection projectionType2, Context context, ProcessorSupport processorSupport)
+    private static ClassProjection<?> findProjectionTypeMatch(Class<?> projectedRawType1, Class<?> projectedRawType2, Class<?> projectedPropertyRawType1, ClassProjection<?> projectionType1, ClassProjection<?> projectionType2, ProcessorSupport processorSupport)
     {
-        return org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(projectedRawType1, projectedPropertyRawType1, processorSupport) ? projectionType1 :
-                org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(projectedRawType2, projectedPropertyRawType1, processorSupport) ? projectionType2 : null;
+        if (org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(projectedRawType1, projectedPropertyRawType1, processorSupport))
+        {
+            return projectionType1;
+        }
+        if (org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(projectedRawType2, projectedPropertyRawType1, processorSupport))
+        {
+            return projectionType2;
+        }
+        return null;
     }
 
-    private static void throwInvalidProjectionException(AssociationProjection association, Class projectedPropertyRawType, Property property)
+    private static void throwInvalidProjectionException(AssociationProjection association, Property<?, ?> property)
     {
-        throw new PureCompilationException(association.getSourceInformation(), String.format("Invalid AssociationProjection. Projection for property '%s' is not specified.", org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property), PackageableElement.getUserPathForPackageableElement(projectedPropertyRawType)));
+        StringBuilder builder = PackageableElement.writeUserPathForPackageableElement(new StringBuilder("Invalid AssociationProjection '"), association);
+        builder.append("'. Projection for property '").append(org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(property)).append("' is not specified.");
+        throw new PureCompilationException(association.getSourceInformation(), builder.toString());
     }
 
-    private static Iterable<AbstractProperty<?>> processAssociationProperties(Association association, Context context, ProcessorSupport processorSupport, ModelRepository modelRepository, Property leftProperty, Property rightProperty, GenericType leftType, Class leftRawType, GenericType rightType, Class rightRawType)
+    private static Iterable<AbstractProperty<?>> processAssociationProperties(Association association, Context context, ProcessorSupport processorSupport, ModelRepository modelRepository, Property<?, ?> leftProperty, Property<?, ?> rightProperty, GenericType leftType, Class<?> leftRawType, GenericType rightType, Class<?> rightRawType)
     {
         if ((leftRawType == rightRawType) && org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(leftProperty).equals(org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(rightProperty)))
         {
@@ -214,23 +208,20 @@ public class AssociationProcessor extends Processor<Association>
         ListIterable<AbstractProperty<?>> leftGeneratedProperties = processAssociationProperty(association, leftProperty, leftType, leftRawType, modelRepository, context, processorSupport);
         ListIterable<AbstractProperty<?>> rightGeneratedProperties = processAssociationProperty(association, rightProperty, rightType, rightRawType, modelRepository, context, processorSupport);
 
-        return LazyIterate.concatenate(leftGeneratedProperties, rightGeneratedProperties);
+        return Lists.mutable.<AbstractProperty<?>>ofInitialCapacity(leftGeneratedProperties.size() + rightGeneratedProperties.size()).withAll(leftGeneratedProperties).withAll(rightGeneratedProperties);
     }
 
-    private static ListIterable<AbstractProperty<?>> processAssociationProperty(Association association, Property property, GenericType sourceGenericType, Class sourceRawType, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport)
+    private static ListIterable<AbstractProperty<?>> processAssociationProperty(Association association, Property<?, ?> property, GenericType sourceGenericType, Class<?> sourceRawType, ModelRepository modelRepository, Context context, ProcessorSupport processorSupport)
     {
         GeneratedMilestonedProperties generatedMilestonedProperties = MilestoningPropertyProcessor.processAssociationProperty(association, sourceRawType, property, context, processorSupport, modelRepository);
         if (generatedMilestonedProperties.hasGeneratedProperties())
         {
-            processOriginalMilestonedProperty(association, property, sourceGenericType, context, processorSupport);
+            processOriginalMilestonedProperty(association, property, sourceGenericType, context);
 
-            Property edgePointProperty = (Property)generatedMilestonedProperties.getEdgePointProperty();
+            Property<?, ?> edgePointProperty = (Property<?, ?>) generatedMilestonedProperties.getEdgePointProperty();
             processAssociationProperty_internal(edgePointProperty, sourceGenericType, sourceRawType, context);
 
-            for (CoreInstance qualifiedProperty : generatedMilestonedProperties.getQualifiedProperties())
-            {
-                processAssociationQualifiedProperty_internal(association, (QualifiedProperty)qualifiedProperty, sourceRawType, context, processorSupport);
-            }
+            generatedMilestonedProperties.getQualifiedProperties().forEach(qp -> processAssociationQualifiedProperty_internal(association, (QualifiedProperty<?>) qp, sourceRawType, context, processorSupport));
             if (association.hasBeenValidated())
             {
                 association.markNotValidated();
@@ -244,46 +235,46 @@ public class AssociationProcessor extends Processor<Association>
         }
     }
 
-    private static void processOriginalMilestonedProperty(Association association, Property<?, ?> property, GenericType sourceGenericType, Context context, ProcessorSupport processorSupport)
+    private static void processOriginalMilestonedProperty(Association association, Property<?, ?> property, GenericType sourceGenericType, Context context)
     {
-        replacePropertySourceType(property, sourceGenericType, context);
-        MilestoningPropertyProcessor.moveProcessedoriginalMilestonedProperties(association, FastList.<Property<?, ?>>newListWith(property), context, processorSupport);
+        replacePropertySourceType(property, sourceGenericType);
+        MilestoningPropertyProcessor.moveProcessedOriginalMilestonedProperties(association, Lists.immutable.with(property), context);
         context.update(property);
     }
 
-    private static void processAssociationProperty_internal(Property property, GenericType sourceGenericType, Class sourceRawType, Context context)
+    private static void processAssociationProperty_internal(Property<?, ?> property, GenericType sourceGenericType, Class<?> sourceRawType, Context context)
     {
-        replacePropertySourceType(property, sourceGenericType, context);
+        replacePropertySourceType(property, sourceGenericType);
         addPropertyToRawType(property, sourceRawType, context);
         context.update(property);
     }
 
-    private static void processAssociationQualifiedProperty_internal(Association association, QualifiedProperty qualifiedProperty, Class sourceRawType, Context context, ProcessorSupport processorSupport)
+    private static void processAssociationQualifiedProperty_internal(Association association, QualifiedProperty<?> qualifiedProperty, Class<?> sourceRawType, Context context, ProcessorSupport processorSupport)
     {
         addQualifiedPropertyToRawType(qualifiedProperty, sourceRawType, context);
 
-        Class qualifiedPropertyReturnType = (Class)ImportStub.withImportStubByPass(qualifiedProperty._genericType()._rawTypeCoreInstance(), processorSupport);
+        Class<?> qualifiedPropertyReturnType = (Class<?>) ImportStub.withImportStubByPass(qualifiedProperty._genericType()._rawTypeCoreInstance(), processorSupport);
         ListIterable<? extends Property<?, ?>> assnProperties = association._properties().toList();
         updateClassifierGenericTypeForQualifiedPropertiesThisVarExprParams(association, qualifiedProperty, qualifiedPropertyReturnType, assnProperties, context, processorSupport);
 
         context.update(qualifiedProperty);
     }
 
-    private static void processNonMilestonedQualifiedProperties(Association association, Class leftRawType, Class rightRawType, Context context, ProcessorSupport processorSupport)
+    private static void processNonMilestonedQualifiedProperties(Association association, Class<?> leftRawType, Class<?> rightRawType, Context context, ProcessorSupport processorSupport)
     {
-        RichIterable<? extends QualifiedProperty> qualifiedProperties = association._qualifiedProperties();
+        RichIterable<? extends QualifiedProperty<?>> qualifiedProperties = association._qualifiedProperties();
         if (qualifiedProperties.notEmpty())
         {
-            SetIterable<? extends Class> validReturnTypes = Sets.immutable.with(leftRawType, rightRawType);
+            SetIterable<? extends Class<?>> validReturnTypes = Sets.immutable.with(leftRawType, rightRawType);
             ListIterable<? extends Property<?, ?>> assnProperties = association._properties().toList();
 
-            for (QualifiedProperty qualifiedProperty : qualifiedProperties)
+            for (QualifiedProperty<?> qualifiedProperty : qualifiedProperties)
             {
-                Class qualifiedPropertyReturnType = (Class)ImportStub.withImportStubByPass(qualifiedProperty._genericType()._rawTypeCoreInstance(), processorSupport);
+                Class<?> qualifiedPropertyReturnType = (Class<?>) ImportStub.withImportStubByPass(qualifiedProperty._genericType()._rawTypeCoreInstance(), processorSupport);
 
                 validateQualifiedPropertyReturnType(association, qualifiedProperty, qualifiedPropertyReturnType, validReturnTypes);
 
-                Class sourceType = (leftRawType == qualifiedPropertyReturnType) ? rightRawType : leftRawType;
+                Class<?> sourceType = (leftRawType == qualifiedPropertyReturnType) ? rightRawType : leftRawType;
                 addQualifiedPropertyToRawType(qualifiedProperty, sourceType, context);
                 updateClassifierGenericTypeForQualifiedPropertiesThisVarExprParams(association, qualifiedProperty, qualifiedPropertyReturnType, assnProperties, context, processorSupport);
                 context.update(qualifiedProperty);
@@ -291,28 +282,28 @@ public class AssociationProcessor extends Processor<Association>
         }
     }
 
-    private static void validateQualifiedPropertyReturnType(Association association, QualifiedProperty qualifiedProperty, Class qualifiedPropertyReturnType, SetIterable<? extends Class> validTypes)
+    private static void validateQualifiedPropertyReturnType(Association association, QualifiedProperty<?> qualifiedProperty, Class<?> qualifiedPropertyReturnType, SetIterable<? extends Class<?>> validTypes)
     {
         if (!validTypes.contains(qualifiedPropertyReturnType))
         {
-            throw new PureCompilationException(qualifiedProperty.getSourceInformation(), qualifiedPropertyCompileErrorMsgPrefix(association, qualifiedProperty) + "has returnType of : " + qualifiedPropertyReturnType.getName() + " it should be one of Association: '" + association.getName() + "' properties' return types: " + validTypes.collect(CoreInstance.GET_NAME).makeString("[", ", ", "]"));
+            throw new PureCompilationException(qualifiedProperty.getSourceInformation(), qualifiedPropertyCompileErrorMsgPrefix(association, qualifiedProperty) + "has returnType of : " + qualifiedPropertyReturnType.getName() + " it should be one of Association: '" + association.getName() + "' properties' return types: " + validTypes.collect(CoreInstance::getName).makeString("[", ", ", "]"));
         }
     }
 
-    private static void updateClassifierGenericTypeForQualifiedPropertiesThisVarExprParams(Association association, QualifiedProperty qualifiedProperty, final Class qualifiedPropertyReturnType, ListIterable<? extends Property> assnProperties, final Context context, final ProcessorSupport processorSupport)
+    private static void updateClassifierGenericTypeForQualifiedPropertiesThisVarExprParams(Association association, QualifiedProperty<?> qualifiedProperty, Class<?> qualifiedPropertyReturnType, ListIterable<? extends Property<?, ?>> assnProperties, Context context, ProcessorSupport processorSupport)
     {
-        validateQualifiedPropertyLeftSideOfFilterByPropertyName(association, qualifiedProperty, qualifiedPropertyReturnType, assnProperties, context, processorSupport);
-        Property leftSideOfFilterProperty = getQualifiedPropertiesFilterLeftSideParam(qualifiedPropertyReturnType, assnProperties, processorSupport);
-        Property leftSideOfFilterOtherProperty = assnProperties.detect(Predicates.notEqual(leftSideOfFilterProperty));
+        validateQualifiedPropertyLeftSideOfFilterByPropertyName(association, qualifiedProperty, qualifiedPropertyReturnType, assnProperties, processorSupport);
+        Property<?, ?> leftSideOfFilterProperty = getQualifiedPropertiesFilterLeftSideParam(qualifiedPropertyReturnType, assnProperties, processorSupport);
+        Property<?, ?> leftSideOfFilterOtherProperty = assnProperties.detect(p -> !leftSideOfFilterProperty.equals(p));
         GenericType leftSideOfFilterOtherPropertyGenericType = leftSideOfFilterOtherProperty._genericType();
 
-        FunctionType functionType = (FunctionType)qualifiedProperty._classifierGenericType()._typeArguments().toList().getFirst()._rawTypeCoreInstance();
+        FunctionType functionType = (FunctionType) qualifiedProperty._classifierGenericType()._typeArguments().toList().getFirst()._rawTypeCoreInstance();
         Iterable<? extends VariableExpression> functionTypeParams = functionType._parameters();
         for (VariableExpression functionTypeParam : functionTypeParams)
         {
             if (functionTypeParam != null && "this".equals(functionTypeParam._name()))
             {
-                GenericType genericTypeCopy = (GenericType)org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(leftSideOfFilterOtherPropertyGenericType, processorSupport);
+                GenericType genericTypeCopy = (GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericType(leftSideOfFilterOtherPropertyGenericType, processorSupport);
                 functionTypeParam._genericType(genericTypeCopy);
                 context.update(functionTypeParam);
                 if (functionTypeParam.hasBeenValidated())
@@ -324,27 +315,18 @@ public class AssociationProcessor extends Processor<Association>
         }
     }
 
-    private static Property getQualifiedPropertiesFilterLeftSideParam(final Class qualifiedPropertyReturnType, ListIterable<? extends Property> assnProperties, final ProcessorSupport processorSupport)
+    private static Property<?, ?> getQualifiedPropertiesFilterLeftSideParam(Class<?> qualifiedPropertyReturnType, ListIterable<? extends Property<?, ?>> assnProperties, ProcessorSupport processorSupport)
     {
-        Property leftSideOfFilterProperty = assnProperties.detect(new Predicate<Property>()
-        {
-            @Override
-            public boolean accept(Property property)
-            {
-                Class returnType = (Class)ImportStub.withImportStubByPass(property._genericType()._rawTypeCoreInstance(), processorSupport);
-                return returnType.equals(qualifiedPropertyReturnType);
-            }
-        });
-        return leftSideOfFilterProperty;
+        return assnProperties.detect(property -> qualifiedPropertyReturnType.equals(ImportStub.withImportStubByPass(property._genericType()._rawTypeCoreInstance(), processorSupport)));
     }
 
-    private static void validateQualifiedPropertyLeftSideOfFilterByPropertyName(Association association, QualifiedProperty qualifiedProperty, Class qualifiedPropertyReturnType, ListIterable<? extends Property> assnProperties, Context context, ProcessorSupport processorSupport)
+    private static void validateQualifiedPropertyLeftSideOfFilterByPropertyName(Association association, QualifiedProperty<?> qualifiedProperty, Class<?> qualifiedPropertyReturnType, ListIterable<? extends Property<?, ?>> assnProperties, ProcessorSupport processorSupport)
     {
         if (propertiesHaveDifferentNames(assnProperties))
         {
-            String leftSideOfFilterPropertyName = getLeftSideOfQualifiedPropertyFilter(association, qualifiedProperty, context, processorSupport);
-            Property leftSideOfFilterProperty = assnProperties.detect(Predicates.attributeEqual(CoreInstance.GET_NAME, leftSideOfFilterPropertyName));
-            Class leftSideOfFilterPropertyReturnType = (Class)ImportStub.withImportStubByPass(leftSideOfFilterProperty._genericType()._rawTypeCoreInstance(), processorSupport);
+            String leftSideOfFilterPropertyName = getLeftSideOfQualifiedPropertyFilter(association, qualifiedProperty);
+            Property<?, ?> leftSideOfFilterProperty = assnProperties.detect(p -> leftSideOfFilterPropertyName.equals(p.getName()));
+            Class<?> leftSideOfFilterPropertyReturnType = (Class<?>) ImportStub.withImportStubByPass(leftSideOfFilterProperty._genericType()._rawTypeCoreInstance(), processorSupport);
             if (leftSideOfFilterPropertyReturnType != qualifiedPropertyReturnType)
             {
                 throw new PureCompilationException(qualifiedProperty.getSourceInformation(), qualifiedPropertyCompileErrorMsgPrefix(association, qualifiedProperty) + "should return a subset of property: '" + leftSideOfFilterPropertyName + "' (left side of filter) and consequently should have a returnType of : '" + leftSideOfFilterPropertyReturnType.getName() + "'");
@@ -352,54 +334,61 @@ public class AssociationProcessor extends Processor<Association>
         }
     }
 
-    private static boolean propertiesHaveDifferentNames(ListIterable<? extends Property> assnProperties)
+    private static boolean propertiesHaveDifferentNames(ListIterable<? extends Property<?, ?>> assnProperties)
     {
-        return assnProperties.collect(CoreInstance.GET_NAME).distinct().size() == 2;
+        return assnProperties.collect(CoreInstance::getName, Sets.mutable.empty()).size() == 2;
     }
 
-    private static String getLeftSideOfQualifiedPropertyFilter(Association association, QualifiedProperty qualifiedProperty, Context context, ProcessorSupport processorSupport)
+    private static String getLeftSideOfQualifiedPropertyFilter(Association association, QualifiedProperty<?> qualifiedProperty)
     {
-        ListIterable<? extends ValueSpecification> exprSequence = qualifiedProperty._expressionSequence().toList();
+        ListIterable<? extends ValueSpecification> exprSequence = ListHelper.wrapListIterable(qualifiedProperty._expressionSequence());
         if (exprSequence.size() > 1)
         {
             throw new PureCompilationException(qualifiedProperty.getSourceInformation(), validQualifiedPropertyInAssociationMsg() + qualifiedPropertyCompileErrorMsgPrefix(association, qualifiedProperty) + " has more than one Expression Sequence");
         }
-        return getPropertyNameForLeftSideOfQualifiedPropertyFilter(association, qualifiedProperty, exprSequence.getFirst(), context, processorSupport);
+        return getPropertyNameForLeftSideOfQualifiedPropertyFilter(association, qualifiedProperty, exprSequence.getFirst());
     }
 
-    private static String getPropertyNameForLeftSideOfQualifiedPropertyFilter(Association association, QualifiedProperty qualifiedProperty, ValueSpecification instance, Context context, ProcessorSupport processorSupport)
+    private static String getPropertyNameForLeftSideOfQualifiedPropertyFilter(Association association, QualifiedProperty<?> qualifiedProperty, ValueSpecification instance)
     {
-        String functionName = instance instanceof FunctionExpression ? ((FunctionExpression)instance)._functionName() : null;
-        String propertyNameForLeftSideOfQualifiedPropertyFilter;
-        if ("filter".equals(functionName))
+        if (instance instanceof FunctionExpression)
         {
-            ValueSpecification leftSideOfFilter = ((FunctionExpression)instance)._parametersValues().toList().getFirst();
-
-            CoreInstance propertyName = leftSideOfFilter instanceof FunctionExpression ? ((FunctionExpression)leftSideOfFilter)._propertyName()._valuesCoreInstance().toList().getFirst() : null;
-            ValueSpecification variableExpression = leftSideOfFilter instanceof FunctionExpression ? ((FunctionExpression)leftSideOfFilter)._parametersValues().toList().getFirst() : null;
-            String variableExpressionName = variableExpression instanceof VariableExpression ? ((VariableExpression)variableExpression)._name() : null;
-            if (!"this".equals(variableExpressionName))
+            FunctionExpression functionExpression = (FunctionExpression) instance;
+            String functionName = functionExpression._functionName();
+            if ("filter".equals(functionName))
             {
-                throw new PureCompilationException(instance.getSourceInformation(), validQualifiedPropertyInAssociationMsg() + qualifiedPropertyCompileErrorMsgPrefix(association, qualifiedProperty) + " left side of filter should refer to '$this' not '" + variableExpressionName + "'");
+                ValueSpecification leftSideOfFilter = ListHelper.wrapListIterable(functionExpression._parametersValues()).getFirst();
+                if (leftSideOfFilter instanceof FunctionExpression)
+                {
+                    FunctionExpression leftSideOfFilterFunctionExpression = (FunctionExpression) leftSideOfFilter;
+                    CoreInstance propertyName = leftSideOfFilterFunctionExpression._propertyName()._valuesCoreInstance().getAny();
+                    if (propertyName != null)
+                    {
+                        ValueSpecification variableExpression = ListHelper.wrapListIterable(leftSideOfFilterFunctionExpression._parametersValues()).getFirst();
+                        if (variableExpression instanceof VariableExpression)
+                        {
+                            String variableExpressionName = ((VariableExpression) variableExpression)._name();
+                            if (!"this".equals(variableExpressionName))
+                            {
+                                throw new PureCompilationException(instance.getSourceInformation(), validQualifiedPropertyInAssociationMsg() + qualifiedPropertyCompileErrorMsgPrefix(association, qualifiedProperty) + " left side of filter should refer to '$this' not '" + variableExpressionName + "'");
+                            }
+                        }
+                        return propertyName.getName();
+                    }
+                }
+                throw new PureCompilationException(instance.getSourceInformation(), "Could not get property name for left side of qualified property filter");
             }
-            propertyNameForLeftSideOfQualifiedPropertyFilter = Objects.requireNonNull(propertyName).getName();
-        }
-        else
-        {
-            ValueSpecification firstParamValue = instance instanceof FunctionExpression ? ((FunctionExpression)instance)._parametersValues().toList().getFirst() : null;
+
+            ValueSpecification firstParamValue = ListHelper.wrapListIterable(functionExpression._parametersValues()).getFirst();
             if (firstParamValue != null)
             {
-                propertyNameForLeftSideOfQualifiedPropertyFilter = getPropertyNameForLeftSideOfQualifiedPropertyFilter(association, qualifiedProperty, firstParamValue, context, processorSupport);
-            }
-            else
-            {
-                throw new PureCompilationException(qualifiedProperty.getSourceInformation(), validQualifiedPropertyInAssociationMsg() + qualifiedPropertyCompileErrorMsgPrefix(association, qualifiedProperty) + " does not use the 'filter' function");
+                return getPropertyNameForLeftSideOfQualifiedPropertyFilter(association, qualifiedProperty, firstParamValue);
             }
         }
-        return propertyNameForLeftSideOfQualifiedPropertyFilter;
+        throw new PureCompilationException(qualifiedProperty.getSourceInformation(), validQualifiedPropertyInAssociationMsg() + qualifiedPropertyCompileErrorMsgPrefix(association, qualifiedProperty) + " does not use the 'filter' function");
     }
 
-    private static String qualifiedPropertyCompileErrorMsgPrefix(Association association, QualifiedProperty qualifiedProperty)
+    private static String qualifiedPropertyCompileErrorMsgPrefix(Association association, QualifiedProperty<?> qualifiedProperty)
     {
         return "Qualified property: '" + qualifiedProperty.getName() + "' in association: '" + association.getName() + "' ";
     }
@@ -409,7 +398,7 @@ public class AssociationProcessor extends Processor<Association>
         return "Association Qualified Properties must follow the following pattern '$this.<<associationProperty>>->filter(p|<<lambdaExpression>>)'. ";
     }
 
-    private static void validateAssociationPropertiesRawTypes(Association association, Context context, Type leftRawType, Type rightRawType)
+    private static void validateAssociationPropertiesRawTypes(Association association, Type leftRawType, Type rightRawType)
     {
         if (!(association instanceof AssociationProjection))
         {
@@ -424,26 +413,20 @@ public class AssociationProcessor extends Processor<Association>
         }
     }
 
-    private static void replacePropertySourceType(Property property, GenericType newGenericType, Context context)
-    {
-        MutableList<GenericType> typeArguments = (MutableList<GenericType>)property._classifierGenericType()._typeArguments().toList();
-        typeArguments.set(0, newGenericType);
-        property._classifierGenericType()._typeArguments(typeArguments);
-    }
-
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static void addPropertyToRawType(Property property, Class rawType, Context context)
     {
-        rawType._propertiesFromAssociations(Lists.immutable.ofAll(rawType._propertiesFromAssociations()).newWith(property));
+        rawType._propertiesFromAssociationsAdd(property);
         updateContext(rawType, context);
     }
 
-    private static void addQualifiedPropertyToRawType(QualifiedProperty property, Class rawType, Context context)
+    private static void addQualifiedPropertyToRawType(QualifiedProperty<?> property, Class<?> rawType, Context context)
     {
-        rawType._qualifiedPropertiesFromAssociations(Lists.immutable.ofAll(rawType._qualifiedPropertiesFromAssociations()).newWith(property));
+        rawType._qualifiedPropertiesFromAssociationsAdd(property);
         updateContext(rawType, context);
     }
 
-    private static void updateContext(Class rawType, Context context)
+    private static void updateContext(Class<?> rawType, Context context)
     {
         context.update(rawType);
         if (rawType.hasBeenValidated())
@@ -452,14 +435,25 @@ public class AssociationProcessor extends Processor<Association>
         }
     }
 
-    private static void replacePropertyReturnType(Property property, GenericType newGenericType, Context context)
+    private static void replacePropertySourceType(Property<?, ?> property, GenericType newGenericType)
     {
-        MutableList<GenericType> typeArguments = (MutableList<GenericType>)property._classifierGenericType()._typeArguments().toList();
-        typeArguments.set(1, newGenericType);
-        property._classifierGenericType()._typeArguments(typeArguments);
+        replacePropertyType(property, newGenericType, 0);
     }
 
-    private static void replacePropertyGenericType(Property property, GenericType genericType, Context context)
+    private static void replacePropertyReturnType(Property<?, ?> property, GenericType newGenericType)
+    {
+        replacePropertyType(property, newGenericType, 1);
+    }
+
+    private static void replacePropertyType(Property<?, ?> property, GenericType newGenericType, int index)
+    {
+        GenericType classifierGenericType = property._classifierGenericType();
+        MutableList<GenericType> typeArguments = Lists.mutable.withAll(classifierGenericType._typeArguments());
+        typeArguments.set(index, newGenericType);
+        classifierGenericType._typeArguments(typeArguments);
+    }
+
+    private static void replacePropertyGenericType(Property<?, ?> property, GenericType genericType)
     {
         property._genericType(genericType);
     }
