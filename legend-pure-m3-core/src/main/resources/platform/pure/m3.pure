@@ -135,6 +135,12 @@
                                                                                 Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'router',
                                                                                 Package.properties[children] : [],
                                                                                 Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
+                                                                            },
+                                                                            ^Package test
+                                                                            {
+                                                                                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'test',
+                                                                                Package.properties[children] : [],
+                                                                                Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure]
                                                                             }],
                                             Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta]
                                         }
@@ -535,7 +541,11 @@
 
 ^Root.children[meta].children[pure].children[metamodel].children[type].children[Class] ElementWithStereotypes @Root.children[meta].children[pure].children[metamodel].children[extension].children
 {
-    Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[Class], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments]:[^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[extension].children[ElementWithStereotypes]}]},
+    Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]
+    {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[Class],
+     Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments]:
+     [^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]
+    {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[extension].children[ElementWithStereotypes]}]},
     Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[metamodel].children[extension],
     Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'ElementWithStereotypes',
     Root.children[meta].children[pure].children[metamodel].children[type].children[Class].properties[properties] :
@@ -3047,3 +3057,70 @@
             }
         ]
 }
+
+^Root.children[meta].children[pure].children[metamodel].children[type].children[Class] Test @Root.children[meta].children[pure].children[test].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]
+                                                                                                                            {
+                                                                                                                                Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[Class],
+                                                                                                                                Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments]:^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]
+                                                                                                                                {
+                                                                                                                                    Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[test].children[Test]
+                                                                                                                                }
+                                                                                                                            },
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[test],
+    Root.children[meta].children[pure].children[metamodel].children[type].children[Class].properties[properties]:
+        [
+            ^Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property] id
+            {
+                Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'id',
+                Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property].properties[aggregation] : Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AggregationKind].values[None],
+                Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AbstractProperty].properties[genericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:String},
+                Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AbstractProperty].properties[multiplicity] : Root.children[meta].children[pure].children[metamodel].children[multiplicity].children[PureOne],
+                Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments]:[^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[test].children[Test]}, ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:String}], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[multiplicityArguments]:Root.children[meta].children[pure].children[metamodel].children[multiplicity].children[PureOne]}
+            }
+        ],
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] :'Test',
+    Root.children[meta].children[pure].children[metamodel].children[type].children[Type].properties[generalizations] :
+        [
+            ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
+            {
+                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[type].children[Any]},
+                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[test].children[Test]
+            }
+        ]
+}
+
+^Root.children[meta].children[pure].children[metamodel].children[type].children[Class] Testable @Root.children[meta].children[pure].children[test].children
+{
+    Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]
+                                                                                                                            {
+                                                                                                                                Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[type].children[Class],
+                                                                                                                                Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments]:^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]
+                                                                                                                                {
+                                                                                                                                    Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[test].children[Testable]
+                                                                                                                                }
+                                                                                                                            },
+    Root.children[meta].children[pure].children[metamodel].children[PackageableElement].properties[package] : Root.children[meta].children[pure].children[test],
+    Root.children[meta].children[pure].children[metamodel].children[type].children[Class].properties[properties]:
+        [
+            ^Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property] tests
+                        {
+                            Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] : 'tests',
+                            Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property].properties[aggregation] : Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AggregationKind].values[None],
+                            Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AbstractProperty].properties[genericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[test].children[Test]},
+                            Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[AbstractProperty].properties[multiplicity] : Root.children[meta].children[pure].children[metamodel].children[multiplicity].children[ZeroMany],
+                            Root.children[meta].children[pure].children[metamodel].children[type].children[Any].properties[classifierGenericType] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[function].children[property].children[Property], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments]:[^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[test].children[Testable]}, ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[test].children[Test]}], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[multiplicityArguments]:Root.children[meta].children[pure].children[metamodel].children[multiplicity].children[ZeroMany]}
+                        }
+        ],
+    Root.children[meta].children[pure].children[metamodel].children[ModelElement].properties[name] :'Testable',
+    Root.children[meta].children[pure].children[metamodel].children[type].children[Type].properties[generalizations] :
+        [
+            ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
+            {
+                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[type].children[Any]},
+                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[test].children[Testable]
+            }
+        ]
+}
+
