@@ -330,6 +330,11 @@
                                                 {
                                                     Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[metamodel].children[PackageableElement]},
                                                     Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[metamodel].children[type].children[Class]
+                                                },
+            ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
+                                                {
+                                                    Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType]{Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType]:Root.children[meta].children[pure].children[test].children[Testable]},
+                                                    Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[metamodel].children[type].children[Class]
                                                 }
         ]
 }
@@ -2218,6 +2223,11 @@
             ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
             {
                 Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[metamodel].children[function].children[FunctionDefinition], Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeArguments] : [^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[typeParameter] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[TypeParameter] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[TypeParameter].properties[name]:'T'}}]},
+                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[metamodel].children[function].children[ConcreteFunctionDefinition]
+            },
+            ^Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization]
+            {
+                Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[general] : ^Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType] {Root.children[meta].children[pure].children[metamodel].children[type].children[generics].children[GenericType].properties[rawType] : Root.children[meta].children[pure].children[test].children[Testable]},
                 Root.children[meta].children[pure].children[metamodel].children[relationship].children[Generalization].properties[specific] : Root.children[meta].children[pure].children[metamodel].children[function].children[ConcreteFunctionDefinition]
             }
         ]

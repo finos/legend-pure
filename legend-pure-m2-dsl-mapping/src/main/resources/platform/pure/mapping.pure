@@ -18,9 +18,10 @@ import meta::pure::store::*;
 import meta::pure::tools::*;
 import meta::pure::functions::collection::*;
 import meta::pure::mapping::aggregationAware::*;
+import meta::pure::test::*;
 
 // Mapping
-Class meta::pure::mapping::Mapping extends PackageableElement
+Class meta::pure::mapping::Mapping extends PackageableElement, Testable
 {
     includes : MappingInclude[*];
     classMappings : SetImplementation[*];
