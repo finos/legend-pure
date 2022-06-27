@@ -101,6 +101,7 @@ public class ClassInterfaceProcessor
                                     "    void _sever_reverse_" + name + "(" + type + " val);\n") +
                                     "    " + interfaceNamePlusTypeParams + " _" + name + "(" + type + " val);\n" +
                                     "    " + interfaceNamePlusTypeParams + " _" + name + "(RichIterable<? extends " + typeObject + "> val);\n" +
+                                    "    " + interfaceNamePlusTypeParams + " _" + name + "Remove();\n" +
                                     (includeGettors ? "    " + type + " _" + name + "();\n" : "");
                         }
                         else
@@ -111,6 +112,7 @@ public class ClassInterfaceProcessor
                                     "    " + interfaceNamePlusTypeParams + " _" + name + "(RichIterable<? extends " + typeObject + "> val);\n" +
                                     "    " + interfaceNamePlusTypeParams + " _" + name + "Add(" + typeObject + " val);\n" +
                                     "    " + interfaceNamePlusTypeParams + " _" + name + "AddAll(RichIterable<? extends " + typeObject + "> val);\n" +
+                                    "    " + interfaceNamePlusTypeParams + " _" + name + "Remove();\n" +
                                     (includeGettors ? "    RichIterable<? extends " + typeObject + "> _" + name + "();\n": "");
                         }
                     }

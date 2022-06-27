@@ -87,7 +87,7 @@ public class TestBinaryModelRepositorySerializer extends AbstractPureTestWithCor
             }
         }
         String m3BinaryPath = PureRepositoryJarTools.purePathToBinaryPath("/platform/pure/m3.pure");
-        for (String instancePath : Lists.mutable.with("meta", "meta::pure", "meta::pure::functions", "meta::pure::functions::lang", "meta::pure::metamodel", "meta::pure::metamodel::constraint", "meta::pure::metamodel::extension", "meta::pure::metamodel::function", "meta::pure::metamodel::function::property", "meta::pure::metamodel::import", "meta::pure::metamodel::multiplicity", "meta::pure::metamodel::relationship", "meta::pure::metamodel::treepath", "meta::pure::metamodel::type", "meta::pure::metamodel::type::generics", "meta::pure::metamodel::valuespecification", "meta::pure::router", "meta::pure::tools", "system", "system::imports"))
+        for (String instancePath : Lists.mutable.with("meta", "meta::pure", "meta::pure::functions", "meta::pure::functions::lang", "meta::pure::metamodel", "meta::pure::metamodel::constraint", "meta::pure::metamodel::extension", "meta::pure::metamodel::function", "meta::pure::metamodel::function::property", "meta::pure::metamodel::import", "meta::pure::metamodel::multiplicity", "meta::pure::metamodel::relationship", "meta::pure::metamodel::treepath", "meta::pure::metamodel::type", "meta::pure::metamodel::type::generics", "meta::pure::metamodel::valuespecification", "meta::pure::router", "meta::pure::tools", "system", "system::imports", "meta::pure::test"))
         {
             expectedDefinitionIndex.put(instancePath, m3BinaryPath);
         }
