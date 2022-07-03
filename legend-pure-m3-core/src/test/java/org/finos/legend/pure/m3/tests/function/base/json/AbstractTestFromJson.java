@@ -83,7 +83,7 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
         }
     }
 
-    private void runShouldPassTestCase(String testName, String expectedType, String actualJson, String additionalPureCode)
+    private void runShouldPassTestCase(String testName, String expectedType, String actualJson, String additionalPureCode, String result)
     {
         String[] rawSource = {
                 "import meta::json::*;\nimport meta::pure::functions::json::tests::*;",
@@ -92,7 +92,9 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
                 "{\n  testField : " + expectedType + ";\n}",
                 "function " + testName + "():Any[*]",
                 "{\n  let json = '{\"testField\": " + actualJson + "}';",
-                "  $json -> fromJson(" + testName + ", ^JSONDeserializationConfig(typeKeyName='@type', failOnUnknownProperties=false));\n}"
+                "     let jsonAsPure = $json -> fromJson(" + testName + ", ^JSONDeserializationConfig(typeKeyName='@type', failOnUnknownProperties=false));",
+                "     assertEquals(" + result + ", $jsonAsPure.testField, 'Output does match expected');",
+                "\n}"
         };
         String source = StringUtils.join(rawSource, "\n") + "\n";
 
@@ -124,9 +126,9 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
     }
 
     @Test
-    public void typeCheck_JsonLongToIntegerProperty()
+    public void typeCheck_JsonFloatToIntegerProperty()
     {
-        this.runShouldFailTestCase("IntegerToFloat", "Integer[1]", "3.0",
+        this.runShouldFailTestCase("FloatToInteger", "Integer[1]", "3.0",
                 "Expected Integer, found Float");
     }
 
@@ -167,7 +169,9 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
     {
         this.runShouldPassTestCase("IntegerToObject", "meta::pure::functions::json::tests::someClass[1]",
                 "3",
-                "Class meta::pure::functions::json::tests::someClass {  } ");
+                "Class meta::pure::functions::json::tests::someClass {  } ",
+                "[]"
+        );
     }
 
     @Test
@@ -182,21 +186,56 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
     public void typeCheck_JsonIntegerToFloatProperty()
     {
         this.runShouldPassTestCase("IntegerToFloat", "Float[1]",
-                "1", "");
+                "1", "", "1.0");
+    }
+
+    @Test
+    public void typeCheck_JsonIntegerToAnyProperty()
+    {
+        this.runShouldPassTestCase("IntegerToAny", "Any[1]",
+                "1", "", "1");
+    }
+
+    @Test
+    public void typeCheck_JsonFloatToAnyProperty()
+    {
+        this.runShouldPassTestCase("FloatToAny", "Any[1]",
+                "2.0", "", "2.0");
+    }
+
+    @Test
+    public void typeCheck_JsonStringToAnyProperty()
+    {
+        this.runShouldPassTestCase("StringToAny", "Any[1]",
+                "\"Hello\"", "", "'Hello'");
+    }
+
+    @Test
+    public void typeCheck_JsonBooleanToAnyProperty()
+    {
+        this.runShouldPassTestCase("BooleanToAny", "Any[1]",
+                "true", "", "true");
+    }
+
+    @Test
+    public void typeCheck_JsonObjectToAnyProperty()
+    {
+        this.runShouldFailTestCase("ObjectToAny", "Any[1]",
+                "{}", "Deserialization of Any currently only supported on primitive values!");
     }
 
     @Test
     public void typeCheck_JsonFloatToDecimalProperty()
     {
         this.runShouldPassTestCase("FloatToDecimal", "Decimal[1]",
-                "3.14", "");
+                "3.14", "", "3.14D");
     }
 
     @Test
     public void typeCheck_JsonIntegerToDecimalProperty()
     {
         this.runShouldPassTestCase("IntegerToDecimal", "Decimal[1]",
-                "3", "");
+                "3", "", "3D");
     }
 
     @Test
@@ -260,56 +299,56 @@ public abstract class AbstractTestFromJson extends AbstractPureTestWithCoreCompi
     public void multiplicityIsInRange_SingleValueToSingletonProperty()
     {
         this.runShouldPassTestCase("SingleToSingleton", "Float[1]",
-                "3.0", "");
+                "3.0", "", "3.0");
     }
 
     @Test
     public void multiplicityIsInRange_SingleArrayToSingletonProperty()
     {
         this.runShouldPassTestCase("SingleArrayToSingleton", "Float[1]",
-                "[3.0]", "");
+                "[3.0]", "", "3.0");
     }
 
     @Test
     public void multiplicityIsInRange_NullToOptionalProperty()
     {
         this.runShouldPassTestCase("NullToOptional", "Float[0..1]",
-                "null", "");
+                "null", "", "[]");
     }
 
     @Test
     public void multiplicityIsInRange_EmptyArrayToOptionalProperty()
     {
         this.runShouldPassTestCase("EmptyToOptional", "Float[0..1]",
-                "[]", "");
+                "[]", "", "[]");
     }
 
     @Test
     public void multiplicityIsInRange_NullToManyProperty()
     {
         this.runShouldPassTestCase("NullToMany", "Float[*]",
-                "null", "");
+                "null", "", "[]");
     }
 
     @Test
     public void multiplicityIsInRange_EmptyArrayToManyProperty()
     {
         this.runShouldPassTestCase("EmptyToMany", "Float[*]",
-                "[]", "");
+                "[]", "", "[]");
     }
 
     @Test
     public void multiplicityIsInRange_SingleValueToManyProperty()
     {
         this.runShouldPassTestCase("SingleToMany", "Float[*]",
-                "3.0", "");
+                "3.0", "", "[3.0]");
     }
 
     @Test
     public void multiplicityIsInRange_SingleArrayToManyProperty()
     {
         this.runShouldPassTestCase("SingleArrayToMany", "Float[*]",
-                "[3.0]", "");
+                "[3.0]", "", "[3.0]");
     }
 
 
