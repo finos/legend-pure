@@ -394,6 +394,119 @@ public class TestModelMapping extends AbstractPureMappingTestWithCoreCompiled
         }
     }
 
+    @Test
+    public void testMappingWithPropertyMappingUnion()
+    {
+        this.runtime.createInMemorySource("model.pure",
+                "Class Firm" +
+                        "{" +
+                        "  legalName : String[2];" +
+                        "}");
+
+        this.runtime.createInMemorySource("mapping.pure",
+                "###Mapping\n" +
+                        "Mapping test::TestMapping\n" +
+                        "(\n" +
+                        "  Firm : Pure\n" +
+                        "  {" +
+                        "    legalName[l1] : ['a'],\n" +
+                        "    legalName[l2] : ['b']\n" +
+                        "  }\n" +
+                        ")");
+
+        this.runtime.compile();
+        Assert.assertTrue(true);
+    }
+    @Test
+    public void testMappingWithTransitivePropertyMapping()
+    {
+        this.runtime.createInMemorySource("model.pure",
+                "Class Firm" +
+                        "{" +
+                        "  addressLocation : String[1..*];" +
+                        "}"+
+                       "Class AlternateAddress" +
+                        "{" +
+                        "  address : Address[1..*];" +
+                        "}"+
+                        "Class Address" +
+                        "{" +
+                        "  address : String[1..*];" +
+                        "}");
+
+        this.runtime.createInMemorySource("mapping.pure",
+                "###Mapping\n" +
+                        "Mapping test::TestMapping\n" +
+                        "(\n" +
+                        "  Firm : Pure\n" +
+                        "  {\n" +
+                        "     ~src AlternateAddress\n"+
+                        "    addressLocation : $src.address.address->toOneMany()\n" +   //ToFix - toOneMany() should not be required
+                        "  }\n" +
+                        ")");
+
+        this.runtime.compile();
+        Assert.assertTrue(true);
+    }
+    @Test
+    public void testMappingWithPropertyMappingUnionM2M()
+    {
+        this.runtime.createInMemorySource("model.pure",
+                "Class TradableProduct" +
+                        "{" +
+                        "  counterParty : CounterParty[2];" +
+                        "}"+
+                        "Class CounterParty" +
+                        "{" +
+                        "  role: CounterPartyRole[1];" +
+                        "  party: ContractParty[1];" +
+                        "}"+
+                        "Enum CounterPartyRole" +
+                        "{" +
+                        "   Party1," +
+                        "    Party2" +
+                        "}"+
+                        "Class Contract" +
+                        "{" +
+                        "  party1: ContractParty[1];" +
+                        "  party2: ContractParty[1];" +
+                        "}"+
+                        "Class ContractParty" +
+                        "{" +
+                        "   name: String[1];" +
+                        "}"
+        );
+
+        this.runtime.createInMemorySource("mapping.pure",
+                "###Mapping\n" +
+                        "Mapping test::TestMapping\n" +
+                        "(\n" +
+                        "  TradableProduct : Pure\n" +
+                        "  {" +
+                        "    ~src Contract\n" +
+                        "    counterParty[c1] : $src.party1,\n" +
+                        "    counterParty[c2] : $src.party2\n" +
+                        "  }\n" +
+                        "  *CounterParty[c1] : Pure\n" +
+                        "  {" +
+                        "    ~src ContractParty\n" +
+                        "     party: $src,\n"+
+                        "     role: CounterPartyRole.Party1\n"+
+                        "   }"+
+                        "  CounterParty[c2] : Pure\n" +
+                        "  {" +
+                        "    ~src ContractParty\n" +
+                        "     party: $src,\n"+
+                        "     role: CounterPartyRole.Party2\n"+
+                        "   }\n"+
+                        "  ContractParty: Pure\n" +
+                        "  {\n"+
+                        "       name: 'GS'\n"+
+                        "   }\n"+
+                        ")");
+        this.runtime.compile();
+        Assert.assertTrue(true);
+    }
 
     @Test
     public void testFilter()
