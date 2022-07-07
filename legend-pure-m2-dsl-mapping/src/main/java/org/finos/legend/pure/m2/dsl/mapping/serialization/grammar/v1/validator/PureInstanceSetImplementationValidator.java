@@ -187,8 +187,7 @@ public class PureInstanceSetImplementationValidator implements MatchRunner<PureI
                         throw new PureCompilationException(((RichIterable<ValueSpecification>) transform._expressionSequence()).toList().get(0).getSourceInformation(),
                                 "Multiplicity Error ' The property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(propertyMapping._propertyCoreInstance())
                                         + "' has a multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(propertyMultiplicity)
-                                        + " when the given expression has a multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(expressionMultiplicity)
-                                        + " and the combined  multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(combinedExpressionsMultiplicity));
+                                        + " when the combined  multiplicity range of expressions is  " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(combinedExpressionsMultiplicity));
                     }
                 }
             }
