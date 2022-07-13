@@ -158,8 +158,15 @@ public class JsonDeserializationCache extends ConversionCache
     }
 
     @Override
-    protected Conversion<?, ?> newGenericAndAnyTypeConversion(ConversionContext context)
+    protected Conversion<?, ?> newGenericAndAnyTypeConversion(boolean isExplicitAny, ConversionContext context)
     {
-        return GenericAndAnyTypeNotSupportedConversion.GENERIC_AND_ANY_TYPE_NOT_SUPPORTED_CONVERSION;
+        if (isExplicitAny)
+        {
+            return JsonAnyTypeDeserialization.JSON_ANY_TYPE_DESERIALIZATION;
+        }
+        else
+        {
+            return GenericAndAnyTypeNotSupportedConversion.GENERIC_AND_ANY_TYPE_NOT_SUPPORTED_CONVERSION;
+        }
     }
 }
