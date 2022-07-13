@@ -55,6 +55,12 @@ public abstract class ConversionCache
                 this.cache.put(type, mapConversion);
                 return mapConversion;
             }
+            else if (type.getName().equals("Any"))
+            {
+                Conversion<?, ?> anyTypeConversion = this.newGenericAndAnyTypeConversion(true, context);
+                this.cache.put(type, anyTypeConversion);
+                return anyTypeConversion;
+            }
             else
             {
                 ClassConversion<?, ?> classConversion = this.newClassConversion((Class)type, context);
@@ -81,7 +87,7 @@ public abstract class ConversionCache
         }
         if (type == null)
         {
-            return this.newGenericAndAnyTypeConversion(context);
+            return this.newGenericAndAnyTypeConversion(false, context);
         }
         throw new IllegalArgumentException("Unknown type.");
     }
@@ -101,5 +107,5 @@ public abstract class ConversionCache
 
     protected abstract UnitConversion<?, ?> newUnitConversion(CoreInstance type, ConversionContext context);
 
-    protected abstract Conversion<?, ?> newGenericAndAnyTypeConversion(ConversionContext context);
+    protected abstract Conversion<?, ?> newGenericAndAnyTypeConversion(boolean isExplicitAny, ConversionContext context);
 }

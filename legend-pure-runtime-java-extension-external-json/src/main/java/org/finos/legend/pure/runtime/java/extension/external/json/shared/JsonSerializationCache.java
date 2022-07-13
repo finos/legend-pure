@@ -156,7 +156,7 @@ public class JsonSerializationCache extends ConversionCache
     }
 
     @Override
-    protected Conversion<?, ?> newGenericAndAnyTypeConversion(ConversionContext context)
+    protected Conversion<?, ?> newGenericAndAnyTypeConversion(boolean isExplicitAny, ConversionContext context)
     {
         return JsonGenericAndAnyTypeSerialization.JSON_GENERIC_AND_ANY_TYPE_SERIALIZATION;
     }
