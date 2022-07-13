@@ -16,6 +16,8 @@ package org.finos.legend.pure.m2.dsl.mapping.serialization.grammar.v1.validator;
 
 import org.eclipse.collections.api.RichIterable;
 import org.eclipse.collections.api.block.procedure.Procedure2;
+import org.eclipse.collections.api.factory.Lists;
+import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MapIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.set.mutable.UnifiedSet;
@@ -50,6 +52,10 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.ModelRepository;
 import org.finos.legend.pure.m4.exception.PureCompilationException;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class PureInstanceSetImplementationValidator implements MatchRunner<PureInstanceSetImplementation>
 {
     @Override
@@ -74,6 +80,20 @@ public class PureInstanceSetImplementationValidator implements MatchRunner<PureI
             if (filterReturnType._rawTypeCoreInstance() != booleanType)
             {
                 throw new PureCompilationException(((RichIterable<ValueSpecification>)filter._expressionSequence()).toList().get(0).getSourceInformation(), "A filter should be a Boolean expression");
+            }
+        }
+
+        Map<String, List<PropertyMapping>> propertyNameToPropertyMapping = new HashMap<>();
+        for (PropertyMapping propertyMapping : classMapping._propertyMappings())
+        {
+            Property property = (Property)ImportStub.withImportStubByPass(propertyMapping._propertyCoreInstance(), processorSupport);
+            if(propertyNameToPropertyMapping.containsKey(property._name())){
+                List<PropertyMapping> curr= propertyNameToPropertyMapping.get(property._name());
+                curr.add(propertyMapping);
+                propertyNameToPropertyMapping.put(property._name(),curr);
+            }
+            else{
+                propertyNameToPropertyMapping.put(property._name(), Lists.mutable.with(propertyMapping) );
             }
         }
 
@@ -137,12 +157,39 @@ public class PureInstanceSetImplementationValidator implements MatchRunner<PureI
                 }
             }
 
-            if (!((PurePropertyMapping)propertyMapping)._explodeProperty() && !org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.subsumes(propertyMultiplicity, expressionMultiplicity))
+
+            if (!((PurePropertyMapping)propertyMapping)._explodeProperty() )
             {
-                throw new PureCompilationException(((RichIterable<ValueSpecification>)transform._expressionSequence()).toList().get(0).getSourceInformation(),
-                        "Multiplicity Error ' The property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(propertyMapping._propertyCoreInstance())
-                                + "' has a multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(propertyMultiplicity)
-                                + " when the given expression has a multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(expressionMultiplicity));
+                if( propertyNameToPropertyMapping.get(property._name()).size()==1 )
+                {
+                    if(!org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.subsumes(propertyMultiplicity, expressionMultiplicity))
+                    {
+                        throw new PureCompilationException(((RichIterable<ValueSpecification>) transform._expressionSequence()).toList().get(0).getSourceInformation(),
+                                "Multiplicity Error ' The property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(propertyMapping._propertyCoreInstance())
+                                        + "' has a multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(propertyMultiplicity)
+                                        + " when the given expression has a multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(expressionMultiplicity));
+                    }
+                }
+                else
+                {
+                    List<Multiplicity> expressionMultiplicities=Lists.mutable.with();
+                    for(PropertyMapping propertyMapping1: propertyNameToPropertyMapping.get(property._name()))
+                    {
+                        LambdaFunction transform1= ((PurePropertyMapping)propertyMapping)._transform();
+                        FunctionType fType1 = (FunctionType)processorSupport.function_getFunctionType(transform1);
+                        Multiplicity expressionMultiplicity1 = fType1._returnMultiplicity();
+                        expressionMultiplicities.add(expressionMultiplicity1);
+                    }
+                    Multiplicity combinedExpressionsMultiplicity= (Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.addMultiplicitities( (ListIterable<? extends CoreInstance>) expressionMultiplicities, processorSupport);
+
+                    if(!org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.subsumes(propertyMultiplicity, combinedExpressionsMultiplicity))
+                    {
+                        throw new PureCompilationException(((RichIterable<ValueSpecification>) transform._expressionSequence()).toList().get(0).getSourceInformation(),
+                                "Multiplicity Error ' The property '" + org.finos.legend.pure.m3.navigation.property.Property.getPropertyName(propertyMapping._propertyCoreInstance())
+                                        + "' has a multiplicity range of " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(propertyMultiplicity)
+                                        + " when the combined  multiplicity range of expressions is  " + org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.print(combinedExpressionsMultiplicity));
+                    }
+                }
             }
         }
         // TODO add this validation once violations have been removed
