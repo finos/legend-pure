@@ -70,19 +70,19 @@ jobs:
           git config --global author.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git config --global author.name "${GITHUB_ACTOR}"
       - name: Check Maven version
-        run: mvn -v -DargLine="-Xmx2000m"
+        run: mvn -v -DargLine="-Xmx2g"
       - name: Download deps and plugins
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -DargLine="-Xmx2000m"
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -DargLine="-Xmx2g"
       - name: Build + Test
         if: (github.repository != 'finos/legend-pure') || (github.ref != 'refs/heads/master')
-        run: mvn -B -e install javadoc:javadoc -DargLine="-Xmx2000m" -Dmaven.test.failure.ignore=true
+        run: mvn -B -e install javadoc:javadoc -DargLine="-Xmx2g" -Dmaven.test.failure.ignore=true
         env:
-          MAVEN_OPTS: -Xmx4000m
+          MAVEN_OPTS: -Xmx4g
       - name: Build + Test + Sonar + Maven Deploy
         if: (github.repository == 'finos/legend-pure') && (github.ref == 'refs/heads/master')
-        run: mvn -B -e deploy javadoc:javadoc -Psonar -DargLine="-Xmx2000m" -Dmaven.test.failure.ignore=true
+        run: mvn -B -e deploy javadoc:javadoc -Psonar -DargLine="-Xmx2g" -Dmaven.test.failure.ignore=true
         env:
-          MAVEN_OPTS: -Xmx4000m
+          MAVEN_OPTS: -Xmx4g
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v3
