@@ -21,10 +21,17 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.federecio.dropwizard.swagger.SwaggerResource;
-import org.eclipse.collections.api.factory.Lists;
+import java.util.EnumSet;
+import javax.servlet.DispatcherType;
+import javax.servlet.FilterRegistration;
 import org.eclipse.collections.api.list.MutableList;
+import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
-import org.finos.legend.pure.ide.light.api.*;
+import org.finos.legend.pure.configuration.PureRepositoriesExternal;
+import org.finos.legend.pure.ide.light.api.Activities;
+import org.finos.legend.pure.ide.light.api.FileManagement;
+import org.finos.legend.pure.ide.light.api.LifeCycle;
+import org.finos.legend.pure.ide.light.api.Service;
 import org.finos.legend.pure.ide.light.api.concept.Concept;
 import org.finos.legend.pure.ide.light.api.execution.function.Execute;
 import org.finos.legend.pure.ide.light.api.execution.go.ExecuteGo;
@@ -33,17 +40,8 @@ import org.finos.legend.pure.ide.light.api.find.FindInSources;
 import org.finos.legend.pure.ide.light.api.find.FindPureFile;
 import org.finos.legend.pure.ide.light.session.PureSession;
 import org.finos.legend.pure.m3.serialization.filesystem.repository.CodeRepository;
-import org.finos.legend.pure.m3.serialization.filesystem.repository.GenericCodeRepository;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.RepositoryCodeStorage;
 import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.classpath.ClassLoaderCodeStorage;
-import org.finos.legend.pure.m3.serialization.filesystem.usercodestorage.fs.MutableFSCodeStorage;
-
-import javax.servlet.DispatcherType;
-import javax.servlet.FilterRegistration;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.EnumSet;
-import java.util.Optional;
 
 public abstract class PureIDEServer extends Application<ServerConfiguration>
 {
@@ -74,7 +72,7 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
                         (configuration.swagger.getContextRoot().endsWith("/") ? "" : "/") + "api")
         );
 
-        PureSession pureSession = new PureSession(configuration.sourceLocationConfiguration, buildRepositories(configuration.sourceLocationConfiguration));
+        PureSession pureSession = new PureSession(configuration.sourceLocationConfiguration, this.getRepositories(configuration.sourceLocationConfiguration));
 
         environment.jersey().register(new Concept(pureSession));
 
@@ -103,6 +101,18 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
         corsFilter.setInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM, "X-Requested-With,Content-Type,Accept,Origin,Access-Control-Allow-Credentials,x-b3-parentspanid,x-b3-sampled,x-b3-spanid,x-b3-traceid");
         corsFilter.setInitParameter(CrossOriginFilter.CHAIN_PREFLIGHT_PARAM, "false");
         corsFilter.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "*");
+    }
+
+    private MutableList<RepositoryCodeStorage> getRepositories(SourceLocationConfiguration sourceLocationConfiguration)
+    {
+        MutableList<RepositoryCodeStorage> fromIde = this.buildRepositories(sourceLocationConfiguration);
+
+        MutableSet<CodeRepository> fromClassPath = PureRepositoriesExternal
+                .repositories()
+                .toSet()
+                .withoutAll(fromIde.flatCollect(RepositoryCodeStorage::getRepositories));
+
+        return fromIde.with(new ClassLoaderCodeStorage(fromClassPath));
     }
 
     protected abstract MutableList<RepositoryCodeStorage> buildRepositories(SourceLocationConfiguration sourceLocationConfiguration);
