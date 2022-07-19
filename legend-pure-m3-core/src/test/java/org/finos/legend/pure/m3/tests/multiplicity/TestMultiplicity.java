@@ -452,25 +452,6 @@ public class TestMultiplicity
     }
 
     @Test
-    public void testAddMultiplicities()
-    {
-        //same upper and lower bounds
-        assertMultiplicityHasBounds(2, 2, Multiplicity.addMultiplicitities( Lists.mutable.with(Multiplicity.newMultiplicity(1, 1, support),Multiplicity.newMultiplicity(1, 1, support)),support));
-        assertMultiplicityHasBounds(2, 3, Multiplicity.addMultiplicitities( Lists.mutable.with(Multiplicity.newMultiplicity(1, 1, support),Multiplicity.newMultiplicity(1, 2, support)),support));
-
-        // Bounded
-        assertMultiplicityHasBounds(0, 20, Multiplicity.addMultiplicitities( Lists.mutable.with(Multiplicity.newMultiplicity(0, 10, support),Multiplicity.newMultiplicity(0, 10, support)),support));
-        assertMultiplicityHasBounds(2, 20, Multiplicity.addMultiplicitities( Lists.mutable.with(Multiplicity.newMultiplicity(2, 10, support),Multiplicity.newMultiplicity(0, 10, support)),support));
-
-        // Unbounded
-        assertMultiplicityHasBounds(0, -1, Multiplicity.addMultiplicitities( Lists.mutable.with(Multiplicity.newUnboundedMultiplicity(0, support), Multiplicity.newMultiplicity(0, 10, support)),support));
-        assertMultiplicityHasBounds(2, -1, Multiplicity.addMultiplicitities( Lists.mutable.with(Multiplicity.newUnboundedMultiplicity(2, support), Multiplicity.newMultiplicity(0, 10, support)),support));
-
-        assertMultiplicityHasBounds(0, -1, Multiplicity.addMultiplicitities( Lists.mutable.with(Multiplicity.newUnboundedMultiplicity(0, support), Multiplicity.newUnboundedMultiplicity(0, support)),support));
-        assertMultiplicityHasBounds(2, -1, Multiplicity.addMultiplicitities( Lists.mutable.with(Multiplicity.newUnboundedMultiplicity(2, support), Multiplicity.newUnboundedMultiplicity(0, support)),support));
-    }
-
-    @Test
     public void testMinSubsumingMultiplicity()
     {
         MutableList<CoreInstance> multiplicities = Lists.mutable.with();
