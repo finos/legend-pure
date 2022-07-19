@@ -704,53 +704,6 @@ public class Multiplicity
         }
     }
 
-
-    /**
-     * Return the  multiplicity which is sum of all the given multiplicities.
-     * If any of the multiplicities is non-concrete, then the sum multiplicity is [*].
-     *
-     * @param multiplicities   multiplicities
-     * @param processorSupport processor support
-     * @return sum multiplicity of given multiplicities
-     */
-    public static CoreInstance addMultiplicitities(ListIterable<? extends CoreInstance> multiplicities, ProcessorSupport processorSupport)
-    {
-        int count = multiplicities.size();
-        switch (count)
-        {
-            case 0:
-            {
-                throw new IllegalArgumentException("Cannot find addition of multiplicities for an empty set");
-            }
-            case 1:
-            {
-                CoreInstance multiplicity = multiplicities.getFirst();
-                return isMultiplicityConcrete(multiplicity) ? multiplicity : newUnboundedMultiplicity(0, processorSupport);
-            }
-            default:
-            {
-                int lowerBound = 0;
-                int upperBound = 0;
-                for (CoreInstance multiplicity : multiplicities)
-                {
-                    if (!isMultiplicityConcrete(multiplicity))
-                    {
-                        return newUnboundedMultiplicity(0, processorSupport);
-                    }
-
-                    lowerBound += concreteMultiplicityLowerBoundToInt(multiplicity);
-
-                    if (upperBound >= 0)
-                    {
-                        int upper = concreteMultiplicityUpperBoundToInt(multiplicity);
-                        upperBound = (upper < 0) ? -1 : upperBound +upper;
-                    }
-                }
-                return newMultiplicity(lowerBound, upperBound, processorSupport);
-            }
-        }
-    }
-
     /**
      * Get the lower bound of the given concrete multiplicity as an int.  The
      * int is guaranteed to be non-negative.
