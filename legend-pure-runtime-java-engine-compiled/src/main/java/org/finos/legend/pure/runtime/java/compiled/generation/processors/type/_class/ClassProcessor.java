@@ -21,16 +21,14 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.factory.Maps;
 import org.eclipse.collections.impl.factory.Sets;
+import org.finos.legend.pure.m3.coreinstance.helper.PropertyTypeHelper;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation._class._Class;
-import org.finos.legend.pure.m3.navigation.generictype.GenericType;
-import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 import org.finos.legend.pure.m4.coreinstance.SourceInformation;
 import org.finos.legend.pure.runtime.java.compiled.compiler.StringJavaSource;
@@ -126,15 +124,7 @@ public class ClassProcessor
 
     static CoreInstance getPropertyResolvedReturnType(CoreInstance classGenericType, CoreInstance property, ProcessorSupport processorSupport)
     {
-        CoreInstance functionType = processorSupport.function_getFunctionType(property);
-        CoreInstance returnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport);
-        CoreInstance propertyOwner = functionType.getValueForMetaPropertyToMany(M3Properties.parameters).getFirst().getValueForMetaPropertyToOne(M3Properties.genericType);
-        if (!GenericType.isGenericTypeConcrete(returnType, processorSupport) && Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport) != Instance.getValueForMetaPropertyToOneResolved(propertyOwner, M3Properties.rawType, processorSupport))
-        {
-            GenericTypeWithXArguments res = GenericType.resolveClassTypeParameterUsingInheritance(classGenericType, propertyOwner, processorSupport);
-            returnType = GenericType.makeTypeArgumentAsConcreteAsPossible(returnType, res.getArgumentsByParameterName(), Maps.immutable.<String, CoreInstance>empty(), processorSupport);
-        }
-        return returnType;
+        return PropertyTypeHelper.getPropertyResolvedReturnType(classGenericType, property, processorSupport);
     }
 
     static String typeParameters(CoreInstance _class)

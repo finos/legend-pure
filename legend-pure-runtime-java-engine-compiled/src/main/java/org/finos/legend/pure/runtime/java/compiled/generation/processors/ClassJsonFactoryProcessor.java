@@ -18,8 +18,8 @@ import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.block.predicate.Predicate;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.set.MutableSet;
-import org.eclipse.collections.impl.factory.Maps;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.milestoning.MilestoningFunctions;
+import org.finos.legend.pure.m3.coreinstance.helper.PropertyTypeHelper;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -228,15 +228,7 @@ public class ClassJsonFactoryProcessor
 
     private static CoreInstance getPropertyResolvedReturnType(CoreInstance classGenericType, CoreInstance property, ProcessorSupport processorSupport)
     {
-        CoreInstance functionType = processorSupport.function_getFunctionType(property);
-        CoreInstance returnType = Instance.getValueForMetaPropertyToOneResolved(functionType, M3Properties.returnType, processorSupport);
-        CoreInstance propertyOwner = functionType.getValueForMetaPropertyToMany(M3Properties.parameters).getFirst().getValueForMetaPropertyToOne(M3Properties.genericType);
-        if (!GenericType.isGenericTypeConcrete(returnType, processorSupport) && Instance.getValueForMetaPropertyToOneResolved(classGenericType, M3Properties.rawType, processorSupport) != Instance.getValueForMetaPropertyToOneResolved(propertyOwner, M3Properties.rawType, processorSupport))
-        {
-            GenericTypeWithXArguments res = GenericType.resolveClassTypeParameterUsingInheritance(classGenericType, propertyOwner, processorSupport);
-            returnType = GenericType.makeTypeArgumentAsConcreteAsPossible(returnType, res.getArgumentsByParameterName(), Maps.immutable.<String, CoreInstance>empty(), processorSupport);
-        }
-        return returnType;
+        return PropertyTypeHelper.getPropertyResolvedReturnType(classGenericType, property, processorSupport);
     }
 
     private static String typeParameters(CoreInstance _class)
