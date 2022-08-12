@@ -25,6 +25,7 @@ import { FaFlask, FaSearch } from 'react-icons/fa';
 import { TestRunnerPanel } from './TestRunnerPanel';
 import { isNonNullable } from '@finos/legend-shared';
 import { clsx } from '@finos/legend-art';
+import { RuntimeOptions } from './RuntimeOptions';
 
 export const AuxiliaryPanel = observer(() => {
   const editorStore = useEditorStore();
@@ -40,6 +41,12 @@ export const AuxiliaryPanel = observer(() => {
     [AUX_PANEL_MODE.CONSOLE]: {
       mode: AUX_PANEL_MODE.CONSOLE,
       name: 'CONSOLE',
+      icon: undefined,
+      isVisible: true,
+    },
+    [AUX_PANEL_MODE.RUNTIME_OPTIONS]: {
+      mode: AUX_PANEL_MODE.RUNTIME_OPTIONS,
+      name: 'RUNTIME OPTIONS',
       icon: undefined,
       isVisible: true,
     },
@@ -132,6 +139,11 @@ export const AuxiliaryPanel = observer(() => {
         {isTabVisible(AUX_PANEL_MODE.CONSOLE) && (
           <div className="auxiliary-panel__content__tab">
             <Console />
+          </div>
+        )}
+        {isTabVisible(AUX_PANEL_MODE.RUNTIME_OPTIONS) && (
+          <div className="auxiliary-panel__content__tab">
+            <RuntimeOptions />
           </div>
         )}
         {isTabVisible(AUX_PANEL_MODE.SEARCH_RESULT) && (

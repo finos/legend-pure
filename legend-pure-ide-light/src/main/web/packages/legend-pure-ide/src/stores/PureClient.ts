@@ -286,4 +286,20 @@ export class PureClient {
         },
       ),
     );
+
+  getRuntimeOption = async (option: string): Promise<boolean> =>
+    await this.networkClient.get(
+      `${this.baseUrl}/getOption/${option}`,
+      undefined,
+      undefined,
+      undefined,
+    );
+
+  setRuntimeOption = async (option: string, value: boolean): Promise<void> =>
+    await this.networkClient.get(
+      `${this.baseUrl}/setOption/${option}/${value}`,
+      undefined,
+      undefined,
+      undefined,
+    );
 }

@@ -32,6 +32,7 @@ import org.finos.legend.pure.ide.light.api.Activities;
 import org.finos.legend.pure.ide.light.api.FileManagement;
 import org.finos.legend.pure.ide.light.api.LifeCycle;
 import org.finos.legend.pure.ide.light.api.Service;
+import org.finos.legend.pure.ide.light.api.RuntimeOptions;
 import org.finos.legend.pure.ide.light.api.concept.Concept;
 import org.finos.legend.pure.ide.light.api.execution.function.Execute;
 import org.finos.legend.pure.ide.light.api.execution.go.ExecuteGo;
@@ -86,6 +87,7 @@ public abstract class PureIDEServer extends Application<ServerConfiguration>
         environment.jersey().register(new Activities(pureSession));
         environment.jersey().register(new FileManagement(pureSession));
         environment.jersey().register(new LifeCycle(pureSession));
+        environment.jersey().register(new RuntimeOptions(pureSession));
 
         environment.jersey().register(new Service(pureSession));
 

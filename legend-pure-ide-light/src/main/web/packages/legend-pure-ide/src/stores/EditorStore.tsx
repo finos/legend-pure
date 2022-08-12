@@ -215,6 +215,13 @@ export class EditorStore {
   // Test
   testRunState = ActionState.create();
   testRunnerState?: TestRunnerState | undefined;
+  // Runtime options
+  debugPlatformCodeGen = false;
+  execPlan = false;
+  localPlan = false;
+  includeAlloyOnlyTests = false;
+  showLocalPlan = false;
+  serilizationKind = 'json';
 
   constructor(applicationStore: ApplicationStore<PureIDEConfig>) {
     makeAutoObservable(this, {
@@ -357,7 +364,36 @@ export class EditorStore {
   setTestRunnerState(val: TestRunnerState | undefined): void {
     this.testRunnerState = val;
   }
-
+  setDebugPlatformCodeGen(val: boolean): void {
+    this.client.setRuntimeOption('DebugPlatformCodeGen', val).then(
+      () => (this.debugPlatformCodeGen = val),
+      () => (this.debugPlatformCodeGen = !val),
+    );
+  }
+  setExecPlan(val: boolean): void {
+    this.client.setRuntimeOption('ExecPlan', val).then(
+      () => (this.execPlan = val),
+      () => (this.execPlan = !val),
+    );
+  }
+  setShowLocalPlan(val: boolean): void {
+    this.client.setRuntimeOption('ShowLocalPlan', val).then(
+      () => (this.showLocalPlan = val),
+      () => (this.showLocalPlan = !val),
+    );
+  }
+  setLocalPlan(val: boolean): void {
+    this.client.setRuntimeOption('PlanLocal', val).then(
+      () => (this.localPlan = val),
+      () => (this.localPlan = val),
+    );
+  }
+  setIncludeAlloyOnlyTests(val: boolean): void {
+    this.client.setRuntimeOption('IncludeAlloyOnlyTest', val).then(
+      (v) => (this.includeAlloyOnlyTests = val),
+      (v) => (this.includeAlloyOnlyTests = val),
+    );
+  }
   cleanUp(): void {
     // dismiss all the alerts as these are parts of application, if we don't do this, we might
     // end up blocking other parts of the app
