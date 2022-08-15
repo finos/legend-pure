@@ -33,6 +33,47 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.finos.legend.pure</groupId>
+                                    <artifactId>legend-pure-m4</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                    <includes>antlr/*.g4</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                        <configuration>
+                            <visitor>true</visitor>
+                            <listener>true</listener>
+                            <!--                            <treatWarningsAsErrors>true</treatWarningsAsErrors> &lt;!&ndash; DO NOT CHANGE THIS &ndash;&gt;-->
+                            <libDirectory>target/antlr</libDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
@@ -92,32 +133,16 @@
                         <configuration>
                             <target>
                                 <copy todir="target/antlr">
-                                    <fileset dir="../legend-pure-m3-core/src/main/antlr4/org/finos/legend/pure/m3/serialization/grammar/m3parser/antlr" />
+                                    <fileset dir="../legend-pure-m3-core/src/main/antlr4/org/finos/legend/pure/m3/serialization/grammar/m3parser/antlr/core" />
                                 </copy>
                                 <copy todir="target/antlr">
-                                    <fileset dir="../legend-pure-m4/src/main/antlr4/org/finos/legend/pure/m4/serialization/grammar" />
+                                    <fileset dir="../legend-pure-m4/src/main/antlr4/org/finos/legend/pure/m4/serialization/grammar/core" />
                                 </copy>
                             </target>
                         </configuration>
                         <goals>
                             <goal>run</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>antlr4</goal>
-                        </goals>
-                        <configuration>
-                            <visitor>true</visitor>
-                            <listener>true</listener>
-                            <libDirectory>target/antlr</libDirectory>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -146,7 +171,7 @@
 
         <dependency>
             <groupId>org.antlr</groupId>
-            <artifactId>antlr4</artifactId>
+            <artifactId>antlr4-runtime</artifactId>
         </dependency>
 
         <dependency>

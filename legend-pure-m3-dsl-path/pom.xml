@@ -30,12 +30,19 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
+                <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
+                        <phase>initialize</phase>
+                        <configuration>
+                            <target>
+                                <copy todir="target/antlr">
+                                    <fileset dir="../legend-pure-m4/src/main/antlr4/org/finos/legend/pure/m4/serialization/grammar/core" />
+                                </copy>
+                            </target>
+                        </configuration>
                         <goals>
-                            <goal>test-jar</goal>
+                            <goal>run</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -51,8 +58,20 @@
                         <configuration>
                             <visitor>true</visitor>
                             <listener>true</listener>
-                            <libDirectory>../legend-pure-m4/src/main/antlr4/org/finos/legend/pure/m4/serialization/grammar</libDirectory>
+                            <!--                            <treatWarningsAsErrors>true</treatWarningsAsErrors> &lt;!&ndash; DO NOT CHANGE THIS &ndash;&gt;-->
+                            <libDirectory>target/antlr</libDirectory>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -123,7 +142,7 @@
 
         <dependency>
             <groupId>org.antlr</groupId>
-            <artifactId>antlr4</artifactId>
+            <artifactId>antlr4-runtime</artifactId>
         </dependency>
 
         <dependency>

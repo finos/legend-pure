@@ -86,7 +86,7 @@
         <maven.compiler.release>8</maven.compiler.release>
 
         <!-- Dependency version -->
-        <antlr.version>4.5.3</antlr.version>
+        <antlr.version>4.8-1</antlr.version>
         <commons-lang.version>3.5</commons-lang.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.7</commons-io.version>
@@ -520,7 +520,7 @@
 
             <dependency>
                 <groupId>org.antlr</groupId>
-                <artifactId>antlr4</artifactId>
+                <artifactId>antlr4-runtime</artifactId>
                 <version>${antlr.version}</version>
             </dependency>
 

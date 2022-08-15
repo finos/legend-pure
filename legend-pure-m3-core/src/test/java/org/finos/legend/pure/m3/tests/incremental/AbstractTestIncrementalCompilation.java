@@ -96,7 +96,7 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
                                 "{\n" +
                                 "   property1 : Integer[1];\n" +
                                 "}")
-                        .compileWithExpectedParserFailureAndAssertions("expected: one of {'->', '}', '(', '.', ';', '&&', '||', '==', '!=', '+', '*', '-', '/', '<', '<=', '>', '>='} found: 'a'", "sourceId1.pure", 3, 8, Lists.mutable.with("myFunc2__Any_MANY_", "start__Any_MANY_"), Lists.mutable.empty(), Lists.mutable.with("myClass", "myFunc1__Any_MANY_"))
+                        .compileWithExpectedParserFailureAndAssertions("expected: '}' found: 'a'", "sourceId1.pure", 3, 8, Lists.mutable.with("myFunc2__Any_MANY_", "start__Any_MANY_"), Lists.mutable.empty(), Lists.mutable.with("myClass", "myFunc1__Any_MANY_"))
                         .updateSource("sourceId1.pure", "function myFunc1():Any[*]\n" +
                                 "{\n" +
                                 "   let a = 1;\n" +
@@ -442,7 +442,7 @@ public abstract class AbstractTestIncrementalCompilation extends AbstractPureTes
                                 "   print('inside myFunc2', 1)\n" +
                                 "   print('Parse error test', 1);\n" +
                                 "}")
-                        .compileWithExpectedParserFailureAndAssertions("expected: one of {'->', '}', '.', ';', '&&', '||', '==', '!=', '+', '*', '-', '/', '<', '<=', '>', '>='} found: 'print'", "sourceId2.pure", 4, 4, Lists.mutable.with("myFunc1__Any_MANY_", "start__Any_MANY_"), Lists.mutable.empty(), Lists.mutable.with("myFunc2__Any_MANY_"))
+                        .compileWithExpectedParserFailureAndAssertions("expected: '}' found: 'print'", "sourceId2.pure", 4, 4, Lists.mutable.with("myFunc1__Any_MANY_", "start__Any_MANY_"), Lists.mutable.empty(), Lists.mutable.with("myFunc2__Any_MANY_"))
                         .updateSource("sourceId2.pure", "function myFunc2():Any[*]\n" +
                                 "{\n" +
                                 "   print('inside myFunc2', 1);\n" +
