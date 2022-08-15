@@ -197,7 +197,7 @@ public class Copy extends NativeFunction
     private void copy(CoreInstance instance, final CoreInstance newInstance, final CoreInstance sourceClassifier, MutableSet<CoreInstance> addedValues, final SourceInformation sourceInfoForErrors, final ProcessorSupport processorSupport, InstantiationContext instantiationContext, MapIterable<CoreInstance, ? extends MapIterable> propertyTree) throws PureExecutionException
     {
         final MutableList<CoreInstance> propertiesToValidate = Lists.mutable.of();
-        for (Pair<String, CoreInstance> pair : processorSupport.class_getSimplePropertiesByName(instance.getClassifier()).keyValuesView())
+        for (Pair<String, CoreInstance> pair : processorSupport.class_getSimplePropertiesByName(processorSupport.getClassifier(instance)).keyValuesView())
         {
             String key = pair.getOne();
             CoreInstance property = pair.getTwo();

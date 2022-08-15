@@ -63,15 +63,15 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
         catch (Exception e)
         {
             assertPureException(PureExecutionException.class, "Error executing the function:testFn(String[1], String[1]):String[1]. Mismatch between the number of function parameters (2) and the number of supplied arguments (1)\n" +
-                                                              "Anonymous_StripedId instance InstanceValue\n" +
-                                                              "    genericType(Property):\n" +
-                                                              "        Anonymous_StripedId instance GenericType\n" +
-                                                              "            rawType(Property):\n" +
-                                                              "                String instance PrimitiveType\n" +
-                                                              "    multiplicity(Property):\n" +
-                                                              "        PureOne instance PackageableMultiplicity\n" +
-                                                              "    values(Property):\n" +
-                                                              "        string instance String", e);
+                    "Anonymous_StripedId instance InstanceValue\n" +
+                    "    genericType(Property):\n" +
+                    "        Anonymous_StripedId instance GenericType\n" +
+                    "            rawType(Property):\n" +
+                    "                String instance PrimitiveType\n" +
+                    "    multiplicity(Property):\n" +
+                    "        PureOne instance PackageableMultiplicity\n" +
+                    "    values(Property):\n" +
+                    "        string instance String", e);
         }
     }
 
@@ -88,15 +88,15 @@ public class TestFunctionExecutionStart extends AbstractPureTestWithCoreCompiled
         catch (Exception e)
         {
             assertPureException(PureExecutionException.class, "Error executing the function:testFn():String[1]. Mismatch between the number of function parameters (0) and the number of supplied arguments (1)\n" +
-                                                              "Anonymous_StripedId instance InstanceValue\n" +
-                                                              "    genericType(Property):\n" +
-                                                              "        Anonymous_StripedId instance GenericType\n" +
-                                                              "            rawType(Property):\n" +
-                                                              "                String instance PrimitiveType\n" +
-                                                              "    multiplicity(Property):\n" +
-                                                              "        PureOne instance PackageableMultiplicity\n" +
-                                                              "    values(Property):\n" +
-                                                              "        string instance String", e);
+                    "Anonymous_StripedId instance InstanceValue\n" +
+                    "    genericType(Property):\n" +
+                    "        Anonymous_StripedId instance GenericType\n" +
+                    "            rawType(Property):\n" +
+                    "                String instance PrimitiveType\n" +
+                    "    multiplicity(Property):\n" +
+                    "        PureOne instance PackageableMultiplicity\n" +
+                    "    values(Property):\n" +
+                    "        string instance String", e);
         }
     }
 

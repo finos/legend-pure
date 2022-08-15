@@ -48,7 +48,7 @@ public class ToDecimal extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
         CoreInstance number = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
-        if (NumericUtilities.IS_DECIMAL_CORE_INSTANCE.accept(number))
+        if (NumericUtilities.IS_DECIMAL_CORE_INSTANCE(processorSupport).accept(number))
         {
             return ValueSpecificationBootstrap.wrapValueSpecification(number, true, processorSupport);
         }

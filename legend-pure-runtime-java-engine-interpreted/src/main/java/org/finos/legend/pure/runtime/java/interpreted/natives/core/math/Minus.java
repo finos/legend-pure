@@ -45,7 +45,7 @@ public class Minus extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
         ListIterable<? extends CoreInstance> numbers = Instance.getValueForMetaPropertyToManyResolved(params.get(0), M3Properties.values, processorSupport);
-        boolean bigDecimalToPureDecimal = numbers.anySatisfy(NumericUtilities.IS_DECIMAL_CORE_INSTANCE);
+        boolean bigDecimalToPureDecimal = numbers.anySatisfy(NumericUtilities.IS_DECIMAL_CORE_INSTANCE(processorSupport));
         int size = numbers.size();
         switch (size)
         {
@@ -56,15 +56,15 @@ public class Minus extends NativeFunction
             case 1:
             {
                 NumericAccumulator accumulator = NumericAccumulator.newAccumulator(0);
-                accumulator.subtract(NumericUtilities.toJavaNumber(numbers.get(0)));
+                accumulator.subtract(NumericUtilities.toJavaNumber(numbers.get(0), processorSupport));
                 return NumericUtilities.toPureNumberValueExpression(accumulator.getValue(), bigDecimalToPureDecimal, this.repository, processorSupport);
             }
             default:
             {
-                NumericAccumulator accumulator = NumericAccumulator.newAccumulator(NumericUtilities.toJavaNumber(numbers.get(0)));
+                NumericAccumulator accumulator = NumericAccumulator.newAccumulator(NumericUtilities.toJavaNumber(numbers.get(0), processorSupport));
                 for (int i = 1; i < size; i++)
                 {
-                    accumulator.subtract(NumericUtilities.toJavaNumber(numbers.get(i)));
+                    accumulator.subtract(NumericUtilities.toJavaNumber(numbers.get(i), processorSupport));
                 }
                 return NumericUtilities.toPureNumberValueExpression(accumulator.getValue(), bigDecimalToPureDecimal, this.repository, processorSupport);
             }

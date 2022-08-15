@@ -53,7 +53,7 @@ public class Cast extends NativeFunction
         CoreInstance targetGenericType = params.get(1).getValueForMetaPropertyToOne(M3Properties.genericType);
         targetGenericType = makeGenericTypeAsConcreteAsPossible(targetGenericType, resolvedTypeParameters, resolvedMultiplicityParameters, processorSupport);
 
-        CoreInstance inst = this.repository.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), valuesParam.getClassifier());
+        CoreInstance inst = this.repository.newAnonymousCoreInstance(functionExpressionToUseInStack.getSourceInformation(), processorSupport.getClassifier(valuesParam));
         Instance.addValueToProperty(inst, M3Properties.genericType, targetGenericType, processorSupport);
         Instance.addValueToProperty(inst, M3Properties.multiplicity, Instance.getValueForMetaPropertyToOneResolved(valuesParam, M3Properties.multiplicity, processorSupport), processorSupport);
         if (GenericTypeMatch.genericTypeMatches(targetGenericType, sourceGenericType, true, ParameterMatchBehavior.MATCH_CAUTIOUSLY, ParameterMatchBehavior.MATCH_CAUTIOUSLY, processorSupport))

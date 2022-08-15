@@ -880,7 +880,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
         personClassMappingImplementationPropertyMappings.forEach(each ->
         {
             CoreInstance relationalOperationElement = Instance.getValueForMetaPropertyToOneResolved(each, "relationalOperationElement", TestSimpleGrammar.processorSupport);
-            Printer.print(sb, relationalOperationElement, 3);
+            Printer.print(sb, relationalOperationElement, 3, runtime.getProcessorSupport());
             sb.append("\n");
         });
         String mappingGraphDump = sb.append("]").toString();
@@ -2511,7 +2511,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                 "                    stores(Property):\n" +
                 "                        [X] myDB instance Database\n" +
                 "                    userDefinedPrimaryKey(Property):\n" +
-                "                        [>2] false instance Boolean", Printer.print(groupBy, 2));
+                "                        [>2] false instance Boolean", Printer.print(groupBy, 2, runtime.getProcessorSupport()));
     }
 
     @Test
@@ -2568,7 +2568,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
         CoreInstance mapping = runtime.getCoreInstance("mapping::testMapping");
         CoreInstance classMapping = this.graphWalker.getMany(mapping, "classMappings").getFirst();
         CoreInstance distinct = this.graphWalker.getOne(classMapping, "distinct");
-        Assert.assertEquals("true instance Boolean", Printer.print(distinct, 1));
+        Assert.assertEquals("true instance Boolean", Printer.print(distinct, 1, runtime.getProcessorSupport()));
     }
 
     @Test

@@ -46,8 +46,8 @@ public class Abs extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
         CoreInstance number = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
-        boolean bigDecimalToPureDecimal = NumericUtilities.IS_DECIMAL_CORE_INSTANCE.accept(number);
-        Number javaNumber = NumericUtilities.toJavaNumber(number);
+        boolean bigDecimalToPureDecimal = NumericUtilities.IS_DECIMAL_CORE_INSTANCE(processorSupport).accept(number);
+        Number javaNumber = NumericUtilities.toJavaNumber(number, processorSupport);
         if (javaNumber instanceof Integer)
         {
             return NumericUtilities.toPureNumberValueExpression(Math.abs((Integer) javaNumber), bigDecimalToPureDecimal, this.repository, processorSupport);

@@ -154,7 +154,7 @@ public class ConsoleCompiled extends AbstractConsole
         }
         if (content instanceof BaseCoreInstance)
         {
-            return Printer.print((BaseCoreInstance)content, space, max);
+            return Printer.print((BaseCoreInstance)content, space, max, new CompiledProcessorSupport(null, null, null));
         }
         try
         {

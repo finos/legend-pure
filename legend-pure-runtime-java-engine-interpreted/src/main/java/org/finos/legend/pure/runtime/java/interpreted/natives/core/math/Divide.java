@@ -45,11 +45,11 @@ public class Divide extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
         CoreInstance firstNumber = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
-        NumericAccumulator accumulator = NumericAccumulator.newAccumulator(NumericUtilities.toJavaNumber(firstNumber));
+        NumericAccumulator accumulator = NumericAccumulator.newAccumulator(NumericUtilities.toJavaNumber(firstNumber, processorSupport));
         for (int i = 1, length = params.size(); i < length; i++)
         {
             CoreInstance nextNumber = Instance.getValueForMetaPropertyToOneResolved(params.get(i), M3Properties.values, processorSupport);
-            accumulator.divide(NumericUtilities.toJavaNumber(nextNumber));
+            accumulator.divide(NumericUtilities.toJavaNumber(nextNumber, processorSupport));
         }
 
         return ValueSpecificationBootstrap.wrapValueSpecification(repository.newCoreInstance(accumulator.getValue().toString(), processorSupport.package_getByUserPath("Float"), null), true, processorSupport);

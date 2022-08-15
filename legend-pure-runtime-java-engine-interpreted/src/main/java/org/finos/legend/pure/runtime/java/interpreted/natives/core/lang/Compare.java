@@ -128,8 +128,8 @@ public class Compare extends NativeFunction
         }
 
         // General case
-        CoreInstance type1 = instance1.getClassifier();
-        CoreInstance type2 = instance2.getClassifier();
+        CoreInstance type1 = processorSupport.getClassifier(instance1);
+        CoreInstance type2 = processorSupport.getClassifier(instance2);
         if (type1 == type2)
         {
             return instance1.getName().compareTo(instance2.getName());

@@ -46,9 +46,9 @@ public class DivideDecimal extends NativeFunction
     @Override
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport) throws PureExecutionException
     {
-        BigDecimal left = (BigDecimal)NumericUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport));
-        BigDecimal right = (BigDecimal)NumericUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport));
-        int scale = NumericUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport)).intValue();
+        BigDecimal left = (BigDecimal)NumericUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport), processorSupport);
+        BigDecimal right = (BigDecimal)NumericUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport), processorSupport);
+        int scale = NumericUtilities.toJavaNumber(Instance.getValueForMetaPropertyToOneResolved(params.get(2), M3Properties.values, processorSupport), processorSupport).intValue();
 
         BigDecimal result = left.divide(right, scale, RoundingMode.HALF_UP);
 

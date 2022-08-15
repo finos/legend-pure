@@ -62,12 +62,12 @@ public class EqualityUtilities
 
         if ((left instanceof PrimitiveCoreInstance<?>) && (right instanceof PrimitiveCoreInstance<?>))
         {
-            return left.getClassifier().getName().equals(right.getClassifier().getName()) &&
+            return processorSupport.getClassifier(left).getName().equals(processorSupport.getClassifier(right).getName()) &&
                     ((PrimitiveCoreInstance<?>)left).getValue().equals(((PrimitiveCoreInstance<?>)right).getValue());
         }
 
-        CoreInstance type = left.getClassifier();
-        if (type != right.getClassifier())
+        CoreInstance type = processorSupport.getClassifier(left);
+        if (type != processorSupport.getClassifier(right))
         {
             return false;
         }
@@ -93,12 +93,12 @@ public class EqualityUtilities
 
         if ((left instanceof PrimitiveCoreInstance<?>) && (right instanceof PrimitiveCoreInstance<?>))
         {
-            return left.getClassifier().getName().equals(right.getClassifier().getName()) &&
+            return processorSupport.getClassifier(left).getName().equals(processorSupport.getClassifier(right).getName()) &&
                     ((PrimitiveCoreInstance<?>)left).getValue().equals(((PrimitiveCoreInstance<?>)right).getValue());
         }
 
-        CoreInstance type = left.getClassifier();
-        if (type != right.getClassifier())
+        CoreInstance type = processorSupport.getClassifier(left);
+        if (type != processorSupport.getClassifier(right))
         {
             return false;
         }
@@ -167,7 +167,7 @@ public class EqualityUtilities
      */
     public static int coreInstanceHashCode(CoreInstance instance, ListIterable<? extends CoreInstance> externalKeys, ProcessorSupport processorSupport)
     {
-        CoreInstance type = instance.getClassifier();
+        CoreInstance type = processorSupport.getClassifier(instance);
         if (Type.isPrimitiveType(type, processorSupport))
         {
             return type.hashCode() ^ instance.getName().hashCode();
@@ -183,7 +183,7 @@ public class EqualityUtilities
             return hashCode;
         }
 
-        ListIterable<? extends CoreInstance> keys = ((externalKeys == null) || externalKeys.isEmpty()) ? _Class.getEqualityKeyProperties(instance.getClassifier(), processorSupport) : externalKeys;
+        ListIterable<? extends CoreInstance> keys = ((externalKeys == null) || externalKeys.isEmpty()) ? _Class.getEqualityKeyProperties(processorSupport.getClassifier(instance), processorSupport) : externalKeys;
         if (keys.isEmpty())
         {
             return instance.hashCode();

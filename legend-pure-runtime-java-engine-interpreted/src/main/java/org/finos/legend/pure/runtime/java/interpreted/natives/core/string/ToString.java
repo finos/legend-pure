@@ -49,7 +49,7 @@ public class ToString extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
         CoreInstance value = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
-        CoreInstance type = value.getClassifier();
+        CoreInstance type = processorSupport.getClassifier(value);
         if (Type.isPrimitiveType(type, processorSupport))
         {
             return ValueSpecificationBootstrap.newStringLiteral(this.repository, value.getName(), processorSupport);
