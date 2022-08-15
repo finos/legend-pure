@@ -35,6 +35,42 @@ public class TestClassWithParamSuperType extends AbstractPureTestWithCoreCompile
     }
 
     @Test
+    public void testPropertiesWithTypeParamsAndExtends()
+    {
+        compileTestSource("fromString.pure",
+                // class with concrete field that has type arguments - i.e Pair
+                "Class A<K,V | m>\n" +
+                "{\n" +
+                "    test : Pair<K, V>[1];\n" +
+                "    withMult: String[m];\n" +
+                "}\n" +
+                "\n" +
+                // class that binds ALL type arguments of generalization
+                "Class B extends A<Integer, String | 0..1>" +
+                "{\n" +
+                "}\n" +
+                "\n" +
+                // class that binds SOME type arguments of generalization
+                "Class C<X|k> extends A<String, X | k>" +
+                "{\n" +
+                "}\n" +
+                "\n" +
+                // class that have multiple generalizations with type arguments bind at diff levels
+                "Class D extends C<String | 1>" +
+                "{\n" +
+                "}\n" +
+                "\n" +
+                "function test():Any[*]\n" +
+                "{\n" +
+                "  ^D(test = pair('eeee', 'ffff'), withMult = 'aaaa');\n" +
+                "  ^C<Float|*>(test = pair('eeee', 1.2), withMult = ['aaaa', 'aaaa']);\n" +
+                "  ^B(test = pair(2, 'eeee'),  withMult = []);\n" +
+                "  ^A<Integer, String|1>(test = pair(2, 'eeee'), withMult = 'aaaa');\n" +
+                "}\n");
+        this.compileAndExecute("test():Any[*]");
+    }
+
+    @Test
     public void testTypeParamsAndExtends()
     {
         compileTestSource("fromString.pure","Class A<P>\n" +
