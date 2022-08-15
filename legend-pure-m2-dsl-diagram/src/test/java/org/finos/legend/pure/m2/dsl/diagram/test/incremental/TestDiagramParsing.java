@@ -105,7 +105,7 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
         }
         catch (Exception e)
         {
-            assertPureException(PureParserException.class, "expected: one of {WIDTH, HEIGHT} found: 'junk'", 2, 33, e);
+            assertPureException(PureParserException.class, "token recognition error at: '='", 2, 37, e);
         }
 
         // Wrong property second
@@ -162,7 +162,7 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
         }
         catch (Exception e)
         {
-            assertPureException(PureParserException.class, "expected: one of {TYPE, STEREOTYPES_VISIBLE, ATTRIBUTES_VISIBLE, ATTRIBUTE_STEREOTYPES_VISIBLE, ATTRIBUTE_TYPES_VISIBLE, COLOR, LINE_WIDTH, POSITION, WIDTH, HEIGHT} found: 'junk'", 4, 26, e);
+            assertPureException(PureParserException.class, "token recognition error at: '='", 4, 30, e);
         }
 
         // Type view with all valid properties but one
@@ -232,7 +232,7 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
         }
         catch (Exception e)
         {
-            assertPureException(PureParserException.class, "expected: one of {ASSOCIATION, STEREOTYPES_VISIBLE, NAME_VISIBLE, COLOR, LINE_WIDTH, LINE_STYLE, POINTS, LABEL, SOURCE, TARGET, SOURCE_PROP_POSITION, SOURCE_MULT_POSITION, TARGET_PROP_POSITION, TARGET_MULT_POSITION} found: 'junk'", 4, 39, e);
+            assertPureException(PureParserException.class, "token recognition error at: '='", 4, 43, e);
         }
 
         // Association view with all valid properties but one
@@ -339,7 +339,7 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
         }
         catch (Exception e)
         {
-            assertPureException(PureParserException.class, "expected: one of {PROPERTY, STEREOTYPES_VISIBLE, NAME_VISIBLE, COLOR, LINE_WIDTH, LINE_STYLE, POINTS, LABEL, SOURCE, TARGET, PROP_POSITION, MULT_POSITION} found: 'junk'", 4, 44, e);
+            assertPureException(PureParserException.class, "token recognition error at: '='", 4, 48, e);
         }
 
         // Property view with all valid properties but one
@@ -433,7 +433,7 @@ public class TestDiagramParsing extends AbstractPureTestWithCoreCompiled
         }
         catch (Exception e)
         {
-            assertPureException(PureParserException.class, "expected: one of {COLOR, LINE_WIDTH, LINE_STYLE, POINTS, LABEL, SOURCE, TARGET} found: 'junk'", 4, 48, e);
+            assertPureException(PureParserException.class, "token recognition error at: '='", 4, 52, e);
         }
 
         // Association view with all valid properties but one

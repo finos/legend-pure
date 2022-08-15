@@ -14,12 +14,10 @@
 
 package org.finos.legend.pure.m3.serialization.grammar.top;
 
-import org.antlr.v4.runtime.tree.TerminalNode;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.multimap.list.MutableListMultimap;
 import org.eclipse.collections.impl.factory.Multimaps;
-import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.serialization.grammar.Parser;
 import org.finos.legend.pure.m3.serialization.grammar.ParserLibrary;
@@ -67,9 +65,15 @@ public class TopGraphBuilder extends TopAntlrParserBaseVisitor<MutableListMultim
     public MutableListMultimap<Parser, CoreInstance> visitTop(TopAntlrParser.TopContext ctx)
     {
         String parserName = ctx.CODE_BLOCK_START().getText().substring(4);
-        if (ctx.CODE() != null)
+        if (ctx.sectionContent() != null)
         {
-            String code = LazyIterate.collect(ctx.CODE(), TerminalNode::getText).makeString("");
+            StringBuilder codeBuilder = new StringBuilder();
+            for (TopAntlrParser.SectionContentContext tn : ctx.sectionContent())
+            {
+                codeBuilder.append(tn.getText());
+            }
+
+            String code = codeBuilder.toString();
             try
             {
                 Parser parser = this.parserLibrary.getParser(parserName);

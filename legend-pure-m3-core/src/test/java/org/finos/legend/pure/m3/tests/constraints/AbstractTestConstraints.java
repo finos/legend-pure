@@ -664,7 +664,7 @@ public abstract class AbstractTestConstraints extends AbstractPureTestWithCoreCo
                         "   startDate: Date[1];\n" +
                         "   endDate: Date[1];\n" +
                         "}"));
-        assertPureException(PureParserException.class, "expected: '~function' found: ')'", 6, 4, e);
+        assertPureException(PureParserException.class, "expected: one of {'~externalId', '~function'} found: ')'", 6, 4, e);
     }
 
     @Test

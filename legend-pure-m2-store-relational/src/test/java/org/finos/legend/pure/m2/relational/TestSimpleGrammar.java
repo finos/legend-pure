@@ -3162,7 +3162,7 @@ public class TestSimpleGrammar extends AbstractPureRelationalTestWithCoreCompile
                         "testColumn2 varchar(200) PRIMARY KEY NOT NULL\n" +
                         ") \n" +
                         ") \n"));
-        assertPureException(PureParserException.class, "expected: one of {')', ','} found: 'NOT NULL'", "testFile.pure", 7, 38, e);
+        assertPureException(PureParserException.class, "expected: ')' found: 'NOT NULL'", 7, 38, e);
     }
 
     @Test

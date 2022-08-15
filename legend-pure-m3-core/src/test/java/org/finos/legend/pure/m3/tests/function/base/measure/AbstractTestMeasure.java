@@ -108,7 +108,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "{\n" +
                         "   let a = 'IamAString' Mass~Pound;" +
                         "}"));
-        assertPureException(PureParserException.class, "expected: one of {'->', '}', '.', ';', '&&', '||', '==', '!=', '+', '*', '-', '/', '<', '<=', '>', '>='} found: 'Mass'", e);
+        assertPureException(PureParserException.class, "expected: '}' found: 'Mass'", e);
     }
 
     @Test
@@ -122,7 +122,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "{\n" +
                         "   let a = false Mass~Pound;" +
                         "}"));
-        assertPureException(PureParserException.class, "expected: one of {'->', '}', '.', ';', '&&', '||', '==', '!=', '+', '*', '-', '/', '<', '<=', '>', '>='} found: 'Mass'", e);
+        assertPureException(PureParserException.class, "expected: '}' found: 'Mass'", e);
     }
 
     @Test
@@ -140,7 +140,7 @@ public abstract class AbstractTestMeasure extends AbstractPureTestWithCoreCompil
                         "   let a = ^A(name='className');\n" +
                         "   let b = $a Mass~Pound;" +
                         "}"));
-        assertPureException(PureParserException.class, "expected: one of {'->', '.', ';', '&&', '||', '==', '!=', '+', '*', '-', '/', '<', '<=', '>', '>='} found: 'Mass'", e);
+        assertPureException(PureParserException.class, "expected: ';' found: 'Mass'", e);
     }
 
     @Test
