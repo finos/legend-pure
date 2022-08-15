@@ -55,7 +55,7 @@ public class GetUnitValue extends NativeFunction
         }
         FastList valueList = new FastList();
         valueList.add(instance);
-        boolean bigDecimalToPureDecimal = valueList.anySatisfy(NumericUtilities.IS_DECIMAL_CORE_INSTANCE);
-        return NumericUtilities.toPureNumberValueExpression(NumericUtilities.toJavaNumber(instance), bigDecimalToPureDecimal, this.repository, processorSupport);
+        boolean bigDecimalToPureDecimal = valueList.anySatisfy(NumericUtilities.IS_DECIMAL_CORE_INSTANCE(processorSupport));
+        return NumericUtilities.toPureNumberValueExpression(NumericUtilities.toJavaNumber(instance, processorSupport), bigDecimalToPureDecimal, this.repository, processorSupport);
     }
 }

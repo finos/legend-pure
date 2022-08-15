@@ -51,7 +51,7 @@ abstract class AbstractRoundFunction extends NativeFunction
         CoreInstance integerType = processorSupport.package_getByUserPath(M3Paths.Integer);
         CoreInstance instance = params.get(0);
         CoreInstance number = Instance.getValueForMetaPropertyToOneResolved(instance, M3Properties.values, processorSupport);
-        if (number.getClassifier() == integerType)
+        if (processorSupport.getClassifier(number) == integerType)
         {
             return instance;
         }

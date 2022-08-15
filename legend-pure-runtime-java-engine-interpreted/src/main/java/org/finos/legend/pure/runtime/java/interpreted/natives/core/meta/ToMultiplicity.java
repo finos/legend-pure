@@ -58,7 +58,7 @@ abstract class ToMultiplicity extends NativeFunction
             throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Cannot cast a collection of size " + values.size() + " to multiplicity " + Multiplicity.print(returnMultiplicity));
         }
 
-        CoreInstance result = this.repository.newAnonymousCoreInstance(param.getSourceInformation(), param.getClassifier());
+        CoreInstance result = this.repository.newAnonymousCoreInstance(param.getSourceInformation(), processorSupport.getClassifier(param));
         Instance.addValueToProperty(result, M3Properties.genericType, Instance.getValueForMetaPropertyToOneResolved(param, M3Properties.genericType, processorSupport), processorSupport);
         Instance.setValuesForProperty(result, M3Properties.values, values, processorSupport);
         Instance.addValueToProperty(result, M3Properties.multiplicity, returnMultiplicity, processorSupport);

@@ -727,7 +727,7 @@ public class TestProjectionCompilation extends AbstractPureTestWithCoreCompiledP
         this.runtime.createInMemorySource("model.pure", testModel);
         this.runtime.compile();
         CoreInstance projection = this.runtime.getCoreInstance("meta::pure::tests::model::simple::projection::EntityWithAddressProjection");
-        Printer.print(projection);
+        Printer.print(projection, this.runtime.getProcessorSupport());
 
         Assert.assertNotNull(projection);
         RichIterable<? extends CoreInstance> properties = Instance.getValueForMetaPropertyToManyResolved(projection, M3Properties.properties, processorSupport);

@@ -77,13 +77,13 @@ public class Print extends NativeFunction
                         String name = toPrintVal.getName();
                         result = ("\n".equals(name) || name.isEmpty()) ? name : '\'' + name + '\'';
                     }
-                    else if (primitiveTypeClassifiers.contains(toPrintVal.getClassifier()))
+                    else if (primitiveTypeClassifiers.contains(processorSupport.getClassifier(toPrintVal)))
                     {
                         result = toPrintVal.getName();
                     }
                     else
                     {
-                        result = Printer.print(toPrintVal, "", max);
+                        result = Printer.print(toPrintVal, "", max, processorSupport);
                     }
                 }
                 else
@@ -122,14 +122,14 @@ public class Print extends NativeFunction
                             builder.append('\'');
                         }
                     }
-                    else if (primitiveTypeClassifiers.contains(instance.getClassifier()))
+                    else if (primitiveTypeClassifiers.contains(processorSupport.getClassifier(instance)))
                     {
                         builder.append("   ");
                         builder.append(instance.getName());
                     }
                     else
                     {
-                        Printer.print(builder, instance, "   ", max);
+                        Printer.print(builder, instance, "   ", max, processorSupport);
                     }
                     builder.append('\n');
                 }

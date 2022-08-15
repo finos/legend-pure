@@ -290,7 +290,7 @@ public class New extends NativeFunction
             ListIterable<? extends CoreInstance> values = Instance.getValueForMetaPropertyToManyResolved(instance, propertyName, processorSupport);
             if (values.notEmpty())
             {
-                CoreInstance property = processorSupport.class_findPropertyUsingGeneralization(instance.getClassifier(), propertyName);
+                CoreInstance property = processorSupport.class_findPropertyUsingGeneralization(processorSupport.getClassifier(instance), propertyName);
                 CoreInstance propertyOwner = Instance.getValueForMetaPropertyToOneResolved(property, M3Properties.owner, processorSupport);
                 if (Instance.instanceOf(propertyOwner, associationClass, processorSupport))
                 {

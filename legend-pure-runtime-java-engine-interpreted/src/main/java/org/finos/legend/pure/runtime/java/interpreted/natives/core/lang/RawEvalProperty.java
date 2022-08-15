@@ -51,9 +51,9 @@ public class RawEvalProperty  extends NativeFunction
         MutableList<CoreInstance> wrappedParameterValues = FastList.newListWith(params.get(1));
         Property property = PropertyCoreInstanceWrapper.toProperty(functionToApplyTo);
         CoreInstance value = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
-        if(processorSupport.class_findPropertyOrQualifiedPropertyUsingGeneralization(value.getClassifier(), property._name()) == null)
+        if(processorSupport.class_findPropertyOrQualifiedPropertyUsingGeneralization(processorSupport.getClassifier(value), property._name()) == null)
         {
-            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Can't find the property '"+ property._name() +"' in the class "+ value.getClassifier().getName());
+            throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Can't find the property '"+ property._name() +"' in the class "+ processorSupport.getClassifier(value).getName());
         }
         return this.functionExecution.executeProperty(property, false, resolvedTypeParameters, resolvedMultiplicityParameters, getParentOrEmptyVariableContext(variableContext), profiler, wrappedParameterValues, functionExpressionToUseInStack, instantiationContext, executionSupport);
     }

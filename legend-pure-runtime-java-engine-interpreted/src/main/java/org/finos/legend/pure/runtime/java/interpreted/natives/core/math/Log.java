@@ -44,7 +44,7 @@ public class Log extends NativeFunction
     public CoreInstance execute(ListIterable<? extends CoreInstance> params, Stack<MutableMap<String, CoreInstance>> resolvedTypeParameters, Stack<MutableMap<String, CoreInstance>> resolvedMultiplicityParameters, VariableContext variableContext, CoreInstance functionExpressionToUseInStack, Profiler profiler, InstantiationContext instantiationContext, ExecutionSupport executionSupport, Context context, ProcessorSupport processorSupport)
     {
         CoreInstance number = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
-        Number javaNumber = NumericUtilities.toJavaNumber(number);
+        Number javaNumber = NumericUtilities.toJavaNumber(number, processorSupport);
         if (javaNumber instanceof Number)
         {
             double log = Math.log(javaNumber.doubleValue());

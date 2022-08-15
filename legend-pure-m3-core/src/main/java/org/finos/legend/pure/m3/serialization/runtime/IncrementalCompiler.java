@@ -88,7 +88,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
     final CodeStorage codeStorage;
     final ModelRepository modelRepository;
     final Context context = new Context();
-    final M3ProcessorSupport processorSupport;
+    M3ProcessorSupport processorSupport;
     final ForkJoinPool forkJoinPool;
     final boolean isTransactionalByDefault;
 
@@ -421,6 +421,11 @@ public abstract class IncrementalCompiler implements SourceEventHandler
     public IncrementalCompilerTransaction newTransaction(boolean committable)
     {
         return this.transactionManager.newTransaction(committable);
+    }
+
+    public void setProcessorSupport(M3ProcessorSupport processorSupport)
+    {
+        this.processorSupport = processorSupport;
     }
 
     class IncrementalCompilerTransactionManager extends MultiTransactionManager<IncrementalCompilerTransaction>

@@ -48,9 +48,9 @@ public class Rem extends NativeFunction
     {
         CoreInstance param0 = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
         CoreInstance param1 = Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport);
-        Number dividend = NumericUtilities.toJavaNumber(param0);
-        Number divisor = NumericUtilities.toJavaNumber(param1);
-        boolean bigDecimalToPureDecimal = NumericUtilities.IS_DECIMAL_CORE_INSTANCE.accept(param0) || NumericUtilities.IS_DECIMAL_CORE_INSTANCE.accept(param1);
+        Number dividend = NumericUtilities.toJavaNumber(param0, processorSupport);
+        Number divisor = NumericUtilities.toJavaNumber(param1, processorSupport);
+        boolean bigDecimalToPureDecimal = NumericUtilities.IS_DECIMAL_CORE_INSTANCE(processorSupport).accept(param0) || NumericUtilities.IS_DECIMAL_CORE_INSTANCE(processorSupport).accept(param1);
         if (divisor.equals(0))
         {
             throw new PureExecutionException(functionExpressionToUseInStack.getSourceInformation(), "Cannot divide " + dividend.toString() + " by zero");

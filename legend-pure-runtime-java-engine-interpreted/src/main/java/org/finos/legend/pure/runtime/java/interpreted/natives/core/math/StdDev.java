@@ -47,7 +47,7 @@ public class StdDev extends NativeFunction
     {
         ListIterable<? extends CoreInstance> numbers = Instance.getValueForMetaPropertyToManyResolved(params.get(0), M3Properties.values, processorSupport);
         boolean isBiasCorrected = PrimitiveUtilities.getBooleanValue(Instance.getValueForMetaPropertyToOneResolved(params.get(1), M3Properties.values, processorSupport));
-        ListIterable<Number> javaNumbers = NumericUtilities.toJavaNumber(numbers);
+        ListIterable<Number> javaNumbers = NumericUtilities.toJavaNumber(numbers, processorSupport);
         double[] values = new double[javaNumbers.size()];
         for (int i = 0; i < javaNumbers.size(); i++)
         {

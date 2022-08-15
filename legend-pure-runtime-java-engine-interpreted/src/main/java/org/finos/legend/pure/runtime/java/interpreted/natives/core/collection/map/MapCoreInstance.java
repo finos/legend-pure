@@ -41,7 +41,7 @@ public class MapCoreInstance extends SimpleCoreInstance
 
     public MapCoreInstance(MapCoreInstance map, boolean copyData, ProcessorSupport processorSupport)
     {
-        super(map.getName(), null, map.getClassifier(), -1, map.getRepository(), false);
+        super(map.getName(), null, processorSupport.getClassifier(map), -1, map.getRepository(), false);
         Instance.addValueToProperty(this, M3Properties.classifierGenericType, map.getValueForMetaPropertyToOne(M3Properties.classifierGenericType), processorSupport);
         this.map = copyData ? map.map.clone() : map.map.newEmpty();
         this.stats = copyData ? new PureMapStats(map.getStats()) : new PureMapStats();

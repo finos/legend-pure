@@ -275,7 +275,7 @@ public class ImportStub
         CoreInstance classifier = processorSupport.getClassifier(instance);
         if (classifier == null)
         {
-            throw new PureCompilationException(instance.getSourceInformation(), "Instance has no classifier: " + instance);
+            throw new PureCompilationException(instance.getSourceInformation(), "Instance has no classifier: '" + instance + "'  Class:"+instance.getClass().getSimpleName());
         }
 
         switch (classifier.getName())

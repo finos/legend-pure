@@ -50,8 +50,8 @@ public class TestStaticInstance extends AbstractPureTestWithCoreCompiled
                           "}\n");
         this.execute("testGet():Nil[0]");
         Assert.assertEquals("p instance Person\n" +
-                            "    lastName(Property):\n" +
-                            "        last instance String", this.functionExecution.getConsole().getLine(0));
+                "    lastName(Property):\n" +
+                "        last instance String", this.functionExecution.getConsole().getLine(0));
     }
 
 
