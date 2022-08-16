@@ -124,7 +124,7 @@ public class ClassImplProcessor
                 (addJavaSerializationSupport ? buildSerializationMethods(_class, processorSupport, classGenericType, useJavaInheritance, associationClass, pureExternalPackage) : "") +
                 buildGetClassifier() +
                 buildGetKeys(_class, processorSupport) +
-                (ClassProcessor.isPlatformClass(_class) ? buildFactory(className) : "") +
+                (ClassProcessor.isPlatformClass(_class) ? buildFactory(className) : buildFactoryConstructor(className)) +
                 (isGetterOverride ? getterOverrides(interfaceNamePlusTypeParams) : "") +
                 buildGetValueForMetaPropertyToOne(classGenericType, processorSupport) +
                 buildGetValueForMetaPropertyToMany(classGenericType, processorSupport) +
