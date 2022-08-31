@@ -31,6 +31,7 @@ import org.eclipse.collections.impl.map.sorted.mutable.TreeSortedMap;
 import org.finos.legend.pure.m3.SourceMutation;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
+import org.finos.legend.pure.m3.compiler.postprocessing.observer.PostProcessorObserver;
 import org.finos.legend.pure.m3.compiler.validation.ValidationType;
 import org.finos.legend.pure.m3.compiler.validation.Validator;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
@@ -181,21 +182,31 @@ public abstract class IncrementalCompiler implements SourceEventHandler
 
     public SourceMutation compileInCurrentTransaction(RichIterable<? extends Source> sources)
     {
+        return compileInCurrentTransaction(sources, null);
+    }
+
+    public SourceMutation compileInCurrentTransaction(RichIterable<? extends Source> sources, PostProcessorObserver postProcessorObserver)
+    {
         IncrementalCompilerTransaction transaction = this.transactionManager.getThreadLocalTransaction();
         if (transaction == null)
         {
             throw new IllegalStateException("No current transaction");
         }
         // TODO should we use this.compilerEventHandlers?
-        return this.compile(sources, Lists.immutable.empty());
+        return this.compile(sources, Lists.immutable.empty(), postProcessorObserver);
     }
 
     SourceMutation compile(RichIterable<? extends Source> sources) throws PureCompilationException, PureParserException
     {
-        return this.compile(sources, this.compilerEventHandlers);
+        return compile(sources, null);
     }
 
-    abstract SourceMutation compile(RichIterable<? extends Source> sources, Iterable<? extends CompilerEventHandler> compilerEventHandlers) throws PureCompilationException, PureParserException;
+    SourceMutation compile(RichIterable<? extends Source> sources, PostProcessorObserver postProcessorObserver) throws PureCompilationException, PureParserException
+    {
+        return this.compile(sources, this.compilerEventHandlers, postProcessorObserver);
+    }
+
+    abstract SourceMutation compile(RichIterable<? extends Source> sources, Iterable<? extends CompilerEventHandler> compilerEventHandlers, PostProcessorObserver postProcessorObserver) throws PureCompilationException, PureParserException;
 
     void runEventHandlers(Iterable<? extends CompilerEventHandler> compilerEventHandlers, SetIterable<CoreInstance> copyToProcess, Multimap<String, ? extends Source> compiledSourcesByRepo)
     {
@@ -213,7 +224,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
         return toProcess.reject(instance -> (instance.getSourceInformation() == null) || excludedSourceIds.contains(instance.getSourceInformation().getSourceId()));
     }
 
-    SourceMutation finishRepoCompilation(String repoName, MutableList<CoreInstance> newInstancesConsolidated, ValidationType validationType) throws PureCompilationException
+    SourceMutation finishRepoCompilation(String repoName, MutableList<CoreInstance> newInstancesConsolidated, ValidationType validationType, PostProcessorObserver postProcessorObserver) throws PureCompilationException
     {
         Procedure<CoreInstance> registerInContext = instance ->
         {
@@ -233,7 +244,7 @@ public abstract class IncrementalCompiler implements SourceEventHandler
             newInstancesConsolidated.forEach(registerInContext);
         }
 
-        SourceMutation sourceMutation = PostProcessor.process(newInstancesConsolidated, this.modelRepository, this.library, this.dslLibrary, this.codeStorage, this.context, this.processorSupport, this.urlPatternLibrary, this.message);
+        SourceMutation sourceMutation = PostProcessor.process(newInstancesConsolidated, this.modelRepository, this.library, this.dslLibrary, this.codeStorage, this.context, this.processorSupport, this.urlPatternLibrary, this.message, postProcessorObserver);
 
         if (validationType == ValidationType.DEEP)
         {

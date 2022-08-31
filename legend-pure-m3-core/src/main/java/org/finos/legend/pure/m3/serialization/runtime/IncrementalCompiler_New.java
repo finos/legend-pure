@@ -15,8 +15,6 @@
 package org.finos.legend.pure.m3.serialization.runtime;
 
 import org.eclipse.collections.api.RichIterable;
-import org.eclipse.collections.api.block.function.Function;
-import org.eclipse.collections.api.block.predicate.Predicate2;
 import org.eclipse.collections.api.block.procedure.Procedure;
 import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.factory.Sets;
@@ -29,6 +27,7 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.finos.legend.pure.m3.SourceMutation;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
+import org.finos.legend.pure.m3.compiler.postprocessing.observer.PostProcessorObserver;
 import org.finos.legend.pure.m3.compiler.unload.Unbinder;
 import org.finos.legend.pure.m3.compiler.unload.unbind.UnbindState;
 import org.finos.legend.pure.m3.compiler.unload.walk.WalkerState;
@@ -60,30 +59,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class IncrementalCompiler_New extends IncrementalCompiler
 {
-    private static final Function<SourceState, String> GET_SOURCE_STATE_REPO = object ->
-    {
-        String repo = PureCodeStorage.getSourceRepoName(object.getSource().getId());
-        if (repo == null)
-        {
-            return null;
-        }
-        return repo.startsWith("model") ? "model-all" : repo;
-    };
-
-    private static final Predicate2<CoreInstance, String> CORE_INSTANCE_IS_FROM_REPO = (instance, repoName) ->
-    {
-        String instanceRepository = PureCodeStorage.getSourceRepoName(instance.getSourceInformation().getSourceId());
-        if ("Pure".equals(repoName))
-        {
-            return true;
-        }
-        if (instanceRepository == null)
-        {
-            return repoName == null;
-        }
-        return repoName != null && ("model-all".equals(repoName) ? instanceRepository.startsWith("model") : instanceRepository.equals(repoName));
-    };
-
     private final MutableSet<SourceState> oldSourceStates = Sets.mutable.with();
     private final MutableSet<CoreInstance> toUnbind = Sets.mutable.with();
     private final MutableSet<CoreInstance> processed = Sets.mutable.with();
@@ -98,7 +73,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
     //----------
 
     @Override
-    SourceMutation compile(RichIterable<? extends Source> sources, Iterable<? extends CompilerEventHandler> compilerEventHandlers) throws PureCompilationException, PureParserException
+    SourceMutation compile(RichIterable<? extends Source> sources, Iterable<? extends CompilerEventHandler> compilerEventHandlers, PostProcessorObserver postProcessorObserver) throws PureCompilationException, PureParserException
     {
         MutableSet<CoreInstance> potentialToProcess = this.walkTheGraphForUnload(this.toUnload).withAll(this.toProcess).withAll(this.toUnbind);
 
@@ -117,7 +92,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
             MutableSet<CoreInstance> repoTransactionInstances = Sets.mutable.empty();
             try
             {
-                result = this.compileRepoSources(repoTransaction, "Pure", 1, 1, sources, this.toProcess.toImmutable(), this.toUnbind.toImmutable(), Lists.mutable.<SourceState>with(), repoTransactionInstances);
+                result = this.compileRepoSources(repoTransaction, "Pure", 1, 1, sources, this.toProcess.toImmutable(), this.toUnbind.toImmutable(), Lists.mutable.<SourceState>with(), repoTransactionInstances, postProcessorObserver);
                 if (shouldCreateNewRepoTransaction)
                 {
                     repoTransaction.commit();
@@ -138,7 +113,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
 
             Multimap<String, ? extends Source> sourcesByRepo = sources.groupBy(s -> PureCodeStorage.getSourceRepoName(s.getId()));
             Multimap<String, ? extends Source> sourcesByRepoNew = sources.groupBy(PureCodeStorage.GET_SOURCE_REPO);
-            Multimap<String, SourceState> sourceStatesByRepo = this.oldSourceStates.groupBy(GET_SOURCE_STATE_REPO);
+            Multimap<String, SourceState> sourceStatesByRepo = this.oldSourceStates.groupBy(IncrementalCompiler_New::getSourceStateRepo);
             Multimap<String, CoreInstance> potentialRepos = potentialToProcess.groupBy(GET_COREINSTANCE_REPO_NAME);
 
             MutableSet<String> allReposToCompile = Sets.mutable.withAll(sourcesByRepo.keysView()).withAll(potentialRepos.keysView());
@@ -166,14 +141,14 @@ public class IncrementalCompiler_New extends IncrementalCompiler
             {
                 IncrementalCompilerTransaction repoTransaction = shouldCreateNewRepoTransactions ? this.newTransaction(true) : threadLocalTransaction;
                 RichIterable<? extends Source> repoSources = sourcesByRepoNew.get(repo);
-                RichIterable<CoreInstance> toProcessThisRepo = this.toProcess.selectWith(CORE_INSTANCE_IS_FROM_REPO, repo).toImmutable();
-                RichIterable<CoreInstance> toUnbindThisRepo = this.toUnbind.selectWith(CORE_INSTANCE_IS_FROM_REPO, repo).toImmutable();
+                RichIterable<CoreInstance> toProcessThisRepo = this.toProcess.selectWith(IncrementalCompiler_New::coreInstanceIsFromRepo, repo).toImmutable();
+                RichIterable<CoreInstance> toUnbindThisRepo = this.toUnbind.selectWith(IncrementalCompiler_New::coreInstanceIsFromRepo, repo).toImmutable();
                 MutableSet<CoreInstance> repoTransactionInstances = Sets.mutable.empty();
 
                 SourceMutation repoResult;
                 try
                 {
-                    repoResult = this.compileRepoSources(repoTransaction, repo, i + 1, repoCount, repoSources, toProcessThisRepo, toUnbindThisRepo, sourceStatesByRepo.get(repo), repoTransactionInstances);
+                    repoResult = this.compileRepoSources(repoTransaction, repo, i + 1, repoCount, repoSources, toProcessThisRepo, toUnbindThisRepo, sourceStatesByRepo.get(repo), repoTransactionInstances, postProcessorObserver);
                     if (shouldCreateNewRepoTransactions)
                     {
                         repoTransaction.commit();
@@ -208,7 +183,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
         return result;
     }
 
-    private SourceMutation compileRepoSources(IncrementalCompilerTransaction transaction, String repoName, int repoNum, int repoTotalCount, RichIterable<? extends Source> sources, RichIterable<CoreInstance> instancesToProcess, RichIterable<CoreInstance> instancesToUnbind, RichIterable<SourceState> sourceStates, MutableSet<CoreInstance> repoTransactionInstances) throws PureCompilationException, PureParserException
+    private SourceMutation compileRepoSources(IncrementalCompilerTransaction transaction, String repoName, int repoNum, int repoTotalCount, RichIterable<? extends Source> sources, RichIterable<CoreInstance> instancesToProcess, RichIterable<CoreInstance> instancesToUnbind, RichIterable<SourceState> sourceStates, MutableSet<CoreInstance> repoTransactionInstances, PostProcessorObserver observer) throws PureCompilationException, PureParserException
     {
         String repoDisplayName = repoName == null ? "non-repository" : repoName;
         try (ThreadLocalTransactionContext ignored = transaction != null ? transaction.openInCurrentThread() : null)
@@ -275,7 +250,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
             MutableSet<CoreInstance> toUnbindGenerated = this.walkTheGraphForUnload(oldButNotNew);
 
             // Filter the instances which are within the repo
-            MutableSet<CoreInstance> toUnbindWithinRepo = toUnbindGenerated.selectWith(CORE_INSTANCE_IS_FROM_REPO, repoName);
+            MutableSet<CoreInstance> toUnbindWithinRepo = toUnbindGenerated.selectWith(IncrementalCompiler_New::coreInstanceIsFromRepo, repoName);
 
             // Total Unbind set is ( generated here + obtained through call - non retained )
             MutableSet<CoreInstance> hereUnbind = toUnbindWithinRepo.union(oldButNotNew).union(instancesToUnbind.toSet());
@@ -291,7 +266,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
             MutableSet<CoreInstance> toProcessGenerated = toUnbindGenerated.select(each -> !sourcesInScope.contains(each.getSourceInformation().getSourceId()) || newInstances.contains(each));
 
             // Filter the instances which are within this repo
-            MutableSet<CoreInstance> toProcessWithinRepoGenerated = toProcessGenerated.selectWith(CORE_INSTANCE_IS_FROM_REPO, repoName);
+            MutableSet<CoreInstance> toProcessWithinRepoGenerated = toProcessGenerated.selectWith(IncrementalCompiler_New::coreInstanceIsFromRepo, repoName);
 
             // ToProcess from call is filtered for the existence in new instances if source is within the sourcesInScope
             MutableSet<CoreInstance> instancesToProcessFiltered = instancesToProcess.select(each -> !sourcesInScope.contains(each.getSourceInformation().getSourceId()) || newInstances.contains(each)).toSet();
@@ -313,7 +288,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
             repoTransactionInstances.addAllIterable(newInstancesConsolidated);
 
             // Do postprocessing, validation - can throw an error
-            SourceMutation result = this.finishRepoCompilation(repoDisplayName, allInstances, newInstancesConsolidated, ValidationType.SHALLOW);
+            SourceMutation result = this.finishRepoCompilation(repoDisplayName, allInstances, newInstancesConsolidated, ValidationType.SHALLOW, observer);
 
             // Repo compilation Successful
 
@@ -342,7 +317,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
     }
 
 
-    private SourceMutation finishRepoCompilation(String repoName, MutableList<CoreInstance> allInstances, MutableList<CoreInstance> newInstancesConsolidated, ValidationType validationType) throws PureCompilationException
+    private SourceMutation finishRepoCompilation(String repoName, MutableList<CoreInstance> allInstances, MutableList<CoreInstance> newInstancesConsolidated, ValidationType validationType, PostProcessorObserver observer) throws PureCompilationException
     {
         Procedure<CoreInstance> registerInContext = instance ->
         {
@@ -362,7 +337,7 @@ public class IncrementalCompiler_New extends IncrementalCompiler
             allInstances.forEach(registerInContext);
         }
 
-        SourceMutation sourceMutation = PostProcessor.process(newInstancesConsolidated, this.modelRepository, this.library, this.dslLibrary, this.codeStorage, this.context, this.processorSupport, this.urlPatternLibrary, this.message);
+        SourceMutation sourceMutation = PostProcessor.process(newInstancesConsolidated, this.modelRepository, this.library, this.dslLibrary, this.codeStorage, this.context, this.processorSupport, this.urlPatternLibrary, this.message, observer);
 
         if (validationType == ValidationType.DEEP)
         {
@@ -494,5 +469,29 @@ public class IncrementalCompiler_New extends IncrementalCompiler
             this.oldSourceStates.add(new SourceState(source, oldContent, source.getNewInstances().toSet(), this.collectImportGroups(source.getId())));
         }
         super.updateSource(source, oldContent);
+    }
+
+    private static String getSourceStateRepo(SourceState sourceState)
+    {
+        String repo = PureCodeStorage.getSourceRepoName(sourceState.getSource().getId());
+        if (repo == null)
+        {
+            return null;
+        }
+        return repo.startsWith("model") ? "model-all" : repo;
+    }
+
+    private static boolean coreInstanceIsFromRepo(CoreInstance instance, String repoName)
+    {
+        String instanceRepository = PureCodeStorage.getSourceRepoName(instance.getSourceInformation().getSourceId());
+        if ("Pure".equals(repoName))
+        {
+            return true;
+        }
+        if (instanceRepository == null)
+        {
+            return repoName == null;
+        }
+        return repoName != null && ("model-all".equals(repoName) ? instanceRepository.startsWith("model") : instanceRepository.equals(repoName));
     }
 }

@@ -31,6 +31,7 @@ import org.eclipse.collections.impl.list.fixed.ArrayAdapter;
 import org.eclipse.collections.impl.utility.LazyIterate;
 import org.finos.legend.pure.m3.SourceMutation;
 import org.finos.legend.pure.m3.compiler.Context;
+import org.finos.legend.pure.m3.compiler.postprocessing.observer.PostProcessorObserver;
 import org.finos.legend.pure.m3.coreinstance.CoreInstanceFactoryRegistry;
 import org.finos.legend.pure.m3.navigation.M3Paths;
 import org.finos.legend.pure.m3.navigation.PackageableElement.PackageableElement;
@@ -185,6 +186,11 @@ public class PureRuntime
 
     public RichIterable<Source> loadAndCompileCore(Message message)
     {
+        return loadAndCompileCore(message, null);
+    }
+
+    public RichIterable<Source> loadAndCompileCore(Message message, PostProcessorObserver postProcessorObserver)
+    {
         this.pureRuntimeStatus.startLoadingAndCompilingCore();
 
         try
@@ -215,7 +221,7 @@ public class PureRuntime
             this.getIncrementalCompiler().preCompileM3(newInstances);
             ////END READ and Serialize m3.pure
 
-            this.compile(sources.reject(s -> M3_PURE.equals(s.getId())));
+            this.compile(sources.reject(s -> M3_PURE.equals(s.getId())), postProcessorObserver);
 
             this.getIncrementalCompiler().finishedCompilingCore(sources);
             return sources;
@@ -241,6 +247,11 @@ public class PureRuntime
 
     public RichIterable<Source> loadAndCompileSystem(Message message)
     {
+        return loadAndCompileSystem(message, null);
+    }
+
+    public RichIterable<Source> loadAndCompileSystem(Message message, PostProcessorObserver postProcessorObserver)
+    {
         this.pureRuntimeStatus.startLoadingAndCompilingSystemFiles();
         try
         {
@@ -250,7 +261,7 @@ public class PureRuntime
                 message.setMessage("Loading "+sourcePaths.size()+" sources...");
             }
             MutableList<Source> sources = sourcePaths.collect(this::getOrLoadSource).reject(Source.IS_COMPILED).toList();
-            compile(sources);
+            compile(sources, postProcessorObserver);
             return sources;
         }
         finally
@@ -313,7 +324,12 @@ public class PureRuntime
 
     private SourceMutation compile(RichIterable<? extends Source> sources)
     {
-        SourceMutation sourceMutation = this.incrementalCompiler.compile(sources);
+        return compile(sources, null);
+    }
+
+    private SourceMutation compile(RichIterable<? extends Source> sources, PostProcessorObserver postProcessorObserver)
+    {
+        SourceMutation sourceMutation = this.incrementalCompiler.compile(sources, postProcessorObserver);
         if (sourceMutation != null)
         {
             try
