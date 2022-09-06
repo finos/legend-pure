@@ -14,19 +14,59 @@
 
 package org.finos.legend.pure.m3.tests.function.base.io;
 
+import com.sun.net.httpserver.*;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiled;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
-public class AbstractTestHttp extends AbstractPureTestWithCoreCompiled
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
+public abstract class AbstractTestHttp extends AbstractPureTestWithCoreCompiled
 {
-    // Remove Ignore when we have an available HTTP server for test...
-    @Test @Ignore
+    private static HttpServer httpServer;
+
+    @BeforeClass
+    public static void beforeClass() throws Exception
+    {
+        httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        httpServer.createContext("/test", AbstractTestHttp::handle);
+        httpServer.start();
+    }
+
+    @AfterClass
+    public static void stopHttp() throws Exception
+    {
+        httpServer.stop(0);
+    }
+
+    private static void handle(HttpExchange exchange) throws IOException
+    {
+        exchange.sendResponseHeaders(200, 0);
+        exchange.close();
+    }
+
+    @After
+    public void cleanRuntime()
+    {
+        runtime.delete("testHttp.pure");
+    }
+
+    @Test
     public void testHttpGet()
     {
-        compileTestSource("function testHttp():Any[*]\n" +
+        compileTestSource("testHttp.pure", "function testHttp():Any[*]\n" +
                 "{\n" +
-                "    assert(200 == meta::pure::functions::io::http::executeHTTPRaw(^meta::pure::functions::io::http::URL(host='127.0.0.1', port=9090, path='/api/server/v1/currentUser'), meta::pure::functions::io::http::HTTPMethod.GET, [], []).statusCode, |'error');\n" +
+                "    assert(200 == meta::pure::functions::io::http::executeHTTPRaw(^meta::pure::functions::io::http::URL(host='127.0.0.1', port=" + httpServer.getAddress().getPort() + ", path='/test'), meta::pure::functions::io::http::HTTPMethod.GET, [], []).statusCode, |'error');\n" +
+                "}\n");
+        this.execute("testHttp():Any[*]");
+    }
+
+    @Test
+    public void testHttpGetWithScheme()
+    {
+        compileTestSource("testHttp.pure", "function testHttp():Any[*]\n" +
+                "{\n" +
+                "    assert(200 == meta::pure::functions::io::http::executeHTTPRaw(^meta::pure::functions::io::http::URL(scheme=meta::pure::functions::io::http::URLScheme.http, host='127.0.0.1', port=" + httpServer.getAddress().getPort() + ", path='/test'), meta::pure::functions::io::http::HTTPMethod.GET, [], []).statusCode, |'error');\n" +
                 "}\n");
         this.execute("testHttp():Any[*]");
     }

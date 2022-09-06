@@ -20,9 +20,16 @@ native function meta::pure::functions::io::readFile(file:String[1]):String[0..1]
 
 Class meta::pure::functions::io::http::URL
 {
+    scheme: URLScheme[0..1];
     host : String[1];
     port : Integer[1];
     path : String[1];
+}
+
+Enum meta::pure::functions::io::http::URLScheme
+{
+    http,
+    https
 }
 
 Enum meta::pure::functions::io::http::HTTPMethod

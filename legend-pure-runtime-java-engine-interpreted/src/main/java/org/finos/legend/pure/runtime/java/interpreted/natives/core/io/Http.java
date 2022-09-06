@@ -14,11 +14,8 @@
 
 package org.finos.legend.pure.runtime.java.interpreted.natives.core.io;
 
-import org.eclipse.collections.api.block.function.Function;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.map.MutableMap;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.navigation.Instance;
 import org.finos.legend.pure.m3.navigation.M3Properties;
@@ -33,6 +30,7 @@ import org.finos.legend.pure.runtime.java.interpreted.natives.core.Instantiation
 import org.finos.legend.pure.runtime.java.interpreted.natives.core.NativeFunction;
 import org.finos.legend.pure.runtime.java.interpreted.profiler.Profiler;
 import org.finos.legend.pure.runtime.java.shared.http.HttpMethod;
+import org.finos.legend.pure.runtime.java.shared.http.URLScheme;
 import org.finos.legend.pure.runtime.java.shared.http.HttpRawHelper;
 import org.finos.legend.pure.runtime.java.shared.http.SimpleHttpResponse;
 
@@ -53,6 +51,12 @@ public class Http extends NativeFunction
         // URL: param 0
         CoreInstance urlInstance = Instance.getValueForMetaPropertyToOneResolved(params.get(0), M3Properties.values, processorSupport);
 
+        URLScheme urlScheme = URLScheme.http;
+        CoreInstance scheme = Instance.getValueForMetaPropertyToOneResolved(urlInstance, "scheme", processorSupport);
+        if (scheme != null)
+        {
+            urlScheme = URLScheme.valueOf(scheme.getName());
+        }
         String host = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(urlInstance, M3Properties.host, processorSupport));
         Integer port = (Integer)PrimitiveUtilities.getIntegerValue(Instance.getValueForMetaPropertyToOneResolved(urlInstance, M3Properties.port, processorSupport));
         String path = PrimitiveUtilities.getStringValue(Instance.getValueForMetaPropertyToOneResolved(urlInstance, M3Properties.path, processorSupport));
@@ -70,7 +74,7 @@ public class Http extends NativeFunction
         CoreInstance bodyInstance = Instance.getValueForMetaPropertyToOneResolved(params.get(3), M3Properties.values, processorSupport);
         String body = bodyInstance == null ? null : PrimitiveUtilities.getStringValue(bodyInstance);
 
-        SimpleHttpResponse response = HttpRawHelper.executeHttpService(host, port, path, httpMethod, mimeType, body);
+        SimpleHttpResponse response = HttpRawHelper.executeHttpService(urlScheme, host, port, path, httpMethod, mimeType, body);
 
         return ValueSpecificationBootstrap.wrapValueSpecification(HttpRawHelper.toHttpResponseInstance(response, processorSupport), true, processorSupport);
     }
