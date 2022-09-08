@@ -43,11 +43,15 @@ import java.nio.charset.StandardCharsets;
 
 public class HttpRawHelper
 {
-
     public static SimpleHttpResponse executeHttpService(String host, int port, String path, HttpMethod httpMethod, String mimeType, String body)
     {
+        return executeHttpService(URLScheme.http, host, port, path, httpMethod, mimeType, body);
+    }
+
+    public static SimpleHttpResponse executeHttpService(URLScheme scheme, String host, int port, String path, HttpMethod httpMethod, String mimeType, String body)
+    {
         final URIBuilder uriBuilder = new URIBuilder()
-                .setScheme("http")
+                .setScheme(scheme.name())
                 .setHost(host)
                 .setPort(port)
                 .setPath(path);

@@ -109,6 +109,7 @@ import org.finos.legend.pure.runtime.java.compiled.metadata.JavaMethodWithParams
 import org.finos.legend.pure.runtime.java.compiled.metadata.MetadataAccessor;
 import org.finos.legend.pure.runtime.java.shared.cipher.AESCipherUtil;
 import org.finos.legend.pure.runtime.java.shared.http.HttpMethod;
+import org.finos.legend.pure.runtime.java.shared.http.URLScheme;
 import org.finos.legend.pure.runtime.java.shared.http.HttpRawHelper;
 import org.finos.legend.pure.runtime.java.shared.identity.IdentityManager;
 import org.json.simple.JSONValue;
@@ -3233,6 +3234,11 @@ public class CompiledSupport
 
     public static HTTPResponse executeHttpRaw(URL url, Object method, String mimeType, String body, ExecutionSupport executionSupport)
     {
-        return (HTTPResponse)HttpRawHelper.toHttpResponseInstance(HttpRawHelper.executeHttpService(url._host(), (int)url._port(), url._path(), HttpMethod.valueOf(((Enum)method)._name()), mimeType, body), ((CompiledExecutionSupport)executionSupport).getProcessorSupport());
+        URLScheme scheme = URLScheme.http;
+        if (url._scheme() != null)
+        {
+            scheme = URLScheme.valueOf(url._scheme()._name());
+        }
+        return (HTTPResponse)HttpRawHelper.toHttpResponseInstance(HttpRawHelper.executeHttpService(scheme, url._host(), (int)url._port(), url._path(), HttpMethod.valueOf(((Enum)method)._name()), mimeType, body), ((CompiledExecutionSupport)executionSupport).getProcessorSupport());
     }
 }
