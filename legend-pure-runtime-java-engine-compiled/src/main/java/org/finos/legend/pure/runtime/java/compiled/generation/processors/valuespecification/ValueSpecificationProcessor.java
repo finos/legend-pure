@@ -281,7 +281,7 @@ public class ValueSpecificationProcessor
                 "(" + FullJavaPaths.LambdaFunction + ")localLambdas.get(" + System.identityHashCode(function) + ")" :
                 "((CompiledExecutionSupport)es).getMetadataAccessor().getLambdaFunction(\"" + processorContext.getIdBuilder().buildId(function) + "\")");
 
-        return "new PureCompiledLambda().lambdaFunction(\n" + lambdaFunctionString + "\n).pureFunction(\n" + pureFunctionString + "\n)\n";
+        return "new PureCompiledLambda(\n(" + lambdaFunctionString + "\n), (\n" + pureFunctionString + "\n))\n";
     }
 
     public static String createFunctionForLambda(CoreInstance topLevelElement, CoreInstance function, ProcessorSupport processorSupport, ProcessorContext processorContext)

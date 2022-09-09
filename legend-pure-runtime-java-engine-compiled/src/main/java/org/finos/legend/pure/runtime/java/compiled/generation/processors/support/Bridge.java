@@ -19,8 +19,10 @@ import org.eclipse.collections.api.block.function.Function2;
 import org.eclipse.collections.api.block.function.Function3;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PackageableElement;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.multiplicity.Multiplicity;
 import org.finos.legend.pure.m3.execution.ExecutionSupport;
+import org.finos.legend.pure.runtime.java.compiled.generation.processors.support.function.SharedPureFunction;
 
 public interface Bridge
 {
@@ -48,15 +50,10 @@ public interface Bridge
         return this::elementToPath;
     }
 
-    @Deprecated
-    default Function0<LambdaCompiledExtended> lambdaBuilder()
-    {
-        return this::buildLambda;
-    }
-
     <T> List<T> buildList();
     boolean hasToOneUpperBound(Multiplicity multiplicity, ExecutionSupport executionSupport);
     boolean isToOne(Multiplicity multiplicity, ExecutionSupport executionSupport);
     String elementToPath(PackageableElement element, String separator, ExecutionSupport executionSupport);
-    LambdaCompiledExtended buildLambda();
+
+    LambdaCompiledExtended buildLambda(LambdaFunction<Object> lambdaFunction, SharedPureFunction<Object> pureFunction);
 }

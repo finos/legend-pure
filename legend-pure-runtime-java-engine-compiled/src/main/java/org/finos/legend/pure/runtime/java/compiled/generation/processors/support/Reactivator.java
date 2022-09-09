@@ -23,10 +23,7 @@ import org.eclipse.collections.api.map.MutableMap;
 import org.eclipse.collections.api.set.MutableSet;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.collection.List;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.functions.lang.KeyExpression;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.FunctionDefinition;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.NativeFunction;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.*;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.Property;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.QualifiedProperty;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.InstanceValue;
@@ -136,6 +133,10 @@ public class Reactivator
         {
             return true;
         }
+        if (func instanceof ConcreteFunctionDefinition)
+        {
+            return true;
+        }
         if (func instanceof FunctionDefinition || func instanceof Property)
         {
             return Pure.findSharedPureFunction(func, bridge, es) != null;
@@ -213,9 +214,7 @@ public class Reactivator
                 MutableMap<String, Object> openVariables = Maps.mutable.empty();
                 lambdaOpenVariablesMap.getMap().forEachKeyValue((key, values) -> openVariables.put((String) key, ((List<?>) values)._values()));
                 Pure.getOpenVariables(lambdaFunction, bridge).getMap().forEachKeyValue((key, values) -> openVariables.put((String) key, ((List<?>) values)._values()));
-                results.add(bridge.buildLambda()
-                        .lambdaFunction(lambdaFunction)
-                        .pureFunction(DynamicPureLambdaFunctionImpl.createPureLambdaFunction(lambdaFunction, openVariables, bridge)));
+                results.add(bridge.buildLambda(lambdaFunction, DynamicPureFunctionImpl.createPureFunction(lambdaFunction, openVariables, bridge)));
             }
             else if (value instanceof Iterable)
             {
