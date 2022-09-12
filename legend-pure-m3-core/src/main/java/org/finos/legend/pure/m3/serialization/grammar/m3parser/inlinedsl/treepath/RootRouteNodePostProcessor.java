@@ -33,6 +33,7 @@ import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.GenericTypeTraceability;
 import org.finos.legend.pure.m3.compiler.postprocessing.PostProcessor;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
+import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState.VariableContextScope;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel._import.PropertyStub;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.property.AbstractProperty;
@@ -325,23 +326,24 @@ public class RootRouteNodePostProcessor extends Processor<RootRouteNode>
 
     private static void processDerivedPropertyExpressions(NewPropertyRouteNodeAccessor treePathNode, Type type, RichIterable<? extends ValueSpecification> expressions, Matcher matcher, ProcessorState processorState, ProcessorSupport processorSupport)
     {
-        processorState.pushVariableContext();
-        processorState.getVariableContext().buildAndRegister("this", (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(type, processorSupport), (Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne), processorSupport);
-        int i = 0;
-        for (ValueSpecification expression : expressions)
+        try (VariableContextScope ignore = processorState.withNewVariableContext())
         {
-            if (expression._usageContext() == null)
+            processorState.getVariableContext().buildAndRegister("this", (GenericType) org.finos.legend.pure.m3.navigation.type.Type.wrapGenericType(type, processorSupport), (Multiplicity) processorSupport.package_getByUserPath(M3Paths.PureOne), processorSupport);
+            int i = 0;
+            for (ValueSpecification expression : expressions)
             {
-                ExpressionSequenceValueSpecificationContext usageContext = (ExpressionSequenceValueSpecificationContext) processorSupport.newAnonymousCoreInstance(null, M3Paths.ExpressionSequenceValueSpecificationContext);
+                if (expression._usageContext() == null)
+                {
+                    ExpressionSequenceValueSpecificationContext usageContext = (ExpressionSequenceValueSpecificationContext) processorSupport.newAnonymousCoreInstance(null, M3Paths.ExpressionSequenceValueSpecificationContext);
 
-                usageContext._offset(i);
-                usageContext._functionDefinition(treePathNode._functionDefinition());
-                expression._usageContext(usageContext);
+                    usageContext._offset(i);
+                    usageContext._functionDefinition(treePathNode._functionDefinition());
+                    expression._usageContext(usageContext);
+                }
+                processorState.resetVariables();
+                PostProcessor.processElement(matcher, expression, processorState, processorSupport);
+                i++;
             }
-            processorState.resetVariables();
-            PostProcessor.processElement(matcher, expression, processorState, processorSupport);
-            i++;
         }
-        processorState.popVariableContext();
     }
 }

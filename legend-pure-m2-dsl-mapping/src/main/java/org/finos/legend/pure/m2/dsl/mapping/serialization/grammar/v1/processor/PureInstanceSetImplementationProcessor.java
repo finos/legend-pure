@@ -19,6 +19,7 @@ import org.finos.legend.pure.m2.dsl.mapping.M2MappingPaths;
 import org.finos.legend.pure.m2.dsl.mapping.M2MappingProperties;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
+import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState.VariableContextScope;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.Processor;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMapping;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.mapping.PropertyMappingValueSpecificationContext;
@@ -56,46 +57,46 @@ public class PureInstanceSetImplementationProcessor extends Processor<PureInstan
         LambdaFunction<?> filter = classMapping._filter();
         if (filter != null)
         {
-            state.pushVariableContext();
-            if (srcClass != null)
+            try (VariableContextScope ignore = state.withNewVariableContext())
             {
-                FunctionType fType = getFunctionType(filter, processorSupport);
-                fType._parameters(Lists.mutable.<VariableExpression>withAll(fType._parameters()).with(createSrcParameter(srcClass, srcGenericTypeSourceInfo, filter.getSourceInformation(), processorSupport)));
+                if (srcClass != null)
+                {
+                    FunctionType fType = getFunctionType(filter, processorSupport);
+                    fType._parameters(Lists.mutable.<VariableExpression>withAll(fType._parameters()).with(createSrcParameter(srcClass, srcGenericTypeSourceInfo, filter.getSourceInformation(), processorSupport)));
+                }
+                matcher.fullMatch(filter, state);
             }
-            matcher.fullMatch(filter, state);
-            state.popVariableContext();
         }
 
         int i = 0;
         for (PropertyMapping propertyMapping : classMapping._propertyMappings())
         {
-            state.pushVariableContext();
-
-            if (((PurePropertyMapping) propertyMapping)._transformerCoreInstance() != null)
+            try (VariableContextScope ignore = state.withNewVariableContext())
             {
-                GrammarInfoStub transformerStub = (GrammarInfoStub) ((PurePropertyMapping) propertyMapping)._transformerCoreInstance();
-                EnumerationMappingProcessor.processsEnumerationTransformer(transformerStub, propertyMapping, processorSupport);
-            }
+                if (((PurePropertyMapping) propertyMapping)._transformerCoreInstance() != null)
+                {
+                    GrammarInfoStub transformerStub = (GrammarInfoStub) ((PurePropertyMapping) propertyMapping)._transformerCoreInstance();
+                    EnumerationMappingProcessor.processsEnumerationTransformer(transformerStub, propertyMapping, processorSupport);
+                }
 
-            LambdaFunction<?> transform = ((PurePropertyMapping) propertyMapping)._transform();
-            if (srcClass != null)
-            {
-                FunctionType fType = getFunctionType(transform, processorSupport);
-                fType._parameters(Lists.mutable.<VariableExpression>withAll(fType._parameters()).with(createSrcParameter(srcClass, srcGenericTypeSourceInfo, propertyMapping.getSourceInformation(), processorSupport)));
-            }
-            matcher.fullMatch(transform, state);
+                LambdaFunction<?> transform = ((PurePropertyMapping) propertyMapping)._transform();
+                if (srcClass != null)
+                {
+                    FunctionType fType = getFunctionType(transform, processorSupport);
+                    fType._parameters(Lists.mutable.<VariableExpression>withAll(fType._parameters()).with(createSrcParameter(srcClass, srcGenericTypeSourceInfo, propertyMapping.getSourceInformation(), processorSupport)));
+                }
+                matcher.fullMatch(transform, state);
 
-            ValueSpecification expressionSequence = transform._expressionSequence().getFirst();
-            if (expressionSequence != null)
-            {
-                PropertyMappingValueSpecificationContext usageContext = (PropertyMappingValueSpecificationContext) processorSupport.newAnonymousCoreInstance(null, M2MappingPaths.PropertyMappingValueSpecificationContext);
-                usageContext._offset(i);
-                usageContext._propertyMapping(propertyMapping);
-                expressionSequence._usageContext(usageContext);
+                ValueSpecification expression = transform._expressionSequence().getAny();
+                if (expression != null)
+                {
+                    PropertyMappingValueSpecificationContext usageContext = (PropertyMappingValueSpecificationContext) processorSupport.newAnonymousCoreInstance(null, M2MappingPaths.PropertyMappingValueSpecificationContext);
+                    usageContext._offset(i);
+                    usageContext._propertyMapping(propertyMapping);
+                    expression._usageContext(usageContext);
+                }
+                i++;
             }
-            i++;
-
-            state.popVariableContext();
         }
     }
 

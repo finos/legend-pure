@@ -25,6 +25,7 @@ import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.impl.factory.Multimaps;
 import org.finos.legend.pure.m3.SourceMutation;
+import org.finos.legend.pure.m3.compiler.postprocessing.observer.PostProcessorObserver;
 import org.finos.legend.pure.m3.compiler.unload.Unbinder;
 import org.finos.legend.pure.m3.compiler.unload.unbind.UnbindState;
 import org.finos.legend.pure.m3.compiler.unload.walk.WalkerState;
@@ -62,7 +63,7 @@ public class IncrementalCompiler_Old extends IncrementalCompiler
     //----------
 
     @Override
-    SourceMutation compile(RichIterable<? extends Source> sources, Iterable<? extends CompilerEventHandler> compilerEventHandlers) throws PureCompilationException, PureParserException
+    SourceMutation compile(RichIterable<? extends Source> sources, Iterable<? extends CompilerEventHandler> compilerEventHandlers, PostProcessorObserver postProcessorObserver) throws PureCompilationException, PureParserException
     {
         this.unload();
 
@@ -79,7 +80,7 @@ public class IncrementalCompiler_Old extends IncrementalCompiler
             IncrementalCompilerTransaction repoTransaction = this.isTransactionalByDefault && threadLocalTransaction == null ? this.newTransaction(true) : threadLocalTransaction;
             try
             {
-                result = this.compileRepoSources(repoTransaction, "Pure", 1, 1, sources, this.toProcess);
+                result = this.compileRepoSources(repoTransaction, "Pure", 1, 1, sources, this.toProcess, postProcessorObserver);
                 if (this.isTransactionalByDefault && threadLocalTransaction == null)
                 {
                     repoTransaction.commit();
@@ -111,7 +112,7 @@ public class IncrementalCompiler_Old extends IncrementalCompiler
                 SourceMutation repoResult;
                 try
                 {
-                    repoResult = this.compileRepoSources(repoTransaction, repo, i + 1, repoCount, repoSources, toProcessThisRepo);
+                    repoResult = this.compileRepoSources(repoTransaction, repo, i + 1, repoCount, repoSources, toProcessThisRepo, postProcessorObserver);
                     if (this.isTransactionalByDefault && threadLocalTransaction == null)
                     {
                         repoTransaction.commit();
@@ -134,7 +135,7 @@ public class IncrementalCompiler_Old extends IncrementalCompiler
         return result;
     }
 
-    private SourceMutation compileRepoSources(IncrementalCompilerTransaction transaction, String repoName, int repoNum, int repoTotalCount, RichIterable<? extends Source> sources, RichIterable<CoreInstance> instancesToProcess) throws PureCompilationException, PureParserException
+    private SourceMutation compileRepoSources(IncrementalCompilerTransaction transaction, String repoName, int repoNum, int repoTotalCount, RichIterable<? extends Source> sources, RichIterable<CoreInstance> instancesToProcess, PostProcessorObserver postProcessorObserver) throws PureCompilationException, PureParserException
     {
         String repoDisplayName = repoName == null ? "non-repository" : repoName;
         try (ThreadLocalTransactionContext ignored = transaction != null ? transaction.openInCurrentThread() : null)
@@ -181,7 +182,7 @@ public class IncrementalCompiler_Old extends IncrementalCompiler
                 sources.forEach(parseSource);
             }
             MutableList<CoreInstance> newInstancesConsolidated = sources.flatCollect(Source::getNewInstances, instancesToProcess.toList());
-            return this.finishRepoCompilation(repoDisplayName, newInstancesConsolidated, ValidationType.SHALLOW);
+            return this.finishRepoCompilation(repoDisplayName, newInstancesConsolidated, ValidationType.SHALLOW, postProcessorObserver);
         }
     }
 
