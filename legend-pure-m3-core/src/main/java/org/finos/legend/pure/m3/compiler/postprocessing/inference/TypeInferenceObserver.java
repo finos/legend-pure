@@ -19,55 +19,148 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public interface TypeInferenceObserver
 {
-    void resetTab();
-    void shiftTab();
-    void unShiftTab();
+    default TypeInferenceObserver resetTab()
+    {
+        return this;
+    }
 
-    void startProcessingFunction(CoreInstance functionDefinition, CoreInstance functionType);
+    default TypeInferenceObserver shiftTab()
+    {
+        return shiftTab(1);
+    }
 
-    void startProcessingFunctionBody();
+    default TypeInferenceObserver shiftTab(int i)
+    {
+        return this;
+    }
 
-    void finishedProcessingFunctionBody();
+    default TypeInferenceObserver unShiftTab()
+    {
+        return shiftTab(-1);
+    }
 
-    void finishedProcessingFunction(CoreInstance functionType);
+    default TypeInferenceObserver unShiftTab(int i)
+    {
+        return shiftTab(-i);
+    }
 
-    void startProcessingFunctionExpression(CoreInstance functionExpression);
+    default TypeInferenceObserver startProcessingFunction(CoreInstance functionDefinition, CoreInstance functionType)
+    {
+        return this;
+    }
 
-    void startFirstPassParametersProcessing();
+    default TypeInferenceObserver startProcessingFunctionBody()
+    {
+        return this;
+    }
 
-    void processingParameter(CoreInstance functionExpression, int i, ValueSpecification value);
+    default TypeInferenceObserver finishedProcessingFunctionBody()
+    {
+        return this;
+    }
 
-    void inferenceResult(boolean success);
+    default TypeInferenceObserver finishedProcessingFunction(CoreInstance functionType)
+    {
+        return this;
+    }
 
-    void functionMatched(CoreInstance foundFunction, CoreInstance foundFunctionType);
+    default TypeInferenceObserver startProcessingFunctionExpression(CoreInstance functionExpression)
+    {
+        return this;
+    }
 
-    void firstPassInferenceFailed();
+    default TypeInferenceObserver startFirstPassParametersProcessing()
+    {
+        return this;
+    }
 
-    void matchTypeParamsFromFoundFunction(CoreInstance foundFunction);
+    default TypeInferenceObserver processingParameter(CoreInstance functionExpression, int i, ValueSpecification value)
+    {
+        return this;
+    }
 
-    void register(CoreInstance templateGenType, CoreInstance valueForMetaPropertyToOne, TypeInferenceContext context, TypeInferenceContext targetGenericsContext);
+    default TypeInferenceObserver inferenceResult(boolean success)
+    {
+        return this;
+    }
 
-    void registerMul(CoreInstance templateMul, CoreInstance valueMul, TypeInferenceContext context, TypeInferenceContext targetGenericsContext);
+    default TypeInferenceObserver functionMatched(CoreInstance foundFunction, CoreInstance foundFunctionType)
+    {
+        return this;
+    }
 
-    void matchParam(int z);
+    default TypeInferenceObserver firstPassInferenceFailed()
+    {
+        return this;
+    }
 
-    void paramInferenceFailed(int z);
+    default TypeInferenceObserver matchTypeParamsFromFoundFunction(CoreInstance foundFunction)
+    {
+        return this;
+    }
 
-    void reverseMatching();
+    default TypeInferenceObserver register(CoreInstance templateGenType, CoreInstance valueForMetaPropertyToOne, TypeInferenceContext context, TypeInferenceContext targetGenericsContext)
+    {
+        return this;
+    }
 
-    void parameterInferenceSucceeded();
+    default TypeInferenceObserver registerMul(CoreInstance templateMul, CoreInstance valueMul, TypeInferenceContext context, TypeInferenceContext targetGenericsContext)
+    {
+        return this;
+    }
 
-    void returnType(CoreInstance returnGenericType);
+    default TypeInferenceObserver matchParam(int z)
+    {
+        return this;
+    }
 
-    void returnTypeNotConcrete();
+    default TypeInferenceObserver paramInferenceFailed(int z)
+    {
+        return this;
+    }
 
-    void reprocessingTheParameter();
+    default TypeInferenceObserver reverseMatching()
+    {
+        return this;
+    }
 
-    void finishedProcessParameter();
+    default TypeInferenceObserver parameterInferenceSucceeded()
+    {
+        return this;
+    }
 
-    void newReturnType(CoreInstance returnGenericType);
+    default TypeInferenceObserver returnType(CoreInstance returnGenericType)
+    {
+        return this;
+    }
 
-    void finishedRegisteringParametersAndMultiplicities();
+    default TypeInferenceObserver returnTypeNotConcrete()
+    {
+        return this;
+    }
 
-    void finishedProcessingFunctionExpression(CoreInstance functionExpression);
+    default TypeInferenceObserver reprocessingTheParameter()
+    {
+        return this;
+    }
+
+    default TypeInferenceObserver finishedProcessParameter()
+    {
+        return this;
+    }
+
+    default TypeInferenceObserver newReturnType(CoreInstance returnGenericType)
+    {
+        return this;
+    }
+
+    default TypeInferenceObserver finishedRegisteringParametersAndMultiplicities()
+    {
+        return this;
+    }
+
+    default TypeInferenceObserver finishedProcessingFunctionExpression(CoreInstance functionExpression)
+    {
+        return this;
+    }
 }
