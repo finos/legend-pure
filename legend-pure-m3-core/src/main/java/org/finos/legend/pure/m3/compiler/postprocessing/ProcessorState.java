@@ -16,12 +16,9 @@ package org.finos.legend.pure.m3.compiler.postprocessing;
 
 import org.eclipse.collections.api.factory.Sets;
 import org.eclipse.collections.api.factory.Stacks;
-import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.set.MutableSet;
 import org.eclipse.collections.api.set.SetIterable;
 import org.eclipse.collections.api.stack.MutableStack;
-import org.eclipse.collections.api.tuple.Pair;
-import org.eclipse.collections.impl.tuple.Tuples;
 import org.finos.legend.pure.m3.SourceMutation;
 import org.finos.legend.pure.m3.compiler.postprocessing.inference.PrintTypeInferenceObserver;
 import org.finos.legend.pure.m3.compiler.postprocessing.inference.TestTypeInferenceObserver;
@@ -46,7 +43,7 @@ public class ProcessorState extends MatcherState
     private VariableContext variableContext;
     private final MutableSet<String> variables = Sets.mutable.empty();
     private final MutableStack<TypeInferenceContext> typeInferenceContext = Stacks.mutable.empty();
-    private final MutableStack<Pair<ListIterable<String>, MilestoningDates>> milestoningDates = Stacks.mutable.empty();
+    private final MutableStack<MilestoneDateContext> milestoningDates = Stacks.mutable.empty();
     private final MutableSet<CoreInstance> functionDefinitions = Sets.mutable.empty();
     private final Message message;
     private final ParserLibrary parserLibrary;
@@ -265,18 +262,40 @@ public class ProcessorState extends MatcherState
 
     public MilestoningDates getMilestoningDates(String varName)
     {
-        Pair<ListIterable<String>, MilestoningDates> inputVarDates = this.milestoningDates.detect(p -> p.getOne().contains(varName));
-        return (inputVarDates == null) ? null : inputVarDates.getTwo();
+        MilestoneDateContext context = this.milestoningDates.detect(c -> c.varNames.contains(varName));
+        return (context == null) ? null : context.milestoningDates;
     }
 
-    public void pushMilestoneDateContext(MilestoningDates milestonedDates, ListIterable<String> varNames)
+    @Deprecated
+    public void pushMilestoneDateContext(MilestoningDates milestonedDates, Iterable<String> varNames)
     {
-        this.milestoningDates.push(Tuples.pair(varNames, milestonedDates));
+        pushMilestoneDateContext(newMilestoneDateContext(milestonedDates, varNames));
     }
 
+    @Deprecated
     public void popMilestoneDateContext()
     {
         this.milestoningDates.pop();
+    }
+
+    private void pushMilestoneDateContext(MilestoneDateContext milestoneDateContext)
+    {
+        if (milestoneDateContext != null)
+        {
+            this.milestoningDates.push(milestoneDateContext);
+        }
+    }
+
+    private void popMilestoneDateContext(MilestoneDateContext milestoneDateContext)
+    {
+        if (milestoneDateContext != null)
+        {
+            MilestoneDateContext popped = this.milestoningDates.pop();
+            if (popped != milestoneDateContext)
+            {
+                throw new IllegalStateException("Unexpected milestone date context");
+            }
+        }
     }
 
     public VariableContextScope withNewVariableContext()
@@ -297,6 +316,45 @@ public class ProcessorState extends MatcherState
         public void close()
         {
             popVariableContext(this.variableContext);
+        }
+    }
+
+    public MilestoningDateContextScope withMilestoningDateContext(MilestoningDates milestonedDates, Iterable<String> varNames)
+    {
+        return new MilestoningDateContextScope(newMilestoneDateContext(milestonedDates, varNames));
+    }
+
+    public class MilestoningDateContextScope implements AutoCloseable
+    {
+        private final MilestoneDateContext milestoneDateContext;
+
+        private MilestoningDateContextScope(MilestoneDateContext milestoneDateContext)
+        {
+            this.milestoneDateContext = milestoneDateContext;
+            pushMilestoneDateContext(this.milestoneDateContext);
+        }
+
+        @Override
+        public void close()
+        {
+            popMilestoneDateContext(this.milestoneDateContext);
+        }
+    }
+
+    private static MilestoneDateContext newMilestoneDateContext(MilestoningDates milestonedDates, Iterable<String> varNames)
+    {
+        return (milestonedDates == null) ? null : new MilestoneDateContext(milestonedDates, varNames);
+    }
+
+    private static class MilestoneDateContext
+    {
+        private final MilestoningDates milestoningDates;
+        private final SetIterable<String> varNames;
+
+        private MilestoneDateContext(MilestoningDates milestoningDates, Iterable<String> varNames)
+        {
+            this.milestoningDates = milestoningDates;
+            this.varNames = Sets.immutable.withAll(varNames);
         }
     }
 

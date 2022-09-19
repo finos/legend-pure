@@ -14,7 +14,7 @@
 
 package org.finos.legend.pure.m3.tests.inference;
 
-import org.eclipse.collections.api.RichIterable;
+import org.eclipse.collections.api.list.ListIterable;
 import org.finos.legend.pure.m3.AbstractPureTestWithCoreCompiledPlatform;
 import org.finos.legend.pure.m3.exception.PureUnmatchedFunctionException;
 import org.finos.legend.pure.m3.navigation.Instance;
@@ -238,8 +238,6 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void inferTheTypeOfParametersOfACollectionOfLambdas()
     {
-//        runtime.loadAndCompile();
-
         compileInferenceTest(
                 "Class Person{age:Integer[1];}\n" +
                         "function tt<T>(a:T[*],e:Function<{T[1]->Integer[1]}>[*]):Any[*]\n" +
@@ -275,7 +273,6 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void ensureProperFailureWhenTheLambdaWithACollectionHaveDifferentParametersCount()
     {
-//        runtime.loadAndCompile();
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
                 "Class Person{age:Integer[1];}\n" +
                         "function tt<T>(a:T[*],e:Function<Any>[*]):Any[*]\n" +
@@ -313,8 +310,6 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void inferTheTypeOfParametersOfACollectionOfLambdasAndFunctions()
     {
-//        runtime.loadAndCompile();
-
         compileInferenceTest(
                 "function tt<T>(a:T[*],e:Function<{T[1]->String[1]}>[*]):Any[*]\n" +
                         "{\n" +
@@ -399,7 +394,12 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
     @Test
     public void testIfType()
     {
-        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest("function test():Any[*]{let r = if(true,|'a',|1)->toOne();$r+2;}"));
+        PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
+                "function test():Any[*]\n" +
+                        "{\n" +
+                        "    let r = if(true,|'a',|1)->toOne();\n" +
+                        "    $r + 2;\n" +
+                        "}"));
         assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "plus(_:Any[2])\n" +
                 PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
                 PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE +
@@ -407,19 +407,26 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                 "\tmeta::pure::functions::math::plus(Float[*]):Float[1]\n" +
                 "\tmeta::pure::functions::math::plus(Integer[*]):Integer[1]\n" +
                 "\tmeta::pure::functions::math::plus(Number[*]):Number[1]\n" +
-                "\tmeta::pure::functions::string::plus(String[*]):String[1]\n", inferenceTestFileName, 1, 60, e);
+                "\tmeta::pure::functions::string::plus(String[*]):String[1]\n", inferenceTestFileName, 4, 8, e);
     }
 
     @Test
     public void testIfMul()
     {
         PureCompilationException e = Assert.assertThrows(PureCompilationException.class, () -> compileInferenceTest(
-                "function a(a:Integer[1],b:Integer[1]):Integer[1]{$a+$b;}\n" +
-                        "function test():Any[*]{let r = if(true,|[1,2],|1);a($r,2);}"));
+                "function a(a:Integer[1],b:Integer[1]):Integer[1]\n" +
+                        "{\n" +
+                        "    $a + $b;\n" +
+                        "}\n" +
+                        "function test():Any[*]\n" +
+                        "{\n" +
+                        "    let r = if(true,|[1,2],|1);\n" +
+                        "    a($r, 2);\n" +
+                        "}"));
         assertPureException(PureCompilationException.class, PureUnmatchedFunctionException.FUNCTION_UNMATCHED_MESSAGE + "a(_:Integer[1..2],_:Integer[1])\n" +
                 PureUnmatchedFunctionException.NONEMPTY_CANDIDATES_WITH_PACKAGE_IMPORTED_MESSAGE +
                 "\ta(Integer[1], Integer[1]):Integer[1]\n" +
-                PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, inferenceTestFileName, 2, 51, e);
+                PureUnmatchedFunctionException.EMPTY_CANDIDATES_WITH_PACKAGE_NOT_IMPORTED_MESSAGE, inferenceTestFileName, 8, 5, e);
     }
 
     @Test
@@ -582,10 +589,10 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
         CoreInstance expSeqGT = Instance.getValueForMetaPropertyToOneResolved(expressionSeq, M3Properties.genericType, processorSupport);
         CoreInstance pairRT = Instance.getValueForMetaPropertyToOneResolved(expSeqGT, M3Properties.rawType, processorSupport);
         Assert.assertEquals(M3Paths.Pair, PackageableElement.getUserPathForPackageableElement(pairRT));
-        RichIterable<? extends CoreInstance> pairTAs = Instance.getValueForMetaPropertyToManyResolved(expSeqGT, M3Properties.typeArguments, processorSupport);
-        CoreInstance listRT = Instance.getValueForMetaPropertyToOneResolved(pairTAs.getFirst(), M3Properties.rawType, processorSupport);
+        ListIterable<? extends CoreInstance> pairTAs = Instance.getValueForMetaPropertyToManyResolved(expSeqGT, M3Properties.typeArguments, processorSupport);
+        CoreInstance listRT = Instance.getValueForMetaPropertyToOneResolved(pairTAs.get(0), M3Properties.rawType, processorSupport);
         Assert.assertNotNull(listRT);
-        CoreInstance listTA = Instance.getValueForMetaPropertyToOneResolved(pairTAs.getFirst(), M3Properties.typeArguments, processorSupport);
+        CoreInstance listTA = Instance.getValueForMetaPropertyToOneResolved(pairTAs.get(0), M3Properties.typeArguments, processorSupport);
         CoreInstance listTypeParameter = Instance.getValueForMetaPropertyToOneResolved(listTA, M3Properties.typeParameter, processorSupport);
         Assert.assertNotNull(listTypeParameter);
         Assert.assertEquals("T", listTypeParameter.getValueForMetaPropertyToOne(M3Properties.name).getName());
@@ -659,8 +666,188 @@ public class TestFunctionTypeInference extends AbstractPureTestWithCoreCompiledP
                         "{\n" +
                         "   $f->map($func);\n" +
                         "}\n");
-        // TODO what is this testing?
-//        System.out.println(processorSupport.package_getByUserPath("test_T_1__Function_1__Person_MANY_").getValueForMetaPropertyToOne(M3Properties.expressionSequence).printWithoutDebug("", 1));
+    }
+
+    @Test
+    public void testChainedFilters()
+    {
+        compileInferenceTest(
+                "function test():Profile[*]\n" +
+                        "{\n" +
+                        "  meta::pure::metamodel::extension::Profile.all()\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 1)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 2)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 3)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 4)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 5)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 6)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 7)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 8)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 9)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 10)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 11)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 12)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 13)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 14)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 15)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 16)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 17)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 18)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 19)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 20)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 21)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 22)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 23)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 24)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 25)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 26)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 27)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 28)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 29)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 30)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 31)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 32)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 33)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 34)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 35)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 36)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 37)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 38)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 39)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 40)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 41)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 42)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 43)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 44)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 45)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 46)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 47)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 48)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 49)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 50)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 51)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 52)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 53)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 54)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 55)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 56)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 57)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 58)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 59)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 60)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 61)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 62)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 63)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 64)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 65)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 66)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 67)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 68)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 69)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 70)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 71)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 72)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 73)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 74)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 75)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 76)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 77)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 78)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 79)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 80)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 81)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 82)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 83)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 84)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 85)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 86)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 87)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 88)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 89)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 90)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 91)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 92)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 93)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 94)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 95)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 96)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 97)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 98)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 99)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 100)\n" +
+                        "}");
+    }
+
+    @Test
+    public void testMixedChain()
+    {
+        compileInferenceTest(
+                "function test():Profile[*]\n" +
+                        "{\n" +
+                        "  meta::pure::metamodel::extension::Profile.all()\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 1)\n" +
+                        "   ->map(p | $p.p_stereotypes)\n" +
+                        "   ->filter(s | !$s.value->isEmpty())\n" +
+                        "   ->map(s | $s.profile)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 2)\n" +
+                        "   ->map(p | $p.p_stereotypes)\n" +
+                        "   ->filter(s | !$s.value->isEmpty())\n" +
+                        "   ->map(s | $s.profile)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 3)\n" +
+                        "   ->map(p | $p.p_stereotypes)\n" +
+                        "   ->filter(s | !$s.value->isEmpty())\n" +
+                        "   ->map(s | $s.profile)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 4)\n" +
+                        "   ->map(p | $p.p_stereotypes)\n" +
+                        "   ->filter(s | !$s.value->isEmpty())\n" +
+                        "   ->map(s | $s.profile)\n" +
+                        "   ->filter(p | $p.p_stereotypes->size() > 5)\n" +
+                        "   ->map(p | $p.p_stereotypes)\n" +
+                        "   ->filter(s | !$s.value->isEmpty())\n" +
+                        "   ->map(s | $s.profile)\n" +
+                        "}");
+    }
+
+    @Test
+    public void testChainWithParameterizedReturn()
+    {
+        compileInferenceTest(
+                "function test<X, Y, Z>(classes:Class<X>[m], funcXY:Function<{Class<X>[1]->Y[1]}>[1], predY:Function<{Y[1]->Boolean[1]}>[1], funcYZ:Function<{Y[1]->Z[0..1]}>[1], predZ:Function<{Z[1]->Boolean[1]}>[1]):Z[*]\n" +
+                        "{\n" +
+                        "  $classes\n" +
+                        "   ->filter(c | $c.properties->size() > 1)\n" +
+                        "   ->filter(c | $c.properties->size() > 2)\n" +
+                        "   ->filter(c | $c.properties->size() > 3)\n" +
+                        "   ->filter(c | $c.properties->size() > 4)\n" +
+                        "   ->filter(c | $c.properties->size() > 5)\n" +
+                        "   ->filter(c | $c.properties->size() > 6)\n" +
+                        "   ->filter(c | $c.properties->size() > 7)\n" +
+                        "   ->filter(c | $c.properties->size() > 8)\n" +
+                        "   ->filter(c | $c.properties->size() > 9)\n" +
+                        "   ->filter(c | $c.properties->size() > 10)\n" +
+                        "   ->map(c | $funcXY->eval($c))\n" +
+                        "   ->filter(y | $predY->eval($y))\n" +
+                        "   ->filter(y | $predY->eval($y))\n" +
+                        "   ->filter(y | $predY->eval($y))\n" +
+                        "   ->filter(y | $predY->eval($y))\n" +
+                        "   ->filter(y | $predY->eval($y))\n" +
+                        "   ->filter(y | $predY->eval($y))\n" +
+                        "   ->filter(y | $predY->eval($y))\n" +
+                        "   ->filter(y | $predY->eval($y))\n" +
+                        "   ->filter(y | $predY->eval($y))\n" +
+                        "   ->filter(y | $predY->eval($y))\n" +
+                        "   ->map(y | $funcYZ->eval($y))\n" +
+                        "   ->filter(z | $predZ->eval($z))\n" +
+                        "   ->filter(z | $predZ->eval($z))\n" +
+                        "   ->filter(z | $predZ->eval($z))\n" +
+                        "   ->filter(z | $predZ->eval($z))\n" +
+                        "   ->filter(z | $predZ->eval($z))\n" +
+                        "   ->filter(z | $predZ->eval($z))\n" +
+                        "   ->filter(z | $predZ->eval($z))\n" +
+                        "   ->filter(z | $predZ->eval($z))\n" +
+                        "   ->filter(z | $predZ->eval($z))\n" +
+                        "   ->filter(z | $predZ->eval($z))\n" +
+                        "}");
     }
 
     private void compileInferenceTest(String source)
