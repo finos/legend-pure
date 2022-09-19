@@ -20,9 +20,46 @@ import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public abstract class MultiplicityMatch implements Comparable<MultiplicityMatch>
 {
-    private static final MultiplicityMatch EXACT_MATCH = new SimpleMultiplicityMatch(0, 0);
-    private static final MultiplicityMatch NON_CONCRETE_MATCH = new NonConcreteMultiplicityMatch();
-    private static final MultiplicityMatch NULL_MATCH = new NullMultiplicityMatch();
+    private static final MultiplicityMatch NULL_MATCH = new MultiplicityMatch()
+    {
+        @Override
+        public int compareTo(MultiplicityMatch other)
+        {
+            return (this == other) ? 0 : 1;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "<MultiplicityMatch null>";
+        }
+    };
+
+    private static final MultiplicityMatch NON_CONCRETE_MATCH = new MultiplicityMatch()
+    {
+        @Override
+        public int compareTo(MultiplicityMatch other)
+        {
+            if (this == other)
+            {
+                return 0;
+            }
+
+            if (other == NULL_MATCH)
+            {
+                return -1;
+            }
+
+            SimpleMultiplicityMatch otherMatch = (SimpleMultiplicityMatch) other;
+            return ((otherMatch.lowerBoundDistance == 0) && (otherMatch.upperBoundDistance == 0)) ? 1 : -1;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "<MultiplicityMatch non-concrete>";
+        }
+    };
 
     private MultiplicityMatch()
     {
@@ -30,6 +67,8 @@ public abstract class MultiplicityMatch implements Comparable<MultiplicityMatch>
 
     private static class SimpleMultiplicityMatch extends MultiplicityMatch
     {
+        private static final SimpleMultiplicityMatch EXACT_MATCH = new SimpleMultiplicityMatch(0, 0);
+
         private final int lowerBoundDistance;
         private final int upperBoundDistance;
 
@@ -42,7 +81,7 @@ public abstract class MultiplicityMatch implements Comparable<MultiplicityMatch>
         @Override
         public int hashCode()
         {
-            return this.lowerBoundDistance ^ this.upperBoundDistance;
+            return this.lowerBoundDistance + (83 * this.upperBoundDistance);
         }
 
         @Override
@@ -58,9 +97,32 @@ public abstract class MultiplicityMatch implements Comparable<MultiplicityMatch>
                 return false;
             }
 
-            SimpleMultiplicityMatch otherMatch = (SimpleMultiplicityMatch)other;
+            SimpleMultiplicityMatch otherMatch = (SimpleMultiplicityMatch) other;
             return (this.lowerBoundDistance == otherMatch.lowerBoundDistance) &&
                     (this.upperBoundDistance == otherMatch.upperBoundDistance);
+        }
+
+        @Override
+        public int compareTo(MultiplicityMatch other)
+        {
+            if (this == other)
+            {
+                return 0;
+            }
+
+            if (other == NULL_MATCH)
+            {
+                return -1;
+            }
+
+            if (other == NON_CONCRETE_MATCH)
+            {
+                return ((this.lowerBoundDistance == 0) && (this.upperBoundDistance == 0)) ? -1 : 1;
+            }
+
+            SimpleMultiplicityMatch otherSimpleMatch = (SimpleMultiplicityMatch) other;
+            int comparison = Integer.compare(this.upperBoundDistance, otherSimpleMatch.upperBoundDistance);
+            return (comparison == 0) ? Integer.compare(this.lowerBoundDistance, otherSimpleMatch.lowerBoundDistance) : comparison;
         }
 
         @Override
@@ -68,112 +130,11 @@ public abstract class MultiplicityMatch implements Comparable<MultiplicityMatch>
         {
             return "<MultiplicityMatch lowerBoundDistance=" + this.lowerBoundDistance + " upperBoundDistance=" + this.upperBoundDistance + ">";
         }
-
-        @Override
-        public int compareTo(MultiplicityMatch other)
-        {
-            if (this == other)
-            {
-                return 0;
-            }
-
-            if (other instanceof NullMultiplicityMatch)
-            {
-                return -1;
-            }
-
-            if (other instanceof NonConcreteMultiplicityMatch)
-            {
-                return ((this.lowerBoundDistance == 0) && (this.upperBoundDistance == 0)) ? -1 : 1;
-            }
-
-            SimpleMultiplicityMatch otherSimpleMatch = (SimpleMultiplicityMatch)other;
-            int comparison = Integer.compare(this.upperBoundDistance, otherSimpleMatch.upperBoundDistance);
-            return (comparison == 0) ? Integer.compare(this.lowerBoundDistance, otherSimpleMatch.lowerBoundDistance) : comparison;
-        }
-    }
-
-    private static class NonConcreteMultiplicityMatch extends MultiplicityMatch
-    {
-        private NonConcreteMultiplicityMatch()
-        {
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return NonConcreteMultiplicityMatch.class.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object other)
-        {
-            return (this == other) || (other instanceof NonConcreteMultiplicityMatch);
-        }
-
-        @Override
-        public String toString()
-        {
-            return "<MultiplicityMatch non-concrete>";
-        }
-
-        @Override
-        public int compareTo(MultiplicityMatch other)
-        {
-            if (this == other)
-            {
-                return 0;
-            }
-
-            if (other instanceof NullMultiplicityMatch)
-            {
-                return -1;
-            }
-
-            if (other instanceof NonConcreteMultiplicityMatch)
-            {
-                return 0;
-            }
-
-            SimpleMultiplicityMatch otherMatch = (SimpleMultiplicityMatch)other;
-            return ((otherMatch.lowerBoundDistance == 0) && (otherMatch.upperBoundDistance == 0)) ? 1 : -1;
-        }
-    }
-
-    private static class NullMultiplicityMatch extends MultiplicityMatch
-    {
-        private NullMultiplicityMatch()
-        {
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return NullMultiplicityMatch.class.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object other)
-        {
-            return (this == other) || (other instanceof NullMultiplicityMatch);
-        }
-
-        @Override
-        public String toString()
-        {
-            return "<MultiplicityMatch null>";
-        }
-
-        @Override
-        public int compareTo(MultiplicityMatch other)
-        {
-            return equals(other) ? 0 : 1;
-        }
     }
 
     private static MultiplicityMatch newExactMultiplicityMatch()
     {
-        return EXACT_MATCH;
+        return SimpleMultiplicityMatch.EXACT_MATCH;
     }
 
     private static MultiplicityMatch newNonConcreteMultiplicityMatch()
