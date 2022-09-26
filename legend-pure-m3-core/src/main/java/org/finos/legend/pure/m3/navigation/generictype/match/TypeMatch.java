@@ -14,25 +14,86 @@
 
 package org.finos.legend.pure.m3.navigation.generictype.match;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.function.FunctionType;
 import org.finos.legend.pure.m3.navigation.multiplicity.MultiplicityMatch;
 import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 abstract class TypeMatch implements Comparable<TypeMatch>
 {
-    private static final TypeMatch EXACT_MATCH = new SimpleTypeMatch(0); // Types are identical
-    private static final TypeMatch NON_CONCRETE_MATCH = new NonConcreteTypeMatch(); // Either type is non-concrete
-    private static final TypeMatch BOTTOM_TYPE_MATCH = new BottomTypeMatch(); // Value type is bottom type
-    private static final TypeMatch NULL_MATCH = new NullTypeMatch();
+    private static final TypeMatch NULL_MATCH = new TypeMatch()
+    {
+        @Override
+        public int compareTo(TypeMatch other)
+        {
+            return (this == other) ? 0 : 1;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "<TypeMatch null>";
+        }
+    };
+
+    // Either type is non-concrete
+    private static final TypeMatch NON_CONCRETE_MATCH = new TypeMatch()
+    {
+        @Override
+        public int compareTo(TypeMatch other)
+        {
+            if (this == other)
+            {
+                return 0;
+            }
+
+            if (other instanceof SimpleTypeMatch)
+            {
+                return (((SimpleTypeMatch) other).typeDistance == 0) ? 1 : -1;
+            }
+
+            return -1;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "<TypeMatch non-concrete>";
+        }
+    };
+
+    // Value type is bottom type
+    private static final TypeMatch BOTTOM_TYPE_MATCH = new TypeMatch()
+    {
+        @Override
+        public int compareTo(TypeMatch other)
+        {
+            if (this == other)
+            {
+                return 0;
+            }
+
+            if (other == NULL_MATCH)
+            {
+                return -1;
+            }
+
+            return 1;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "<TypeMatch Nil>";
+        }
+    };
 
     private TypeMatch()
     {
@@ -40,6 +101,8 @@ abstract class TypeMatch implements Comparable<TypeMatch>
 
     private static class SimpleTypeMatch extends TypeMatch
     {
+        private static final SimpleTypeMatch EXACT_MATCH = new SimpleTypeMatch(0);
+
         private final int typeDistance;
 
         private SimpleTypeMatch(int typeDistance)
@@ -56,7 +119,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
         @Override
         public boolean equals(Object other)
         {
-            return (this == other) || ((other instanceof SimpleTypeMatch) && (this.typeDistance == ((SimpleTypeMatch)other).typeDistance));
+            return (this == other) || ((other instanceof SimpleTypeMatch) && (this.typeDistance == ((SimpleTypeMatch) other).typeDistance));
         }
 
         @Override
@@ -67,7 +130,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
                 return 0;
             }
 
-            if (other instanceof NonConcreteTypeMatch)
+            if (other == NON_CONCRETE_MATCH)
             {
                 return (this.typeDistance == 0) ? -1 : 1;
             }
@@ -77,54 +140,13 @@ abstract class TypeMatch implements Comparable<TypeMatch>
                 return -1;
             }
 
-            return Integer.compare(this.typeDistance, ((SimpleTypeMatch)other).typeDistance);
+            return Integer.compare(this.typeDistance, ((SimpleTypeMatch) other).typeDistance);
         }
 
         @Override
         public String toString()
         {
             return "<TypeMatch typeDistance=" + this.typeDistance + ">";
-        }
-    }
-
-    private static class NonConcreteTypeMatch extends TypeMatch
-    {
-        private NonConcreteTypeMatch()
-        {
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return NonConcreteTypeMatch.class.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object other)
-        {
-            return (this == other) || (other instanceof NonConcreteTypeMatch);
-        }
-
-        @Override
-        public String toString()
-        {
-            return "<TypeMatch non-concrete>";
-        }
-
-        @Override
-        public int compareTo(TypeMatch other)
-        {
-            if (this == other)
-            {
-                return 0;
-            }
-
-            if (other instanceof SimpleTypeMatch)
-            {
-                return (((SimpleTypeMatch)other).typeDistance == 0) ? 1 : -1;
-            }
-
-            return (other instanceof NonConcreteTypeMatch) ? 0 : -1;
         }
     }
 
@@ -146,10 +168,10 @@ abstract class TypeMatch implements Comparable<TypeMatch>
         @Override
         public int hashCode()
         {
-            return this.parameterTypeMatches.hashCode() ^
-                    this.parameterMultiplicityMatches.hashCode() ^
-                    this.returnTypeMatch.hashCode() ^
-                    this.returnMultiplicityMatch.hashCode();
+            int hash = this.parameterTypeMatches.hashCode();
+            hash = (43 * hash) + this.parameterMultiplicityMatches.hashCode();
+            hash = (43 * hash) + this.returnTypeMatch.hashCode();
+            return (43 * hash) + this.returnMultiplicityMatch.hashCode();
         }
 
         @Override
@@ -165,7 +187,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
                 return false;
             }
 
-            FunctionTypeMatch otherMatch = (FunctionTypeMatch)other;
+            FunctionTypeMatch otherMatch = (FunctionTypeMatch) other;
             return this.parameterTypeMatches.equals(otherMatch.parameterTypeMatches) &&
                     this.parameterMultiplicityMatches.equals(otherMatch.parameterMultiplicityMatches) &&
                     this.returnTypeMatch.equals(otherMatch.returnTypeMatch) &&
@@ -178,12 +200,9 @@ abstract class TypeMatch implements Comparable<TypeMatch>
             StringBuilder builder = new StringBuilder("<TypeMatch FunctionType");
             this.parameterTypeMatches.appendString(builder, " parameterTypeMatches=[", ", ", "]");
             this.parameterMultiplicityMatches.appendString(builder, " parameterMultiplicityMatches=[", ", ", "]");
-            builder.append(" returnTypeMatch=");
-            builder.append(this.returnTypeMatch);
-            builder.append(" returnMultiplicityMatch=");
-            builder.append(this.returnMultiplicityMatch);
-            builder.append('>');
-            return builder.toString();
+            builder.append(" returnTypeMatch=").append(this.returnTypeMatch);
+            builder.append(" returnMultiplicityMatch=").append(this.returnMultiplicityMatch);
+            return builder.append('>').toString();
         }
 
         @Override
@@ -194,7 +213,7 @@ abstract class TypeMatch implements Comparable<TypeMatch>
                 return 0;
             }
 
-            if ((other instanceof SimpleTypeMatch) || (other instanceof NonConcreteTypeMatch))
+            if ((other == NON_CONCRETE_MATCH) || (other instanceof SimpleTypeMatch))
             {
                 return 1;
             }
@@ -204,36 +223,16 @@ abstract class TypeMatch implements Comparable<TypeMatch>
                 return -1;
             }
 
-            FunctionTypeMatch otherMatch = (FunctionTypeMatch)other;
-            int comparison = 0;
+            FunctionTypeMatch otherMatch = (FunctionTypeMatch) other;
+            int comparison;
 
-            int thisParamTypeCount = this.parameterTypeMatches.size();
-            int otherParamTypeCount = otherMatch.parameterTypeMatches.size();
-            for (int i = 0, minCount = Math.min(thisParamTypeCount, otherParamTypeCount); i < minCount; i++)
-            {
-                comparison = this.parameterTypeMatches.get(i).compareTo(otherMatch.parameterTypeMatches.get(i));
-                if (comparison != 0)
-                {
-                    return comparison;
-                }
-            }
-            comparison = Integer.compare(thisParamTypeCount, otherParamTypeCount);
+            comparison = GenericTypeMatch.compareMatchLists(this.parameterTypeMatches, otherMatch.parameterTypeMatches);
             if (comparison != 0)
             {
                 return comparison;
             }
 
-            int thisParamMultCount = this.parameterMultiplicityMatches.size();
-            int otherParamMultCount = otherMatch.parameterMultiplicityMatches.size();
-            for (int i = 0, minCount = Math.min(thisParamMultCount, otherParamMultCount); i < minCount; i++)
-            {
-                comparison = this.parameterMultiplicityMatches.get(i).compareTo(otherMatch.parameterMultiplicityMatches.get(i));
-                if (comparison != 0)
-                {
-                    return comparison;
-                }
-            }
-            comparison = Integer.compare(thisParamMultCount, otherParamMultCount);
+            comparison = GenericTypeMatch.compareMatchLists(this.parameterMultiplicityMatches, otherMatch.parameterMultiplicityMatches);
             if (comparison != 0)
             {
                 return comparison;
@@ -249,76 +248,9 @@ abstract class TypeMatch implements Comparable<TypeMatch>
         }
     }
 
-    private static class BottomTypeMatch extends TypeMatch
-    {
-        private BottomTypeMatch()
-        {
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return BottomTypeMatch.class.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object other)
-        {
-            return (this == other) || (other instanceof BottomTypeMatch);
-        }
-
-        @Override
-        public String toString()
-        {
-            return "<TypeMatch Nil>";
-        }
-
-        @Override
-        public int compareTo(TypeMatch other)
-        {
-            if (this == other)
-            {
-                return 0;
-            }
-
-            return (other instanceof BottomTypeMatch) ? 0 : ((other instanceof NullTypeMatch) ? -1 : 1);
-        }
-    }
-
-    private static class NullTypeMatch extends TypeMatch
-    {
-        private NullTypeMatch()
-        {
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return NullTypeMatch.class.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object other)
-        {
-            return (this == other) || (other instanceof NullTypeMatch);
-        }
-
-        @Override
-        public String toString()
-        {
-            return "<TypeMatch null>";
-        }
-
-        @Override
-        public int compareTo(TypeMatch other)
-        {
-            return equals(other) ? 0 : 1;
-        }
-    }
-
     static TypeMatch newExactTypeMatch()
     {
-        return EXACT_MATCH;
+        return SimpleTypeMatch.EXACT_MATCH;
     }
 
     static TypeMatch newBottomTypeMatch()
@@ -427,8 +359,8 @@ abstract class TypeMatch implements Comparable<TypeMatch>
             return null;
         }
 
-        MutableList<GenericTypeMatch> paramTypeMatches = FastList.newList(parameterCount);
-        MutableList<MultiplicityMatch> paramMultMatches = FastList.newList(parameterCount);
+        MutableList<GenericTypeMatch> paramTypeMatches = Lists.mutable.ofInitialCapacity(parameterCount);
+        MutableList<MultiplicityMatch> paramMultMatches = Lists.mutable.ofInitialCapacity(parameterCount);
         for (int i = 0; i < parameterCount; i++)
         {
             CoreInstance paramParam = targetParameters.get(i);

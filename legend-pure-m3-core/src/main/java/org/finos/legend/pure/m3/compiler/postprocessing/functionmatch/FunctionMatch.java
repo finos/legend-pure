@@ -14,26 +14,29 @@
 
 package org.finos.legend.pure.m3.compiler.postprocessing.functionmatch;
 
-import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
-import org.eclipse.collections.impl.factory.Lists;
-import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.eclipse.collections.impl.utility.ArrayIterate;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.type.FunctionType;
+import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.match.GenericTypeMatch;
 import org.finos.legend.pure.m3.navigation.generictype.match.NullMatchBehavior;
 import org.finos.legend.pure.m3.navigation.generictype.match.ParameterMatchBehavior;
 import org.finos.legend.pure.m3.navigation.multiplicity.MultiplicityMatch;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.Function;
-import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.valuespecification.ValueSpecification;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
+import org.finos.legend.pure.m3.tools.ListHelper;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
+
+import java.util.Arrays;
 
 class FunctionMatch implements Comparable<FunctionMatch>
 {
-    private final ImmutableList<GenericTypeMatch> typeMatches;
-    private final ImmutableList<MultiplicityMatch> multiplicityMatches;
+    private final GenericTypeMatch[] typeMatches;
+    private final MultiplicityMatch[] multiplicityMatches;
 
-    private FunctionMatch(ImmutableList<GenericTypeMatch> typeMatches, ImmutableList<MultiplicityMatch> multiplicityMatches)
+    private FunctionMatch(GenericTypeMatch[] typeMatches, MultiplicityMatch[] multiplicityMatches)
     {
         this.typeMatches = typeMatches;
         this.multiplicityMatches = multiplicityMatches;
@@ -42,7 +45,7 @@ class FunctionMatch implements Comparable<FunctionMatch>
     @Override
     public int hashCode()
     {
-        return this.typeMatches.hashCode() ^ this.multiplicityMatches.hashCode();
+        return Arrays.hashCode(this.typeMatches) + (43 * Arrays.hashCode(this.multiplicityMatches));
     }
 
     @Override
@@ -58,8 +61,8 @@ class FunctionMatch implements Comparable<FunctionMatch>
             return false;
         }
 
-        FunctionMatch otherMatch = (FunctionMatch)other;
-        return this.typeMatches.equals(otherMatch.typeMatches) && this.multiplicityMatches.equals(otherMatch.multiplicityMatches);
+        FunctionMatch otherMatch = (FunctionMatch) other;
+        return Arrays.equals(this.typeMatches, otherMatch.typeMatches) && Arrays.equals(this.multiplicityMatches, otherMatch.multiplicityMatches);
     }
 
     @Override
@@ -70,16 +73,16 @@ class FunctionMatch implements Comparable<FunctionMatch>
             return 0;
         }
 
-        int size = this.typeMatches.size();
-        if (other.typeMatches.size() != size)
+        int size = this.typeMatches.length;
+        if (other.typeMatches.length != size)
         {
-            return Integer.compare(size, other.typeMatches.size());
+            return Integer.compare(size, other.typeMatches.length);
         }
 
         // First, compare type matches
         for (int i = 0; i < size; i++)
         {
-            int comparison = this.typeMatches.get(i).compareTo(other.typeMatches.get(i));
+            int comparison = this.typeMatches[i].compareTo(other.typeMatches[i]);
             if (comparison != 0)
             {
                 return comparison;
@@ -89,7 +92,7 @@ class FunctionMatch implements Comparable<FunctionMatch>
         // If we still have a tie, compare multiplicity matches
         for (int i = 0; i < size; i++)
         {
-            int comparison = this.multiplicityMatches.get(i).compareTo(other.multiplicityMatches.get(i));
+            int comparison = this.multiplicityMatches[i].compareTo(other.multiplicityMatches[i]);
             if (comparison != 0)
             {
                 return comparison;
@@ -103,22 +106,20 @@ class FunctionMatch implements Comparable<FunctionMatch>
     public String toString()
     {
         StringBuilder builder = new StringBuilder("<FunctionMatch ");
-        this.typeMatches.appendString(builder, "typeMatches=[", ", ", "]");
-        builder.append(' ');
-        this.multiplicityMatches.appendString(builder, "multMatches=[", ", ", "]");
-        builder.append('>');
-        return builder.toString();
+        ArrayIterate.appendString(this.typeMatches, builder, "typeMatches=[", ", ", "]");
+        ArrayIterate.appendString(this.multiplicityMatches, builder, " multMatches=[", ", ", "]");
+        return builder.append('>').toString();
     }
 
-    static FunctionMatch newFunctionMatch(Function function, String functionToFindName, ListIterable<? extends ValueSpecification> givenParameters, boolean lenient, ProcessorSupport processorSupport)
+    static FunctionMatch newFunctionMatch(Function<?> function, String functionToFindName, ListIterable<? extends ValueSpecification> givenParameters, boolean lenient, ProcessorSupport processorSupport)
     {
         if (!functionToFindName.equals(function._functionName()))
         {
             return null;
         }
 
-        CoreInstance functionType = processorSupport.function_getFunctionType(function);
-        ListIterable<? extends CoreInstance> parameters = Instance.getValueForMetaPropertyToManyResolved(functionType, M3Properties.parameters, processorSupport);
+        FunctionType functionType = (FunctionType) processorSupport.function_getFunctionType(function);
+        ListIterable<? extends CoreInstance> parameters = ListHelper.wrapListIterable(functionType._parameters());
         int parameterCount = parameters.size();
         if (parameterCount != givenParameters.size())
         {
@@ -152,6 +153,6 @@ class FunctionMatch implements Comparable<FunctionMatch>
             multiplicityMatches[i] = multiplicityMatch;
         }
 
-        return new FunctionMatch(Lists.immutable.with(typeMatches), Lists.immutable.with(multiplicityMatches));
+        return new FunctionMatch(typeMatches, multiplicityMatches);
     }
 }

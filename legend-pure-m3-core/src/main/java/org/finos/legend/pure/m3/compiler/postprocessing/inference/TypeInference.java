@@ -115,44 +115,37 @@ public class TypeInference
         Type templateFunctionType = templateGenericType._typeArguments().notEmpty() ? (Type) ImportStub.withImportStubByPass(templateGenericType._typeArguments().getFirst()._rawTypeCoreInstance(), processorSupport) : null;
         FunctionType lambdaFunctionType = (FunctionType) ImportStub.withImportStubByPass(lambdaFunction._classifierGenericType()._typeArguments().getFirst()._rawTypeCoreInstance(), processorSupport);
 
-        if (org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenericType) && org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(ImportStub.withImportStubByPass(templateGenericType._rawTypeCoreInstance(), processorSupport), processorSupport.package_getByUserPath(M3Paths.Function), processorSupport))
-        {
-            ListIterable<? extends VariableExpression> parameters = ListHelper.wrapListIterable(lambdaFunctionType._parameters());
-            for (int j = 0 ; j < parameters.size(); j++)
-            {
-                VariableExpression param = parameters.get(j);
-                if (param._genericType() == null)
-                {
-                    if (org.finos.legend.pure.m3.navigation.type.Type.isBottomType(templateFunctionType, processorSupport) || org.finos.legend.pure.m3.navigation.type.Type.isTopType(templateFunctionType, processorSupport))
-                    {
-                        throw new PureCompilationException(lambdaFunction.getSourceInformation(), "Can't infer the parameters' types for the lambda. Please specify it in the signature.");
-                    }
-                    VariableExpression templateParam = ListHelper.wrapListIterable(((FunctionType) Objects.requireNonNull(templateFunctionType))._parameters()).get(j);
-                    CoreInstance genericType = org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(templateParam._genericType(), state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
-                    if (state.getTypeInferenceContext().isTypeParameterResolved(genericType))
-                    {
-                        genericType = state.getTypeInferenceContext().resolve(genericType);
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                    CoreInstance multiplicity = org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(templateParam._multiplicity(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity());
-                    param._genericType((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericTypeAsInferredGenericType(genericType, param.getSourceInformation(), processorSupport));
-                    param._multiplicity((Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(multiplicity, param.getSourceInformation(), processorSupport));
-                }
-            }
-            try (VariableContextScope ignore = state.withNewVariableContext())
-            {
-                FunctionDefinitionProcessor.process(lambdaFunction, state, matcher, repository);
-                LambdaFunctionProcessor.process(lambdaFunction, state, matcher, repository);
-            }
-        }
-        else
+        if (!org.finos.legend.pure.m3.navigation.generictype.GenericType.isGenericTypeConcrete(templateGenericType) || !org.finos.legend.pure.m3.navigation.type.Type.subTypeOf(ImportStub.withImportStubByPass(templateGenericType._rawTypeCoreInstance(), processorSupport), processorSupport.package_getByUserPath(M3Paths.Function), processorSupport))
         {
             throw new PureCompilationException(lambdaFunction.getSourceInformation(), "Can't infer the parameters' types for the lambda. Please specify it in the signature.");
         }
 
+        ListIterable<? extends VariableExpression> parameters = ListHelper.wrapListIterable(lambdaFunctionType._parameters());
+        for (int j = 0 ; j < parameters.size(); j++)
+        {
+            VariableExpression param = parameters.get(j);
+            if (param._genericType() == null)
+            {
+                if (org.finos.legend.pure.m3.navigation.type.Type.isBottomType(templateFunctionType, processorSupport) || org.finos.legend.pure.m3.navigation.type.Type.isTopType(templateFunctionType, processorSupport))
+                {
+                    throw new PureCompilationException(lambdaFunction.getSourceInformation(), "Can't infer the parameters' types for the lambda. Please specify it in the signature.");
+                }
+                VariableExpression templateParam = ListHelper.wrapListIterable(((FunctionType) Objects.requireNonNull(templateFunctionType))._parameters()).get(j);
+                CoreInstance genericType = org.finos.legend.pure.m3.navigation.generictype.GenericType.makeTypeArgumentAsConcreteAsPossible(templateParam._genericType(), state.getTypeInferenceContext().getTypeParameterToGenericType(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity(), processorSupport);
+                if (!state.getTypeInferenceContext().isTypeParameterResolved(genericType))
+                {
+                    return true;
+                }
+                CoreInstance multiplicity = org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.makeMultiplicityAsConcreteAsPossible(templateParam._multiplicity(), state.getTypeInferenceContext().getMultiplicityParameterToMultiplicity());
+                param._genericType((GenericType) org.finos.legend.pure.m3.navigation.generictype.GenericType.copyGenericTypeAsInferredGenericType(state.getTypeInferenceContext().resolve(genericType), param.getSourceInformation(), processorSupport));
+                param._multiplicity((Multiplicity) org.finos.legend.pure.m3.navigation.multiplicity.Multiplicity.copyMultiplicity(multiplicity, param.getSourceInformation(), processorSupport));
+            }
+        }
+        try (VariableContextScope ignore = state.withNewVariableContext())
+        {
+            FunctionDefinitionProcessor.process(lambdaFunction, state, matcher, repository);
+            LambdaFunctionProcessor.process(lambdaFunction, state, matcher, repository);
+        }
         instanceValueContainer._genericTypeRemove();
         InstanceValueProcessor.updateInstanceValue(instanceValueContainer, processorSupport);
         return false;

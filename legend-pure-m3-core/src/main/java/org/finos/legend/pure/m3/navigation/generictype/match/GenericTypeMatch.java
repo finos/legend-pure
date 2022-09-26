@@ -14,20 +14,19 @@
 
 package org.finos.legend.pure.m3.navigation.generictype.match;
 
+import org.eclipse.collections.api.factory.Lists;
 import org.eclipse.collections.api.list.ImmutableList;
 import org.eclipse.collections.api.list.ListIterable;
 import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.api.map.ImmutableMap;
-import org.eclipse.collections.impl.factory.Lists;
-import org.eclipse.collections.impl.list.mutable.FastList;
-import org.finos.legend.pure.m3.navigation.M3Properties;
 import org.finos.legend.pure.m3.navigation.Instance;
+import org.finos.legend.pure.m3.navigation.M3Properties;
+import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
+import org.finos.legend.pure.m3.navigation.ProcessorSupport;
 import org.finos.legend.pure.m3.navigation.generictype.GenericType;
 import org.finos.legend.pure.m3.navigation.generictype.GenericTypeWithXArguments;
 import org.finos.legend.pure.m3.navigation.multiplicity.MultiplicityMatch;
 import org.finos.legend.pure.m3.navigation.type.Type;
-import org.finos.legend.pure.m3.navigation.ProcessorSupport;
-import org.finos.legend.pure.m3.navigation.PrimitiveUtilities;
 import org.finos.legend.pure.m4.coreinstance.CoreInstance;
 
 public class GenericTypeMatch implements Comparable<GenericTypeMatch>
@@ -43,19 +42,19 @@ public class GenericTypeMatch implements Comparable<GenericTypeMatch>
     private GenericTypeMatch(TypeMatch rawTypeMatch, Iterable<? extends GenericTypeMatch> typeArgumentMatches, Iterable<? extends MultiplicityMatch> multiplicityArgumentMatches)
     {
         this.rawTypeMatch = rawTypeMatch;
-        this.typeArgumentMatches = Lists.immutable.withAll(typeArgumentMatches);
-        this.multiplicityArgumentMatches = Lists.immutable.withAll(multiplicityArgumentMatches);
+        this.typeArgumentMatches = (typeArgumentMatches == null) ? Lists.immutable.empty() : Lists.immutable.withAll(typeArgumentMatches);
+        this.multiplicityArgumentMatches = (multiplicityArgumentMatches == null) ? Lists.immutable.empty() : Lists.immutable.withAll(multiplicityArgumentMatches);
     }
 
     private GenericTypeMatch(TypeMatch rawTypeMatch)
     {
-        this(rawTypeMatch, Lists.immutable.<GenericTypeMatch>empty(), Lists.immutable.<MultiplicityMatch>empty());
+        this(rawTypeMatch, null, null);
     }
 
     @Override
     public int hashCode()
     {
-        return this.rawTypeMatch.hashCode() ^ this.typeArgumentMatches.hashCode() ^ this.multiplicityArgumentMatches.hashCode();
+        return this.rawTypeMatch.hashCode() + 47 * (this.typeArgumentMatches.hashCode() + (47 * this.multiplicityArgumentMatches.hashCode()));
     }
 
     @Override
@@ -71,7 +70,7 @@ public class GenericTypeMatch implements Comparable<GenericTypeMatch>
             return false;
         }
 
-        GenericTypeMatch otherMatch = (GenericTypeMatch)other;
+        GenericTypeMatch otherMatch = (GenericTypeMatch) other;
         return this.rawTypeMatch.equals(otherMatch.rawTypeMatch) &&
                 this.typeArgumentMatches.equals(otherMatch.typeArgumentMatches) &&
                 this.multiplicityArgumentMatches.equals(otherMatch.multiplicityArgumentMatches);
@@ -98,7 +97,7 @@ public class GenericTypeMatch implements Comparable<GenericTypeMatch>
         return compareMatchLists(this.multiplicityArgumentMatches, other.multiplicityArgumentMatches);
     }
 
-    private static <T extends Comparable<T>> int compareMatchLists(ListIterable<T> these, ListIterable<T> those)
+    static <T extends Comparable<T>> int compareMatchLists(ListIterable<T> these, ListIterable<T> those)
     {
         int theseCount = these.size();
         int thoseCount = those.size();
@@ -116,13 +115,9 @@ public class GenericTypeMatch implements Comparable<GenericTypeMatch>
     @Override
     public String toString()
     {
-        StringBuilder builder = new StringBuilder("<GenericTypeMatch rawTypeMatch=");
-        builder.append(this.rawTypeMatch);
-        builder.append(" typeArgumentMatches=[");
-        this.typeArgumentMatches.appendString(builder, ", ");
-        builder.append("] multiplicityParameters=[");
-        this.multiplicityArgumentMatches.appendString(builder, ", ");
-        builder.append("]>");
+        StringBuilder builder = new StringBuilder("<GenericTypeMatch rawTypeMatch=").append(this.rawTypeMatch);
+        this.typeArgumentMatches.appendString(builder, " typeArgumentMatches=[", ", ", "]");
+        this.multiplicityArgumentMatches.appendString(builder, " multiplicityParameters=[", ", ", "]>");
         return builder.toString();
     }
 
@@ -244,7 +239,7 @@ public class GenericTypeMatch implements Comparable<GenericTypeMatch>
 
         ListIterable<? extends CoreInstance> targetTypeArguments = targetGenericType.getValueForMetaPropertyToMany(M3Properties.typeArguments);
         int typeParameterCount = targetTypeArguments.size();
-        MutableList<GenericTypeMatch> typeArgumentMatches = FastList.newList(typeParameterCount);
+        MutableList<GenericTypeMatch> typeArgumentMatches = Lists.mutable.ofInitialCapacity(typeParameterCount);
 
         if (typeParameterCount > 0)
         {
@@ -277,7 +272,7 @@ public class GenericTypeMatch implements Comparable<GenericTypeMatch>
 
         ListIterable<? extends CoreInstance> targetMultArguments = Instance.getValueForMetaPropertyToManyResolved(targetGenericType, M3Properties.multiplicityArguments, processorSupport);
         int multParameterCount = targetMultArguments.size();
-        MutableList<MultiplicityMatch> multArgumentMatches = FastList.newList(multParameterCount);
+        MutableList<MultiplicityMatch> multArgumentMatches = Lists.mutable.ofInitialCapacity(multParameterCount);
 
         if (multParameterCount > 0)
         {

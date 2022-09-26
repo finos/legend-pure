@@ -25,6 +25,7 @@ import org.eclipse.collections.impl.utility.ArrayIterate;
 import org.finos.legend.pure.m3.compiler.Context;
 import org.finos.legend.pure.m3.compiler.PropertyOwnerStrategy;
 import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState;
+import org.finos.legend.pure.m3.compiler.postprocessing.ProcessorState.MilestoningDateContextScope;
 import org.finos.legend.pure.m3.compiler.postprocessing.processor.NativeFunctionIdentifier;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.PropertyOwner;
 import org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction;
@@ -54,21 +55,19 @@ public class MilestoningDatesPropagationFunctions
     {
     }
 
-    public static <V> V possiblyExecuteInNewMilestoningDateContext(FunctionExpression fe, CoreInstance possibleLambda, Function<CoreInstance, V> function, ProcessorState processorState, ModelRepository repository, Context context, ProcessorSupport processorSupport)
+    public static MilestoningDateContextScope withNewMilestoningDateContext(FunctionExpression fe, CoreInstance possibleLambda, ProcessorState processorState, ModelRepository repository, Context context, ProcessorSupport processorSupport)
     {
         ListIterable<String> varNames = getMilestoningDatesVarNames(possibleLambda, processorSupport);
         MilestoningDates propagatedMilestoningDates = getMilestoningDatesForFunctionsWithLambda(fe, processorState, varNames, repository, context, processorSupport);
+        return processorState.withMilestoningDateContext(propagatedMilestoningDates, varNames);
+    }
 
-        if (propagatedMilestoningDates == null)
+    public static <V> V possiblyExecuteInNewMilestoningDateContext(FunctionExpression fe, CoreInstance possibleLambda, Function<? super CoreInstance, V> function, ProcessorState processorState, ModelRepository repository, Context context, ProcessorSupport processorSupport)
+    {
+        try (MilestoningDateContextScope ignore = withNewMilestoningDateContext(fe, possibleLambda, processorState, repository, context, processorSupport))
         {
-            // no milestoning date context needed
             return function.apply(possibleLambda);
         }
-
-        processorState.pushMilestoneDateContext(propagatedMilestoningDates, varNames);
-        V result = function.apply(possibleLambda);
-        processorState.popMilestoneDateContext();
-        return result;
     }
 
     private static MilestoningDates getMilestoningDatesForFunctionsWithLambda(FunctionExpression fe, ProcessorState processorState, ListIterable<String> varNames, ModelRepository repository, Context context, ProcessorSupport processorSupport)
