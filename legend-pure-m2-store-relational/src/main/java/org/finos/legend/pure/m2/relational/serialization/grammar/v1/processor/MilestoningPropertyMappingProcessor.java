@@ -33,6 +33,7 @@ import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.SQLNull;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.TableAlias;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.TableAliasColumn;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.BusinessMilestoning;
+import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.BusinessSnapshotMilestoning;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.ProcessingMilestoning;
 import org.finos.legend.pure.m3.coreinstance.meta.relational.metamodel.relation.Table;
 import org.finos.legend.pure.m3.navigation.ProcessorSupport;
@@ -154,14 +155,15 @@ public class MilestoningPropertyMappingProcessor
     {
         Table table = (Table)tableAlias._relationalElement();
         BusinessMilestoning businessMilestoning = table._milestoning().selectInstancesOf(BusinessMilestoning.class).getFirst();
+        BusinessSnapshotMilestoning businessSnapshotMilestoning = table._milestoning().selectInstancesOf(BusinessSnapshotMilestoning.class).getFirst();
         ProcessingMilestoning processingMilestoning = table._milestoning().selectInstancesOf(ProcessingMilestoning.class).getFirst();
 
         switch (milestoningPropertyName)
         {
             case "from":
-                return businessMilestoning._from();
+                return businessMilestoning != null ? businessMilestoning._from() : businessSnapshotMilestoning._snapshotDate();
             case "thru":
-                return businessMilestoning._thru();
+                return businessMilestoning != null ? businessMilestoning._thru() : businessSnapshotMilestoning._snapshotDate();
             case "in":
                 return processingMilestoning._in();
             case "out":
