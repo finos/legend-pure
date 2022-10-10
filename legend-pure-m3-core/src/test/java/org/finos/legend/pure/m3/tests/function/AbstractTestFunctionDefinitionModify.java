@@ -98,7 +98,6 @@ public abstract class AbstractTestFunctionDefinitionModify extends AbstractPureT
     public void cleanRuntime()
     {
         runtime.delete("testSource.pure");
-//        runtime.delete("/test/testModel.pure");
         runtime.compile();
     }
 
