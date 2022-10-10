@@ -201,20 +201,22 @@ public class DynamicPureFunctionImpl<T> implements SharedPureFunction<T> {
                     }
                 };
             }
-            default: {
-                return new PureLambdaFunction<X>() {
-
+            default:
+             {
+                return new PureLambdaFunction<X>()
+                {
                     @Override
-                    public X execute(ListIterable<?> vars, ExecutionSupport es) {
+                    public X execute(ListIterable<?> vars, ExecutionSupport es)
+                    {
                         return inner.execute(vars, es);
                     }
 
                     @Override
-                    public MutableMap<String, Object> getOpenVariables() {
+                    public MutableMap<String, Object> getOpenVariables()
+                    {
                         return inner.getOpenVariables();
                     }
-                }
-                        ;
+                };
             }
         }
     }
