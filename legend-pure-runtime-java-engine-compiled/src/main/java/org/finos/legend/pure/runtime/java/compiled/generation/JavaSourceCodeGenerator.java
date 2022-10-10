@@ -460,9 +460,9 @@ public final class JavaSourceCodeGenerator {
                 "    public String __id(){return this.lambdaFunction == null ? \"Anonymous_Lambda\" : this.lambdaFunction.getName();}\n" +
                 "    public PureCompiledLambda copy()\n" +
                 "    {\n" +
-                "        return new PureCompiledLambda(" +
+                "        return new PureCompiledLambda(\n" +
                 "                   (LambdaFunction)((AbstractCoreInstance)this.lambdaFunction).copy(),\n" +
-                "                   this.pureFunction" +
+                "                   this.pureFunction\n" +
                 "                   );\n" +
                 "    }\n" +
                 "\n" +
