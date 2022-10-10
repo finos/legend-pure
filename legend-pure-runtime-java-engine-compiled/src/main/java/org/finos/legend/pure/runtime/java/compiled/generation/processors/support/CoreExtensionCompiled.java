@@ -296,7 +296,8 @@ public class CoreExtensionCompiled extends BaseCompiledExtension
                                 "        }\n" +
                                 "\n" +
                                 "        @Override\n" +
-                                "        public LambdaCompiledExtended buildLambda(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction<Object> lambdaFunction, SharedPureFunction<Object> pureFunction) {\n" +
+                                "        public LambdaCompiledExtended buildLambda(org.finos.legend.pure.m3.coreinstance.meta.pure.metamodel.function.LambdaFunction<Object> lambdaFunction, SharedPureFunction<Object> pureFunction)\n" +
+                                "{\n" +
                                 "            return new PureCompiledLambda(lambdaFunction, pureFunction);\n" +
                                 "        }\n" +
                                 "    }\n" +
