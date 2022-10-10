@@ -56,18 +56,7 @@ public final class JavaMethodWithParamsSharedPureFunction<R> implements SharedPu
     {
         try
         {
-            ListIterable<Object> argValues;
-            if(!appendExecutionSupportParameter)
-            {
-                argValues = (ListIterable<Object>) vars;
-            }
-            else
-            {
-                MutableList<Object> x2 = Lists.mutable.empty();
-                x2.addAll((Collection<?>) vars);
-                x2.add(es);
-                argValues = x2;
-            }
+            ListIterable<?> argValues = this.appendExecutionSupportParameter ? Lists.mutable.<Object>withAll(vars).with(es) : vars;
             return (R) this.method.invoke(null, argValues.toArray());
         }
         catch (IllegalArgumentException e)
