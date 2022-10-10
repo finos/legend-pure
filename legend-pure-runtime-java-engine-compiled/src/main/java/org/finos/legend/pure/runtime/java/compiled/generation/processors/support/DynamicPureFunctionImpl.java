@@ -98,13 +98,10 @@ public class DynamicPureFunctionImpl<T> implements SharedPureFunction<T> {
         return getClass().getSimpleName() + "{func=" + this.func + ", openVariables=" + this.openVariables + "}";
     }
 
-    public static SharedPureFunction<Object> createPureFunction(FunctionDefinition<?> func, MutableMap<String, Object> openVariables, Bridge bridge) {
+    public static SharedPureFunction<Object> createPureFunction(FunctionDefinition<?> func, MutableMap<String, Object> openVariables, Bridge bridge)
+    {
         DynamicPureFunctionImpl<Object> impl = new DynamicPureFunctionImpl<>(func, openVariables, bridge);
-        if (func instanceof LambdaFunction) {
-            return createPureLambdaFunctionWrapper(impl);
-        } else {
-            return impl;
-        }
+        return (func instanceof LambdaFunction) ? createPureLambdaFunctionWrapper(impl) : impl;
     }
 
     private static <X> PureLambdaFunction<X> createPureLambdaFunctionWrapper(DynamicPureFunctionImpl<X> inner) {
