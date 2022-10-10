@@ -41,8 +41,7 @@ public final class JavaMethodWithParamsSharedPureFunction<R> implements SharedPu
         this.method = method;
         this.paramClasses = paramClasses;
         this.sourceInformation = sourceInformation;
-
-        appendExecutionSupportParameter = (this.paramClasses.length > 0 && (this.paramClasses[paramClasses.length - 1] == ExecutionSupport.class));
+        this.appendExecutionSupportParameter = (this.paramClasses.length > 0 && (this.paramClasses[paramClasses.length - 1] == ExecutionSupport.class));
     }
 
     public Class<?>[] getParametersTypes()
