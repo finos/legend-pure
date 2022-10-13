@@ -55,7 +55,7 @@
 
         <module>legend-pure-m2-store-relational</module>
         <module>legend-pure-runtime-java-extension-store-relational</module>
-
+        <module>legend-pure-runtime-java-extension-store-rai</module>
         <module>legend-pure-runtime-java-extension-external-shared</module>
 
         <module>legend-pure-configuration-external</module>
@@ -465,6 +465,11 @@
             <dependency>
                 <groupId>org.finos.legend.pure</groupId>
                 <artifactId>legend-pure-runtime-java-extension-store-relational</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.pure</groupId>
+                <artifactId>legend-pure-runtime-java-extension-store-rai</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
