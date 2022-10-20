@@ -87,6 +87,7 @@
 
         <!-- Dependency version -->
         <antlr.version>4.8-1</antlr.version>
+        <apache.maven.version>3.8.6</apache.maven.version>
         <commons-lang.version>3.5</commons-lang.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.7</commons-io.version>
@@ -528,8 +529,23 @@
             <!-- Maven Plugin -->
             <dependency>
                 <groupId>org.apache.maven</groupId>
+                <artifactId>maven-core</artifactId>
+                <version>${apache.maven.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.codehaus.plexus</groupId>
+                        <artifactId>plexus-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.plexus</groupId>
+                        <artifactId>plexus-component-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
                 <artifactId>maven-plugin-api</artifactId>
-                <version>3.6.3</version>
+                <version>${apache.maven.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
